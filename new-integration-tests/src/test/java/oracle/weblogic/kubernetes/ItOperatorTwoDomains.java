@@ -43,7 +43,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -85,6 +85,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTim
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -96,7 +97,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify operator manages multiple domains")
 @IntegrationTest
-public class ItOperatorTwoDomains implements LoggedTest {
+public class ItOperatorTwoDomains {
 
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
@@ -121,6 +122,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
   private List<DateTime> domainAdminPodOriginalTimestamps = new ArrayList<>();
   private List<DateTime> domain1ManagedServerPodOriginalTimestampList = new ArrayList<>();
   private List<DateTime> domain2ManagedServerPodOriginalTimestampList = new ArrayList<>();
+  private static LoggingFacade logger = null;
 
   /**
    * Get namespaces, install operator and initiate domain UID list.
@@ -129,7 +131,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(4) List<String> namespaces) {
-
+    logger = getLogger();
     // get unique operator namespaces
     logger.info("Get unique namespaces for operator1 and operator2");
     for (int i = 0; i < numberOfOperators; i++) {

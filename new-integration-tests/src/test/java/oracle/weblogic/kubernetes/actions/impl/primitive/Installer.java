@@ -5,9 +5,6 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.io.File;
 
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.logging.LoggingFactory;
-
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
@@ -22,7 +19,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExist;
-
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
  *  Implementation of actions that download/install tools for the uses to use.
@@ -31,7 +28,6 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExist;
  */
 
 public class Installer {
-  private static final LoggingFacade logger = LoggingFactory.getLogger(Installer.class);
   private static final String TMP_FILE_NAME = "temp-download-file.out";
 
 
@@ -92,7 +88,7 @@ public class Installer {
     boolean unzipSucceeded = true;
     if (params.verify()
         && new File(DOWNLOAD_DIR, params.fileName()).exists()) {
-      logger.fine("File {0} already exists.", params.fileName());
+      getLogger().fine("File {0} already exists.", params.fileName());
     } else {
       // check and make sure DOWNLOAD_DIR exists; will create it if it is missing
       checkDirectory(DOWNLOAD_DIR);
@@ -169,7 +165,7 @@ public class Installer {
       if (!Command.withParams(params).execute()) {
         RuntimeException exception =
             new RuntimeException(String.format("Failed to get the latest %s release information.", type));
-        logger.severe(
+        getLogger().severe(
             String.format(
                 "Failed to get the latest %s release information. The stderr is %s",
                 type,
@@ -200,7 +196,7 @@ public class Installer {
       } else {
         RuntimeException exception =
             new RuntimeException(String.format("Failed to get the version number of the requested %s release.", type));
-        logger.severe(
+        getLogger().severe(
             String.format(
                 "Failed to get the version number of the requested %s release. The stderr is %s",
                 type,

@@ -15,12 +15,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Handler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -69,9 +71,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
@@ -88,8 +90,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
   private static Collection<String> pushedImages = new ArrayList<>();
 
+
   @Override
   public void beforeAll(ExtensionContext context) {
+    LoggingFacade logger = getLogger();
     /* The pattern is that we have initialization code that we want to run once to completion
      * before any tests are executed. This method will be called before every test method. Therefore, the
      * very first time this method is called we will do the initialization. Since we assume that the tests
@@ -211,6 +215,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
   @Override
   public void close() {
+    LoggingFacade logger = getLogger();
     logger.info("Cleanup images after all test suites are run");
 
     // delete all the images from local repo
@@ -227,9 +232,14 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         }
       }
     }
+
+    for (Handler handler:logger.getUnderlyingLogger().getHandlers()) {
+      handler.close();
+    }
   }
 
   private String getOcirToken() {
+    LoggingFacade logger = getLogger();
     Path scriptPath = Paths.get(RESOURCE_DIR, "bash-scripts", "ocirtoken.sh");
     String cmd = scriptPath.toFile().getAbsolutePath();
     ExecResult result = null;
@@ -248,6 +258,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   }
 
   private void deleteImageOcir(String token, String imageName) {
+    LoggingFacade logger = getLogger();
     int firstSlashIdx = imageName.indexOf('/');
     String registry = imageName.substring(0, firstSlashIdx);
     int secondSlashIdx = imageName.indexOf('/', firstSlashIdx + 1);
@@ -340,7 +351,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
    */
   private boolean createBasicImage(String imageName, String imageTag, String modelFile, String varFile,
                                    String appName, String domainType) {
-
+    LoggingFacade logger = getLogger();
     final String image = imageName + ":" + imageTag;
 
     // build the model file list

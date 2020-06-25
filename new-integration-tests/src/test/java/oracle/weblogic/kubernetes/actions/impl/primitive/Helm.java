@@ -5,15 +5,13 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.util.Map;
 
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class Helm {
-  private static final LoggingFacade logger = LoggingFactory.getLogger(Helm.class);
 
   /**
    * Installs a Helm chart.
@@ -59,7 +57,7 @@ public class Helm {
       }
     }
 
-    logger.fine("Installing a chart in namespace {0} using chart reference {1}", namespace, chartRef);
+    getLogger().fine("Installing a chart in namespace {0} using chart reference {1}", namespace, chartRef);
 
     // build Helm install command
     String installCmd = String.format("helm install %1s %2s --namespace %3s ",
@@ -118,7 +116,7 @@ public class Helm {
     // chart reference to be used in Helm upgrade
     String chartDir = params.getChartDir();
 
-    logger.fine("Upgrading a release in namespace {0} using chart reference {1}", namespace, chartDir);
+    getLogger().fine("Upgrading a release in namespace {0} using chart reference {1}", namespace, chartDir);
 
     // build Helm upgrade command
     String upgradeCmd = String.format("helm upgrade %1s %2s --namespace %3s --reuse-values",
@@ -148,7 +146,7 @@ public class Helm {
         .isNotNull()
         .isNotEmpty();
 
-    logger.fine("Uninstalling release {0} in namespace {1}", params.getReleaseName(), params.getNamespace());
+    getLogger().fine("Uninstalling release {0} in namespace {1}", params.getReleaseName(), params.getNamespace());
 
     String uninstallCmd = String.format("helm uninstall %1s -n %2s", params.getReleaseName(),
         params.getNamespace());
@@ -215,15 +213,15 @@ public class Helm {
    * @return true on success, false otherwise
    */
   private static boolean exec(String command) {
-    logger.info("Running command - \n" + command);
+    getLogger().info("Running command - \n" + command);
     try {
       ExecResult result = ExecCommand.exec(command, true);
       if (result.exitValue() != 0) {
-        logger.info("Command failed with errors " + result.stderr() + "\n" + result.stdout());
+        getLogger().info("Command failed with errors " + result.stderr() + "\n" + result.stdout());
         return false;
       }
     } catch (Exception e) {
-      logger.info("Got exception, command failed with errors " + e.getMessage());
+      getLogger().info("Got exception, command failed with errors " + e.getMessage());
       return false;
     }
     return true;

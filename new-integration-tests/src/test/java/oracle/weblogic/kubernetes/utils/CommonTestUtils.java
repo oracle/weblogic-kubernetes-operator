@@ -38,6 +38,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 
@@ -129,10 +130,10 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -151,8 +152,8 @@ public class CommonTestUtils {
           .atMost(5, MINUTES).await();
 
   private static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
-        .and().with().pollInterval(3, SECONDS)
-        .atMost(12, SECONDS).await();
+      .and().with().pollInterval(3, SECONDS)
+      .atMost(12, SECONDS).await();
 
   /**
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
@@ -182,7 +183,7 @@ public class CommonTestUtils {
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
                                                     String... domainNamespace) {
-
+    LoggingFacade logger = getLogger();
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
     assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
@@ -266,7 +267,8 @@ public class CommonTestUtils {
    * @return true if successful
    */
   public static boolean upgradeAndVerifyOperator(String opNamespace,
-                                                    String... domainNamespace) {
+                                                 String... domainNamespace) {
+    LoggingFacade logger = getLogger();
     // Helm upgrade parameters
     HelmParams opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -311,10 +313,10 @@ public class CommonTestUtils {
   public static HelmParams installAndVerifyNginx(String nginxNamespace,
                                                  int nodeportshttp,
                                                  int nodeportshttps) {
-
+    LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
-        .releaseName(NGINX_RELEASE_NAME)
+        .releaseName(NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3))
         .namespace(nginxNamespace)
         .repoUrl(GOOGLE_REPO_URL)
         .repoName(STABLE_REPO_NAME)
@@ -322,9 +324,13 @@ public class CommonTestUtils {
 
     // NGINX chart values to override
     NginxParams nginxParams = new NginxParams()
-        .helmParams(nginxHelmParams)
-        .nodePortsHttp(nodeportshttp)
-        .nodePortsHttps(nodeportshttps);
+        .helmParams(nginxHelmParams);
+
+    if (nodeportshttp != 0 && nodeportshttps != 0) {
+      nginxParams
+          .nodePortsHttp(nodeportshttp)
+          .nodePortsHttps(nodeportshttps);
+    }
 
     // install NGINX
     assertThat(installNginx(nginxParams))
@@ -365,7 +371,7 @@ public class CommonTestUtils {
   public static HelmParams installAndVerifyVoyager(String voyagerNamespace,
                                                    String cloudProvider,
                                                    boolean enableValidatingWebhook) {
-
+    LoggingFacade logger = getLogger();
     final String voyagerPodNamePrefix = VOYAGER_CHART_NAME +  "-release-";
 
     // Helm install parameters
@@ -402,10 +408,10 @@ public class CommonTestUtils {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info(
-              "Waiting for Voyager to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-              voyagerNamespace,
-              condition.getElapsedTimeInMS(),
-              condition.getRemainingTimeInMS()))
+                "Waiting for Voyager to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+                voyagerNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> isVoyagerReady(voyagerNamespace, voyagerPodNamePrefix),
             "isVoyagerReady failed with ApiException"));
 
@@ -419,7 +425,7 @@ public class CommonTestUtils {
    * @param domainNamespace namespace in which the domain will be created
    */
   public static void createDomainAndVerify(Domain domain, String domainNamespace) {
-
+    LoggingFacade logger = getLogger();
     // create the domain CR
     assertNotNull(domain, "domain is null");
     assertNotNull(domain.getSpec(), "domain spec is null");
@@ -474,7 +480,7 @@ public class CommonTestUtils {
                                                              String domainNamespace,
                                                              int nodeport,
                                                              Map<String, Integer> clusterNameMSPortMap) {
-
+    LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
     final String ingressNginxClass = "nginx";
     String ingressName = domainUid + "-" + ingressNginxClass;
@@ -525,7 +531,7 @@ public class CommonTestUtils {
                                                             String domainNamespace,
                                                             String ingressName,
                                                             Map<String, Integer> clusterNameMSPortMap) {
-
+    LoggingFacade logger = getLogger();
     final String voyagerIngressName = VOYAGER_CHART_NAME + "-" + ingressName;
     final String channelName = "tcp-80";
     final String ingressType = "NodePort";
@@ -565,7 +571,7 @@ public class CommonTestUtils {
     // get ingress service Nodeport
     int ingressServiceNodePort = assertDoesNotThrow(
         () -> getServiceNodePort(domainNamespace, voyagerIngressName, channelName),
-            "Getting admin server node port failed");
+        "Getting admin server node port failed");
     logger.info("Node port for {0} is: {1} :", voyagerIngressName, ingressServiceNodePort);
 
     // check the ingress is ready to route the app to the server pod
@@ -594,6 +600,7 @@ public class CommonTestUtils {
    * @param domainNamespace the domain namespace in which the domain exists
    */
   public static void checkPodExists(String podName, String domainUid, String domainNamespace) {
+    LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be created in namespace {1} "
@@ -615,6 +622,7 @@ public class CommonTestUtils {
    * @param domainNamespace the domain namespace in which the domain exists
    */
   public static void checkPodReady(String podName, String domainUid, String domainNamespace) {
+    LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
@@ -625,7 +633,7 @@ public class CommonTestUtils {
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
             String.format("podReady failed with ApiException for pod %s in namespace %s",
-               podName, domainNamespace)));
+                podName, domainNamespace)));
   }
 
   /**
@@ -642,14 +650,15 @@ public class CommonTestUtils {
       String podName,
       DateTime lastCreationTime
   ) {
+    LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
-            podName,
-            domNamespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> isPodRestarted(podName, domNamespace, lastCreationTime),
             String.format(
                 "pod %s has not been restarted in namespace %s", podName, domNamespace)));
@@ -662,6 +671,7 @@ public class CommonTestUtils {
    * @param namespace the namespace in which to check for the service
    */
   public static void checkServiceExists(String serviceName, String namespace) {
+    LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for service {0} to exist in namespace {1} "
@@ -683,6 +693,7 @@ public class CommonTestUtils {
    * @param namespace the namespace in which to check whether the pod exists
    */
   public static void checkPodDoesNotExist(String podName, String domainUid, String namespace) {
+    LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
@@ -703,6 +714,7 @@ public class CommonTestUtils {
    * @param namespace the namespace in which to check the service does not exist
    */
   public static void checkServiceDoesNotExist(String serviceName, String namespace) {
+    LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for service {0} to be deleted in namespace {1} "
@@ -785,12 +797,12 @@ public class CommonTestUtils {
    * @return image name with tag
    */
   public static String createMiiImageAndVerify(String miiImageNameBase,
-                                                List<String> wdtModelList,
-                                                List<String> appSrcDirList,
-                                                String baseImageName,
-                                                String baseImageTag,
-                                                String domainType,
-                                                boolean oneArchiveContainsMultiApps) {
+                                               List<String> wdtModelList,
+                                               List<String> appSrcDirList,
+                                               String baseImageName,
+                                               String baseImageTag,
+                                               String domainType,
+                                               boolean oneArchiveContainsMultiApps) {
 
     return createImageAndVerify(
         miiImageNameBase, wdtModelList, appSrcDirList, null, baseImageName,
@@ -809,11 +821,11 @@ public class CommonTestUtils {
    * @return image name with tag
    */
   public static String createImageAndVerify(String imageNameBase,
-                                             String wdtModelFile,
-                                             String appName,
-                                             String modelPropFile,
-                                             String altModelDir,
-                                             String domainHome) {
+                                            String wdtModelFile,
+                                            String appName,
+                                            String modelPropFile,
+                                            String altModelDir,
+                                            String domainHome) {
 
     final List<String> wdtModelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
     final List<String> appSrcDirList = Collections.singletonList(appName);
@@ -862,15 +874,16 @@ public class CommonTestUtils {
    * @return image name with tag
    */
   public static String createImageAndVerify(String imageNameBase,
-                                               List<String> wdtModelList,
-                                               List<String> appSrcDirList,
-                                               List<String> modelPropList,
-                                               String baseImageName,
-                                               String baseImageTag,
-                                               String domainType,
-                                               boolean modelType,
-                                               String domainHome,
-                                               boolean oneArchiveContainsMultiApps) {
+                                            List<String> wdtModelList,
+                                            List<String> appSrcDirList,
+                                            List<String> modelPropList,
+                                            String baseImageName,
+                                            String baseImageTag,
+                                            String domainType,
+                                            boolean modelType,
+                                            String domainHome,
+                                            boolean oneArchiveContainsMultiApps) {
+    LoggingFacade logger = getLogger();
 
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -996,7 +1009,7 @@ public class CommonTestUtils {
    * @param namespace namespace in which the secret will be created
    */
   public static void createOCRRepoSecret(String namespace) {
-
+    LoggingFacade logger = getLogger();
     logger.info("Creating image pull secret in namespace {0}", namespace);
     createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
   }
@@ -1022,7 +1035,7 @@ public class CommonTestUtils {
    * @param namespace namespace in which to create the secret
    */
   public static void createDockerRegistrySecret(String userName, String password,
-      String email, String registry, String secretName, String namespace) {
+                                                String email, String registry, String secretName, String namespace) {
 
     // Create registry secret in the namespace to pull the image from repository
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
@@ -1049,6 +1062,7 @@ public class CommonTestUtils {
    * @param dockerImage the Docker image to push to registry
    */
   public static void dockerLoginAndPushImageToRegistry(String dockerImage) {
+    LoggingFacade logger = getLogger();
     // push image, if necessary
     if (!REPO_NAME.isEmpty() && dockerImage.contains(REPO_NAME)) {
       // docker login, if necessary
@@ -1159,7 +1173,7 @@ public class CommonTestUtils {
                                            String curlCmdForWLDFApp,
                                            String curlCmd,
                                            List<String> expectedServerNames) {
-
+    LoggingFacade logger = getLogger();
     // get the original managed server pod creation timestamp before scale
     List<DateTime> listOfPodCreationTimestamp = new ArrayList<>();
     for (int i = 1; i <= replicasBeforeScale; i++) {
@@ -1300,7 +1314,7 @@ public class CommonTestUtils {
                                                       String promVersion,
                                                       int promServerNodePort,
                                                       int alertManagerNodePort) {
-
+    LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams promHelmParams = new HelmParams()
         .releaseName(promReleaseName)
@@ -1359,11 +1373,11 @@ public class CommonTestUtils {
    * @return the grafana Helm installation parameters
    */
   public static HelmParams installAndVerifyGrafana(String grafanaReleaseName,
-                                                      String grafanaNamespace,
-                                                      String grafanaValueFile,
-                                                      String grafanaVersion,
-                                                      int grafanaNodePort) {
-
+                                                   String grafanaNamespace,
+                                                   String grafanaValueFile,
+                                                   String grafanaVersion,
+                                                   int grafanaNodePort) {
+    LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams grafanaHelmParams = new HelmParams()
         .releaseName(grafanaReleaseName)
@@ -1425,7 +1439,7 @@ public class CommonTestUtils {
                                           V1PersistentVolumeClaim v1pvc,
                                           String labelSelector,
                                           String namespace) {
-
+    LoggingFacade logger = getLogger();
     assertNotNull(v1pv, "v1pv is null");
     assertNotNull(v1pvc, "v1pvc is null");
 
@@ -1502,7 +1516,7 @@ public class CommonTestUtils {
    * @param namespace the namespace in which the job will be created
    */
   public static void createJobAndWaitUntilComplete(V1Job jobBody, String namespace) {
-
+    LoggingFacade logger = getLogger();
     String jobName = assertDoesNotThrow(() -> createNamespacedJob(jobBody), "createNamespacedJob failed");
 
     logger.info("Checking if the job {0} completed in namespace {1}", jobName, namespace);
@@ -1525,6 +1539,7 @@ public class CommonTestUtils {
    * @return PodCreationTimestamp of the pod
    */
   public static DateTime getPodCreationTime(String namespace, String podName) {
+    LoggingFacade logger = getLogger();
     DateTime podCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
             String.format("Couldn't get PodCreationTimestamp for pod %s", podName));
@@ -1549,7 +1564,7 @@ public class CommonTestUtils {
       String domainUid,
       String namespace,
       List<String> modelFiles) {
-
+    LoggingFacade logger = getLogger();
     assertNotNull(configMapName, "ConfigMap name cannot be null");
 
     Map<String, String> labels = new HashMap<>();
@@ -1585,7 +1600,8 @@ public class CommonTestUtils {
    * @throws java.io.IOException when copying files from source location to staging area fails
    */
   public static void replaceStringInFile(String filePath, String oldValue, String newValue)
-          throws IOException {
+      throws IOException {
+    LoggingFacade logger = getLogger();
     Path src = Paths.get(filePath);
     logger.info("Copying {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
@@ -1599,6 +1615,7 @@ public class CommonTestUtils {
    * Read the content of a model file as a String and add it to a map.
    */
   private static void addModelFile(Map<String, String> data, String modelFileName) {
+    LoggingFacade logger = getLogger();
     logger.info("Add model file {0}", modelFileName);
     String dsModelFile = String.format("%s/%s", MODEL_DIR, modelFileName);
 
@@ -1659,27 +1676,29 @@ public class CommonTestUtils {
       String username,
       String password,
       boolean expectValid) {
+    LoggingFacade logger = getLogger();
     String msg = expectValid ? "valid" : "invalid";
     logger.info("Check if the given WebLogic admin credentials are {0}", msg);
     withQuickRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Checking that credentials {0}/{1} are {2}"
-            + "(elapsed time {3}ms, remaining time {4}ms)",
-            username,
-            password,
-            msg,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
+                    + "(elapsed time {3}ms, remaining time {4}ms)",
+                username,
+                password,
+                msg,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(
             expectValid
-            ?
+                ?
             () -> credentialsValid(K8S_NODEPORT_HOST, podName, namespace, username, password)
-            :
+                :
             () -> credentialsNotValid(K8S_NODEPORT_HOST, podName, namespace, username, password),
             String.format(
-               "Failed to validate credentials %s/%s on pod %s in namespace %s",
-               username, password, podName, namespace)));
+                "Failed to validate credentials %s/%s on pod %s in namespace %s",
+                username, password, podName, namespace)));
   }
+
 
   /**
    * Generate a text file in RESULTS_ROOT directory by replacing template value.
@@ -1691,7 +1710,7 @@ public class CommonTestUtils {
   public static Path generateFileFromTemplate(
        String inputTemplateFile, String outputFile, 
        Map<String, String> templateMap) throws IOException {
- 
+    LoggingFacade logger = getLogger();
     Path srcFile = Paths.get(inputTemplateFile);
     Path targetFile = Paths.get(RESULTS_ROOT,outputFile);
     logger.info("Copying  source file {0} to target file {1}",inputTemplateFile, targetFile.toString());
