@@ -77,8 +77,8 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
@@ -118,6 +118,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespace;
@@ -143,6 +144,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.replaceStringInFi
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -159,7 +161,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify WebLogic Metric is processed as expected by MonitoringExporter via Prometheus and Grafana")
 @IntegrationTest
-class ItMonitoringExporter implements LoggedTest {
+class ItMonitoringExporter {
 
 
   // domain constants
@@ -169,9 +171,8 @@ class ItMonitoringExporter implements LoggedTest {
   private static String domain2Namespace = null;
   private static String domain1Uid = "monexp-domain-1";
   private static String domain2Uid = "monexp-domain-2";
-  private static HelmParams nginxHelmParams1 = null;
-  private static int nodeportshttp1 = 0;
-  private static int nodeportshttp2 = 0;
+  private static HelmParams nginxHelmParams = null;
+  private static int nodeportshttp = 0;
   private static List<String> ingressHost1List = null;
   private static List<String> ingressHost2List = null;
 
@@ -203,6 +204,7 @@ class ItMonitoringExporter implements LoggedTest {
   private static String exporterUrl = null;
   private static String prometheusDomainRegexValue = null;
   private static Map<String, Integer> clusterNameMsPortMap;
+  private static LoggingFacade logger = null;
 
   /**
    * Install operator and NGINX. Create model in image domain with multiple clusters.
@@ -212,8 +214,10 @@ class ItMonitoringExporter implements LoggedTest {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(7) List<String> namespaces) {
 
+  public static void initAll(@Namespaces(6) List<String> namespaces) {
+
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -241,9 +245,8 @@ class ItMonitoringExporter implements LoggedTest {
 
     logger.info("Get a unique namespace for NGINX");
     assertNotNull(namespaces.get(5), "Namespace list is null");
-    final String nginxNamespace1 = namespaces.get(5);
-    assertNotNull(namespaces.get(6), "Namespace list is null");
-    final String nginxNamespace2 = namespaces.get(6);
+    final String nginxNamespace = namespaces.get(5);
+
 
     logger.info("install and verify operator");
     installAndVerifyOperator(opNamespace, domain1Namespace,domain2Namespace);
@@ -258,20 +261,22 @@ class ItMonitoringExporter implements LoggedTest {
     logger.info("Create domain and verify that it's running");
     createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1);
 
-    // get a free node port for NGINX
-    nodeportshttp1 = getNextFreePort(30305, 30405);
-    nodeportshttp2 = getNextFreePort(30305, 30405);
-    int nodeportshttps1 = getNextFreePort(30443, 30543);
 
-    logger.info("install and verify NGINX");
-    nginxHelmParams1 = installAndVerifyNginx(nginxNamespace1, nodeportshttp1, nodeportshttps1);
+    // install and verify NGINX
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+    String nginxServiceName = nginxHelmParams.getReleaseName() + "-nginx-ingress-controller";
+    logger.info("NGINX service name: {0}", nginxServiceName);
+    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+    logger.info("NGINX http node port: {0}", nodeportshttp);
+
+    // create ingress for the domain
     logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
     clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
     ingressHost1List =
         createIngressForDomainAndVerify(domain1Uid, domain1Namespace,clusterNameMsPortMap, false);
 
-    exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp1);
+    exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp);
 
     logger.info("create pv and pvc for monitoring");
     HashMap<String, String> labels = new HashMap<>();
@@ -675,8 +680,8 @@ class ItMonitoringExporter implements LoggedTest {
     deleteMonitoringExporterTempDir();
 
     // uninstall NGINX release
-    if (nginxHelmParams1 != null) {
-      assertThat(uninstallNginx(nginxHelmParams1))
+    if (nginxHelmParams != null) {
+      assertThat(uninstallNginx(nginxHelmParams))
           .as("Test uninstallNginx1 returns true")
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();
@@ -1375,7 +1380,7 @@ class ItMonitoringExporter implements LoggedTest {
                 ADMIN_USERNAME_DEFAULT,
                 ADMIN_PASSWORD_DEFAULT,
                 K8S_NODEPORT_HOST,
-                nodeportshttp1);
+                nodeportshttp);
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
         .as("Verify NGINX can access the monitoring exporter metrics from all managed servers in the domain")
         .withFailMessage("NGINX can not access the monitoring exporter metrics from one or more of the managed servers")

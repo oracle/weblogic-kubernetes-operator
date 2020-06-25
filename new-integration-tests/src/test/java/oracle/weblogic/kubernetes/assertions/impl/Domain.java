@@ -29,7 +29,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDo
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -86,10 +86,10 @@ public class Domain {
             = customObjectsApi.getNamespacedCustomObject(
             "weblogic.oracle", domainVersion, namespace, "domains", domainUid);
       } catch (ApiException apex) {
-        logger.info(apex.getMessage());
+        getLogger().info(apex.getMessage());
       }
       boolean domainExist = (domainObject != null);
-      logger.info("Domain Object exists : " + domainExist);
+      getLogger().info("Domain Object exists : " + domainExist);
       return domainExist;
     };
   }
@@ -111,12 +111,12 @@ public class Domain {
     try {
       domain = getDomainCustomResource(domainUID, namespace);
     } catch (ApiException apex) {
-      logger.severe("Failed to obtain the domain resource object from the API server", apex);
+      getLogger().severe("Failed to obtain the domain resource object from the API server", apex);
       return false;
     }
 
     boolean domainPatched = (domain.spec().image().equals(image));
-    logger.info("Domain Object patched : " + domainPatched + " domain image = " + domain.spec().image());
+    getLogger().info("Domain Object patched : " + domainPatched + " domain image = " + domain.spec().image());
     return domainPatched;
   }
 
@@ -137,12 +137,13 @@ public class Domain {
     try {
       domain = getDomainCustomResource(domainUID, namespace);
     } catch (ApiException apex) {
-      logger.severe(String.format("Failed to obtain domain resource %s in namespace %s", domainUID, namespace), apex);
+      getLogger().severe(String.format("Failed to obtain domain resource %s in namespace %s",
+          domainUID, namespace), apex);
       return false;
     }
 
     boolean domainPatched = domain.spec().webLogicCredentialsSecret().getName().equals(secretName);
-    logger.info("Domain {0} is patched with webLogicCredentialsSecret: {1}",
+    getLogger().info("Domain {0} is patched with webLogicCredentialsSecret: {1}",
         domainUID, domain.getSpec().webLogicCredentialsSecret().getName());
     return domainPatched;
   }
@@ -170,7 +171,7 @@ public class Domain {
         .append(nodePort)
         .append("/console/login/LoginForm.jsp").toString();
 
-    logger.info("Accessing WebLogic console with url {0}", consoleUrl);
+    getLogger().info("Accessing WebLogic console with url {0}", consoleUrl);
     final WebClient webClient = new WebClient();
     final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
         "connection to the WebLogic admin console failed");
@@ -178,10 +179,10 @@ public class Domain {
     form.getInputByName("j_username").type(userName);
     form.getInputByName("j_password").type(password);
     HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
-    logger.info("Clicking login button");
+    getLogger().info("Clicking login button");
     HtmlPage home = submit.click();
     assertTrue(home.asText().contains("Persistent Stores"), "Home does not contain Persistent Stores text");
-    logger.info("Console login passed");
+    getLogger().info("Console login passed");
     return true;
   }
 
@@ -202,25 +203,25 @@ public class Domain {
     if (assertDoesNotThrow(() -> doesPodNotExist(domainNamespace, domainUid, podName),
         String.format("podExists failed with ApiException for pod %s in namespace %s",
             podName, domainNamespace))) {
-      logger.info("pod {0} does not exist in namespace {1}", podName, domainNamespace);
+      getLogger().info("pod {0} does not exist in namespace {1}", podName, domainNamespace);
       return false;
     }
 
     // if the pod is not in ready state, return false
-    logger.info("Checking that pod {0} is ready in namespace {1}", podName, domainNamespace);
+    getLogger().info("Checking that pod {0} is ready in namespace {1}", podName, domainNamespace);
     if (!assertDoesNotThrow(() -> isPodReady(domainNamespace, domainUid, podName),
         String.format("isPodReady failed with ApiException for pod %s in namespace %s", podName, domainNamespace))) {
-      logger.info("pod {0} is not ready in namespace {1}", podName, domainNamespace);
+      getLogger().info("pod {0} is not ready in namespace {1}", podName, domainNamespace);
       return false;
     }
 
     // if the pod was restarted, return false
-    logger.info("Checking that pod {0} is not restarted in namespace {1}", podName, domainNamespace);
+    getLogger().info("Checking that pod {0} is not restarted in namespace {1}", podName, domainNamespace);
     if (assertDoesNotThrow(() ->
         isPodRestarted(podName, domainNamespace, podOriginalCreationTimestamp),
         String.format("isPodRestarted failed with ApiException for pod %s in namespace %s",
             podName, domainNamespace))) {
-      logger.info("pod {0} is restarted in namespace {1}", podName, domainNamespace);
+      getLogger().info("pod {0} is restarted in namespace {1}", podName, domainNamespace);
       return false;
     }
 

@@ -33,7 +33,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
-import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -54,8 +54,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -73,8 +73,8 @@ public class DeployUtil {
 
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(5, MINUTES).await();
 
   /**
    * Deploy application.
@@ -88,8 +88,8 @@ public class DeployUtil {
    * @param namespace name of the namespace in which WebLogic server pods running
    */
   public static void deployUsingWlst(String host, String port, String userName,
-      String password, String targets, Path archivePath, String namespace) {
-
+                                     String password, String targets, Path archivePath, String namespace) {
+    final LoggingFacade logger = getLogger();
     setImage(namespace);
 
     // create a temporary WebLogic domain property file
@@ -143,6 +143,7 @@ public class DeployUtil {
    * @param deployScriptConfigMapName configmap containing deployment scripts
    */
   private static void deploy(String namespace, String deployScriptConfigMapName) {
+    LoggingFacade logger = getLogger();
     logger.info("Preparing to run deploy job using WLST");
     // create a V1Container with specific scripts and properties for creating domain
     V1Container jobCreationContainer = new V1Container()
@@ -168,7 +169,8 @@ public class DeployUtil {
    * @throws ApiException when Kubernetes cluster query fails
    */
   private static void createDeployJob(String deployScriptConfigMap, String namespace,
-      V1Container jobContainer) throws ApiException {
+                                      V1Container jobContainer) throws ApiException {
+    LoggingFacade logger = getLogger();
     logger.info("Running Kubernetes job to deploy application");
     String uniqueName = Namespace.uniqueName();
     String name = "wlst-deploy-job-" + uniqueName;
@@ -208,7 +210,7 @@ public class DeployUtil {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
-                + "(elapsed time {2} ms, remaining time {3} ms)",
+                    + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
                 namespace,
                 condition.getElapsedTimeInMS(),
@@ -240,6 +242,7 @@ public class DeployUtil {
    * @param namespace namespace in which secrets needs to be created
    */
   private static void setImage(String namespace) {
+    final LoggingFacade logger = getLogger();
     //determine if the tests are running in Kind cluster.
     //if true use images from Kind registry
     String ocrImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
@@ -278,25 +281,25 @@ public class DeployUtil {
    * @param cluster name of the cluster to deploy application
    * @param archivePath local path of the application archive
    */
-  public static ExecResult deployUsingRest(String host, String port, 
-      String userName, String password, String cluster, Path archivePath) {
-
+  public static ExecResult deployUsingRest(String host, String port,
+                                           String userName, String password, String cluster, Path archivePath) {
+    final LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer curlString = new StringBuffer("status=$(curl --noproxy '*' ");
     curlString.append(" --user " + userName + ":" + password);
     curlString.append(" -w %{http_code} --show-error -o /dev/null ")
-             .append("-H X-Requested-By:MyClient ")
-             .append("-H Accept:application/json  ")
-             .append("-H Content-Type:multipart/form-data ")
-             .append("-H Prefer:respond-async ")
-             .append("-F \"model={ name: 'testwebapp', targets: [ { identity: [ clusters, '")
-             .append(cluster + "' ] } ] }\" ")
-             .append(" -F \"sourcePath=@")
-             .append(archivePath.toString() + "\" ")
-             .append("-X POST http://" + host + ":" + port)
-             .append("/management/weblogic/latest/edit/appDeployments); ")
-             .append("echo ${status}");
-    
+        .append("-H X-Requested-By:MyClient ")
+        .append("-H Accept:application/json  ")
+        .append("-H Content-Type:multipart/form-data ")
+        .append("-H Prefer:respond-async ")
+        .append("-F \"model={ name: 'testwebapp', targets: [ { identity: [ clusters, '")
+        .append(cluster + "' ] } ] }\" ")
+        .append(" -F \"sourcePath=@")
+        .append(archivePath.toString() + "\" ")
+        .append("-X POST http://" + host + ":" + port)
+        .append("/management/weblogic/latest/edit/appDeployments); ")
+        .append("echo ${status}");
+
     logger.info("deployUsingRest: curl command {0}", new String(curlString));
     try {
       result = exec(new String(curlString), true);
