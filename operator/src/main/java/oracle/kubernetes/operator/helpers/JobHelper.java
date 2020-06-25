@@ -443,6 +443,10 @@ public class JobHelper {
       V1Job domainIntrospectorJob =
             (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
       if (isNotComplete(domainIntrospectorJob)) {
+        LOGGER.info(MessageKeys.INTROSPECTOR_JOB_FAILED,
+            domainIntrospectorJob.getMetadata().getNamespace(),
+            domainIntrospectorJob.getMetadata().getName(),
+            domainIntrospectorJob.toString());
         List<String> jobConditionsReason = new ArrayList<>();
         if (domainIntrospectorJob != null) {
           V1JobStatus status = domainIntrospectorJob.getStatus();
