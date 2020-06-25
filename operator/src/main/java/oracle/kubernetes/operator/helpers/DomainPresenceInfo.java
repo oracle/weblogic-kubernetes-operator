@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -102,6 +104,10 @@ public class DomainPresenceInfo {
 
   public V1Service removeServerService(String serverName) {
     return getSko(serverName).getService().getAndSet(null);
+  }
+
+  public static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
+    return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class));
   }
 
   V1Service[] getServiceServices() {

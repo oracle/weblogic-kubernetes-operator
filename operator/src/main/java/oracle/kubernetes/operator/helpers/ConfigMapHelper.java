@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
+import javax.json.JsonValue;
 import javax.validation.constraints.NotNull;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -47,7 +48,6 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_RESTAR
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SECRETS_MD_5;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
@@ -267,6 +267,17 @@ public class ConfigMapHelper {
       return new CallBuilder().readConfigMapAsync(getName(), namespace, new ReadResponseStep(next));
     }
 
+    Step createConfigMap(Step next) {
+      return new CallBuilder()
+          .createConfigMapAsync(namespace, getModel(), createCreateResponseStep(next));
+    }
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    boolean isCompatibleMap(V1ConfigMap existingMap) {
+      return VersionHelper.matchesResourceVersion(existingMap.getMetadata(), DEFAULT_DOMAIN_VERSION)
+          && COMPARATOR.containsAll(existingMap, getModel());
+    }
+
     class ReadResponseStep extends DefaultResponseStep<V1ConfigMap> {
       ReadResponseStep(Step next) {
         super(next);
@@ -274,7 +285,7 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        Optional.ofNullable((String) packet.get(DOMAIN_INTROSPECT_REQUESTED))
+        DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).map(Domain::getIntrospectVersion)
               .ifPresent(value -> addLabel(INTROSPECTION_STATE_LABEL, value));
         V1ConfigMap existingMap = callResponse.getResult();
         if (existingMap == null) {
@@ -288,16 +299,6 @@ public class ConfigMapHelper {
           recordCurrentMap(packet, existingMap);
           return doNext(packet);
         }
-      }
-
-      private Step createConfigMap(Step next) {
-        return new CallBuilder()
-            .createConfigMapAsync(namespace, getModel(), createCreateResponseStep(next));
-      }
-
-      private boolean isCompatibleMap(V1ConfigMap existingMap) {
-        return VersionHelper.matchesResourceVersion(existingMap.getMetadata(), DEFAULT_DOMAIN_VERSION)
-            && COMPARATOR.containsAll(existingMap, getModel());
       }
 
       private void logConfigMapExists() {
@@ -321,12 +322,20 @@ public class ConfigMapHelper {
       private Step patchCurrentMap(V1ConfigMap currentMap, Step next) {
         JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
 
+        if (labelsNotDefined(currentMap)) {
+          patchBuilder.add("/metadata/labels", JsonValue.EMPTY_JSON_OBJECT);
+        }
+        
         KubernetesUtils.addPatches(
             patchBuilder, "/metadata/labels/", getMapLabels(currentMap), getLabels());
 
         return new CallBuilder()
             .patchConfigMapAsync(name, namespace,
                 new V1Patch(patchBuilder.build().toString()), createPatchResponseStep(next));
+      }
+
+      private boolean labelsNotDefined(V1ConfigMap currentMap) {
+        return Objects.requireNonNull(currentMap.getMetadata()).getLabels() == null;
       }
     }
 
@@ -442,7 +451,7 @@ public class ConfigMapHelper {
       if (loader.isTopologyNotValid()) {
         return doNext(reportTopologyErrorsAndStop(), packet);
       } else if (loader.getDomainConfig() == null)  {
-        return doNext(packet);
+        return doNext(loader.createIntrospectionVersionUpdateStep(), packet);
       } else {
         LOGGER.fine(MessageKeys.WLS_CONFIGURATION_READ, timeSinceJobStart(packet), loader.getDomainConfig());
         loader.updatePacket();
@@ -497,6 +506,11 @@ public class ConfigMapHelper {
       copyFileToPacketIfPresent(SECRETS_MD_5, SECRETS_MD_5);
       copyToPacketAndFileIfPresent(DOMAIN_RESTART_VERSION, info.getDomain().getRestartVersion());
       copyToPacketAndFileIfPresent(DOMAIN_INPUTS_HASH, getModelInImageSpecHash());
+    }
+
+    private Step createIntrospectionVersionUpdateStep() {
+      return DomainValidationSteps.createValidateDomainTopologyStep(
+            createIntrospectorConfigMapContext(conflictStep).patchOnly().verifyConfigMap(conflictStep.getNext()));
     }
 
     private Step createValidationStep() {
@@ -609,6 +623,7 @@ public class ConfigMapHelper {
 
   public static class IntrospectorConfigMapContext extends ConfigMapContext {
     final String domainUid;
+    private boolean patchOnly;
 
     IntrospectorConfigMapContext(
           Step conflictStep,
@@ -621,6 +636,20 @@ public class ConfigMapHelper {
       addLabel(LabelConstants.DOMAINUID_LABEL, domainUid);
     }
 
+    IntrospectorConfigMapContext patchOnly() {
+      patchOnly = true;
+      return this;
+    }
+
+    @Override
+    Step createConfigMap(Step next) {
+      return patchOnly ? null : super.createConfigMap(next);
+    }
+
+    @Override
+    boolean isCompatibleMap(V1ConfigMap existingMap) {
+      return patchOnly || super.isCompatibleMap(existingMap);
+    }
   }
 
   /**
