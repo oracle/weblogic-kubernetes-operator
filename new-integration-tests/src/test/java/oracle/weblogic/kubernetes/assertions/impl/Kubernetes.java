@@ -41,7 +41,6 @@ import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listDeployments;
-
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 public class Kubernetes {
