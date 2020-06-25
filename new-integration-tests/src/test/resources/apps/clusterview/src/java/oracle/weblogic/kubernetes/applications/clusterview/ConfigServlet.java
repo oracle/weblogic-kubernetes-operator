@@ -5,6 +5,8 @@ package oracle.weblogic.kubernetes.applications.clusterview;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.management.MBeanServer;
@@ -18,6 +20,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import weblogic.j2ee.descriptor.wl.JDBCConnectionPoolParamsBean;
+import weblogic.j2ee.descriptor.wl.JDBCDataSourceParamsBean;
+import weblogic.j2ee.descriptor.wl.JDBCDriverParamsBean;
+import weblogic.management.configuration.JDBCSystemResourceMBean;
 import weblogic.management.configuration.ServerMBean;
 
 import weblogic.management.jmx.MBeanServerInvocationHandler;
@@ -77,47 +83,84 @@ public class ConfigServlet extends HttpServlet {
    * @throws IOException if an I/O error occurs
    */
   protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException {
+      throws ServletException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
     response.setContentType("text/html;charset=UTF-8");
     try (PrintWriter out = response.getWriter()) {
-      String serverType = request.getParameter("serverType");
-      String serverName = request.getParameter("serverName");
-      String attribute = request.getParameter("attribute");
 
       // check attributes of server configurations
-      if (attribute != null) {
-        ServerMBean serverConfiguration = getServerMBean(serverType, serverName);
-        switch (attribute) {
-          case "maxmessagesize":
-            int size = getMaxMessageSize(serverConfiguration);
-            out.println("MaxMessageSize=" + size);
-            break;
-          default:
-            out.println("supported attributes are<br>");
-            out.println("MaxMessageSize");
-        }
+      String attributeTest = request.getParameter("attributeTest");
+      if (attributeTest != null) {
+        printServerAttributes(request, out);
       }
 
       // test jdbc connection pool
       String dsTest = request.getParameter("dsTest");
-      String dsName = request.getParameter("dsName");
       if (dsTest != null) {
-        ServerRuntimeMBean serverRuntime = getServerRuntime(serverName);
-        JDBCDataSourceRuntimeMBean[] jdbcDataSourceRuntimeMBeans = serverRuntime.getJDBCServiceRuntime().getJDBCDataSourceRuntimeMBeans();
-        for (JDBCDataSourceRuntimeMBean jdbcDataSourceRuntimeMBean : jdbcDataSourceRuntimeMBeans) {
-          if (jdbcDataSourceRuntimeMBean.getName().equals(dsName)) {
-            String testPool = jdbcDataSourceRuntimeMBean.testPool();
-            if (testPool == null) {
-              out.println("Connection successful");
-            }
-          }
-        }
+        testJdbcConnection(request, out);
+      }
+
+      String resTest = request.getParameter("resTest");
+      if (resTest != null) {
+        printResourceAttributes(request, out);
       }
     }
   }
 
-  private int getMaxMessageSize(ServerMBean server) {
-    return server.getMaxMessageSize();
+  private void printServerAttributes(HttpServletRequest request, PrintWriter out) {
+    String serverType = request.getParameter("serverType");
+    String serverName = request.getParameter("serverName");
+    ServerMBean serverConfiguration = getServerMBean(serverType, serverName);
+    out.println("MaxMessageSize=" + serverConfiguration.getMaxMessageSize());
+  }
+
+  private void printResourceAttributes(HttpServletRequest request, PrintWriter out)
+      throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    String resName = request.getParameter("resName");
+    if (resName != null) {
+      JDBCSystemResourceMBean jdbcSystemResource = getJDBCSystemResource(resName);
+      JDBCConnectionPoolParamsBean connPool = jdbcSystemResource.getJDBCResource().getJDBCConnectionPoolParams();
+      JDBCDriverParamsBean driverParams = jdbcSystemResource.getJDBCResource().getJDBCDriverParams();
+      JDBCDataSourceParamsBean dsParams = jdbcSystemResource.getJDBCResource().getJDBCDataSourceParams();
+
+      //print connection pool parameters
+      getAttributes(connPool.getClass().getDeclaredMethods(), out, request, out);
+      //print driver parameteres
+      getAttributes(driverParams.getClass().getDeclaredMethods(), out, request, out);
+      //print data source parameters
+      getAttributes(dsParams.getClass().getDeclaredMethods(), out, request, out);
+
+    }
+  }
+
+  private void getAttributes(Method[] declaredMethods, Object obj, HttpServletRequest request, PrintWriter out)
+      throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+
+    for (Method declaredMethod : declaredMethods) {
+      declaredMethod.getName();
+      if (declaredMethod.getName().startsWith("get")) {
+        declaredMethod.setAccessible(true);
+        String name = declaredMethod.getName();
+        out.println(name + ":" + declaredMethod.invoke(obj));
+      }
+    }
+
+  }
+
+  private void testJdbcConnection(HttpServletRequest request, PrintWriter out) {
+
+    String dsName = request.getParameter("dsName");
+    String serverName = request.getParameter("serverName");
+
+    ServerRuntimeMBean serverRuntime = getServerRuntime(serverName);
+    JDBCDataSourceRuntimeMBean[] jdbcDataSourceRuntimeMBeans = serverRuntime.getJDBCServiceRuntime().getJDBCDataSourceRuntimeMBeans();
+    for (JDBCDataSourceRuntimeMBean jdbcDataSourceRuntimeMBean : jdbcDataSourceRuntimeMBeans) {
+      if (jdbcDataSourceRuntimeMBean.getName().equals(dsName)) {
+        String testPool = jdbcDataSourceRuntimeMBean.testPool();
+        if (testPool == null) {
+          out.println("Connection successful");
+        }
+      }
+    }
   }
 
   private ServerMBean getServerMBean(String serverType, String serverName) {
@@ -138,6 +181,13 @@ public class ConfigServlet extends HttpServlet {
     return null;
   }
 
+  private JDBCSystemResourceMBean getJDBCSystemResource(String jdbcResourceName) {
+    JDBCSystemResourceMBean res = domainRuntimeServiceMbean.getDomainConfiguration().lookupJDBCSystemResource(jdbcResourceName);
+    JDBCConnectionPoolParamsBean jdbcConnectionPoolParams = res.getJDBCResource().getJDBCConnectionPoolParams();
+
+    return res;
+  }
+
   /**
    * Handles the HTTP <code>GET</code> method.
    *
@@ -149,7 +199,11 @@ public class ConfigServlet extends HttpServlet {
   @Override
   protected void doGet(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
-    processRequest(request, response);
+    try {
+      processRequest(request, response);
+    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+      Logger.getLogger(ConfigServlet.class.getName()).log(Level.SEVERE, null, ex);
+    }
   }
 
   /**
@@ -163,7 +217,11 @@ public class ConfigServlet extends HttpServlet {
   @Override
   protected void doPost(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
-    processRequest(request, response);
+    try {
+      processRequest(request, response);
+    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+      Logger.getLogger(ConfigServlet.class.getName()).log(Level.SEVERE, null, ex);
+    }
   }
 
   /**
