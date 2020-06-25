@@ -301,7 +301,7 @@ class ItMonitoringExporter implements LoggedTest {
       createAndVerifyDomain(wdtImage, domain2Uid, domain2Namespace, "Image", replicaCount);
       ingressHost2List =
               createIngressForDomainAndVerify(domain2Uid, domain2Namespace, clusterNameMsPortMap);
-
+      logger.info("Installing Prometheus and Grafana");
       installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
               domain2Namespace,
               domain2Uid);
@@ -465,7 +465,6 @@ class ItMonitoringExporter implements LoggedTest {
    */
   private void editPrometheusCM(String oldRegex, String newRegex) throws ApiException {
     List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(monitoringNS).getItems();
-
     V1ConfigMap promCm = cmList.stream()
             .filter(cm -> "prometheus-server".equals(cm.getMetadata().getName()))
             .findAny()
@@ -473,9 +472,9 @@ class ItMonitoringExporter implements LoggedTest {
 
     assertNotNull(promCm,"Can't find cm for prometheus-server");
     Map<String, String> cmData = promCm.getData();
-    String values = cmData.get("prometheus.yaml").replace(oldRegex,newRegex);
-    assertNotNull(values, "can't find values for key prometheus.yaml");
-    cmData.replace("prometheus.yaml", values);
+    String values = cmData.get("prometheus.yml").replace(oldRegex,newRegex);
+    assertNotNull(values, "can't find values for key prometheus.yml");
+    cmData.replace("prometheus.yml", values);
 
     promCm.setData(cmData);
     Kubernetes.replaceConfigMap(promCm);
@@ -535,6 +534,7 @@ class ItMonitoringExporter implements LoggedTest {
     }
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
+      logger.info("update prometheus Config Map with domain info");
       editPrometheusCM(prometheusDomainRegexValue, prometheusRegexValue);
       prometheusDomainRegexValue = prometheusRegexValue;
     }
