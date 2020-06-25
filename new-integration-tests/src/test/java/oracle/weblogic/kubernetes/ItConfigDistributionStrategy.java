@@ -516,7 +516,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
 
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
     assertTrue(response.body().contains("getMaxCapacity:12"), "Did get getMaxCapacity:12");
-    assertTrue(response.body().contains("Url:" + dsUrl1), "Didn't get Url:" + dsUrl2);
+    assertTrue(response.body().contains("Url:" + dsUrl2), "Didn't get Url:" + dsUrl2);
 
     //test connection pool
     appURI = "/clusterview/ConfigServlet?"
