@@ -4,8 +4,8 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.util.Arrays;
-//import java.util.Base64;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,10 +37,11 @@ public class MySQLDBUtils {
 
   /**
    * Create and start a MySQL database pod.
-   * @param name name of the db pod
-   * @param user username of the database
-   * @param password password for the database
-   * @param nodePort node port of db service
+   *
+   * @param name      name of the db pod
+   * @param user      username of the database
+   * @param password  password for the database
+   * @param nodePort  node port of db service
    * @param namespace name of the namespace in which to create MySQL db
    */
   public static void createMySQLDB(String name, String user, String password, int nodePort, String namespace) {
@@ -50,16 +51,19 @@ public class MySQLDBUtils {
     String serviceName = name.concat("-external-").concat(uniqueName);
 
     createSecret(secretName, user, password, namespace);
-    createService(serviceName, namespace, nodePort);
+    createService(serviceName, name, namespace, nodePort);
     startMySQLDB(name, secretName, namespace);
 
   }
 
   private static void startMySQLDB(String name, String secretName, String namespace) {
+    Map<String, String> labels = new HashMap<>();
+    labels.put("app", name);
     V1Pod mysqlPod = new V1Pod()
         .metadata(new V1ObjectMeta()
             .name(name)
-            .namespace(namespace))
+            .namespace(namespace)
+            .labels(labels))
         .spec(new V1PodSpec()
             .terminationGracePeriodSeconds(5L)
             .containers(Arrays.asList(new V1Container()
@@ -78,10 +82,12 @@ public class MySQLDBUtils {
     CommonTestUtils.checkPodReady(pod.getMetadata().getName(), null, namespace);
   }
 
-  private static void createService(String serviceName, String namespace, int port) {
+  private static void createService(String serviceName, String selectorName, String namespace, int port) {
 
     boolean service = false;
     try {
+      Map<String, String> selector = new HashMap<>();
+      selector.put("app", selectorName);
       service = TestActions.createService(new V1Service()
           .metadata(new V1ObjectMeta()
               .name(serviceName)
@@ -92,7 +98,8 @@ public class MySQLDBUtils {
                   .port(3306)
                   .protocol("TCP")
                   .targetPort(new IntOrString(3306))
-                  .nodePort(port)))));
+                  .nodePort(port)))
+              .selector(selector)));
     } catch (ApiException ex) {
       Logger.getLogger(MySQLDBUtils.class.getName()).log(Level.SEVERE, null, ex);
     }
@@ -101,10 +108,10 @@ public class MySQLDBUtils {
 
   private static void createSecret(String secretName, String user, String password, String namespace) {
     HashMap<String, String> secrets = new HashMap<>();
-    //secrets.put("root-user", Base64.getEncoder().encode(user.getBytes()));
-    //secrets.put("root-password", Base64.getEncoder().encode(password.getBytes()));
     secrets.put("root-user", user);
     secrets.put("root-password", password);
+    HashMap<String, String> labels = new HashMap<>();
+    labels.put("weblogic.domainUID", "itests-mysql");
 
     boolean secret = false;
     try {
@@ -112,7 +119,8 @@ public class MySQLDBUtils {
           new V1Secret()
               .metadata(new V1ObjectMeta()
                   .name(secretName)
-                  .namespace(namespace))
+                  .namespace(namespace)
+                  .labels(labels))
               .stringData(secrets));
     } catch (ApiException ex) {
       Logger.getLogger(MySQLDBUtils.class.getName()).log(Level.SEVERE, null, ex);
