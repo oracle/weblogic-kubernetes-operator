@@ -30,6 +30,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static io.kubernetes.client.util.Yaml.dump;
@@ -55,7 +56,8 @@ public class LoggingUtil {
    * @param namespaces list of namespaces used by the test instance
    */
   public static void generateLog(Object itInstance, List namespaces) {
-    getLogger().info("Generating logs...");
+    LoggingFacade logger = getLogger();
+    logger.info("Generating logs...");
     String resultDirExt = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
     try {
       Path resultDir = Files.createDirectories(
@@ -65,7 +67,7 @@ public class LoggingUtil {
         LoggingUtil.collectLogs((String) namespace, resultDir.toString());
       }
     } catch (IOException ex) {
-      getLogger().severe(ex.getMessage());
+      logger.severe(ex.getMessage());
     }
   }
 
@@ -76,13 +78,14 @@ public class LoggingUtil {
    * @param resultDir existing directory to write log files
    */
   public static void collectLogs(String namespace, String resultDir) {
-    getLogger().info("Collecting logs in namespace : {0}", namespace);
+    LoggingFacade logger = getLogger();
+    logger.info("Collecting logs in namespace : {0}", namespace);
 
     // get events
     try {
       writeToFile(Kubernetes.listNamespacedEvents(namespace), resultDir, namespace + ".list.events.log");
     } catch (Exception ex) {
-      getLogger().warning("Listing events failed, not collecting any data for events");
+      logger.warning("Listing events failed, not collecting any data for events");
     }
 
     // get service accounts
@@ -90,7 +93,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listServiceAccounts(namespace), resultDir,
           namespace + ".list.service-accounts.log");
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // get services
@@ -98,7 +101,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listServices(namespace), resultDir,
           namespace + ".list.services.log");
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // get namespaces
@@ -109,7 +112,7 @@ public class LoggingUtil {
         }
       }
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // get pvc
@@ -117,7 +120,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listPersistentVolumeClaims(namespace), resultDir,
           namespace + ".list.persistent-volume-claims.log");
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // archive persistent volume contents
@@ -138,9 +141,9 @@ public class LoggingUtil {
                       Paths.get(resultDir, pvcName, pvName)));
             }
           } catch (ApiException ex) {
-            getLogger().warning(ex.getResponseBody());
+            logger.warning(ex.getResponseBody());
           } catch (IOException ex) {
-            getLogger().warning(ex.getMessage());
+            logger.warning(ex.getMessage());
           }
         }
       }
@@ -149,7 +152,7 @@ public class LoggingUtil {
     try {
       writeToFile(pvList, resultDir, "list.persistent-volumes.log");
     } catch (IOException ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // get secrets
@@ -157,7 +160,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listSecrets(namespace), resultDir,
           namespace + ".list.secrets.log");
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // get configmaps
@@ -165,21 +168,21 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listConfigMaps(namespace), resultDir,
           namespace + ".list.configmaps.log");
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // get jobs
     try {
       writeToFile(Kubernetes.listJobs(namespace), resultDir, namespace + ".list.jobs.log");
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // get deployments
     try {
       writeToFile(Kubernetes.listDeployments(namespace), resultDir, namespace + ".list.deploy.log");
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // get replicasets
@@ -187,7 +190,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listReplicaSets(namespace), resultDir,
           namespace + ".list.replica-sets.log");
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // get cluster roles
@@ -195,7 +198,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listClusterRoles(null), resultDir,
           "list.cluster-roles.log");
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // get cluster role bindings
@@ -203,7 +206,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listClusterRoleBindings(null), resultDir,
           "list.cluster-rolebindings.log");
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // get namespaced roles
@@ -211,7 +214,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listNamespacedRoles(namespace), resultDir,
           namespace + ".list.roles.log");
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // get namespaced rolebindings
@@ -219,20 +222,20 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listNamespacedRoleBinding(namespace), resultDir,
           namespace + ".list.rolebindings.log");
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
 
     // get domain objects in the given namespace
     try {
       writeToFile(Kubernetes.listDomains(namespace), resultDir, namespace + ".list.domains.log");
     } catch (Exception ex) {
-      getLogger().warning("Listing domain failed, not collecting any data for domain");
+      logger.warning("Listing domain failed, not collecting any data for domain");
     }
     // get pods
     try {
       writeToFile(Kubernetes.listPods(namespace, null), resultDir, namespace + ".list.pods.log");
     } catch (Exception ex) {
-      getLogger().warning("Listing pods failed, not collecting any data for pod configuration");
+      logger.warning("Listing pods failed, not collecting any data for pod configuration");
     }
 
     // get domain/operator pods
@@ -240,12 +243,17 @@ public class LoggingUtil {
       for (var pod : Kubernetes.listPods(namespace, null).getItems()) {
         if (pod.getMetadata() != null) {
           String podName = pod.getMetadata().getName();
-          writeToFile(Kubernetes.getPodLog(podName, namespace), resultDir,
-              namespace + ".pod." + podName + ".log");
+          List<V1Container> containers = pod.getSpec().getContainers();
+          logger.info("Found {0} container(s) in the pod {1}", containers.size(), podName);
+          for (var container : containers) {
+            String containerName = container.getName();
+            writeToFile(Kubernetes.getPodLog(podName, namespace, containerName), resultDir,
+                namespace + ".pod." + podName + ".container." + containerName + ".log");
+          }
         }
       }
     } catch (Exception ex) {
-      getLogger().warning(ex.getMessage());
+      logger.warning(ex.getMessage());
     }
   }
 
@@ -259,13 +267,14 @@ public class LoggingUtil {
    */
   private static void writeToFile(Object obj, String resultDir, String fileName)
       throws IOException {
-    getLogger().info("Generating {0}", Paths.get(resultDir, fileName));
+    LoggingFacade logger = getLogger();
+    logger.info("Generating {0}", Paths.get(resultDir, fileName));
     if (obj != null) {
       Files.write(Paths.get(resultDir, fileName),
           dump(obj).getBytes(StandardCharsets.UTF_8)
       );
     } else {
-      getLogger().info("Nothing to write in {0} list is empty", Paths.get(resultDir, fileName));
+      logger.info("Nothing to write in {0} list is empty", Paths.get(resultDir, fileName));
     }
   }
 
@@ -308,7 +317,7 @@ public class LoggingUtil {
    */
   private static V1Pod setupPVPod(String namespace, String pvcName, String pvName)
       throws ApiException {
-
+    final LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
         .atMost(1, MINUTES).await();
@@ -342,7 +351,7 @@ public class LoggingUtil {
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> getLogger().info("Waiting for {0} to be ready in namespace {1}, "
+            condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
                 + "(elapsed time {2} , remaining time {3}",
                 podName,
                 namespace,
@@ -360,7 +369,7 @@ public class LoggingUtil {
    */
   private static void cleanupPVPod(String namespace) throws ApiException {
     final String podName = "pv-pod-" + namespace;
-
+    LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(5, SECONDS)
         .and().with().pollInterval(5, SECONDS)
         .atMost(1, MINUTES).await();
@@ -371,7 +380,7 @@ public class LoggingUtil {
     // Wait for the pod to be deleted
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> getLogger().info("Waiting for {0} to be deleted in namespace {1}, "
+            condition -> logger.info("Waiting for {0} to be deleted in namespace {1}, "
                 + "(elapsed time {2} , remaining time {3}",
                 podName,
                 namespace,
@@ -395,28 +404,29 @@ public class LoggingUtil {
    */
   private static void copyDirectoryFromPod(V1Pod pvPod, Path destinationPath)
       throws ApiException {
+    LoggingFacade logger = getLogger();
     Future<String> copyJob = null;
     try {
       Runnable copy = () -> {
         try {
-          getLogger().info("Copying the contents of PV to {0}", destinationPath.toString());
+          logger.info("Copying the contents of PV to {0}", destinationPath.toString());
           Kubernetes.copyDirectoryFromPod(pvPod, "/shared", destinationPath);
         } catch (IOException | ApiException ex) {
-          getLogger().warning(ex.getMessage());
+          logger.warning(ex.getMessage());
         }
       };
       ExecutorService executorService = Executors.newSingleThreadExecutor();
       copyJob = executorService.submit(copy, "Done copying");
       copyJob.get(1, MINUTES);
     } catch (ExecutionException ex) {
-      getLogger().warning("Exception in copy");
+      logger.warning("Exception in copy");
     } catch (TimeoutException ex) {
-      getLogger().warning("Copy timed out");
+      logger.warning("Copy timed out");
     } catch (InterruptedException ex) {
-      getLogger().warning("Copy interrupted");
+      logger.warning("Copy interrupted");
     } finally {
       if (copyJob != null && !copyJob.isDone()) {
-        getLogger().info("Cancelling the copy job");
+        logger.info("Cancelling the copy job");
         copyJob.cancel(true);
       }
     }

@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.models.V1beta1CustomResourceSubresources;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.openapi.models.V1beta1JSONSchemaProps;
 import io.kubernetes.client.util.Yaml;
+import okhttp3.internal.http2.StreamResetException;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -54,6 +55,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 public class CrdHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String SCHEMA_LOCATION = "/schema";
+  private static final String NO_ERROR = "NO_ERROR";
   private static final CrdComparator COMPARATOR = new CrdComparatorImpl();
 
   private static final FileGroupReader schemaReader = new FileGroupReader(SCHEMA_LOCATION);
@@ -559,6 +561,13 @@ public class CrdHelper {
         LOGGER.info(MessageKeys.CREATING_CRD, callResponse);
         return doNext(packet);
       }
+
+      @Override
+      protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
+        LOGGER.info(MessageKeys.CREATE_CRD_FAILED, callResponse);
+        return isNotAuthorizedOrForbidden(callResponse)
+            ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
+      }
     }
 
     private class CreateBetaResponseStep extends ResponseStep<V1beta1CustomResourceDefinition> {
@@ -577,6 +586,13 @@ public class CrdHelper {
           Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
         LOGGER.info(MessageKeys.CREATING_CRD, callResponse);
         return doNext(packet);
+      }
+
+      @Override
+      protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
+        LOGGER.info(MessageKeys.CREATE_CRD_FAILED, callResponse);
+        return isNotAuthorizedOrForbidden(callResponse)
+            ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
     }
 
@@ -597,6 +613,15 @@ public class CrdHelper {
         LOGGER.info(MessageKeys.CREATING_CRD, callResponse);
         return doNext(packet);
       }
+
+      @Override
+      protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
+        LOGGER.info(MessageKeys.REPLACE_CRD_FAILED, callResponse);
+        return isNotAuthorizedOrForbidden(callResponse)
+           || ((callResponse.getE().getCause() instanceof StreamResetException) 
+           && (callResponse.getExceptionString().contains(NO_ERROR)))
+           ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
+      }      
     }
 
     private class ReplaceBetaResponseStep extends ResponseStep<V1beta1CustomResourceDefinition> {
@@ -615,6 +640,15 @@ public class CrdHelper {
           Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
         LOGGER.info(MessageKeys.CREATING_CRD, callResponse);
         return doNext(packet);
+      }
+
+      @Override
+      protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
+        LOGGER.info(MessageKeys.REPLACE_CRD_FAILED, callResponse);
+        return isNotAuthorizedOrForbidden(callResponse)
+           || ((callResponse.getE().getCause() instanceof StreamResetException) 
+           && (callResponse.getExceptionString().contains(NO_ERROR)))
+           ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
     }
   }
