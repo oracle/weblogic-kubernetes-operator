@@ -270,6 +270,15 @@ public class ItConfigDistributionStrategy {
   public void afterEach() {
     deleteConfigMap(overridecm, domainNamespace);
     deleteSecret(dsSecret, domainNamespace);
+    String patchStr
+        = "["
+        + "{\"op\": \"remove\", \"path\": \"/spec/configuration/overridesConfigMap\"},"
+        + "{\"op\": \"remove\", \"path\": \"/spec/configuration/secrets\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
     restartDomain();
   }
 
