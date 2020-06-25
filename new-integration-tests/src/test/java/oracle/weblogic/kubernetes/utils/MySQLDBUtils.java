@@ -110,8 +110,6 @@ public class MySQLDBUtils {
     HashMap<String, String> secrets = new HashMap<>();
     secrets.put("root-user", user);
     secrets.put("root-password", password);
-    HashMap<String, String> labels = new HashMap<>();
-    labels.put("weblogic.domainUID", "itests-mysql");
 
     boolean secret = false;
     try {
@@ -119,8 +117,7 @@ public class MySQLDBUtils {
           new V1Secret()
               .metadata(new V1ObjectMeta()
                   .name(secretName)
-                  .namespace(namespace)
-                  .labels(labels))
+                  .namespace(namespace))
               .stringData(secrets));
     } catch (ApiException ex) {
       Logger.getLogger(MySQLDBUtils.class.getName()).log(Level.SEVERE, null, ex);
