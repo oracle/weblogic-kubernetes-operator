@@ -6,7 +6,7 @@ package oracle.weblogic.kubernetes.assertions.impl;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -21,7 +21,7 @@ public class WitAssertion {
    * @return true if the image does exist, false otherwise
    */
   public static boolean doesImageExist(String imageName, String imageTag) {
-    logger.info("Checking if image " + imageName + ":" + imageTag + " exists.");
+    getLogger().info("Checking if image " + imageName + ":" + imageTag + " exists.");
     // verify the docker image is created
     Exception exception = null;;
     try {

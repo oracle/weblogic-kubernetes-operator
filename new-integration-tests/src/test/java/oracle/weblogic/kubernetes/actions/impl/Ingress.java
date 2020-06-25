@@ -18,10 +18,11 @@ import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressRule;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.INGRESS_API_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.INGRESS_KIND;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
  * Utility class for ingress resource .
@@ -44,7 +45,7 @@ public class Ingress {
                                            String domainUid,
                                            Map<String, Integer> clusterNameMsPortMap,
                                            Map<String, String> annotations) {
-
+    LoggingFacade logger = getLogger();
     List<String> ingressHostList = new ArrayList<>();
     ArrayList<ExtensionsV1beta1IngressRule> ingressRules = new ArrayList<>();
     clusterNameMsPortMap.forEach((clusterName, managedServerPort) -> {

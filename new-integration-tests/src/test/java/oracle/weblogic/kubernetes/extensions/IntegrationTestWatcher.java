@@ -32,7 +32,7 @@ import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.junit.jupiter.api.extension.TestWatcher;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
@@ -90,14 +90,14 @@ public class IntegrationTestWatcher implements
       String namespace = assertDoesNotThrow(() -> createUniqueNamespace(),
           "Failed to create unique namespace due to ApiException");
       namespaces.add(namespace);
-      logger.info("Created a new namespace called {0}", namespace);
+      getLogger().info("Created a new namespace called {0}", namespace);
     }
     if (this.namespaces == null) {
       this.namespaces = namespaces;
     } else {
       this.namespaces.addAll(namespaces);
     }
-    logger.info(this.namespaces.toString());
+    getLogger().info(this.namespaces.toString());
     return namespaces;
   }
 
@@ -160,7 +160,7 @@ public class IntegrationTestWatcher implements
   @Override
   public void beforeTestExecution(ExtensionContext context) throws Exception {
     printHeader(String.format("Ending beforeEach for %s()", methodName), "-");
-    logger.info("About to execute [{0}] in {1}()", context.getDisplayName(), methodName);
+    getLogger().info("About to execute [{0}] in {1}()", context.getDisplayName(), methodName);
     getStore(context).put(START_TIME, System.currentTimeMillis());
   }
 
@@ -174,8 +174,8 @@ public class IntegrationTestWatcher implements
     Method testMethod = context.getRequiredTestMethod();
     long startTime = getStore(context).remove(START_TIME, long.class);
     long duration = System.currentTimeMillis() - startTime;
-    logger.info("Finished executing [{0}] {1}()", context.getDisplayName(), methodName);
-    logger.info("Method [{0}] took {1} ms.", testMethod.getName(), duration);
+    getLogger().info("Finished executing [{0}] {1}()", context.getDisplayName(), methodName);
+    getLogger().info("Method [{0}] took {1} ms.", testMethod.getName(), duration);
   }
 
   private ExtensionContext.Store getStore(ExtensionContext context) {
@@ -273,11 +273,11 @@ public class IntegrationTestWatcher implements
     printHeader(String.format("Test FAILED %s()", methodName), "!");
     if (System.getenv("SLEEP_SECONDS_AFTER_FAILURE") != null) {
       int sleepSecs = Integer.parseInt(System.getenv("SLEEP_SECONDS_AFTER_FAILURE"));
-      logger.info("Sleeping for " + sleepSecs + " seconds to keep the env. for debugging");
+      getLogger().info("Sleeping for " + sleepSecs + " seconds to keep the env. for debugging");
       try {
         Thread.sleep(sleepSecs * 1000);
       } catch (InterruptedException ie) {
-        logger.info("Exception in testFailed sleep {0}", ie);
+        getLogger().info("Exception in testFailed sleep {0}", ie);
       }
     }
 
@@ -309,9 +309,9 @@ public class IntegrationTestWatcher implements
     // set SKIP_CLEANUP env. var to skip cleanup, mainly used for debugging in local runs
     if (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").toLowerCase().equals("true")) {
-      logger.info("Skipping cleanup after test class");
+      getLogger().info("Skipping cleanup after test class");
     } else {
-      logger.info("Starting cleanup after test class");
+      getLogger().info("Starting cleanup after test class");
       CleanupUtil.cleanup(namespaces);
     }
   }
@@ -336,9 +336,9 @@ public class IntegrationTestWatcher implements
    * @param failedStage the stage in which the test failed
    */
   private void collectLogs(ExtensionContext extensionContext, String failedStage) {
-    logger.info("Collecting logs...");
+    getLogger().info("Collecting logs...");
     if (namespaces == null || namespaces.isEmpty()) {
-      logger.warning("Namespace list is empty, "
+      getLogger().warning("Namespace list is empty, "
           + "see if the methods in the tests is(are) annotated with Namespaces(<n>)");
       return;
     }
@@ -348,7 +348,7 @@ public class IntegrationTestWatcher implements
               extensionContext.getRequiredTestClass().getSimpleName(),
               getExtDir(extensionContext, failedStage)));
     } catch (IOException ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
     for (var namespace : namespaces) {
       LoggingUtil.collectLogs((String)namespace, resultDir.toString());
@@ -382,6 +382,6 @@ public class IntegrationTestWatcher implements
    * @param rc repeater string
    */
   private void printHeader(String message, String rc) {
-    logger.info("\n" + rc.repeat(message.length()) + "\n" + message + "\n" + rc.repeat(message.length()) + "\n");
+    getLogger().info("\n" + rc.repeat(message.length()) + "\n" + message + "\n" + rc.repeat(message.length()) + "\n");
   }
 }

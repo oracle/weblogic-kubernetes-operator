@@ -22,7 +22,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
  * Utility class for NGINX ingress controller.
@@ -122,7 +122,7 @@ public class Nginx {
     try {
       Kubernetes.createIngress(domainNamespace, ingress);
     } catch (ApiException apex) {
-      logger.severe("got ApiException while calling createIngress: {0}", apex.getResponseBody());
+      getLogger().severe("got ApiException while calling createIngress: {0}", apex.getResponseBody());
       return null;
     }
     return ingressHostList;

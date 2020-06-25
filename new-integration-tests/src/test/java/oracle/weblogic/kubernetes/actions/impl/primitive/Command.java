@@ -5,16 +5,15 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.io.IOException;
 
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
  * Implementation of actions that perform command execution.
  */
 public class Command {
-  private static final LoggingFacade logger = LoggingFactory.getLogger(Command.class);
 
   private CommandParams params;
 
@@ -48,7 +47,7 @@ public class Command {
    */
   public boolean execute() {
     if (params.verbose()) {
-      logger.info("Executing command {0}", params.command());
+      getLogger().info("Executing command {0}", params.command());
     }
     try {
       ExecResult result = ExecCommand.exec(
@@ -63,15 +62,15 @@ public class Command {
       // check exitValue to determine if the command execution has failed.
       if (params.verbose()) {
         if (result.exitValue() != 0) {
-          logger.severe("The command execution failed because it returned non-zero exit value: {0}.", result);
+          getLogger().severe("The command execution failed because it returned non-zero exit value: {0}.", result);
         } else {
-          logger.info("The command execution succeeded with result: {0}.", result);
+          getLogger().info("The command execution succeeded with result: {0}.", result);
         }
       } 
 
       return result.exitValue() == 0;
     } catch (IOException | InterruptedException ie) {
-      logger.severe("The command execution failed", ie);
+      getLogger().severe("The command execution failed", ie);
       return false;
     }
   }
@@ -84,7 +83,7 @@ public class Command {
    */
   public boolean executeAndVerify(String expectedResponse) {
     if (params.verbose()) {
-      logger.info("Executing command {0}", params.command());
+      getLogger().info("Executing command {0}", params.command());
     }
     try {
       ExecResult result = ExecCommand.exec(
@@ -99,9 +98,9 @@ public class Command {
       // check exitValue to determine if the command execution has failed.
       if (params.verbose()) {
         if (result.exitValue() != 0) {
-          logger.severe("The command execution failed because it returned non-zero exit value: {0}.", result);
+          getLogger().severe("The command execution failed because it returned non-zero exit value: {0}.", result);
         } else {
-          logger.info("The command execution succeeded with result: {0}.", result);
+          getLogger().info("The command execution succeeded with result: {0}.", result);
         }
       } 
 
@@ -109,7 +108,7 @@ public class Command {
              && result.stdout() != null
              && result.stdout().contains(expectedResponse);
     } catch (IOException | InterruptedException ie) {
-      logger.severe("The command execution failed", ie);
+      getLogger().severe("The command execution failed", ie);
       return false;
     }
   }
@@ -121,7 +120,7 @@ public class Command {
    */
   public ExecResult executeAndReturnResult() {
     if (params.verbose()) {
-      logger.info("Executing command {0}", params.command());
+      getLogger().info("Executing command {0}", params.command());
     }
     ExecResult result = null;
     try {
@@ -135,11 +134,9 @@ public class Command {
       }
 
     } catch (IOException | InterruptedException ie) {
-      logger.severe("The command execution failed", ie);
+      getLogger().severe("The command execution failed", ie);
     }
     return result;
   }
-
-
 
 }

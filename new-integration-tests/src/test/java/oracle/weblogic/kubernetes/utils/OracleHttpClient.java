@@ -12,7 +12,10 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+
 
 /**
  * A simple Http client.
@@ -37,6 +40,7 @@ public class OracleHttpClient {
    */
   public static HttpResponse<String> get(String url, Map<String, String> headers, boolean debug)
       throws IOException, InterruptedException {
+    LoggingFacade logger = getLogger();
     HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
     requestBuilder
         .GET()

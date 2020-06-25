@@ -21,8 +21,6 @@ import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 
-import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
-import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V2;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 
@@ -42,7 +40,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   private void setApiVersion(Domain domain) {
-    domain.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V2);
     domain.setApiVersion(
         KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION);
   }

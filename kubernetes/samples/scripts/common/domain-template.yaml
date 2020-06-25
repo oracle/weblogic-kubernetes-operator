@@ -9,7 +9,6 @@ metadata:
   name: %DOMAIN_UID%
   namespace: %NAMESPACE%
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: %DOMAIN_UID%
 spec:
   # The WebLogic Domain Home

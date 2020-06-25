@@ -61,7 +61,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.TestAssertions;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.MySQLDBUtils;
@@ -124,6 +124,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -140,7 +141,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the introspectVersion runs the introspector")
 @IntegrationTest
-public class ItConfigDistributionStrategy implements LoggedTest {
+public class ItConfigDistributionStrategy {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -182,6 +183,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
       = with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(5, MINUTES).await();
+  private static LoggingFacade logger = null;
 
   /**
    * Assigns unique namespaces for operator and domains. Pulls WebLogic image if running tests in Kind cluster. Installs
@@ -191,6 +193,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
    */
   @BeforeAll
   public void initAll(@Namespaces(3) List<String> namespaces) {
+    logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
