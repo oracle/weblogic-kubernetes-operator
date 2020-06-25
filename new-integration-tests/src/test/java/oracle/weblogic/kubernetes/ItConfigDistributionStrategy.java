@@ -103,6 +103,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -181,9 +183,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
           .atMost(5, MINUTES).await();
 
   /**
-   * Assigns unique namespaces for operator and domains.
-   * Pull bLogic image if running tests in Kind cluster.
-   * Installs operator.
+   * Assigns unique namespaces for operator and domains. Pulls WebLogic image if running tests in Kind cluster. Installs
+   * operator.
    *
    * @param namespaces injected by JUnit
    */
@@ -249,47 +250,12 @@ public class ItConfigDistributionStrategy implements LoggedTest {
    * Verify the default config before starting any test.
    */
   @BeforeEach
-  public void verifyDefaultConfig() {
+  public void beforeEach() {
 
-    //verify the WebLogic server configuration is default
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName
-            + "-external",
-            "default"),
-        "Getting admin server node port failed");
-
-    //verify server attribute MaxMessageSize
-    String appURI = "/clusterview/ConfigServlet?"
-        + "attributeTest=true&"
-        + "serverType=adminserver&"
-        + "serverName=" + adminServerName;
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
-
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    assertTrue(response.body().contains("1000000"), "Didn't get MaxMessageSize=10000000");
-
-    //verify datasource attributes
-    appURI = "/clusterview/ConfigServlet?"
-        + "resTest=true&"
-        + "resName=" + dsName;
-    String dsurl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    response = assertDoesNotThrow(() -> OracleHttpClient.get(dsurl, true));
-
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    assertTrue(response.body().contains("getMaxCapacity:15"), "Did get getMaxCapacity:15");
-    assertTrue(response.body().contains("Url:" + dsUrl1), "Didn't get Url:" + dsUrl1);
-
-    //test connection pool
-    appURI = "/clusterview/ConfigServlet?"
-        + "dsTest=true&"
-        + "dsName=" + dsName + "&"
-        + "serverName=" + managedServerNameBase + 1;
-    String dstesturl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    response = assertDoesNotThrow(() -> OracleHttpClient.get(dstesturl, true));
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    assertTrue(response.body().contains("Connection successful"), "Didn't get Connection successful");
+    String maxMessageSize = "10000000";
+    String cpMaxCapacity = "15";
+    String dsUrl = dsUrl1;
+    verifyConfig(maxMessageSize, cpMaxCapacity, dsUrl);
 
   }
 
@@ -297,18 +263,77 @@ public class ItConfigDistributionStrategy implements LoggedTest {
    * Delete the overrides, secrets and restart domain to get clean state.
    */
   @AfterEach
-  public void deleteOverrideConfig() {
-    TestActions.deleteConfigMap(overridecm, domainNamespace);
-    TestActions.deleteSecret(dsSecret, domainNamespace);
+  public void afterEach() {
+    deleteConfigMap(overridecm, domainNamespace);
+    deleteSecret(dsSecret, domainNamespace);
     restartDomain();
   }
 
+
   /**
    * Test server configuration and data source configurations are dynamically overridden when
-   * /spec/configuration/overrideDistributionStrategy: DYNAMIC.
-   * Test sets the above field to DYNAMIC and overrides the /spec/configuration/overridesConfigMap and
-   * /spec/configuration/secrets with new configuration and new secrets.
-   * Verifies after introspector runs the server configuration and data source configurations are updated as expected.
+   * /spec/configuration/overrideDistributionStrategy: field is not set.
+   *
+   * <p>Test sets the /spec/configuration/overridesConfigMap
+   * and /spec/configuration/secrets with new configuration and new secrets.
+   *
+   * <p>Verifies after introspector runs the server configuration and data source configurations are
+   * updated as expected.
+   */
+  @Order(1)
+  @Test
+  @DisplayName("Test overrideDistributionStrategy set to DEFAULT")
+  public void testDefaultOverride() {
+
+    //store the pod creation timestamps
+    storePodCreationTimestamps();
+
+    //create config override map and secrets
+    setupCustomConfigOverrides();
+
+    //patch the domain resource with overridesConfigMap, secrets and introspectVersion
+    String patchStr
+        = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    //verify the introspector pod is created and runs
+    logger.info("Verifying introspector pod is created, runs and deleted");
+    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    checkPodExists(introspectPodName, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
+
+    logger.info("Verifying the WebLogic server pod states are not changed");
+    for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
+      String podName = (String) entry.getKey();
+      DateTime creationTimestamp = (DateTime) entry.getValue();
+      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, domainNamespace,
+          creationTimestamp), "Pod is restarted");
+    }
+
+    //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
+    restartDomain(); // remove after the above bug is fixed
+
+    verifyConfigOverrides();
+  }
+
+
+  /**
+   * Test server configuration and data source configurations are dynamically overridden when
+   * /spec/configuration/overrideDistributionStrategy is set to DYNAMIC.
+   *
+   * <p>Test sets the above field to DYNAMIC and overrides the
+   * /spec/configuration/overridesConfigMap and /spec/configuration/secrets with new configuration and new
+   * secrets.
+   *
+   * <p>Verifies after introspector runs the server configuration and data source configurations are updated
+   * as expected.
    */
   @Order(2)
   @Test
@@ -366,42 +391,50 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     verifyConfigOverrides();
   }
 
+
   /**
-   * Test domain status gets updated when introspectVersion attribute is added under domain.spec. Test Creates a domain
-   * in persistent volume using WLST. Updates the cluster configuration; cluster size using online WLST. Patches the
-   * domain custom resource with introSpectVersion. Verifies the introspector runs and the cluster maximum replica is
-   * updated under domain status. Verifies that the new pod comes up and sample application deployment works.
+   * Test server configuration and data source configurations are overridden on pods restart when
+   * /spec/configuration/overrideDistributionStrategy is set to ON_RESTART.
+   *
+   * <p>Test sets the above field to ON_RESTART and overrides the
+   * /spec/configuration/overridesConfigMap and /spec/configuration/secrets with new configuration and new secrets.
+   *
+   * <p>Verifies after introspector runs the server configuration and data source configurations are updated as
+   * expected.
    */
-  @Order(1)
+  @Order(3)
   @Test
-  @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
-  public void testDefaultOverride() {
+  @DisplayName("Test overrideDistributionStrategy value ON_RESTART")
+  public void testOnRestartOverride() {
 
-    // create a config map containing configuration override files
-    ArrayList<Path> configfiles = new ArrayList<>();
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    CommonTestUtils.createConfigMapFromFiles(overridecm, configfiles, domainNamespace);
-
-    // get the pod creation time stamps
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, adminPodCreationTime);
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i,
-          getPodCreationTime(domainNamespace, managedServerPodNamePrefix + i));
-    }
-
-    // patch the domain to add overridesConfigMap field and add introspectVersion field
-    String patchStr
-        = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
-        + "\"value\": \"configoverride-cm\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
+    //patching the domain with /spec/configuration/overrideDistributionStrategy: ON_RESTART
+    String patchStr = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overrideDistributionStrategy\", "
+        + "\"value\": \"ON_RESTART\"}"
         + "]";
-
-    logger.info("Updating domain using patch string: {0}", patchStr);
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    //workaround for bug - changing overrideDistributionStrategy needs restart of server pods
+    restartDomain(); // remove after the above bug is fixed
+
+    //store the pod creation timestamps
+    storePodCreationTimestamps();
+
+    //create config override map and secrets
+    setupCustomConfigOverrides();
+
+    //patch the domain resource with overridesConfigMap, secrets and introspectVersion
+    patchStr
+        = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
@@ -411,32 +444,143 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     checkPodExists(introspectPodName, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
 
-    for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
+    logger.info("Verifying the WebLogic server pod states are not changed");
+    for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
       String podName = (String) entry.getKey();
       DateTime creationTimestamp = (DateTime) entry.getValue();
       assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, domainNamespace,
           creationTimestamp), "Pod is restarted");
     }
 
+    //verify the configuration is not overridden
+    verifyConfig("10000000", "15", dsUrl1);
+
+    //restart domain for the distributionstrategy to take effect
+    restartDomain();
+
+    verifyConfigOverrides();
+  }
+
+
+  /**
+   * Test server configuration and data source configurations are not overridden when
+   * /spec/configuration/overrideDistributionStrategy is set to anything other than DYNAMIC or ON_RESTART.
+   *
+   * <p>Test sets the above field to RESTART and sets the
+   * /spec/configuration/overridesConfigMap and /spec/configuration/secrets with new configuration and new secrets.
+   *
+   * <p>Verifies after introspector runs the server configuration and data source configurations are not updated
+   * since the overrideDistributionStrategy is an invalid one.
+   */
+  @Order(4)
+  @Test
+  @DisplayName("Test invalid overrideDistributionStrategy value RESTART")
+  public void testOverrideNegative() {
+
+    //patching the domain with /spec/configuration/overrideDistributionStrategy: ON_RESTART
+    String patchStr = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overrideDistributionStrategy\", "
+        + "\"value\": \"RESTART\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    //workaround for bug - changing overrideDistributionStrategy needs restart of server pods
+    restartDomain(); // remove after the above bug is fixed
+
+    //store the pod creation timestamps
+    storePodCreationTimestamps();
+
+    //create config override map and secrets
+    setupCustomConfigOverrides();
+
+    //patch the domain resource with overridesConfigMap, secrets and introspectVersion
+    patchStr
+        = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    //verify the introspector pod is created and runs
+    logger.info("Verifying introspector pod is created, runs and deleted");
+    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    checkPodExists(introspectPodName, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
+
+    logger.info("Verifying the WebLogic server pod states are not changed");
+    for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
+      String podName = (String) entry.getKey();
+      DateTime creationTimestamp = (DateTime) entry.getValue();
+      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, domainNamespace,
+          creationTimestamp), "Pod is restarted");
+    }
+
+    //verify the configuration is not overridden
+    verifyConfig("10000000", "15", dsUrl1);
+
+    //restart domain for the distributionstrategy to take effect
+    restartDomain();
+
+    verifyConfig("10000000", "15", dsUrl1);
+  }
+
+  //verify the configuration overrides for server and data source
+  private void verifyConfigOverrides() {
+
+    String maxMessageSize = "78787878";
+    String cpMaxCapacity = "12";
+    String dsUrl = dsUrl2;
+    verifyConfig(maxMessageSize, cpMaxCapacity, dsUrl);
+  }
+
+  private void verifyConfig(String maxMessageSize, String cpMaxCapacity, String dsUrl) {
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName + "-external",
+        -> getServiceNodePort(domainNamespace, adminServerPodName
+            + "-external",
             "default"),
         "Getting admin server node port failed");
 
-    //access application from admin server
+    //verify server attribute MaxMessageSize
     String appURI = "/clusterview/ConfigServlet?"
-        + "attribute=maxmessagesize&"
+        + "attributeTest=true&"
         + "serverType=adminserver&"
         + "serverName=" + adminServerName;
     String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("10000000")));
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
+    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
 
+    assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    assertTrue(response.body().contains(maxMessageSize), "Didn't get MaxMessageSize=" + maxMessageSize);
+
+    //verify datasource attributes
+    appURI = "/clusterview/ConfigServlet?"
+        + "resTest=true&"
+        + "resName=" + dsName;
+    String dsurl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+    response = assertDoesNotThrow(() -> OracleHttpClient.get(dsurl, true));
+
+    assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    assertTrue(response.body().contains("getMaxCapacity:" + cpMaxCapacity), "Did get getMaxCapacity:" + cpMaxCapacity);
+    assertTrue(response.body().contains("Url:" + dsUrl), "Didn't get Url:" + dsUrl);
+
+    //test connection pool
+    appURI = "/clusterview/ConfigServlet?"
+        + "dsTest=true&"
+        + "dsName=" + dsName + "&"
+        + "serverName=" + managedServerNameBase + 1;
+    String dstesturl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+    response = assertDoesNotThrow(() -> OracleHttpClient.get(dstesturl, true));
+    assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    assertTrue(response.body().contains("Connection successful"), "Didn't get Connection successful");
   }
+
 
   private void storePodCreationTimestamps() {
     // get the pod creation time stamps
@@ -482,263 +626,6 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
     CommonTestUtils.createConfigMapFromFiles(overridecm, configfiles, domainNamespace);
-
-  }
-
-  //verify the configuration overrides for server and data source
-  private void verifyConfigOverrides() {
-
-    //verify the WebLogic server configuration is updated
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName
-            + "-external",
-            "default"),
-        "Getting admin server node port failed");
-
-    //verify server attribute MaxMessageSize
-    String appURI = "/clusterview/ConfigServlet?"
-        + "attributeTest=true&"
-        + "serverType=adminserver&"
-        + "serverName=" + adminServerName;
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
-
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    assertTrue(response.body().contains("78787878"), "Didn't get MaxMessageSize=78787878");
-
-    //verify datasource attributes
-    appURI = "/clusterview/ConfigServlet?"
-        + "resTest=true&"
-        + "resName=" + dsName;
-    String dsurl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    response = assertDoesNotThrow(() -> OracleHttpClient.get(dsurl, true));
-
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    assertTrue(response.body().contains("getMaxCapacity:12"), "Did get getMaxCapacity:12");
-    assertTrue(response.body().contains("Url:" + dsUrl2), "Didn't get Url:" + dsUrl2);
-
-    //test connection pool
-    appURI = "/clusterview/ConfigServlet?"
-        + "dsTest=true&"
-        + "dsName=" + dsName + "&"
-        + "serverName=" + managedServerNameBase + 1;
-    String dstesturl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    response = assertDoesNotThrow(() -> OracleHttpClient.get(dstesturl, true));
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    assertTrue(response.body().contains("Connection successful"), "Didn't get Connection successful");
-
-  }
-
-  /**
-   * Test domain status gets updated when introspectVersion attribute is added under domain.spec. Test Creates a domain
-   * in persistent volume using WLST. Updates the cluster configuration; cluster size using online WLST. Patches the
-   * domain custom resource with introSpectVersion. Verifies the introspector runs and the cluster maximum replica is
-   * updated under domain status. Verifies that the new pod comes up and sample application deployment works.
-   */
-  @Order(3)
-  @Test
-  @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
-  public void testOverrideOnRestart() {
-
-    ArrayList<Path> configfiles = new ArrayList<>();
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    String override1cm = "configoverride-cm";
-    CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, domainNamespace);
-
-    // get the pod creation time stamps
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
-    // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, adminPodCreationTime);
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i,
-          getPodCreationTime(domainNamespace, managedServerPodNamePrefix + i));
-    }
-
-    // patch the domain to increase the replicas of the cluster and add introspectVersion field
-    String patchStr = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overrideDistributionStrategy\", "
-        + "\"value\": \"ON_RESTART\"}"
-        + "]";
-
-    restartDomain();
-
-    // patch the domain to add overridesConfigMap field and update introspectVersion field
-    patchStr
-        = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
-        + "\"value\": \"configoverride-cm\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
-        + "]";
-
-    logger.info("Updating server configuration using patch string: {0}", patchStr);
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-
-    //verify the introspector pod is created and runs
-    logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
-    checkPodExists(introspectPodName, domainUid, domainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
-
-    for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
-      String podName = (String) entry.getKey();
-      DateTime creationTimestamp = (DateTime) entry.getValue();
-      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, domainNamespace,
-          creationTimestamp), "Pod is restarted");
-    }
-
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName
-            + "-external",
-            "default"),
-        "Getting admin server node port failed");
-
-    //access application from admin server
-    String appURI = "/clusterview/ConfigServlet?"
-        + "attribute=maxmessagesize&"
-        + "serverType=adminserver&"
-        + "serverName=" + adminServerName;
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("10000000")));
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
-
-    TestActions.startDomain(domainUid, domainNamespace);
-
-    logger.info("Getting node port for default channel");
-    serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName
-            + "-external", "default"),
-        "Getting admin server node port failed");
-
-    //access application from admin server
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("78787878")));
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
-
-  }
-
-  /**
-   * Test domain status gets updated when introspectVersion attribute is added under domain.spec. Test Creates a domain
-   * in persistent volume using WLST. Updates the cluster configuration; cluster size using online WLST. Patches the
-   * domain custom resource with introSpectVersion. Verifies the introspector runs and the cluster maximum replica is
-   * updated under domain status. Verifies that the new pod comes up and sample application deployment works.
-   */
-  @Order(4)
-  @Test
-  @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
-  public void testOverrideNegative() {
-
-    ArrayList<Path> configfiles = new ArrayList<>();
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    String override1cm = "configoverride-cm";
-    CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, domainNamespace);
-
-    // get the pod creation time stamps
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
-    // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, adminPodCreationTime);
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i,
-          getPodCreationTime(domainNamespace, managedServerPodNamePrefix + i));
-    }
-
-    // patch the domain to increase the replicas of the cluster and add introspectVersion field
-    String patchStr = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overrideDistributionStrategy\", "
-        + "\"value\": \"RESTART\"}"
-        + "]";
-
-    logger.info("Updating server configuration using patch string: {0}", patchStr);
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-
-    // patch the domain to add overridesConfigMap field and update introspectVersion field
-    patchStr
-        = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
-        + "\"value\": \"configoverride-cm\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
-        + "]";
-
-    logger.info("Updating server configuration using patch string: {0}", patchStr);
-    patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-
-    restartDomain();
-
-    //verify the introspector pod is created and runs
-    logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
-    checkPodExists(introspectPodName, domainUid, domainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
-
-    for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
-      String podName = (String) entry.getKey();
-      DateTime creationTimestamp = (DateTime) entry.getValue();
-      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, domainNamespace,
-          creationTimestamp), "Pod is restarted");
-    }
-
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName
-            + "-external",
-            "default"),
-        "Getting admin server node port failed");
-
-    //access application from admin server
-    String appURI = "/clusterview/ConfigServlet?"
-        + "attribute=maxmessagesize&"
-        + "serverType=adminserver&"
-        + "serverName=" + adminServerName;
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("10000000")));
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
-
-    // patch the domain to increase the replicas of the cluster and add introspectVersion field
-    patchStr = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overrideDistributionStrategy\", "
-        + "\"value\": \"ON_RESTART\"}"
-        + "]";
-
-    logger.info("Updating server configuration using patch string: {0}", patchStr);
-    patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-
-    TestActions.startDomain(domainUid, domainNamespace);
-
-    logger.info("Getting node port for default channel");
-    serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName
-            + "-external", "default"),
-        "Getting admin server node port failed");
-
-    //access application from admin server
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("78787878")));
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
 
   }
 
