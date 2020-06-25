@@ -505,7 +505,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
 
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    assertTrue(response.body().contains("1000000"), "Didn't get MaxMessageSize=78787878");
+    assertTrue(response.body().contains("78787878"), "Didn't get MaxMessageSize=78787878");
 
     //verify datasource attributes
     appURI = "/clusterview/ConfigServlet?"
@@ -515,7 +515,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     response = assertDoesNotThrow(() -> OracleHttpClient.get(dsurl, true));
 
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    assertTrue(response.body().contains("getMaxCapacity:15"), "Did get getMaxCapacity:15");
+    assertTrue(response.body().contains("getMaxCapacity:12"), "Did get getMaxCapacity:12");
     assertTrue(response.body().contains("Url:" + dsUrl1), "Didn't get Url:" + dsUrl2);
 
     //test connection pool
