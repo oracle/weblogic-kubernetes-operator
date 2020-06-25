@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -38,20 +39,25 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.operator.VersionConstants.OPERATOR_V1;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.BETA_CRD;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATE_CRD_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLACE_CRD_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
 
 public class CrdHelperTest {
   private static final KubernetesVersion KUBERNETES_VERSION_15 = new KubernetesVersion(1, 15);
   private static final KubernetesVersion KUBERNETES_VERSION_16 = new KubernetesVersion(1, 16);
+
+  private static final SemanticVersion PRODUCT_VERSION = new SemanticVersion(3, 0, 0);
+  private static final SemanticVersion PRODUCT_VERSION_OLD = new SemanticVersion(2, 4, 0);
+  private static final SemanticVersion PRODUCT_VERSION_FUTURE = new SemanticVersion(3, 1, 0);
 
   private V1CustomResourceDefinition defaultCrd;
   private V1beta1CustomResourceDefinition defaultBetaCrd;
@@ -64,14 +70,14 @@ public class CrdHelperTest {
   private final Function<URI, Path> pathFunction = fileSystem::getPath;
 
   private V1CustomResourceDefinition defineDefaultCrd() {
-    return CrdHelper.CrdContext.createModel(KUBERNETES_VERSION_16);
+    return CrdHelper.CrdContext.createModel(KUBERNETES_VERSION_16, PRODUCT_VERSION);
   }
 
   private V1beta1CustomResourceDefinition defineDefaultBetaCrd() {
-    return CrdHelper.CrdContext.createBetaModel(KUBERNETES_VERSION_15);
+    return CrdHelper.CrdContext.createBetaModel(KUBERNETES_VERSION_15, PRODUCT_VERSION);
   }
 
-  private V1CustomResourceDefinition defineCrd(String version, String operatorVersion) {
+  private V1CustomResourceDefinition defineCrd(String version, SemanticVersion operatorVersion) {
     return new V1CustomResourceDefinition()
         .apiVersion("apiextensions.k8s.io/v1")
         .kind("CustomResourceDefinition")
@@ -80,7 +86,7 @@ public class CrdHelperTest {
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1beta1CustomResourceDefinition defineBetaCrd(String version, String operatorVersion) {
+  private V1beta1CustomResourceDefinition defineBetaCrd(String version, SemanticVersion operatorVersion) {
     return new V1beta1CustomResourceDefinition()
         .apiVersion("apiextensions.k8s.io/v1beta1")
         .kind("CustomResourceDefinition")
@@ -88,10 +94,10 @@ public class CrdHelperTest {
         .spec(createBetaSpec(version));
   }
 
-  private V1ObjectMeta createMetadata(String operatorVersion) {
+  private V1ObjectMeta createMetadata(SemanticVersion operatorVersion) {
     return new V1ObjectMeta()
         .name(KubernetesConstants.CRD_NAME)
-        .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, operatorVersion);
+        .putLabelsItem(LabelConstants.OPERATOR_VERISON, operatorVersion.toString());
   }
 
   private V1CustomResourceDefinitionSpec createSpec(String version) {
@@ -143,7 +149,7 @@ public class CrdHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnResource(BETA_CRD, KubernetesConstants.CRD_NAME, 422);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null);
     testSupport.runSteps(scriptCrdStep);
 
     testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
@@ -151,7 +157,7 @@ public class CrdHelperTest {
 
   @Test
   public void whenCrdV1SupportedAndNoCrd_createIt() {
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, null));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -160,7 +166,7 @@ public class CrdHelperTest {
   public void whenCrdV1SupportedAndBetaCrd_upgradeIt() {
     testSupport.defineResources(defaultBetaCrd);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, null));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
     assertThat(testSupport.getResources(CUSTOM_RESOURCE_DEFINITION), hasItem(defaultCrd));
@@ -168,7 +174,7 @@ public class CrdHelperTest {
 
   @Test
   public void whenNoBetaCrd_createIt() {
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
     assertThat(testSupport.getResources(BETA_CRD), hasItem(defaultBetaCrd));
@@ -179,7 +185,7 @@ public class CrdHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(BETA_CRD, KubernetesConstants.CRD_NAME, null, 401);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null);
     testSupport.runSteps(scriptCrdStep);
     assertThat(logRecords, containsInfo(CREATE_CRD_FAILED));
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
@@ -190,7 +196,7 @@ public class CrdHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, 401);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16,PRODUCT_VERSION,  null);
     testSupport.runSteps(scriptCrdStep);
     assertThat(logRecords, containsInfo(CREATE_CRD_FAILED));
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
@@ -200,22 +206,43 @@ public class CrdHelperTest {
   public void whenMatchingCrdExists_noop() {
     testSupport.defineResources(defaultBetaCrd);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null));
   }
 
   @Test
   public void whenExistingCrdHasOldVersion_replaceIt() {
-    testSupport.defineResources(defineBetaCrd("v1", OPERATOR_V1));
+    testSupport.defineResources(defineBetaCrd("v1", PRODUCT_VERSION_OLD));
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
   @Test
+  public void whenExistingCrdHasCurrentApiVersionButOldProductVersion_replaceIt() {
+    testSupport.defineResources(defineCrd(KubernetesConstants.DOMAIN_VERSION, PRODUCT_VERSION));
+
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION_FUTURE, null));
+
+    assertThat(logRecords, containsInfo(CREATING_CRD));
+    List<V1CustomResourceDefinition> crds = testSupport.getResources(CUSTOM_RESOURCE_DEFINITION);
+    V1CustomResourceDefinition crd = crds.stream().findFirst().orElse(null);
+    assertNotNull(crd);
+    assertThat(getProductVersionFromMetadata(crd.getMetadata()), equalTo(PRODUCT_VERSION_FUTURE));
+  }
+
+  private SemanticVersion getProductVersionFromMetadata(V1ObjectMeta metadata) {
+    return Optional.ofNullable(metadata)
+            .map(V1ObjectMeta::getLabels)
+            .map(labels -> labels.get(LabelConstants.OPERATOR_VERISON))
+            .map(SemanticVersion::new)
+            .orElse(null);
+  }
+
+  @Test
   @Ignore
   public void whenExistingCrdHasFutureVersion_dontReplaceIt() {
-    V1CustomResourceDefinition existing = defineCrd("v500", "operator-v500");
+    V1CustomResourceDefinition existing = defineCrd("v500", PRODUCT_VERSION_FUTURE);
     existing
         .getSpec()
         .addVersionsItem(
@@ -224,15 +251,15 @@ public class CrdHelperTest {
                 .name(KubernetesConstants.DOMAIN_VERSION));
     testSupport.defineResources(existing);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, null));
   }
 
   @Test
   @Ignore
   public void whenExistingCrdHasFutureVersionButNotCurrentStorage_updateIt() {
-    testSupport.defineResources(defineCrd("v500", "operator-v500"));
+    testSupport.defineResources(defineCrd("v500", PRODUCT_VERSION_FUTURE));
 
-    V1CustomResourceDefinition replacement = defineCrd("v500", "operator-v500");
+    V1CustomResourceDefinition replacement = defineCrd("v500", PRODUCT_VERSION_FUTURE);
     replacement
         .getSpec()
         .addVersionsItem(
@@ -240,7 +267,7 @@ public class CrdHelperTest {
                 .served(true)
                 .name(KubernetesConstants.DOMAIN_VERSION));
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, null));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -248,10 +275,10 @@ public class CrdHelperTest {
   @Test
   public void whenReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineCrd("v1", OPERATOR_V1));
+    testSupport.defineResources(defineCrd("v1", PRODUCT_VERSION_OLD));
     testSupport.failOnReplace(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, 401);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, null);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -261,10 +288,10 @@ public class CrdHelperTest {
   @Test
   public void whenReplaceFailsThrowsStreamException_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineCrd("v1", OPERATOR_V1));
+    testSupport.defineResources(defineCrd("v1", PRODUCT_VERSION_OLD));
     testSupport.failOnReplaceWithStreamResetException(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, null);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -274,10 +301,10 @@ public class CrdHelperTest {
   @Test
   public void whenBetaCrdReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineBetaCrd("v1", OPERATOR_V1));
+    testSupport.defineResources(defineBetaCrd("v1", PRODUCT_VERSION_OLD));
     testSupport.failOnReplace(BETA_CRD, KubernetesConstants.CRD_NAME, null, 401);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -287,10 +314,10 @@ public class CrdHelperTest {
   @Test
   public void whenBetaCrdReplaceThrowsStreamResetException_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineBetaCrd("v1", OPERATOR_V1));
+    testSupport.defineResources(defineBetaCrd("v1", PRODUCT_VERSION_OLD));
     testSupport.failOnReplaceWithStreamResetException(BETA_CRD, KubernetesConstants.CRD_NAME, null);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));

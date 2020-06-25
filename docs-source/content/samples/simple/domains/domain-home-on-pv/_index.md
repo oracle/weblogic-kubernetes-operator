@@ -157,7 +157,6 @@ metadata:
   name: domain1
   namespace: default
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
 spec:
   # The WebLogic Domain Home
@@ -241,8 +240,7 @@ $ kubectl describe domain domain1
 Name:         domain1
 Namespace:    default
 Labels:       weblogic.domainUID=domain1
-              weblogic.resourceVersion=domain-v2
-Annotations:  kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"weblogic.oracle/v2","kind":"Domain","metadata":{"annotations":{},"labels":{"weblogic.domainUID":"domain1","weblogic.resourceVersion":"do...
+Annotations:  kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"weblogic.oracle/v2","kind":"Domain","metadata":{"annotations":{},"labels":{"weblogic.domainUID":"domain1",...
 API Version:  weblogic.oracle/v2
 Kind:         Domain
 Metadata:
