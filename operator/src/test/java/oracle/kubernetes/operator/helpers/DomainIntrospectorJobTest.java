@@ -48,13 +48,11 @@ import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
-import static oracle.kubernetes.operator.logging.MessageKeys.JOB_IS_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.AllOf.allOf;
@@ -111,7 +109,6 @@ public class DomainIntrospectorJobTest {
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
-    testSupport.defineResources(new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)));
   }
 
   private String[] getMessageKeys() {
@@ -170,6 +167,7 @@ public class DomainIntrospectorJobTest {
   private String getJobDeletedMessageKey() {
     return JOB_DELETED;
   }
+
   private String getJobFailedMessageKey() {
     return INTROSPECTOR_JOB_FAILED;
   }
@@ -310,11 +308,14 @@ public class DomainIntrospectorJobTest {
 
   @Test
   public void whenJobLogContainsSevereError_logJobInfos() {
+    testSupport.defineResources(new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)));
     new DomainProcessorTestSetup(testSupport).defineKubernetesResources(SEVERE_MESSAGE_1);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
-    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+    //testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+    testSupport.runSteps(JobHelper.deleteDomainIntrospectorJobStep(terminalStep));
 
     assertThat(logRecords, containsInfo(getJobFailedMessageKey()));
+    assertThat(logRecords, containsFine(getJobDeletedMessageKey()));
   }
 
   private Cluster getCluster(String clusterName) {

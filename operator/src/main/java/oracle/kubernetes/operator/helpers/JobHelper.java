@@ -373,7 +373,15 @@ public class JobHelper {
       return MessageKeys.JOB_DELETED;
     }
 
-    void logJobDeleted(String domainUid, String namespace, String jobName) {
+    void logJobDeleted(String domainUid, String namespace, String jobName, Packet packet) {
+      V1Job domainIntrospectorJob =
+          (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+      if (domainIntrospectorJob != null && !JobWatcher.isComplete(domainIntrospectorJob)) {
+        LOGGER.info(MessageKeys.INTROSPECTOR_JOB_FAILED,
+            domainIntrospectorJob.getMetadata().getNamespace(),
+            domainIntrospectorJob.getMetadata().getName(),
+            domainIntrospectorJob.toString());
+      }
       LOGGER.fine(getJobDeletedMessageKey(), domainUid, namespace, jobName);
     }
 
@@ -382,7 +390,7 @@ public class JobHelper {
       java.lang.String domainUid = info.getDomain().getDomainUid();
       java.lang.String namespace = info.getNamespace();
       String jobName = JobHelper.createJobName(domainUid);
-      logJobDeleted(domainUid, namespace, jobName);
+      logJobDeleted(domainUid, namespace, jobName, packet);
       return new CallBuilder()
             .deleteJobAsync(
                   jobName,
@@ -441,14 +449,14 @@ public class JobHelper {
       }
 
       V1Job domainIntrospectorJob =
-            (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+            (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
       if (isNotComplete(domainIntrospectorJob)) {
-        LOGGER.info(MessageKeys.INTROSPECTOR_JOB_FAILED,
-            domainIntrospectorJob.getMetadata().getNamespace(),
-            domainIntrospectorJob.getMetadata().getName(),
-            domainIntrospectorJob.toString());
         List<String> jobConditionsReason = new ArrayList<>();
         if (domainIntrospectorJob != null) {
+          //LOGGER.info(MessageKeys.INTROSPECTOR_JOB_FAILED,
+          //    domainIntrospectorJob.getMetadata().getNamespace(),
+          //    domainIntrospectorJob.getMetadata().getName(),
+          //    domainIntrospectorJob.toString());
           V1JobStatus status = domainIntrospectorJob.getStatus();
           if (status != null && status.getConditions() != null) {
             for (V1JobCondition cond : status.getConditions()) {
