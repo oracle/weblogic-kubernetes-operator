@@ -84,7 +84,7 @@ public class Domain {
     // change the /spec/serverStartPolicy to NEVER to shut down all servers in the domain
     // create patch string to shut down the domain
     StringBuffer patchStr = new StringBuffer("[{")
-        .append("\"op\": \"add\", ")
+        .append("\"op\": \"replace\", ")
         .append("\"path\": \"/spec/serverStartPolicy\", ")
         .append("\"value\": \"NEVER\"")
         .append("}]");
