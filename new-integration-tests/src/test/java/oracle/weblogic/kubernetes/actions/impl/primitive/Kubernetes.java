@@ -1120,6 +1120,7 @@ public class Kubernetes implements LoggedTest {
 
   /**
    * Replace a Kubernetes Config Map.
+   * The following command updates a complete configMap.
    *
    * @param configMap V1ConfigMap object containing config map configuration data
    * @return true if successful

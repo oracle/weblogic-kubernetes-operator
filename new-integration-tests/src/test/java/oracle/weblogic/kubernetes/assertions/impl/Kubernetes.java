@@ -473,7 +473,7 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if an deployment  is running in a given namespace.
+   * Checks if an deployment is running in a given namespace.
    * @param deploymentName name of deployment to check
    * @param label set of deployment labels
    * @param namespace in which to check for the pod existence

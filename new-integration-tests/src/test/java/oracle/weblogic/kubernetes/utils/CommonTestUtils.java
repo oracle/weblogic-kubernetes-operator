@@ -855,8 +855,8 @@ public class CommonTestUtils {
     final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
 
     return createImageAndVerify(
-            imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
-            WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
+      imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
+      WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
   }
 
   /**
@@ -954,9 +954,9 @@ public class CommonTestUtils {
         } else {
           for (String appName : buildAppDirList) {
             assertTrue(buildAppArchive(defaultAppParams()
-                            .srcDirList(Collections.singletonList(appName))
-                            .appName(appName)),
-                    String.format("Failed to create app archive for %s", appName));
+                .srcDirList(Collections.singletonList(appName))
+                .appName(appName)),
+                String.format("Failed to create app archive for %s", appName));
             zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
             // build the archive list
             archiveList.add(zipFile);
@@ -984,35 +984,35 @@ public class CommonTestUtils {
     if (!modelType) {  //create a domain home in image image
       result = createImage(
               new WitParams()
-                      .baseImageName(baseImageName)
-                      .baseImageTag(baseImageTag)
-                      .domainType(domainType)
-                      .modelImageName(imageName)
-                      .modelImageTag(imageTag)
-                      .modelFiles(wdtModelList)
-                      .modelVariableFiles(modelPropList)
-                      .modelArchiveFiles(archiveList)
-                      .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainHome)
-                      .wdtModelOnly(modelType)
-                      .wdtOperation("CREATE")
-                      .wdtVersion(WDT_VERSION)
-                      .env(env)
-                      .redirect(true));
+                .baseImageName(baseImageName)
+                .baseImageTag(baseImageTag)
+                .domainType(domainType)
+                .modelImageName(imageName)
+                .modelImageTag(imageTag)
+                .modelFiles(wdtModelList)
+                .modelVariableFiles(modelPropList)
+                .modelArchiveFiles(archiveList)
+                .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainHome)
+                .wdtModelOnly(modelType)
+                .wdtOperation("CREATE")
+                .wdtVersion(WDT_VERSION)
+                .env(env)
+                .redirect(true));
     } else {
       result = createImage(
               new WitParams()
-                      .baseImageName(baseImageName)
-                      .baseImageTag(baseImageTag)
-                      .domainType(domainType)
-                      .modelImageName(imageName)
-                      .modelImageTag(imageTag)
-                      .modelFiles(wdtModelList)
-                      .modelVariableFiles(modelPropList)
-                      .modelArchiveFiles(archiveList)
-                      .wdtModelOnly(modelType)
-                      .wdtVersion(WDT_VERSION)
-                      .env(env)
-                      .redirect(true));
+                .baseImageName(baseImageName)
+                .baseImageTag(baseImageTag)
+                .domainType(domainType)
+                .modelImageName(imageName)
+                .modelImageTag(imageTag)
+                .modelFiles(wdtModelList)
+                .modelVariableFiles(modelPropList)
+                .modelArchiveFiles(archiveList)
+                .wdtModelOnly(modelType)
+                .wdtVersion(WDT_VERSION)
+                .env(env)
+                .redirect(true));
     }
 
     assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
