@@ -97,10 +97,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   @Override
   public void beforeAll(ExtensionContext context) {
     LoggingFacade logger = getLogger();
-    // initialize logger for each test
-    /* ThreadSafeLogger.init(context.getRequiredTestClass().getSimpleName());
-    logger = ThreadSafeLogger.getLogger();
-    logger.info("First log message"); */
     /* The pattern is that we have initialization code that we want to run once to completion
      * before any tests are executed. This method will be called before every test method. Therefore, the
      * very first time this method is called we will do the initialization. Since we assume that the tests

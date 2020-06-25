@@ -44,7 +44,6 @@ public class LoggingFactory {
    */
   public static synchronized LoggingFacade getLogger(String name, String resourceBundleName) {
 
-    // LoggingFacade lf = facade.get(resourceBundleName);
     LoggingFacade lf = facade.get(name);
     if (lf == null) {
       Logger logger = Logger.getLogger(name, resourceBundleName);
@@ -66,7 +65,6 @@ public class LoggingFactory {
   public static synchronized LoggingFacade getLogger(
       String name, String resourceBundleName, Handler handler) {
 
-    //LoggingFacade lf = facade.get(resourceBundleName);
     LoggingFacade lf = facade.get(name);
     if (lf == null) {
       Logger logger = Logger.getLogger(name, resourceBundleName);

@@ -31,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.joda.time.DateTime;
 
 import static io.kubernetes.client.util.Yaml.dump;
@@ -135,6 +136,7 @@ public class Kubernetes {
    @throws ApiException if Kubernetes client API call fails
    */
   public static boolean isPodReady(String namespace, Map<String, String> labels, String podName) throws ApiException {
+    final LoggingFacade logger = getLogger();
     boolean status = false;
     String labelSelector = null;
     if (labels != null && !labels.isEmpty()) {
@@ -156,11 +158,11 @@ public class Kubernetes {
       if (v1PodReadyCondition != null) {
         status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
         if (status) {
-          getLogger().info("Pod {0} is READY in namespace {1}", podName, namespace);
+          logger.info("Pod {0} is READY in namespace {1}", podName, namespace);
         }
       }
     } else {
-      getLogger().info("Pod {0} does not exist in namespace {1}", podName, namespace);
+      logger.info("Pod {0} does not exist in namespace {1}", podName, namespace);
     }
     return status;
   }
@@ -193,6 +195,7 @@ public class Kubernetes {
    */
   public static boolean isPodTerminating(String namespace, String domainUid, String podName)
       throws ApiException {
+    LoggingFacade logger = getLogger();
     boolean terminating = false;
     String labelSelector = null;
     if (domainUid != null) {
@@ -200,11 +203,11 @@ public class Kubernetes {
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (null == pod) {
-      getLogger().severe("pod does not exist");
+      logger.severe("pod does not exist");
       return false;
     } else if (pod.getMetadata().getDeletionTimestamp() != null) {
       terminating = true;
-      getLogger().info("{0} : !!!Terminating!!!, DeletionTimeStamp : {1}",
+      logger.info("{0} : !!!Terminating!!!, DeletionTimeStamp : {1}",
           pod.getMetadata().getName(), pod.getMetadata().getDeletionTimestamp());
     }
     return terminating;
@@ -227,14 +230,15 @@ public class Kubernetes {
       String podName,
       String expectedRestartVersion
   ) throws ApiException {
+    LoggingFacade logger = getLogger();
     String restartVersion = getPodRestartVersion(namespace, "", podName);
 
     if (restartVersion != null && restartVersion.equals(expectedRestartVersion)) {
-      getLogger().info("Pod {0}: domainRestartVersion has been updated to expected value {1}",
+      logger.info("Pod {0}: domainRestartVersion has been updated to expected value {1}",
           podName, expectedRestartVersion);
       return true;
     }
-    getLogger().info("Pod {0}: domainRestartVersion {1} does not match expected value {2}",
+    logger.info("Pod {0}: domainRestartVersion {1} does not match expected value {2}",
         podName, restartVersion, expectedRestartVersion);
     return false;
   }
@@ -392,12 +396,13 @@ public class Kubernetes {
   public static V1Service getService(
       String serviceName, Map<String, String> label, String namespace)
       throws ApiException {
+    LoggingFacade logger = getLogger();
     String labelSelector = null;
     if (label != null) {
       String key = label.keySet().iterator().next().toString();
       String value = label.get(key).toString();
       labelSelector = String.format("%s in (%s)", key, value);
-      getLogger().info(labelSelector);
+      logger.info(labelSelector);
     }
     V1ServiceList v1ServiceList
         = coreV1Api.listServiceForAllNamespaces(
@@ -414,12 +419,12 @@ public class Kubernetes {
     for (V1Service service : v1ServiceList.getItems()) {
       if (service.getMetadata().getName().equals(serviceName.trim())
           && service.getMetadata().getNamespace().equals(namespace.trim())) {
-        getLogger().info("Service Name : " + service.getMetadata().getName());
-        getLogger().info("Service Namespace : " + service.getMetadata().getNamespace());
+        logger.info("Service Name : " + service.getMetadata().getName());
+        logger.info("Service Namespace : " + service.getMetadata().getNamespace());
         Map<String, String> labels = service.getMetadata().getLabels();
         if (labels != null) {
           for (Map.Entry<String, String> entry : labels.entrySet()) {
-            getLogger().log(Level.INFO, "Label Key: {0} Label Value: {1}",
+            logger.log(Level.INFO, "Label Key: {0} Label Value: {1}",
                 new Object[]{entry.getKey(), entry.getValue()});
           }
         }
@@ -462,6 +467,7 @@ public class Kubernetes {
    * @throws ApiException when there is error in querying the cluster
    */
   public static void listServices(String namespace, String labelSelectors) throws ApiException {
+    LoggingFacade logger = getLogger();
     V1ServiceList v1ServiceList
         = coreV1Api.listServiceForAllNamespaces(
         Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -475,22 +481,22 @@ public class Kubernetes {
         Boolean.FALSE // Watch for changes to the described resources.
         );
     List<V1Service> items = v1ServiceList.getItems();
-    getLogger().info(Arrays.toString(items.toArray()));
+    logger.info(Arrays.toString(items.toArray()));
     for (V1Service service : items) {
-      getLogger().info("Service Name : " + service.getMetadata().getName());
-      getLogger().info("Service Namespace : " + service.getMetadata().getNamespace());
-      getLogger().info("Service ResourceVersion : " + service.getMetadata().getResourceVersion());
-      getLogger().info("Service SelfLink : " + service.getMetadata().getSelfLink());
-      getLogger().info("Service Uid :" + service.getMetadata().getUid());
-      getLogger().info("Service Spec Cluster IP : " + service.getSpec().getClusterIP());
-      getLogger().info("Service Spec getExternalIPs : " + service.getSpec().getExternalIPs());
-      getLogger().info("Service Spec getExternalName : " + service.getSpec().getExternalName());
-      getLogger().info("Service Spec getPorts : " + service.getSpec().getPorts());
-      getLogger().info("Service Spec getType : " + service.getSpec().getType());
+      logger.info("Service Name : " + service.getMetadata().getName());
+      logger.info("Service Namespace : " + service.getMetadata().getNamespace());
+      logger.info("Service ResourceVersion : " + service.getMetadata().getResourceVersion());
+      logger.info("Service SelfLink : " + service.getMetadata().getSelfLink());
+      logger.info("Service Uid :" + service.getMetadata().getUid());
+      logger.info("Service Spec Cluster IP : " + service.getSpec().getClusterIP());
+      logger.info("Service Spec getExternalIPs : " + service.getSpec().getExternalIPs());
+      logger.info("Service Spec getExternalName : " + service.getSpec().getExternalName());
+      logger.info("Service Spec getPorts : " + service.getSpec().getPorts());
+      logger.info("Service Spec getType : " + service.getSpec().getType());
       Map<String, String> labels = service.getMetadata().getLabels();
       if (labels != null) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
-          getLogger().log(Level.INFO, "LABEL KEY: {0} LABEL VALUE: {1}",
+          logger.log(Level.INFO, "LABEL KEY: {0} LABEL VALUE: {1}",
               new Object[]{entry.getKey(), entry.getValue()});
         }
       }
@@ -560,10 +566,11 @@ public class Kubernetes {
   public static boolean isJobComplete(String namespace, String labelSelectors, String jobName)
       throws ApiException {
     boolean completionStatus = false;
+    LoggingFacade logger = getLogger();
 
     V1Job job = getJob(namespace, labelSelectors, jobName);
     if (job != null && job.getStatus() != null) {
-      getLogger().info("\n" + dump(job.getStatus()));
+      logger.info("\n" + dump(job.getStatus()));
       if (job.getStatus().getConditions() != null) {
         V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
             v1JobCondition
@@ -574,14 +581,14 @@ public class Kubernetes {
         if (jobCondition != null) {
           completionStatus = jobCondition.getStatus().equalsIgnoreCase("true");
           if (jobCondition.getType().equalsIgnoreCase("failed")) {
-            getLogger().severe("Job {0} failed", jobName);
+            logger.severe("Job {0} failed", jobName);
           } else if (jobCondition.getType().equalsIgnoreCase("complete")) {
-            getLogger().info("Job {0} completed successfully ", jobName);
+            logger.info("Job {0} completed successfully ", jobName);
           }
         }
       }
     } else {
-      getLogger().warning("Job doesn't exist");
+      logger.warning("Job doesn't exist");
     }
     return completionStatus;
   }
@@ -607,15 +614,16 @@ public class Kubernetes {
   public static boolean isPodRestarted(
       String podName, String domainUid,
       String namespace, DateTime timestamp) throws ApiException {
+    LoggingFacade logger = getLogger();
     DateTime newCreationTime = getPodCreationTimestamp(namespace, "", podName);
 
     if (newCreationTime != null
         && newCreationTime.isAfter(timestamp)) {
-      getLogger().info("Pod {0}: new creation time {1} is later than the last creation time {2}",
+      logger.info("Pod {0}: new creation time {1} is later than the last creation time {2}",
           podName, newCreationTime, timestamp);
       return true;
     }
-    getLogger().info("Pod {0}: new creation time {1} is NOT later than the last creation time {2}",
+    logger.info("Pod {0}: new creation time {1} is NOT later than the last creation time {2}",
         podName, newCreationTime, timestamp);
     return false;
   }

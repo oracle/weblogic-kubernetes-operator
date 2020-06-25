@@ -19,7 +19,7 @@ public class ThreadSafeLogger {
   public static final LoggingFacade globalLogger = LoggingFactory.getLogger("GLOBAL", "OperatorIntegrationTests");
 
   /**
-   * Initialize logger.
+   * Create a logger and set it in thread local.
    * @param loggerName name of the logger
    */
   public static void init(String loggerName) {
@@ -46,7 +46,7 @@ public class ThreadSafeLogger {
   }
 
   /**
-   * Get local logger if its set, if not get global logger.
+   * Get logger from the current thread.
    * @return logging facade with logger
    */
   public static LoggingFacade getLogger() {

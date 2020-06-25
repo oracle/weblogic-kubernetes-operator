@@ -71,7 +71,7 @@ public class WLSTUtils {
    * @param namespace namespace in which to run the job
    */
   public static void executeWLSTScript(Path wlstScript, Path domainProperties, String namespace) {
-    LoggingFacade logger = getLogger();
+    final LoggingFacade logger = getLogger();
     setImage(namespace);
 
     String wlstScriptFileName = wlstScript.getFileName().toString();
@@ -103,13 +103,13 @@ public class WLSTUtils {
   /**
    * Create a job to execute WLST script.
    *
-   * @param uniqueName a unique job name
+   * @param wlstJobName a unique job name
    * @param wlstScriptConfigMapName configmap holding WLST script file
    * @param namespace name of the namespace in which the job is created
    * @param jobContainer V1Container with job commands to execute WLST script
    * @throws ApiException when Kubernetes cluster query fails
    */
-  public static void createWLSTJob(String uniqueName, String wlstScriptConfigMapName, String namespace,
+  public static void createWLSTJob(String wlstJobName, String wlstScriptConfigMapName, String namespace,
                                    V1Container jobContainer) throws ApiException {
     LoggingFacade logger = getLogger();
     logger.info("Running Kubernetes job to execute WLST script");
@@ -117,7 +117,7 @@ public class WLSTUtils {
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                .name(uniqueName)
+                .name(wlstJobName)
                 .namespace(namespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once
@@ -183,7 +183,6 @@ public class WLSTUtils {
    * @param namespace namespace in which secrets needs to be created
    */
   private static void setImage(String namespace) {
-    final LoggingFacade logger = getLogger();
     //determine if the tests are running in Kind cluster.
     //if true use images from Kind registry
     String ocrImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
@@ -209,7 +208,7 @@ public class WLSTUtils {
       }
       isUseSecret = true;
     }
-    logger.info("Using image {0}", image);
+    getLogger().info("Using image {0}", image);
   }
 
 }
