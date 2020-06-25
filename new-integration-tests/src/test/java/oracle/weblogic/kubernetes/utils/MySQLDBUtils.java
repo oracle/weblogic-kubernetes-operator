@@ -112,7 +112,8 @@ public class MySQLDBUtils {
           new V1Secret()
               .metadata(new V1ObjectMeta()
                   .name(secretName)
-                  .namespace(namespace)).data(secrets));
+                  .namespace(namespace))
+              .stringData(secrets));
     } catch (ApiException ex) {
       Logger.getLogger(MySQLDBUtils.class.getName()).log(Level.SEVERE, null, ex);
     }
