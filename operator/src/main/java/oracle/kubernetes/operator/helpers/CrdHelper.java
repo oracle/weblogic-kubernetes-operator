@@ -679,7 +679,8 @@ public class CrdHelper {
 
       // Check product version label
       if (productVersion != null) {
-        if (productVersion.compareTo(getProductVersionFromMetadata(actual.getMetadata())) < 0) {
+        SemanticVersion currentCrdVersion = getProductVersionFromMetadata(actual.getMetadata());
+        if (currentCrdVersion == null || productVersion.compareTo(currentCrdVersion) < 0) {
           return false;
         }
       }
@@ -702,7 +703,8 @@ public class CrdHelper {
 
       // Check product version label
       if (productVersion != null) {
-        if (productVersion.compareTo(getProductVersionFromMetadata(actual.getMetadata())) < 0) {
+        SemanticVersion currentCrdVersion = getProductVersionFromMetadata(actual.getMetadata());
+        if (currentCrdVersion == null || productVersion.compareTo(currentCrdVersion) < 0) {
           return false;
         }
       }
