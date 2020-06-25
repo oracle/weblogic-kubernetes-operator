@@ -432,19 +432,17 @@ public class TestAssertions {
    * Check if a pod is restarted based on podCreationTimestamp.
    *
    * @param podName the name of the pod to check for
-   * @param domainUid the label the pod is decorated with
    * @param namespace in which the pod is running
    * @param timestamp the initial podCreationTimestamp
    * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
    */
   public static Callable<Boolean> isPodRestarted(
       String podName,
-      String domainUid,
       String namespace,
       DateTime timestamp
   ) {
     return () -> {
-      return Kubernetes.isPodRestarted(podName,domainUid,namespace,timestamp);
+      return Kubernetes.isPodRestarted(podName, namespace,timestamp);
     };
   }
 

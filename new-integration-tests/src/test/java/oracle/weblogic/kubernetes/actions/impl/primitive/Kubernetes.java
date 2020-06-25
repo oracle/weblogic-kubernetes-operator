@@ -2352,6 +2352,25 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
+   * Get the name of the operator pod.
+   *
+   * @param release release name of the operator
+   * @param namespace Kubernetes namespace that the operator is running in
+   * @return name of the operator pod
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getOperatorPodName(String release, String namespace) throws ApiException {
+    String labelSelector = String.format("app in (%s)", release);
+    V1PodList pods = listPods(namespace, labelSelector);
+    for (var pod : pods.getItems()) {
+      if (pod.getMetadata().getName().contains(release)) {
+        return pod.getMetadata().getName();
+      }
+    }
+    return null;
+  }
+
+  /**
    * Simple class to redirect/copy data to both the stdout stream and a buffer
    * which can be read from later.
    */
