@@ -4,7 +4,7 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.util.Arrays;
-import java.util.Base64;
+//import java.util.Base64;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -100,9 +100,11 @@ public class MySQLDBUtils {
   }
 
   private static void createSecret(String secretName, String user, String password, String namespace) {
-    HashMap<String, byte[]> secrets = new HashMap<>();
-    secrets.put("root-user", Base64.getEncoder().encode(user.getBytes()));
-    secrets.put("root-password", Base64.getEncoder().encode(password.getBytes()));
+    HashMap<String, String> secrets = new HashMap<>();
+    //secrets.put("root-user", Base64.getEncoder().encode(user.getBytes()));
+    //secrets.put("root-password", Base64.getEncoder().encode(password.getBytes()));
+    secrets.put("root-user", user);
+    secrets.put("root-password", password);
 
     boolean secret = false;
     try {

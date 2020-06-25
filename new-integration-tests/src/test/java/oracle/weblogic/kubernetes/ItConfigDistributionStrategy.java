@@ -220,8 +220,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     createDomain();
     mysqlDBPort1 = getNextFreePort(30000, 32767);
     MySQLDBUtils.createMySQLDB("mysqldb-1", "root", "root123", mysqlDBPort1, introDomainNamespace);
-    mysqlDBPort2 = getNextFreePort(30000, 32767);
-    MySQLDBUtils.createMySQLDB("mysqldb-2", "root", "root456", mysqlDBPort2, introDomainNamespace);
+    //mysqlDBPort2 = getNextFreePort(30000, 32767);
+    //MySQLDBUtils.createMySQLDB("mysqldb-2", "root", "root456", mysqlDBPort2, introDomainNamespace);
     createJdbcDataSource("root", "root123", mysqlDBPort1);
     deployApplication();
 
