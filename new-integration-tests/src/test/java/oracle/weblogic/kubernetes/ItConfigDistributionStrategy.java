@@ -6,10 +6,10 @@ package oracle.weblogic.kubernetes;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -432,7 +432,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     String tempString = assertDoesNotThrow(()
         -> Files.readString(srcDsOverrideFile).replaceAll("JDBC_URL", newDsUrl));
     assertDoesNotThrow(()
-        -> Files.write(dstDsOverrideFile, tempString.getBytes(), StandardOpenOption.TRUNCATE_EXISTING));
+        -> Files.write(dstDsOverrideFile, tempString.getBytes(StandardCharsets.UTF_8)));
 
     ArrayList<Path> configfiles = new ArrayList<>();
     configfiles.add(dstDsOverrideFile);
