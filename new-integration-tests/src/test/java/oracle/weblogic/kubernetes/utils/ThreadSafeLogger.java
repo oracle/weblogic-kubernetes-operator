@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,20 +27,19 @@ public class ThreadSafeLogger {
       // create file handler
       Path resultDir = Files.createDirectories(Paths.get(TestConstants.LOGS_DIR,
           loggerName));
-      File logFile = new File(Paths.get(resultDir.toString(), loggerName + ".out").toString());
+      /* File logFile = new File(Paths.get(resultDir.toString(), loggerName + ".out").toString());
       if (logFile.exists()) {
         logFile.delete();
       }
-      Files.createFile(logFile.toPath());
-      //logFile.setWritable(true);
-      FileHandler fileHandler = new FileHandler(logFile.toString(), true);
+      Files.createFile(logFile.toPath()); */
+      FileHandler fileHandler = new FileHandler(
+          Paths.get(resultDir.toString(), loggerName + ".out").toString(), true);
       SimpleFormatter formatter = new SimpleFormatter();
       fileHandler.setFormatter(formatter);
+      // create logger
       LoggingFacade logger = LoggingFactory.getLogger(
           loggerName, "OperatorIntegrationTests", fileHandler);
-      //logger.setLevel(Level.ALL);
       localLogger.set(logger);
-      //logger.info("First log message");
     } catch (IOException ioe) {
       globalLogger.severe("Logger initialization failed with Exception {0}", ioe);
     }
@@ -53,10 +51,10 @@ public class ThreadSafeLogger {
    */
   public static LoggingFacade getLogger() {
     if (localLogger.get() != null) {
-      globalLogger.info("Returning local logger {0}", localLogger.get().getName());
+      //globalLogger.info("Returning local logger {0}", localLogger.get().getName());
       return localLogger.get();
     } else {
-      globalLogger.info("Returning global logger");
+      //globalLogger.info("Returning global logger");
       return globalLogger;
     }
   }
