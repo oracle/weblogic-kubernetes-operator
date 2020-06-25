@@ -376,7 +376,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         "Getting admin server node port failed");
 
     String appURI = "/clusterview/ConfigServlet?"
-        + "attribute=maxmessagesize&"
+        + "attributeTest=true&"
         + "serverType=adminserver&"
         + "serverName=" + adminServerName;
     String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
@@ -387,11 +387,21 @@ public class ItConfigDistributionStrategy implements LoggedTest {
             .statusCode(), "Status code not equals to 200");
 
     appURI = "/clusterview/ConfigServlet?"
+        + "resTest=true&"
+        + "resName=" + dsName;
+    String dsurl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(dsurl, true).body().contains("getMaxCapacity:12")));
+    assertEquals(200,
+        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
+            "Accessing sample application on admin server failed")
+            .statusCode(), "Status code not equals to 200");
+
+    appURI = "/clusterview/ConfigServlet?"
         + "dsTest=true&"
         + "dsName=" + dsName + "&"
         + "serverName=" + managedServerNameBase + 1;
-    String dsurl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(dsurl, true).body().contains("Connection successful")));
+    String dstesturl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(dstesturl, true).body().contains("Connection successful")));
     assertEquals(200,
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")

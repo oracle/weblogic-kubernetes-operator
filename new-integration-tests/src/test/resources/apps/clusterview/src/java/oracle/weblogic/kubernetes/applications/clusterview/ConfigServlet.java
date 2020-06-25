@@ -123,16 +123,16 @@ public class ConfigServlet extends HttpServlet {
       JDBCDataSourceParamsBean dsParams = jdbcSystemResource.getJDBCResource().getJDBCDataSourceParams();
 
       //print connection pool parameters
-      getAttributes(connPool.getClass().getDeclaredMethods(), out, request, out);
+      getAttributes(connPool.getClass().getDeclaredMethods(), connPool, out);
       //print driver parameteres
-      getAttributes(driverParams.getClass().getDeclaredMethods(), out, request, out);
+      getAttributes(driverParams.getClass().getDeclaredMethods(), driverParams, out);
       //print data source parameters
-      getAttributes(dsParams.getClass().getDeclaredMethods(), out, request, out);
+      getAttributes(dsParams.getClass().getDeclaredMethods(), dsParams, out);
 
     }
   }
 
-  private void getAttributes(Method[] declaredMethods, Object obj, HttpServletRequest request, PrintWriter out)
+  private void getAttributes(Method[] declaredMethods, Object obj, PrintWriter out)
       throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
     for (Method declaredMethod : declaredMethods) {
