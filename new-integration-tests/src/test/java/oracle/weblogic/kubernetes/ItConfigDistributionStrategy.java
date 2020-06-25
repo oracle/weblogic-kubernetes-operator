@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -174,9 +175,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   String dsSecret = domainUid.concat("-mysql-secrets");
 
   /**
-   * Assigns unique namespaces for operator and domains.
-   * Pull WebLogic image if running tests in Kind cluster.
-   * Installs operator.
+   * Assigns unique namespaces for operator and domains. Pull WebLogic image if running tests in Kind cluster. Installs
+   * operator.
    *
    * @param namespaces injected by JUnit
    */
@@ -367,46 +367,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
     restartDomain(); // remove after the above bug is fixed
 
-    //verify the WebLogic server configuration is updated
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName
-            + "-external",
-            "default"),
-        "Getting admin server node port failed");
-
-    String appURI = "/clusterview/ConfigServlet?"
-        + "attributeTest=true&"
-        + "serverType=adminserver&"
-        + "serverName=" + adminServerName;
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("78787878")));
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
-
-    appURI = "/clusterview/ConfigServlet?"
-        + "resTest=true&"
-        + "resName=" + dsName;
-    String dsurl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(dsurl, true).body().contains("getMaxCapacity:12")));
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
-
-    appURI = "/clusterview/ConfigServlet?"
-        + "dsTest=true&"
-        + "dsName=" + dsName + "&"
-        + "serverName=" + managedServerNameBase + 1;
-    String dstesturl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(dstesturl, true).body().contains("Connection successful")));
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
-
+    verifyOverrides();
   }
 
   private void storePodCreationTimestamps() {
@@ -451,6 +412,47 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
     String configoverridecm = "configoverride-cm";
     CommonTestUtils.createConfigMapFromFiles(configoverridecm, configfiles, introDomainNamespace);
+
+  }
+
+  private void verifyOverrides() {
+
+    //verify the WebLogic server configuration is updated
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName
+            + "-external",
+            "default"),
+        "Getting admin server node port failed");
+
+    String appURI = "/clusterview/ConfigServlet?"
+        + "attributeTest=true&"
+        + "serverType=adminserver&"
+        + "serverName=" + adminServerName;
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("78787878")));
+    assertEquals(200,
+        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
+            "Accessing sample application on admin server failed")
+            .statusCode(), "Status code not equals to 200");
+
+    appURI = "/clusterview/ConfigServlet?"
+        + "resTest=true&"
+        + "resName=" + dsName;
+    String dsurl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsurl, true));
+    assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    assertTrue(response.body().contains("getMaxCapacity:12"));
+    assertTrue(response.body().contains("Url:" + newDsUrl));
+
+    appURI = "/clusterview/ConfigServlet?"
+        + "dsTest=true&"
+        + "dsName=" + dsName + "&"
+        + "serverName=" + managedServerNameBase + 1;
+    String dstesturl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+    response = assertDoesNotThrow(() -> OracleHttpClient.get(dsurl, true));
+    assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    assertTrue(response.body().contains("Connection successful"));
 
   }
 
@@ -818,7 +820,6 @@ public class ItConfigDistributionStrategy implements LoggedTest {
       checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
-
     TestActions.startDomain(domainUid, introDomainNamespace);
     logger.info("Checking for admin server pod readiness");
     CommonTestUtils.checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
@@ -1131,7 +1132,6 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     }
   }
 
-
   /**
    * Create secret for docker credentials.
    *
@@ -1153,6 +1153,5 @@ public class ItConfigDistributionStrategy implements LoggedTest {
           OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
     }
   }
-
 
 }

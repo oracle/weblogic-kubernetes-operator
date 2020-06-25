@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 import weblogic.j2ee.descriptor.wl.JDBCConnectionPoolParamsBean;
 import weblogic.j2ee.descriptor.wl.JDBCDataSourceParamsBean;
 import weblogic.j2ee.descriptor.wl.JDBCDriverParamsBean;
+import weblogic.j2ee.descriptor.wl.JDBCPropertyBean;
 import weblogic.management.configuration.JDBCSystemResourceMBean;
 import weblogic.management.configuration.ServerMBean;
 
@@ -83,7 +84,7 @@ public class ConfigServlet extends HttpServlet {
    * @throws IOException if an I/O error occurs
    */
   protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+      throws ServletException, IOException {
     response.setContentType("text/html;charset=UTF-8");
     try (PrintWriter out = response.getWriter()) {
 
@@ -113,8 +114,7 @@ public class ConfigServlet extends HttpServlet {
     out.println("MaxMessageSize=" + serverConfiguration.getMaxMessageSize());
   }
 
-  private void printResourceAttributes(HttpServletRequest request, PrintWriter out)
-      throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+  private void printResourceAttributes(HttpServletRequest request, PrintWriter out) {
     String resName = request.getParameter("resName");
     if (resName != null) {
       JDBCSystemResourceMBean jdbcSystemResource = getJDBCSystemResource(resName);
@@ -123,12 +123,17 @@ public class ConfigServlet extends HttpServlet {
       JDBCDataSourceParamsBean dsParams = jdbcSystemResource.getJDBCResource().getJDBCDataSourceParams();
 
       //print connection pool parameters
-      getAttributes(connPool.getClass().getDeclaredMethods(), connPool, out);
-      //print driver parameteres
-      getAttributes(driverParams.getClass().getDeclaredMethods(), driverParams, out);
-      //print data source parameters
-      getAttributes(dsParams.getClass().getDeclaredMethods(), dsParams, out);
+      getConnectionPoolAttributes(connPool, out);
 
+      //print driver parameteres
+      getDriverParamAttributes(driverParams, out);
+
+      try {
+        //print data source parameters
+        getAttributes(dsParams.getClass().getDeclaredMethods(), dsParams, out);
+      } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+        Logger.getLogger(ConfigServlet.class.getName()).log(Level.SEVERE, null, ex);
+      }
     }
   }
 
@@ -136,14 +141,29 @@ public class ConfigServlet extends HttpServlet {
       throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
     for (Method declaredMethod : declaredMethods) {
-      declaredMethod.getName();
-      if (declaredMethod.getName().startsWith("get")) {
+      String name = declaredMethod.getName();
+      if (name.startsWith("get")) {
         declaredMethod.setAccessible(true);
-        String name = declaredMethod.getName();
-        out.println(name + ":" + declaredMethod.invoke(obj));
+        out.println(name + ":" + declaredMethod.invoke(obj) + "<br>");
       }
     }
+  }
 
+  private void getConnectionPoolAttributes(JDBCConnectionPoolParamsBean pool, PrintWriter out) {
+    try {
+      getAttributes(pool.getClass().getDeclaredMethods(), pool, out);
+    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+      Logger.getLogger(ConfigServlet.class.getName()).log(Level.SEVERE, null, ex);
+    }
+  }
+
+  private void getDriverParamAttributes(JDBCDriverParamsBean driverParams, PrintWriter out) {
+    out.println("driverName:" + driverParams.getDriverName() + "<br>");
+    out.println("Url:" + driverParams.getUrl() + "<br>");
+    JDBCPropertyBean[] properties = driverParams.getProperties().getProperties();
+    for (JDBCPropertyBean property : properties) {
+      out.println("property:" + property.getName() + ":" + property.getValue() + "<br>");
+    }
   }
 
   private void testJdbcConnection(HttpServletRequest request, PrintWriter out) {
@@ -199,11 +219,7 @@ public class ConfigServlet extends HttpServlet {
   @Override
   protected void doGet(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
-    try {
-      processRequest(request, response);
-    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-      Logger.getLogger(ConfigServlet.class.getName()).log(Level.SEVERE, null, ex);
-    }
+    processRequest(request, response);
   }
 
   /**
@@ -217,11 +233,7 @@ public class ConfigServlet extends HttpServlet {
   @Override
   protected void doPost(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
-    try {
-      processRequest(request, response);
-    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-      Logger.getLogger(ConfigServlet.class.getName()).log(Level.SEVERE, null, ex);
-    }
+    processRequest(request, response);
   }
 
   /**
