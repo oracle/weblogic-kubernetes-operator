@@ -49,7 +49,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -57,8 +56,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-//import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-//import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
@@ -231,6 +228,7 @@ public class ItIstioCrossDomainTransaction implements LoggedTest {
     logger.info("Creating image with model file and verify");
     String domain1Image = createImageAndVerify(
         WDT_IMAGE_NAME1, WDT_MODEL_FILE_DOMAIN1, appSource, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
+    logger.info("Created {0} image", domain1Image);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domain1Image);
@@ -238,6 +236,7 @@ public class ItIstioCrossDomainTransaction implements LoggedTest {
     logger.info("Creating image with model file and verify");
     String domain2Image = createImageAndVerify(
         WDT_IMAGE_NAME2, WDT_MODEL_FILE_DOMAIN2, appSource, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR, domainUid2);
+    logger.info("Created {0} image", domain2Image);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domain2Image);
@@ -382,7 +381,7 @@ public class ItIstioCrossDomainTransaction implements LoggedTest {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHomeSourceType("Image")
-            .image(REPO_NAME + domainImage)
+            .image(domainImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1SecretReference()
