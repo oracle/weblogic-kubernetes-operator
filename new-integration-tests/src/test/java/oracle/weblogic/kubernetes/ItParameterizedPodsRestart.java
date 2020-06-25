@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
@@ -95,7 +96,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVer
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -103,48 +103,50 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test pods are restarted after some properties in server pods are changed.
  */
-@DisplayName("Test pods are restarted after some properties in server pods are changed")
+@DisplayName("Test pods are restarted after properties in server pods are changed with different type of domains")
 @IntegrationTest
-class ItParameterizedDomainType implements LoggedTest {
+class ItParameterizedPodsRestart implements LoggedTest {
 
   // domain constants
-  private static final String domainUid = "domain1";
   private static final String clusterName = "cluster-1";
-  private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-  private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static final String wlSecretName = "weblogic-credentials";
-  private static final String pvName = domainUid + "-pv";
-  private static final String pvcName = domainUid + "-pvc";
   private static final int replicaCount = 2;
 
   private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
-  private static String domainNamespace = null;
   private static String opNamespace = null;
   private static boolean isUseSecret = true;
-
-  private int t3ChannelPort = 0;
+  private static int t3ChannelPort = 0;
+  private static Domain miiDomain = null;
+  private static Domain domainInPV = null;
+  private static Domain domainInImage = null;
 
   /**
-   * Get namespaces for operator and WebLogic domain.
+   * Get namespaces for operator and WebLogic domain and create three different type of domains.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(1) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) {
 
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
+    assertNotNull(namespaces.get(1));
+    String miiDomainNamespace = namespaces.get(1);
+    assertNotNull(namespaces.get(2));
+    String domainInPVNamespace = namespaces.get(2);
+    assertNotNull(namespaces.get(3));
+    String domainInImageNamespace = namespaces.get(3);
+
     // install and verify operator
-    installAndVerifyOperator(opNamespace);
+    installAndVerifyOperator(opNamespace, miiDomainNamespace, domainInPVNamespace, domainInImageNamespace);
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
@@ -153,67 +155,62 @@ class ItParameterizedDomainType implements LoggedTest {
       image = kindRepoImage;
       isUseSecret = false;
     }
-  }
 
-  @ParameterizedTest
-  @DisplayName("Create domain using different WebLogic domain type as parameters")
-  @MethodSource("oracle.weblogic.kubernetes.utils.Params#webLogicDomainTypes")
-  public void testParamsCreateDomain(String domainType, @Namespaces(1) List<String> namespaces) {
-    domainType = domainType.trim();
-
-    // get a unique domain namespace
-    logger.info("Getting a unique namespace for WebLogic domain");
-    assertNotNull(namespaces.get(0), "Namespace list is null");
-    domainNamespace = namespaces.get(0);
-
-    // upgrade Operator for the new domain namespace
-    assertTrue(upgradeAndVerifyOperator(opNamespace, domainNamespace),
-        String.format("Failed to upgrade operator in namespace %s", opNamespace));
-
-    logger.info("creating domain with domain type {0} in namespace {1}", domainType, domainNamespace);
-    createAndVerifyDomain(domainType);
-
-    // Add/Modify server pod resources by patching the domain custom resource
-    // verify all pods are restarted and back to ready state
-    testServerPodsRestartByChangingResource();
+    // create domains with different domain type
+    miiDomain = createAndVerifyMiiDomain("miidomain", miiDomainNamespace);
+    domainInPV = createAndVerifyDomainInPVUsingWlst("domaininpv", domainInPVNamespace);
+    domainInImage = createAndVerifyDomainInImageUsingWdt("domaininimage", domainInImageNamespace);
   }
 
   /**
-   * Create a WebLogic domain based on the specified domain type.
-   * @param domainType the type of the domain, accepted value: ModelInImage, DomainInPV or DomainInImage
-   */
-  private void createAndVerifyDomain(String domainType) {
-    if (domainType.equalsIgnoreCase("ModelInImage")) {
-      createAndVerifyMiiDomain();
-    } else if (domainType.equalsIgnoreCase("DomainInPV")) {
-      // create domain in PV using WLST
-      createAndVerifyDomainInPVUsingWlst();
-    } else if (domainType.equalsIgnoreCase("DomainInImage")) {
-      // create domain in image
-      createAndVerifyDomainInImageUsingWdt();
-    } else {
-      fail("wrong domain type, got " + domainType + ", expect: ModelInImage, DomainInPV or DomainInImage");
-    }
-  }
-
-  /**
+   * For each domain with different domain type, test the following.
    * Add/Modify server pod resources by patching the domain custom resource.
    * Verify all pods are restarted and back to ready state.
    * The resources tested: resources: limits: cpu: "1", resources: requests: cpu: "0.5"
    * Test fails if any server pod is not restarted and back to ready state or the compute resources in the patched
    * domain custom resource do not match the values we planned to add or modify.
+   *
+   * @param domain oracle.weblogic.domain.Domain object
    */
-  private void testServerPodsRestartByChangingResource() {
+  @ParameterizedTest
+  @DisplayName("Test pods are restarted after properties in server pods are changed in three different type of domains")
+  @MethodSource("domainProvider")
+  public void testParamsServerPodsRestartByChangingResource(Domain domain) {
+    assertNotNull(domain, domain + " is null");
+    assertNotNull(domain.getMetadata(), domain + " metadata is null");
 
-    // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
+    // Add/Modify server pod resources by patching the domain custom resource
+    // verify all pods are restarted and back to ready state
+    logger.info("testServerPodsRestartByChangingResource with domain {0}", domain.getMetadata().getName());
+    testServerPodsRestartByChangingResource(domain);
+  }
+
+  /**
+   * Generate a steam of Domain objects used in parameterized tests.
+   * @return stream of oracle.weblogic.domain.Domain objects
+   */
+  private static Stream<Domain> domainProvider() {
+    return Stream.of(miiDomain, domainInPV, domainInImage);
+  }
+
+
+  /**
+   * Add/Modify server pod resources by patching the domain custom resource.
+   * Verify all pods are restarted and back to ready state.
+   * @param domain1 oracle.weblogic.domain.Domain object
+   */
+  private void testServerPodsRestartByChangingResource(Domain domain1) {
 
     assertNotNull(domain1, domain1 + " is null");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + "/spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getResources(), domain1 + "/spec/serverPod/resources is null");
+    assertNotNull(domain1.getMetadata(), domain1 + " metadata is null");
+
+    String domainUid = domain1.getSpec().getDomainUid();
+    String domainNamespace = domain1.getMetadata().getNamespace();
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
     // get the current server pod compute resource limit
     Map<String, Quantity> limits = domain1.getSpec().getServerPod().getResources().getLimits();
@@ -265,7 +262,7 @@ class ItParameterizedDomainType implements LoggedTest {
     }
 
     // add/modify the server pod resources by patching the domain custom resource
-    assertTrue(addServerPodResources(cpuLimit, cpuRequest),
+    assertTrue(addServerPodResources(domainUid, domainNamespace, cpuLimit, cpuRequest),
         String.format("Failed to add server pod compute resources for domain %s in namespace %s",
             domainUid, domainNamespace));
 
@@ -319,9 +316,13 @@ class ItParameterizedDomainType implements LoggedTest {
   }
 
   /**
-   * Create a model in image domain and verify the server pods are ready.
+   * Create a model in image domain and verify the domain was created, server pods are ready and services exist.
+   *
+   * @param domainUid uid of the domain to be created
+   * @param domainNamespace namespace in which the domain to be created
+   * @return oracle.weblogic.domain.Domain object
    */
-  private void createAndVerifyMiiDomain() {
+  private static Domain createAndVerifyMiiDomain(String domainUid, String domainNamespace) {
 
     // get the pre-built image created by IntegrationTestWatcher
     String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
@@ -386,21 +387,30 @@ class ItParameterizedDomainType implements LoggedTest {
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     // check that admin server pod ready and service exists in the domain namespace
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     // check that managed server pods ready and service exists in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
-      String managedServerPodName = managedServerPrefix + i;
+      String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + i;
       // check that the managed server pod exists in the domain namespace
       checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
+
+    return domain;
   }
 
   /**
-   * Create domain in PV using WLST and verify the domain was created.
+   * Create domain in PV using WLST and verify the domain was created, server pods are ready and services exist.
+   *
+   * @param domainUid uid of the domain to be created
+   * @param domainNamespace namespace in which the domain to be created
+   * @return oracle.weblogic.domain.Domain object
    */
-  private void createAndVerifyDomainInPVUsingWlst() {
+  private static Domain createAndVerifyDomainInPVUsingWlst(String domainUid, String domainNamespace) {
+    String pvName = domainUid + "-pv";
+    String pvcName = domainUid + "-pvc";
 
     if (isUseSecret) {
       // create pull secrets for WebLogic image
@@ -415,8 +425,8 @@ class ItParameterizedDomainType implements LoggedTest {
 
     // create persistent volume and persistent volume claims
     Path pvHostPath = assertDoesNotThrow(
-        () -> createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume")),
-        "createDirectories failed with IOException");
+        () -> createDirectories(get(PV_ROOT, ItParameterizedPodsRestart.class.getSimpleName(),
+            domainUid + "-persistentVolume")), "createDirectories failed with IOException");
 
     logger.info("Creating PV directory {0}", pvHostPath);
     assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
@@ -514,15 +524,17 @@ class ItParameterizedDomainType implements LoggedTest {
     logger.info("Creating domain custom resource {0} in namespace {1}", domainUid, domainNamespace);
     createDomainAndVerify(domain, domainNamespace);
 
+    // check that admin server pod is ready and service exists in domain namespace
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-    // check admin server pod is ready and service exists in domain namespace
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
-    // check for managed server pods are ready and services exist in domain namespace
-    for (int j = 1; j <= replicaCount; j++) {
-      String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + j;
+    // check that managed server pods are ready and services exist in domain namespace
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + i;
       checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
+
+    return domain;
   }
 
   /**
@@ -537,13 +549,13 @@ class ItParameterizedDomainType implements LoggedTest {
    * @param domainUid the Uid of the domain to create
    * @param domainNamespace the namespace in which the domain will be created
    */
-  private void runCreateDomainInPVJobUsingWlst(String pvName,
-                                               String pvcName,
-                                               String domainUid,
-                                               String domainNamespace) {
+  private static void runCreateDomainInPVJobUsingWlst(String pvName,
+                                                      String pvcName,
+                                                      String domainUid,
+                                                      String domainNamespace) {
 
     logger.info("Creating a staging location for domain creation scripts");
-    Path pvTemp = get(RESULTS_ROOT, this.getClass().getSimpleName(), "domainCreateTempPV");
+    Path pvTemp = get(RESULTS_ROOT, ItParameterizedPodsRestart.class.getSimpleName(), "domainCreateTempPV");
     assertDoesNotThrow(() -> deleteDirectory(pvTemp.toFile()),"deleteDirectory failed with IOException");
     assertDoesNotThrow(() -> createDirectories(pvTemp), "createDirectories failed with IOException");
 
@@ -634,8 +646,8 @@ class ItParameterizedDomainType implements LoggedTest {
    * @param wlstPropertiesFile path of the properties file
    * @param domainUid the WebLogic domain for which the properties file is created
    */
-  private void createDomainProperties(Path wlstPropertiesFile,
-                                      String domainUid) {
+  private static void createDomainProperties(Path wlstPropertiesFile,
+                                             String domainUid) {
     // create a list of properties for the WebLogic domain configuration
     Properties p = new Properties();
 
@@ -663,8 +675,12 @@ class ItParameterizedDomainType implements LoggedTest {
 
   /**
    * Create a WebLogic domain in image using WDT.
+   *
+   * @param domainUid uid of the domain to be created
+   * @param domainNamespace namespace in which the domain to be created
+   * @return oracle.weblogic.domain.Domain object
    */
-  private void createAndVerifyDomainInImageUsingWdt() {
+  private static Domain createAndVerifyDomainInImageUsingWdt(String domainUid, String domainNamespace) {
 
     // Create the repo secret to pull the image
     createDockerRegistrySecret(domainNamespace);
@@ -715,16 +731,20 @@ class ItParameterizedDomainType implements LoggedTest {
     createDomainAndVerify(domain, domainNamespace);
 
     // check admin server pod ready and service exists in the domain namespace
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     logger.info("Check for admin server pod {0} ready and service exists in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     // check managed server pods are ready and service exists in the domain namespace
+    String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+      logger.info("Wait for managed server pod {0} to be ready and services exist in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
+
+    return domain;
   }
 
   /**
@@ -734,7 +754,7 @@ class ItParameterizedDomainType implements LoggedTest {
    * @param domainUid the label the pod is decorated with
    * @param namespace the namespace in which the pod exists
    */
-  private void checkPodReadyAndServiceExists(String podName, String domainUid, String namespace) {
+  private static void checkPodReadyAndServiceExists(String podName, String domainUid, String namespace) {
     logger.info("Waiting for pod {0} to be ready in namespace {1}", podName, namespace);
     checkPodReady(podName, domainUid, namespace);
 
@@ -750,7 +770,10 @@ class ItParameterizedDomainType implements LoggedTest {
    * @param cpuRequest cpu request to be added to domain spec serverPod resources requests
    * @return true if patching domain custom resource is successful, false otherwise
    */
-  private boolean addServerPodResources(BigDecimal cpuLimit, BigDecimal cpuRequest) {
+  private boolean addServerPodResources(String domainUid,
+                                        String domainNamespace,
+                                        BigDecimal cpuLimit,
+                                        BigDecimal cpuRequest) {
     // construct the patch string for adding server pod resources
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"add\", ")

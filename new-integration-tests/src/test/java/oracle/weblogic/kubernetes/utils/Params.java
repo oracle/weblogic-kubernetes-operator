@@ -6,7 +6,6 @@ package oracle.weblogic.kubernetes.utils;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_WLS_DOMAIN_TYPES;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_WLS_IMAGE_TAGS;
 
 public class Params {
@@ -19,15 +18,5 @@ public class Params {
   public static Stream<String> webLogicImageTags() {
     return Stream.of(Optional.ofNullable(System.getenv("WEBLOGIC_IMAGE_TAGS"))
         .orElse(DEFAULT_WLS_IMAGE_TAGS).split(","));
-  }
-
-  /**
-   * This method is used in parameterized test to get the WebLogic image tags as
-   * values.
-   * @return stream of WebLogic image tag values
-   */
-  public static Stream<String> webLogicDomainTypes() {
-    return Stream.of(Optional.ofNullable(System.getenv("WEBLOGIC_DOMAIN_TYPES"))
-        .orElse(DEFAULT_WLS_DOMAIN_TYPES).split(","));
   }
 }
