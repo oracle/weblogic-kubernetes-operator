@@ -487,7 +487,7 @@ public class DomainProcessorTest {
   private final Map<String,Boolean> introspectionRunBeforeUpdates = new HashMap<>();
 
   @Test
-  public void whenDomainTypeIsFromModelDomainAndNewManagedServerCreated_runIntrospectionJobFirst() throws Exception {
+  public void whenDomainTypeIsFromModelDomainAndNewServerCreated_dontRunIntrospectionJobFirst() throws Exception {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
@@ -495,7 +495,7 @@ public class DomainProcessorTest {
 
     makeRightOperation.execute();
 
-    assertThat(introspectionRunBeforeUpdates, hasEntry(getManagedPodName(3), true));
+    assertThat(introspectionRunBeforeUpdates, hasEntry(getManagedPodName(3), false));
   }
 
   @Test

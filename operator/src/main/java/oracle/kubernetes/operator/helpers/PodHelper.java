@@ -417,11 +417,7 @@ public class PodHelper {
 
     @Override
     Step createNewPod(Step next) {
-      if (MakeRightDomainOperation.isInspectionRequired(packet)) {
-        return deferProcessing(createPod(next));
-      } else {
-        return createProgressingStep(createPod(next));
-      }
+      return createProgressingStep(createPod(next));
     }
 
     @Override
