@@ -174,7 +174,6 @@ metadata:
   name: fmw-domain
   namespace: default
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: fmw-domain
 spec:
   # The WebLogic Domain Home
@@ -257,7 +256,6 @@ Here is an example of the output of this command:
 Name:         fmw-domain
 Namespace:    default
 Labels:       weblogic.domainUID=fmw-domain
-              weblogic.resourceVersion=domain-v2
 Annotations:  kubectl.kubernetes.io/last-applied-configuration:
                 {"apiVersion":"weblogic.oracle/v4","kind":"Domain","metadata":{"annotations":{},"labels":{"weblogic.domainUID":"fmw-domain","weblogic.reso...
 API Version:  weblogic.oracle/v4
