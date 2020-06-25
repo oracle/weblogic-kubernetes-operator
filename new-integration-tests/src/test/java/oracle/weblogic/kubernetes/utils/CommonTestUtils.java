@@ -109,6 +109,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
@@ -147,6 +149,10 @@ public class CommonTestUtils {
       with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(5, MINUTES).await();
+
+  private static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
+        .and().with().pollInterval(3, SECONDS)
+        .atMost(12, SECONDS).await();
 
   /**
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
@@ -644,7 +650,7 @@ public class CommonTestUtils {
             domNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, domNamespace, lastCreationTime),
+        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domNamespace, lastCreationTime),
             String.format(
                 "pod %s has not been restarted in namespace %s", podName, domNamespace)));
   }
@@ -1636,6 +1642,43 @@ public class CommonTestUtils {
         .redirect(true);
 
     return Command.withParams(params).execute();
+  }
+
+  /**
+   * Check that the given credentials are valid to access the WebLogic domain.
+   *
+   * @param podName name of the admin server pod
+   * @param namespace name of the namespace that the pod is running in
+   * @param username WebLogic admin username
+   * @param password WebLogic admin password
+   * @param expectValid true if the check expects a successful result
+   */
+  public static void verifyCredentials(
+      String podName,
+      String namespace,
+      String username,
+      String password,
+      boolean expectValid) {
+    String msg = expectValid ? "valid" : "invalid";
+    logger.info("Check if the given WebLogic admin credentials are {0}", msg);
+    withQuickRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Checking that credentials {0}/{1} are {2}"
+            + "(elapsed time {3}ms, remaining time {4}ms)",
+            username,
+            password,
+            msg,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(
+            expectValid
+            ?
+            () -> credentialsValid(K8S_NODEPORT_HOST, podName, namespace, username, password)
+            :
+            () -> credentialsNotValid(K8S_NODEPORT_HOST, podName, namespace, username, password),
+            String.format(
+               "Failed to validate credentials %s/%s on pod %s in namespace %s",
+               username, password, podName, namespace)));
   }
 
   /**
