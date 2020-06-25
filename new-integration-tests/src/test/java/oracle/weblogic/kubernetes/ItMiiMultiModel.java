@@ -25,7 +25,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -56,6 +56,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAnd
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -75,7 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to create model-in-image domain with multiple WDT models")
 @IntegrationTest
-class ItMiiMultiModel implements LoggedTest {
+class ItMiiMultiModel {
 
   private static String domainNamespace = null;
   private static String adminSecretName = null;
@@ -108,6 +109,8 @@ class ItMiiMultiModel implements LoggedTest {
   private static final String dsName2 = "TestDataSource2";
   private static final String dsName3 = "TestDataSource3";
 
+  private static LoggingFacade logger = null;
+
   /**
    * Perform initialization for all the tests in this class.
    *
@@ -119,7 +122,7 @@ class ItMiiMultiModel implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
-
+    logger = getLogger();
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");

@@ -26,7 +26,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
@@ -61,6 +61,7 @@ import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGateway
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -69,7 +70,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create WebLogic domain in domainhome-in-image model with istio configuration")
 @IntegrationTest
-class ItIstioDomainInImage implements LoggedTest {
+class ItIstioDomainInImage {
 
   private static HelmParams opHelmParams = null;
   private static String opNamespace = null;
@@ -83,6 +84,7 @@ class ItIstioDomainInImage implements LoggedTest {
   private final String adminServerPodName = domainUid + "-" + adminServerName;
 
   private static Map<String, Object> secretNameMap;
+  private static LoggingFacade logger = null;
 
   /**
    * Install Operator.
@@ -91,7 +93,7 @@ class ItIstioDomainInImage implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
-
+    logger = getLogger();
     installIstio();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)

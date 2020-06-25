@@ -11,7 +11,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,6 +38,7 @@ import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainW
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -47,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
-class ItMiiChangeAdminCredentials implements LoggedTest {
+class ItMiiChangeAdminCredentials {
 
   private static String domainNamespace = null;
   private static String domainUid = "domain1";
@@ -57,6 +58,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
   private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
   private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
   private static int replicaCount = 2;
+  private static LoggingFacade logger = null;
 
   /**
    * Perform initialization for all the tests in this class.
@@ -67,6 +69,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)

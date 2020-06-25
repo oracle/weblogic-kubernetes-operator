@@ -57,7 +57,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
@@ -109,7 +109,6 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -123,6 +122,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.TestUtils.verifyClusterMemberCommunication;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -139,7 +139,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the introspectVersion runs the introspector")
 @IntegrationTest
-public class ItIntrospectVersion implements LoggedTest {
+public class ItIntrospectVersion {
 
   private static String opNamespace = null;
   private static String introDomainNamespace = null;
@@ -156,10 +156,11 @@ public class ItIntrospectVersion implements LoggedTest {
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(5, MINUTES).await();
 
   private static Path clusterViewAppPath;
+  private static LoggingFacade logger = null;
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -170,7 +171,7 @@ public class ItIntrospectVersion implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
-
+    logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);
@@ -256,7 +257,7 @@ public class ItIntrospectVersion implements LoggedTest {
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() ->
-        File.createTempFile("domain", "properties"),
+            File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("domain_path", "/shared/domains");
@@ -274,7 +275,7 @@ public class ItIntrospectVersion implements LoggedTest {
     p.setProperty("domain_logs", "/shared/logs");
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(() ->
-        p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
+            p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
         "Failed to write domain properties file");
 
     // WLST script for creating domain
@@ -393,10 +394,10 @@ public class ItIntrospectVersion implements LoggedTest {
 
     // patch the domain to increase the replicas of the cluster and add introspectVersion field
     String patchStr =
-          "["
+        "["
             + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3},"
             + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
-        + "]";
+            + "]";
 
     logger.info("Updating replicas in cluster {0} using patch string: {1}", clusterName, patchStr);
     V1Patch patch = new V1Patch(patchStr);
@@ -411,16 +412,16 @@ public class ItIntrospectVersion implements LoggedTest {
 
     //verify the maximum cluster size is updated to expected value
     withStandardRetryPolicy.conditionEvaluationListener(new ConditionEvaluationListener() {
-        @Override
-        public void conditionEvaluated(EvaluatedCondition condition) {
-          logger.info("Waiting for Domain.status.clusters.{0}.maximumReplicas to be {1}",
-              clusterName, 3);
-        }
-      })
+      @Override
+      public void conditionEvaluated(EvaluatedCondition condition) {
+        logger.info("Waiting for Domain.status.clusters.{0}.maximumReplicas to be {1}",
+            clusterName, 3);
+      }
+    })
         .until((Callable<Boolean>) () -> {
-          Domain res = getDomainCustomResource(domainUid, introDomainNamespace);
-          return (res.getStatus().getClusters().get(0).getMaximumReplicas() == 3);
-        }
+              Domain res = getDomainCustomResource(domainUid, introDomainNamespace);
+              return (res.getStatus().getClusters().get(0).getMaximumReplicas() == 3);
+            }
         );
 
     // verify the 3rd server pod comes up
@@ -491,7 +492,7 @@ public class ItIntrospectVersion implements LoggedTest {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
+            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount + 1; i++) {
@@ -566,7 +567,7 @@ public class ItIntrospectVersion implements LoggedTest {
 
     assertTrue(assertDoesNotThrow(() ->
             patchDomainResourceWithNewIntrospectVersion(domainUid, introDomainNamespace),
-            "Patch domain with new IntrospectVersion threw ApiException"),
+        "Patch domain with new IntrospectVersion threw ApiException"),
         "Failed to patch domain with new IntrospectVersion");
 
     //verify the introspector pod is created and runs
@@ -599,7 +600,7 @@ public class ItIntrospectVersion implements LoggedTest {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
+            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -624,7 +625,7 @@ public class ItIntrospectVersion implements LoggedTest {
    * @param namespace name of the domain namespace in which the job is created
    */
   private void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
-      String pvName, String pvcName, String namespace) {
+                                         String pvName, String pvcName, String namespace) {
     logger.info("Preparing to run create domain job using WLST");
 
     List<Path> domainScriptFiles = new ArrayList<>();
@@ -665,7 +666,7 @@ public class ItIntrospectVersion implements LoggedTest {
     logger.info("Creating configmap {0}", configMapName);
 
     Path domainScriptsDir = Files.createDirectories(
-          Paths.get(TestConstants.LOGS_DIR, this.getClass().getSimpleName(), namespace));
+        Paths.get(TestConstants.LOGS_DIR, this.getClass().getSimpleName(), namespace));
 
     // add domain creation scripts and properties files to the configmap
     Map<String, String> data = new HashMap<>();
@@ -698,7 +699,7 @@ public class ItIntrospectVersion implements LoggedTest {
    * @param jobContainer V1Container with job commands to create domain
    */
   private void createDomainJob(String pvName,
-      String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
+                               String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
     logger.info("Running Kubernetes job to create domain");
 
     V1Job jobBody = new V1Job()
@@ -760,7 +761,7 @@ public class ItIntrospectVersion implements LoggedTest {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
-                + "(elapsed time {2} ms, remaining time {3} ms)",
+                    + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
                 namespace,
                 condition.getElapsedTimeInMS(),

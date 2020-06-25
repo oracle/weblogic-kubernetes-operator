@@ -25,7 +25,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRole;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRoleBinding;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
@@ -63,6 +64,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -75,7 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify scaling multiple clusters domain and the sample application can be accessed via NGINX")
 @IntegrationTest
-class ItScaleMiiDomainNginx implements LoggedTest {
+class ItScaleMiiDomainNginx {
 
   // mii constants
   private static final String WDT_MODEL_FILE = "model-multiclusterdomain-sampleapp-wls.yaml";
@@ -98,7 +100,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   private static HelmParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int externalRestHttpsPort = 0;
-
+  private static LoggingFacade logger = null;
   private String curlCmd = null;
 
   /**
@@ -110,7 +112,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
-
+    logger = getLogger();
     // get a unique operator namespace
     logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -135,12 +137,13 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, externalRestHttpsPort, domainNamespace);
 
-    // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
-
     // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+
+    String nginxServiceName = nginxHelmParams.getReleaseName() + "-nginx-ingress-controller";
+    logger.info("NGINX service name: {0}", nginxServiceName);
+    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+    logger.info("NGINX http node port: {0}", nodeportshttp);
 
     // create model in image domain with multiple clusters
     createMiiDomainWithMultiClusters();
