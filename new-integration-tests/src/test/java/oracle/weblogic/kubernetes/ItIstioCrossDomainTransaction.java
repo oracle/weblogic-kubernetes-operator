@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,9 +33,9 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
-import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -56,9 +57,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-//import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
@@ -67,19 +67,20 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify cross domain transaction with istio enabled is successful")
 @IntegrationTest
-public class ItIstioCrossDomainTransaction implements LoggedTest {
+public class ItIstioCrossDomainTransaction {
 
   private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
   private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossdomaintransaction-domain2.yaml";
@@ -105,14 +106,15 @@ public class ItIstioCrossDomainTransaction implements LoggedTest {
   private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
   private String clusterName = "cluster-1";
+  private static LoggingFacade logger = null;
 
   /**
    * Install Operator.
-   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   *     JUnit engine parameter resolution mechanism
+   * @param namespaces injected by JUnit
    */
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -121,19 +123,19 @@ public class ItIstioCrossDomainTransaction implements LoggedTest {
     installIstio();
 
     // get a new unique opNamespace
-    logger.info("Creating unique namespace for Operator");
+    logger.info("Assigning unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    logger.info("Creating unique namespace for Domain");
+    logger.info("Assigning unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domain1Namespace = namespaces.get(1);
 
-    logger.info("Creating unique namespace for Domain");
+    logger.info("Assigning unique namespace for Domain");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domain2Namespace = namespaces.get(2);
 
-    // Now that we got the namespaces for both the domains,w e need to update the model properties
+    // Now that we got the namespaces for both the domains, we need to update the model properties
     // file with the namespaces. for cross domain transaction to work, we need to have the externalDNSName
     // set in the config file. Cannot set this after the domain is up since a server restart is
     // required for this to take effect. So, copying the property file to RESULT_ROOT and updating the
@@ -265,32 +267,20 @@ public class ItIstioCrossDomainTransaction implements LoggedTest {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    /*
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(() -> {
       return adminNodePortAccessible(istioIngressPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
 
-     */
-
-
-    String curlRequest = String.format("curl -v --show-error --noproxy '*' "
-            + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,"
-            + "t3://%s2.%s:8001",
-             K8S_NODEPORT_HOST, istioIngressPort, domain1AdminServerPodName, domain1Namespace,
+    String url = String.format("http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,"
+            + "t3://%s2.%s:8001", K8S_NODEPORT_HOST, istioIngressPort, domain1AdminServerPodName, domain1Namespace,
              domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace,
              domain2ManagedServerPrefix,domain2Namespace);
 
-    ExecResult result = null;
-    logger.info("curl command {0}", curlRequest);
-    result = assertDoesNotThrow(
-        () -> exec(curlRequest, true));
-    if (result.exitValue() == 0) {
-      logger.info("\n HTTP response is \n " + result.stdout());
-      logger.info("curl command returned {0}", result.toString());
-      assertTrue(result.stdout().contains("Status=Committed"), "crossDomainTransaction failed");
-    }
+    HttpResponse response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
+    assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    assertTrue(response.body().toString().contains("Status=Committed"), "istiocrossDomainTransaction failed");
 
   }
 
@@ -320,17 +310,15 @@ public class ItIstioCrossDomainTransaction implements LoggedTest {
                 condition.getRemainingTimeInMS()))
         .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
 
-
-    // check admin server pod exists
-    logger.info("Check for admin server pod {0} existence in namespace {1}",
+    logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
 
-    // check managed server pods exist
+    // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check for managed server pod {0} existence in namespace {1}",
+      logger.info("Check managed server service {0} is created in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkPodExists(managedServerPrefix + i, domainUid, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
 
     // check admin server pod is ready
@@ -344,31 +332,6 @@ public class ItIstioCrossDomainTransaction implements LoggedTest {
           managedServerPrefix + i, domainNamespace);
       checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
     }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
-
-    /*
-    logger.info("Getting node port");
-    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(domainNamespace,
-        adminServerPodName + "-external", "default"),
-        "Getting admin server node port failed");
-
-    logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return TestAssertions.adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
-
-     */
 
   }
 
