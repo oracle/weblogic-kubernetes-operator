@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.utils;
 
 import io.kubernetes.client.custom.V1Patch;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -11,7 +12,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomReso
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceCredentialsSecretPatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podRestartVersionUpdated;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -39,6 +40,7 @@ public class CommonPatchTestUtils {
       String namespace,
       String secretName
   ) {
+    LoggingFacade logger = getLogger();
     String patch = String.format(
         "[\n  {\"op\": \"replace\", \"path\": \"/spec/%s\", \"value\": \"%s\"}\n]\n",
         "webLogicCredentialsSecret/name", secretName);
@@ -106,6 +108,7 @@ public class CommonPatchTestUtils {
       final int replicaCount,
       final String secretName
   ) {
+    LoggingFacade logger = getLogger();
     logger.info(
         "Patch domain resource {0} in namespace {1} to use the new secret {2}",
         domainUid, namespace, secretName);
@@ -137,7 +140,7 @@ public class CommonPatchTestUtils {
       String namespace,
       String newValue
   ) {
-
+    LoggingFacade logger = getLogger();
     // check if domain resource has been patched with the new secret
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -167,6 +170,7 @@ public class CommonPatchTestUtils {
       String domainUid,
       String namespace,
       String restartVersion) {
+    LoggingFacade logger = getLogger();
     logger.info("Check that weblogic.domainRestartVersion of pod {0} has been updated", podName);
     boolean restartVersionUpdated = assertDoesNotThrow(
         () -> podRestartVersionUpdated(podName, domainUid, namespace, restartVersion),

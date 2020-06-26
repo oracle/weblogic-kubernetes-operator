@@ -4,7 +4,9 @@
 query_sync:
   url: http://coordinator:8999/
   refreshInterval: 5
-metricsNameSnakeCase: true
+metricsNameSnakeCase: false
+domainQualifier: true
+
 restPort: 8001
 queries:
   - applicationRuntimes:
@@ -16,6 +18,6 @@ queries:
         key: name
         values: [deploymentState, contextRoot, sourceInfo, openSessionsHighCount, openSessionsCurrentCount, sessionsOpenedTotalCount, sessionCookieMaxAgeSecs, sessionInvalidationIntervalSecs, sessionTimeoutSecs, singleThreadedServletPoolSize, sessionIDLength, servletReloadCheckSecs, jSPPageCheckSecs]
         servlets:
-          prefix: weblogic_servlet_
+          prefix: wls_servlet_
           key: servletName
           values: [invocationTotalCount, reloadTotal, executionTimeAverage, poolMaxCapacity, executionTimeTotal, reloadTotalCount, executionTimeHigh, executionTimeLow]

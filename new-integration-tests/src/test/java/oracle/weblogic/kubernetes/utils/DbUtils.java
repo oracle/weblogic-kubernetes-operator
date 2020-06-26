@@ -34,6 +34,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -47,7 +48,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -84,7 +85,7 @@ public class DbUtils {
 
   public static void setupDBandRCUschema(String dbImage, String fmwImage, String rcuSchemaPrefix, String dbNamespace,
       int dbPort, String dbUrl, boolean isUseSecret) throws ApiException {
-
+    LoggingFacade logger = getLogger();
     // create pull secrets when running in non Kind Kubernetes cluster
     if (isUseSecret) {
       CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
@@ -109,7 +110,7 @@ public class DbUtils {
    */
   public static void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace, boolean isUseSecret)
       throws ApiException {
-
+    LoggingFacade logger = getLogger();
     Map labels = new HashMap<String, String>();
     labels.put("app", "database");
 
@@ -242,7 +243,7 @@ public class DbUtils {
    */
   public static void createRcuSchema(String fmwBaseImageName, String rcuPrefix, String dbUrl,
       String dbNamespace, boolean isUseSecret) throws ApiException {
-
+    LoggingFacade logger = getLogger();
     logger.info("Create RCU pod for RCU prefix {0}", rcuPrefix);
     assertDoesNotThrow(() -> createRcuPod(fmwBaseImageName, dbUrl, dbNamespace, isUseSecret),
         String.format("Creating RCU pod failed with ApiException for image: %s, rcuPrefix: %s, dbUrl: %s, "
@@ -264,7 +265,7 @@ public class DbUtils {
    */
   public static V1Pod createRcuPod(String fmwBaseImageName, String dbUrl, String dbNamespace, boolean isUseSecret)
       throws ApiException {
-
+    LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
         .atMost(5, MINUTES).await();
@@ -317,6 +318,7 @@ public class DbUtils {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean isPodReady(String namespace, String labelSelector, String podName) throws ApiException {
+    LoggingFacade logger = getLogger();
     boolean status = false;
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null) {
@@ -357,7 +359,7 @@ public class DbUtils {
   private static boolean createRcuRepository(String dbNamespace, String dbUrl,
                                          String rcuSchemaPrefix)
       throws ApiException, IOException {
-
+    LoggingFacade logger = getLogger();
     // copy the script and helper files into the RCU pod
     Path createRepositoryScript = Paths.get(RESOURCE_DIR, "bash-scripts", CREATE_REPOSITORY_SCRIPT);
     Path passwordFile = Paths.get(RESOURCE_DIR, "helper-files", PASSWORD_FILE);
@@ -431,6 +433,7 @@ public class DbUtils {
   }
 
   private static void checkDbReady(String matchStr, String podName, String dbNamespace) {
+    LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} log contain message {1} in namespace {2} "

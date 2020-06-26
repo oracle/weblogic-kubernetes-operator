@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.logging;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Handler;
 import java.util.logging.Logger;
 
 import io.kubernetes.client.openapi.JSON;
@@ -43,11 +44,33 @@ public class LoggingFactory {
    */
   public static synchronized LoggingFacade getLogger(String name, String resourceBundleName) {
 
-    LoggingFacade lf = facade.get(resourceBundleName);
+    LoggingFacade lf = facade.get(name);
     if (lf == null) {
       Logger logger = Logger.getLogger(name, resourceBundleName);
       lf = new LoggingFacade(logger);
-      facade.put(resourceBundleName, lf);
+      facade.put(name, lf);
+    }
+
+    return lf;
+  }
+
+  /**
+   * Obtains a Logger from the underlying logging implementation and wraps it in a LoggingFacade.
+   *
+   * @param name the name of the logger to use
+   * @param resourceBundleName the resource bundle to use with this logger
+   * @param handler handler for the logger
+   * @return a logger for the caller to use
+   */
+  public static synchronized LoggingFacade getLogger(
+      String name, String resourceBundleName, Handler handler) {
+
+    LoggingFacade lf = facade.get(name);
+    if (lf == null) {
+      Logger logger = Logger.getLogger(name, resourceBundleName);
+      lf = new LoggingFacade(logger);
+      logger.addHandler(handler);
+      facade.put(name, lf);
     }
 
     return lf;

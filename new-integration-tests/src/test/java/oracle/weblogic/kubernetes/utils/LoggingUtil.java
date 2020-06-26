@@ -30,6 +30,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static io.kubernetes.client.util.Yaml.dump;
@@ -37,7 +38,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 
 /**
@@ -55,6 +56,7 @@ public class LoggingUtil {
    * @param namespaces list of namespaces used by the test instance
    */
   public static void generateLog(Object itInstance, List namespaces) {
+    LoggingFacade logger = getLogger();
     logger.info("Generating logs...");
     String resultDirExt = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
     try {
@@ -76,6 +78,7 @@ public class LoggingUtil {
    * @param resultDir existing directory to write log files
    */
   public static void collectLogs(String namespace, String resultDir) {
+    LoggingFacade logger = getLogger();
     logger.info("Collecting logs in namespace : {0}", namespace);
 
     // get events
@@ -264,6 +267,7 @@ public class LoggingUtil {
    */
   private static void writeToFile(Object obj, String resultDir, String fileName)
       throws IOException {
+    LoggingFacade logger = getLogger();
     logger.info("Generating {0}", Paths.get(resultDir, fileName));
     if (obj != null) {
       Files.write(Paths.get(resultDir, fileName),
@@ -313,7 +317,7 @@ public class LoggingUtil {
    */
   private static V1Pod setupPVPod(String namespace, String pvcName, String pvName)
       throws ApiException {
-
+    final LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
         .atMost(1, MINUTES).await();
@@ -365,7 +369,7 @@ public class LoggingUtil {
    */
   private static void cleanupPVPod(String namespace) throws ApiException {
     final String podName = "pv-pod-" + namespace;
-
+    LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(5, SECONDS)
         .and().with().pollInterval(5, SECONDS)
         .atMost(1, MINUTES).await();
@@ -400,6 +404,7 @@ public class LoggingUtil {
    */
   private static void copyDirectoryFromPod(V1Pod pvPod, Path destinationPath)
       throws ApiException {
+    LoggingFacade logger = getLogger();
     Future<String> copyJob = null;
     try {
       Runnable copy = () -> {

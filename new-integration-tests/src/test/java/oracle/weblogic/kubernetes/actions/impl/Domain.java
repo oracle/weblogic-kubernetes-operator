@@ -24,6 +24,7 @@ import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -48,7 +49,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRole.clusterRoleExists;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.impl.RoleBinding.roleBindingExists;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 public class Domain {
 
@@ -81,6 +82,7 @@ public class Domain {
    * @return true if patching domain custom resource succeeded, false otherwise
    */
   public static boolean shutdown(String domainUid, String namespace) {
+    LoggingFacade logger = getLogger();
     // change the /spec/serverStartPolicy to NEVER to shut down all servers in the domain
     // create patch string to shut down the domain
     StringBuffer patchStr = new StringBuffer("[{")
@@ -105,7 +107,7 @@ public class Domain {
    * @return true if patching domain resource succeeded, false otherwise
    */
   public static boolean restart(String domainUid, String namespace) {
-
+    LoggingFacade logger = getLogger();
     // change the /spec/serverStartPolicy to IF_NEEDED to start all servers in the domain
     // create patch string to start the domain
     StringBuffer patchStr = new StringBuffer("[{")
@@ -142,7 +144,7 @@ public class Domain {
    * @throws ApiException if Kubernetes request fails
    */
   public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
-      String namespace) throws ApiException {
+                                                                      String namespace) throws ApiException {
     return Kubernetes.getDomainCustomResource(domainUid, namespace);
   }
 
@@ -157,7 +159,7 @@ public class Domain {
    * @return true if successful, false otherwise
    */
   public static boolean patchDomainCustomResource(String domainUid, String namespace, V1Patch patch,
-      String patchFormat) {
+                                                  String patchFormat) {
     return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, patchFormat);
   }
 
@@ -173,7 +175,7 @@ public class Domain {
    */
   public static boolean patchDomainResourceWithNewIntrospectVersion(
       String domainUid, String namespace) throws ApiException {
-
+    LoggingFacade logger = getLogger();
     StringBuffer patchStr;
     oracle.weblogic.domain.Domain res = getDomainCustomResource(domainUid, namespace);
     // construct the patch string
@@ -215,7 +217,7 @@ public class Domain {
    */
   public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
       throws ApiException {
-
+    LoggingFacade logger = getLogger();
     // get the domain cluster list
     oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, namespace);
 
@@ -268,7 +270,7 @@ public class Domain {
                                                 int externalRestHttpsPort,
                                                 String opNamespace,
                                                 String opServiceAccount) {
-
+    LoggingFacade logger = getLogger();
     logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
     String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
     if (secretName.isEmpty()) {
@@ -354,7 +356,7 @@ public class Domain {
                                              String myWebAppName,
                                              String curlCommand)
       throws ApiException, IOException, InterruptedException {
-
+    LoggingFacade logger = getLogger();
     // create RBAC API objects for WLDF script
     logger.info("Creating RBAC API objects for WLDF script");
     if (!createRbacApiObjectsForWLDFScript(domainNamespace, opNamespace)) {
@@ -482,7 +484,7 @@ public class Domain {
    */
   private static boolean createRbacApiObjectsForWLDFScript(String domainNamespace, String opNamespace)
       throws ApiException {
-
+    LoggingFacade logger = getLogger();
     // create cluster role
     if (!clusterRoleExists(WLDF_CLUSTER_ROLE_NAME)) {
       logger.info("Creating cluster role {0}", WLDF_CLUSTER_ROLE_NAME);
