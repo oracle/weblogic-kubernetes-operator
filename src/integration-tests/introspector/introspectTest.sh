@@ -870,7 +870,7 @@ function checkFileStores() {
 
 function checkNodeManagerMemArg() {
 
-  trace "Verifying node manager memory arguments"
+  trace "Info: Verifying node manager memory arguments"
 
   # Verify that default NODEMGR_MEM_ARGS environment value (-Xms64m -Xmx100m) was applied to the Node Manager
   # command line when NODEMGR_MEM_ARGS was not defined.
@@ -943,7 +943,7 @@ function checkNodeManagerMemArg() {
 #
 function checkManagedServer1MemArg() {
 
-  trace "Verifying managed server memory arguments"
+  trace "Info: Verifying managed server memory arguments"
 
   # Verify that USER_MEM_ARGS environment value was applied to the Managed Server 1 command line
   maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
@@ -984,7 +984,7 @@ function checkManagedServer1MemArg() {
 
 function checkNodeManagerJavaOptions() {
 
-  trace "Verifying node manager java options"
+  trace "Info: Verifying node manager java options"
 
   # Verify that NODEMGR_JAVA_OPTIONS environment value was applied to the Node Manager command line
   nodeMgrlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
