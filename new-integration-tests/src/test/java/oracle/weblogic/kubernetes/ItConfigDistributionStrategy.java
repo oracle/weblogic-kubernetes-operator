@@ -56,16 +56,10 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.BuildApplication;
-import oracle.weblogic.kubernetes.utils.CommonTestUtils;
-import oracle.weblogic.kubernetes.utils.MySQLDBUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
@@ -107,21 +101,28 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
+import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
+import static oracle.weblogic.kubernetes.utils.MySQLDBUtils.createMySQLDB;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -195,16 +196,16 @@ public class ItConfigDistributionStrategy {
     domainNamespace = namespaces.get(1);
 
     // build the clusterview application
-    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"),
+    Path distDir = buildApplication(Paths.get(APP_DIR, "clusterview"),
         null, null, "dist", domainNamespace);
     clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
     assertTrue(clusterViewAppPath.toFile().exists(), "Application archive is not available");
 
     //start two MySQL database instances
     mysqlDBPort1 = getNextFreePort(30000, 32767);
-    MySQLDBUtils.createMySQLDB("mysqldb-1", "root", "root123", mysqlDBPort1, domainNamespace);
+    createMySQLDB("mysqldb-1", "root", "root123", mysqlDBPort1, domainNamespace);
     mysqlDBPort2 = getNextFreePort(31000, 32767);
-    MySQLDBUtils.createMySQLDB("mysqldb-2", "root", "root456", mysqlDBPort2, domainNamespace);
+    createMySQLDB("mysqldb-2", "root", "root456", mysqlDBPort2, domainNamespace);
 
     dsUrl1 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort1;
     dsUrl2 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort2;
@@ -567,7 +568,7 @@ public class ItConfigDistributionStrategy {
     for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
       String podName = (String) entry.getKey();
       DateTime creationTimestamp = (DateTime) entry.getValue();
-      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, domainNamespace,
+      assertTrue(podStateNotChanged(podName, domainUid, domainNamespace,
           creationTimestamp), "Pod is restarted");
     }
   }
@@ -610,7 +611,7 @@ public class ItConfigDistributionStrategy {
     configfiles.add(dstDsOverrideFile);
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    CommonTestUtils.createConfigMapFromFiles(overridecm, configfiles, domainNamespace);
+    createConfigMapFromFiles(overridecm, configfiles, domainNamespace);
 
   }
 
@@ -759,13 +760,13 @@ public class ItConfigDistributionStrategy {
     shutdownDomain(domainUid, domainNamespace);
 
     logger.info("Checking for admin server pod shutdown");
-    CommonTestUtils.checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
     logger.info("Checking managed server pods were shutdown");
     for (int i = 1; i <= replicaCount; i++) {
       checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
 
-    TestActions.startDomain(domainUid, domainNamespace);
+    startDomain(domainUid, domainNamespace);
     logger.info("Checking for admin server pod readiness");
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
     logger.info("Checking for managed servers pod readiness");
@@ -1009,7 +1010,7 @@ public class ItConfigDistributionStrategy {
       pvHostPath = Files.createDirectories(Paths.get(
           PV_ROOT, this.getClass().getSimpleName(), pvName));
       logger.info("Creating PV directory host path {0}", pvHostPath);
-      FileUtils.deleteDirectory(pvHostPath.toFile());
+      deleteDirectory(pvHostPath.toFile());
       Files.createDirectories(pvHostPath);
     } catch (IOException ioex) {
       logger.severe(ioex.getMessage());
@@ -1081,7 +1082,7 @@ public class ItConfigDistributionStrategy {
       }
     }
     if (!secretExists) {
-      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+      createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
           OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
     }
   }
