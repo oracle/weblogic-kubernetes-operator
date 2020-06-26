@@ -126,6 +126,7 @@ import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -431,14 +432,10 @@ public class ItConfigDistributionStrategy {
   }
 
   /**
-   * Test server configuration and datasource configurations are not overridden when
-   * /spec/configuration/overrideDistributionStrategy is set to anything other than DYNAMIC or ON_RESTART.
+   * Test patching the domain with values for /spec/configuration/overrideDistributionStrategy field
+   * anything other than DYNAMIC or ON_RESTART fails.
    *
-   * <p>Test sets the above field to RESTART and sets the /spec/configuration/overridesConfigMap and
-   * /spec/configuration/secrets with new configuration and new secrets.
-   *
-   * <p>Verifies after introspector runs the server configuration and datasource configurations are not updated
-   * since the overrideDistributionStrategy is an invalid one.
+   * <p>Test tries to set the above field to RESTART and asserts the patching fails.
    */
   @Order(4)
   @Test
@@ -452,38 +449,8 @@ public class ItConfigDistributionStrategy {
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-
-    //does changing overrideDistributionStrategy needs restart of server pods?
-    restartDomain(); // if above is a bug, remove this after the above bug is fixed
-
-    //store the pod creation timestamps
-    storePodCreationTimestamps();
-
-    //create config override map and secrets
-    setupCustomConfigOverrides();
-
-    //patch the domain resource with overridesConfigMap, secrets and introspectVersion
-    patchStr
-        = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"5\"}"
-        + "]";
-    logger.info("Updating domain configuration using patch string: {0}", patchStr);
-    patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-
-    verifyIntrospectorRuns();
-    verifyPodsStateNotChanged();
-
-    //print the configuration overrides without asserting
-    verifyConfig(null, null, null, true);
-
-    //restart domain for the distributionstrategy to take effect
-    restartDomain();
+    assertFalse(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Patch domain with invalid overrideDistributionStrategy succeeded.");
 
     //verify the overrides are not applied and original configuration is still effective
     verifyConfig("10000000", "15", dsUrl1, false);
