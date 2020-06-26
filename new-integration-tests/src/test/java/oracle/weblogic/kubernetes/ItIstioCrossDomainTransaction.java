@@ -314,17 +314,17 @@ public class ItIstioCrossDomainTransaction {
         adminServerPodName, domainNamespace);
     checkServiceExists(adminServerPodName, domainNamespace);
 
+    // check admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed server service {0} is created in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
