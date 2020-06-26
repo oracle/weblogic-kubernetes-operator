@@ -265,13 +265,13 @@ public class ItConfigDistributionStrategy {
   }
 
   /**
-   * Test server configuration and JDBC data source configurations are overridden dynamically when
+   * Test server configuration and JDBC datasource configurations are overridden dynamically when
    * /spec/configuration/overrideDistributionStrategy: field is not set. By default it should be DYNAMIC.
    *
    * <p>Test sets the /spec/configuration/overridesConfigMap and /spec/configuration/secrets with new configuration
    * and new secrets.
    *
-   * <p>Verifies after introspector runs the server configuration and JDBC data source configurations are updated
+   * <p>Verifies after introspector runs the server configuration and JDBC datasource configurations are updated
    * as expected.
    */
   @Order(1)
@@ -301,7 +301,7 @@ public class ItConfigDistributionStrategy {
     verifyPodsStateNotChanged();
 
     //print the configuration overrides without asserting
-    verifyConfig("10000000", "15", dsUrl1, true);
+    verifyConfig(null, null, null, true);
 
     //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
     restartDomain(); // remove after the above bug is fixed
@@ -310,13 +310,13 @@ public class ItConfigDistributionStrategy {
   }
 
   /**
-   * Test server configuration and data source configurations are dynamically overridden when
+   * Test server configuration and datasource configurations are dynamically overridden when
    * /spec/configuration/overrideDistributionStrategy is set to DYNAMIC.
    *
    * <p>Test sets the above field to DYNAMIC and overrides the /spec/configuration/overridesConfigMap and
    * /spec/configuration/secrets with new configuration and new secrets.
    *
-   * <p>Verifies after introspector runs and the server configuration and JDBC data source configurations are
+   * <p>Verifies after introspector runs and the server configuration and JDBC datasource configurations are
    * updated as expected.
    */
   @Order(2)
@@ -359,7 +359,7 @@ public class ItConfigDistributionStrategy {
     verifyPodsStateNotChanged();
 
     //print the configuration overrides without asserting
-    verifyConfig("10000000", "15", dsUrl1, true);
+    verifyConfig(null, null, null, true);
 
     //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
     restartDomain(); // remove after the above bug is fixed
@@ -368,14 +368,14 @@ public class ItConfigDistributionStrategy {
   }
 
   /**
-   * Test server configuration and JDBC data source configurations are overridden on pods restart when
+   * Test server configuration and JDBC datasource configurations are overridden on restart of pods when
    * /spec/configuration/overrideDistributionStrategy is set to ON_RESTART.
    *
    * <p>Test sets the above field to ON_RESTART and overrides the /spec/configuration/overridesConfigMap and
    * /spec/configuration/secrets with new configuration and new secrets.
    *
-   * <p>Verifies after introspector runs the server configuration and JDBC data source configurations are updated
-   * as expected.
+   * <p>Verifies after introspector runs the server configuration and JDBC datasource configurations are
+   * not updated. After domain restart the overrides are applied.
    */
   @Order(3)
   @Test
@@ -417,22 +417,26 @@ public class ItConfigDistributionStrategy {
     verifyPodsStateNotChanged();
 
     //print the configuration overrides without asserting
-    verifyConfig("10000000", "15", dsUrl1, true);
+    verifyConfig(null, null, null, true);
+
+    //verify the overrides are not applied
+    verifyConfig("10000000", "15", dsUrl1, false);
 
     //restart domain for the distributionstrategy to take effect
     restartDomain();
 
+    //verify on restart the overrides are applied
     verifyConfigOverrides();
   }
 
   /**
-   * Test server configuration and data source configurations are not overridden when
+   * Test server configuration and datasource configurations are not overridden when
    * /spec/configuration/overrideDistributionStrategy is set to anything other than DYNAMIC or ON_RESTART.
    *
    * <p>Test sets the above field to RESTART and sets the /spec/configuration/overridesConfigMap and
    * /spec/configuration/secrets with new configuration and new secrets.
    *
-   * <p>Verifies after introspector runs the server configuration and data source configurations are not updated
+   * <p>Verifies after introspector runs the server configuration and datasource configurations are not updated
    * since the overrideDistributionStrategy is an invalid one.
    */
   @Order(4)
@@ -440,7 +444,7 @@ public class ItConfigDistributionStrategy {
   @DisplayName("Test invalid overrideDistributionStrategy value RESTART")
   public void testOverrideNegative() {
 
-    //patching the domain with /spec/configuration/overrideDistributionStrategy: ON_RESTART
+    //patching the domain with /spec/configuration/overrideDistributionStrategy: RESTART
     String patchStr = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overrideDistributionStrategy\", "
         + "\"value\": \"RESTART\"}"
@@ -480,10 +484,11 @@ public class ItConfigDistributionStrategy {
     //restart domain for the distributionstrategy to take effect
     restartDomain();
 
+    //verify the overrides are not applied and original configuration is still effective
     verifyConfig("10000000", "15", dsUrl1, false);
   }
 
-  //verify the configuration overrides for server and data source
+  //verify the configuration overrides for server and JDBC datasource
   private void verifyConfigOverrides() {
 
     String maxMessageSize = "78787878";
@@ -492,6 +497,8 @@ public class ItConfigDistributionStrategy {
     verifyConfig(maxMessageSize, cpMaxCapacity, dsUrl, false);
   }
 
+  //use the http client and access the clusterview application to get server configuration
+  //and JDBC datasource configuration.
   private void verifyConfig(String maxMessageSize, String cpMaxCapacity, String dsUrl, boolean debug) {
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
@@ -540,6 +547,7 @@ public class ItConfigDistributionStrategy {
     }
   }
 
+  //store pod creation timestamps for podstate check
   private void storePodCreationTimestamps() {
     // get the pod creation time stamps
     podTimestamps = new LinkedHashMap<>();
@@ -553,6 +561,7 @@ public class ItConfigDistributionStrategy {
     }
   }
 
+  //check if the pods are restarted by comparing the pod creationtimestamp.
   private void verifyPodsStateNotChanged() {
     logger.info("Verifying the WebLogic server pod states are not changed");
     for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
@@ -563,6 +572,7 @@ public class ItConfigDistributionStrategy {
     }
   }
 
+  //verify the introspector pod is created and run
   private void verifyIntrospectorRuns() {
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
@@ -573,10 +583,9 @@ public class ItConfigDistributionStrategy {
 
   //method to create custom configuration overrides
   private void setupCustomConfigOverrides() {
-
     logger.info("Creating config overrides");
 
-    //create new secrets for jdbc data source
+    //create new secrets for jdbc datasource
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("dbusername", "root");
     secretMap.put("dbpassword", "root456");
@@ -585,10 +594,10 @@ public class ItConfigDistributionStrategy {
         .metadata(new V1ObjectMeta()
             .name(dsSecret)
             .namespace(domainNamespace))
-        .stringData(secretMap)), "Creating secret for data source failed.");
+        .stringData(secretMap)), "Creating secret for datasource failed.");
     assertTrue(secretCreated, String.format("creating secret failed %s", dsSecret));
 
-    //copy the template data source file for override after replacing JDBC_URL with new data source url
+    //copy the template datasource file for override after replacing JDBC_URL with new datasource url
     Path srcDsOverrideFile = Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/jdbc-JdbcTestDataSource-0.xml");
     Path dstDsOverrideFile = Paths.get(WORK_DIR, "jdbc-JdbcTestDataSource-0.xml");
     String tempString = assertDoesNotThrow(()
@@ -605,6 +614,7 @@ public class ItConfigDistributionStrategy {
 
   }
 
+  //create a standard WebLogic domain.
   private void createDomain() {
 
     // create WebLogic domain credential secret
@@ -743,6 +753,7 @@ public class ItConfigDistributionStrategy {
         domainNamespace);
   }
 
+  //restart pods by manipulating the serverStartPolicy to NEVER and IF_NEEDED
   private void restartDomain() {
     logger.info("Restarting domain {0}", domainNamespace);
     shutdownDomain(domainUid, domainNamespace);
@@ -763,6 +774,7 @@ public class ItConfigDistributionStrategy {
     }
   }
 
+  //create a JDBC datasource targeted to cluster.
   private void createJdbcDataSource(String user, String password, int mySQLNodePort) {
 
     try {
@@ -783,7 +795,7 @@ public class ItConfigDistributionStrategy {
       p.setProperty("dsTarget", clusterName);
       p.store(new FileOutputStream(domainPropertiesFile), "domain properties file");
 
-      // WLST script for creating jdbc data source
+      // WLST script for creating jdbc datasource
       Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "create-jdbc-resource.py");
       executeWLSTScript(wlstScript, domainPropertiesFile.toPath(), domainNamespace);
     } catch (IOException ex) {

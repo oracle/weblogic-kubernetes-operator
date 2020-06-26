@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Utility class to deploy application to WebLogic server.
+ * Utility class to create MySQL database.
  */
 public class MySQLDBUtils {
 
@@ -39,10 +39,10 @@ public class MySQLDBUtils {
    * Create and start a MySQL database pod.
    *
    * @param name      name of the db pod
-   * @param user      username of the database
+   * @param user      username for the database
    * @param password  password for the database
    * @param nodePort  node port of db service
-   * @param namespace name of the namespace in which to create MySQL db
+   * @param namespace name of the namespace in which to create MySQL database
    */
   public static void createMySQLDB(String name, String user, String password, int nodePort, String namespace) {
 
@@ -56,6 +56,7 @@ public class MySQLDBUtils {
 
   }
 
+  //create the database pod
   private static void startMySQLDB(String name, String secretName, String namespace) {
     Map<String, String> labels = new HashMap<>();
     labels.put("app", name);
@@ -82,6 +83,7 @@ public class MySQLDBUtils {
     CommonTestUtils.checkPodReady(pod.getMetadata().getName(), null, namespace);
   }
 
+  //create services for MySQL database
   private static void createService(String serviceName, String selectorName, String namespace, int port) {
 
     boolean service = false;
@@ -106,6 +108,7 @@ public class MySQLDBUtils {
     assertTrue(service, "Service creation for mysql failed");
   }
 
+  //create secrets
   private static void createSecret(String secretName, String user, String password, String namespace) {
     HashMap<String, String> secrets = new HashMap<>();
     secrets.put("root-user", user);

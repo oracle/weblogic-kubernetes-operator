@@ -100,13 +100,12 @@ public class Domain {
   }
 
   /**
-   * Restart a domain in the specified namespace.
+   * Start domain in the specified namespace.
    *
    * @param domainUid the domain to restart
    * @param namespace the namespace in which the domain exists
    * @return true if patching domain resource succeeded, false otherwise
    */
-
   public static boolean start(String domainUid, String namespace) {
     LoggingFacade logger = getLogger();
     // change the /spec/serverStartPolicy to IF_NEEDED to start all servers in the domain

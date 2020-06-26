@@ -34,7 +34,7 @@ import weblogic.management.runtime.JDBCDataSourceRuntimeMBean;
 import weblogic.management.runtime.ServerRuntimeMBean;
 
 /**
- * Servlet to print all MBeans names and attributes in the server runtime.
+ * Servlet to print Server configuration and JDBC datasource parameters.
  */
 public class ConfigServlet extends HttpServlet {
 
@@ -94,12 +94,13 @@ public class ConfigServlet extends HttpServlet {
         printServerAttributes(request, out);
       }
 
-      // test jdbc connection pool
+      // test JDBC connection pool
       String dsTest = request.getParameter("dsTest");
       if (dsTest != null) {
         testJdbcConnection(request, out);
       }
 
+      // print JDBC datasource parameters
       String resTest = request.getParameter("resTest");
       if (resTest != null) {
         printResourceAttributes(request, out);
