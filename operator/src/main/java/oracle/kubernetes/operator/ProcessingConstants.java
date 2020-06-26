@@ -33,4 +33,6 @@ public interface ProcessingConstants {
   public static final String ENCODED_CREDENTIALS = "encodedCredentials";
 
   public static final String WAIT_FOR_POD_READY = "waitForPodReady";
+
+  public static final String INTROSPECTOR_JOB_FAILURE_LOGGED = "introspectorJobfailureLogged";
 }

@@ -41,6 +41,7 @@ import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
+import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 
 public class JobHelper {
 
@@ -377,7 +378,8 @@ public class JobHelper {
       V1Job domainIntrospectorJob =
           (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
       if (domainIntrospectorJob != null && !JobWatcher.isComplete(domainIntrospectorJob)) {
-        LOGGER.info(MessageKeys.INTROSPECTOR_JOB_FAILED,
+        packet.remove(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED);
+        LOGGER.info(INTROSPECTOR_JOB_FAILED,
             domainIntrospectorJob.getMetadata().getNamespace(),
             domainIntrospectorJob.getMetadata().getName(),
             domainIntrospectorJob.toString());
@@ -453,10 +455,14 @@ public class JobHelper {
       if (isNotComplete(domainIntrospectorJob)) {
         List<String> jobConditionsReason = new ArrayList<>();
         if (domainIntrospectorJob != null) {
-          //LOGGER.info(MessageKeys.INTROSPECTOR_JOB_FAILED,
-          //    domainIntrospectorJob.getMetadata().getNamespace(),
-          //    domainIntrospectorJob.getMetadata().getName(),
-          //    domainIntrospectorJob.toString());
+          Boolean logged = (Boolean) packet.get(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED);
+          if (logged == null || !logged.booleanValue()) {
+            packet.put(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED, Boolean.valueOf(true));
+            LOGGER.info(INTROSPECTOR_JOB_FAILED,
+                domainIntrospectorJob.getMetadata().getNamespace(),
+                domainIntrospectorJob.getMetadata().getName(),
+                domainIntrospectorJob.toString());
+          }
           V1JobStatus status = domainIntrospectorJob.getStatus();
           if (status != null && status.getConditions() != null) {
             for (V1JobCondition cond : status.getConditions()) {
