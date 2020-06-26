@@ -751,17 +751,17 @@ public class Main {
                     return v;
                   });
           info.setPopulated(true);
-          dp.makeRightDomainPresence(info, true, false, false);
+          dp.createMakeRightOperation(info).withExplicitRecheck().execute();
         }
       }
 
       dpis.forEach(
-          (key, value) -> {
-            if (!domainUids.contains(key)) {
+          (uid, info) -> {
+            if (!domainUids.contains(uid)) {
               // This is a stranded DomainPresenceInfo.
-              value.setDeleting(true);
-              value.setPopulated(true);
-              dp.makeRightDomainPresence(value, true, true, false);
+              info.setDeleting(true);
+              info.setPopulated(true);
+              dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
             }
           });
 

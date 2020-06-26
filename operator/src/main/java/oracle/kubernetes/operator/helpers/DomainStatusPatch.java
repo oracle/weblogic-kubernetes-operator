@@ -12,8 +12,6 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class DomainStatusPatch {
-  static final String BAD_DOMAIN = "ErrBadDomain";
-  static final String ERR_INTROSPECTOR = "ErrIntrospector";
 
   private final String name;
   private final String namespace;
