@@ -20,7 +20,7 @@ public class Configuration {
   private Opss opss;
 
   @Description(
-      "A list of names of the secrets for WebLogic configuration overrides or model. If this field is specified,"
+      "A list of names of the Secrets for WebLogic configuration overrides or model. If this field is specified,"
           + " then the value of spec.configOverrideSecrets is ignored.")
   private List<String> secrets;
 
@@ -28,16 +28,20 @@ public class Configuration {
           + " then the value of spec.configOverrides is ignored.")
   private String overridesConfigMap;
 
-  @Description("The introspector job timeout value in seconds. If this field is specified,"
-          + " then the operator's ConfigMap data.introspectorJobActiveDeadlineSeconds value is ignored. "
+  @Description("The introspector job timeout value in seconds. If this field is specified, "
+          + "then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. "
           + "Defaults to 120 seconds.")
   private Long introspectorJobActiveDeadlineSeconds;
 
   @Description(
       "Determines how updated configuration overrides are distributed to already running WebLogic Servers "
       + "following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides "
-      + "are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. "
-      + "Legal values are DYNAMIC and ON_RESTART. See also introspectVersion. Defaults to DYNAMIC.")
+      + "are generated during introspection from Secrets, the `overrideConfigMap` field, and WebLogic domain topology. "
+      + "Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides "
+      + "dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration "
+      + "overrides only after the server's next restart. The selection of ON_RESTART will not cause servers to "
+      + "restart when there are updated configuration overrides available. See also `introspectVersion`. "
+      + "Defaults to DYNAMIC.")
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
   @Description("The Istio service mesh integration settings.")

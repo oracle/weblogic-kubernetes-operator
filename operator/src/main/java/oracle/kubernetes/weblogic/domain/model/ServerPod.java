@@ -88,7 +88,7 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Description(
-      "Selector which must match a node's labels for the Pod to be scheduled on that Node.")
+      "Selector which must match a Node's labels for the Pod to be scheduled on that Node.")
   private final Map<String, String> nodeSelector = new HashMap<>();
 
   @Description("If specified, the Pod's scheduling constraints.")

@@ -24,8 +24,8 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
   @Expose
   private String clusterName;
 
-  /** The number of intended cluster members. Required. */
-  @Description("The number of intended running cluster members.")
+  /** The number of currently cluster members. Required. */
+  @Description("The number of currently running cluster members.")
   @Range(minimum = 0)
   private Integer replicas;
 

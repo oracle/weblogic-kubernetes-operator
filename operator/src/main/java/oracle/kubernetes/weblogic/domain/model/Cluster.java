@@ -25,24 +25,24 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   /** The name of the cluster. Required. */
   @Description("The name of the cluster. This value must match the name of a WebLogic cluster already defined "
-      + "in the WebLogic domain configuration. Required")
+      + "in the WebLogic domain configuration. Required.")
   @Nonnull
   private String clusterName;
 
   /** The number of replicas to run in the cluster, if specified. */
   @Description(
-      "The number of cluster member Managed Server instances to start this WebLogic cluster. "
+      "The number of cluster member Managed Server instances to start for this WebLogic cluster. "
       + "The operator will sort cluster member Managed Server names from the WebLogic domain "
       + "configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. "
       + "This is done so that server names such as \"managed-server10\" come after \"managed-server9\". "
-      + "The operator will then start Managed Servers from the sorted list, "
-      + "up to the replicas count, unless specific Managed Servers are specified as "
-      + "starting in their entry under the managedServers field. In that case, the specified Managed Servers "
-      + "will be started and then additional cluster members "
-      + "will be started, up to the replicas count, by finding further cluster members in the sorted list that are "
+      + "The operator will then start Managed Server instances from the sorted list, "
+      + "up to the `replicas` count, unless specific Managed Servers are specified as "
+      + "starting in their entry under the `managedServers` field. In that case, the specified Managed Server "
+      + "instances will be started and then additional cluster members "
+      + "will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are "
       + "not already started. If cluster members are started "
-      + "because of their related entries under managedServers then this cluster may have more cluster members "
-      + "running than its replicas count. Not required. Defaults to 0.")
+      + "because of their related entries under `managedServers` then this cluster may have more cluster members "
+      + "running than its `replicas` count. Defaults to 0.")
   @Range(minimum = 0)
   private Integer replicas;
 
@@ -70,18 +70,18 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Expose
   private KubernetesResource clusterService = new KubernetesResource();
 
-  @Description("Specifies whether the number of replicas is allowed to drop below the "
+  @Description("Specifies whether the number of running cluster members is allowed to drop below the "
       + "minimum dynamic cluster size configured in the WebLogic domain configuration. "
-      + "Otherwise, the operator will ensure that the number of replicas is not less than "
+      + "Otherwise, the operator will ensure that the number of running cluster members is not less than "
       + "the minimum dynamic cluster setting. This setting applies to dynamic clusters only. "
-      + "Not required. Defaults to true"
+      + "Defaults to true."
   )
   private Boolean allowReplicasBelowMinDynClusterSize;
 
   @Description(
       "The maximum number of Managed Servers instances that the operator will start in parallel "
-      + "for this cluster in response to a change in replicas count. "
-      + "If more Managed Servers need to be started, the operator will wait until a Managed "
+      + "for this cluster in response to a change in the `replicas` count. "
+      + "If more Managed Server instances must be started, the operator will wait until a Managed "
       + "Server Pod is in the `Ready` state before starting the next Managed Server instance. "
       + "A value of 0 means all Managed Server instances will start in parallel. Defaults to 0."
   )

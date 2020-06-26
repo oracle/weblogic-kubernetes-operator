@@ -20,19 +20,19 @@ public class Shutdown {
   public static final Boolean DEFAULT_IGNORESESSIONS = Boolean.FALSE;
 
   @Description(
-      "Specifies how the operator will shut down server instances. Not required."
+      "Specifies how the operator will shut down server instances."
           + " Defaults to graceful shutdown.")
   @EnumClass(ShutdownType.class)
   private String shutdownType;
 
   @Description(
       "For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down"
-          + " the server. Not required. Defaults to 30 seconds.")
+          + " the server. Defaults to 30 seconds.")
   private Long timeoutSeconds;
 
   @Description(
       "For graceful shutdown only, indicates to ignore pending HTTP sessions during in-flight work handling."
-          + " Not required. Defaults to false.")
+          + " Defaults to false.")
   private Boolean ignoreSessions;
 
   public Shutdown() {

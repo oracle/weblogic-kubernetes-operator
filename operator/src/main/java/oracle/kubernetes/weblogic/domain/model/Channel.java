@@ -14,21 +14,21 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Channel implements Comparable<Channel> {
   @SerializedName("channelName")
   @Description(
-      "Name of channel. The 'default' value refers to the Administration Server's default channel (configured "
-          + "via the ServerMBean's ListenPort). "
-          + "The 'default-secure' value refers to the Administration Server's default secure channel "
-          + "(configured via the ServerMBean's SSLMBean's ListenPort). "
-          + "The 'default-admin' value refers to the Administration Server's default administrative channel "
-          + "(configured via the DomainMBean's AdministrationPort). "
-          + "Otherwise, the name is the name of one of the Administration Server's network access points "
-          + "(configured via the ServerMBean's NetworkAccessMBeans).")
+      "Name of the channel. The \"default\" value refers to the Administration Server's default channel, "
+          + "which is configured using the ServerMBean's ListenPort. "
+          + "The \"default-secure\" value refers to the Administration Server's default secure channel, "
+          + "which is configured using the ServerMBean's SSLMBean's ListenPort. "
+          + "The \"default-admin\" value refers to the Administration Server's default administrative channel, "
+          + "which is configured using the DomainMBean's AdministrationPort. "
+          + "Otherwise, provide the name of one of the Administration Server's network access points, "
+          + "which is configured using the ServerMBean's NetworkAccessMBeans. The \"default\", \"default-secure\", "
+          + "and \"default-admin\" channels may not be specified here when using Istio.")
   @Nonnull
   private String channelName;
 
   @SerializedName("nodePort")
   @Description(
-      "Specifies the port number used to access the WebLogic channel "
-          + "outside of the Kubernetes cluster. "
+      "Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. "
           + "If not specified, defaults to the port defined by the WebLogic channel.")
   private Integer nodePort;
 

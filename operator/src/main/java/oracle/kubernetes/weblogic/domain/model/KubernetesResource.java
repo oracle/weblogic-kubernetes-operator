@@ -21,7 +21,7 @@ class KubernetesResource {
    */
   @Description(
       "The labels to be added to generated resources. The label names must "
-          + "not start with 'weblogic.'.")
+          + "not start with \"weblogic.\".")
   private final Map<String, String> labels = new HashMap<>();
 
   /**

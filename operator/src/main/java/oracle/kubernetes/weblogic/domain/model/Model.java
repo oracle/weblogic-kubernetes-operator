@@ -16,7 +16,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Model {
 
   @EnumClass(value = ModelInImageDomainType.class)
-  @Description("WebLogic Deploy Tooling domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
+  @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
   private String domainType;
 
   @Description("Name of a ConfigMap containing the WebLogic Deploy Tooling model.")
@@ -24,7 +24,7 @@ public class Model {
 
   @Valid
   @Nullable
-  @Description("Runtime encryption secret. Required when domainHomeSourceType is set to FromModel.")
+  @Description("Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel.")
   private String runtimeEncryptionSecret;
 
   @Nullable

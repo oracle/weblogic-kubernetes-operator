@@ -50,7 +50,7 @@ public class Domain {
    */
   @SerializedName("apiVersion")
   @Expose
-  @Description("The API version defines the versioned schema of this Domain.")
+  @Description("The API version defines the versioned schema of this Domain. Required.")
   private String apiVersion;
 
   /**
@@ -60,7 +60,7 @@ public class Domain {
    */
   @SerializedName("kind")
   @Expose
-  @Description("The type of the REST resource. Must be 'Domain'.")
+  @Description("The type of the REST resource. Must be \"Domain\". Required.")
   private String kind;
 
   /**
@@ -70,7 +70,7 @@ public class Domain {
   @SerializedName("metadata")
   @Expose
   @Valid
-  @Description("The domain resource metadata. Must include the name and namespace.")
+  @Description("The resource metadata. Must include the `name` and `namespace`. Required.")
   @Nonnull
   private V1ObjectMeta metadata = new V1ObjectMeta();
 

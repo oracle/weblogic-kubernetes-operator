@@ -35,7 +35,7 @@ import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPa
 @Description("The current status of the operation of the WebLogic domain. Updated automatically by the operator.")
 public class DomainStatus {
 
-  @Description("Current service state of domain.")
+  @Description("Current service state of the domain.")
   @Valid
   private List<DomainCondition> conditions = new ArrayList<>();
 
@@ -64,9 +64,10 @@ public class DomainStatus {
   private DateTime startTime = SystemClock.now();
 
   @Description(
-      "The number of running Managed Servers in the WebLogic cluster if there is "
-          + "only one cluster in the domain and where the cluster does not explicitly "
-          + "configure its replicas in a cluster specification.")
+      "The number of running cluster member Managed Servers in the WebLogic cluster if there is "
+      + "exactly one cluster defined in the domain configuration and where the `replicas` field is set at the `spec` "
+      + "level rather than for the specific cluster under `clusters`. This field is provided to support use of "
+      + "Kubernetes scaling for this limited use case.")
   @Range(minimum = 0)
   private Integer replicas;
 
