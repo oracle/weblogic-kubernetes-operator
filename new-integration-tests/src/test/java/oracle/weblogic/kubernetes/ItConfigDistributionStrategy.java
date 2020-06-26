@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
@@ -360,10 +361,17 @@ public class ItConfigDistributionStrategy {
     verifyPodsStateNotChanged();
 
     //print the configuration overrides without asserting
-    verifyConfig(null, null, null, true);
+    //verifyConfig(null, null, null, true);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for server configuration to be updated"
+                + "(elapsed time {0} ms, remaining time {2} ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(configUpdated());
 
     //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
-    restartDomain(); // remove after the above bug is fixed
+    //restartDomain(); // remove after the above bug is fixed
 
     verifyConfigOverrides();
   }
@@ -464,6 +472,30 @@ public class ItConfigDistributionStrategy {
     verifyConfig(maxMessageSize, cpMaxCapacity, dsUrl, false);
   }
 
+  private Callable<Boolean> configUpdated() {
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, adminServerPodName
+            + "-external",
+            "default"),
+        "Getting admin server node port failed");
+
+    //verify server attribute MaxMessageSize
+    String appURI = "/clusterview/ConfigServlet?"
+        + "attributeTest=true&"
+        + "serverType=adminserver&"
+        + "serverName=" + adminServerName;
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+
+    String maxMessageSize = "78787878";
+    return (()
+        -> {
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
+      assertEquals(200, response.statusCode(), "Status code not equals to 200");
+      return response.body().contains("MaxMessageSize=".concat(maxMessageSize));
+    });
+  }
+
   //use the http client and access the clusterview application to get server configuration
   //and JDBC datasource configuration.
   private void verifyConfig(String maxMessageSize, String cpMaxCapacity, String dsUrl, boolean debug) {
@@ -484,7 +516,8 @@ public class ItConfigDistributionStrategy {
 
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
     if (!debug) {
-      assertTrue(response.body().contains(maxMessageSize), "Didn't get MaxMessageSize=" + maxMessageSize);
+      assertTrue(response.body().contains("MaxMessageSize=".concat(maxMessageSize)),
+          "Didn't get MaxMessageSize=" + maxMessageSize);
     }
 
     //verify datasource attributes
@@ -733,6 +766,7 @@ public class ItConfigDistributionStrategy {
     }
 
     startDomain(domainUid, domainNamespace);
+    verifyIntrospectorRuns();
     logger.info("Checking for admin server pod readiness");
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
     logger.info("Checking for managed servers pod readiness");
