@@ -13,11 +13,9 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public interface DomainProcessor {
 
-  public void makeRightDomainPresence(
-      DomainPresenceInfo info,
-      boolean explicitRecheck,
-      boolean isDeleting,
-      boolean isWillInterrupt);
+  MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo liveInfo);
+
+  MakeRightDomainOperation createMakeRightOperation(Domain liveDomain);
 
   public void dispatchDomainWatch(Watch.Response<Domain> item);
 

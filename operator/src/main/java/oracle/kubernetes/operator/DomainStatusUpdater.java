@@ -68,6 +68,10 @@ public class DomainStatusUpdater {
   public static final String MANAGED_SERVERS_STARTING_PROGRESS_REASON = "ManagedServersStarting";
   public static final String SERVERS_READY_REASON = "ServersReady";
   public static final String ALL_STOPPED_AVAILABLE_REASON = "AllServersStopped";
+  public static final String BAD_DOMAIN = "ErrBadDomain";
+  public static final String ERR_INTROSPECTOR = "ErrIntrospector";
+  public static final String BAD_TOPOLOGY = "BadTopology";
+  
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String TRUE = "True";
   private static final String FALSE = "False";
@@ -527,13 +531,17 @@ public class DomainStatusUpdater {
       }
 
       private Integer getClusterMaximumSize(String clusterName) {
-        return getDomainConfig().map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
-            .map(cluster -> cluster.map(WlsClusterConfig::getMaxClusterSize).orElse(0)).get();
+        return getDomainConfig()
+              .map(config -> config.getClusterConfig(clusterName))
+              .map(WlsClusterConfig::getMaxClusterSize)
+              .orElse(0);
       }
 
       private Integer getClusterMinimumSize(String clusterName) {
-        return getDomainConfig().map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
-                .map(cluster -> cluster.map(WlsClusterConfig::getMinClusterSize).orElse(0)).get();
+        return getDomainConfig()
+              .map(config -> config.getClusterConfig(clusterName))
+              .map(WlsClusterConfig::getMinClusterSize)
+              .orElse(0);
       }
 
       private Integer getClusterSizeGoal(String clusterName) {

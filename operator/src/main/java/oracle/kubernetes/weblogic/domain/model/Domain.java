@@ -449,11 +449,8 @@ public class Domain {
     return spec.getDomainHomeSourceType();
   }
 
-  /**
-   * Returns true if the operator can be asked to run a new introspection for this domain.
-   */
-  public boolean mayRequestIntrospection() {
-    return getDomainHomeSourceType().mayRequestIntrospection();
+  public boolean isNewIntrospectionRequiredForNewServers() {
+    return getDomainHomeSourceType() == DomainSourceType.FromModel;
   }
 
   public Model getModel() {
@@ -470,10 +467,6 @@ public class Domain {
 
   public int getIstioReadinessPort() {
     return spec.getIstioReadinessPort();
-  }
-
-  public boolean isDomainSourceFromModel(String type) {
-    return DomainSourceType.FromModel.toString().equals(type);
   }
 
   /**
@@ -694,10 +687,9 @@ public class Domain {
     private void verifyIstioExposingDefaultChannel() {
       if (spec.isIstioEnabled()) {
         Optional.ofNullable(spec.getAdminServer())
-            .map(a -> a.getAdminService())
-            .map(service -> service.getChannels())
-            .ifPresent(cs -> cs.stream()
-                              .forEach(this::checkForDefaultNameExposed));
+            .map(AdminServer::getAdminService)
+            .map(AdminService::getChannels)
+            .ifPresent(cs -> cs.forEach(this::checkForDefaultNameExposed));
       }
     }
 

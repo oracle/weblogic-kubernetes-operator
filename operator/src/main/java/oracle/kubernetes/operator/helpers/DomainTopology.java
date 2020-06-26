@@ -39,15 +39,15 @@ public class DomainTopology {
   /**
    * Parses a topology yaml. If validation errors occur, logs them and returns null.
    * @param topologyYaml the YAML to parse
-   * @param errorLogger processing for the validation errors
+   * @param errorReporter processing for the validation errors
    * @return a valid topology or null
    */
-  public static DomainTopology parseDomainTopologyYaml(String topologyYaml, Consumer<List<String>> errorLogger) {
+  public static DomainTopology parseDomainTopologyYaml(String topologyYaml, Consumer<List<String>> errorReporter) {
     final DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
     if (domainTopology == null || domainTopology.getDomainValid()) {
       return domainTopology;
     } else {
-      errorLogger.accept(domainTopology.validationErrors);
+      errorReporter.accept(domainTopology.validationErrors);
       return null;
     }
   }
