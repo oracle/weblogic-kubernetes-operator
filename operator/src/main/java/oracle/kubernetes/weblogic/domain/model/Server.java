@@ -21,7 +21,7 @@ public class Server extends BaseConfiguration {
    */
   @EnumClass(value = ServerStartPolicy.class, qualifier = "forServer")
   @Description("The strategy for deciding whether to start a WebLogic server instance. "
-      + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. "
+      + "Legal values are ALWAYS, NEVER, or IF_NEEDED. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers")
   private String serverStartPolicy;

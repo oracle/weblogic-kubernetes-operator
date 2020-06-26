@@ -65,7 +65,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `restartVersion` | string | Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers |
 | `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances. |
 | `serverService` | [Server Service](#server-service) | Customization affecting the generation of Kubernetes services for WebLogic Server instances. |
-| `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers |
+| `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers |
 | `serverStartState` | string | The WebLogic runtime state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 
 ### Cluster
@@ -81,7 +81,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `restartVersion` | string | Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers |
 | `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances. |
 | `serverService` | [Server Service](#server-service) | Customization affecting the generation of Kubernetes services for WebLogic Server instances. |
-| `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers |
+| `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic server instance. Legal values are NEVER, or IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers |
 | `serverStartState` | string | The WebLogic runtime state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 
 ### Configuration
@@ -92,7 +92,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `istio` | [Istio](#istio) | The Istio service mesh integration settings. |
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Settings for OPSS security. |
-| `overrideDistributionStrategy` | string | Determines how updated configuration overrides are distributed to already running WebLogic servers following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC and ON_RESTART. See also introspectVersion. Defaults to DYNAMIC |
+| `overrideDistributionStrategy` | string | Determines how updated configuration overrides are distributed to already running WebLogic servers following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC and ON_RESTART. See also introspectVersion. Defaults to DYNAMIC. |
 | `overridesConfigMap` | string | The name of the ConfigMap for WebLogic configuration overrides. If this field is specified then the value of spec.configOverrides is ignored. |
 | `secrets` | array of string | A list of names of the secrets for WebLogic configuration overrides or model. If this field is specified then the value of spec.configOverrideSecrets is ignored. |
 
@@ -104,7 +104,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `serverName` | string | The name of the Managed Server. This name must match the name of a Managed Server instance or of a dynamic cluster member name from a server template already defined in the WebLogic domain configuration. Required. |
 | `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances. |
 | `serverService` | [Server Service](#server-service) | Customization affecting the generation of Kubernetes services for WebLogic Server instances. |
-| `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers |
+| `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers |
 | `serverStartState` | string | The WebLogic runtime state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 
 ### Server Pod

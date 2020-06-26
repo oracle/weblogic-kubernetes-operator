@@ -22,7 +22,7 @@
           "$ref": "#/definitions/ServerPod"
         },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a WebLogic server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers",
+          "description": "The strategy for deciding whether to start a WebLogic server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers",
           "type": "string",
           "enum": [
             "ALWAYS",
@@ -118,7 +118,7 @@
           "$ref": "#/definitions/KubernetesResource"
         },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a WebLogic server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers",
+          "description": "The strategy for deciding whether to start a WebLogic server instance. Legal values are NEVER, or IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers",
           "type": "string",
           "enum": [
             "NEVER",
@@ -177,7 +177,7 @@
       "type": "object",
       "properties": {
         "overrideDistributionStrategy": {
-          "description": "Determines how updated configuration overrides are distributed to already running WebLogic servers following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC and ON_RESTART. See also introspectVersion. Defaults to DYNAMIC",
+          "description": "Determines how updated configuration overrides are distributed to already running WebLogic servers following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC and ON_RESTART. See also introspectVersion. Defaults to DYNAMIC.",
           "type": "string",
           "enum": [
             "DYNAMIC",
@@ -500,7 +500,7 @@
           "$ref": "#/definitions/ServerPod"
         },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a WebLogic server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers",
+          "description": "The strategy for deciding whether to start a WebLogic server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers",
           "type": "string",
           "enum": [
             "ALWAYS",

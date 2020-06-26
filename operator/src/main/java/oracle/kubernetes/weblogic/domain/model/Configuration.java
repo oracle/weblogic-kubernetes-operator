@@ -36,7 +36,7 @@ public class Configuration {
       "Determines how updated configuration overrides are distributed to already running WebLogic servers "
       + "following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides "
       + "are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. "
-      + "Legal values are DYNAMIC and ON_RESTART. See also introspectVersion. Defaults to DYNAMIC")
+      + "Legal values are DYNAMIC and ON_RESTART. See also introspectVersion. Defaults to DYNAMIC.")
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
   @Description("The Istio service mesh integration settings.")
