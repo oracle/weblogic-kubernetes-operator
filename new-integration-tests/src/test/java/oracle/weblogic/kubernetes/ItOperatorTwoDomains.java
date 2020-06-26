@@ -528,19 +528,19 @@ public class ItOperatorTwoDomains {
     verifyDomain2NotChanged();
 
     // restart domain1
-    logger.info("Restarting domain1");
+    logger.info("Starting domain1");
     assertTrue(startDomain(domain1Uid, domain1Namespace),
-        String.format("restart domain %s in namespace %s failed", domain1Uid, domain1Namespace));
+        String.format("start domain %s in namespace %s failed", domain1Uid, domain1Namespace));
 
     // verify domain1 is restarted
     // check domain1 admin server pod is ready, also check admin service exists in the domain1 namespace
-    logger.info("Checking admin server pod in domain1 was restarted");
+    logger.info("Checking admin server pod in domain1 was started");
     checkPodReadyAndServiceExists(domain1AdminServerPodName, domain1Uid, domain1Namespace);
     checkPodRestarted(domain1Uid, domain1Namespace, domain1AdminServerPodName,
         domainAdminPodOriginalTimestamps.get(0));
 
     // check managed server pods in domain1
-    logger.info("Checking managed server pods in domain1 were restarted");
+    logger.info("Checking managed server pods in domain1 were started");
     for (int i = 1; i <= replicasAfterScale; i++) {
       String domain1ManagedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
       checkPodReadyAndServiceExists(domain1ManagedServerPodName, domain1Uid, domain1Namespace);
@@ -549,7 +549,7 @@ public class ItOperatorTwoDomains {
     }
 
     // verify domain2 was not changed after domain1 was restarted
-    logger.info("Verifying that domain2 was not changed after domain1 was restarted");
+    logger.info("Verifying that domain2 was not changed after domain1 was started");
     verifyDomain2NotChanged();
   }
 

@@ -176,7 +176,7 @@ public class ItConfigDistributionStrategy {
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+          .atMost(15, MINUTES).await();
   private static LoggingFacade logger = null;
 
   /**
@@ -304,9 +304,17 @@ public class ItConfigDistributionStrategy {
 
     //print the configuration overrides without asserting
     verifyConfig(null, null, null, true);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for server configuration to be updated"
+                + "(elapsed time {0} ms, remaining time {1} ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(configUpdated());
 
     //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
-    restartDomain(); // remove after the above bug is fixed
+    //https://jira.oraclecorp.com/jira/browse/OWLS-82976
+    //restartDomain(); // remove after the above bug is fixed
 
     verifyConfigOverrides();
   }
@@ -361,7 +369,7 @@ public class ItConfigDistributionStrategy {
     verifyPodsStateNotChanged();
 
     //print the configuration overrides without asserting
-    //verifyConfig(null, null, null, true);
+    verifyConfig(null, null, null, true);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for server configuration to be updated"
@@ -371,6 +379,7 @@ public class ItConfigDistributionStrategy {
         .until(configUpdated());
 
     //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
+    //https://jira.oraclecorp.com/jira/browse/OWLS-82976
     //restartDomain(); // remove after the above bug is fixed
 
     verifyConfigOverrides();
@@ -766,6 +775,7 @@ public class ItConfigDistributionStrategy {
     }
 
     startDomain(domainUid, domainNamespace);
+    //make sure that the introspector runs on a cold start
     verifyIntrospectorRuns();
     logger.info("Checking for admin server pod readiness");
     checkPodReady(adminServerPodName, domainUid, domainNamespace);

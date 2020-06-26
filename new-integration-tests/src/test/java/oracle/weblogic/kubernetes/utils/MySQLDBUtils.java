@@ -50,8 +50,8 @@ public class MySQLDBUtils {
     String secretName = name.concat("-secret-").concat(uniqueName);
     String serviceName = name.concat("-external-").concat(uniqueName);
 
-    createSecret(secretName, user, password, namespace);
-    createService(serviceName, name, namespace, nodePort);
+    createMySQLDBSecret(secretName, user, password, namespace);
+    createMySQLDBService(serviceName, name, namespace, nodePort);
     startMySQLDB(name, secretName, namespace);
 
   }
@@ -84,7 +84,7 @@ public class MySQLDBUtils {
   }
 
   //create services for MySQL database
-  private static void createService(String serviceName, String selectorName, String namespace, int port) {
+  private static void createMySQLDBService(String serviceName, String selectorName, String namespace, int port) {
 
     boolean service = false;
     try {
@@ -109,7 +109,7 @@ public class MySQLDBUtils {
   }
 
   //create secrets
-  private static void createSecret(String secretName, String user, String password, String namespace) {
+  private static void createMySQLDBSecret(String secretName, String user, String password, String namespace) {
     HashMap<String, String> secrets = new HashMap<>();
     secrets.put("root-user", user);
     secrets.put("root-password", password);
