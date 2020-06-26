@@ -27,7 +27,7 @@ topology:
 
 appDeployments:
   Application:
-    wlsexporter:
+    "wls-exporter":
       SourcePath: "wlsdeploy/applications/wls-exporter.war"
       ModuleType: war
       Target: 'cluster-1'

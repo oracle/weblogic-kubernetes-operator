@@ -9,42 +9,42 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.DomainTopology;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
-import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Component;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -59,6 +59,8 @@ import org.junit.Test;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
+import static oracle.kubernetes.operator.DomainSourceType.Image;
+import static oracle.kubernetes.operator.DomainSourceType.PersistentVolume;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -68,11 +70,15 @@ import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -88,7 +94,12 @@ public class DomainProcessorTest {
   private static final int NUM_ADMIN_SERVERS = 1;
   private static final int NUM_JOB_PODS = 1;
   private static final String[] MANAGED_SERVER_NAMES =
-      IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(n -> MS_PREFIX + n).toArray(String[]::new);
+      IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(DomainProcessorTest::getManagedServerName).toArray(String[]::new);
+
+  @Nonnull
+  private static String getManagedServerName(int n) {
+    return MS_PREFIX + n;
+  }
 
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
@@ -98,8 +109,9 @@ public class DomainProcessorTest {
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final Domain newDomain = DomainProcessorTestSetup.createTestDomain();
-  private final DomainConfigurator domainConfigurator = DomainConfiguratorFactory.forDomain(domain);
-  private final DomainConfigurator newDomainConfigurator = DomainConfiguratorFactory.forDomain(newDomain);
+  private final DomainConfigurator domainConfigurator = configureDomain(newDomain);
+  private final MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newDomain);
+  private final WlsDomainConfig domainConfig = createDomainConfig();
 
   private static WlsDomainConfig createDomainConfig() {
     WlsClusterConfig clusterConfig = new WlsClusterConfig(CLUSTER);
@@ -126,7 +138,7 @@ public class DomainProcessorTest {
     mementos.add(UnitTestHash.install());
     mementos.add(ScanCacheStub.install());
 
-    testSupport.defineResources(domain);
+    testSupport.defineResources(newDomain);
     new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig());
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
   }
@@ -145,8 +157,7 @@ public class DomainProcessorTest {
   public void whenDomainSpecNotChanged_dontRunUpdateThread() {
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
 
-    DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    processor.makeRightDomainPresence(info, false, false, false);
+    makeRightOperation.execute();
 
     assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
   }
@@ -155,8 +166,7 @@ public class DomainProcessorTest {
   public void whenDomainExplicitSet_runUpdateThread() {
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
 
-    DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    processor.makeRightDomainPresence(info, true, false, false);
+    processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
 
     assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
   }
@@ -166,7 +176,7 @@ public class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MAX_SERVERS);
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    processor.makeRightDomainPresence(info, true, false, false);
+    processor.createMakeRightOperation(info).execute();
 
     assertServerPodAndServicePresent(info, ADMIN_NAME);
     for (String serverName : MANAGED_SERVER_NAMES) {
@@ -177,12 +187,10 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void verifyThat_serverStatusUpdated_byMakeRightDomainPresence() {
+  public void whenMakeRightRun_updateSDomainStatus() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
 
-    DomainPresenceInfo info = new DomainPresenceInfo(domain);
-
-    processor.makeRightDomainPresence(info, true, false, false);
+    processor.createMakeRightOperation(new DomainPresenceInfo(domain)).execute();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
 
@@ -199,8 +207,7 @@ public class DomainProcessorTest {
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
-    DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    processor.makeRightDomainPresence(info, true, false, false);
+    processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
 
     assertThat((int) getServerServices().count(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS));
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
@@ -213,8 +220,7 @@ public class DomainProcessorTest {
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(true);
 
-    DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    processor.makeRightDomainPresence(info, true, false, false);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
 
     assertThat((int) getServerServices().count(), equalTo(MAX_SERVERS + NUM_ADMIN_SERVERS));
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
@@ -226,7 +232,7 @@ public class DomainProcessorTest {
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    processor.makeRightDomainPresence(info, true, true, true);
+    processor.createMakeRightOperation(info).interrupt().forDeletion().withExplicitRecheck().execute();
 
     assertThat(getRunningServices(), empty());
     assertThat(getRunningPods(), empty());
@@ -239,7 +245,7 @@ public class DomainProcessorTest {
     testSupport.defineResources(createNonOperatorService());
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    processor.makeRightDomainPresence(info, true, true, true);
+    processor.createMakeRightOperation(info).interrupt().forDeletion().withExplicitRecheck().execute();
 
     assertThat(getRunningServices(), contains(createNonOperatorService()));
     assertThat(getRunningPods(), empty());
@@ -266,7 +272,7 @@ public class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MAX_SERVERS);
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    processor.makeRightDomainPresence(info, true, false, false);
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
 
     assertThat(info.getExternalService(ADMIN_NAME), notNullValue());
   }
@@ -277,39 +283,82 @@ public class DomainProcessorTest {
 
   @Test
   public void whenDomainHasRunningServersAndExistingTopology_dontRunIntrospectionJob() throws JsonProcessingException {
-    defineServerResources(ADMIN_NAME);
-    testSupport.defineResources(createIntrospectorConfigMap(OLD_INTROSPECTION_STATE));
-    testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
+    establishPreviousIntrospection(null);
 
-    newDomainConfigurator.withIntrospectVersion(OLD_INTROSPECTION_STATE);
-    processor.makeRightDomainPresence(new DomainPresenceInfo(newDomain), false, false, true);
+    domainConfigurator.withIntrospectVersion(OLD_INTROSPECTION_STATE);
+    makeRightOperation.execute();
 
-    assertThat(job, nullValue());
+    assertThat(makeRightOperation.wasInspectionRun(), is(false));
   }
 
   @Test
   public void whenDomainHasIntrospectVersionDifferentFromOldDomain_runIntrospectionJob() throws Exception {
-    establishPreviousIntrospection();
+    establishPreviousIntrospection(null);
 
-    newDomainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
-    processor.makeRightDomainPresence(new DomainPresenceInfo(newDomain), false, false, true);
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
 
     assertThat(job, notNullValue());
   }
 
-  private void establishPreviousIntrospection() throws JsonProcessingException {
+  @Test
+  public void whenIntrospectionJobRun_recordIt() throws Exception {
+    establishPreviousIntrospection(null);
+
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    MakeRightDomainOperation makeRight = this.processor.createMakeRightOperation(
+          new DomainPresenceInfo(newDomain)).interrupt();
+    makeRight.execute();
+
+    assertThat(makeRight.wasInspectionRun(), is(true));
+  }
+
+  private void establishPreviousIntrospection(Consumer<Domain> domainSetup) throws JsonProcessingException {
+    if (domainSetup != null) {
+      domainSetup.accept(domain);
+      domainSetup.accept(newDomain);
+    }
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     defineServerResources(ADMIN_NAME);
+    defineServerResources(getManagedServerName(1));
+    defineServerResources(getManagedServerName(2));
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     testSupport.defineResources(createIntrospectorConfigMap(OLD_INTROSPECTION_STATE));
     testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
+    domainConfigurator.withIntrospectVersion(OLD_INTROSPECTION_STATE);
+  }
+
+  private String getCurrentImageSpecHash() {
+    return String.valueOf(ConfigMapHelper.getModelInImageSpecHash(newDomain.getSpec().getImage()));
+  }
+
+  // define a config map with a topology to avoid the no-topology condition that always runs the introspector
+  @SuppressWarnings("SameParameterValue")
+  private V1ConfigMap createIntrospectorConfigMap(String introspectionDoneValue) throws JsonProcessingException {
+    return new V1ConfigMap()
+          .metadata(createIntrospectorConfigMapMeta(introspectionDoneValue))
+          .data(new HashMap<>(Map.of(IntrospectorConfigMapKeys.TOPOLOGY_YAML, defineTopology(),
+                                     IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH, getCurrentImageSpecHash())));
+  }
+
+  private V1ObjectMeta createIntrospectorConfigMapMeta(@Nullable String introspectionDoneValue) {
+    final V1ObjectMeta meta = new V1ObjectMeta()
+          .namespace(NS)
+          .name(ConfigMapHelper.getIntrospectorConfigMapName(UID));
+    Optional.ofNullable(introspectionDoneValue).ifPresent(v -> meta.putLabelsItem(INTROSPECTION_STATE_LABEL, v));
+    return meta;
+  }
+
+  private String defineTopology() throws JsonProcessingException {
+    return DomainProcessorTestSetup.createTopologyYaml(createDomainConfig());
   }
 
   @Test
   public void afterIntrospection_introspectorConfigMapHasUpToDateLabel() throws Exception {
-    establishPreviousIntrospection();
+    establishPreviousIntrospection(null);
 
-    newDomainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
-    processor.makeRightDomainPresence(new DomainPresenceInfo(newDomain), false, false, true);
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
 
     assertThat(getIntrospectorConfigMapIntrospectionVersion(), equalTo(NEW_INTROSPECTION_STATE));
   }
@@ -333,20 +382,16 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenFromModelDomainHasIntrospectVersionDifferentFromOldDomain_dontRunIntrospectionJob() throws Exception {
-    establishPreviousIntrospection();
+  public void whenDomainTypeIsDomainInPV_dontRerunIntrospectionJob() throws Exception {
+    establishPreviousIntrospection(this::configureForDomainInPV);
 
-    newDomainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE).withDomainHomeSourceType(FromModel);
-    processor.makeRightDomainPresence(new DomainPresenceInfo(newDomain), false, false, true);
+    makeRightOperation.execute();
 
-    assertThat(job, nullValue());
+    assertThat(makeRightOperation.wasInspectionRun(), is(false));
   }
 
-  @SuppressWarnings("SameParameterValue")
-  private Domain createDomainWithIntrospectVersion(String introspectVersion) {
-    final Domain newDomain = DomainProcessorTestSetup.createTestDomain();
-    DomainConfiguratorFactory.forDomain(newDomain).withIntrospectVersion(introspectVersion);
-    return newDomain;
+  public void configureForDomainInPV(Domain d) {
+    configureDomain(d).withDomainHomeSourceType(PersistentVolume);
   }
 
   private V1Job job;
@@ -355,30 +400,126 @@ public class DomainProcessorTest {
     this.job = job;
   }
 
-  // define a config map with a topology to avoid the no-topology condition that always runs the introspector
-  private V1ConfigMap createIntrospectorConfigMap(String introspectionDoneValue) throws JsonProcessingException {
-    return new V1ConfigMap()
-          .metadata(createIntrospectorConfigMapMeta(introspectionDoneValue))
-          .data(new HashMap<>(Map.of(IntrospectorConfigMapKeys.TOPOLOGY_YAML, defineTopology())));
+  @Test
+  public void whenDomainTypeIsDomainInImage_dontRerunIntrospectionJob() throws Exception {
+    establishPreviousIntrospection(d -> configureDomain(d).withDomainHomeSourceType(Image));
+
+    makeRightOperation.execute();
+
+    assertThat(makeRightOperation.wasInspectionRun(), is(false));
   }
 
-  private V1ObjectMeta createIntrospectorConfigMapMeta(@Nullable String introspectionDoneValue) {
-    final V1ObjectMeta meta = new V1ObjectMeta()
-          .namespace(NS)
-          .name(ConfigMapHelper.getIntrospectorConfigMapName(UID));
-    Optional.ofNullable(introspectionDoneValue).ifPresent(v -> meta.putLabelsItem(INTROSPECTION_STATE_LABEL, v));
-    return meta;
+  @Test
+  public void whenDomainTypeIsFromModelDomainAndNoChanges_dontRerunIntrospectionJob() throws Exception {
+    establishPreviousIntrospection(this::configureForModelInImage);
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+
+    makeRightOperation.execute();
+
+    assertThat(makeRightOperation.wasInspectionRun(), is(false));
   }
 
-  private String defineTopology() throws JsonProcessingException {
-    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("domain")
-          .withAdminServerName("admin").withWlsServer("admin", 8045);
-
-    return new ObjectMapper(new YAMLFactory())
-          .setSerializationInclusion(JsonInclude.Include.NON_DEFAULT)
-          .writeValueAsString(new DomainTopology(configSupport.createDomainConfig()));
+  void configureForModelInImage(Domain domain) {
+    configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret");
   }
 
+  private DomainConfigurator configureDomain(Domain domain) {
+    return DomainConfiguratorFactory.forDomain(domain);
+  }
+
+  @Test
+  public void whenDomainTypeIsFromModelDomainAndImageHashChanged_runIntrospectionJob() throws Exception {
+    establishPreviousIntrospection(this::configureForModelInImage);
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+    cacheChangedDomainInputsHash();
+
+    makeRightOperation.execute();
+
+    assertThat(makeRightOperation.wasInspectionRun(), is(true));
+  }
+
+  private void cacheChangedDomainInputsHash() {
+    getConfigMaps()
+          .filter(this::isIntrospectorConfigMap)
+          .findFirst()
+          .map(V1ConfigMap::getData)
+          .ifPresent(data -> data.put(IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH, "changedHash"));
+  }
+
+  private boolean isIntrospectorConfigMap(V1ConfigMap map) {
+    return isIntrospectorMeta(map.getMetadata());
+  }
+
+  @Test
+  public void whenDomainTypeIsFromModelDomainAndManagedServerModified_runIntrospectionJobThenRoll() throws Exception {
+    establishPreviousIntrospection(this::configureForModelInImage);
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
+    domainConfigurator.configureServer(getManagedServerName(1)).withAdditionalVolume("vol1", "/path");
+    domainConfigurator.configureServer(getManagedServerName(2)).withAdditionalVolume("vol2", "/path");
+
+    makeRightOperation.execute();
+
+    assertThat(introspectionRunBeforeUpdates,
+          allOf(hasEntry(getManagedPodName(1), true), hasEntry(getManagedPodName(2), true)));
+  }
+
+  @Nonnull
+  public String getManagedPodName(int i) {
+    return LegalNames.toPodName(UID, getManagedServerName(i));
+  }
+
+  @Nonnull
+  public String getAdminPodName() {
+    return LegalNames.toPodName(UID, ADMIN_NAME);
+  }
+
+  private void recordPodCreation(V1Pod pod) {
+    Optional.of(pod)
+          .map(V1Pod::getMetadata)
+          .map(V1ObjectMeta::getName)
+          .ifPresent(name -> introspectionRunBeforeUpdates.put(name, makeRightOperation.wasInspectionRun()));
+  }
+
+  private final Map<String,Boolean> introspectionRunBeforeUpdates = new HashMap<>();
+
+  @Test
+  public void whenDomainTypeIsFromModelDomainAndNewServerCreated_dontRunIntrospectionJobFirst() throws Exception {
+    establishPreviousIntrospection(this::configureForModelInImage);
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
+    configureDomain(newDomain).configureCluster(CLUSTER).withReplicas(3);
+
+    makeRightOperation.execute();
+
+    assertThat(introspectionRunBeforeUpdates, hasEntry(getManagedPodName(3), false));
+  }
+
+  @Test
+  public void whenDomainTypeIsFromModelDomainAndAdminServerModified_runIntrospectionJobFirst() throws Exception {
+    establishPreviousIntrospection(this::configureForModelInImage);
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
+    configureDomain(newDomain).configureAdminServer().withAdditionalVolume("newVol", "/path");
+
+    makeRightOperation.execute();
+
+    assertThat(introspectionRunBeforeUpdates, hasEntry(getAdminPodName(), true));
+  }
+
+  @Test
+  public void afterChangeTriggersIntrospection_doesNotRunIntrospectionOnNextExplicitMakeRight() throws Exception {
+    establishPreviousIntrospection(this::configureForModelInImage);
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
+    configureDomain(newDomain).configureAdminServer().withAdditionalVolume("newVol", "/path");
+    makeRightOperation.execute();
+    job = null;
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
+
+    assertThat(job, nullValue());
+  }
 
   // todo after external service created, if adminService deleted, delete service
 
@@ -416,23 +557,37 @@ public class DomainProcessorTest {
     testSupport.defineResources(createServerPod(serverName), createServerService(serverName));
   }
 
+  /**/
   private V1Pod createServerPod(String serverName) {
-    return AnnotationHelper.withSha256Hash(
-        new V1Pod()
-            .metadata(
-                withServerLabels(
-                    new V1ObjectMeta()
-                        .name(LegalNames.toPodName(DomainProcessorTestSetup.UID, serverName))
-                        .namespace(NS),
-                    serverName))
-            .spec(new V1PodSpec()));
+    Packet packet = new Packet();
+    packet
+          .getComponents()
+          .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(new DomainPresenceInfo(domain)));
+    packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig);
+
+    if (ADMIN_NAME.equals(serverName)) {
+      packet.put(ProcessingConstants.SERVER_SCAN, domainConfig.getServerConfig(serverName));
+      return PodHelper.createAdminServerPodModel(packet);
+    } else {
+      packet.put(ProcessingConstants.CLUSTER_NAME, CLUSTER);
+      packet.put(ProcessingConstants.SERVER_SCAN, getClusteredServerConfig(serverName));
+      return PodHelper.createManagedServerPodModel(packet);
+    }
   }
+
+  private WlsServerConfig getClusteredServerConfig(String serverName) {
+    return domainConfig.getClusterConfig(CLUSTER).getServerConfigs()
+          .stream()
+          .filter(c -> serverName.equals(c.getName())).findFirst()
+          .orElseThrow();
+  }
+
 
   private V1ObjectMeta withServerLabels(V1ObjectMeta meta, String serverName) {
     return KubernetesUtils.withOperatorLabels(DomainProcessorTestSetup.UID, meta)
         .putLabelsItem(SERVERNAME_LABEL, serverName);
   }
-
+  
   private V1Service createServerService(String serverName) {
     return AnnotationHelper.withSha256Hash(
         new V1Service()
@@ -456,7 +611,7 @@ public class DomainProcessorTest {
     defineDuplicateServerNames();
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    processor.makeRightDomainPresence(info, true, false, false);
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
 
     assertServerPodAndServiceNotPresent(info, ADMIN_NAME);
     for (String serverName : MANAGED_SERVER_NAMES) {
@@ -473,8 +628,7 @@ public class DomainProcessorTest {
   public void whenDomainIsNotValid_updateStatus() {
     defineDuplicateServerNames();
 
-    DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    processor.makeRightDomainPresence(info, true, false, false);
+    processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
