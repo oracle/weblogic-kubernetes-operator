@@ -20,6 +20,9 @@ import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1DeploymentCondition;
+import io.kubernetes.client.openapi.models.V1DeploymentList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobList;
@@ -37,6 +40,7 @@ import org.joda.time.DateTime;
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listDeployments;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 public class Kubernetes {
@@ -432,6 +436,75 @@ public class Kubernetes {
       }
     }
     return null;
+  }
+
+  /**
+   * Get V1Deployment object for the given  name, label and namespace.
+   * @param deploymentName name of the deployment to look for
+   * @param label the key value pair with which the deployment is decorated with
+   * @param namespace the namespace in which to check for the deployment
+   * @return V1Deployment object if found otherwise null
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static V1Deployment getDeployment(
+          String deploymentName, Map<String, String> label, String namespace)
+          throws ApiException {
+    String labelSelector = null;
+    LoggingFacade logger = getLogger();
+    if (label != null) {
+      String key = label.keySet().iterator().next().toString();
+      String value = label.get(key).toString();
+      labelSelector = String.format("%s in (%s)", key, value);
+      logger.info(labelSelector);
+    }
+    V1DeploymentList v1DeploymentList = listDeployments(namespace);
+
+    for (V1Deployment deployment : v1DeploymentList.getItems()) {
+      if (deployment.getMetadata().getName().equals(deploymentName.trim())
+              && deployment.getMetadata().getNamespace().equals(namespace.trim())) {
+        logger.info("Deployment Name : " + deployment.getMetadata().getName());
+        logger.info("Deployment Namespace : " + deployment.getMetadata().getNamespace());
+        logger.info("Deployment status : " + deployment.getStatus().toString());
+        Map<String, String> labels = deployment.getMetadata().getLabels();
+        if (labels != null) {
+          for (Map.Entry<String, String> entry : labels.entrySet()) {
+            logger.log(Level.INFO, "Label Key: {0} Label Value: {1}",
+                    new Object[]{entry.getKey(), entry.getValue()});
+          }
+        }
+        return deployment;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Checks if an deployment is running in a given namespace.
+   * @param deploymentName name of deployment to check
+   * @param label set of deployment labels
+   * @param namespace in which to check for the pod existence
+   * @return true if deployment exists and available otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean isDeploymentReady(String deploymentName,
+                                          Map<String, String> label,
+                                          String namespace) throws ApiException {
+    boolean status = false;
+    V1Deployment deployment = getDeployment(deploymentName, label, namespace);
+    if (deployment != null) {
+      // get the deploymentCondition with the 'Available' type field
+      V1DeploymentCondition v1DeploymentRunningCondition = deployment.getStatus().getConditions().stream()
+              .filter(v1DeploymentCondition -> "Available".equals(v1DeploymentCondition.getType()))
+              .findAny()
+              .orElse(null);
+
+      if (v1DeploymentRunningCondition != null) {
+        status = v1DeploymentRunningCondition.getStatus().equalsIgnoreCase("true");
+      }
+    } else {
+      getLogger().info("Deployment doesn't exist");
+    }
+    return status;
   }
 
   /**
