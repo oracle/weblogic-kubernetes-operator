@@ -57,7 +57,6 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.TestActions;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.TestAssertions;
@@ -69,7 +68,6 @@ import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,7 +107,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
@@ -120,13 +117,11 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -136,19 +131,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Tests related to introspectVersion attribute.
+ * Tests related to overrideDistributionStrategy attribute.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify the introspectVersion runs the introspector")
+@DisplayName("Verify the overrideDistributionStrategy applies the overrides accordingly to the value set")
 @IntegrationTest
 public class ItConfigDistributionStrategy {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static String nginxNamespace = null;
-
-  private static int nodeportshttp;
-  private static HelmParams nginxHelmParams = null;
 
   private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
   private static boolean isUseSecret = true;
@@ -186,13 +177,14 @@ public class ItConfigDistributionStrategy {
   private static LoggingFacade logger = null;
 
   /**
-   * Assigns unique namespaces for operator and domains. Pulls WebLogic image if running tests in Kind cluster. Installs
-   * operator.
+   * Assigns unique namespaces for operator and domains.
+   * Pulls WebLogic image if running tests in Kind cluster.
+   * Installs operator.
    *
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public void initAll(@Namespaces(3) List<String> namespaces) {
+  public void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
@@ -201,9 +193,6 @@ public class ItConfigDistributionStrategy {
     logger.info("Assign a unique namespace for Introspect Version WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
-    logger.info("Assign a unique namespace for NGINX");
-    assertNotNull(namespaces.get(2), "Namespace is null");
-    nginxNamespace = namespaces.get(2);
 
     // build the clusterview application
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"),
@@ -222,13 +211,6 @@ public class ItConfigDistributionStrategy {
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
-
-    // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
-
-    // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
@@ -282,16 +264,15 @@ public class ItConfigDistributionStrategy {
     restartDomain();
   }
 
-
   /**
-   * Test server configuration and data source configurations are dynamically overridden when
-   * /spec/configuration/overrideDistributionStrategy: field is not set.
+   * Test server configuration and JDBC data source configurations are overridden dynamically when
+   * /spec/configuration/overrideDistributionStrategy: field is not set. By default it should be DYNAMIC.
    *
-   * <p>Test sets the /spec/configuration/overridesConfigMap
-   * and /spec/configuration/secrets with new configuration and new secrets.
+   * <p>Test sets the /spec/configuration/overridesConfigMap and /spec/configuration/secrets with new configuration
+   * and new secrets.
    *
-   * <p>Verifies after introspector runs the server configuration and data source configurations are
-   * updated as expected.
+   * <p>Verifies after introspector runs the server configuration and JDBC data source configurations are updated
+   * as expected.
    */
   @Order(1)
   @Test
@@ -309,26 +290,15 @@ public class ItConfigDistributionStrategy {
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"1\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    //verify the introspector pod is created and runs
-    logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
-    checkPodExists(introspectPodName, domainUid, domainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
-
-    logger.info("Verifying the WebLogic server pod states are not changed");
-    for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
-      String podName = (String) entry.getKey();
-      DateTime creationTimestamp = (DateTime) entry.getValue();
-      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, domainNamespace,
-          creationTimestamp), "Pod is restarted");
-    }
+    verifyIntrospectorRuns();
+    verifyPodsStateNotChanged();
 
     //print the configuration overrides without asserting
     verifyConfig("10000000", "15", dsUrl1, true);
@@ -339,17 +309,15 @@ public class ItConfigDistributionStrategy {
     verifyConfigOverrides();
   }
 
-
   /**
    * Test server configuration and data source configurations are dynamically overridden when
    * /spec/configuration/overrideDistributionStrategy is set to DYNAMIC.
    *
-   * <p>Test sets the above field to DYNAMIC and overrides the
-   * /spec/configuration/overridesConfigMap and /spec/configuration/secrets with new configuration and new
-   * secrets.
+   * <p>Test sets the above field to DYNAMIC and overrides the /spec/configuration/overridesConfigMap and
+   * /spec/configuration/secrets with new configuration and new secrets.
    *
-   * <p>Verifies after introspector runs the server configuration and data source configurations are updated
-   * as expected.
+   * <p>Verifies after introspector runs and the server configuration and JDBC data source configurations are
+   * updated as expected.
    */
   @Order(2)
   @Test
@@ -367,7 +335,7 @@ public class ItConfigDistributionStrategy {
         "Failed to patch domain");
 
     //does changing overrideDistributionStrategy needs restart of server pods?
-    restartDomain(); // if it above is a bug, remove this after the above bug is fixed
+    restartDomain(); // if above is a bug, remove this after the above bug is fixed
 
     //store the pod creation timestamps
     storePodCreationTimestamps();
@@ -380,26 +348,15 @@ public class ItConfigDistributionStrategy {
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    //verify the introspector pod is created and runs
-    logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
-    checkPodExists(introspectPodName, domainUid, domainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
-
-    logger.info("Verifying the WebLogic server pod states are not changed");
-    for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
-      String podName = (String) entry.getKey();
-      DateTime creationTimestamp = (DateTime) entry.getValue();
-      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, domainNamespace,
-          creationTimestamp), "Pod is restarted");
-    }
+    verifyIntrospectorRuns();
+    verifyPodsStateNotChanged();
 
     //print the configuration overrides without asserting
     verifyConfig("10000000", "15", dsUrl1, true);
@@ -410,16 +367,15 @@ public class ItConfigDistributionStrategy {
     verifyConfigOverrides();
   }
 
-
   /**
-   * Test server configuration and data source configurations are overridden on pods restart when
+   * Test server configuration and JDBC data source configurations are overridden on pods restart when
    * /spec/configuration/overrideDistributionStrategy is set to ON_RESTART.
    *
-   * <p>Test sets the above field to ON_RESTART and overrides the
-   * /spec/configuration/overridesConfigMap and /spec/configuration/secrets with new configuration and new secrets.
+   * <p>Test sets the above field to ON_RESTART and overrides the /spec/configuration/overridesConfigMap and
+   * /spec/configuration/secrets with new configuration and new secrets.
    *
-   * <p>Verifies after introspector runs the server configuration and data source configurations are updated as
-   * expected.
+   * <p>Verifies after introspector runs the server configuration and JDBC data source configurations are updated
+   * as expected.
    */
   @Order(3)
   @Test
@@ -437,7 +393,7 @@ public class ItConfigDistributionStrategy {
         "Failed to patch domain");
 
     //does changing overrideDistributionStrategy needs restart of server pods?
-    restartDomain(); // if it above is a bug, remove this after the above bug is fixed
+    restartDomain(); // if above is a bug, remove this after the above bug is fixed
 
     //store the pod creation timestamps
     storePodCreationTimestamps();
@@ -450,26 +406,15 @@ public class ItConfigDistributionStrategy {
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"4\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    //verify the introspector pod is created and runs
-    logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
-    checkPodExists(introspectPodName, domainUid, domainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
-
-    logger.info("Verifying the WebLogic server pod states are not changed");
-    for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
-      String podName = (String) entry.getKey();
-      DateTime creationTimestamp = (DateTime) entry.getValue();
-      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, domainNamespace,
-          creationTimestamp), "Pod is restarted");
-    }
+    verifyIntrospectorRuns();
+    verifyPodsStateNotChanged();
 
     //print the configuration overrides without asserting
     verifyConfig("10000000", "15", dsUrl1, true);
@@ -480,13 +425,12 @@ public class ItConfigDistributionStrategy {
     verifyConfigOverrides();
   }
 
-
   /**
    * Test server configuration and data source configurations are not overridden when
    * /spec/configuration/overrideDistributionStrategy is set to anything other than DYNAMIC or ON_RESTART.
    *
-   * <p>Test sets the above field to RESTART and sets the
-   * /spec/configuration/overridesConfigMap and /spec/configuration/secrets with new configuration and new secrets.
+   * <p>Test sets the above field to RESTART and sets the /spec/configuration/overridesConfigMap and
+   * /spec/configuration/secrets with new configuration and new secrets.
    *
    * <p>Verifies after introspector runs the server configuration and data source configurations are not updated
    * since the overrideDistributionStrategy is an invalid one.
@@ -520,29 +464,18 @@ public class ItConfigDistributionStrategy {
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"5\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    //verify the introspector pod is created and runs
-    logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
-    checkPodExists(introspectPodName, domainUid, domainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
-
-    logger.info("Verifying the WebLogic server pod states are not changed");
-    for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
-      String podName = (String) entry.getKey();
-      DateTime creationTimestamp = (DateTime) entry.getValue();
-      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, domainNamespace,
-          creationTimestamp), "Pod is restarted");
-    }
+    verifyIntrospectorRuns();
+    verifyPodsStateNotChanged();
 
     //print the configuration overrides without asserting
-    verifyConfig("10000000", "15", dsUrl1, true);
+    verifyConfig(null, null, null, true);
 
     //restart domain for the distributionstrategy to take effect
     restartDomain();
@@ -618,6 +551,24 @@ public class ItConfigDistributionStrategy {
       podTimestamps.put(managedServerPodNamePrefix + i,
           getPodCreationTime(domainNamespace, managedServerPodNamePrefix + i));
     }
+  }
+
+  private void verifyPodsStateNotChanged() {
+    logger.info("Verifying the WebLogic server pod states are not changed");
+    for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
+      String podName = (String) entry.getKey();
+      DateTime creationTimestamp = (DateTime) entry.getValue();
+      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, domainNamespace,
+          creationTimestamp), "Pod is restarted");
+    }
+  }
+
+  private void verifyIntrospectorRuns() {
+    //verify the introspector pod is created and runs
+    logger.info("Verifying introspector pod is created, runs and deleted");
+    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    checkPodExists(introspectPodName, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
   }
 
   //method to create custom configuration overrides
@@ -1099,20 +1050,6 @@ public class ItConfigDistributionStrategy {
     boolean success = assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
         "Failed to create persistent volume claim");
     assertTrue(success, "PersistentVolumeClaim creation failed");
-  }
-
-  /**
-   * Uninstall Nginx. The cleanup framework does not uninstall Nginx release. Do it here for now.
-   */
-  @AfterAll
-  public void tearDownAll() {
-    // uninstall NGINX release
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
-          .as("Test uninstallNginx returns true")
-          .withFailMessage("uninstallNginx() did not return true")
-          .isTrue();
-    }
   }
 
   /**
