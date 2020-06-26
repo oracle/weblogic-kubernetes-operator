@@ -29,7 +29,7 @@ import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 
 import static java.lang.System.lineSeparator;
-import static oracle.kubernetes.operator.helpers.DomainStatusPatch.BAD_DOMAIN;
+import static oracle.kubernetes.operator.DomainStatusUpdater.BAD_DOMAIN;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 
 public class DomainValidationSteps {
@@ -184,7 +184,9 @@ public class DomainValidationSteps {
     }
 
     private boolean hasMatchingMetadata(V1ObjectMeta metadata, String name, String namespace) {
-      return Objects.equals(name, metadata.getName()) && Objects.equals(namespace, metadata.getNamespace());
+      return metadata != null
+            && Objects.equals(name, metadata.getName())
+            && Objects.equals(namespace, metadata.getNamespace());
     }
   }
 }

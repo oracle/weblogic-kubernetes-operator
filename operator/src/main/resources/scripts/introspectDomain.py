@@ -137,7 +137,7 @@ class OfflineWlstEnv(object):
     self.EWALLET                  = self.INTROSPECT_HOME + '/ewallet.p12'
     self.WLS_VERSION              = self.INTROSPECT_HOME + "/wls.version"
     self.JDK_PATH                 = self.INTROSPECT_HOME + "/jdk.path"
-    self.SECRETS_MD5              = self.INTROSPECT_HOME + "/secrets.md5"
+    self.SECRETS_AND_ENV_MD5      = self.INTROSPECT_HOME + "/secrets_and_env.md5"
     self.DOMAINZIP_HASH           = self.INTROSPECT_HOME + "/domainzip_hash"
     self.WDT_CONFIGMAP_PATH      = self.getEnvOrDef('WDT_CONFIGMAP_PATH',
                                                     '/weblogic-operator/wdt-config-map')
@@ -1632,7 +1632,7 @@ class DomainIntrospector(SecretManager):
         trace("cfgmap write jdk_path")
         MII_IntrospectCMFileGenerator(self.env, self.env.JDK_PATH, '/tmp/jdk_path').generate()
         trace("cfgmap write md5 secrets")
-        MII_IntrospectCMFileGenerator(self.env, self.env.SECRETS_MD5, '/tmp/secrets.md5').generate()
+        MII_IntrospectCMFileGenerator(self.env, self.env.SECRETS_AND_ENV_MD5, '/tmp/secrets_and_env.md5').generate()
         trace("cfgmap write model hash")
         # Must be called after MII_PrimordialDomainGenerator
         MII_IntrospectCMFileGenerator(self.env, self.env.DOMAINZIP_HASH, '/tmp/domainzip_hash').generate()

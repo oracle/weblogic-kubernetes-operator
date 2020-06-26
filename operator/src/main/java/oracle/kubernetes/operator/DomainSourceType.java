@@ -27,10 +27,6 @@ public enum DomainSourceType {
       return "/u01/domains/" + uid;
     }
 
-    @Override
-    public boolean mayRequestIntrospection() {
-      return false;
-    }
   };
 
   public boolean hasLogHomeByDefault() {
@@ -39,7 +35,4 @@ public enum DomainSourceType {
 
   public abstract String getDefaultDomainHome(String uid);
 
-  public boolean mayRequestIntrospection() {
-    return true;
-  }
 }

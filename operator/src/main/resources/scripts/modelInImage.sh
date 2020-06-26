@@ -14,7 +14,7 @@ INTROSPECTCM_PASSPHRASE_MD5="/weblogic-operator/introspectormii/inventory_passph
 INTROSPECTCM_MERGED_MODEL="/weblogic-operator/introspectormii/merged_model.json"
 INTROSPECTCM_WLS_VERSION="/weblogic-operator/introspectormii/wls.version"
 INTROSPECTCM_JDK_PATH="/weblogic-operator/introspectormii/jdk.path"
-INTROSPECTCM_SECRETS_MD5="/weblogic-operator/introspectormii/secrets.md5"
+INTROSPECTCM_SECRETS_AND_ENV_MD5="/weblogic-operator/introspectormii/secrets_and_env.md5"
 DOMAIN_ZIPPED="/weblogic-operator/introspectormii/domainzip.secure"
 PRIMORDIAL_DOMAIN_ZIPPED="/weblogic-operator/introspectormii/primordial_domainzip.secure"
 INTROSPECTJOB_IMAGE_MD5="/tmp/inventory_image.md5"
@@ -105,7 +105,7 @@ function compareArtifactsMD5() {
   if [ -f ${INTROSPECTCM_IMAGE_MD5} ] ; then
     has_md5=1
     # introspectorDomain py put two blank lines in the configmap, use -B to ignore blank lines
-    diff -B ${INTROSPECTCM_IMAGE_MD5} ${INTROSPECTJOB_IMAGE_MD5} > /tmp/imgmd5diff
+    diff -wB ${INTROSPECTCM_IMAGE_MD5} ${INTROSPECTJOB_IMAGE_MD5} > /tmp/imgmd5diff
     if [ $? -ne 0 ] ; then
       trace "WDT artifacts in image changed: create domain again"
       WDT_ARTIFACTS_CHANGED=1
@@ -116,7 +116,7 @@ function compareArtifactsMD5() {
   trace "Checking wdt artifacts in config map"
   if [ -f ${INTROSPECTCM_CM_MD5} ] ; then
     has_md5=1
-    diff -B  ${INTROSPECTCM_CM_MD5} ${INTROSPECTJOB_CM_MD5}
+    diff -wB  ${INTROSPECTCM_CM_MD5} ${INTROSPECTJOB_CM_MD5}
     if [ $? -ne 0 ] ; then
       trace "WDT artifacts in wdt config map changed: create domain again"
       WDT_ARTIFACTS_CHANGED=1
@@ -245,6 +245,7 @@ function buildWDTParams_MD5() {
          " but the secret does not have this key."
       exit 1
     else
+      # TBD code review comment: pass credentials via filename instead of risking putting them in an env var
       # Set it for introspectDomain.py to use
       export OPSS_PASSPHRASE=$(cat ${OPSS_KEY_PASSPHRASE})
     fi
@@ -303,19 +304,19 @@ function createWLDomain() {
 
   local version_changed=0
   local jdk_changed=0
-  local secrets_changed=0
+  local secrets_and_env_changed=0
   trace "current version "${current_version}
 
-  getSecretsMD5
-  local current_secrets_md5=$(cat /tmp/secrets.md5)
+  getSecretsAndEnvMD5
+  local current_secrets_and_env_md5=$(cat /tmp/secrets_and_env.md5)
 
   trace "Checking changes in secrets and jdk path"
 
-  if [ -f ${INTROSPECTCM_SECRETS_MD5} ] ; then
-    previous_secrets_md5=$(cat ${INTROSPECTCM_SECRETS_MD5})
-    if [ "${current_secrets_md5}" != "${previous_secrets_md5}" ]; then
-      trace "secrets different: before: ${previous_secrets_md5} current: ${current_secrets_md5}"
-      secrets_changed=1
+  if [ -f ${INTROSPECTCM_SECRETS_AND_ENV_MD5} ] ; then
+    previous_secrets_and_env_md5=$(cat ${INTROSPECTCM_SECRETS_AND_ENV_MD5})
+    if [ "${current_secrets_and_env_md5}" != "${previous_secrets_and_env_md5}" ]; then
+      trace "Secrets and env different: old_md5=${previous_secrets_and_env_md5} new_md5=${current_secrets_and_env_md5}"
+      secrets_and_env_changed=1
     fi
   fi
 
@@ -356,7 +357,7 @@ function createWLDomain() {
   # create domain again
 
   if  [ ${WDT_ARTIFACTS_CHANGED} -ne 0 ] || [ ${jdk_changed} -eq 1 ] \
-    || [ ${secrets_changed} -ne 0 ] ; then
+    || [ ${secrets_and_env_changed} -ne 0 ] ; then
 
     trace "Need to create domain ${WDT_DOMAIN_TYPE}"
     createModelDomain
@@ -446,38 +447,45 @@ function checkWDTVersion() {
   trace "Exiting checkWDTVersion"
 }
 
-# getSecretsMD5
+# getSecretsAndEnvMD5
 #
-# concatenate all the secrets, calculate the md5 and delete the file.
+# concatenate all the secrets and env, calculate the md5 and delete the file.
 # The md5 is used to determine whether the domain needs to be recreated
 # Note: the secrets are two levels indirections, so use find and filter out the ..data
-# output:  /tm/secrets.md5
+# output:  /tmp/secrets_and_env.md5
 
-function getSecretsMD5() {
-  trace "Entering getSecretsMD5"
+function getSecretsAndEnvMD5() {
+  trace "Entering getSecretsAndEnvMD5"
 
-  local secrets_text="/tmp/secrets.txt"
+  local secrets_and_env_text="/tmp/secrets.txt"
   local override_secrets="/weblogic-operator/config-overrides-secrets/"
   local weblogic_secrets="/weblogic-operator/secrets/"
+  local env_var
+
+  rm -f ${secrets_and_env_text}
+
+  for env_var in ${OPERATOR_ENVVAR_NAMES//,/ }; do
+    echo "$env_var='${!env_var}'"
+  done | sort >> ${secrets_and_env_text}
 
   if [ -d "${override_secrets}" ] ; then
     # find the link and exclude ..data so that the normalized file name will be found
     # otherwise it will return ../data/xxx ..etc. Note: the actual file is in a timestamp linked directory
-    find ${override_secrets} -type l -not -name "..data" -print  | sort  | xargs cat >> ${secrets_text}
+    find ${override_secrets} -type l -not -name "..data" -print  | sort  | xargs cat >> ${secrets_and_env_text}
   fi
 
   if [ -d "${weblogic_secrets}" ] ; then
-    find ${weblogic_secrets} -type l -not -name "..data" -print |  sort  | xargs cat >> ${secrets_text}
+    find ${weblogic_secrets} -type l -not -name "..data" -print |  sort  | xargs cat >> ${secrets_and_env_text}
   fi
 
-  if [ ! -f "${secrets_text}" ] ; then
-    echo "0" > ${secrets_text}
+  if [ ! -f "${secrets_and_env_text}" ] ; then
+    echo "0" > ${secrets_and_env_text}
   fi
-  local secrets_md5=$(md5sum ${secrets_text} | cut -d' ' -f1)
-  echo ${secrets_md5} > /tmp/secrets.md5
-  trace "Found secrets ${secrets_md5}"
-  rm ${secrets_text}
-  trace "Exiting getSecretsMD5"
+  local secrets_and_env_md5=$(md5sum ${secrets_and_env_text} | cut -d' ' -f1)
+  echo ${secrets_and_env_md5} > /tmp/secrets_and_env.md5
+  trace "Found secrets and env: md5=${secrets_and_env_md5}"
+  rm ${secrets_and_env_text}
+  trace "Exiting getSecretsAndEnvMD5"
 }
 
 
