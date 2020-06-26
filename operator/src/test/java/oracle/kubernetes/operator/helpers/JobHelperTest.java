@@ -79,7 +79,12 @@ public class JobHelperTest {
   private static final String DOMAIN_UID = "JobHelperTestDomain";
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
-  private static final String OSEV = "OPERATOR_SUPPLIED_ENV_VARS";
+  /** 
+   * OEVN is the name of an env var that contains a comma-separated list of oper supplied env var names.
+   * It's used by the Model in Image introspector job to detect env var differences from the last
+   * time the job ran.
+   */
+  private static final String OEVN = "OPERATOR_ENVVAR_NAMES";
   private Method getDomainSpec;
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
   private final V1PodSecurityContext podSecurityContext = createPodSecurityContext(123L);
@@ -218,10 +223,10 @@ public class JobHelperTest {
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec),
         allOf(
-            hasEnvVarContains(OSEV,"item1"),
-            hasEnvVarContains(OSEV,"item2"),
-            hasEnvVarContains(OSEV,"WL_HOME"),
-            hasEnvVarContains(OSEV,"MW_HOME")));
+            hasEnvVarContains(OEVN,"item1"),
+            hasEnvVarContains(OEVN,"item2"),
+            hasEnvVarContains(OEVN,"WL_HOME"),
+            hasEnvVarContains(OEVN,"MW_HOME")));
   }
 
   private V1JobSpec createJobSpec() {
@@ -254,7 +259,7 @@ public class JobHelperTest {
         getMatchingContainerEnv(domainPresenceInfo, jobSpec), hasEnvVar("USER_MEM_ARGS", ""));
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec), hasEnvVarContains(OSEV,"USER_MEM_ARGS"));
+        getMatchingContainerEnv(domainPresenceInfo, jobSpec), hasEnvVarContains(OEVN,"USER_MEM_ARGS"));
   }
 
   @Test
@@ -267,7 +272,7 @@ public class JobHelperTest {
         getMatchingContainerEnv(domainPresenceInfo, jobSpec), hasEnvVar("item1", END_VALUE_1));
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec), hasEnvVarContains(OSEV,"item1"));
+        getMatchingContainerEnv(domainPresenceInfo, jobSpec), hasEnvVarContains(OEVN,"item1"));
 
   }
 
@@ -282,7 +287,7 @@ public class JobHelperTest {
 
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        not(hasEnvVarContains(OSEV,ServerEnvVars.DATA_HOME)));
+        not(hasEnvVarContains(OEVN,ServerEnvVars.DATA_HOME)));
   }
 
   private static final String OVERRIDE_DATA_DIR = "/u01/data";
@@ -298,7 +303,7 @@ public class JobHelperTest {
             hasEnvVar(ServerEnvVars.DATA_HOME, OVERRIDE_DATA_HOME));
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-            hasEnvVarContains(OSEV, ServerEnvVars.DATA_HOME));
+            hasEnvVarContains(OEVN, ServerEnvVars.DATA_HOME));
   }
 
   @Test
@@ -311,7 +316,7 @@ public class JobHelperTest {
             not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-            not(hasEnvVarContains(OSEV, ServerEnvVars.DATA_HOME)));
+            not(hasEnvVarContains(OEVN, ServerEnvVars.DATA_HOME)));
   }
 
   private static final String NULL_DATA_HOME = null;
@@ -347,9 +352,9 @@ public class JobHelperTest {
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec),
         allOf(
-            hasEnvVarContains(OSEV,"item1"),
-            hasEnvVarContains(OSEV,"item2"),
-            hasEnvVarContains(OSEV,"item3")));
+            hasEnvVarContains(OEVN,"item1"),
+            hasEnvVarContains(OEVN,"item2"),
+            hasEnvVarContains(OEVN,"item3")));
   }
 
   @Test
@@ -371,9 +376,9 @@ public class JobHelperTest {
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec),
         allOf(
-            hasEnvVarContains(OSEV,configMapKeyRefEnvVar.getName()),
-            hasEnvVarContains(OSEV,secretKeyRefEnvVar.getName()),
-            hasEnvVarContains(OSEV,fieldRefEnvVar.getName())));
+            hasEnvVarContains(OEVN,configMapKeyRefEnvVar.getName()),
+            hasEnvVarContains(OEVN,secretKeyRefEnvVar.getName()),
+            hasEnvVarContains(OEVN,fieldRefEnvVar.getName())));
   }
 
   @Test
@@ -396,9 +401,9 @@ public class JobHelperTest {
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec),
         allOf(
-            hasEnvVarContains(OSEV,configMapKeyRefEnvVar.getName()),
-            hasEnvVarContains(OSEV,secretKeyRefEnvVar.getName()),
-            hasEnvVarContains(OSEV,fieldRefEnvVar.getName())));
+            hasEnvVarContains(OEVN,configMapKeyRefEnvVar.getName()),
+            hasEnvVarContains(OEVN,secretKeyRefEnvVar.getName()),
+            hasEnvVarContains(OEVN,fieldRefEnvVar.getName())));
   }
 
   @Test
@@ -411,8 +416,8 @@ public class JobHelperTest {
 
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(not(hasEnvVarContains(OSEV, "ADMIN_USERNAME")),
-              not(hasEnvVarContains(OSEV, "ADMIN_PASSWORD"))));
+        allOf(not(hasEnvVarContains(OEVN, "ADMIN_USERNAME")),
+              not(hasEnvVarContains(OEVN, "ADMIN_PASSWORD"))));
   }
 
   @Test

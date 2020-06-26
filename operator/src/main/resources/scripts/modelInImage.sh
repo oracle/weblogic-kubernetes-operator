@@ -464,7 +464,7 @@ function getSecretsAndEnvMD5() {
 
   rm -f ${secrets_and_env_text}
 
-  for env_var in ${OPERATOR_SUPPLIED_ENV_VARS//,/ }; do
+  for env_var in ${OPERATOR_ENVVAR_NAMES//,/ }; do
     echo "$env_var='${!env_var}'"
   done | sort >> ${secrets_and_env_text}
 

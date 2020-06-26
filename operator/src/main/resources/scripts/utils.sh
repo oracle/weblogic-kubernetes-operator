@@ -279,7 +279,7 @@ function traceEnv() {
     INTROSPECT_HOME \
     PATH \
     TRACE_TIMING \
-    OPERATOR_SUPPLIED_ENV_VARS
+    OPERATOR_ENVVAR_NAMES
   do
     echo "    ${env_var}='${!env_var}'"
   done

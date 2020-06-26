@@ -83,7 +83,7 @@ checkEnv -q \
          NODEMGR_HOME \
          WL_HOME \
          MW_HOME \
-         OPERATOR_SUPPLIED_ENV_VARS \
+         OPERATOR_ENVVAR_NAMES \
          || exit 1
 
 for script_file in "${SCRIPTPATH}/wlst.sh" \

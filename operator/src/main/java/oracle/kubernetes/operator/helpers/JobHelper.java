@@ -302,7 +302,7 @@ public class JobHelper {
         sb.append(var.getName()).append(',');
       }
       sb.deleteCharAt(sb.length() - 1);
-      addEnvVar(vars, "OPERATOR_SUPPLIED_ENV_VARS", sb.toString());
+      addEnvVar(vars, "OPERATOR_ENVVAR_NAMES", sb.toString());
 
       if (domainTopology != null) {
         // The domainTopology != null when the job is rerun for the same domain. In which
