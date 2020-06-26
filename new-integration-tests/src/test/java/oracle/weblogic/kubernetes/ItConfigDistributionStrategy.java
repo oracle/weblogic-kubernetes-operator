@@ -365,7 +365,7 @@ public class ItConfigDistributionStrategy {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for server configuration to be updated"
-                + "(elapsed time {0} ms, remaining time {2} ms)",
+                + "(elapsed time {0} ms, remaining time {1} ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(configUpdated());
