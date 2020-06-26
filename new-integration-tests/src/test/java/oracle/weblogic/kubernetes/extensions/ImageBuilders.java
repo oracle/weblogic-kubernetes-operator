@@ -78,9 +78,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
 
-//import oracle.weblogic.kubernetes.logging.LoggingFacade;
-//import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
-
 /**
  * Class to build the required images for the tests.
  */

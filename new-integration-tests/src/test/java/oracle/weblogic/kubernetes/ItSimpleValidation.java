@@ -31,7 +31,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ThreadSafeLogger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -56,13 +55,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-//import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Simple validation of integration tests")
@@ -86,7 +84,7 @@ class ItSimpleValidation {
    */
   @BeforeAll
   public void setup(@Namespaces(2) List<String> namespaces) {
-    logger = ThreadSafeLogger.getLogger();
+    logger = getLogger();
     logger.info("Assigning unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);
@@ -237,7 +235,7 @@ class ItSimpleValidation {
   /**
    * Create domain.
    */
-  //@Test
+  @Test
   @Order(2)
   @DisplayName("Create a domain")
   @Slow

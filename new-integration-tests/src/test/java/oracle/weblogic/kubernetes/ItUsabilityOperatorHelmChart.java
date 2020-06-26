@@ -25,7 +25,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ThreadSafeLogger;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -61,6 +60,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPus
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -100,7 +100,7 @@ class ItUsabilityOperatorHelmChart {
    */
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
-    logger = ThreadSafeLogger.getLogger();
+    logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");

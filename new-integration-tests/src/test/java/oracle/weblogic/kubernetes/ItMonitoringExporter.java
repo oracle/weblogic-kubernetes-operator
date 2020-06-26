@@ -65,7 +65,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.TestUtils;
-import oracle.weblogic.kubernetes.utils.ThreadSafeLogger;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
@@ -123,6 +122,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyP
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -187,7 +187,7 @@ class ItMonitoringExporter {
    */
   @BeforeAll
   public static void initAll(@Namespaces(6) List<String> namespaces) {
-    logger = ThreadSafeLogger.getLogger();
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
