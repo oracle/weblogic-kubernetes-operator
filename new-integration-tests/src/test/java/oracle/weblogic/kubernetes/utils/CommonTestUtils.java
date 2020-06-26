@@ -463,8 +463,24 @@ public class CommonTestUtils {
   public static List<String> createIngressForDomainAndVerify(String domainUid,
                                                              String domainNamespace,
                                                              Map<String, Integer> clusterNameMSPortMap) {
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, true);
+  }
 
-    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap);
+  /**
+   * Create an ingress for the domain with domainUid in the specified namespace.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @param setIngressHost set specific host or set it to all
+   * @return list of ingress hosts
+   */
+  public static List<String> createIngressForDomainAndVerify(String domainUid,
+                                                             String domainNamespace,
+                                                             Map<String, Integer> clusterNameMSPortMap,
+                                                             boolean setIngressHost) {
+
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, setIngressHost);
   }
 
   /**
@@ -480,6 +496,26 @@ public class CommonTestUtils {
                                                              String domainNamespace,
                                                              int nodeport,
                                                              Map<String, Integer> clusterNameMSPortMap) {
+
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, nodeport, clusterNameMSPortMap, true);
+  }
+
+  /**
+   * Create an ingress for the domain with domainUid in the specified namespace.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param nodeport node port of the ingress controller
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @param setIngressHost if false does not set ingress host
+   * @return list of ingress hosts
+   */
+  public static List<String> createIngressForDomainAndVerify(String domainUid,
+                                                             String domainNamespace,
+                                                             int nodeport,
+                                                             Map<String, Integer> clusterNameMSPortMap,
+                                                             boolean setIngressHost) {
+
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
     final String ingressNginxClass = "nginx";
@@ -489,19 +525,19 @@ public class CommonTestUtils {
     annotations.put("kubernetes.io/ingress.class", ingressNginxClass);
 
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations);
+            createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, setIngressHost);
 
     assertNotNull(ingressHostList,
-        String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
+            String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-        .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
-        .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
-        .contains(ingressName);
+            .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
+            .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
+            .contains(ingressName);
 
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
-        ingressName, domainUid, domainNamespace);
+            ingressName, domainUid, domainNamespace);
 
     // check the ingress is ready to route the app to the server pod
     if (nodeport != 0) {
@@ -546,7 +582,7 @@ public class CommonTestUtils {
 
     // create an ingress in domain namespace
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations);
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true);
 
     // wait until the Voyager ingress pod is ready.
     withStandardRetryPolicy
@@ -805,8 +841,8 @@ public class CommonTestUtils {
                                                boolean oneArchiveContainsMultiApps) {
 
     return createImageAndVerify(
-        miiImageNameBase, wdtModelList, appSrcDirList, null, baseImageName,
-        baseImageTag, domainType, true, null, oneArchiveContainsMultiApps);
+            miiImageNameBase, wdtModelList, appSrcDirList, null, baseImageName,
+            baseImageTag, domainType, true, null, oneArchiveContainsMultiApps);
   }
 
   /**
@@ -832,8 +868,8 @@ public class CommonTestUtils {
     final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
 
     return createImageAndVerify(
-        imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
-        WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
+      imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
+      WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
   }
 
   /**
@@ -856,8 +892,8 @@ public class CommonTestUtils {
     final List<String> modelPropList = Collections.singletonList(MODEL_DIR + "/" + modelPropFile);
 
     return createImageAndVerify(
-        imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
-        WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
+            imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
+            WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
   }
 
   /**
@@ -883,6 +919,7 @@ public class CommonTestUtils {
                                             boolean modelType,
                                             String domainHome,
                                             boolean oneArchiveContainsMultiApps) {
+
     LoggingFacade logger = getLogger();
 
     // create unique image name with date
@@ -908,10 +945,10 @@ public class CommonTestUtils {
 
       if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
         assertTrue(archiveApp(defaultAppParams()
-            .srcDirList(archiveAppsList)));
+                .srcDirList(archiveAppsList)));
         //archive provided ear or war file
         String appName = archiveAppsList.get(0).substring(archiveAppsList.get(0).lastIndexOf("/") + 1,
-            appSrcDirList.get(0).lastIndexOf("."));
+                appSrcDirList.get(0).lastIndexOf("."));
 
         // build the archive list
         String zipAppFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
@@ -924,16 +961,16 @@ public class CommonTestUtils {
         String zipFile = "";
         if (oneArchiveContainsMultiApps) {
           assertTrue(buildAppArchive(defaultAppParams()
-                  .srcDirList(buildAppDirList)),
-              String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
+                          .srcDirList(buildAppDirList)),
+                  String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
           zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
           // build the archive list
           archiveList.add(zipFile);
         } else {
           for (String appName : buildAppDirList) {
             assertTrue(buildAppArchive(defaultAppParams()
-                    .srcDirList(Collections.singletonList(appName))
-                    .appName(appName)),
+                .srcDirList(Collections.singletonList(appName))
+                .appName(appName)),
                 String.format("Failed to create app archive for %s", appName));
             zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
             // build the archive list
@@ -961,43 +998,43 @@ public class CommonTestUtils {
     boolean result = false;
     if (!modelType) {  //create a domain home in image image
       result = createImage(
-          new WitParams()
-              .baseImageName(baseImageName)
-              .baseImageTag(baseImageTag)
-              .domainType(domainType)
-              .modelImageName(imageName)
-              .modelImageTag(imageTag)
-              .modelFiles(wdtModelList)
-              .modelVariableFiles(modelPropList)
-              .modelArchiveFiles(archiveList)
-              .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainHome)
-              .wdtModelOnly(modelType)
-              .wdtOperation("CREATE")
-              .wdtVersion(WDT_VERSION)
-              .env(env)
-              .redirect(true));
+              new WitParams()
+                .baseImageName(baseImageName)
+                .baseImageTag(baseImageTag)
+                .domainType(domainType)
+                .modelImageName(imageName)
+                .modelImageTag(imageTag)
+                .modelFiles(wdtModelList)
+                .modelVariableFiles(modelPropList)
+                .modelArchiveFiles(archiveList)
+                .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainHome)
+                .wdtModelOnly(modelType)
+                .wdtOperation("CREATE")
+                .wdtVersion(WDT_VERSION)
+                .env(env)
+                .redirect(true));
     } else {
       result = createImage(
-          new WitParams()
-              .baseImageName(baseImageName)
-              .baseImageTag(baseImageTag)
-              .domainType(domainType)
-              .modelImageName(imageName)
-              .modelImageTag(imageTag)
-              .modelFiles(wdtModelList)
-              .modelVariableFiles(modelPropList)
-              .modelArchiveFiles(archiveList)
-              .wdtModelOnly(modelType)
-              .wdtVersion(WDT_VERSION)
-              .env(env)
-              .redirect(true));
+              new WitParams()
+                .baseImageName(baseImageName)
+                .baseImageTag(baseImageTag)
+                .domainType(domainType)
+                .modelImageName(imageName)
+                .modelImageTag(imageTag)
+                .modelFiles(wdtModelList)
+                .modelVariableFiles(modelPropList)
+                .modelArchiveFiles(archiveList)
+                .wdtModelOnly(modelType)
+                .wdtVersion(WDT_VERSION)
+                .env(env)
+                .redirect(true));
     }
 
     assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 
     // Check image exists using docker images | grep image tag.
     assertTrue(doesImageExist(imageTag),
-        String.format("Image %s does not exist", image));
+            String.format("Image %s does not exist", image));
 
     logger.info("Image {0} are created successfully", image);
     return image;
@@ -1282,7 +1319,9 @@ public class CommonTestUtils {
         logger.info("Checking that managed server pod {0} was deleted from namespace {1}",
             manageServerPodNamePrefix + i, domainNamespace);
         checkPodDoesNotExist(manageServerPodNamePrefix + i, domainUid, domainNamespace);
-        expectedServerNames.remove(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
+        if (expectedServerNames != null) {
+          expectedServerNames.remove(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
+        }
       }
 
       if (curlCmd != null && expectedServerNames != null) {
@@ -1414,7 +1453,7 @@ public class CommonTestUtils {
     logger.info("Wait for the grafana pod is ready in namespace {0}", grafanaNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for prometheus to be running in namespace {0} "
+            condition -> logger.info("Waiting for grafana to be running in namespace {0} "
                     + "(elapsed time {1}ms, remaining time {2}ms)",
                 grafanaNamespace,
                 condition.getElapsedTimeInMS(),
