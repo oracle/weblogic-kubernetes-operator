@@ -47,8 +47,10 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -76,11 +78,13 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
@@ -360,6 +364,7 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_withNoPvc_fromModel_containerHasExpectedVolumeMounts() {
+    reportInspectionWasRun();
     configurator.withDomainHomeSourceType(DomainSourceType.FromModel)
         .withRuntimeEncryptionSecret("my-runtime-encryption-secret");
     assertThat(
@@ -371,6 +376,21 @@ public abstract class PodHelperTestBase {
             readOnlyVolumeMount("weblogic-scripts-cm-volume", "/weblogic-operator/scripts"),
             readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
                 RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH))); 
+  }
+
+  public void reportInspectionWasRun() {
+    testSupport.addToPacket(MAKE_RIGHT_DOMAIN_OPERATION, reportIntrospectionRun());
+  }
+
+  private MakeRightDomainOperation reportIntrospectionRun() {
+    return createStub(InspectionWasRun.class);
+  }
+
+  abstract static class InspectionWasRun implements MakeRightDomainOperation {
+    @Override
+    public boolean wasInspectionRun() {
+      return true;
+    }
   }
 
   @Test
@@ -671,7 +691,7 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  @Ignore("Ignored: getCreatedPodSpecContainer is returing null because Pod is not yet created")
+  @Ignore("Ignored: getCreatedPodSpecContainer is returning null because Pod is not yet created")
   public void whenPodCreated_containerUsesListenPort() {
     V1Container v1Container = getCreatedPodSpecContainer();
 
@@ -950,6 +970,26 @@ public abstract class PodHelperTestBase {
     initializeExistingPod();
 
     getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("nap1", "TCP", 1234, 9001));
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  public void whenMiiSecretsHashChanged_replacePod() {
+    testSupport.addToPacket(IntrospectorConfigMapKeys.SECRETS_MD_5, "originalSecret");
+    initializeExistingPod();
+
+    testSupport.addToPacket(IntrospectorConfigMapKeys.SECRETS_MD_5, "newSecret");
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  public void whenMiiDomainZipHashChanged_replacePod() {
+    testSupport.addToPacket(IntrospectorConfigMapKeys.DOMAINZIP_HASH, "originalSecret");
+    initializeExistingPod();
+
+    testSupport.addToPacket(IntrospectorConfigMapKeys.DOMAINZIP_HASH, "newSecret");
 
     verifyPodReplaced();
   }
