@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -38,13 +39,16 @@ public class MySQLDBUtils {
   /**
    * Create and start a MySQL database pod.
    *
-   * @param name      name of the db pod
-   * @param user      username for the database
-   * @param password  password for the database
-   * @param nodePort  node port of db service
-   * @param namespace name of the namespace in which to create MySQL database
+   * @param name              name of the db pod
+   * @param user              username for the database
+   * @param password          password for the database
+   * @param nodePort          node port of db service
+   * @param namespace         name of the namespace in which to create MySQL database
+   * @param mySQLImageVersion version of the MySQL db image to use, when null uses version from
+   *                          TestConstants.MYSQL_VERSION
    */
-  public static void createMySQLDB(String name, String user, String password, int nodePort, String namespace) {
+  public static void createMySQLDB(String name, String user, String password, int nodePort,
+                                   String namespace, String mySQLImageVersion) {
 
     String uniqueName = Namespace.uniqueName();
     String secretName = name.concat("-secret-").concat(uniqueName);
@@ -52,12 +56,13 @@ public class MySQLDBUtils {
 
     createMySQLDBSecret(secretName, user, password, namespace);
     createMySQLDBService(serviceName, name, namespace, nodePort);
-    startMySQLDB(name, secretName, namespace);
+    startMySQLDB(name, secretName, namespace,
+        mySQLImageVersion != null ? mySQLImageVersion : TestConstants.MYSQL_VERSION);
 
   }
 
   //create the database pod
-  private static void startMySQLDB(String name, String secretName, String namespace) {
+  private static void startMySQLDB(String name, String secretName, String namespace, String mySQLVImageVersion) {
     Map<String, String> labels = new HashMap<>();
     labels.put("app", name);
     V1Pod mysqlPod = new V1Pod()
@@ -68,7 +73,7 @@ public class MySQLDBUtils {
         .spec(new V1PodSpec()
             .terminationGracePeriodSeconds(5L)
             .containers(Arrays.asList(new V1Container()
-                .image("mysql:5.6")
+                .image("mysql:".concat(mySQLVImageVersion))
                 .name("mysql")
                 .addEnvItem(new V1EnvVar()
                     .name("MYSQL_ROOT_PASSWORD")

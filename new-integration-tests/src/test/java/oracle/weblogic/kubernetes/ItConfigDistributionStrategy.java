@@ -205,9 +205,9 @@ public class ItConfigDistributionStrategy {
 
     //start two MySQL database instances
     mysqlDBPort1 = getNextFreePort(30000, 32767);
-    createMySQLDB("mysqldb-1", "root", "root123", mysqlDBPort1, domainNamespace);
+    createMySQLDB("mysqldb-1", "root", "root123", mysqlDBPort1, domainNamespace, null);
     mysqlDBPort2 = getNextFreePort(31000, 32767);
-    createMySQLDB("mysqldb-2", "root", "root456", mysqlDBPort2, domainNamespace);
+    createMySQLDB("mysqldb-2", "root", "root456", mysqlDBPort2, domainNamespace, null);
 
     dsUrl1 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort1;
     dsUrl2 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort2;
