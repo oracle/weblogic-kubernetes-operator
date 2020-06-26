@@ -63,9 +63,7 @@ import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
@@ -257,7 +255,6 @@ public class DomainProcessorTest {
                 .putLabelsItem(CREATEDBYOPERATOR_LABEL, "false")
                 .putLabelsItem(DOMAINNAME_LABEL, DomainProcessorTestSetup.UID)
                 .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
-                .putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
                 .putLabelsItem(SERVERNAME_LABEL, ADMIN_NAME))
         .spec(new V1ServiceSpec().type(ServiceHelper.CLUSTER_IP_TYPE));
   }
@@ -396,7 +393,6 @@ public class DomainProcessorTest {
                 .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
                 .putLabelsItem(DOMAINNAME_LABEL, DomainProcessorTestSetup.UID)
                 .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
-                .putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
                 .putLabelsItem(SERVERNAME_LABEL, ADMIN_NAME))
         .spec(
             new V1ServiceSpec()

@@ -57,11 +57,12 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.extensions.ImageBuilders;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.joda.time.DateTime;
 
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -761,8 +762,8 @@ public class TestActions {
    */
   public static boolean archiveApp(AppParams params) {
     return AppBuilder
-            .withParams(params)
-            .archiveApp();
+        .withParams(params)
+        .archiveApp();
   }
 
   // ------------------------ Docker --------------------------------------
@@ -949,6 +950,17 @@ public class TestActions {
   }
 
   /**
+   * Delete a pod in a given namespace.
+   *
+   * @param podName name of the pod to be deleted
+   * @param namespace Kubernetes namespace that the pod is running in
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static void deletePod(String podName, String namespace) throws ApiException {
+    Kubernetes.deletePod(podName, namespace);
+  }
+
+  /**
    * Get the weblogic.domainRestartVersion label from a given pod.
    *
    * @param namespace in which to check for the pod existence
@@ -1100,6 +1112,7 @@ public class TestActions {
    */
   public static String patchDomainResourceWithNewRestartVersion(
       String domainResourceName, String namespace) {
+    LoggingFacade logger = getLogger();
     String oldVersion = assertDoesNotThrow(
         () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
         String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
@@ -1125,4 +1138,14 @@ public class TestActions {
     return String.valueOf(newVersion);
   }
 
+  /**
+   * Get the name of the operator pod.
+   *
+   * @param release release name of the operator
+   * @param namespace Kubernetes namespace that the operator belongs to
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getOperatorPodName(String release, String namespace) throws ApiException {
+    return Kubernetes.getOperatorPodName(release, namespace);
+  }
 }

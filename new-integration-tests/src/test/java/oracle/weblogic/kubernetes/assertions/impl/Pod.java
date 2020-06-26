@@ -13,7 +13,7 @@ import org.joda.time.DateTime;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -30,7 +30,7 @@ public class Pod {
 
     // check the pods list is not empty
     if (pods.isEmpty()) {
-      logger.severe("The pods list is empty");
+      getLogger().severe("The pods list is empty");
       return false;
     }
 
@@ -41,7 +41,7 @@ public class Pod {
     for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
       // check pods are replaced
       retry
-          .conditionEvaluationListener(condition -> logger.info("Waiting for pod {0} to be "
+          .conditionEvaluationListener(condition -> getLogger().info("Waiting for pod {0} to be "
           + "restarted in namespace {1} "
           + "(elapsed time {2}ms, remaining time {3}ms)",
           entry.getKey(),
@@ -53,7 +53,7 @@ public class Pod {
 
       // check pods are in ready status
       retry
-          .conditionEvaluationListener(condition -> logger.info("Waiting for pod {0} to be "
+          .conditionEvaluationListener(condition -> getLogger().info("Waiting for pod {0} to be "
           + "ready in namespace {1} "
           + "(elapsed time {2}ms, remaining time {3}ms)",
           entry.getKey(),
@@ -88,19 +88,19 @@ public class Pod {
             .map(metadata -> metadata.getMetadata())
             .map(timeStamp -> timeStamp.getDeletionTimestamp()).orElse(null);
         if (deletionTimeStamp != null) {
-          logger.info("Pod {0} is getting replaced", entry.getKey());
+          getLogger().info("Pod {0} is getting replaced", entry.getKey());
           if (++terminatingPods > maxUnavailable) {
-            logger.severe("more than maxUnavailable {0} pod(s) are restarting", maxUnavailable);
+            getLogger().severe("more than maxUnavailable {0} pod(s) are restarting", maxUnavailable);
             throw new Exception("more than maxUnavailable pods are restarting");
           }
         }
         if (podName.equals(entry.getKey())) {
           if (pod != null && pod.getMetadata().getCreationTimestamp() != null) {
             DateTime newCreationTimeStamp = pod.getMetadata().getCreationTimestamp();
-            logger.info("Comparing creation timestamps old: {0} new {1}",
+            getLogger().info("Comparing creation timestamps old: {0} new {1}",
                 entry.getValue(), newCreationTimeStamp);
             if (newCreationTimeStamp.isAfter(entry.getValue())) {
-              logger.info("Pod {0} is restarted", entry.getKey());
+              getLogger().info("Pod {0} is restarted", entry.getKey());
               podRestartStatus = true;
             }
           }

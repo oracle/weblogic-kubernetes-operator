@@ -7,14 +7,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -26,7 +26,7 @@ public class IstioUtils {
    * Install istio.
   */
   public static void installIstio() {
-
+    LoggingFacade logger = getLogger();
     Path istioInstallPath = 
          Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh");
     String installScript = istioInstallPath.toString();
@@ -44,7 +44,7 @@ public class IstioUtils {
    * Uninstall istio.
   */
   public static void uninstallIstio() {
-
+    LoggingFacade logger = getLogger();
     Path istioInstallPath = 
          Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh");
     String installScript = istioInstallPath.toString();
@@ -63,6 +63,7 @@ public class IstioUtils {
    * @return ingress port for istio-ingressgateway
   */
   public static int getIstioHttpIngressPort() {
+    LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer getIngressPort = null;
     getIngressPort = new StringBuffer("kubectl -n istio-system get service istio-ingressgateway ");
@@ -87,6 +88,7 @@ public class IstioUtils {
    * @return secure ingress https port for istio-ingressgateway
   */
   public static int getIstioSecureIngressPort() {
+    LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer getSecureIngressPort = null;
     getSecureIngressPort = new StringBuffer("kubectl -n istio-system get service istio-ingressgateway ");
@@ -111,6 +113,7 @@ public class IstioUtils {
    * @return tcp ingress port for istio-ingressgateway
    */
   public static int getIstioTcpIngressPort() {
+    LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer getTcpIngressPort = null;
     getTcpIngressPort = new StringBuffer("kubectl -n istio-system get service istio-ingressgateway ");
@@ -136,6 +139,7 @@ public class IstioUtils {
    * @return true if deployment is success otherwise false
   */
   public static boolean deployHttpIstioGatewayAndVirtualservice(Path configPath) {
+    LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
     deployIstioGateway = new StringBuffer("kubectl apply -f ");
@@ -158,7 +162,7 @@ public class IstioUtils {
   */
   public static boolean deployTcpIstioGatewayAndVirtualservice(
       Path configPath)  {
-
+    LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
     deployIstioGateway = new StringBuffer("kubectl apply -f ");
@@ -181,7 +185,7 @@ public class IstioUtils {
   */
   public static boolean deployIstioDestinationRule(
        Path configPath) {
-
+    LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
     deployIstioGateway = new StringBuffer("kubectl apply -f ");

@@ -7,7 +7,6 @@ metadata:
   labels:
     weblogic.domainName: ${DOMAIN_NAME}
     weblogic.domainUID: ${DOMAIN_UID}
-    weblogic.resourceVersion: domain-v1
   name: ${DOMAIN_UID}-weblogic-domain-pvc
   namespace: ${NAMESPACE}
 spec:
