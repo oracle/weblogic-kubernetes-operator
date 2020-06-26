@@ -50,7 +50,7 @@ public class Domain {
    */
   @SerializedName("apiVersion")
   @Expose
-  @Description("The API version defines the versioned schema of this representation of a Domain.")
+  @Description("The API version defines the versioned schema of this Domain.")
   private String apiVersion;
 
   /**
@@ -365,7 +365,7 @@ public class Domain {
   }
 
   /**
-   * Name of the secret containing WebLogic startup credentials username and password.
+   * Name of the secret containing WebLogic startup credentials user name and password.
    *
    * @return the secret name
    */

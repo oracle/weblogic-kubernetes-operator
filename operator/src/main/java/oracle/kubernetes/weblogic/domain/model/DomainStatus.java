@@ -276,9 +276,9 @@ public class DomainStatus {
   }
 
   /**
-   * Status of WebLogic servers in this domain.
+   * Status of WebLogic Servers in this domain.
    *
-   * @return a sorted list of ServerStatus containing status of WebLogic servers in this domain
+   * @return a sorted list of ServerStatus containing status of WebLogic Servers in this domain
    */
   public List<ServerStatus> getServers() {
     synchronized (servers) {
@@ -287,7 +287,7 @@ public class DomainStatus {
   }
 
   /**
-   * Status of WebLogic servers in this domain.
+   * Status of WebLogic Servers in this domain.
    *
    * @param servers servers
    */
@@ -331,7 +331,7 @@ public class DomainStatus {
 
 
   /**
-   * Status of WebLogic servers in this domain.
+   * Status of WebLogic Servers in this domain.
    *
    * @param servers servers
    * @return this

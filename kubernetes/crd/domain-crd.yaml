@@ -33,7 +33,7 @@ spec:
                   overrideDistributionStrategy:
                     type: string
                     description: Determines how updated configuration overrides are
-                      distributed to already running WebLogic servers following introspection
+                      distributed to already running WebLogic Servers following introspection
                       when the domainHomeSourceType is PersistentVolume or Image.  Configuration
                       overrides are generated during introspection from secrets, the
                       overrideConfigMap field, and WebLogic domain topology. Legal
@@ -76,7 +76,7 @@ spec:
                   secrets:
                     type: array
                     description: A list of names of the secrets for WebLogic configuration
-                      overrides or model. If this field is specified then the value
+                      overrides or model. If this field is specified, then the value
                       of spec.configOverrideSecrets is ignored.
                     items:
                       type: string
@@ -96,13 +96,13 @@ spec:
                   overridesConfigMap:
                     type: string
                     description: The name of the ConfigMap for WebLogic configuration
-                      overrides. If this field is specified then the value of spec.configOverrides
+                      overrides. If this field is specified, then the value of spec.configOverrides
                       is ignored.
                   introspectorJobActiveDeadlineSeconds:
                     type: number
                     description: The introspector job timeout value in seconds. If
-                      this field is specified then the Operator's ConfigMap data.introspectorJobActiveDeadlineSeconds
-                      value is ignored.
+                      this field is specified, then the operator's ConfigMap data.introspectorJobActiveDeadlineSeconds
+                      value is ignored. Defaults to 120 seconds.
               configOverrideSecrets:
                 type: array
                 description: Deprecated. Use configuration.secrets instead. Ignored
@@ -124,15 +124,18 @@ spec:
                       type: string
               domainUID:
                 type: string
-                description: Domain unique identifier. Must be unique across the Kubernetes
-                  cluster. This value is distinct and need not match the domain name
-                  from the WebLogic domain configuration. Not required. Defaults to
-                  the value of metadata.name.
+                description: Domain unique identifier. It is recommended that this
+                  value be unique to assist in future work to identify related domains
+                  in active-passive scenarios across data centers; however, it is
+                  only required that this value be unique within the namespace, similarly
+                  to the names of Kubernetes resources. This value is distinct and
+                  need not match the domain name from the WebLogic domain configuration.
+                  Not required. Defaults to the value of metadata.name.
                 pattern: ^[a-z0-9-.]{1,253}$
               serverService:
                 type: object
                 description: Customization affecting the generation of Kubernetes
-                  services for WebLogic Server instances.
+                  Services for WebLogic Server instances.
                 properties:
                   precreateService:
                     type: boolean
@@ -180,8 +183,8 @@ spec:
                   to true.
               webLogicCredentialsSecret:
                 type: object
-                description: Reference to a Kubernetes Secret that contains the username
-                  and password needed to boot a WebLogic Server under the 'username'
+                description: Reference to a Kubernetes Secret that contains the user
+                  name and password needed to boot a WebLogic Server under the 'username'
                   and 'password' fields.
                 properties:
                   name:
@@ -210,7 +213,7 @@ spec:
                   serverService:
                     type: object
                     description: Customization affecting the generation of Kubernetes
-                      services for WebLogic Server instances.
+                      Services for WebLogic Server instances.
                     properties:
                       precreateService:
                         type: boolean
@@ -237,7 +240,7 @@ spec:
                         description: NodeName is a request to schedule this Pod onto
                           a specific Node. If it is non-empty, the scheduler simply
                           schedules this pod onto that node, assuming that it fits
-                          resource requirements.
+                          the resource requirements.
                       livenessProbe:
                         type: object
                         description: Settings for the liveness probe associated with
@@ -259,7 +262,7 @@ spec:
                         description: 'If specified, all readiness gates will be evaluated
                           for Pod readiness. A Pod is ready when all its containers
                           are ready AND all conditions specified in the readiness
-                          gates have status equal to "True" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
+                          gates have a status equal to "True" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
                         items:
                           description: PodReadinessGate contains the reference to
                             a pod condition
@@ -401,8 +404,8 @@ spec:
                           indicate the highest priorities with the former being the
                           highest priority. Any other name must be defined by creating
                           a PriorityClass object with that name. If not specified,
-                          the pod priority will be default or zero if there is no
-                          default.
+                          the pod priority will be the default or zero, if there is
+                          no default.
                       volumes:
                         type: array
                         description: Additional volumes to be created in the server
@@ -1906,8 +1909,9 @@ spec:
                         description: The annotations to be added to generated resources.
                       env:
                         type: array
-                        description: A list of environment variables to set in the
-                          container running a WebLogic Server instance.
+                        description: 'A list of environment variables to set in the
+                          container running a WebLogic Server instance. More info:
+                          https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables'
                         items:
                           description: EnvVar represents an environment variable present
                             in a Container.
@@ -3511,9 +3515,9 @@ spec:
                               filesystem. Default is false.
                       schedulerName:
                         type: string
-                        description: If specified, the Pod will be dispatched by specified
-                          scheduler. If not specified, the Pod will be dispatched
-                          by default scheduler.
+                        description: If specified, the Pod will be dispatched by the
+                          specified scheduler. If not specified, the Pod will be dispatched
+                          by the default scheduler.
                       initContainers:
                         type: array
                         description: Initialization containers to be included in the
@@ -4741,7 +4745,7 @@ spec:
                               down the server. Not required. Defaults to 30 seconds.
                       affinity:
                         type: object
-                        description: If specified, the Pod's scheduling constraints
+                        description: If specified, the Pod's scheduling constraints.
                         properties:
                           nodeAffinity:
                             type: object
@@ -5403,8 +5407,8 @@ spec:
                   serverStartPolicy:
                     type: string
                     description: 'The strategy for deciding whether to start a WebLogic
-                      server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED.
-                      More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers'
+                      Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED.
+                      Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers'
                     enum:
                     - ALWAYS
                     - NEVER
@@ -5494,7 +5498,7 @@ spec:
                       - ADMIN
                     serverService:
                       description: Customization affecting the generation of Kubernetes
-                        services for WebLogic Server instances.
+                        Services for WebLogic Server instances.
                       type: object
                       properties:
                         precreateService:
@@ -5519,18 +5523,22 @@ spec:
                       minimum: 1.0
                     replicas:
                       description: The number of cluster member Managed Server instances
-                        to start. The first cluster members defined in the WebLogic
-                        domain configuration will be selected to start, up to the
-                        replicas count, unless specific Managed Servers are specified
-                        as starting in their entry under the managedServers field.
-                        In that case, the specified Managed Servers will be started
-                        and then additional cluster members will be started, up to
-                        the replicas count, by finding the first cluster members in
-                        the WebLogic domain configuration that are not already started.
-                        If cluster members are started because of their related entries
-                        under managedServers then this cluster may have more cluster
-                        members running than its replicas count. Not required. Defaults
-                        to 0.
+                        to start this WebLogic cluster. The operator will sort cluster
+                        member Managed Server names from the WebLogic domain configuration
+                        by normalizing any numbers in the Managed Server name and
+                        then sorting alphabetically. This is done so that server names
+                        such as "managed-server10" come after "managed-server9". The
+                        operator will then start Managed Servers from the sorted list,
+                        up to the replicas count, unless specific Managed Servers
+                        are specified as starting in their entry under the managedServers
+                        field. In that case, the specified Managed Servers will be
+                        started and then additional cluster members will be started,
+                        up to the replicas count, by finding further cluster members
+                        in the sorted list that are not already started. If cluster
+                        members are started because of their related entries under
+                        managedServers then this cluster may have more cluster members
+                        running than its replicas count. Not required. Defaults to
+                        0.
                       type: number
                       minimum: 0.0
                     clusterName:
@@ -5555,7 +5563,7 @@ spec:
                           description: NodeName is a request to schedule this Pod
                             onto a specific Node. If it is non-empty, the scheduler
                             simply schedules this pod onto that node, assuming that
-                            it fits resource requirements.
+                            it fits the resource requirements.
                           type: string
                         livenessProbe:
                           description: Settings for the liveness probe associated
@@ -5577,7 +5585,7 @@ spec:
                           description: 'If specified, all readiness gates will be
                             evaluated for Pod readiness. A Pod is ready when all its
                             containers are ready AND all conditions specified in the
-                            readiness gates have status equal to "True" More info:
+                            readiness gates have a status equal to "True" More info:
                             https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
                           type: array
                           items:
@@ -5722,7 +5730,7 @@ spec:
                             with the former being the highest priority. Any other
                             name must be defined by creating a PriorityClass object
                             with that name. If not specified, the pod priority will
-                            be default or zero if there is no default.
+                            be the default or zero, if there is no default.
                           type: string
                         volumes:
                           description: Additional volumes to be created in the server
@@ -7258,8 +7266,9 @@ spec:
                             type: string
                           type: object
                         env:
-                          description: A list of environment variables to set in the
-                            container running a WebLogic Server instance.
+                          description: 'A list of environment variables to set in
+                            the container running a WebLogic Server instance. More
+                            info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables'
                           type: array
                           items:
                             description: EnvVar represents an environment variable
@@ -8892,8 +8901,8 @@ spec:
                               type: boolean
                         schedulerName:
                           description: If specified, the Pod will be dispatched by
-                            specified scheduler. If not specified, the Pod will be
-                            dispatched by default scheduler.
+                            the specified scheduler. If not specified, the Pod will
+                            be dispatched by the default scheduler.
                           type: string
                         initContainers:
                           description: Initialization containers to be included in
@@ -10144,7 +10153,7 @@ spec:
                                 down the server. Not required. Defaults to 30 seconds.
                               type: number
                         affinity:
-                          description: If specified, the Pod's scheduling constraints
+                          description: If specified, the Pod's scheduling constraints.
                           type: object
                           properties:
                             nodeAffinity:
@@ -10841,8 +10850,8 @@ spec:
                           type: object
                     serverStartPolicy:
                       description: 'The strategy for deciding whether to start a WebLogic
-                        server instance. Legal values are NEVER, or IF_NEEDED. More
-                        info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers'
+                        Server instance. Legal values are NEVER, or IF_NEEDED. Defaults
+                        to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers'
                       type: string
                       enum:
                       - NEVER
@@ -10879,7 +10888,7 @@ spec:
                 type: string
                 description: The image pull policy for the WebLogic container image.
                   Legal values are Always, Never and IfNotPresent. Defaults to Always
-                  if image ends in :latest, IfNotPresent, otherwise.
+                  if image ends in :latest; IfNotPresent, otherwise.
                 enum:
                 - Always
                 - Never
@@ -10895,17 +10904,21 @@ spec:
               replicas:
                 type: number
                 description: The default number of cluster member Managed Server instances
-                  to start, if this is not specified for a specific cluster under
-                  the clusters field. For each cluster, the first cluster members
-                  defined in the WebLogic domain configuration will be selected to
-                  start, up to the replicas count, unless specific Managed Servers
-                  are specified as starting in their entry under the managedServers
-                  field. In that case, the specified Managed Servers will be started
-                  and then additional cluster members will be started, up to the replicas
-                  count, by finding the first cluster members in the WebLogic domain
-                  configuration that are not already started. If cluster members are
-                  started because of their related entries under managedServers then
-                  a cluster may have more cluster members running than its replicas
+                  to start for each WebLogic cluster in the domain configuration,
+                  unless replicas is specified for that cluster under the clusters
+                  field. For each cluster, the operator will sort cluster member Managed
+                  Server names from the WebLogic domain configuration by normalizing
+                  any numbers in the Managed Server name and then sorting alphabetically.
+                  This is done so that server names such as "managed-server10" come
+                  after "managed-server9". The operator will then start Managed Servers
+                  from the sorted list, up to the replicas count, unless specific
+                  Managed Servers are specified as starting in their entry under the
+                  managedServers field. In that case, the specified Managed Servers
+                  will be started and then additional cluster members will be started,
+                  up to the replicas count, by finding further cluster members in
+                  the sorted list that are not already started. If cluster members
+                  are started because of their related entries under managedServers
+                  then a cluster may have more cluster members running than its replicas
                   count. Not required. Defaults to 0.
                 minimum: 0.0
               domainHomeInImage:
@@ -10918,8 +10931,8 @@ spec:
               serverStartPolicy:
                 type: string
                 description: 'The strategy for deciding whether to start a WebLogic
-                  server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.
-                  More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers'
+                  Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.
+                  Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers'
                 enum:
                 - NEVER
                 - IF_NEEDED
@@ -10974,7 +10987,8 @@ spec:
                     type: string
                     description: NodeName is a request to schedule this Pod onto a
                       specific Node. If it is non-empty, the scheduler simply schedules
-                      this pod onto that node, assuming that it fits resource requirements.
+                      this pod onto that node, assuming that it fits the resource
+                      requirements.
                   livenessProbe:
                     type: object
                     description: Settings for the liveness probe associated with a
@@ -10996,7 +11010,7 @@ spec:
                     description: 'If specified, all readiness gates will be evaluated
                       for Pod readiness. A Pod is ready when all its containers are
                       ready AND all conditions specified in the readiness gates have
-                      status equal to "True" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
+                      a status equal to "True" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
                     items:
                       description: PodReadinessGate contains the reference to a pod
                         condition
@@ -11132,7 +11146,7 @@ spec:
                       indicate the highest priorities with the former being the highest
                       priority. Any other name must be defined by creating a PriorityClass
                       object with that name. If not specified, the pod priority will
-                      be default or zero if there is no default.
+                      be the default or zero, if there is no default.
                   volumes:
                     type: array
                     description: Additional volumes to be created in the server Pod.
@@ -12557,8 +12571,8 @@ spec:
                     description: The annotations to be added to generated resources.
                   env:
                     type: array
-                    description: A list of environment variables to set in the container
-                      running a WebLogic Server instance.
+                    description: 'A list of environment variables to set in the container
+                      running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables'
                     items:
                       description: EnvVar represents an environment variable present
                         in a Container.
@@ -14118,9 +14132,9 @@ spec:
                           Default is false.
                   schedulerName:
                     type: string
-                    description: If specified, the Pod will be dispatched by specified
-                      scheduler. If not specified, the Pod will be dispatched by default
-                      scheduler.
+                    description: If specified, the Pod will be dispatched by the specified
+                      scheduler. If not specified, the Pod will be dispatched by the
+                      default scheduler.
                   initContainers:
                     type: array
                     description: Initialization containers to be included in the server
@@ -15316,7 +15330,7 @@ spec:
                           the server. Not required. Defaults to 30 seconds.
                   affinity:
                     type: object
-                    description: If specified, the Pod's scheduling constraints
+                    description: If specified, the Pod's scheduling constraints.
                     properties:
                       nodeAffinity:
                         type: object
@@ -15969,7 +15983,7 @@ spec:
                       - ADMIN
                     serverService:
                       description: Customization affecting the generation of Kubernetes
-                        services for WebLogic Server instances.
+                        Services for WebLogic Server instances.
                       type: object
                       properties:
                         precreateService:
@@ -16002,7 +16016,7 @@ spec:
                           description: NodeName is a request to schedule this Pod
                             onto a specific Node. If it is non-empty, the scheduler
                             simply schedules this pod onto that node, assuming that
-                            it fits resource requirements.
+                            it fits the resource requirements.
                           type: string
                         livenessProbe:
                           description: Settings for the liveness probe associated
@@ -16024,7 +16038,7 @@ spec:
                           description: 'If specified, all readiness gates will be
                             evaluated for Pod readiness. A Pod is ready when all its
                             containers are ready AND all conditions specified in the
-                            readiness gates have status equal to "True" More info:
+                            readiness gates have a status equal to "True" More info:
                             https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
                           type: array
                           items:
@@ -16169,7 +16183,7 @@ spec:
                             with the former being the highest priority. Any other
                             name must be defined by creating a PriorityClass object
                             with that name. If not specified, the pod priority will
-                            be default or zero if there is no default.
+                            be the default or zero, if there is no default.
                           type: string
                         volumes:
                           description: Additional volumes to be created in the server
@@ -17705,8 +17719,9 @@ spec:
                             type: string
                           type: object
                         env:
-                          description: A list of environment variables to set in the
-                            container running a WebLogic Server instance.
+                          description: 'A list of environment variables to set in
+                            the container running a WebLogic Server instance. More
+                            info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables'
                           type: array
                           items:
                             description: EnvVar represents an environment variable
@@ -19339,8 +19354,8 @@ spec:
                               type: boolean
                         schedulerName:
                           description: If specified, the Pod will be dispatched by
-                            specified scheduler. If not specified, the Pod will be
-                            dispatched by default scheduler.
+                            the specified scheduler. If not specified, the Pod will
+                            be dispatched by the default scheduler.
                           type: string
                         initContainers:
                           description: Initialization containers to be included in
@@ -20591,7 +20606,7 @@ spec:
                                 down the server. Not required. Defaults to 30 seconds.
                               type: number
                         affinity:
-                          description: If specified, the Pod's scheduling constraints
+                          description: If specified, the Pod's scheduling constraints.
                           type: object
                           properties:
                             nodeAffinity:
@@ -21272,8 +21287,8 @@ spec:
                                     - weight
                     serverStartPolicy:
                       description: 'The strategy for deciding whether to start a WebLogic
-                        server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED.
-                        More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers'
+                        Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED.
+                        Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers'
                       type: string
                       enum:
                       - ALWAYS
@@ -21325,7 +21340,7 @@ spec:
                             If the value is "Not available", the operator has failed
                             to read the health. If the value is "Not available (possibly
                             overloaded)", the operator has failed to read the health
-                            of the server possibly due to the server is in overloaded
+                            of the server possibly due to the server is in the overloaded
                             state.
                           type: string
                         activationTime:
@@ -21399,8 +21414,8 @@ spec:
                       description: Last time we probed the condition.
                       type: string
                     status:
-                      description: Status is the status of the condition. Can be True,
-                        False, Unknown.
+                      description: The status of the condition. Can be True, False,
+                        Unknown.
                       type: string
               message:
                 type: string

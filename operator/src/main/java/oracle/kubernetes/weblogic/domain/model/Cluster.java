@@ -31,13 +31,16 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
 
   /** The number of replicas to run in the cluster, if specified. */
   @Description(
-      "The number of cluster member Managed Server instances to start. The first cluster "
-      + "members defined in the WebLogic domain configuration will be selected to "
-      + "start, up to the replicas count, unless specific Managed Servers are specified as "
+      "The number of cluster member Managed Server instances to start this WebLogic cluster. "
+      + "The operator will sort cluster member Managed Server names from the WebLogic domain "
+      + "configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. "
+      + "This is done so that server names such as \"managed-server10\" come after \"managed-server9\". "
+      + "The operator will then start Managed Servers from the sorted list, "
+      + "up to the replicas count, unless specific Managed Servers are specified as "
       + "starting in their entry under the managedServers field. In that case, the specified Managed Servers "
       + "will be started and then additional cluster members "
-      + "will be started, up to the replicas count, by finding the first cluster members in the WebLogic "
-      + "domain configuration that are not already started. If cluster members are started "
+      + "will be started, up to the replicas count, by finding further cluster members in the sorted list that are "
+      + "not already started. If cluster members are started "
       + "because of their related entries under managedServers then this cluster may have more cluster members "
       + "running than its replicas count. Not required. Defaults to 0.")
   @Range(minimum = 0)
@@ -51,8 +54,8 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
    * @since 2.0
    */
   @EnumClass(value = ServerStartPolicy.class, qualifier = "forCluster")
-  @Description("The strategy for deciding whether to start a WebLogic server instance. "
-      + "Legal values are NEVER, or IF_NEEDED. "
+  @Description("The strategy for deciding whether to start a WebLogic Server instance. "
+      + "Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers")
   private String serverStartPolicy;

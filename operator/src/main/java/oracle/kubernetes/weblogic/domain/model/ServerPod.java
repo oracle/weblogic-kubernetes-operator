@@ -58,7 +58,9 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Valid
-  @Description("A list of environment variables to set in the container running a WebLogic Server instance.")
+  @Description("A list of environment variables to set in the container running a WebLogic Server instance. "
+      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
+      + "domain-resource/#jvm-memory-and-java-option-environment-variables")
   private List<V1EnvVar> env = new ArrayList<>();
 
   /**
@@ -89,17 +91,17 @@ class ServerPod extends KubernetesResource {
       "Selector which must match a node's labels for the Pod to be scheduled on that Node.")
   private final Map<String, String> nodeSelector = new HashMap<>();
 
-  @Description("If specified, the Pod's scheduling constraints")
+  @Description("If specified, the Pod's scheduling constraints.")
   private V1Affinity affinity = null;
 
   @Description("If specified, indicates the Pod's priority. \"system-node-critical\" and \"system-cluster-critical\" "
       + "are two special keywords which indicate the highest priorities with the former being the highest priority. "
       + "Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod "
-      + "priority will be default or zero if there is no default.")
+      + "priority will be the default or zero, if there is no default.")
   private String priorityClassName = null;
 
   @Description("If specified, all readiness gates will be evaluated for Pod readiness. A Pod is ready when all its "
-      + "containers are ready AND all conditions specified in the readiness gates have status equal to \"True\" More "
+      + "containers are ready AND all conditions specified in the readiness gates have a status equal to \"True\" More "
       + "info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md")
   private List<V1PodReadinessGate> readinessGates = new ArrayList<>();
 
@@ -116,11 +118,11 @@ class ServerPod extends KubernetesResource {
   private String runtimeClassName = null;
 
   @Description("NodeName is a request to schedule this Pod onto a specific Node. If it is non-empty, the scheduler "
-      + "simply schedules this pod onto that node, assuming that it fits resource requirements.")
+      + "simply schedules this pod onto that node, assuming that it fits the resource requirements.")
   private String nodeName = null;
 
-  @Description("If specified, the Pod will be dispatched by specified scheduler. If not specified, the Pod will be "
-      + "dispatched by default scheduler.")
+  @Description("If specified, the Pod will be dispatched by the specified scheduler. If not specified, the Pod will be "
+      + "dispatched by the default scheduler.")
   private String schedulerName = null;
 
   @Description("If specified, the Pod's tolerations.")

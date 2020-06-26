@@ -43,9 +43,11 @@ public class DomainSpec extends BaseConfiguration {
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
   @Description(
-      "Domain unique identifier. Must be unique across the Kubernetes cluster. This value is distinct and"
-      + " need not match the domain name from the WebLogic domain configuration. Not required."
-      + " Defaults to the value of metadata.name.")
+      "Domain unique identifier. It is recommended that this value be unique to assist in future work to "
+      + "identify related domains in active-passive scenarios across data centers; however, it is only required "
+      + "that this value be unique within the namespace, similarly to the names of Kubernetes resources. "
+      + "This value is distinct and need not match the domain name from the WebLogic domain configuration. "
+      + "Not required. Defaults to the value of metadata.name.")
   @Pattern("^[a-z0-9-.]{1,253}$")
   @SerializedName("domainUID")
   private String domainUid;
@@ -71,19 +73,19 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @EnumClass(value = ServerStartPolicy.class, qualifier = "forDomain")
-  @Description("The strategy for deciding whether to start a WebLogic server instance. "
-      + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. "
+  @Description("The strategy for deciding whether to start a WebLogic Server instance. "
+      + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers")
   private String serverStartPolicy;
 
   /**
-   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * Reference to secret containing WebLogic startup credentials user name and password. Secret must
    * contain keys names 'username' and 'password'. Required.
    */
   @Description(
       "Reference to a Kubernetes Secret that contains"
-          + " the username and password needed to boot a WebLogic Server under the 'username' and "
+          + " the user name and password needed to boot a WebLogic Server under the 'username' and "
           + "'password' fields.")
   @Valid
   @NotNull
@@ -146,14 +148,14 @@ public class DomainSpec extends BaseConfiguration {
    * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
    * IfNotPresent.
    *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
+   * <p>Defaults to Always if image ends in :latest; IfNotPresent, otherwise.
    *
    * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
    */
   @Description(
       "The image pull policy for the WebLogic container image. "
           + "Legal values are Always, Never and IfNotPresent. "
-          + "Defaults to Always if image ends in :latest, IfNotPresent, otherwise.")
+          + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
 
@@ -174,14 +176,17 @@ public class DomainSpec extends BaseConfiguration {
    */
 
   @Description(
-      "The default number of cluster member Managed Server instances to start, if this is not specified for a specific "
-      + "cluster under the clusters field. For each cluster, the first cluster "
-      + "members defined in the WebLogic domain configuration will be selected to "
-      + "start, up to the replicas count, unless specific Managed Servers are specified as "
+      "The default number of cluster member Managed Server instances to start for each WebLogic cluster in the "
+      + "domain configuration, unless replicas is specified for that cluster under the clusters field. "
+      + "For each cluster, the operator will sort cluster member Managed Server names from the WebLogic domain "
+      + "configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. "
+      + "This is done so that server names such as \"managed-server10\" come after \"managed-server9\". "
+      + "The operator will then start Managed Servers from the sorted list, "
+      + "up to the replicas count, unless specific Managed Servers are specified as "
       + "starting in their entry under the managedServers field. In that case, the specified Managed Servers "
       + "will be started and then additional cluster members "
-      + "will be started, up to the replicas count, by finding the first cluster members in the WebLogic "
-      + "domain configuration that are not already started. If cluster members are started "
+      + "will be started, up to the replicas count, by finding further cluster members in the sorted list that are "
+      + "not already started. If cluster members are started "
       + "because of their related entries under managedServers then a cluster may have more cluster members "
       + "running than its replicas count. Not required. Defaults to 0.")
   @Range(minimum = 0)
@@ -414,7 +419,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * Reference to secret containing WebLogic startup credentials user name and password. Secret must
    * contain keys names 'username' and 'password'. Required.
    *
    * @param webLogicCredentialsSecret WebLogic startup credentials secret
@@ -426,7 +431,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * Reference to secret containing WebLogic startup credentials user name and password. Secret must
    * contain keys names 'username' and 'password'. Required.
    *
    * @param opssKeyPassPhrase WebLogic startup credentials secret
