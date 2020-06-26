@@ -284,6 +284,13 @@ public class ItJrfDomainInPV {
     // verify the admin server service created
     checkServiceExists(adminServerPodName, jrfDomainNamespace);
 
+    // verify managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, jrfDomainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, jrfDomainNamespace);
+    }
+
     // verify admin server pod is ready
     checkPodReady(adminServerPodName, domainUid, jrfDomainNamespace);
 
@@ -292,13 +299,6 @@ public class ItJrfDomainInPV {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, jrfDomainNamespace);
       checkPodReady(managedServerPodNamePrefix + i, domainUid, jrfDomainNamespace);
-    }
-
-    // verify managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, jrfDomainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, jrfDomainNamespace);
     }
 
   }
