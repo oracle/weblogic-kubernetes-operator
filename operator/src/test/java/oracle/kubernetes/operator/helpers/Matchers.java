@@ -21,6 +21,7 @@ import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWithName;
+import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWithNameAndValue;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 
@@ -39,9 +40,8 @@ public class Matchers {
     return hasItem(envVarWithName(name));
   }
 
-  public static Matcher<Iterable<? super V1EnvVar>> hasEnvVarContains(String name, String val) {
-    // env.getValue() will match if it contains 'val' (assumes ',' is the delimiter)
-    return hasItem(envVarWithNameAndValue(name,"(^|.*,)" + val + "($|,.*)"));
+  public static Matcher<Iterable<? super V1EnvVar>> hasEnvVarRegEx(String name, String regex) {
+    return hasItem(envVarWithNameAndValue(name,regex));
   }
 
   static Matcher<Map<? extends String, ? extends Quantity>> hasResourceQuantity(
