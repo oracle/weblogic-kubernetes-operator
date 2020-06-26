@@ -41,7 +41,7 @@ public class Matchers {
 
   public static Matcher<Iterable<? super V1EnvVar>> hasEnvVarContains(String name, String val) {
     // env.getValue() will match if it contains 'val' (assumes ',' is the delimiter)
-    return hasItem(envVarWithName(name,"(^|.*,)" + val + "($|,.*)"));
+    return hasItem(envVarWithNameAndValue(name,"(^|.*,)" + val + "($|,.*)"));
   }
 
   static Matcher<Map<? extends String, ? extends Quantity>> hasResourceQuantity(
@@ -188,7 +188,7 @@ public class Matchers {
       return new EnvVarMatcher(name);
     }
 
-    static EnvVarMatcher envVarWithName(@Nonnull String name, String value) {
+    static EnvVarMatcher envVarWithNameAndValue(@Nonnull String name, String value) {
       return new EnvVarMatcher(name, value);
     }
 
