@@ -451,6 +451,7 @@ public class Domain {
 
   /**
    * Returns true if the operator can be asked to run a new introspection for this domain.
+   * @return true, if this domain may ask for a new introspection
    */
   public boolean mayRequestIntrospection() {
     return getDomainHomeSourceType().mayRequestIntrospection();
