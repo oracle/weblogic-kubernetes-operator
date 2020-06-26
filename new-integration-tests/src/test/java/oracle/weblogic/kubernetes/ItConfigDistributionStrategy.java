@@ -456,7 +456,7 @@ public class ItConfigDistributionStrategy {
         "Failed to patch domain");
 
     //does changing overrideDistributionStrategy needs restart of server pods?
-    restartDomain(); // if it above is a bug, remove this after the above bug is fixed
+    restartDomain(); // if above is a bug, remove this after the above bug is fixed
 
     //store the pod creation timestamps
     storePodCreationTimestamps();
