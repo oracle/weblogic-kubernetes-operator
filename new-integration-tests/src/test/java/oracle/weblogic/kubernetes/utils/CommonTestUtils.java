@@ -130,6 +130,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
@@ -1725,5 +1726,33 @@ public class CommonTestUtils {
       replaceStringInFile(out, entry.getKey(), entry.getValue()); 
     }
     return targetFile;
+  }
+
+  /**
+   * Check the WebLogic application using host information in the header.  
+   * @param url url to access the appliation
+   * @param hostHeader host information to be passed as Header 
+   * @return true if curl command returns HTTP code 200 otherwise false
+  */
+  public static boolean checkAppUsingHostHeader(String url, String hostHeader) {
+    ExecResult result = null;
+    LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    curlString.append(" --noproxy '*' ")
+         .append(" --silent --show-error ")
+         .append("-H 'host: " + hostHeader  + "' ")
+         .append(url)
+         .append(" -o /dev/null")
+         .append(" -w %{http_code});")
+         .append("echo ${status}");
+    logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
+    try {
+      result = exec(new String(curlString), true);
+    } catch (Exception ex) {
+      logger.info("checkAppUsingHostInfo: caught unexpected exception {0}", ex);
+      return false;
+    }
+    logger.info("checkAppUsingHostInfo: kubectl returned {0}", result.toString());
+    return result.stdout().contains("200"); 
   }
 }

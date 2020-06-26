@@ -29,7 +29,6 @@ import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -49,8 +48,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
@@ -216,33 +215,37 @@ class ItIstioDomainInImage {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return adminNodePortAccessible(istioIngressPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
+    try {
+      Thread.sleep(5 * 1000);
+    } catch (InterruptedException ie) {
+      //    
+    }
+
+    String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+    boolean checkConsole = 
+         checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+    assertTrue(checkConsole, "Failed to access WebLogic console");
+    logger.info("WebLogic console is acceesible");
 
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
     result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
-        clusterName, archivePath);
+        clusterName, archivePath, domainNamespace + ".org");
     assertNotNull(result, "Application deployment failed");
     logger.info("Application deployment returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Application deployed successfully");
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
-    logger.info("Application Access URL {0}", url);
-
+    assertEquals("202", result.stdout(), "Deployment does not returns HTTP status code 202");
     try {
       Thread.sleep(5 * 1000);
     } catch (InterruptedException ie) {
-      //    
+     //
     }
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
+
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
+    logger.info("Application Access URL {0}", url);
+    boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
+    assertTrue(checkConsole, "Failed to access WebLogic appliation");
   }
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
