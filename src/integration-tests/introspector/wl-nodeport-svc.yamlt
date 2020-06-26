@@ -8,7 +8,6 @@ metadata:
     weblogic.createdByOperator: "true"
     weblogic.domainName: ${DOMAIN_NAME}
     weblogic.domainUID: ${DOMAIN_UID}
-    weblogic.resourceVersion: domain-v1
     weblogic.serverName: ${SERVER_NAME}
   name: ${SERVICE_NAME}
   namespace: ${NAMESPACE}

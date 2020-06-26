@@ -7,7 +7,6 @@ metadata:
   labels:
     weblogic.createdByOperator: "true"
     weblogic.domainUID: ${DOMAIN_UID}
-    weblogic.resourceVersion: domain-v2
   name: ${JOB_NAME}
   namespace: ${NAMESPACE}
 spec:

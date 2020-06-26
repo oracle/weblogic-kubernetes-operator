@@ -20,7 +20,6 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -105,8 +104,6 @@ public class ConfigMapHelperTest {
     return new V1ObjectMeta()
         .name(SCRIPT_CONFIG_MAP_NAME)
         .namespace(DOMAIN_NS)
-        .putLabelsItem(
-            LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
         .putLabelsItem(LabelConstants.OPERATORNAME_LABEL, OPERATOR_NS)
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }

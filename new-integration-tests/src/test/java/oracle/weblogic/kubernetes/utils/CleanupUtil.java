@@ -26,12 +26,13 @@ import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 
 /**
@@ -51,6 +52,7 @@ public class CleanupUtil {
    * @param namespaces list of namespaces
    */
   public static void cleanup(List<String> namespaces) {
+    LoggingFacade logger = getLogger();
     try {
       uninstallIstio();
       // If namespace list is empty or null return
@@ -91,7 +93,7 @@ public class CleanupUtil {
         withStandardRetryPolicy
             .conditionEvaluationListener(
                 condition -> logger.info("Waiting for artifacts to be deleted in namespace {0}, "
-                    + "(elapsed time {1} , remaining time {2}",
+                        + "(elapsed time {1} , remaining time {2}",
                     namespace,
                     condition.getElapsedTimeInMS(),
                     condition.getRemainingTimeInMS()))
@@ -101,7 +103,7 @@ public class CleanupUtil {
         withStandardRetryPolicy
             .conditionEvaluationListener(
                 condition -> logger.info("Waiting for namespace to be deleted {0}, "
-                    + "(elapsed time {1} , remaining time {2}",
+                        + "(elapsed time {1} , remaining time {2}",
                     namespace,
                     condition.getElapsedTimeInMS(),
                     condition.getRemainingTimeInMS()))
@@ -119,6 +121,7 @@ public class CleanupUtil {
    * @param namespace name of the namespace
    */
   private static void deleteDomains(String namespace) {
+    LoggingFacade logger = getLogger();
     try {
       for (var item : Kubernetes.listDomains(namespace).getItems()) {
         String domainUid = item.getMetadata().getName();
@@ -149,6 +152,7 @@ public class CleanupUtil {
    * @return true if no artifacts exists, otherwise false
    */
   public static Callable<Boolean> nothingFoundInNamespace(String namespace) {
+    LoggingFacade logger = getLogger();
     return () -> {
       boolean nothingFound = true;
       logger.info("Checking for "
@@ -384,6 +388,7 @@ public class CleanupUtil {
    * @return true if namespace was not found, otherwise false
    */
   public static Callable<Boolean> namespaceNotFound(String namespace) {
+    LoggingFacade logger = getLogger();
     return () -> {
       boolean notFound = true;
       // get namespaces
@@ -408,6 +413,7 @@ public class CleanupUtil {
    * @param namespace name of the namespace
    */
   public static void deleteNamespacedArtifacts(String namespace) {
+    LoggingFacade logger = getLogger();
     logger.info("Deleting artifacts in namespace {0}", namespace);
 
     // Delete all Domain objects in the given namespace
@@ -552,6 +558,7 @@ public class CleanupUtil {
    * @param namespace name of the namespace
    */
   public static void deleteNamespace(String namespace) {
+    LoggingFacade logger = getLogger();
     try {
       Kubernetes.deleteNamespace(namespace);
     } catch (Exception ex) {

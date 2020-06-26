@@ -29,7 +29,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.DbUtils;
 import org.awaitility.core.ConditionFactory;
@@ -61,6 +61,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -70,7 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
 @IntegrationTest
-public class ItJrfDomainInPV implements LoggedTest {
+public class ItJrfDomainInPV {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
@@ -85,11 +86,10 @@ public class ItJrfDomainInPV implements LoggedTest {
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
 
   private static String dbUrl = null;
-  private static int dbPort = getNextFreePort(30000, 32767);
-
   private static String fmwImage = JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG;
   private static String dbImage = DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
   private static boolean isUseSecret = true;
+  private static LoggingFacade logger = null;
 
   private final String domainUid = "jrfdomain-inpv";
   private final String wlSecretName = domainUid + "-weblogic-credentials";
@@ -112,6 +112,7 @@ public class ItJrfDomainInPV implements LoggedTest {
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
 
+    logger = getLogger();
     logger.info("Assign a unique namespace for DB and RCU");
     assertNotNull(namespaces.get(0), "Namespace is null");
     dbNamespace = namespaces.get(0);
@@ -125,6 +126,7 @@ public class ItJrfDomainInPV implements LoggedTest {
     assertNotNull(namespaces.get(2), "Namespace is null");
     jrfDomainNamespace = namespaces.get(2);
 
+    final int dbPort = getNextFreePort(30000, 32767);
     logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, dbPort: {2} "
         + "dbUrl: {3} dbImage: {4},  fmwImage: {5} isUseSecret: {6}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl,
         dbImage, fmwImage, isUseSecret);
@@ -279,11 +281,11 @@ public class ItJrfDomainInPV implements LoggedTest {
     // verify the domain custom resource is created
     createDomainAndVerify(domain, jrfDomainNamespace);
 
-    // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, jrfDomainNamespace);
-
     // verify the admin server service created
     checkServiceExists(adminServerPodName, jrfDomainNamespace);
+
+    // verify admin server pod is ready
+    checkPodReady(adminServerPodName, domainUid, jrfDomainNamespace);
 
     // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {

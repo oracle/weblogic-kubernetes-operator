@@ -78,7 +78,6 @@ metadata:
   name: domain2
   namespace: domain1
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain2
 spec:
   ... other content ...

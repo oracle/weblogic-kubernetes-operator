@@ -12,7 +12,6 @@ spec:
       annotations:
         sidecar.istio.io/inject: "false"
       labels:
-        weblogic.resourceVersion: domain-v2
         weblogic.domainUID: %DOMAIN_UID%
         weblogic.domainName: %DOMAIN_NAME%
         app: %DOMAIN_UID%-create-weblogic-sample-domain-job

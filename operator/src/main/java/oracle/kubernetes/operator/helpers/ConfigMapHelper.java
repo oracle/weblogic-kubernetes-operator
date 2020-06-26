@@ -45,7 +45,6 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SECRETS_MD_5;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 public class ConfigMapHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -139,6 +138,7 @@ public class ConfigMapHelper {
   /**
    * Returns the standard name for the generated domain config map.
    * @param domainUid the unique ID of the domain
+   * @return map name
    */
   public static String getIntrospectorConfigMapName(String domainUid) {
     return domainUid + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
@@ -207,7 +207,6 @@ public class ConfigMapHelper {
       this.namespace = namespace;
       this.contents = contents;
 
-      addLabel(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION);
       addLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     }
 
@@ -291,8 +290,7 @@ public class ConfigMapHelper {
       }
 
       private boolean isCompatibleMap(V1ConfigMap existingMap) {
-        return VersionHelper.matchesResourceVersion(existingMap.getMetadata(), DEFAULT_DOMAIN_VERSION)
-            && COMPARATOR.containsAll(existingMap, getModel());
+        return COMPARATOR.containsAll(existingMap, getModel());
       }
 
       private void logConfigMapExists() {
