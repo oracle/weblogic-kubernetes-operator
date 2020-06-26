@@ -38,13 +38,14 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 
 /** DomainSpec is a description of a domain. */
-@Description("DomainSpec is a description of a domain.")
+@Description("The specification of the operation of the WebLogic domain. Required.")
 public class DomainSpec extends BaseConfiguration {
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
   @Description(
-      "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required."
-          + " Defaults to the value of metadata.name.")
+      "Domain unique identifier. Must be unique across the Kubernetes cluster. This value is distinct and"
+      + " need not match the domain name from the WebLogic domain configuration. Not required."
+      + " Defaults to the value of metadata.name.")
   @Pattern("^[a-z0-9-.]{1,253}$")
   @SerializedName("domainUID")
   private String domainUid;
@@ -55,7 +56,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "The folder for the WebLogic Domain. Not required."
+      "The directory containing the WebLogic domain configuration inside the container. Not required."
           + " Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume."
           + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image."
           + " Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel.")
@@ -70,9 +71,10 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @EnumClass(value = ServerStartPolicy.class, qualifier = "forDomain")
-  @Description(
-      "The strategy for deciding whether to start a server. "
-          + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.")
+  @Description("The strategy for deciding whether to start a WebLogic server instance. "
+      + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. "
+      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
+      + "domain-lifecycle/startup/#starting-and-stopping-servers")
   private String serverStartPolicy;
 
   /**
@@ -80,8 +82,8 @@ public class DomainSpec extends BaseConfiguration {
    * contain keys names 'username' and 'password'. Required.
    */
   @Description(
-      "The name of a pre-created Kubernetes secret, in the domain's namespace, that holds"
-          + " the username and password needed to boot WebLogic Server under the 'username' and "
+      "Reference to a Kubernetes Secret that contains"
+          + " the username and password needed to boot a WebLogic Server under the 'username' and "
           + "'password' fields.")
   @Valid
   @NotNull
@@ -92,8 +94,8 @@ public class DomainSpec extends BaseConfiguration {
    * .out, and HTTP access log files in.
    */
   @Description(
-      "The in-pod name of the directory in which to store the domain, Node Manager, server logs, "
-          + "server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. "
+      "The directory in a server's container in which to store the domain, Node Manager, server logs, "
+          + "server *.out, and optionally HTTP access log files if httpAccessLogInLogHome is true. "
           + "Ignored if logHomeEnabled is false.")
   private String logHome;
 
@@ -103,7 +105,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "Specified whether the log home folder is enabled. Not required. "
+      "Specifies whether the log home folder is enabled. Not required. "
           + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
@@ -113,20 +115,21 @@ public class DomainSpec extends BaseConfiguration {
    * directories are determined from the WebLogic domain home configuration.
    */
   @Description(
-      "An optional, in-pod location for data storage of default and custom file stores. "
-          + "If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") "
+      "An optional, directory in a server's container for data storage of default and custom file stores. "
+          + "If dataHome is not specified or its value is either not set or empty "
           + "then the data storage directories are determined from the WebLogic domain home configuration.")
   private String dataHome;
 
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
-  @Description("If true (the default), then the server .out file will be included in the pod's stdout.")
+  @Description("Specifies whether the server .out file will be included in the Pod's log. "
+          + "Not required. Defaults to true.")
   private Boolean includeServerOutInPodLog;
 
   /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
    *  if {@link #logHomeEnabled} is true. Default is true. */
-  @Description("If true (the default), then server HTTP access log files will be written to the same "
-      + "directory specified in `logHome`. Otherwise, server HTTP access log files will be written to "
-      + "the directory configured in the WebLogic domain home configuration.")
+  @Description("Specifies whether the server HTTP access log files will be written to the same "
+      + "directory specified in logHome. Otherwise, server HTTP access log files will be written to "
+      + "the directory configured in the WebLogic domain home configuration. Not required. Defaults to true.")
   private Boolean httpAccessLogInLogHome;
 
   /**
@@ -135,7 +138,7 @@ public class DomainSpec extends BaseConfiguration {
    * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4
    */
   @Description(
-      "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; "
+      "The WebLogic container image; required when domainHomeSourceType is Image or FromModel; "
           + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
   private String image;
 
@@ -148,9 +151,9 @@ public class DomainSpec extends BaseConfiguration {
    * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
    */
   @Description(
-      "The image pull policy for the WebLogic Docker image. "
+      "The image pull policy for the WebLogic container image. "
           + "Legal values are Always, Never and IfNotPresent. "
-          + "Defaults to Always if image ends in :latest, IfNotPresent otherwise.")
+          + "Defaults to Always if image ends in :latest, IfNotPresent, otherwise.")
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
 
@@ -162,28 +165,38 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("A list of image pull secrets for the WebLogic Docker image.")
+  @Description("A list of image pull secrets for the WebLogic container image.")
   private List<V1LocalObjectReference> imagePullSecrets;
 
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in a cluster specification.
    */
+
   @Description(
-      "The number of managed servers to run in any cluster that does not specify a replica count.")
+      "The default number of cluster member Managed Server instances to start, if this is not specified for a specific "
+      + "cluster under the clusters field. For each cluster, the first cluster "
+      + "members defined in the WebLogic domain configuration will be selected to "
+      + "start, up to the replicas count, unless specific Managed Servers are specified as "
+      + "starting in their entry under the managedServers field. In that case, the specified Managed Servers "
+      + "will be started and then additional cluster members "
+      + "will be started, up to the replicas count, by finding the first cluster members in the WebLogic "
+      + "domain configuration that are not already started. If cluster members are started "
+      + "because of their related entries under managedServers then a cluster may have more cluster members "
+      + "running than its replicas count. Not required. Defaults to 0.")
   @Range(minimum = 0)
   private Integer replicas;
 
-  @Description("Whether to allow the number of replicas to drop below the minimum "
-      + "dynamic cluster size configured in the WebLogic domain home configuration, "
-      + "if this is not specified at the cluster level. Defaults to true."
+  @Description("Whether to allow the number of running cluster member Managed Server instances to drop "
+      + "below the minimum dynamic cluster size configured in the WebLogic domain configuration, "
+      + "if this is not specified for a specific cluster under the clusters field. Not required. Defaults to true."
   )
   private Boolean allowReplicasBelowMinDynClusterSize;
 
   @Description(
-      "The maximum number of Managed Servers that the operator will start in parallel "
-          + "for a cluster, if `maxConcurrentStartup` is not specified at the cluster level. "
-          + "A value of 0 (the default) means there is no configured limit."
+      "The maximum number of cluster member Managed Server instances that the operator will start in parallel "
+          + "for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the "
+          + "clusters field. A value of 0 means there is no configured limit. Not required. Defaults to 0."
   )
   @Range(minimum = 0)
   private Integer maxClusterConcurrentStartup;
@@ -196,17 +209,17 @@ public class DomainSpec extends BaseConfiguration {
   @Deprecated
   @Description(
       "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
-          + " True indicates that the domain home file system is contained in the Docker image"
+          + " True indicates that the domain home file system is present in the container image"
           + " specified by the image field. False indicates that the domain home file system is located"
-          + " on a persistent volume.")
+          + " on a persistent volume. Not required. Defaults to unset.")
   private Boolean domainHomeInImage;
 
   @Description(
       "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
-          + " Image indicates that the domain home file system is contained in the Docker image"
+          + " Image indicates that the domain home file system is present in the container image"
           + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
-          + " on a persistent volume.  FromModel indicates that the domain home file system will be created"
-          + " and managed by the operator based on a WDT domain model."
+          + " on a persistent volume. FromModel indicates that the domain home file system will be created"
+          + " and managed by the operator based on a WDT domain model. Not required."
           + " If this field is specified it overrides the value of domainHomeInImage. If both fields are"
           + " unspecified then domainHomeSourceType defaults to Image.")
   private DomainSourceType domainHomeSourceType;
@@ -217,8 +230,15 @@ public class DomainSpec extends BaseConfiguration {
    * @since 3.0.0
    */
   @Description(
-      "If the domain is running, the operator will restart its introspector job when this value is changed. "
-      + "This field is ignored when the domainHomeSourceType is FromModel. "
+      "Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. "
+      + "Repeating introspection is required for the operator to recognize changes to the domain configuration, "
+      + "such as adding a new WebLogic cluster or Manager Server instance, to regenerate configuration overrides, "
+      + "or to regenerate the WebLogic domain home when the domainHomeSourceType is FromModel. Introspection occurs "
+      + "automatically, without requiring change to this field, when servers are first started or restarted after a "
+      + "full domain shutdown. For the FromModel domainHomeSourceType, introspection also occurs when a running "
+      + "server must be restarted because of changes to any of the fields listed here: "
+      + "https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
+      + "domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. "
       + "See also overridesConfigurationStrategy.")
   private String introspectVersion;
 
@@ -251,7 +271,9 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for the Administration Server.")
+  @Description("Lifecycle options for the Administration Server, including Java options, environment variables, "
+          + "additional Pod content, and which channels or network access points should be exposed using "
+          + "a NodePort Service.")
   private AdminServer adminServer;
 
   /**
@@ -259,7 +281,10 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for individual Managed Servers.")
+  @Description("Lifecycle options for individual Managed Servers, including Java options, environment variables, "
+          + "additional Pod content, and the ability to explicitly start, stop, or restart a named server instance. "
+          + "The serverName field of each entry must name a Managed Server that already exists in the WebLogic "
+          + "domain configuration.")
   private final List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
@@ -267,7 +292,10 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for the clusters.")
+  @Description("Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, "
+          + "environment variables, additional Pod content, and the ability to explicitly start, stop, or restart "
+          + "cluster members. The clusterName field of each entry must name a cluster that already exists in the "
+          + "WebLogic domain configuration.")
   protected final List<Cluster> clusters = new ArrayList<>();
 
   /**

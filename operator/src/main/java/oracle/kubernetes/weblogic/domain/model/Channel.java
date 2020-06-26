@@ -11,17 +11,16 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description("Describes a single channel used by the Administration Server.")
 public class Channel implements Comparable<Channel> {
   @SerializedName("channelName")
   @Description(
-      "Name of channel.\n'default' refers to the Administration Server's default channel (configured "
-          + "via the ServerMBean's ListenPort) "
-          + "\n'default-secure' refers to the Administration Server's default secure channel "
-          + "(configured via the ServerMBean's SSLMBean's ListenPort) "
-          + "\n'default-admin' refers to the Administration Server's default administrative channel "
-          + "(configured via the DomainMBean's AdministrationPort) "
-          + "\nOtherwise, the name is the name of one of the Administration Server's network access points "
+      "Name of channel. The 'default' value refers to the Administration Server's default channel (configured "
+          + "via the ServerMBean's ListenPort). "
+          + "The 'default-secure' value refers to the Administration Server's default secure channel "
+          + "(configured via the ServerMBean's SSLMBean's ListenPort). "
+          + "The 'default-admin' value refers to the Administration Server's default administrative channel "
+          + "(configured via the DomainMBean's AdministrationPort). "
+          + "Otherwise, the name is the name of one of the Administration Server's network access points "
           + "(configured via the ServerMBean's NetworkAccessMBeans).")
   @Nonnull
   private String channelName;

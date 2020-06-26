@@ -14,14 +14,13 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
 
-@Description("Shutdown describes the configuration for shutting down a server instance.")
 public class Shutdown {
   // Default timeout must stay 30 seconds to match Kubernetes default
   public static final Long DEFAULT_TIMEOUT = 30L;
   public static final Boolean DEFAULT_IGNORESESSIONS = Boolean.FALSE;
 
   @Description(
-      "Tells the operator how to shutdown server instances. Not required."
+      "Specifies how the operator will shut down server instances. Not required."
           + " Defaults to graceful shutdown.")
   @EnumClass(ShutdownType.class)
   private String shutdownType;

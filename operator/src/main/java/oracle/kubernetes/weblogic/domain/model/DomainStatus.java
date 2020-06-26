@@ -32,9 +32,7 @@ import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPa
  * DomainStatus represents information about the status of a domain. Status may trail the actual
  * state of a system.
  */
-@Description(
-    "DomainStatus represents information about the status of a domain. "
-        + "Status may trail the actual state of a system.")
+@Description("The current status of the operation of the WebLogic domain. Updated automatically by the operator.")
 public class DomainStatus {
 
   @Description("Current service state of domain.")

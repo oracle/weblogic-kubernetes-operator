@@ -16,27 +16,27 @@ public class Configuration {
   @Description("Model in image model files and properties.")
   private Model model;
 
-  @Description("Configuration for OPSS security.")
+  @Description("Settings for OPSS security.")
   private Opss opss;
 
   @Description(
       "A list of names of the secrets for WebLogic configuration overrides or model. If this field is specified"
-          + " it overrides the value of spec.configOverrideSecrets.")
+          + " then the value of spec.configOverrideSecrets is ignored.")
   private List<String> secrets;
 
-  @Description("The name of the config map for WebLogic configuration overrides. If this field is specified"
-          + " it overrides the value of spec.configOverrides.")
+  @Description("The name of the ConfigMap for WebLogic configuration overrides. If this field is specified"
+          + " then the value of spec.configOverrides is ignored.")
   private String overridesConfigMap;
 
   @Description("The introspector job timeout value in seconds. If this field is specified"
-          + " it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value.")
+          + " then the Operator's ConfigMap data.introspectorJobActiveDeadlineSeconds value is ignored.")
   private Long introspectorJobActiveDeadlineSeconds;
 
   @Description(
       "Determines how updated configuration overrides are distributed to already running WebLogic servers "
       + "following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides "
       + "are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. "
-      + "Legal values are DYNAMIC (the default) and ON_RESTART. See also introspectVersion.")
+      + "Legal values are DYNAMIC and ON_RESTART. See also introspectVersion. Defaults to DYNAMIC")
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
   @Description("The Istio service mesh integration settings.")

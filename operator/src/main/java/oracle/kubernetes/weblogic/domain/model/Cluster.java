@@ -22,15 +22,24 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *
  * @since 2.0
  */
-@Description("An element representing a cluster in the domain configuration.")
 public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   /** The name of the cluster. Required. */
-  @Description("The name of this cluster. Required")
+  @Description("The name of the cluster. This value must match the name of a WebLogic cluster already defined "
+      + "in the WebLogic domain configuration. Required")
   @Nonnull
   private String clusterName;
 
   /** The number of replicas to run in the cluster, if specified. */
-  @Description("The number of cluster members to run.")
+  @Description(
+      "The number of cluster member Managed Server instances to start. The first cluster "
+      + "members defined in the WebLogic domain configuration will be selected to "
+      + "start, up to the replicas count, unless specific Managed Servers are specified as "
+      + "starting in their entry under the managedServers field. In that case, the specified Managed Servers "
+      + "will be started and then additional cluster members "
+      + "will be started, up to the replicas count, by finding the first cluster members in the WebLogic "
+      + "domain configuration that are not already started. If cluster members are started "
+      + "because of their related entries under managedServers then this cluster may have more cluster members "
+      + "running than its replicas count. Not required. Defaults to 0.")
   @Range(minimum = 0)
   private Integer replicas;
 
@@ -42,9 +51,10 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
    * @since 2.0
    */
   @EnumClass(value = ServerStartPolicy.class, qualifier = "forCluster")
-  @Description(
-      "The strategy for deciding whether to start a server. "
-          + "Legal values are NEVER, or IF_NEEDED.")
+  @Description("The strategy for deciding whether to start a WebLogic server instance. "
+      + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. "
+      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
+      + "domain-lifecycle/startup/#starting-and-stopping-servers")
   private String serverStartPolicy;
 
   @Description(
@@ -52,24 +62,25 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Range(minimum = 1)
   private Integer maxUnavailable;
 
-  @Description("Customization affecting ClusterIP Kubernetes services for the WebLogic cluster.")
+  @Description("Customization affecting Kubernetes Service generated for this WebLogic cluster.")
   @SerializedName("clusterService")
   @Expose
   private KubernetesResource clusterService = new KubernetesResource();
 
-  @Description("If true (the default), then the number of replicas is allowed to drop below the "
-      + "minimum dynamic cluster size configured in the WebLogic domain home configuration. "
+  @Description("Specifies whether the number of replicas is allowed to drop below the "
+      + "minimum dynamic cluster size configured in the WebLogic domain configuration. "
       + "Otherwise, the operator will ensure that the number of replicas is not less than "
-      + "the minimum dynamic cluster setting. This setting applies to dynamic clusters only."
+      + "the minimum dynamic cluster setting. This setting applies to dynamic clusters only. "
+      + "Not required. Defaults to true"
   )
   private Boolean allowReplicasBelowMinDynClusterSize;
 
   @Description(
-      "The maximum number of Managed Servers that the operator will start in parallel "
-      + "for the cluster in response to a change in replicas count for the cluster. "
+      "The maximum number of Managed Servers instances that the operator will start in parallel "
+      + "for this cluster in response to a change in replicas count. "
       + "If more Managed Servers need to be started, the operator will wait until a Managed "
-      + "Server pod is in the `Ready` and `Running` state before starting the next Managed Server. "
-      + "A value of 0 (the default) means all Managed Servers will start in parallel."
+      + "Server Pod is in the `Ready` state before starting the next Managed Server instance. "
+      + "A value of 0 means all Managed Server instances will start in parallel. Defaults to 0."
   )
   @Range(minimum = 0)
   private Integer maxConcurrentStartup;

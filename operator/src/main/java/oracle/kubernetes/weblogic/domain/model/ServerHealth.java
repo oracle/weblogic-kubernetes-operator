@@ -25,7 +25,7 @@ public class ServerHealth {
   private DateTime activationTime;
 
   @Description(
-      "Server health of this WebLogic Server. If the value is \"Not available\", the operator has "
+      "Server health of this WebLogic Server instance. If the value is \"Not available\", the operator has "
           + "failed to read the health. If the value is \"Not available (possibly overloaded)\", the "
           + "operator has failed to read the health of the server possibly due to the server is "
           + "in overloaded state.")
