@@ -50,6 +50,10 @@ function check_for_shutdown() {
 
   if [ -e /tmp/diefast ]; then
     trace "Found '/tmp/diefast' file; skipping clean shutdown" &>> ${STOP_OUT_FILE}
+
+    # Adjust PATH if necessary before calling jps
+    adjustPath
+
     kill -9 `jps -v | grep " NodeManager " | awk '{ print $1 }'`
     kill -9 `jps -v | grep " -Dweblogic.Name=${SERVER_NAME} " | awk '{ print $1 }'`
     touch ${SHUTDOWN_MARKER_FILE}
