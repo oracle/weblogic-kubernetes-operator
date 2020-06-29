@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -89,10 +90,6 @@ public class DomainPresenceInfo {
     return false;
   }
 
-  public boolean mayRequestIntrospection() {
-    return Optional.ofNullable(getDomain()).map(Domain::mayRequestIntrospection).orElse(true);
-  }
-
   public void setServerService(String serverName, V1Service service) {
     getSko(serverName).getService().set(service);
   }
@@ -107,6 +104,10 @@ public class DomainPresenceInfo {
 
   public V1Service removeServerService(String serverName) {
     return getSko(serverName).getService().getAndSet(null);
+  }
+
+  public static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
+    return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class));
   }
 
   V1Service[] getServiceServices() {

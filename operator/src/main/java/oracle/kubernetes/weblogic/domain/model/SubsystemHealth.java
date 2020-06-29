@@ -21,12 +21,12 @@ import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPa
 /** SubsystemHealth describes the current health of a specific subsystem. */
 public class SubsystemHealth implements Comparable<SubsystemHealth>, PatchableComponent<SubsystemHealth> {
 
-  @Description("Server health of this WebLogic Server. Required.")
+  @Description("Server health of this WebLogic Server instance.")
   @Expose
   @NotNull
   private String health;
 
-  @Description("Name of subsystem providing symptom information. Required.")
+  @Description("Name of subsystem providing symptom information.")
   @Expose
   @NotNull
   private String subsystemName;

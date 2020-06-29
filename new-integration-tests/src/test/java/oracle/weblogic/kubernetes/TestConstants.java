@@ -99,6 +99,7 @@ public interface TestConstants {
   public static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
   // WDT domain-in-image constants
+
   public static final String WDT_BASIC_MODEL_FILE = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
   public static final String WDT_BASIC_IMAGE_NAME = REPO_NAME + "wdt-basic-image";

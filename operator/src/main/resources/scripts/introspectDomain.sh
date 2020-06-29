@@ -83,6 +83,7 @@ checkEnv -q \
          NODEMGR_HOME \
          WL_HOME \
          MW_HOME \
+         OPERATOR_ENVVAR_NAMES \
          || exit 1
 
 for script_file in "${SCRIPTPATH}/wlst.sh" \
@@ -108,10 +109,10 @@ fi
 traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN START"
 
 source ${SCRIPTPATH}/modelInImage.sh
-
 if [ $? -ne 0 ]; then
       trace SEVERE "Error sourcing modelInImage.sh" && exit 1
 fi
+
 # Add another env/attribute in domain yaml for model in image
 # log error if dir exists and attribute set
 DOMAIN_CREATED=0
