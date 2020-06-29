@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -19,7 +20,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 /** This test class verifies the behavior of the ConfigMapWatcher. */
 public class ConfigMapWatcherTest extends WatcherTestBase implements WatchListener<V1ConfigMap> {
 
-  private static final int INITIAL_RESOURCE_VERSION = 456;
+  private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("456");
 
   @Override
   public void receivedResponse(Watch.Response<V1ConfigMap> response) {
@@ -32,7 +33,7 @@ public class ConfigMapWatcherTest extends WatcherTestBase implements WatchListen
 
     assertThat(
         StubWatchFactory.getRequestParameters().get(0),
-        both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
+        both(hasEntry("resourceVersion", INITIAL_RESOURCE_VERSION.toString()))
             .and(hasEntry("labelSelector", LabelConstants.CREATEDBYOPERATOR_LABEL)));
   }
 
@@ -43,7 +44,7 @@ public class ConfigMapWatcherTest extends WatcherTestBase implements WatchListen
   }
 
   @Override
-  protected ConfigMapWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
-    return ConfigMapWatcher.create(this, ns, Integer.toString(rv), tuning, this, stopping);
+  protected ConfigMapWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
+    return ConfigMapWatcher.create(this, ns, rv.toString(), tuning, this, stopping);
   }
 }

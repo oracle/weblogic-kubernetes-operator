@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,11 +33,11 @@ import static java.net.HttpURLConnection.HTTP_GONE;
 abstract class Watcher<T> {
   static final String HAS_NEXT_EXCEPTION_MESSAGE = "IO Exception during hasNext method.";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final long IGNORED_RESOURCE_VERSION = 0;
+  private static final BigInteger IGNORED_RESOURCE_VERSION = BigInteger.ZERO;
 
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
   private final WatchTuning tuning;
-  private Long resourceVersion;
+  private BigInteger resourceVersion;
   private final AtomicBoolean stopping;
   private WatchListener<T> listener;
   private Thread thread = null;
@@ -52,7 +53,7 @@ abstract class Watcher<T> {
    */
   Watcher(String resourceVersion, WatchTuning tuning, AtomicBoolean stopping) {
     this.resourceVersion =
-        !isNullOrEmpty(resourceVersion) ? Long.parseLong(resourceVersion) : 0;
+        !isNullOrEmpty(resourceVersion) ? new BigInteger(resourceVersion) : BigInteger.ZERO;
     this.tuning = tuning;
     this.stopping = stopping;
   }
@@ -211,13 +212,13 @@ abstract class Watcher<T> {
       // The kubernetes client parsing logic can mistakenly parse a status as a type
       // with similar fields, such as V1ConfigMap. In this case, the actual status is
       // not available to our layer, so respond defensively by resetting resource version.
-      resourceVersion = 0L;
+      resourceVersion = BigInteger.ZERO;
     } else if (status.getCode() == HTTP_GONE) {
       resourceVersion = computeNextResourceVersionFromMessage(status);
     }
   }
 
-  private long computeNextResourceVersionFromMessage(V1Status status) {
+  private BigInteger computeNextResourceVersionFromMessage(V1Status status) {
     String message = status.getMessage();
     if (message != null) {
       int index1 = message.indexOf('(');
@@ -226,12 +227,16 @@ abstract class Watcher<T> {
         if (index2 > 0) {
           String val = message.substring(index1 + 1, index2);
           if (!isNullOrEmpty(val)) {
-            return Long.parseLong(val);
+            try {
+              return new BigInteger(val);
+            } catch (NumberFormatException nfe) {
+              // no-op
+            }
           }
         }
       }
     }
-    return 0L;
+    return BigInteger.ZERO;
   }
 
   /**
@@ -246,31 +251,31 @@ abstract class Watcher<T> {
     updateResourceVersion(getNewResourceVersion(type, object));
   }
 
-  private long getNewResourceVersion(String type, Object object) {
-    long newResourceVersion = getResourceVersionFromMetadata(object);
+  private BigInteger getNewResourceVersion(String type, Object object) {
+    BigInteger newResourceVersion = getResourceVersionFromMetadata(object);
     if (type.equalsIgnoreCase("DELETED")) {
-      return 1 + newResourceVersion;
+      return newResourceVersion.add(BigInteger.ONE);
     } else {
       return newResourceVersion;
     }
   }
 
-  private long getResourceVersionFromMetadata(Object object) {
+  private BigInteger getResourceVersionFromMetadata(Object object) {
     try {
       Method getMetadata = object.getClass().getDeclaredMethod("getMetadata");
       V1ObjectMeta metadata = (V1ObjectMeta) getMetadata.invoke(object);
       String val = metadata.getResourceVersion();
-      return !isNullOrEmpty(val) ? Long.parseLong(val) : 0;
+      return !isNullOrEmpty(val) ? new BigInteger(val) : BigInteger.ZERO;
     } catch (Exception e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       return IGNORED_RESOURCE_VERSION;
     }
   }
 
-  private void updateResourceVersion(long newResourceVersion) {
-    if (resourceVersion == 0) {
+  private void updateResourceVersion(BigInteger newResourceVersion) {
+    if (resourceVersion.equals(BigInteger.ZERO)) {
       resourceVersion = newResourceVersion;
-    } else if (newResourceVersion > resourceVersion) {
+    } else if (newResourceVersion.compareTo(resourceVersion) > 0) {
       resourceVersion = newResourceVersion;
     }
   }

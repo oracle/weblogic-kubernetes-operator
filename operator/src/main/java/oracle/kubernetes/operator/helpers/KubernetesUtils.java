@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.lang.reflect.Field;
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -128,14 +129,22 @@ public class KubernetesUtils {
     DateTime time2 = second.getCreationTimestamp();
 
     if (time1.equals(time2)) {
-      return getResourceVersion(first) > getResourceVersion(second);
+      return getResourceVersion(first).compareTo(getResourceVersion(second)) > 0;
     } else {
       return time1.isAfter(time2);
     }
   }
 
-  private static int getResourceVersion(V1ObjectMeta metadata) {
-    return Integer.parseInt(metadata.getResourceVersion());
+  private static BigInteger getResourceVersion(V1ObjectMeta metadata) {
+    String resVersion = metadata.getResourceVersion();
+    if (resVersion != null) {
+      try {
+        return new BigInteger(resVersion);
+      } catch (NumberFormatException nfe) {
+        // no-op
+      }
+    }
+    return BigInteger.ZERO;
   }
 
   public static V1ObjectMeta withOperatorLabels(String uid, V1ObjectMeta meta) {
