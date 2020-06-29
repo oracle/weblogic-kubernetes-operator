@@ -291,23 +291,43 @@ public class ItConfigDistributionStrategy {
     String patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  }, "
-        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        +   "{\"clusterName\" : \"mystaticcluster\", \"replicas\": \"1\", \"serverStartState\": \"RUNNING\"} "
-        + "},"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"1\"}"
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  }"
         + "]";
+
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
-
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
+
+    patchStr= "[\n" +
+        "  {\"op\": \"add\",\"path\": \"/spec/clusters/1\", \"value\":" +
+        " {\"clusterName\" : \"mystaticcluster\"} },\n" +
+        "  {\"op\": \"add\",\"path\": \"/spec/clusters/1/replicas\", \"value\": \"2\"},\n" +
+        "  {\"op\": \"add\",\"path\": \"/spec/clusters/1/serverStartState\", \"value\": \"RUNNING\"}\n" +
+        "]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    patchStr
+        = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"1\"}"
+        + "]";
+
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
 
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
 
     //print the configuration overrides without asserting
     verifyConfig(null, null, null, true);
+
+    //wait until config is updated upto 5 minutes
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for server configuration to be updated"
