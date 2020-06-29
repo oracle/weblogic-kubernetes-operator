@@ -21,7 +21,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
 
   @Description(
       "The type of the condition. Valid types are Progressing, "
-          + "Available, and Failed. Required.")
+          + "Available, and Failed.")
   @NotNull
   private final DomainConditionType type;
 
@@ -45,7 +45,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   @Expose
   private String reason;
 
-  @Description("Status is the status of the condition. Can be True, False, Unknown. Required.")
+  @Description("The status of the condition. Can be True, False, Unknown.")
   @SerializedName("status")
   @Expose
   @NotNull
@@ -162,7 +162,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   }
 
   /**
-   * Status is the status of the condition. Can be True, False, Unknown. Required.
+   * The status of the condition. Can be True, False, Unknown. Required.
    *
    * @return status
    */
@@ -171,7 +171,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   }
 
   /**
-   * Status is the status of the condition. Can be True, False, Unknown. Required.
+   * The status of the condition. Can be True, False, Unknown. Required.
    *
    * @param status status
    * @return this

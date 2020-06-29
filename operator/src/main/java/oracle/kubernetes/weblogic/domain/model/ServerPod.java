@@ -43,7 +43,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.Collections.emptyList;
 
-@Description("ServerPod describes the configuration for a Kubernetes pod for a server.")
 class ServerPod extends KubernetesResource {
 
   private static final Comparator<V1EnvVar> ENV_VAR_COMPARATOR =
@@ -59,7 +58,9 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Valid
-  @Description("A list of environment variables to add to a server.")
+  @Description("A list of environment variables to set in the container running a WebLogic Server instance. "
+      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
+      + "domain-resource/#jvm-memory-and-java-option-environment-variables.")
   private List<V1EnvVar> env = new ArrayList<>();
 
   /**
@@ -68,7 +69,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Settings for the liveness probe associated with a server.")
+  @Description("Settings for the liveness probe associated with a WebLogic Server instance.")
   private final ProbeTuning livenessProbe = new ProbeTuning();
 
   /**
@@ -77,7 +78,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Settings for the readiness probe associated with a server.")
+  @Description("Settings for the readiness probe associated with a WebLogic Server instance.")
   private final ProbeTuning readinessProbe = new ProbeTuning();
 
   /**
@@ -87,48 +88,48 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Description(
-      "Selector which must match a node's labels for the pod to be scheduled on that node.")
+      "Selector which must match a Node's labels for the Pod to be scheduled on that Node.")
   private final Map<String, String> nodeSelector = new HashMap<>();
 
-  @Description("If specified, the pod's scheduling constraints")
+  @Description("If specified, the Pod's scheduling constraints.")
   private V1Affinity affinity = null;
 
-  @Description("If specified, indicates the pod's priority. \"system-node-critical\" and \"system-cluster-critical\" "
+  @Description("If specified, indicates the Pod's priority. \"system-node-critical\" and \"system-cluster-critical\" "
       + "are two special keywords which indicate the highest priorities with the former being the highest priority. "
       + "Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod "
-      + "priority will be default or zero if there is no default.")
+      + "priority will be the default or zero, if there is no default.")
   private String priorityClassName = null;
 
-  @Description("If specified, all readiness gates will be evaluated for pod readiness. A pod is ready when all its "
-      + "containers are ready AND all conditions specified in the readiness gates have status equal to \"True\" More "
-      + "info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md")
+  @Description("If specified, all readiness gates will be evaluated for Pod readiness. A Pod is ready when all its "
+      + "containers are ready AND all conditions specified in the readiness gates have a status equal to \"True\". "
+      + "More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md.")
   private List<V1PodReadinessGate> readinessGates = new ArrayList<>();
 
-  @Description("Restart policy for all containers within the pod. One of Always, OnFailure, Never. Default to Always. "
-      + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy")
+  @Description("Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. "
+      + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.")
   private String restartPolicy = null;
 
   @Description("RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run "
-      + "this pod.  If no RuntimeClass resource matches the named class, the pod will not be run. If unset or empty, "
+      + "this Pod. If no RuntimeClass resource matches the named class, the Pod will not be run. If unset or empty, "
       + "the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that uses the "
       + "default runtime handler. More "
       + "info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an "
       + "alpha feature and may change in the future.")
   private String runtimeClassName = null;
 
-  @Description("NodeName is a request to schedule this pod onto a specific node. If it is non-empty, the scheduler "
-      + "simply schedules this pod onto that node, assuming that it fits resource requirements.")
+  @Description("NodeName is a request to schedule this Pod onto a specific Node. If it is non-empty, the scheduler "
+      + "simply schedules this pod onto that node, assuming that it fits the resource requirements.")
   private String nodeName = null;
 
-  @Description("If specified, the pod will be dispatched by specified scheduler. If not specified, the pod will be "
-      + "dispatched by default scheduler.")
+  @Description("If specified, the Pod will be dispatched by the specified scheduler. If not specified, the Pod will be "
+      + "dispatched by the default scheduler.")
   private String schedulerName = null;
 
-  @Description("If specified, the pod's tolerations.")
+  @Description("If specified, the Pod's tolerations.")
   private List<V1Toleration> tolerations = new ArrayList<>();
 
-  @Description("Name of the ServiceAccount to be used to run this pod. If it is not set, default "
-      + "ServiceAccount will be used. The ServiceAccount has to exist at the time the pod is created.")
+  @Description("Name of the ServiceAccount to be used to run this Pod. If it is not set, default "
+      + "ServiceAccount will be used. The ServiceAccount has to exist at the time the Pod is created.")
   private String serviceAccountName = null;
 
   /**
@@ -136,7 +137,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Memory and CPU minimum requirements and limits for the server.")
+  @Description("Memory and CPU minimum requirements and limits for the WebLogic Server instance.")
   private final V1ResourceRequirements resources =
       new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
 
@@ -156,7 +157,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.1
    */
-  @Description("Initialization containers to be included in the server pod.")
+  @Description("Initialization containers to be included in the server Pod.")
   private List<V1Container> initContainers = new ArrayList<>();
 
   /**
@@ -164,7 +165,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.1
    */
-  @Description("Additional containers to be included in the server pod.")
+  @Description("Additional containers to be included in the server Pod.")
   private List<V1Container> containers = new ArrayList<>();
 
   /**
@@ -172,7 +173,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.2
    */
-  @Description("Configures how the operator should shutdown the server instance.")
+  @Description("Configures how the operator should shut down the server instance.")
   private final Shutdown shutdown = new Shutdown();
 
   /**
@@ -183,7 +184,7 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Description(
-      "Container-level security attributes. Will override any matching pod-level attributes.")
+      "Container-level security attributes. Will override any matching Pod-level attributes.")
   private V1SecurityContext containerSecurityContext = new V1SecurityContext();
 
   /**
@@ -191,7 +192,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Additional volumes to be created in the server pod.")
+  @Description("Additional volumes to be created in the server Pod.")
   private final List<V1Volume> volumes = new ArrayList<>();
 
   /**
@@ -199,7 +200,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Additional volume mounts for the server pod.")
+  @Description("Additional volume mounts for the server Pod.")
   private final List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
