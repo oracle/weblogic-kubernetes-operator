@@ -8,4 +8,18 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
         <d:name>admin-server</d:name>
         <d:max-message-size f:combine-mode="add">78787878</d:max-message-size>
     </d:server>
+    <d:server f:combine-mode="add">
+        <d:name>mystaticcluster-ms-1</d:name>
+        <d:listen-port>8001</d:listen-port>
+        <d:cluster>mystaticluster</d:cluster>
+    </d:server>
+    <d:server f:combine-mode="add">
+        <d:name>mystaticcluster-ms-2</d:name>
+        <d:listen-port>8001</d:listen-port>
+        <d:cluster>mystaticluster</d:cluster>
+    </d:server>
+    <d:cluster f:combine-mode="add">
+        <d:name>mystaticluster</d:name>
+        <d:cluster-messaging-mode>unicast</d:cluster-messaging-mode>
+    </d:cluster>
 </d:domain>

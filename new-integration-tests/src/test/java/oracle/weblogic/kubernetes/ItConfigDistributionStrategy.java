@@ -291,11 +291,15 @@ public class ItConfigDistributionStrategy {
     String patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  }, "
+        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
+        +   "{\"clusterName\" : \"mystaticcluster\", \"replicas\": \"1\", \"serverStartState\": \"RUNNING\"} "
+        + "},"
         + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"1\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
+
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
