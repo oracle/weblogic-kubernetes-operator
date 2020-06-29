@@ -19,7 +19,7 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
         <d:cluster>mystaticluster</d:cluster>
     </d:server>
     <d:cluster f:combine-mode="add">
-        <d:name>mystaticluster</d:name>
+        <d:name>mystaticcluster</d:name>
         <d:cluster-messaging-mode>unicast</d:cluster-messaging-mode>
     </d:cluster>
 </d:domain>

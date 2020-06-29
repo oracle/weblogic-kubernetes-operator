@@ -315,7 +315,7 @@ public class ItConfigDistributionStrategy {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(configUpdated());
-
+    restartDataSource(dsName);
 
     //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
     //https://jira.oraclecorp.com/jira/browse/OWLS-82976
@@ -507,6 +507,25 @@ public class ItConfigDistributionStrategy {
       assertEquals(200, response.statusCode(), "Status code not equals to 200");
       return response.body().contains("MaxMessageSize=".concat(maxMessageSize));
     });
+  }
+
+  private void restartDataSource(String dsName) {
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, adminServerPodName
+            + "-external",
+            "default"),
+        "Getting admin server node port failed");
+
+    for (int i = 1; i <= replicaCount; i++) {
+      String appURI = "/clusterview/ConfigServlet?"
+          + "restartDS=true&"
+          + "dsName=" + dsName + "&"
+          + "serverName=" + managedServerNameBase + i;
+      String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
+    }
   }
 
   //use the http client and access the clusterview application to get server configuration
