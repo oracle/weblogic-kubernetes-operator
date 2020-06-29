@@ -33,7 +33,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.assertions.TestAssertions;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
@@ -66,6 +66,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -74,7 +75,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify cross domain transaction is successful")
 @IntegrationTest
-public class ItCrossDomainTransaction implements LoggedTest {
+public class ItCrossDomainTransaction {
 
   private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
   private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossdomaintransaction-domain2.yaml";
@@ -99,6 +100,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
   private final String domain1AdminServerPodName = domainUid1 + "-admin-server";
   private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
+  private static LoggingFacade logger = null;
 
   /**
    * Install Operator.
@@ -107,6 +109,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -152,12 +155,12 @@ public class ItCrossDomainTransaction implements LoggedTest {
     assertDoesNotThrow(() -> {
       addNamespaceToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
       String.format("Failed to update %s with namespace %s",
-            WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
+          WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
     });
     assertDoesNotThrow(() -> {
       addNamespaceToPropertyFile(WDT_MODEL_DOMAIN2_PROPS, domain2Namespace);
       String.format("Failed to update %s with namespace %s",
-            WDT_MODEL_DOMAIN2_PROPS, domain2Namespace);
+          WDT_MODEL_DOMAIN2_PROPS, domain2Namespace);
     });
 
   }
@@ -238,9 +241,9 @@ public class ItCrossDomainTransaction implements LoggedTest {
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
-             K8S_NODEPORT_HOST, adminServiceNodePort, domain1AdminServerPodName, domain1Namespace,
-             domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace,
-             domain2ManagedServerPrefix, domain2Namespace);
+        K8S_NODEPORT_HOST, adminServiceNodePort, domain1AdminServerPodName, domain1Namespace,
+        domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace,
+        domain2ManagedServerPrefix, domain2Namespace);
 
     ExecResult result = null;
     logger.info("curl command {0}", curlRequest);

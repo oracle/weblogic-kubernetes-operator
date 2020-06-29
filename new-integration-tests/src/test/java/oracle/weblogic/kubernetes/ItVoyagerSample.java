@@ -25,7 +25,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPus
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -66,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test Voyager is installed and the Voyager ingress is created successfully")
 @IntegrationTest
-class ItVoyagerSample implements LoggedTest {
+class ItVoyagerSample {
 
   // constants for operator and WebLogic domain
   private static String domainUid = "voyager-domain-1";
@@ -80,6 +81,7 @@ class ItVoyagerSample implements LoggedTest {
   private static ConditionFactory withStandardRetryPolicy = null;
 
   private static HelmParams voyagerHelmParams = null;
+  private static LoggingFacade logger = null;
 
   /**
    * Install operator, create a one cluster domain and install Voyager.
@@ -89,6 +91,7 @@ class ItVoyagerSample implements LoggedTest {
    */
   @BeforeAll
   public static void init(@Namespaces(3) List<String> namespaces) {
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
       .and().with().pollInterval(10, SECONDS)

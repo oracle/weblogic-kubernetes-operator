@@ -57,11 +57,12 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.extensions.ImageBuilders;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.joda.time.DateTime;
 
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -363,14 +364,20 @@ public class TestActions {
    * @param domainUid WebLogic domainUid which is backend to the ingress
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @param annotations annotations to create ingress resource
+   * @param setIngressHost if true set to specific host or all
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
   public static List<String> createIngress(String ingressName,
                                            String domainNamespace,
                                            String domainUid,
                                            Map<String, Integer> clusterNameMsPortMap,
-                                           Map<String, String> annotations) {
-    return Ingress.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap, annotations);
+                                           Map<String, String> annotations,
+                                           boolean setIngressHost) {
+    return Ingress.createIngress(ingressName,
+            domainNamespace,
+            domainUid,
+            clusterNameMsPortMap,
+            annotations, setIngressHost);
   }
 
   /**
@@ -761,8 +768,8 @@ public class TestActions {
    */
   public static boolean archiveApp(AppParams params) {
     return AppBuilder
-            .withParams(params)
-            .archiveApp();
+        .withParams(params)
+        .archiveApp();
   }
 
   // ------------------------ Docker --------------------------------------
@@ -1111,6 +1118,7 @@ public class TestActions {
    */
   public static String patchDomainResourceWithNewRestartVersion(
       String domainResourceName, String namespace) {
+    LoggingFacade logger = getLogger();
     String oldVersion = assertDoesNotThrow(
         () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
         String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
