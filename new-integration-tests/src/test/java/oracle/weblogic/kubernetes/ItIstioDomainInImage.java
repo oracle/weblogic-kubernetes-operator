@@ -215,12 +215,6 @@ class ItIstioDomainInImage {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    try {
-      Thread.sleep(5 * 1000);
-    } catch (InterruptedException ie) {
-      //    
-    }
-
     String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
     boolean checkConsole = 
          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
@@ -236,16 +230,11 @@ class ItIstioDomainInImage {
     assertNotNull(result, "Application deployment failed");
     logger.info("Application deployment returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment does not returns HTTP status code 202");
-    try {
-      Thread.sleep(5 * 1000);
-    } catch (InterruptedException ie) {
-     //
-    }
 
     String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);
     boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
-    assertTrue(checkConsole, "Failed to access WebLogic appliation");
+    assertTrue(checkApp, "Failed to access WebLogic appliation");
   }
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
