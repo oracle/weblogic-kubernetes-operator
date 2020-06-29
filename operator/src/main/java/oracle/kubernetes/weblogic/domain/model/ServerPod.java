@@ -60,7 +60,7 @@ class ServerPod extends KubernetesResource {
   @Valid
   @Description("A list of environment variables to set in the container running a WebLogic Server instance. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
-      + "domain-resource/#jvm-memory-and-java-option-environment-variables")
+      + "domain-resource/#jvm-memory-and-java-option-environment-variables.")
   private List<V1EnvVar> env = new ArrayList<>();
 
   /**
@@ -102,11 +102,11 @@ class ServerPod extends KubernetesResource {
 
   @Description("If specified, all readiness gates will be evaluated for Pod readiness. A Pod is ready when all its "
       + "containers are ready AND all conditions specified in the readiness gates have a status equal to \"True\" More "
-      + "info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md")
+      + "info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md.")
   private List<V1PodReadinessGate> readinessGates = new ArrayList<>();
 
   @Description("Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. "
-      + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy")
+      + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.")
   private String restartPolicy = null;
 
   @Description("RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run "

@@ -76,7 +76,7 @@ public class DomainSpec extends BaseConfiguration {
   @Description("The strategy for deciding whether to start a WebLogic Server instance. "
       + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
-      + "domain-lifecycle/startup/#starting-and-stopping-servers")
+      + "domain-lifecycle/startup/#starting-and-stopping-servers.")
   private String serverStartPolicy;
 
   /**

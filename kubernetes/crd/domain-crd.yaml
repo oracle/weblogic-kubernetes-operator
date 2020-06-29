@@ -145,7 +145,7 @@ spec:
                 properties:
                   precreateService:
                     type: boolean
-                    description: If true, the operator will create services even for
+                    description: If true, the operator will create Services even for
                       Managed Server instances without running Pods.
                   annotations:
                     type: object
@@ -222,7 +222,7 @@ spec:
                     properties:
                       precreateService:
                         type: boolean
-                        description: If true, the operator will create services even
+                        description: If true, the operator will create Services even
                           for Managed Server instances without running Pods.
                       annotations:
                         type: object
@@ -267,7 +267,7 @@ spec:
                         description: 'If specified, all readiness gates will be evaluated
                           for Pod readiness. A Pod is ready when all its containers
                           are ready AND all conditions specified in the readiness
-                          gates have a status equal to "True" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
+                          gates have a status equal to "True" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md.'
                         items:
                           description: PodReadinessGate contains the reference to
                             a pod condition
@@ -1916,7 +1916,7 @@ spec:
                         type: array
                         description: 'A list of environment variables to set in the
                           container running a WebLogic Server instance. More info:
-                          https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables'
+                          https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.'
                         items:
                           description: EnvVar represents an environment variable present
                             in a Container.
@@ -2077,7 +2077,7 @@ spec:
                         type: string
                         description: 'Restart policy for all containers within the
                           Pod. One of Always, OnFailure, Never. Default to Always.
-                          More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
+                          More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.'
                       nodeSelector:
                         type: object
                         additionalProperties:
@@ -5510,7 +5510,7 @@ spec:
                       type: object
                       properties:
                         precreateService:
-                          description: If true, the operator will create services
+                          description: If true, the operator will create Services
                             even for Managed Server instances without running Pods.
                           type: boolean
                         annotations:
@@ -5595,7 +5595,7 @@ spec:
                             evaluated for Pod readiness. A Pod is ready when all its
                             containers are ready AND all conditions specified in the
                             readiness gates have a status equal to "True" More info:
-                            https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
+                            https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md.'
                           type: array
                           items:
                             description: PodReadinessGate contains the reference to
@@ -7277,7 +7277,7 @@ spec:
                         env:
                           description: 'A list of environment variables to set in
                             the container running a WebLogic Server instance. More
-                            info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables'
+                            info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.'
                           type: array
                           items:
                             description: EnvVar represents an environment variable
@@ -7440,7 +7440,7 @@ spec:
                         restartPolicy:
                           description: 'Restart policy for all containers within the
                             Pod. One of Always, OnFailure, Never. Default to Always.
-                            More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
+                            More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.'
                           type: string
                         nodeSelector:
                           description: Selector which must match a Node's labels for
@@ -10940,7 +10940,7 @@ spec:
                 type: string
                 description: 'The strategy for deciding whether to start a WebLogic
                   Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.
-                  Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers'
+                  Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
                 enum:
                 - NEVER
                 - IF_NEEDED
@@ -11017,7 +11017,7 @@ spec:
                     description: 'If specified, all readiness gates will be evaluated
                       for Pod readiness. A Pod is ready when all its containers are
                       ready AND all conditions specified in the readiness gates have
-                      a status equal to "True" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
+                      a status equal to "True" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md.'
                     items:
                       description: PodReadinessGate contains the reference to a pod
                         condition
@@ -12579,7 +12579,7 @@ spec:
                   env:
                     type: array
                     description: 'A list of environment variables to set in the container
-                      running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables'
+                      running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.'
                     items:
                       description: EnvVar represents an environment variable present
                         in a Container.
@@ -12731,7 +12731,7 @@ spec:
                     type: string
                     description: 'Restart policy for all containers within the Pod.
                       One of Always, OnFailure, Never. Default to Always. More info:
-                      https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
+                      https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.'
                   nodeSelector:
                     type: object
                     additionalProperties:
@@ -15995,7 +15995,7 @@ spec:
                       type: object
                       properties:
                         precreateService:
-                          description: If true, the operator will create services
+                          description: If true, the operator will create Services
                             even for Managed Server instances without running Pods.
                           type: boolean
                         annotations:
@@ -16047,7 +16047,7 @@ spec:
                             evaluated for Pod readiness. A Pod is ready when all its
                             containers are ready AND all conditions specified in the
                             readiness gates have a status equal to "True" More info:
-                            https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
+                            https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md.'
                           type: array
                           items:
                             description: PodReadinessGate contains the reference to
@@ -17729,7 +17729,7 @@ spec:
                         env:
                           description: 'A list of environment variables to set in
                             the container running a WebLogic Server instance. More
-                            info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables'
+                            info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.'
                           type: array
                           items:
                             description: EnvVar represents an environment variable
@@ -17892,7 +17892,7 @@ spec:
                         restartPolicy:
                           description: 'Restart policy for all containers within the
                             Pod. One of Always, OnFailure, Never. Default to Always.
-                            More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
+                            More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.'
                           type: string
                         nodeSelector:
                           description: Selector which must match a Node's labels for
