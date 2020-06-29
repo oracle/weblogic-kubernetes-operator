@@ -29,7 +29,7 @@ if [ ! "${DYNAMIC_CONFIG_OVERRIDE:-notset}" = notset ]; then
     local local_fname
     local tgt_file
     mkdir -p $tgt_dir # TBD ignore any error?
-    for local_fname in {src_dir}/${fil_prefix}*.xml ; do
+    for local_fname in ${src_dir}/${fil_prefix}*.xml ; do
       tgt_file=${local_fname/$fil_prefix//}   # strip out file prefix from source file
       tgt_file=$(basename $tgt_file)          # strip out dir path since it's the source file path
       tgt_file=$tgt_dir/$tgt_file             # add back in tgt dir path
@@ -38,7 +38,7 @@ if [ ! "${DYNAMIC_CONFIG_OVERRIDE:-notset}" = notset ]; then
       cp $local_fname $tgt_file # TBD ignore any error?
       chmod 750 $tgt_file # TBD ignore any error?
     done
-    for local_fname in {tgt_dir}/*.xml ; do
+    for local_fname in ${tgt_dir}/*.xml ; do
       if [ -f "$src_dir/${fil_prefix}$(basename ${local_fname})" ]; then
         continue
       fi
