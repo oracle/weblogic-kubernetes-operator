@@ -316,6 +316,7 @@ public class ItConfigDistributionStrategy {
                 condition.getRemainingTimeInMS()))
         .until(configUpdated());
 
+
     //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
     //https://jira.oraclecorp.com/jira/browse/OWLS-82976
     //restartDomain(); // remove after the above bug is fixed
@@ -478,7 +479,6 @@ public class ItConfigDistributionStrategy {
 
   //verify the configuration overrides for server and JDBC datasource
   private void verifyConfigOverrides() {
-
     String maxMessageSize = "78787878";
     String cpMaxCapacity = "12";
     String dsUrl = dsUrl2;

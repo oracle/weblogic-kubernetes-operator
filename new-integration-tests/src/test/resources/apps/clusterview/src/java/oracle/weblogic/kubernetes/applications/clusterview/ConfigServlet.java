@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.management.MBeanServer;
@@ -105,6 +106,12 @@ public class ConfigServlet extends HttpServlet {
       if (resTest != null) {
         printResourceAttributes(request, out);
       }
+
+      String restart = request.getParameter("restartDS");
+      if (restart != null) {
+        restartJDBCResource(request, out);
+      }
+
     }
   }
 
@@ -179,6 +186,26 @@ public class ConfigServlet extends HttpServlet {
         String testPool = jdbcDataSourceRuntimeMBean.testPool();
         if (testPool == null) {
           out.println("Connection successful");
+        }
+      }
+    }
+  }
+
+  private void restartJDBCResource(HttpServletRequest request, PrintWriter out) {
+    String dsName = request.getParameter("dsName");
+    String serverName = request.getParameter("serverName");
+
+    ServerRuntimeMBean serverRuntime = getServerRuntime(serverName);
+    JDBCDataSourceRuntimeMBean[] jdbcDataSourceRuntimeMBeans = serverRuntime.getJDBCServiceRuntime().getJDBCDataSourceRuntimeMBeans();
+    for (JDBCDataSourceRuntimeMBean jdbcDataSourceRuntimeMBean : jdbcDataSourceRuntimeMBeans) {
+      if (jdbcDataSourceRuntimeMBean.getName().equals(dsName)) {
+        try {
+          String testPool = jdbcDataSourceRuntimeMBean.testPool();
+          jdbcDataSourceRuntimeMBean.forceShutdown();
+          TimeUnit.SECONDS.sleep(5);
+          jdbcDataSourceRuntimeMBean.start();
+        } catch (Exception ex) {
+          Logger.getLogger(ConfigServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
       }
     }
