@@ -6,8 +6,6 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: {{ template "apache.fullname" . }}
-  labels:
-    weblogic.resourceVersion: "loadbalancer-v2"
 rules:
   - apiGroups:
       - ""

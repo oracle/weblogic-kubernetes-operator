@@ -38,7 +38,6 @@ metadata:
   name: domain1
   namespace: domain1-ns
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
 spec:
   domainHomeSourceType: Image

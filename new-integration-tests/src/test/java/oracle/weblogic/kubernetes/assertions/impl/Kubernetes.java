@@ -20,6 +20,9 @@ import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1DeploymentCondition;
+import io.kubernetes.client.openapi.models.V1DeploymentList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobList;
@@ -31,12 +34,14 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.joda.time.DateTime;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listDeployments;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 public class Kubernetes {
 
@@ -97,7 +102,7 @@ public class Kubernetes {
     if (pod == null) {
       podDeleted = true;
     } else {
-      logger.info("[" + pod.getMetadata().getName() + "] still exist");
+      getLogger().info("[" + pod.getMetadata().getName() + "] still exist");
     }
     return podDeleted;
   }
@@ -120,7 +125,7 @@ public class Kubernetes {
     if (pod != null) {
       status = pod.getStatus().getPhase().equals(RUNNING);
     } else {
-      logger.info("Pod doesn't exist");
+      getLogger().info("Pod doesn't exist");
     }
     return status;
   }
@@ -135,6 +140,7 @@ public class Kubernetes {
    @throws ApiException if Kubernetes client API call fails
    */
   public static boolean isPodReady(String namespace, Map<String, String> labels, String podName) throws ApiException {
+    final LoggingFacade logger = getLogger();
     boolean status = false;
     String labelSelector = null;
     if (labels != null && !labels.isEmpty()) {
@@ -193,6 +199,7 @@ public class Kubernetes {
    */
   public static boolean isPodTerminating(String namespace, String domainUid, String podName)
       throws ApiException {
+    LoggingFacade logger = getLogger();
     boolean terminating = false;
     String labelSelector = null;
     if (domainUid != null) {
@@ -227,6 +234,7 @@ public class Kubernetes {
       String podName,
       String expectedRestartVersion
   ) throws ApiException {
+    LoggingFacade logger = getLogger();
     String restartVersion = getPodRestartVersion(namespace, "", podName);
 
     if (restartVersion != null && restartVersion.equals(expectedRestartVersion)) {
@@ -299,7 +307,7 @@ public class Kubernetes {
         status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
       }
     } else {
-      logger.info("Pod doesn't exist");
+      getLogger().info("Pod doesn't exist");
     }
     return status;
   }
@@ -354,7 +362,7 @@ public class Kubernetes {
         );
     for (V1Pod item : v1PodList.getItems()) {
       if (item.getMetadata().getName().contains(podName.trim())) {
-        logger.info("Name: {0}, Namespace: {1}, Phase: {2}",
+        getLogger().info("Name: {0}, Namespace: {1}, Phase: {2}",
             item.getMetadata().getName(), namespace, item.getStatus().getPhase());
         return item;
       }
@@ -392,6 +400,7 @@ public class Kubernetes {
   public static V1Service getService(
       String serviceName, Map<String, String> label, String namespace)
       throws ApiException {
+    LoggingFacade logger = getLogger();
     String labelSelector = null;
     if (label != null) {
       String key = label.keySet().iterator().next().toString();
@@ -430,6 +439,75 @@ public class Kubernetes {
   }
 
   /**
+   * Get V1Deployment object for the given  name, label and namespace.
+   * @param deploymentName name of the deployment to look for
+   * @param label the key value pair with which the deployment is decorated with
+   * @param namespace the namespace in which to check for the deployment
+   * @return V1Deployment object if found otherwise null
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static V1Deployment getDeployment(
+          String deploymentName, Map<String, String> label, String namespace)
+          throws ApiException {
+    String labelSelector = null;
+    LoggingFacade logger = getLogger();
+    if (label != null) {
+      String key = label.keySet().iterator().next().toString();
+      String value = label.get(key).toString();
+      labelSelector = String.format("%s in (%s)", key, value);
+      logger.info(labelSelector);
+    }
+    V1DeploymentList v1DeploymentList = listDeployments(namespace);
+
+    for (V1Deployment deployment : v1DeploymentList.getItems()) {
+      if (deployment.getMetadata().getName().equals(deploymentName.trim())
+              && deployment.getMetadata().getNamespace().equals(namespace.trim())) {
+        logger.info("Deployment Name : " + deployment.getMetadata().getName());
+        logger.info("Deployment Namespace : " + deployment.getMetadata().getNamespace());
+        logger.info("Deployment status : " + deployment.getStatus().toString());
+        Map<String, String> labels = deployment.getMetadata().getLabels();
+        if (labels != null) {
+          for (Map.Entry<String, String> entry : labels.entrySet()) {
+            logger.log(Level.INFO, "Label Key: {0} Label Value: {1}",
+                    new Object[]{entry.getKey(), entry.getValue()});
+          }
+        }
+        return deployment;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Checks if an deployment is running in a given namespace.
+   * @param deploymentName name of deployment to check
+   * @param label set of deployment labels
+   * @param namespace in which to check for the pod existence
+   * @return true if deployment exists and available otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean isDeploymentReady(String deploymentName,
+                                          Map<String, String> label,
+                                          String namespace) throws ApiException {
+    boolean status = false;
+    V1Deployment deployment = getDeployment(deploymentName, label, namespace);
+    if (deployment != null) {
+      // get the deploymentCondition with the 'Available' type field
+      V1DeploymentCondition v1DeploymentRunningCondition = deployment.getStatus().getConditions().stream()
+              .filter(v1DeploymentCondition -> "Available".equals(v1DeploymentCondition.getType()))
+              .findAny()
+              .orElse(null);
+
+      if (v1DeploymentRunningCondition != null) {
+        status = v1DeploymentRunningCondition.getStatus().equalsIgnoreCase("true");
+      }
+    } else {
+      getLogger().info("Deployment doesn't exist");
+    }
+    return status;
+  }
+
+  /**
    * Get a list of pods from given namespace and  label.
    *
    * @param namespace in which to list all pods
@@ -462,6 +540,7 @@ public class Kubernetes {
    * @throws ApiException when there is error in querying the cluster
    */
   public static void listServices(String namespace, String labelSelectors) throws ApiException {
+    LoggingFacade logger = getLogger();
     V1ServiceList v1ServiceList
         = coreV1Api.listServiceForAllNamespaces(
         Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -523,7 +602,7 @@ public class Kubernetes {
           Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return list;
@@ -560,6 +639,7 @@ public class Kubernetes {
   public static boolean isJobComplete(String namespace, String labelSelectors, String jobName)
       throws ApiException {
     boolean completionStatus = false;
+    LoggingFacade logger = getLogger();
 
     V1Job job = getJob(namespace, labelSelectors, jobName);
     if (job != null && job.getStatus() != null) {
@@ -598,15 +678,15 @@ public class Kubernetes {
    * Check if a pod is restarted based on podCreationTimestamp.
    *
    * @param podName the name of the pod to check for
-   * @param domainUid the label the pod is decorated with
    * @param namespace in which the pod is running
    * @param timestamp the initial podCreationTimestamp
    * @return true if the pod's creation timestamp is later than the initial PodCreationTimestamp
    * @throws ApiException when query fails
    */
   public static boolean isPodRestarted(
-      String podName, String domainUid,
+      String podName,
       String namespace, DateTime timestamp) throws ApiException {
+    LoggingFacade logger = getLogger();
     DateTime newCreationTime = getPodCreationTimestamp(namespace, "", podName);
 
     if (newCreationTime != null
@@ -642,7 +722,7 @@ public class Kubernetes {
           false // Watch for changes to the described resources
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
     return listPersistentVolume;
@@ -670,7 +750,7 @@ public class Kubernetes {
           false // Watch for changes to the described resources
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 

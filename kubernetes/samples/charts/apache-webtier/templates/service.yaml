@@ -6,13 +6,10 @@ kind: Service
 metadata:
   name: {{ template "apache.fullname" . }}
   namespace: {{ .Release.Namespace | quote }}
-  labels:
-    weblogic.resourceVersion: "loadbalancer-v2"
 spec:
   type: NodePort
   selector:
     app: {{ template "apache.fullname" . }}
-    weblogic.resourceVersion: "loadbalancer-v2"
   ports:
     - port: 80
       nodePort: {{ .Values.httpNodePort }}

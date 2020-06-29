@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -38,7 +39,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
@@ -92,8 +93,8 @@ public class BuildApplication {
    * @return Path path of the archive built
    */
   public static Path buildApplication(Path appSrcPath, Map<String, String> antParams,
-      String antTargets, String archiveDistDir, String namespace) {
-
+                                      String antTargets, String archiveDistDir, String namespace) {
+    final LoggingFacade logger = getLogger();
     setImage(namespace);
 
     // Path of temp location for application source directory
@@ -189,7 +190,7 @@ public class BuildApplication {
    * @throws ApiException when create pod fails
    */
   private static V1Pod setupWebLogicPod(String namespace, V1Container container) {
-
+    final LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
         .atMost(3, MINUTES).await();
@@ -205,7 +206,7 @@ public class BuildApplication {
                 .addArgsItem("600")))
             .imagePullSecrets(isUseSecret
                 ? Arrays.asList(new V1LocalObjectReference()
-                    .name(OCR_SECRET_NAME))
+                .name(OCR_SECRET_NAME))
                 : null)) // the persistent volume claim used by the test
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
@@ -215,7 +216,7 @@ public class BuildApplication {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
-                + "(elapsed time {2} , remaining time {3}",
+                    + "(elapsed time {2} , remaining time {3}",
                 podName,
                 namespace,
                 condition.getElapsedTimeInMS(),
@@ -231,6 +232,7 @@ public class BuildApplication {
    * @param namespace namespace in which secrets needs to be created
    */
   private static void setImage(String namespace) {
+    final LoggingFacade logger = getLogger();
     //determine if the tests are running in Kind cluster.
     //if true use images from Kind registry
     String ocrImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;

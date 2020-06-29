@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -27,10 +26,8 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -233,15 +230,7 @@ public class Domain {
   }
 
   private EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
-    return spec.getEffectiveConfigurationFactory(apiVersion, getResourceVersion());
-  }
-
-  private String getResourceVersion() {
-    Map<String, String> labels = metadata.getLabels();
-    if (labels == null) {
-      return VersionConstants.DEFAULT_DOMAIN_VERSION;
-    }
-    return labels.get(LabelConstants.RESOURCE_VERSION_LABEL);
+    return spec.getEffectiveConfigurationFactory(apiVersion);
   }
 
   /**
@@ -460,11 +449,8 @@ public class Domain {
     return spec.getDomainHomeSourceType();
   }
 
-  /**
-   * Returns true if the operator can be asked to run a new introspection for this domain.
-   */
-  public boolean mayRequestIntrospection() {
-    return getDomainHomeSourceType().mayRequestIntrospection();
+  public boolean isNewIntrospectionRequiredForNewServers() {
+    return getDomainHomeSourceType() == DomainSourceType.FromModel;
   }
 
   public Model getModel() {
@@ -481,10 +467,6 @@ public class Domain {
 
   public int getIstioReadinessPort() {
     return spec.getIstioReadinessPort();
-  }
-
-  public boolean isDomainSourceFromModel(String type) {
-    return DomainSourceType.FromModel.toString().equals(type);
   }
 
   /**
@@ -705,10 +687,9 @@ public class Domain {
     private void verifyIstioExposingDefaultChannel() {
       if (spec.isIstioEnabled()) {
         Optional.ofNullable(spec.getAdminServer())
-            .map(a -> a.getAdminService())
-            .map(service -> service.getChannels())
-            .ifPresent(cs -> cs.stream()
-                              .forEach(this::checkForDefaultNameExposed));
+            .map(AdminServer::getAdminService)
+            .map(AdminService::getChannels)
+            .ifPresent(cs -> cs.forEach(this::checkForDefaultNameExposed));
       }
     }
 

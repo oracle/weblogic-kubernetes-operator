@@ -128,8 +128,10 @@ public class MessageKeys {
   public static final String HTTP_REQUEST_TIMED_OUT = "WLSKO-0170";
   public static final String NAMESPACE_IS_MISSING = "WLSKO-0171";
   public static final String CM_PATCHED = "WLSKO-0172";
-  public static final String INTROSPECTOR_JOB_FAILED = "WLSKO-0173";
-  public static final String INTROSPECTOR_JOB_FAILED_DETAIL = "WLSKO-0174";
+  public static final String REPLACE_CRD_FAILED = "WLSKO-0173";
+  public static final String CREATE_CRD_FAILED = "WLSKO-0174";
+  public static final String INTROSPECTOR_JOB_FAILED = "WLSKO-0175";
+  public static final String INTROSPECTOR_JOB_FAILED_DETAIL = "WLSKO-0176";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";

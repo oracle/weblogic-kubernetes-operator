@@ -1,5 +1,5 @@
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2020, 2020, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.  Please read through the comments which explain
 # what updates are needed.
@@ -12,7 +12,6 @@ metadata:
   # Update this with the namespace your domain will run in:
   namespace: sample-domain1-ns
   labels:
-    weblogic.resourceVersion: domain-v2
     # Update this with the `domainUID` of your domain:
     weblogic.domainUID: sample-domain1
 

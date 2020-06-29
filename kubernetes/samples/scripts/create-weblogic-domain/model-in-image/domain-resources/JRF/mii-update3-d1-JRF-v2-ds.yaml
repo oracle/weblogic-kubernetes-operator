@@ -9,7 +9,6 @@ metadata:
   name: sample-domain1
   namespace: sample-domain1-ns
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: sample-domain1
 
 spec:
@@ -134,7 +133,7 @@ spec:
     - sample-domain1-rcu-access
 
     # Increase the introspector job active timeout value for JRF use cases
-    introspectorJobActiveDeadlineSeconds: 300
+    introspectorJobActiveDeadlineSeconds: 600
 
     opss:
 
