@@ -19,23 +19,23 @@ import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPa
 /** ServerStatus describes the current status of a specific WebLogic Server. */
 public class ClusterStatus implements Comparable<ClusterStatus>, PatchableComponent<ClusterStatus> {
 
-  @Description("WebLogic cluster name. Required.")
+  @Description("WebLogic cluster name.")
   @SerializedName("clusterName")
   @Expose
   private String clusterName;
 
-  /** The number of intended cluster members. Required. */
-  @Description("The number of intended cluster members. Required.")
+  /** The number of currently cluster members. Required. */
+  @Description("The number of currently running cluster members.")
   @Range(minimum = 0)
   private Integer replicas;
 
   /** The number of ready cluster members. Required. */
-  @Description("The number of ready cluster members. Required.")
+  @Description("The number of ready cluster members.")
   @Range(minimum = 0)
   private Integer readyReplicas;
 
   /** The maximum number of cluster members. Required. */
-  @Description("The maximum number of cluster members. Required.")
+  @Description("The maximum number of cluster members.")
   @Range(minimum = 0)
   private Integer maximumReplicas;
 
@@ -45,7 +45,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
   private Integer minimumReplicas;
 
   /** The requested number of cluster members from the domain spec. */
-  @Description("The requested number of cluster members from the domain spec. "
+  @Description("The requested number of cluster members. "
       + "Cluster members will be started by the operator if this value is larger than zero.")
   @Range(minimum = 0)
   private Integer replicasGoal;

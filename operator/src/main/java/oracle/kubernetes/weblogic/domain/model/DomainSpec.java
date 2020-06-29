@@ -38,13 +38,16 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 
 /** DomainSpec is a description of a domain. */
-@Description("DomainSpec is a description of a domain.")
+@Description("The specification of the operation of the WebLogic domain. Required.")
 public class DomainSpec extends BaseConfiguration {
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
   @Description(
-      "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required."
-          + " Defaults to the value of metadata.name.")
+      "Domain unique identifier. It is recommended that this value be unique to assist in future work to "
+      + "identify related domains in active-passive scenarios across data centers; however, it is only required "
+      + "that this value be unique within the namespace, similarly to the names of Kubernetes resources. "
+      + "This value is distinct and need not match the domain name from the WebLogic domain configuration. "
+      + "Defaults to the value of `metadata.name`.")
   @Pattern("^[a-z0-9-.]{1,253}$")
   @SerializedName("domainUID")
   private String domainUid;
@@ -55,7 +58,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "The folder for the WebLogic Domain. Not required."
+      "The directory containing the WebLogic domain configuration inside the container."
           + " Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume."
           + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image."
           + " Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel.")
@@ -70,19 +73,20 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @EnumClass(value = ServerStartPolicy.class, qualifier = "forDomain")
-  @Description(
-      "The strategy for deciding whether to start a server. "
-          + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.")
+  @Description("The strategy for deciding whether to start a WebLogic Server instance. "
+      + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
+      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
+      + "domain-lifecycle/startup/#starting-and-stopping-servers.")
   private String serverStartPolicy;
 
   /**
-   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * Reference to secret containing WebLogic startup credentials user name and password. Secret must
    * contain keys names 'username' and 'password'. Required.
    */
   @Description(
-      "The name of a pre-created Kubernetes secret, in the domain's namespace, that holds"
-          + " the username and password needed to boot WebLogic Server under the 'username' and "
-          + "'password' fields.")
+      "Reference to a Kubernetes Secret that contains"
+          + " the user name and password needed to boot a WebLogic Server under the `username` and "
+          + "`password` fields.")
   @Valid
   @NotNull
   private V1SecretReference webLogicCredentialsSecret;
@@ -92,9 +96,9 @@ public class DomainSpec extends BaseConfiguration {
    * .out, and HTTP access log files in.
    */
   @Description(
-      "The in-pod name of the directory in which to store the domain, Node Manager, server logs, "
-          + "server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. "
-          + "Ignored if logHomeEnabled is false.")
+      "The directory in a server's container in which to store the domain, Node Manager, server logs, "
+          + "server *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. "
+          + "Ignored if `logHomeEnabled` is false.")
   private String logHome;
 
   /**
@@ -103,8 +107,8 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "Specified whether the log home folder is enabled. Not required. "
-          + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
+      "Specifies whether the log home folder is enabled. "
+          + "Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
   /**
@@ -113,20 +117,21 @@ public class DomainSpec extends BaseConfiguration {
    * directories are determined from the WebLogic domain home configuration.
    */
   @Description(
-      "An optional, in-pod location for data storage of default and custom file stores. "
-          + "If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") "
-          + "then the data storage directories are determined from the WebLogic domain home configuration.")
+      "An optional directory in a server's container for data storage of default and custom file stores. "
+          + "If `dataHome` is not specified or its value is either not set or empty, "
+          + "then the data storage directories are determined from the WebLogic domain configuration.")
   private String dataHome;
 
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
-  @Description("If true (the default), then the server .out file will be included in the pod's stdout.")
+  @Description("Specifies whether the server .out file will be included in the Pod's log. "
+          + "Defaults to true.")
   private Boolean includeServerOutInPodLog;
 
   /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
    *  if {@link #logHomeEnabled} is true. Default is true. */
-  @Description("If true (the default), then server HTTP access log files will be written to the same "
+  @Description("Specifies whether the server HTTP access log files will be written to the same "
       + "directory specified in `logHome`. Otherwise, server HTTP access log files will be written to "
-      + "the directory configured in the WebLogic domain home configuration.")
+      + "the directory configured in the WebLogic domain configuration. Defaults to true.")
   private Boolean httpAccessLogInLogHome;
 
   /**
@@ -135,7 +140,7 @@ public class DomainSpec extends BaseConfiguration {
    * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4
    */
   @Description(
-      "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; "
+      "The WebLogic container image; required when `domainHomeSourceType` is Image or FromModel; "
           + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
   private String image;
 
@@ -143,14 +148,14 @@ public class DomainSpec extends BaseConfiguration {
    * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
    * IfNotPresent.
    *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
+   * <p>Defaults to Always if image ends in :latest; IfNotPresent, otherwise.
    *
    * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
    */
   @Description(
-      "The image pull policy for the WebLogic Docker image. "
+      "The image pull policy for the WebLogic container image. "
           + "Legal values are Always, Never and IfNotPresent. "
-          + "Defaults to Always if image ends in :latest, IfNotPresent otherwise.")
+          + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
 
@@ -162,28 +167,41 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("A list of image pull secrets for the WebLogic Docker image.")
+  @Description("A list of image pull Secrets for the WebLogic container image.")
   private List<V1LocalObjectReference> imagePullSecrets;
 
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in a cluster specification.
    */
+
   @Description(
-      "The number of managed servers to run in any cluster that does not specify a replica count.")
+      "The default number of cluster member Managed Server instances to start for each WebLogic cluster in the "
+      + "domain configuration, unless `replicas` is specified for that cluster under the `clusters` field. "
+      + "For each cluster, the operator will sort cluster member Managed Server names from the WebLogic domain "
+      + "configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. "
+      + "This is done so that server names such as \"managed-server10\" come after \"managed-server9\". "
+      + "The operator will then start Managed Servers from the sorted list, "
+      + "up to the `replicas` count, unless specific Managed Servers are specified as "
+      + "starting in their entry under the `managedServers` field. In that case, the specified Managed Servers "
+      + "will be started and then additional cluster members "
+      + "will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are "
+      + "not already started. If cluster members are started "
+      + "because of their entries under `managedServers`, then a cluster may have more cluster members "
+      + "running than its `replicas` count. Defaults to 0.")
   @Range(minimum = 0)
   private Integer replicas;
 
-  @Description("Whether to allow the number of replicas to drop below the minimum "
-      + "dynamic cluster size configured in the WebLogic domain home configuration, "
-      + "if this is not specified at the cluster level. Defaults to true."
+  @Description("Whether to allow the number of running cluster member Managed Server instances to drop "
+      + "below the minimum dynamic cluster size configured in the WebLogic domain configuration, "
+      + "if this is not specified for a specific cluster under the `clusters` field. Defaults to true."
   )
   private Boolean allowReplicasBelowMinDynClusterSize;
 
   @Description(
-      "The maximum number of Managed Servers that the operator will start in parallel "
-          + "for a cluster, if `maxConcurrentStartup` is not specified at the cluster level. "
-          + "A value of 0 (the default) means there is no configured limit."
+      "The maximum number of cluster member Managed Server instances that the operator will start in parallel "
+          + "for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the "
+          + "`clusters` field. A value of 0 means there is no configured limit. Defaults to 0."
   )
   @Range(minimum = 0)
   private Integer maxClusterConcurrentStartup;
@@ -195,20 +213,20 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Deprecated
   @Description(
-      "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
-          + " True indicates that the domain home file system is contained in the Docker image"
+      "Deprecated. Use `domainHomeSourceType` instead. Ignored if `domainHomeSourceType` is specified."
+          + " True indicates that the domain home file system is present in the container image"
           + " specified by the image field. False indicates that the domain home file system is located"
-          + " on a persistent volume.")
+          + " on a persistent volume. Defaults to unset.")
   private Boolean domainHomeInImage;
 
   @Description(
       "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
-          + " Image indicates that the domain home file system is contained in the Docker image"
-          + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
-          + " on a persistent volume.  FromModel indicates that the domain home file system will be created"
+          + " Image indicates that the domain home file system is present in the container image"
+          + " specified by the `image` field. PersistentVolume indicates that the domain home file system is located"
+          + " on a persistent volume. FromModel indicates that the domain home file system will be created"
           + " and managed by the operator based on a WDT domain model."
-          + " If this field is specified it overrides the value of domainHomeInImage. If both fields are"
-          + " unspecified then domainHomeSourceType defaults to Image.")
+          + " If this field is specified, it overrides the value of `domainHomeInImage`. If both fields are"
+          + " unspecified, then `domainHomeSourceType` defaults to Image.")
   private DomainSourceType domainHomeSourceType;
 
   /**
@@ -217,9 +235,16 @@ public class DomainSpec extends BaseConfiguration {
    * @since 3.0.0
    */
   @Description(
-      "If the domain is running, the operator will restart its introspector job when this value is changed. "
-      + "This field is ignored when the domainHomeSourceType is FromModel. "
-      + "See also overridesConfigurationStrategy.")
+      "Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. "
+      + "Repeating introspection is required for the operator to recognize changes to the domain configuration, "
+      + "such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, "
+      + "or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs "
+      + "automatically, without requiring change to this field, when servers are first started or restarted after a "
+      + "full domain shutdown. For the FromModel `domainHomeSourceType`, introspection also occurs when a running "
+      + "server must be restarted because of changes to any of the fields listed here: "
+      + "https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
+      + "domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. "
+      + "See also `overridesConfigurationStrategy`.")
   private String introspectVersion;
 
   @Description("Models and overrides affecting the WebLogic domain configuration.")
@@ -231,9 +256,9 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Deprecated
-  @Description("Deprecated. Use configuration.overridesConfigMap instead."
-      + " Ignored if configuration.overridesConfigMap is specified."
-      + " The name of the config map for optional WebLogic configuration overrides.")
+  @Description("Deprecated. Use `configuration.overridesConfigMap` instead."
+      + " Ignored if `configuration.overridesConfigMap` is specified."
+      + " The name of the ConfigMap for optional WebLogic configuration overrides.")
   private String configOverrides;
 
   /**
@@ -242,8 +267,8 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Deprecated
-  @Description("Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
-      + " A list of names of the secrets for optional WebLogic configuration overrides.")
+  @Description("Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified."
+      + " A list of names of the Secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets;
 
   /**
@@ -251,7 +276,9 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for the Administration Server.")
+  @Description("Lifecycle options for the Administration Server, including Java options, environment variables, "
+          + "additional Pod content, and which channels or network access points should be exposed using "
+          + "a NodePort Service.")
   private AdminServer adminServer;
 
   /**
@@ -259,7 +286,10 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for individual Managed Servers.")
+  @Description("Lifecycle options for individual Managed Servers, including Java options, environment variables, "
+          + "additional Pod content, and the ability to explicitly start, stop, or restart a named server instance. "
+          + "The `serverName` field of each entry must match a Managed Server that already exists in the WebLogic "
+          + "domain configuration or that matches a dynamic cluster member based on the server template.")
   private final List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
@@ -267,7 +297,10 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for the clusters.")
+  @Description("Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, "
+          + "environment variables, additional Pod content, and the ability to explicitly start, stop, or restart "
+          + "cluster members. The `clusterName` field of each entry must match a cluster that already exists in the "
+          + "WebLogic domain configuration.")
   protected final List<Cluster> clusters = new ArrayList<>();
 
   /**
@@ -386,7 +419,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * Reference to secret containing WebLogic startup credentials user name and password. Secret must
    * contain keys names 'username' and 'password'. Required.
    *
    * @param webLogicCredentialsSecret WebLogic startup credentials secret
@@ -398,7 +431,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * Reference to secret containing WebLogic startup credentials user name and password. Secret must
    * contain keys names 'username' and 'password'. Required.
    *
    * @param opssKeyPassPhrase WebLogic startup credentials secret

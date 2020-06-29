@@ -37,8 +37,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
  */
-@Description(
-    "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.")
 public class Domain {
   /**
    * The pattern for computing the default shared logs directory.
@@ -52,7 +50,7 @@ public class Domain {
    */
   @SerializedName("apiVersion")
   @Expose
-  @Description("The API version for the Domain.")
+  @Description("The API version defines the versioned schema of this Domain. Required.")
   private String apiVersion;
 
   /**
@@ -62,7 +60,7 @@ public class Domain {
    */
   @SerializedName("kind")
   @Expose
-  @Description("The type of resource. Must be 'Domain'.")
+  @Description("The type of the REST resource. Must be \"Domain\". Required.")
   private String kind;
 
   /**
@@ -72,7 +70,7 @@ public class Domain {
   @SerializedName("metadata")
   @Expose
   @Valid
-  @Description("The domain meta-data. Must include the name and namespace.")
+  @Description("The resource metadata. Must include the `name` and `namespace`. Required.")
   @Nonnull
   private V1ObjectMeta metadata = new V1ObjectMeta();
 
@@ -82,7 +80,7 @@ public class Domain {
   @SerializedName("spec")
   @Expose
   @Valid
-  @Description("The specification of the domain. Required.")
+  @Description("The specification of the operation of the WebLogic domain. Required.")
   @Nonnull
   private DomainSpec spec = new DomainSpec();
 
@@ -93,7 +91,7 @@ public class Domain {
   @SerializedName("status")
   @Expose
   @Valid
-  @Description("The current status of the domain. Updated by the operator.")
+  @Description("The current status of the operation of the WebLogic domain. Updated automatically by the operator.")
   private DomainStatus status;
 
   @SuppressWarnings({"rawtypes"})
@@ -367,7 +365,7 @@ public class Domain {
   }
 
   /**
-   * Name of the secret containing WebLogic startup credentials username and password.
+   * Name of the secret containing WebLogic startup credentials user name and password.
    *
    * @return the secret name
    */

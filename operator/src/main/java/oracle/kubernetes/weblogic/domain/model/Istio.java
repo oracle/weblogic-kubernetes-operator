@@ -12,10 +12,11 @@ public class Istio {
 
   @Description(
       "True, if this domain is deployed under an Istio service mesh. "
-          + "Defaults to true when the 'istio' element is included. Not required.")
+          + "Defaults to true when the `istio` field is specified.")
   private Boolean enabled = true;
 
-  @Description("The WebLogic readiness port for Istio. Defaults to 8888. Not required.")
+  @Description("The operator will create a WebLogic network access point with this port for use by the "
+      + "readiness probe. Defaults to 8888.")
   private Integer readinessPort = 8888;
 
   /**
