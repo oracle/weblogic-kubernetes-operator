@@ -1746,13 +1746,12 @@ public class CommonTestUtils {
          .append(" -w %{http_code});")
          .append("echo ${status}");
     logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
-    try {
-      result = exec(new String(curlString), true);
-    } catch (Exception ex) {
-      logger.info("checkAppUsingHostInfo: caught unexpected exception {0}", ex);
+    result = assertDoesNotThrow(() -> exec(new String(curlString), true));
+    logger.info("checkAppUsingHostInfo: kubectl returned {0}", result.toString());
+    if (result != null) {
+      return result.stdout().contains("200"); 
+    } else { 
       return false;
     }
-    logger.info("checkAppUsingHostInfo: kubectl returned {0}", result.toString());
-    return result.stdout().contains("200"); 
   }
 }
