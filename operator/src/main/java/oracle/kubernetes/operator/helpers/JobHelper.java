@@ -379,11 +379,12 @@ public class JobHelper {
       V1Job domainIntrospectorJob =
           (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
 
+      packet.remove(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED);
       if (domainIntrospectorJob != null
           && !JobWatcher.isComplete(domainIntrospectorJob)) {
         logIntrospectorFailure(packet, domainIntrospectorJob);
-        packet.remove(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED);
       }
+      packet.remove(ProcessingConstants.JOB_POD_NAME);
 
       LOGGER.fine(getJobDeletedMessageKey(), domainUid, namespace, jobName);
     }
@@ -418,7 +419,7 @@ public class JobHelper {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String namespace = info.getNamespace();
 
-      String jobPodName = (String) packet.remove(ProcessingConstants.JOB_POD_NAME);
+      String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
 
       return doNext(readDomainIntrospectorPodLog(jobPodName, namespace, getNext()), packet);
     }
@@ -569,7 +570,7 @@ public class JobHelper {
       LOGGER.fine(INTROSPECTOR_JOB_FAILED_DETAIL,
           domainIntrospectorJob.getMetadata().getNamespace(),
           domainIntrospectorJob.getMetadata().getName(),
-          domainIntrospectorJob);
+          domainIntrospectorJob.toString());
     }
   }
 

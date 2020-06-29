@@ -38,7 +38,6 @@ import org.junit.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.ProcessingConstants.*;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
