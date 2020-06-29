@@ -1703,13 +1703,13 @@ public class CommonTestUtils {
 
   /**
    * Generate a text file in RESULTS_ROOT directory by replacing template value.
-   * @param inputTemplateFile input template file 
+   * @param inputTemplateFile input template file
    * @param outputFile output file to be generated
    * @param templateMap map containing template variable(s) to be replaced
    * @return path of the generated file
   */
   public static Path generateFileFromTemplate(
-       String inputTemplateFile, String outputFile, 
+       String inputTemplateFile, String outputFile,
        Map<String, String> templateMap) throws IOException {
     LoggingFacade logger = getLogger();
     Path srcFile = Paths.get(inputTemplateFile);
@@ -1723,19 +1723,18 @@ public class CommonTestUtils {
     String out = targetFile.toString();
     for (Map.Entry<String, String> entry : templateMap.entrySet()) {
       logger.info("Replacing String {0} with the value {1}", entry.getKey(), entry.getValue());
-      replaceStringInFile(out, entry.getKey(), entry.getValue()); 
+      replaceStringInFile(out, entry.getKey(), entry.getValue());
     }
     return targetFile;
   }
 
   /**
-   * Check the WebLogic application using host information in the header.  
+   * Check the WebLogic application using host information in the header.
    * @param url url to access the appliation
-   * @param hostHeader host information to be passed as Header 
+   * @param hostHeader host information to be passed as Header
    * @return true if curl command returns HTTP code 200 otherwise false
   */
   public static boolean checkAppUsingHostHeader(String url, String hostHeader) {
-    ExecResult result = null;
     LoggingFacade logger = getLogger();
     StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     curlString.append(" --noproxy '*' ")
@@ -1746,12 +1745,19 @@ public class CommonTestUtils {
          .append(" -w %{http_code});")
          .append("echo ${status}");
     logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
-    result = assertDoesNotThrow(() -> exec(new String(curlString), true));
-    logger.info("checkAppUsingHostInfo: kubectl returned {0}", result.toString());
-    if (result != null) {
-      return result.stdout().contains("200"); 
-    } else { 
-      return false;
-    }
+    withQuickRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for server to be ready {0} "
+                + "(elapsed time {1} ms, remaining time {2} ms)",
+                url,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> {
+          return () -> {
+            return exec(new String(curlString), true).stdout().contains("200");
+          };
+        }));
+    return true;
   }
+
 }
