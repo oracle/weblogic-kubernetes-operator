@@ -12,11 +12,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Opss {
 
-  @Description("Secret containing the OPSS key wallet file.")
+  @Description("Name of a Secret containing the OPSS key wallet file.")
   private String walletFileSecret;
 
   @Description(
-      "Secret containing OPSS key passphrase.")
+      "Name of a Secret containing the OPSS key passphrase.")
   @Valid
   private String walletPasswordSecret;
 
