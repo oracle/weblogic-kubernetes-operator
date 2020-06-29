@@ -92,11 +92,11 @@ public class DbUtils {
           OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace);
     }
 
-    logger.info("Start Oracle DB with dbImage: {0}, imagePullPolicy: {1}, dbPort: {2}, "
-        + "dbNamespace: {3}", dbImage, dbPort, dbNamespace);
+    logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}, isUseSecret: {3}",
+        dbImage, dbPort, dbNamespace, isUseSecret);
     startOracleDB(dbImage, dbPort, dbNamespace, isUseSecret);
-    logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, imagePullPolicy: {2}, "
-        + "dbUrl: {3}, dbNamespace: {4}", fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
+    logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
+        + " dbNamespace: {3}, isUseSecret {4}:", fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace, isUseSecret);
     createRcuSchema(fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace, isUseSecret);
 
   }
@@ -209,6 +209,13 @@ public class DbUtils {
         "Create deployment failed for oracleDbDepl in namespace %s ",
         dbNamespace));
 
+    // sleep for a while to make sure the DB pod is created
+    try {
+      Thread.sleep(2 * 1000);
+    } catch (InterruptedException ie) {
+        // ignore
+    }
+
     // wait for the Oracle DB pod to be ready
     String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace),
         String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
@@ -268,7 +275,7 @@ public class DbUtils {
     LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
-        .atMost(5, MINUTES).await();
+        .atMost(10, MINUTES).await();
 
     Map labels = new HashMap<String, String>();
     labels.put("ruc", "rcu");
