@@ -51,7 +51,7 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -85,8 +85,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomReso
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -97,6 +96,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -109,7 +109,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test pods are restarted after properties in server pods are changed with different type of domains")
 @IntegrationTest
-class ItParameterizedPodsRestart implements LoggedTest {
+class ItParameterizedPodsRestart {
 
   // domain constants
   private static final String clusterName = "cluster-1";
@@ -117,12 +117,10 @@ class ItParameterizedPodsRestart implements LoggedTest {
   private static final int replicaCount = 2;
 
   private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
-  private static String opNamespace = null;
   private static boolean isUseSecret = true;
   private static int t3ChannelPort = 0;
-  private static Domain miiDomain = null;
-  private static Domain domainInPV = null;
-  private static Domain domainInImage = null;
+  private static List<Domain> domains = new ArrayList<>();
+  private static LoggingFacade logger = null;
 
   /**
    * Get namespaces for operator and WebLogic domain and create three different type of domains.
@@ -132,11 +130,12 @@ class ItParameterizedPodsRestart implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(4) List<String> namespaces) {
+    logger = getLogger();
 
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    opNamespace = namespaces.get(0);
+    String opNamespace = namespaces.get(0);
 
     assertNotNull(namespaces.get(1));
     String miiDomainNamespace = namespaces.get(1);
@@ -157,9 +156,13 @@ class ItParameterizedPodsRestart implements LoggedTest {
     }
 
     // create domains with different domain type
-    miiDomain = createAndVerifyMiiDomain("miidomain", miiDomainNamespace);
-    domainInPV = createAndVerifyDomainInPVUsingWlst("domaininpv", domainInPVNamespace);
-    domainInImage = createAndVerifyDomainInImageUsingWdt("domaininimage", domainInImageNamespace);
+    Domain miiDomain = createAndVerifyMiiDomain(miiDomainNamespace);
+    Domain domainInPV = createAndVerifyDomainInPVUsingWlst(domainInPVNamespace);
+    Domain domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
+
+    domains.add(miiDomain);
+    domains.add(domainInPV);
+    domains.add(domainInImage);
   }
 
   /**
@@ -190,7 +193,7 @@ class ItParameterizedPodsRestart implements LoggedTest {
    * @return stream of oracle.weblogic.domain.Domain objects
    */
   private static Stream<Domain> domainProvider() {
-    return Stream.of(miiDomain, domainInPV, domainInImage);
+    return domains.stream();
   }
 
 
@@ -318,11 +321,12 @@ class ItParameterizedPodsRestart implements LoggedTest {
   /**
    * Create a model in image domain and verify the domain was created, server pods are ready and services exist.
    *
-   * @param domainUid uid of the domain to be created
    * @param domainNamespace namespace in which the domain to be created
    * @return oracle.weblogic.domain.Domain object
    */
-  private static Domain createAndVerifyMiiDomain(String domainUid, String domainNamespace) {
+  private static Domain createAndVerifyMiiDomain(String domainNamespace) {
+
+    String domainUid = "miidomain";
 
     // get the pre-built image created by IntegrationTestWatcher
     String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
@@ -404,11 +408,11 @@ class ItParameterizedPodsRestart implements LoggedTest {
   /**
    * Create domain in PV using WLST and verify the domain was created, server pods are ready and services exist.
    *
-   * @param domainUid uid of the domain to be created
    * @param domainNamespace namespace in which the domain to be created
    * @return oracle.weblogic.domain.Domain object
    */
-  private static Domain createAndVerifyDomainInPVUsingWlst(String domainUid, String domainNamespace) {
+  private static Domain createAndVerifyDomainInPVUsingWlst(String domainNamespace) {
+    String domainUid = "domaininpv";
     String pvName = domainUid + "-pv";
     String pvcName = domainUid + "-pvc";
 
@@ -439,7 +443,7 @@ class ItParameterizedPodsRestart implements LoggedTest {
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
-            .accessModes(Arrays.asList("ReadWriteMany"))
+            .addAccessModesItem("ReadWriteMany")
             .hostPath(new V1HostPathVolumeSource()
                 .path(pvHostPath.toString())))
         .metadata(new V1ObjectMetaBuilder()
@@ -481,10 +485,7 @@ class ItParameterizedPodsRestart implements LoggedTest {
             .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(image)
-            .imagePullSecrets(isUseSecret ? Arrays.asList(
-                new V1LocalObjectReference()
-                    .name(OCR_SECRET_NAME))
-                : null)
+            .addImagePullSecretsItem(isUseSecret ? new V1LocalObjectReference().name(OCR_SECRET_NAME) : null)
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
@@ -589,24 +590,23 @@ class ItParameterizedPodsRestart implements LoggedTest {
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
-                    .initContainers(Arrays.asList(new V1Container()
+                    .addInitContainersItem(new V1Container()
                         .name("fix-pvc-owner")
                         .image(image)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
                         .addArgsItem("chown -R 1000:1000 /shared")
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name(pvName)
-                                .mountPath("/shared")))
+                        .addVolumeMountsItem(new V1VolumeMount()
+                            .name(pvName)
+                            .mountPath("/shared"))
                         .securityContext(new V1SecurityContext()
                             .runAsGroup(0L)
-                            .runAsUser(0L))))
-                    .containers(Arrays.asList(new V1Container()
+                            .runAsUser(0L)))
+                    .addContainersItem(new V1Container()
                         .name("create-weblogic-domain-onpv-container")
                         .image(image)
-                        .ports(Arrays.asList(new V1ContainerPort()
-                            .containerPort(7001)))
+                        .addPortsItem(new V1ContainerPort()
+                            .containerPort(7001))
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
                                 .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
@@ -619,7 +619,7 @@ class ItParameterizedPodsRestart implements LoggedTest {
                         .addArgsItem("/u01/weblogic/create-domain.py")
                         .addArgsItem("-skipWLSModuleScanning")
                         .addArgsItem("-loadProperties")
-                        .addArgsItem("/u01/weblogic/domain.properties")))
+                        .addArgsItem("/u01/weblogic/domain.properties"))
                     .volumes(Arrays.asList(
                         new V1Volume()
                             .name(pvName)
@@ -631,10 +631,8 @@ class ItParameterizedPodsRestart implements LoggedTest {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptConfigMapName))))  //ConfigMap containing domain scripts
-                    .imagePullSecrets(isUseSecret ? Arrays.asList(
-                        new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))
-                        : null))));
+                    .addImagePullSecretsItem(
+                        isUseSecret ? new V1LocalObjectReference().name(OCR_SECRET_NAME) : null))));
 
     logger.info("Running a job {0} to create a domain on PV for domain {1} in namespace {2}",
         jobBody.getMetadata().getName(), domainUid, domainNamespace);
@@ -676,11 +674,11 @@ class ItParameterizedPodsRestart implements LoggedTest {
   /**
    * Create a WebLogic domain in image using WDT.
    *
-   * @param domainUid uid of the domain to be created
    * @param domainNamespace namespace in which the domain to be created
    * @return oracle.weblogic.domain.Domain object
    */
-  private static Domain createAndVerifyDomainInImageUsingWdt(String domainUid, String domainNamespace) {
+  private static Domain createAndVerifyDomainInImageUsingWdt(String domainNamespace) {
+    String domainUid = "domaininimage";
 
     // Create the repo secret to pull the image
     createDockerRegistrySecret(domainNamespace);
@@ -745,22 +743,6 @@ class ItParameterizedPodsRestart implements LoggedTest {
     }
 
     return domain;
-  }
-
-  /**
-   * Check pod is ready and service exists in the specified namespace.
-   *
-   * @param podName pod name to check
-   * @param domainUid the label the pod is decorated with
-   * @param namespace the namespace in which the pod exists
-   */
-  private static void checkPodReadyAndServiceExists(String podName, String domainUid, String namespace) {
-    logger.info("Waiting for pod {0} to be ready in namespace {1}", podName, namespace);
-    checkPodReady(podName, domainUid, namespace);
-
-    logger.info("Check service {0} exists in namespace {1}", podName, namespace);
-    checkServiceExists(podName, namespace);
-
   }
 
   /**

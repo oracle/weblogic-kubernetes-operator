@@ -454,6 +454,7 @@ public class Domain {
         .append(" ")
         .append(myWebAppName).toString();
 
+    logger.info("executing command {0} in admin server pod", command);
     result = exec(adminPod, null, true, "/bin/sh", "-c", command);
     if (result.exitValue() != 0) {
       return false;
