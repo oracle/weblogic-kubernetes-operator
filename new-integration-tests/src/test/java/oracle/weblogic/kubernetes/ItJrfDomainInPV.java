@@ -283,6 +283,9 @@ public class ItJrfDomainInPV {
 
     // verify the admin server service created
     checkServiceExists(adminServerPodName, jrfDomainNamespace);
+    
+    // verify admin server pod is ready
+    checkPodReady(adminServerPodName, domainUid, jrfDomainNamespace);
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
@@ -290,9 +293,6 @@ public class ItJrfDomainInPV {
           managedServerPodNamePrefix + i, jrfDomainNamespace);
       checkServiceExists(managedServerPodNamePrefix + i, jrfDomainNamespace);
     }
-
-    // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, jrfDomainNamespace);
 
     // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
