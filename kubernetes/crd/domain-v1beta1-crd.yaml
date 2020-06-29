@@ -5303,7 +5303,7 @@ spec:
                   type: string
                   description: 'The strategy for deciding whether to start a WebLogic
                     Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED.
-                    Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers'
+                    Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
                   enum:
                   - ALWAYS
                   - NEVER
@@ -5364,7 +5364,7 @@ spec:
                 restartVersion:
                   type: string
                   description: 'Changes to this field cause the operator to restart
-                    WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers'
+                    WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
             logHome:
               type: string
               description: The directory in a server's container in which to store
@@ -10642,7 +10642,7 @@ spec:
                   serverStartPolicy:
                     description: 'The strategy for deciding whether to start a WebLogic
                       Server instance. Legal values are NEVER, or IF_NEEDED. Defaults
-                      to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers'
+                      to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
                     type: string
                     enum:
                     - NEVER
@@ -10659,7 +10659,7 @@ spec:
                     minimum: 0.0
                   restartVersion:
                     description: 'Changes to this field cause the operator to restart
-                      WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers'
+                      WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
                     type: string
                 required:
                 - clusterName
@@ -10729,7 +10729,7 @@ spec:
             restartVersion:
               type: string
               description: 'Changes to this field cause the operator to restart WebLogic
-                Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers'
+                Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
             introspectVersion:
               type: string
               description: 'Changes to this field cause the operator to repeat its
@@ -20874,7 +20874,7 @@ spec:
                   serverStartPolicy:
                     description: 'The strategy for deciding whether to start a WebLogic
                       Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED.
-                      Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers'
+                      Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
                     type: string
                     enum:
                     - ALWAYS
@@ -20882,7 +20882,7 @@ spec:
                     - IF_NEEDED
                   restartVersion:
                     description: 'Changes to this field cause the operator to restart
-                      WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers'
+                      WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
                     type: string
                 required:
                 - serverName

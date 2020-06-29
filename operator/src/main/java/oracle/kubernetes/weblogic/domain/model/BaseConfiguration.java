@@ -63,7 +63,7 @@ public abstract class BaseConfiguration {
   @Description(
       "Changes to this field cause the operator to restart WebLogic Server instances. More info: "
       + "https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
-      + "domain-lifecycle/startup/#restarting-servers")
+      + "domain-lifecycle/startup/#restarting-servers.")
   private String restartVersion;
 
   /**
