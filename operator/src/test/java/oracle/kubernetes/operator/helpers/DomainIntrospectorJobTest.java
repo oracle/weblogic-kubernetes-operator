@@ -38,6 +38,7 @@ import org.junit.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.ProcessingConstants.*;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
@@ -46,6 +47,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
@@ -113,7 +115,11 @@ public class DomainIntrospectorJobTest {
 
   private String[] getMessageKeys() {
     return new String[] {
-        getJobCreatedMessageKey(), getJobDeletedMessageKey(), getNoClusterInDomainMessageKey(), getJobFailedMessageKey()
+        getJobCreatedMessageKey(),
+        getJobDeletedMessageKey(),
+        getNoClusterInDomainMessageKey(),
+        getJobFailedMessageKey(),
+        getJobFailedDetailMessageKey()
     };
   }
 
@@ -170,6 +176,10 @@ public class DomainIntrospectorJobTest {
 
   private String getJobFailedMessageKey() {
     return INTROSPECTOR_JOB_FAILED;
+  }
+
+  private String getJobFailedDetailMessageKey() {
+    return INTROSPECTOR_JOB_FAILED_DETAIL;
   }
 
   private String getNoClusterInDomainMessageKey() {
@@ -307,15 +317,28 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobLogContainsSevereError_logJobInfos() {
+  public void whenJobLogContainsSevereError_logJobInfosOnDelete() {
     testSupport.defineResources(new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)));
     new DomainProcessorTestSetup(testSupport).defineKubernetesResources(SEVERE_MESSAGE_1);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
-    //testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
     testSupport.runSteps(JobHelper.deleteDomainIntrospectorJobStep(terminalStep));
 
     assertThat(logRecords, containsInfo(getJobFailedMessageKey()));
+    assertThat(logRecords, containsFine(getJobFailedDetailMessageKey()));
     assertThat(logRecords, containsFine(getJobDeletedMessageKey()));
+  }
+
+  @Test
+  public void whenJobLogContainsSevereError_logJobInfosOnReadPogLog() {
+    testSupport.defineResources(new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)));
+    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(SEVERE_MESSAGE_1);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    assertThat(logRecords, containsInfo(getJobFailedMessageKey()));
+    assertThat(logRecords, containsFine(getJobFailedDetailMessageKey()));
   }
 
   private Cluster getCluster(String clusterName) {
