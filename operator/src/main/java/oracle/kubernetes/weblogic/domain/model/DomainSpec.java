@@ -117,8 +117,8 @@ public class DomainSpec extends BaseConfiguration {
    * directories are determined from the WebLogic domain home configuration.
    */
   @Description(
-      "An optional, directory in a server's container for data storage of default and custom file stores. "
-          + "If `dataHome` is not specified or its value is either not set or empty "
+      "An optional directory in a server's container for data storage of default and custom file stores. "
+          + "If `dataHome` is not specified or its value is either not set or empty, "
           + "then the data storage directories are determined from the WebLogic domain configuration.")
   private String dataHome;
 
@@ -187,7 +187,7 @@ public class DomainSpec extends BaseConfiguration {
       + "will be started and then additional cluster members "
       + "will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are "
       + "not already started. If cluster members are started "
-      + "because of their entries under `managedServers` then a cluster may have more cluster members "
+      + "because of their entries under `managedServers`, then a cluster may have more cluster members "
       + "running than its `replicas` count. Defaults to 0.")
   @Range(minimum = 0)
   private Integer replicas;

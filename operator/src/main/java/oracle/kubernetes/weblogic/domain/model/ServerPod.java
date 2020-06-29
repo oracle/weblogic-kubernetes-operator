@@ -101,8 +101,8 @@ class ServerPod extends KubernetesResource {
   private String priorityClassName = null;
 
   @Description("If specified, all readiness gates will be evaluated for Pod readiness. A Pod is ready when all its "
-      + "containers are ready AND all conditions specified in the readiness gates have a status equal to \"True\" More "
-      + "info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md.")
+      + "containers are ready AND all conditions specified in the readiness gates have a status equal to \"True\". "
+      + "More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md.")
   private List<V1PodReadinessGate> readinessGates = new ArrayList<>();
 
   @Description("Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. "

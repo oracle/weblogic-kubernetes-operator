@@ -47,7 +47,7 @@ public abstract class BaseConfiguration {
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
   @EnumClass(ServerStartState.class)
   @Description(
-      "The WebLogic runtime state in which the server is to be started. Use ADMIN if server should start "
+      "The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start "
           + "in the admin state. Defaults to RUNNING.")
   private String serverStartState;
 

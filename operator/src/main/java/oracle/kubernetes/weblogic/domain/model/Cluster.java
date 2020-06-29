@@ -41,7 +41,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
       + "instances will be started and then additional cluster members "
       + "will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are "
       + "not already started. If cluster members are started "
-      + "because of their related entries under `managedServers` then this cluster may have more cluster members "
+      + "because of their related entries under `managedServers`, then this cluster may have more cluster members "
       + "running than its `replicas` count. Defaults to 0.")
   @Range(minimum = 0)
   private Integer replicas;
