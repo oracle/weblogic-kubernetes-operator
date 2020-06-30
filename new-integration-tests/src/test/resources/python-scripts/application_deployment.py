@@ -52,7 +52,7 @@ def deploy_application():
     print 'connecting to admin server'
     connect(admin_username, admin_password, t3url)
     try:
-      echo 'Undeploying ' + application_name + ' if it exists'
+      print 'Undeploying ' + application_name + ' if it exists'
       undeploy(application_name)
     except:
       ## ignore error
