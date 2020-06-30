@@ -47,6 +47,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import java.net.http.HttpResponse;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -686,6 +687,20 @@ public class ItIntrospectVersion {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, introDomainNamespace);
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    }
+
+    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + adminServerT3Port + "/clusterview/";
+
+    String serverListUri = "ClusterViewServlet?listServers=true";
+    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
+
+    assertEquals(200, response.statusCode(), "Status code not equals to 200");
+
+    // verify managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking {0} health", managedServerNameBase + i);
+      assertTrue(response.body().contains(managedServerNameBase + i + ":HEALTH_OK"),
+          "Didn't get " + managedServerNameBase + i + ":HEALTH_OK");
     }
 
   }
