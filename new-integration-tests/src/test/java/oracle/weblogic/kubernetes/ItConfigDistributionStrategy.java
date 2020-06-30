@@ -722,10 +722,10 @@ public class ItConfigDistributionStrategy {
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("\"-Dweblogic.debug.DebugSituationalConfig=true"))
+                    .value("-Dweblogic.debug.DebugSituationalConfig=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("\"-Dweblogic.debug.DebugSituationalConfigDumpXml=true"))
+                    .value("-Dweblogic.debug.DebugSituationalConfigDumpXml=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
