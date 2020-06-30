@@ -305,8 +305,8 @@ public class ItConfigDistributionStrategy {
 
     int newClusterReplicas = 2;
     String newCluster = "cl2";
-    String managedServerNameBase = "cl2-ms-";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+    String newManagedServerNameBase = "cl2-ms-";
+    String newManagedServerPodNamePrefix = domainUid + "-" + newManagedServerNameBase;
 
     //store the pod creation timestamps
     storePodCreationTimestamps();
@@ -324,7 +324,7 @@ public class ItConfigDistributionStrategy {
     p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p.setProperty("test_name", "create_cluster");
     p.setProperty("cluster_name", newCluster);
-    p.setProperty("server_prefix", managedServerNameBase);
+    p.setProperty("server_prefix", newManagedServerNameBase);
     p.setProperty("server_count", "3");
     assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
         "Failed to write the WLST properties to file");
@@ -362,15 +362,15 @@ public class ItConfigDistributionStrategy {
     // verify managed server services created
     for (int i = 1; i <= newClusterReplicas; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
+          newManagedServerPodNamePrefix + i, domainNamespace);
+      checkServiceExists(newManagedServerPodNamePrefix + i, domainNamespace);
     }
 
     // verify managed server pods are ready
     for (int i = 1; i <= newClusterReplicas; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+          newManagedServerPodNamePrefix + i, domainNamespace);
+      checkPodReady(newManagedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
 
     //deploy clusterview application
@@ -392,9 +392,9 @@ public class ItConfigDistributionStrategy {
 
     // verify managed server pods are ready
     for (int i = 1; i <= newClusterReplicas; i++) {
-      logger.info("Checking {0} health", managedServerNameBase + i);
-      assertTrue(response.body().contains(managedServerNameBase + i + ":HEALTH_OK"),
-          "Didn't get " + managedServerNameBase + i + ":HEALTH_OK");
+      logger.info("Checking {0} health", newManagedServerNameBase + i);
+      assertTrue(response.body().contains(newManagedServerNameBase + i + ":HEALTH_OK"),
+          "Didn't get " + newManagedServerNameBase + i + ":HEALTH_OK");
     }
 
     //create ingress controller
@@ -410,7 +410,7 @@ public class ItConfigDistributionStrategy {
         domainUid + "." + newCluster + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int j = 1; j <= newClusterReplicas + 1; j++) {
-      managedServers.add(managedServerNameBase + j);
+      managedServers.add(newManagedServerNameBase + j);
     }
     assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
         .as("Verify all managed servers can see each other")
