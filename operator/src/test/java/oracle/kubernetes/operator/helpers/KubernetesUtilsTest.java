@@ -56,6 +56,19 @@ public class KubernetesUtilsTest {
   }
 
   @Test
+  public void whenHaveNonParsableResourceVersionsAndSameTime_succeedIsFirstNewer() {
+    DateTime now = DateTime.now();
+
+    String resVersion = "ThisIsNotANumber";
+    String differentResVersion = "SomeOtherValueAlsoNotANumber";
+
+    V1ObjectMeta first = new V1ObjectMeta().creationTimestamp(now).resourceVersion(resVersion);
+    V1ObjectMeta second = new V1ObjectMeta().creationTimestamp(now).resourceVersion(differentResVersion);
+
+    assertThat(KubernetesUtils.isFirstNewer(first, second), is(false));
+  }
+
+  @Test
   public void whenHaveSmallResourceVersion_parseCorrectly() {
     String resVersion = "1";
 

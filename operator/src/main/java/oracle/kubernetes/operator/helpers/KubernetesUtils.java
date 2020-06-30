@@ -148,10 +148,7 @@ public class KubernetesUtils {
    * @return The integer value of the resource version or 0, if the value is not parsable
    */
   public static BigInteger getResourceVersion(V1ObjectMeta metadata) {
-    if (metadata != null) {
-      return getResourceVersion(metadata.getResourceVersion());
-    }
-    return BigInteger.ZERO;
+    return getResourceVersion(Optional.ofNullable(metadata).map(V1ObjectMeta::getResourceVersion).orElse(null));
   }
 
   /**
