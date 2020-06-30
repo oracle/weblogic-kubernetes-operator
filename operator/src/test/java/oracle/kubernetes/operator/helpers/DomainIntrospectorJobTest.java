@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -100,7 +101,6 @@ public class DomainIntrospectorJobTest {
   public void setUp() throws Exception {
     mementos.add(
         TestUtils.silenceOperatorLogger()
-            //.collectAllLogMessages(logRecords)
             .collectLogMessages(logRecords, getMessageKeys())
             .withLogLevel(Level.FINE)
             .ignoringLoggedExceptions(ApiException.class));
@@ -317,7 +317,8 @@ public class DomainIntrospectorJobTest {
 
   @Test
   public void whenJobLogContainsSevereError_logJobInfosOnDelete() {
-    testSupport.defineResources(new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)));
+    testSupport.defineResources(
+        new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)).status(new V1JobStatus()));
     new DomainProcessorTestSetup(testSupport).defineKubernetesResources(SEVERE_MESSAGE_1);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
@@ -330,7 +331,8 @@ public class DomainIntrospectorJobTest {
 
   @Test
   public void whenJobLogContainsSevereError_logJobInfosOnReadPogLog() {
-    testSupport.defineResources(new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)));
+    testSupport.defineResources(
+        new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)).status(new V1JobStatus()));
     new DomainProcessorTestSetup(testSupport).defineKubernetesResources(SEVERE_MESSAGE_1);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 

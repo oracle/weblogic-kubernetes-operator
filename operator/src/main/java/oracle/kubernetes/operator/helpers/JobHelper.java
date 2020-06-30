@@ -555,7 +555,7 @@ public class JobHelper {
       LOGGER.info(INTROSPECTOR_JOB_FAILED,
           domainIntrospectorJob.getMetadata().getName(),
           domainIntrospectorJob.getMetadata().getNamespace(),
-          domainIntrospectorJob.getStatus(),
+          domainIntrospectorJob.getStatus().toString(),
           jobPodName);
       LOGGER.fine(INTROSPECTOR_JOB_FAILED_DETAIL,
           domainIntrospectorJob.getMetadata().getNamespace(),
