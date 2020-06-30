@@ -615,8 +615,8 @@ public class ItIntrospectVersion {
   }
 
   /**
-   * Test new cluster can be created using online WLST transaction and those cluster server pods can be brought
-   * up by patching and running the introspector.
+   * Test, a new cluster can be created using online WLST change and new server pods can be brought
+   * up by patching domain resource with new cluster info and running the introspector.
    */
   @Order(3)
   @Test
