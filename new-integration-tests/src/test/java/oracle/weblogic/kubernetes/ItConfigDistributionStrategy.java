@@ -287,39 +287,20 @@ public class ItConfigDistributionStrategy {
     //create config override map and secrets
     setupCustomConfigOverrides();
 
-    //patch the domain resource with overridesConfigMap, secrets and introspectVersion
+    logger.info("patch the domain resource with overridesConfigMap, secrets , cluster and introspectVersion");
     String patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  }"
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]},"
+        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
+        + "    {\"clusterName\" : \"mystaticcluster\", \"replicas\": 1, \"serverStartState\": \"RUNNING\"}"
+        + "},"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"1\"}"
         + "]";
-
-    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     V1Patch patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
-
-    patchStr= "[\n" +
-        "  {\"op\": \"add\",\"path\": \"/spec/clusters/1\", \"value\":" +
-        " {\"clusterName\" : \"mystaticcluster\"} },\n" +
-        "  {\"op\": \"add\",\"path\": \"/spec/clusters/1/replicas\", \"value\": \"2\"},\n" +
-        "  {\"op\": \"add\",\"path\": \"/spec/clusters/1/serverStartState\", \"value\": \"RUNNING\"}\n" +
-        "]";
-    logger.info("Updating domain configuration using patch string: {0}", patchStr);
-    patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-
-    patchStr
-        = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"1\"}"
-        + "]";
-
-    logger.info("Updating domain configuration using patch string: {0}", patchStr);
-    patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-
 
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
@@ -741,7 +722,10 @@ public class ItConfigDistributionStrategy {
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value("\"-Dweblogic.debug.DebugSituationalConfig=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("\"-Dweblogic.debug.DebugSituationalConfigDumpXml=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
