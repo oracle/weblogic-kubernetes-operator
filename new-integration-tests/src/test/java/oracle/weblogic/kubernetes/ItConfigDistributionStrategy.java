@@ -255,7 +255,7 @@ public class ItConfigDistributionStrategy {
     createJdbcDataSource(dsName0, "root", "root123", mysqlDBPort1);
     createJdbcDataSource(dsName1, "root", "root123", mysqlDBPort1);
     //deploy application to view server configuration
-    deployApplication();
+    deployApplication(clusterName + "," + adminServerName);
 
   }
 
@@ -375,9 +375,12 @@ public class ItConfigDistributionStrategy {
 
     //deploy clusterview application
     logger.info("Deploying clusterview app {0} to cluster {1}",
-        clusterViewAppPath, newCluster);
-    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(adminServerT3Port),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, newCluster, clusterViewAppPath,
+        clusterViewAppPath, clusterName + "," + adminServerName + "," + newCluster);
+    deployUsingWlst(K8S_NODEPORT_HOST,
+        Integer.toString(adminServerT3Port),
+        ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT,
+        clusterName + "," + adminServerName + "," + newCluster, clusterViewAppPath,
         domainNamespace);
 
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + adminServerT3Port + "/clusterview/";
@@ -919,7 +922,7 @@ public class ItConfigDistributionStrategy {
   }
 
   //deploy application clusterview.war to domain
-  private void deployApplication() {
+  private void deployApplication(String targets) {
     logger.info("Getting node port for T3 channel");
     int t3channelNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "t3channel"),
@@ -929,7 +932,7 @@ public class ItConfigDistributionStrategy {
     //deploy application
     logger.info("Deploying webapp {0} to domain", clusterViewAppPath);
     deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, clusterViewAppPath,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, targets, clusterViewAppPath,
         domainNamespace);
   }
 
