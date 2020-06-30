@@ -1045,11 +1045,10 @@ class ItMiiDomain {
       String appPath
   ) {
     boolean v2AppAvailable = false;
-    boolean failed = false;
 
     // Access the pod periodically to check application's availability across the duration
     // of patching the domain with newer version of the application.
-    while (!v2AppAvailable && !failed)  {
+    while (!v2AppAvailable)  {
       v2AppAvailable = true;
       for (int i = 1; i <= replicaCount; i++) {
         v2AppAvailable = v2AppAvailable && appAccessibleInPod(
@@ -1075,7 +1074,7 @@ class ItMiiDomain {
       
       if (count == 0) {
         logger.info("XXXXXXXXXXX: application not available XXXXXXXX");
-        failed = true;
+        break;
       } else {
         logger.fine("YYYYYYYYYYY: application available YYYYYYYY count = " + count);   
       }
