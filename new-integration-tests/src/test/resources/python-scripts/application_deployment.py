@@ -54,8 +54,8 @@ def deploy_application():
     try:
       print 'Undeploying ' + application_name + ' if it exists'
       undeploy(application_name)
-    except:
-      ## ignore error
+    except:      
+      print('Application does not exist')
     print 'Running deploy(' + application_name + ', ' + archive_name + ', ' + targets + 'remote=\'true\', upload=\'true\')'
     deploy(application_name, archive_name, targets, remote='true', upload='true')
     print 'done with deployment'
