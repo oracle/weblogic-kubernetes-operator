@@ -1388,7 +1388,9 @@ public class CommonTestUtils {
         logger.info("Checking that managed server pod {0} was deleted from namespace {1}",
             managedServerPodName, domainNamespace);
         checkPodDoesNotExist(managedServerPodName, domainUid, domainNamespace);
-        expectedServerNames.remove(managedServerPodName.substring(domainUid.length() + 1));
+        if (expectedServerNames != null) {
+          expectedServerNames.remove(managedServerPodName.substring(domainUid.length() + 1));
+        }
       }
 
       if (curlCmd != null && expectedServerNames != null) {

@@ -200,7 +200,6 @@ class ItParameterizedPodsRestart {
     return domains.stream();
   }
 
-
   /**
    * Add/Modify server pod resources by patching the domain custom resource.
    * Verify all pods are restarted and back to ready state.
@@ -432,9 +431,8 @@ class ItParameterizedPodsRestart {
     createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claims
-    Path pvHostPath = assertDoesNotThrow(
-        () -> createDirectories(get(PV_ROOT, ItParameterizedPodsRestart.class.getSimpleName(),
-            domainUid + "-persistentVolume")), "createDirectories failed with IOException");
+    Path pvHostPath =
+        get(PV_ROOT, ItParameterizedPodsRestart.class.getSimpleName(), domainUid + "-persistentVolume");
 
     logger.info("Creating PV directory {0}", pvHostPath);
     assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
@@ -546,9 +544,9 @@ class ItParameterizedPodsRestart {
    * Copies the WLST domain script to a temp location.
    * Creates a domain properties in the temp location.
    * Creates a configmap containing domain scripts and property files.
-   * Runs a job to create domain on persistent volume.
+   * Runs a job to create domain in a persistent volume.
    *
-   * @param pvName persistence volume on which the WebLogic domain home will be hosted
+   * @param pvName persistence volume in which the WebLogic domain home will be hosted
    * @param pvcName persistence volume claim for the WebLogic domain
    * @param domainUid the Uid of the domain to create
    * @param domainNamespace the namespace in which the domain will be created

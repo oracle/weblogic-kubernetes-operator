@@ -57,8 +57,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -130,7 +128,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Verify scaling up and down the clusters in the domain with different domain types.
  * Also verify the sample application can be accessed via NGINX ingress controller.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify scaling the clusters in the domain with different domain types and "
     + "the sample application can be accessed via NGINX ingress controller")
 @IntegrationTest
@@ -162,7 +159,7 @@ class ItParameterizedScaleDomainNginx {
   /**
    * Install operator and NGINX.
    * Create three different type of domains: model in image, domain in PV and domain in image.
-   * Create ingress for the domain.
+   * Create ingress for each domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
@@ -225,7 +222,7 @@ class ItParameterizedScaleDomainNginx {
       String domainUid = domain.getSpec().getDomainUid();
       String domainNamespace = domain.getMetadata().getNamespace();
 
-      // create ingress using host based routing for miiDomain
+      // create ingress using host based routing
       Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
       int numClusters = domain.getSpec().getClusters().size();
       for (int i = 1; i <= numClusters; i++) {
@@ -244,19 +241,29 @@ class ItParameterizedScaleDomainNginx {
     }
   }
 
+  /**
+   * Scale the cluster by patching domain resource for three different type of domains.
+   *
+   * @param domain oracle.weblogic.domain.Domain object
+   */
   @ParameterizedTest
   @DisplayName("scale cluster by patching domain resource with three different type of domains")
   @MethodSource("domainProvider")
   public void testParamsScaleClustersByPatchingDomainResource(Domain domain) {
     assertDomainNotNull(domain);
 
-    // Verify scale each cluster of the domain by patching domain resource
+    // Verify scale cluster of the domain by patching domain resource
     logger.info("testScaleClustersByPatchingDomainResource with domain {0}", domain.getMetadata().getName());
     testScaleClustersByPatchingDomainResource(domain);
   }
 
+  /**
+   * Scale cluster using REST API for three different type of domains.
+   *
+   * @param domain oracle.weblogic.domain.Domain object
+   */
   @ParameterizedTest
-  @DisplayName("scale cluster using REST API with three different type of domains")
+  @DisplayName("scale cluster using REST API for three different type of domains")
   @MethodSource("domainProvider")
   public void testParamsScaleClustersWithRestApi(Domain domain) {
     assertDomainNotNull(domain);
@@ -266,8 +273,13 @@ class ItParameterizedScaleDomainNginx {
     testScaleClustersWithRestApi(domain);
   }
 
+  /**
+   * Scale cluster using WLDF policy for three different type of domains.
+   *
+   * @param domain oracle.weblogic.domain.Domain object
+   */
   @ParameterizedTest
-  @DisplayName("scale cluster using WLDF policy with three different type of domains")
+  @DisplayName("scale cluster using WLDF policy for three different type of domains")
   @MethodSource("domainProvider")
   public void testParamsScaleClustersWithWLDF(Domain domain) {
     assertDomainNotNull(domain);
@@ -298,7 +310,6 @@ class ItParameterizedScaleDomainNginx {
     int numClusters = domain.getSpec().getClusters().size();
 
     for (int i = 1; i <= numClusters; i++) {
-
       String clusterName = CLUSTER_NAME_PREFIX + i;
       String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
 
@@ -317,7 +328,7 @@ class ItParameterizedScaleDomainNginx {
       scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
           replicaCount, numberOfServers, curlCmd, managedServersBeforeScale);
 
-      // then scale cluster-1 and cluster-2 to 2 servers
+      // then scale cluster back to 2 servers
       logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
           clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
       managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
@@ -331,7 +342,6 @@ class ItParameterizedScaleDomainNginx {
    * @param domain oracle.weblogic.domain.Domain object
    */
   private void testScaleClustersWithRestApi(Domain domain) {
-
     assertDomainNotNull(domain);
 
     // get domain properties
@@ -339,35 +349,30 @@ class ItParameterizedScaleDomainNginx {
     String domainNamespace = domain.getMetadata().getNamespace();
     int numClusters = domain.getSpec().getClusters().size();
     String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
-
     int numberOfServers = 3;
 
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
         clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
     curlCmd = generateCurlCmd(domainUid, clusterName, SAMPLE_APP_CONTEXT_ROOT);
     List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
-    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
-        managedServerPodNamePrefix,
+    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         replicaCount, numberOfServers, true, externalRestHttpsPort, opNamespace, opServiceAccount,
         false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
 
-    // then scale cluster-1 and cluster-2 to 2 servers
+    // then scale cluster back to 2 servers
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
         clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
     managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
-    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
-        managedServerPodNamePrefix,
+    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         numberOfServers, replicaCount, true, externalRestHttpsPort, opNamespace, opServiceAccount,
         false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
-
   }
 
   /**
-   * Scale each cluster in the domain using WLDF policy.
+   * Verify scale each cluster in the domain using WLDF policy.
    * @param domain oracle.weblogic.domain.Domain object
    */
   private void testScaleClustersWithWLDF(Domain domain) {
-
     assertDomainNotNull(domain);
 
     // get domain properties
@@ -402,8 +407,8 @@ class ItParameterizedScaleDomainNginx {
   }
 
   /**
-   * TODO: remove this after Sankar's PR is merged
-   * The cleanup framework does not uninstall NGINX release. Do it here for now.
+   * Uninstall NGINX release.
+   * Delete cluster role and cluster role binding used for WLDF.
    */
   @AfterAll
   public void tearDownAll() {
@@ -433,7 +438,8 @@ class ItParameterizedScaleDomainNginx {
 
   /**
    * Create model in image domain with multiple clusters.
-   * @param domainNamespace namespace of the domain
+   *
+   * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
   private static Domain createMiiDomainWithMultiClusters(String domainNamespace) {
@@ -547,11 +553,11 @@ class ItParameterizedScaleDomainNginx {
   /**
    * Create a domain in PV using WDT.
    *
-   * @param domainNamespace namespace of the domain
+   * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
   private static Domain createDomainInPvUsingWdt(String domainNamespace) {
-    String domainUid = "domaininpv";
+    final String domainUid = "domaininpv";
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
@@ -566,8 +572,7 @@ class ItParameterizedScaleDomainNginx {
     }
 
     // create WebLogic domain credential secret
-    createSecretWithUsernamePassword(wlSecretName, domainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
@@ -575,9 +580,9 @@ class ItParameterizedScaleDomainNginx {
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
     // create a temporary WebLogic domain property file as a input for WDT model file
-    File domainPropertiesFile = assertDoesNotThrow(() ->
-            createTempFile("domaininpv", "properties"),
+    File domainPropertiesFile = assertDoesNotThrow(() -> createTempFile("domaininpv", "properties"),
         "Failed to create domain properties file");
+
     Properties p = new Properties();
     p.setProperty("adminUsername", ADMIN_USERNAME_DEFAULT);
     p.setProperty("adminPassword", ADMIN_PASSWORD_DEFAULT);
@@ -599,22 +604,22 @@ class ItParameterizedScaleDomainNginx {
     // WDT model file containing WebLogic domain configuration
     Path wdtModelFile = get(RESOURCE_DIR, "wdt-models", "domain-onpv-wdt-model.yaml");
 
-    // create configmap and domain on persistent volume using WDT
+    // create configmap and domain in persistent volume using WDT
     runCreateDomainInPVJobUsingWdt(wdtScript, wdtModelFile, domainPropertiesFile.toPath(),
         domainUid, pvName, pvcName, domainNamespace);
 
-    // create the domain custom resource configuration object
+    // create the domain custom resource
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
-        .metadata(new V1ObjectMeta() //metadata
+        .metadata(new V1ObjectMeta()
             .name(domainUid)
             .namespace(domainNamespace))
-        .spec(new DomainSpec() //spec
+        .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/u01/shared/domains/" + domainUid)  // point to domain home in pv
-            .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
+            .domainHome("/u01/shared/domains/" + domainUid)
+            .domainHomeSourceType("PersistentVolume")
             .image(wlsBaseImage)
             .imagePullPolicy("IfNotPresent")
             .addImagePullSecretsItem(isUseSecret ? new V1LocalObjectReference().name(OCR_SECRET_NAME) : null)
@@ -626,7 +631,7 @@ class ItParameterizedScaleDomainNginx {
             .logHome("/u01/shared/logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod() //serverpod
+            .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
@@ -640,7 +645,7 @@ class ItParameterizedScaleDomainNginx {
                 .addVolumeMountsItem(new V1VolumeMount()
                     .mountPath("/u01/shared")
                     .name(pvName)))
-            .adminServer(new AdminServer() //admin server
+            .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
@@ -679,7 +684,7 @@ class ItParameterizedScaleDomainNginx {
           String.format("Failed to create app archive for %s", appName));
 
       //deploy application
-      Path archivePath = get(ARCHIVE_DIR + "/wlsdeploy/applications/" + appName + ".ear");
+      Path archivePath = get(ARCHIVE_DIR, "wlsdeploy", "applications", appName + ".ear");
       logger.info("Deploying webapp {0} to domain {1}", archivePath, domainUid);
       deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3ChannelPort),
           ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName, archivePath,
@@ -729,15 +734,15 @@ class ItParameterizedScaleDomainNginx {
    * Create a persistent volume.
    *
    * @param pvName name of the persistent volume to create
-   * @param domainUid domain UID
+   * @param domainUid UID of the domain
    */
   private static void createPV(String pvName, String domainUid) {
     logger.info("creating persistent volume");
 
     Path pvHostPath = null;
     try {
-      pvHostPath = createDirectories(get(
-          PV_ROOT, ItParameterizedScaleDomainNginx.class.getSimpleName(), pvName));
+      pvHostPath = get(PV_ROOT, ItParameterizedScaleDomainNginx.class.getSimpleName(), pvName);
+
       logger.info("Creating PV directory host path {0}", pvHostPath);
       deleteDirectory(pvHostPath.toFile());
       createDirectories(pvHostPath);
@@ -753,7 +758,6 @@ class ItParameterizedScaleDomainNginx {
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
-            .addAccessModesItem("ReadWriteMany")
             .hostPath(new V1HostPathVolumeSource()
                 .path(pvHostPath.toString())))
         .metadata(new V1ObjectMeta()
@@ -793,7 +797,7 @@ class ItParameterizedScaleDomainNginx {
   }
 
   /**
-   * Create a WebLogic domain on a persistent volume by doing the following.
+   * Create a WebLogic domain in a persistent volume by doing the following.
    * Create a configmap containing WDT model file, property file and shell script to download and run WDT.
    * Create a Kubernetes job to create domain on persistent volume.
    *
@@ -828,38 +832,38 @@ class ItParameterizedScaleDomainNginx {
     // create a V1Container with specific scripts and properties for creating domain
     V1Container jobCreationContainer = new V1Container()
         .addCommandItem("/bin/sh")
-        .addArgsItem("/u01/weblogic/" + domainCreationScriptFile.getFileName()) //shell script to run WDT
+        .addArgsItem("/u01/weblogic/" + domainCreationScriptFile.getFileName())
         .addEnvItem(new V1EnvVar()
             .name("WDT_VERSION")
-            .value(WDT_VERSION)) // WDT version to use
+            .value(WDT_VERSION))
         .addEnvItem(new V1EnvVar()
             .name("WDT_MODEL_FILE")
-            .value("/u01/weblogic/" + modelFile.getFileName())) // WDT model file
+            .value("/u01/weblogic/" + modelFile.getFileName()))
         .addEnvItem(new V1EnvVar()
             .name("WDT_VAR_FILE")
-            .value("/u01/weblogic/" + domainPropertiesFile.getFileName())) // WDT model property file
+            .value("/u01/weblogic/" + domainPropertiesFile.getFileName()))
         .addEnvItem(new V1EnvVar()
             .name("WDT_DIR")
             .value("/u01/shared/wdt"))
         .addEnvItem(new V1EnvVar()
             .name("DOMAIN_HOME_DIR")
-            .value("/u01/shared/domains/" + domainUid)); // domain location
+            .value("/u01/shared/domains/" + domainUid));
 
     logger.info("Running a Kubernetes job to create the domain");
     createDomainJob(pvName, pvcName, domainScriptConfigMapName, namespace, jobCreationContainer);
   }
 
   /**
-   * Create configmap containing domain creation scripts.
+   * Create ConfigMap containing domain creation scripts.
    *
-   * @param configMapName name of the configmap to create
-   * @param files files to add in configmap
-   * @param namespace name of the namespace in which to create configmap
+   * @param configMapName name of the ConfigMap to create
+   * @param files files to add in ConfigMap
+   * @param namespace name of the namespace in which to create ConfigMap
    * @throws IOException when reading the domain script files fail
    */
   private static void createConfigMapForDomainCreation(String configMapName, List<Path> files, String namespace)
       throws IOException {
-    logger.info("Creating configmap {0}", configMapName);
+    logger.info("Creating ConfigMap {0}", configMapName);
 
     Path domainScriptsDir = createDirectories(
         get(TestConstants.LOGS_DIR, ItParameterizedScaleDomainNginx.class.getSimpleName(), namespace));
@@ -867,7 +871,7 @@ class ItParameterizedScaleDomainNginx {
     // add domain creation scripts and properties files to the configmap
     Map<String, String> data = new HashMap<>();
     for (Path file : files) {
-      logger.info("Adding file {0} in configmap", file);
+      logger.info("Adding file {0} in ConfigMap", file);
       data.put(file.getFileName().toString(), readString(file));
       logger.info("Making a copy of file {0} to {1} for diagnostic purposes", file,
           domainScriptsDir.resolve(file.getFileName()));
@@ -881,7 +885,7 @@ class ItParameterizedScaleDomainNginx {
         .metadata(meta);
 
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
-        String.format("Failed to create configmap %s with files %s", configMapName, files));
+        String.format("Failed to create ConfigMap %s with files %s", configMapName, files));
     assertTrue(cmCreated, String.format("Failed while creating ConfigMap %s", configMapName));
   }
 
@@ -890,12 +894,15 @@ class ItParameterizedScaleDomainNginx {
    *
    * @param pvName name of the persistent volume to create domain in
    * @param pvcName name of the persistent volume claim
-   * @param domainScriptCM configmap holding domain creation script files
+   * @param domainScriptCM ConfigMap holding domain creation script files
    * @param namespace name of the domain namespace in which the job is created
    * @param jobContainer V1Container with job commands to create domain
    */
   private static void createDomainJob(String pvName,
-                               String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
+                                      String pvcName,
+                                      String domainScriptCM,
+                                      String namespace,
+                                      V1Container jobContainer) {
     logger.info("Running Kubernetes job to create domain");
 
     V1Job jobBody = new V1Job()
@@ -933,7 +940,7 @@ class ItParameterizedScaleDomainNginx {
                                 .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
                             new V1VolumeMount()
                                 .name(pvName) // location to write domain
-                                .mountPath("/u01/shared")))) // mounted under //u01/shared inside pod
+                                .mountPath("/u01/shared")))) // mounted under /u01/shared inside pod
                     .volumes(Arrays.asList(
                         new V1Volume()
                             .name(pvName)
@@ -974,7 +981,7 @@ class ItParameterizedScaleDomainNginx {
   }
 
   /**
-   * Create a WebLogic domain with domain type domain in image using WDT.
+   * Create a WebLogic domain in image using WDT.
    *
    * @param domainNamespace namespace in which the domain to be created
    * @return oracle.weblogic.domain.Domain object
@@ -994,12 +1001,11 @@ class ItParameterizedScaleDomainNginx {
     appSrcDirList.add(MII_BASIC_APP_NAME);
     appSrcDirList.add(WLDF_OPENSESSION_APP);
 
-    String domainInImageWithWDTImage =
-        createImageAndVerify("domaininimage-wdtimage",
-            Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForDomainInImage), appSrcDirList,
-            Collections.singletonList(MODEL_DIR + "/" + WDT_BASIC_MODEL_PROPERTIES_FILE),
-            WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS_DOMAIN_TYPE, false,
-            WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid, false);
+    String domainInImageWithWDTImage = createImageAndVerify("domaininimage-wdtimage",
+        Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForDomainInImage), appSrcDirList,
+        Collections.singletonList(MODEL_DIR + "/" + WDT_BASIC_MODEL_PROPERTIES_FILE),
+        WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS_DOMAIN_TYPE, false,
+        WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid, false);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domainInImageWithWDTImage);
@@ -1007,7 +1013,7 @@ class ItParameterizedScaleDomainNginx {
     // Create the repo secret to pull the image
     createDockerRegistrySecret(domainNamespace);
 
-    // create the domain CR
+    // create the domain custom resource
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
@@ -1072,13 +1078,13 @@ class ItParameterizedScaleDomainNginx {
 
   /**
    * Assert the specified domain and domain spec, metadata and clusters not null.
-    * @param domain oracle.weblogic.domain.Domain object
+   * @param domain oracle.weblogic.domain.Domain object
    */
   private static void assertDomainNotNull(Domain domain) {
     assertNotNull(domain, "domain is null");
-    assertNotNull(domain.getSpec(), domain + "/spec is null");
+    assertNotNull(domain.getSpec(), domain + " spec is null");
     assertNotNull(domain.getMetadata(), domain + " metadata is null");
-    assertNotNull(domain.getSpec().getClusters(), domain.getSpec().getClusters() + " is null");
+    assertNotNull(domain.getSpec().getClusters(), domain.getSpec() + " getClusters() is null");
   }
 
   /**
@@ -1098,6 +1104,5 @@ class ItParameterizedScaleDomainNginx {
     }
 
     return managedServerPodNamePrefix;
-
   }
 }
