@@ -169,7 +169,8 @@ public class ItConfigDistributionStrategy {
   static String dsUrl1;
   static String dsUrl2;
 
-  String dsName = "JdbcTestDataSource-0";
+  String dsName0 = "JdbcTestDataSource-0";
+  String dsName1 = "JdbcTestDataSource-1";
   String dsSecret = domainUid.concat("-mysql-secrets");
 
   // create standard, reusable retry/backoff policy
@@ -229,7 +230,8 @@ public class ItConfigDistributionStrategy {
     //create and start WebLogic domain
     createDomain();
     //create a jdbc resource targeted to cluster
-    createJdbcDataSource("root", "root123", mysqlDBPort1);
+    createJdbcDataSource(dsName0, "root", "root123", mysqlDBPort1);
+    createJdbcDataSource(dsName1, "root", "root123", mysqlDBPort1);
     //deploy application to view server configuration
     deployApplication();
 
@@ -572,7 +574,7 @@ public class ItConfigDistributionStrategy {
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/ConfigServlet?";
 
     //verify datasource attributes of JdbcTestDataSource-0
-    String appURI = "resTest=true&resName=" + dsName;
+    String appURI = "resTest=true&resName=" + dsName0;
     String dsOverrideTestUrl = baseUri + appURI;
     HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
 
@@ -587,7 +589,7 @@ public class ItConfigDistributionStrategy {
 
     //test connection pool in all managed servers of dynamic cluster
     for (int i = 1; i <= replicaCount; i++) {
-      appURI = "dsTest=true&dsName=" + dsName + "&" + "serverName=" + managedServerNameBase + i;
+      appURI = "dsTest=true&dsName=" + dsName0 + "&" + "serverName=" + managedServerNameBase + i;
       String dsConnectionPoolTestUrl = baseUri + appURI;
       response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
       assertEquals(200, response.statusCode(), "Status code not equals to 200");
@@ -604,7 +606,7 @@ public class ItConfigDistributionStrategy {
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/ConfigServlet?";
 
     //verify datasource attributes of JdbcTestDataSource-0
-    String appURI = "resTest=true&resName=" + dsName;
+    String appURI = "resTest=true&resName=" + dsName1;
     String dsOverrideTestUrl = baseUri + appURI;
     HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
 
@@ -621,7 +623,7 @@ public class ItConfigDistributionStrategy {
 
     //test connection pool in all managed servers of dynamic cluster
     for (int i = 1; i <= replicaCount; i++) {
-      appURI = "dsTest=true&dsName=" + dsName + "&" + "serverName=" + managedServerNameBase + i;
+      appURI = "dsTest=true&dsName=" + dsName1 + "&" + "serverName=" + managedServerNameBase + i;
       String dsConnectionPoolTestUrl = baseUri + appURI;
       response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
       assertEquals(200, response.statusCode(), "Status code not equals to 200");
@@ -862,7 +864,7 @@ public class ItConfigDistributionStrategy {
   }
 
   //create a JDBC datasource targeted to cluster.
-  private void createJdbcDataSource(String user, String password, int mySQLNodePort) {
+  private void createJdbcDataSource(String dsName, String user, String password, int mySQLNodePort) {
 
     try {
       String jdbcDsUrl = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mySQLNodePort;
