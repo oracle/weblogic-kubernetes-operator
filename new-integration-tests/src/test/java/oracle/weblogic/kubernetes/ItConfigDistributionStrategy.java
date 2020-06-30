@@ -196,15 +196,19 @@ public class ItConfigDistributionStrategy {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public void initAll(@Namespaces(2) List<String> namespaces) {
+  public void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);
-    logger.info("Assign a unique namespace for Introspect Version WebLogic domain");
+    logger.info("Assign a unique namespace for domain namspace");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
+    logger.info("Assign a unique namespace for NGINX");
+    assertNotNull(namespaces.get(2), "Namespace is null");
+    domainNamespace = namespaces.get(2);
+
 
     // build the clusterview application
     Path distDir = buildApplication(Paths.get(APP_DIR, "clusterview"),
