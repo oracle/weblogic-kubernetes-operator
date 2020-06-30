@@ -50,15 +50,7 @@ def decode_archive():
 def deploy_application():
   try:
     print 'connecting to admin server'
-    connect(admin_username, admin_password, t3url)
-    try:
-      edit()
-      startEdit()
-      print 'Undeploying ' + application_name + ' if it exists'
-      undeploy(application_name)
-      activate()
-    except:      
-      print('Application does not exist')
+    connect(admin_username, admin_password, t3url)    
     print 'Running deploy(' + application_name + ', ' + archive_name + ', ' + targets + 'remote=\'true\', upload=\'true\')'
     deploy(application_name, archive_name, targets, remote='true', upload='true')
     print 'done with deployment'

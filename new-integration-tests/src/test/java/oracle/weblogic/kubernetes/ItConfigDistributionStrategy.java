@@ -57,14 +57,12 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -105,7 +103,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
@@ -118,19 +115,15 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.MySQLDBUtils.createMySQLDB;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.TestUtils.verifyClusterMemberCommunication;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -150,10 +143,6 @@ public class ItConfigDistributionStrategy {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-
-  private static String nginxNamespace = null;
-  private static int nodeportshttp;
-  private static HelmParams nginxHelmParams = null;
 
   private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
   private static boolean isUseSecret = true;
@@ -199,7 +188,7 @@ public class ItConfigDistributionStrategy {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public void initAll(@Namespaces(3) List<String> namespaces) {
+  public void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
@@ -208,9 +197,6 @@ public class ItConfigDistributionStrategy {
     logger.info("Assign a unique namespace for domain namspace");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
-    logger.info("Assign a unique namespace for NGINX");
-    assertNotNull(namespaces.get(2), "Namespace is null");
-    nginxNamespace = namespaces.get(2);
 
 
     // build the clusterview application
@@ -230,13 +216,6 @@ public class ItConfigDistributionStrategy {
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
-
-    // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
-
-    // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
@@ -280,7 +259,6 @@ public class ItConfigDistributionStrategy {
         = "["
         + "{\"op\": \"remove\", \"path\": \"/spec/configuration/overridesConfigMap\"},"
         + "{\"op\": \"remove\", \"path\": \"/spec/configuration/secrets\"}"
-        + "{\"op\": \"remove\", \"path\": \"/spec/clusters/1\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
@@ -303,35 +281,8 @@ public class ItConfigDistributionStrategy {
   @DisplayName("Test overrideDistributionStrategy set to DEFAULT")
   public void testDefaultOverride() {
 
-    int newClusterReplicas = 2;
-    String newCluster = "cl2";
-    String newManagedServerNameBase = "cl2-ms-";
-    String newManagedServerPodNamePrefix = domainUid + "-" + newManagedServerNameBase;
-
     //store the pod creation timestamps
     storePodCreationTimestamps();
-
-    logger.info("Getting node port for default channel");
-    int adminServerT3Port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "t3channel");
-
-    // create a temporary WebLogic WLST property file
-    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
-        "Creating WLST properties file failed");
-    Properties p = new Properties();
-    p.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p.setProperty("admin_port", Integer.toString(adminServerT3Port));
-    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-    p.setProperty("test_name", "create_cluster");
-    p.setProperty("cluster_name", newCluster);
-    p.setProperty("server_prefix", newManagedServerNameBase);
-    p.setProperty("server_count", "3");
-    assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
-        "Failed to write the WLST properties to file");
-
-    // changet the admin server port to a different value to force pod restart
-    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
-    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), domainNamespace);
 
     List<Path> overrideFiles = new ArrayList<>();
     overrideFiles.add(
@@ -346,9 +297,6 @@ public class ItConfigDistributionStrategy {
     String patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
-        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"" + newCluster + "\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
-        + "},"
         + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"1\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
@@ -358,64 +306,6 @@ public class ItConfigDistributionStrategy {
 
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
-
-    // verify managed server services created
-    for (int i = 1; i <= newClusterReplicas; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          newManagedServerPodNamePrefix + i, domainNamespace);
-      checkServiceExists(newManagedServerPodNamePrefix + i, domainNamespace);
-    }
-
-    // verify managed server pods are ready
-    for (int i = 1; i <= newClusterReplicas; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          newManagedServerPodNamePrefix + i, domainNamespace);
-      checkPodReady(newManagedServerPodNamePrefix + i, domainUid, domainNamespace);
-    }
-
-    //deploy clusterview application
-    logger.info("Deploying clusterview app {0} to cluster {1}",
-        clusterViewAppPath, clusterName + "," + adminServerName + "," + newCluster);
-    deployUsingWlst(K8S_NODEPORT_HOST,
-        Integer.toString(adminServerT3Port),
-        ADMIN_USERNAME_DEFAULT,
-        ADMIN_PASSWORD_DEFAULT,
-        clusterName + "," + adminServerName + "," + newCluster, clusterViewAppPath,
-        domainNamespace);
-
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + adminServerT3Port + "/clusterview/";
-
-    String serverListUri = "ClusterViewServlet?listServers=true";
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
-
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-
-    // verify managed server pods are ready
-    for (int i = 1; i <= newClusterReplicas; i++) {
-      logger.info("Checking {0} health", newManagedServerNameBase + i);
-      assertTrue(response.body().contains(newManagedServerNameBase + i + ":HEALTH_OK"),
-          "Didn't get " + newManagedServerNameBase + i + ":HEALTH_OK");
-    }
-
-    //create ingress controller
-    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-    clusterNameMsPortMap.put(newCluster, 8001);
-    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-    createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
-
-    //access application in managed servers through NGINX load balancer
-    logger.info("Accessing the clusterview app through NGINX load balancer");
-    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
-        domainUid + "." + newCluster + ".test", K8S_NODEPORT_HOST, nodeportshttp);
-    List<String> managedServers = new ArrayList<>();
-    for (int j = 1; j <= newClusterReplicas + 1; j++) {
-      managedServers.add(newManagedServerNameBase + j);
-    }
-    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-        .as("Verify all managed servers can see each other")
-        .withFailMessage("managed servers cannot see other")
-        .isTrue();
 
     //wait until config is updated upto 5 minutes
     withStandardRetryPolicy
@@ -474,9 +364,6 @@ public class ItConfigDistributionStrategy {
     patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
-        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"mystaticcluster\", \"replicas\": 1, \"serverStartState\": \"RUNNING\"}"
-        + "},"
         + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
@@ -566,9 +453,6 @@ public class ItConfigDistributionStrategy {
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
-        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"mystaticcluster\", \"replicas\": 1, \"serverStartState\": \"RUNNING\"}"
-        + "},"
         + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
@@ -1268,22 +1152,6 @@ public class ItConfigDistributionStrategy {
     if (!secretExists) {
       createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
           OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
-    }
-  }
-
-  /**
-   * Uninstall Nginx.
-   * The cleanup framework does not uninstall Nginx release.
-   * Do it here for now.
-   */
-  @AfterAll
-  public void tearDownAll() {
-    // uninstall NGINX release
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
-          .as("Test uninstallNginx returns true")
-          .withFailMessage("uninstallNginx() did not return true")
-          .isTrue();
     }
   }
 
