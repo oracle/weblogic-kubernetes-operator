@@ -6,10 +6,6 @@ pre = "<b> </b>"
 description = "Introduction to Model in Image, description of its runtime behavior, and references."
 +++
 
-{{% notice info %}}
-This feature is supported only in 3.0.0.
-{{% /notice %}}
-
 #### Content
 
  - [Introduction](#introduction)
