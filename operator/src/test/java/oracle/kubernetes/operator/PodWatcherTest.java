@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -31,7 +32,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 /** This test class verifies the behavior of the PodWatcher. */
 public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
 
-  private static final int INITIAL_RESOURCE_VERSION = 234;
+  private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
   private static final String NS = "ns";
   private static final String NAME = "test";
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -55,7 +56,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
 
     assertThat(
         StubWatchFactory.getRequestParameters().get(0),
-        both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
+        both(hasEntry("resourceVersion", INITIAL_RESOURCE_VERSION.toString()))
             .and(hasEntry("labelSelector", asList(DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL))));
   }
 
@@ -70,12 +71,12 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Override
-  protected PodWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
-    return PodWatcher.create(this, ns, Integer.toString(rv), tuning, this, stopping);
+  protected PodWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
+    return PodWatcher.create(this, ns, rv.toString(), tuning, this, stopping);
   }
 
   private PodWatcher createWatcher(AtomicBoolean stopping) {
-    return PodWatcher.create(this, NS, Integer.toString(INITIAL_RESOURCE_VERSION), tuning, this, stopping);
+    return PodWatcher.create(this, NS, INITIAL_RESOURCE_VERSION.toString(), tuning, this, stopping);
   }
 
   @Test
