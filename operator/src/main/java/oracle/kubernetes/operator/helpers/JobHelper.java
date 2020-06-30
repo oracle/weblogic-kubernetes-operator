@@ -45,6 +45,8 @@ import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
+import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 
 public class JobHelper {
 
@@ -362,7 +364,17 @@ public class JobHelper {
       return MessageKeys.JOB_DELETED;
     }
 
-    void logJobDeleted(String domainUid, String namespace, String jobName) {
+    void logJobDeleted(String domainUid, String namespace, String jobName, Packet packet) {
+      V1Job domainIntrospectorJob =
+          (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+
+      packet.remove(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED);
+      if (domainIntrospectorJob != null
+          && !JobWatcher.isComplete(domainIntrospectorJob)) {
+        logIntrospectorFailure(packet, domainIntrospectorJob);
+      }
+      packet.remove(ProcessingConstants.JOB_POD_NAME);
+
       LOGGER.fine(getJobDeletedMessageKey(), domainUid, namespace, jobName);
     }
 
@@ -371,7 +383,7 @@ public class JobHelper {
       java.lang.String domainUid = info.getDomain().getDomainUid();
       java.lang.String namespace = info.getNamespace();
       String jobName = JobHelper.createJobName(domainUid);
-      logJobDeleted(domainUid, namespace, jobName);
+      logJobDeleted(domainUid, namespace, jobName, packet);
       return new CallBuilder()
             .deleteJobAsync(
                   jobName,
@@ -396,7 +408,7 @@ public class JobHelper {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String namespace = info.getNamespace();
 
-      String jobPodName = (String) packet.remove(ProcessingConstants.JOB_POD_NAME);
+      String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
 
       return doNext(readDomainIntrospectorPodLog(jobPodName, namespace, getNext()), packet);
     }
@@ -431,10 +443,12 @@ public class JobHelper {
       }
 
       V1Job domainIntrospectorJob =
-            (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+            (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+
       if (isNotComplete(domainIntrospectorJob)) {
         List<String> jobConditionsReason = new ArrayList<>();
         if (domainIntrospectorJob != null) {
+          logIntrospectorFailure(packet, domainIntrospectorJob);
           V1JobStatus status = domainIntrospectorJob.getStatus();
           if (status != null && status.getConditions() != null) {
             for (V1JobCondition cond : status.getConditions()) {
@@ -530,6 +544,23 @@ public class JobHelper {
 
     private String onSeparateLines(List<String> lines) {
       return String.join(System.lineSeparator(), lines);
+    }
+  }
+
+  private static void logIntrospectorFailure(Packet packet, V1Job domainIntrospectorJob) {
+    Boolean logged = (Boolean) packet.get(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED);
+    String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
+    if (logged == null || !logged.booleanValue()) {
+      packet.put(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED, Boolean.valueOf(true));
+      LOGGER.info(INTROSPECTOR_JOB_FAILED,
+          domainIntrospectorJob.getMetadata().getName(),
+          domainIntrospectorJob.getMetadata().getNamespace(),
+          domainIntrospectorJob.getStatus().toString(),
+          jobPodName);
+      LOGGER.fine(INTROSPECTOR_JOB_FAILED_DETAIL,
+          domainIntrospectorJob.getMetadata().getNamespace(),
+          domainIntrospectorJob.getMetadata().getName(),
+          domainIntrospectorJob.toString());
     }
   }
 
