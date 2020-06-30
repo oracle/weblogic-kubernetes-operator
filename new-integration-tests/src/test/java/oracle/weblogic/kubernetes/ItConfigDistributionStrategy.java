@@ -358,15 +358,6 @@ public class ItConfigDistributionStrategy {
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
 
-    //wait until config is updated upto 5 minutes
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for server configuration to be updated"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(configUpdated());
-
     // verify managed server services created
     for (int i = 1; i <= newClusterReplicas; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
@@ -415,6 +406,15 @@ public class ItConfigDistributionStrategy {
         .as("Verify all managed servers can see each other")
         .withFailMessage("managed servers cannot see other")
         .isTrue();
+
+    //wait until config is updated upto 5 minutes
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for server configuration to be updated"
+                + "(elapsed time {0} ms, remaining time {1} ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(configUpdated());
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
