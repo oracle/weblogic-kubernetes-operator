@@ -240,12 +240,9 @@ public class ItConfigDistributionStrategy {
    */
   @BeforeEach
   public void beforeEach() {
-
-    String maxMessageSize = "10000000";
-    String cpMaxCapacity = "15";
-    String dsUrl = dsUrl1;
-    verifyConfig(maxMessageSize, cpMaxCapacity, dsUrl, false);
-
+    //print the configuration overrides before override
+    verifyConfigXMLOverride(false);
+    verifyResourceJDBC0Override(false);
   }
 
   /**
@@ -259,6 +256,7 @@ public class ItConfigDistributionStrategy {
         = "["
         + "{\"op\": \"remove\", \"path\": \"/spec/configuration/overridesConfigMap\"},"
         + "{\"op\": \"remove\", \"path\": \"/spec/configuration/secrets\"}"
+        + "{\"op\": \"remove\", \"path\": \"/spec/clusters/1\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
@@ -284,14 +282,19 @@ public class ItConfigDistributionStrategy {
     //store the pod creation timestamps
     storePodCreationTimestamps();
 
+    List<Path> overrideFiles = new ArrayList<>();
+    overrideFiles.add(
+        Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/jdbc-JdbcTestDataSource-0.xml"));
+    overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
+    overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
+
     //create config override map and secrets
-    setupCustomConfigOverrides();
+    createConfigMapFromFiles(overridecm, overrideFiles, domainNamespace);
 
     logger.info("patch the domain resource with overridesConfigMap, secrets , cluster and introspectVersion");
     String patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]},"
         + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
         + "    {\"clusterName\" : \"mystaticcluster\", \"replicas\": 1, \"serverStartState\": \"RUNNING\"}"
         + "},"
@@ -305,9 +308,6 @@ public class ItConfigDistributionStrategy {
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
 
-    //print the configuration overrides without asserting
-    verifyConfig(null, null, null, true);
-
     //wait until config is updated upto 5 minutes
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -316,13 +316,9 @@ public class ItConfigDistributionStrategy {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(configUpdated());
-    restartDataSource(dsName);
 
-    //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
-    //https://jira.oraclecorp.com/jira/browse/OWLS-82976
-    //restartDomain(); // remove after the above bug is fixed
-
-    verifyConfigOverrides();
+    verifyConfigXMLOverride(true);
+    verifyResourceJDBC0Override(true);
   }
 
   /**
@@ -356,17 +352,25 @@ public class ItConfigDistributionStrategy {
     //store the pod creation timestamps
     storePodCreationTimestamps();
 
-    //create config override map and secrets
-    setupCustomConfigOverrides();
+    List<Path> overrideFiles = new ArrayList<>();
+    overrideFiles.add(
+        Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/jdbc-JdbcTestDataSource-0.xml"));
+    overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
+    overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
 
-    //patch the domain resource with overridesConfigMap, secrets and introspectVersion
+    //create config override map and secrets
+    createConfigMapFromFiles(overridecm, overrideFiles, domainNamespace);
+
+    logger.info("patch the domain resource with overridesConfigMap, secrets , cluster and introspectVersion");
     patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
+        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
+        + "    {\"clusterName\" : \"mystaticcluster\", \"replicas\": 1, \"serverStartState\": \"RUNNING\"}"
+        + "},"
         + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
         + "]";
-    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
@@ -374,8 +378,7 @@ public class ItConfigDistributionStrategy {
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
 
-    //print the configuration overrides without asserting
-    verifyConfig(null, null, null, true);
+    //wait until config is updated upto 5 minutes
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for server configuration to be updated"
@@ -383,13 +386,9 @@ public class ItConfigDistributionStrategy {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(configUpdated());
-    restartDataSource(dsName);
 
-    //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
-    //https://jira.oraclecorp.com/jira/browse/OWLS-82976
-    //restartDomain(); // remove after the above bug is fixed
-
-    verifyConfigOverrides();
+    verifyConfigXMLOverride(true);
+    verifyResourceJDBC0Override(true);
   }
 
   /**
@@ -399,8 +398,8 @@ public class ItConfigDistributionStrategy {
    * <p>Test sets the above field to ON_RESTART and overrides the /spec/configuration/overridesConfigMap and
    * /spec/configuration/secrets with new configuration and new secrets.
    *
-   * <p>Verifies after introspector runs the server configuration and JDBC datasource configurations are
-   * not updated. After domain restart the overrides are applied.
+   * <p>Verifies after introspector runs the server configuration and JDBC datasource configurations are not
+   * updated. After domain restart the overrides are applied.
    */
   @Order(3)
   @Test
@@ -423,6 +422,33 @@ public class ItConfigDistributionStrategy {
     //store the pod creation timestamps
     storePodCreationTimestamps();
 
+    logger.info("Creating config overrides");
+
+    //create new secrets for jdbc datasource
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("dbusername", "root");
+    secretMap.put("dbpassword", "root456");
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(dsSecret)
+            .namespace(domainNamespace))
+        .stringData(secretMap)), "Creating secret for datasource failed.");
+    assertTrue(secretCreated, String.format("creating secret failed %s", dsSecret));
+
+    //copy the template datasource file for override after replacing JDBC_URL with new datasource url
+    Path srcDsOverrideFile = Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/jdbc-JdbcTestDataSource-1.xml");
+    Path dstDsOverrideFile = Paths.get(WORK_DIR, "jdbc-JdbcTestDataSource-1.xml");
+    String tempString = assertDoesNotThrow(()
+        -> Files.readString(srcDsOverrideFile).replaceAll("JDBC_URL", dsUrl2));
+    assertDoesNotThrow(()
+        -> Files.write(dstDsOverrideFile, tempString.getBytes(StandardCharsets.UTF_8)));
+
+    List<Path> overrideFiles = new ArrayList<>();
+    overrideFiles.add(dstDsOverrideFile);
+    overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
+    overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
+
     //create config override map and secrets
     setupCustomConfigOverrides();
 
@@ -431,7 +457,10 @@ public class ItConfigDistributionStrategy {
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"4\"}"
+        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
+        + "    {\"clusterName\" : \"mystaticcluster\", \"replicas\": 1, \"serverStartState\": \"RUNNING\"}"
+        + "},"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     patch = new V1Patch(patchStr);
@@ -441,22 +470,21 @@ public class ItConfigDistributionStrategy {
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
 
-    //print the configuration overrides without asserting
-    verifyConfig(null, null, null, true);
-
     //verify the overrides are not applied
-    verifyConfig("10000000", "15", dsUrl1, false);
+    verifyConfigXMLOverride(false);
+    verifyResourceJDBC0Override(false);
 
     //restart domain for the distributionstrategy to take effect
     restartDomain();
 
     //verify on restart the overrides are applied
-    verifyConfigOverrides();
+    verifyConfigXMLOverride(true);
+    verifyResourceJDBC1Override(true);
   }
 
   /**
-   * Test patching the domain with values for /spec/configuration/overrideDistributionStrategy field
-   * anything other than DYNAMIC or ON_RESTART fails.
+   * Test patching the domain with values for /spec/configuration/overrideDistributionStrategy field anything other than
+   * DYNAMIC or ON_RESTART fails.
    *
    * <p>Test tries to set the above field to RESTART and asserts the patching fails.
    */
@@ -476,15 +504,7 @@ public class ItConfigDistributionStrategy {
         "Patch domain with invalid overrideDistributionStrategy succeeded.");
 
     //verify the overrides are not applied and original configuration is still effective
-    verifyConfig("10000000", "15", dsUrl1, false);
-  }
-
-  //verify the configuration overrides for server and JDBC datasource
-  private void verifyConfigOverrides() {
-    String maxMessageSize = "78787878";
-    String cpMaxCapacity = "12";
-    String dsUrl = dsUrl2;
-    verifyConfig(maxMessageSize, cpMaxCapacity, dsUrl, false);
+    verifyConfigXMLOverride(false);
   }
 
   private Callable<Boolean> configUpdated() {
@@ -511,72 +531,100 @@ public class ItConfigDistributionStrategy {
     });
   }
 
-  private void restartDataSource(String dsName) {
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName
-            + "-external",
-            "default"),
-        "Getting admin server node port failed");
+  private void verifyConfigXMLOverride(boolean configUpdated) {
 
-    for (int i = 1; i <= replicaCount; i++) {
-      String appURI = "/clusterview/ConfigServlet?"
-          + "restartDS=true&"
-          + "dsName=" + dsName + "&"
-          + "serverName=" + managedServerNameBase + i;
-      String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+    int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/";
 
-      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
+    //verify server attribute MaxMessageSize to be equal to 78787878
+    String configUri = "ConfigServlet?"
+        + "attributeTest=true"
+        + "&serverType=adminserver"
+        + "&serverName=" + adminServerName;
+    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
+
+    assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    if (configUpdated) {
+      assertTrue(response.body().contains("MaxMessageSize=78787878"), "Didn't get MaxMessageSize=78787878");
+    } else {
+      assertTrue(response.body().contains("MaxMessageSize=10000000"), "Didn't get MaxMessageSize=10000000");
+    }
+
+    String serverListUri = "ClusterViewServlet?listServer=true";
+    response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
+
+    assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    if (configUpdated) {
+      assertTrue(response.body().contains("mystaticcluster-ms-1:0"), "Didn't get mystaticcluster-ms-1:0");
+      assertTrue(response.body().contains("mystaticcluster-ms-2:1"), "Didn't get mystaticcluster-ms-2:1");
+    } else {
+      assertTrue(response.body().contains("mystaticcluster-ms-1:1"), "Didn't get mystaticcluster-ms-1:1");
+      assertTrue(response.body().contains("mystaticcluster-ms-2:1"), "Didn't get mystaticcluster-ms-2:1");
     }
   }
 
   //use the http client and access the clusterview application to get server configuration
   //and JDBC datasource configuration.
-  private void verifyConfig(String maxMessageSize, String cpMaxCapacity, String dsUrl, boolean debug) {
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName
-            + "-external",
-            "default"),
-        "Getting admin server node port failed");
+  private void verifyResourceJDBC0Override(boolean configUpdated) {
 
-    //verify server attribute MaxMessageSize
-    String appURI = "/clusterview/ConfigServlet?"
-        + "attributeTest=true&"
-        + "serverType=adminserver&"
-        + "serverName=" + adminServerName;
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
+    // get admin server node port and construct a base url for clusterview app
+    int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/ConfigServlet?";
+
+    //verify datasource attributes of JdbcTestDataSource-0
+    String appURI = "resTest=true&resName=" + dsName;
+    String dsOverrideTestUrl = baseUri + appURI;
+    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
 
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (!debug) {
-      assertTrue(response.body().contains("MaxMessageSize=".concat(maxMessageSize)),
-          "Didn't get MaxMessageSize=" + maxMessageSize);
+    if (configUpdated) {
+      assertTrue(response.body().contains("getMaxCapacity:12"), "Did get getMaxCapacity:12");
+      assertTrue(response.body().contains("getInitialCapacity:2"), "Did get getInitialCapacity:2");
+    } else {
+      assertTrue(response.body().contains("getMaxCapacity:15"), "Did get getMaxCapacity:15");
+      assertTrue(response.body().contains("getInitialCapacity:1"), "Did get getInitialCapacity:1");
     }
 
-    //verify datasource attributes
-    appURI = "/clusterview/ConfigServlet?"
-        + "resTest=true&"
-        + "resName=" + dsName;
-    String dsurl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    response = assertDoesNotThrow(() -> OracleHttpClient.get(dsurl, true));
+    //test connection pool in all managed servers of dynamic cluster
+    for (int i = 1; i <= replicaCount; i++) {
+      appURI = "dsTest=true&dsName=" + dsName + "&" + "serverName=" + managedServerNameBase + i;
+      String dsConnectionPoolTestUrl = baseUri + appURI;
+      response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
+      assertEquals(200, response.statusCode(), "Status code not equals to 200");
+      assertTrue(response.body().contains("Connection successful"), "Didn't get Connection successful");
+    }
+  }
+
+  //use the http client and access the clusterview application to get server configuration
+  //and JDBC datasource configuration.
+  private void verifyResourceJDBC1Override(boolean configUpdated) {
+
+    // get admin server node port and construct a base url for clusterview app
+    int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/ConfigServlet?";
+
+    //verify datasource attributes of JdbcTestDataSource-0
+    String appURI = "resTest=true&resName=" + dsName;
+    String dsOverrideTestUrl = baseUri + appURI;
+    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
 
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (!debug) {
-      assertTrue(response.body().contains("getMaxCapacity:" + cpMaxCapacity),
-          "Did get getMaxCapacity:" + cpMaxCapacity);
-      assertTrue(response.body().contains("Url:" + dsUrl), "Didn't get Url:" + dsUrl);
+    if (configUpdated) {
+      assertTrue(response.body().contains("getMaxCapacity:10"), "Did get getMaxCapacity:10");
+      assertTrue(response.body().contains("getInitialCapacity:4"), "Did get getInitialCapacity:4");
+      assertTrue(response.body().contains("Url:" + dsUrl2), "Didn't get Url:" + dsUrl2);
+    } else {
+      assertTrue(response.body().contains("getMaxCapacity:15"), "Did get getMaxCapacity:15");
+      assertTrue(response.body().contains("getInitialCapacity:1"), "Did get getInitialCapacity:1");
+      assertTrue(response.body().contains("Url:" + dsUrl1), "Didn't get Url:" + dsUrl1);
     }
 
-    //test connection pool
-    appURI = "/clusterview/ConfigServlet?"
-        + "dsTest=true&"
-        + "dsName=" + dsName + "&"
-        + "serverName=" + managedServerNameBase + 1;
-    String dstesturl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    response = assertDoesNotThrow(() -> OracleHttpClient.get(dstesturl, true));
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (!debug) {
+    //test connection pool in all managed servers of dynamic cluster
+    for (int i = 1; i <= replicaCount; i++) {
+      appURI = "dsTest=true&dsName=" + dsName + "&" + "serverName=" + managedServerNameBase + i;
+      String dsConnectionPoolTestUrl = baseUri + appURI;
+      response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
+      assertEquals(200, response.statusCode(), "Status code not equals to 200");
       assertTrue(response.body().contains("Connection successful"), "Didn't get Connection successful");
     }
   }

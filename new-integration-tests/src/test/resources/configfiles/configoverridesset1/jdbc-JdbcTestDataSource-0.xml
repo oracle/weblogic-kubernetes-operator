@@ -15,15 +15,4 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
         <jdbc:connection-harvest-max-count jdbcf:combine-mode="add">7</jdbc:connection-harvest-max-count>
         <jdbc:inactive-connection-timeout-seconds jdbcf:combine-mode="add">120</jdbc:inactive-connection-timeout-seconds>
     </jdbc:jdbc-connection-pool-params>
-    <jdbc:jdbc-driver-params>
-        <jdbc:url jdbcf:combine-mode="replace">JDBC_URL</jdbc:url>
-        <jdbc:driver-name jdbcf:combine-mode="replace">com.mysql.cj.jdbc.Driver</jdbc:driver-name>
-        <jdbc:properties>
-            <jdbc:property>
-                <jdbc:name>user</jdbc:name>
-                <jdbc:value jdbcf:combine-mode="replace">${secret:mydomain-mysql-secrets.dbusername}</jdbc:value>
-            </jdbc:property>
-        </jdbc:properties>
-        <jdbc:password-encrypted jdbcf:combine-mode="replace">${secret:mydomain-mysql-secrets.dbpassword:encrypt}</jdbc:password-encrypted>
-    </jdbc:jdbc-driver-params>
 </jdbc:jdbc-data-source>
