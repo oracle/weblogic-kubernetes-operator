@@ -258,12 +258,10 @@ public class ItConfigDistributionStrategy {
   @AfterEach
   public void afterEach() {
     deleteConfigMap(overridecm, domainNamespace);
-    deleteSecret(dsSecret, domainNamespace);
     String patchStr
         = "["
         + "{\"op\": \"remove\", \"path\": \"/spec/configuration/overrideDistributionStrategy\"},"
-        + "{\"op\": \"remove\", \"path\": \"/spec/configuration/overridesConfigMap\"},"
-        + "{\"op\": \"remove\", \"path\": \"/spec/configuration/secrets\"}"
+        + "{\"op\": \"remove\", \"path\": \"/spec/configuration/overridesConfigMap\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
@@ -477,6 +475,16 @@ public class ItConfigDistributionStrategy {
     //verify on restart the overrides are applied
     verifyConfigXMLOverride(true);
     verifyResourceJDBC1Override(true);
+
+    //cleanup secret
+    deleteSecret(dsSecret, domainNamespace);
+    patchStr
+        = "["
+        + "{\"op\": \"remove\", \"path\": \"/spec/configuration/secrets\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    patch = new V1Patch(patchStr);
+    patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 
   /**
