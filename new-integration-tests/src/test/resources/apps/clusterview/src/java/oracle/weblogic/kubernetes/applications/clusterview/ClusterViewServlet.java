@@ -57,10 +57,14 @@ public class ClusterViewServlet extends HttpServlet {
           .newProxyInstance(localMBeanServer, runtimeserviceObjectName);
       serverRuntime = runtimeService.getServerRuntime();
 
-      domainMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/domainRuntime");
-      ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
-      domainRuntimeServiceMbean = (DomainRuntimeServiceMBean) MBeanServerInvocationHandler
-          .newProxyInstance(domainMBeanServer, domainServiceObjectName);
+      try {
+        domainMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/domainRuntime");
+        ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
+        domainRuntimeServiceMbean = (DomainRuntimeServiceMBean) MBeanServerInvocationHandler
+            .newProxyInstance(domainMBeanServer, domainServiceObjectName);
+      } catch (MalformedObjectNameException | NamingException ex) {
+        Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
+      }
 
       try {
         ctx.lookup(serverRuntime.getName());
