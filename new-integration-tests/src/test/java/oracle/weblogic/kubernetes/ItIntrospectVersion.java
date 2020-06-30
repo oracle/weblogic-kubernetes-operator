@@ -487,7 +487,7 @@ public class ItIntrospectVersion {
     logger.info("Deploying clusterview app {0} to cluster {1}",
         clusterViewAppPath, clusterName);
     deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName, clusterViewAppPath,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
         introDomainNamespace);
 
     //access application in managed servers through NGINX load balancer
