@@ -126,7 +126,7 @@ class ItIstioDomainInImage {
    * Add istio configuration with default readinessPort 
    * Do not add any AdminService under AdminServer configuration
    * Deploy istio gateways and virtual service 
-   * Verify domain pods runs in ready state and services are created.
+   * Verify servers pods are in ready state and services are created.
    * Verify login to WebLogic console is successful thru istio ingress http port.
    * Deploy a web application thru istio http ingress port using REST api  
    * Access web application thru istio http ingress port using curl
@@ -219,7 +219,7 @@ class ItIstioDomainInImage {
     boolean checkConsole = 
          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
     assertTrue(checkConsole, "Failed to access WebLogic console");
-    logger.info("WebLogic console is acceesible");
+    logger.info("WebLogic console is accessible");
 
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
@@ -229,7 +229,7 @@ class ItIstioDomainInImage {
         clusterName, archivePath, domainNamespace + ".org");
     assertNotNull(result, "Application deployment failed");
     logger.info("Application deployment returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Deployment does not returns HTTP status code 202");
+    assertEquals("202", result.stdout(), "Deployment does not return HTTP status code 202");
 
     String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);

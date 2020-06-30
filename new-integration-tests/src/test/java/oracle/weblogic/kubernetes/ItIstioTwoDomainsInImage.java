@@ -140,7 +140,7 @@ class ItIstioTwoDomainsInImage {
    * port by passing host information in HTTP header.
    * Deploy a web application to domain1 through istio ingress http port 
    * using host information in HTTP header. 
-   * Access web application through istio http ingress port using host i
+   * Access web application through istio http ingress port using host 
    * information in HTTP header.
    * Repeat the same steps for domain2.
    */
@@ -282,7 +282,7 @@ class ItIstioTwoDomainsInImage {
     boolean checkConsole = 
          checkAppUsingHostHeader(consoleUrl, domainNamespace1 + ".org");
     assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
-    logger.info("WebLogic console on domain1 is acceesible");
+    logger.info("WebLogic console on domain1 is accessible");
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
     result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
@@ -291,7 +291,7 @@ class ItIstioTwoDomainsInImage {
         clusterName, archivePath, domainNamespace1 + ".org");
     assertNotNull(result, "Application deployment failed on domain1");
     logger.info("Application deployment on domain1 returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Deployment does not returns HTTP status code 202");
+    assertEquals("202", result.stdout(), "Deployment does not return HTTP status code 202");
 
     String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);
@@ -300,14 +300,14 @@ class ItIstioTwoDomainsInImage {
 
     checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace2 + ".org");
     assertTrue(checkConsole, "Failed to access domain2 WebLogic console");
-    logger.info("WebLogic console on domain2 is acceesible");
+    logger.info("WebLogic console on domain2 is accessible");
     result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
         clusterName, archivePath, domainNamespace2 + ".org");
     assertNotNull(result, "Application deployment on domain2 failed");
     logger.info("Application deployment on domain2 returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Deployment does not returns HTTP status code 202");
+    assertEquals("202", result.stdout(), "Deployment does not return HTTP status code 202");
 
     logger.info("Application Access URL {0}", url);
     checkApp = checkAppUsingHostHeader(url, domainNamespace2 + ".org");

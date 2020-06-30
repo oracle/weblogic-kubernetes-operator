@@ -279,9 +279,10 @@ public class DeployUtil {
    * @param password admin server password
    * @param cluster name of the cluster to deploy application
    * @param archivePath local path of the application archive
+   * @return ExecResult
    */
   public static ExecResult deployUsingRest(String host, String port,
-                                           String userName, String password, String cluster, Path archivePath) {
+           String userName, String password, String cluster, Path archivePath) {
     final LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer curlString = new StringBuffer("status=$(curl --noproxy '*' ");
