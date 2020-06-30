@@ -51,6 +51,11 @@ def deploy_application():
   try:
     print 'connecting to admin server'
     connect(admin_username, admin_password, t3url)
+    try:
+      echo 'Undeploying ' + application_name + ' if it exists'
+      undeploy(application_name)
+    except:
+      ## ignore error
     print 'Running deploy(' + application_name + ', ' + archive_name + ', ' + targets + 'remote=\'true\', upload=\'true\')'
     deploy(application_name, archive_name, targets, remote='true', upload='true')
     print 'done with deployment'
