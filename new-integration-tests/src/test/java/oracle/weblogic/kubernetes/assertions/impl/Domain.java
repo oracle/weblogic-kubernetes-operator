@@ -194,6 +194,9 @@ public class Domain {
                 condition.getRemainingTimeInMS()))
         .until((Callable<Boolean>) () -> {
           HtmlPage loginPage = webClient.getPage(consoleUrl);
+          if (loginPage != null) {
+            logger.info("loginPage returned {0}", loginPage.toString());
+          }
           return (loginPage != null);
         });
 
