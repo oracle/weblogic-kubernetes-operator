@@ -486,7 +486,10 @@ class ItParameterizedPodsRestart {
             .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(wlsBaseImage)
-            .addImagePullSecretsItem(isUseSecret ? new V1LocalObjectReference().name(OCR_SECRET_NAME) : null)
+            .imagePullSecrets(isUseSecret ? Arrays.asList(
+                new V1LocalObjectReference()
+                    .name(OCR_SECRET_NAME))
+                : null)
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
@@ -632,8 +635,10 @@ class ItParameterizedPodsRestart {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptConfigMapName))))  //ConfigMap containing domain scripts
-                    .addImagePullSecretsItem(
-                        isUseSecret ? new V1LocalObjectReference().name(OCR_SECRET_NAME) : null))));
+                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                        new V1LocalObjectReference()
+                            .name(OCR_SECRET_NAME))
+                        : null))));
 
     logger.info("Running a job {0} to create a domain on PV for domain {1} in namespace {2}",
         jobBody.getMetadata().getName(), domainUid, domainNamespace);

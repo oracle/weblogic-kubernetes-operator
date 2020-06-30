@@ -622,7 +622,10 @@ class ItParameterizedScaleDomainNginx {
             .domainHomeSourceType("PersistentVolume")
             .image(wlsBaseImage)
             .imagePullPolicy("IfNotPresent")
-            .addImagePullSecretsItem(isUseSecret ? new V1LocalObjectReference().name(OCR_SECRET_NAME) : null)
+            .imagePullSecrets(isUseSecret ? Arrays.asList(
+                new V1LocalObjectReference()
+                    .name(OCR_SECRET_NAME))
+                : null)
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
@@ -952,8 +955,10 @@ class ItParameterizedScaleDomainNginx {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptCM)))) //config map containing domain scripts
-                    .addImagePullSecretsItem(
-                        isUseSecret ? new V1LocalObjectReference().name(OCR_SECRET_NAME) : null))));
+                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                        new V1LocalObjectReference()
+                            .name(OCR_SECRET_NAME))
+                        : null))));
 
     String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
 
