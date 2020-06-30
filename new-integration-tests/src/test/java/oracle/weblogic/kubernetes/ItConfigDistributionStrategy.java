@@ -118,6 +118,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
@@ -392,6 +393,12 @@ public class ItConfigDistributionStrategy {
       assertTrue(response.body().contains(managedServerNameBase + i + ":HEALTH_OK"),
           "Didn't get " + managedServerNameBase + i + ":HEALTH_OK");
     }
+
+    //create ingress controller
+    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+    clusterNameMsPortMap.put(newCluster, 8001);
+    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
+    createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
 
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
