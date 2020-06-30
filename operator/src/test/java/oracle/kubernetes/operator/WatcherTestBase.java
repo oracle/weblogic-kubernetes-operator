@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,14 +31,14 @@ import static org.hamcrest.Matchers.hasEntry;
 /** Tests behavior of the Watcher class. */
 @SuppressWarnings("SameParameterValue")
 public abstract class WatcherTestBase extends ThreadFactoryTestBase implements AllWatchesClosedListener {
-  private static final int NEXT_RESOURCE_VERSION = 123456;
-  private static final int INITIAL_RESOURCE_VERSION = 123;
+  private static final BigInteger NEXT_RESOURCE_VERSION = new BigInteger("214748364705");
+  private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("214748364700");
   private static final String NAMESPACE = "testspace";
   private final RuntimeException hasNextException = new RuntimeException(Watcher.HAS_NEXT_EXCEPTION_MESSAGE);
   final WatchTuning tuning = new WatchTuning(30, 0);
   private List<Memento> mementos = new ArrayList<>();
   private List<Watch.Response<?>> callBacks = new ArrayList<>();
-  private int resourceVersion = INITIAL_RESOURCE_VERSION;
+  private BigInteger resourceVersion = INITIAL_RESOURCE_VERSION;
   private AtomicBoolean stopping = new AtomicBoolean(false);
 
   private V1ObjectMeta createMetaData() {
@@ -88,7 +89,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     }
   }
 
-  void sendInitialRequest(int initialResourceVersion) {
+  void sendInitialRequest(BigInteger initialResourceVersion) {
     scheduleAddResponse(createObjectWithMetaData());
 
     createAndRunWatcher(NAMESPACE, stopping, initialResourceVersion);
@@ -119,7 +120,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     return WatchEvent.createDeleteEvent(object).toWatchResponse();
   }
 
-  private Watch.Response createHttpGoneErrorResponse(int nextResourceVersion) {
+  private Watch.Response createHttpGoneErrorResponse(BigInteger nextResourceVersion) {
     return WatchEvent.createErrorEvent(HTTP_GONE, nextResourceVersion).toWatchResponse();
   }
 
@@ -155,7 +156,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
 
     assertThat(
         StubWatchFactory.getRequestParameters().get(1),
-        hasEntry("resourceVersion", String.valueOf(resourceVersion - 2)));
+        hasEntry("resourceVersion", resourceVersion.subtract(BigInteger.TWO).toString()));
   }
 
   @Test
@@ -167,7 +168,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
 
     assertThat(
         StubWatchFactory.getRequestParameters().get(1),
-        hasEntry("resourceVersion", Integer.toString(NEXT_RESOURCE_VERSION)));
+        hasEntry("resourceVersion", NEXT_RESOURCE_VERSION.toString()));
   }
 
   @Test
@@ -200,7 +201,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
 
     assertThat(
         StubWatchFactory.getRequestParameters().get(1),
-        hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION + 1)));
+        hasEntry("resourceVersion", INITIAL_RESOURCE_VERSION.add(BigInteger.ONE).toString()));
   }
 
   @Test
@@ -222,13 +223,15 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   private String getNextResourceVersion() {
-    return Integer.toString(resourceVersion++);
+    String res = resourceVersion.toString();
+    resourceVersion = resourceVersion.add(BigInteger.ONE);
+    return res;
   }
 
-  private void createAndRunWatcher(String nameSpace, AtomicBoolean stopping, int resourceVersion) {
+  private void createAndRunWatcher(String nameSpace, AtomicBoolean stopping, BigInteger resourceVersion) {
     Watcher<?> watcher = createWatcher(nameSpace, stopping, resourceVersion);
     watcher.waitForExit();
   }
 
-  protected abstract Watcher<?> createWatcher(String ns, AtomicBoolean stopping, int rv);
+  protected abstract Watcher<?> createWatcher(String ns, AtomicBoolean stopping, BigInteger rv);
 }
