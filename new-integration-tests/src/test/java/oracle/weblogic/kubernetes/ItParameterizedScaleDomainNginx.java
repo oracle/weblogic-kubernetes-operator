@@ -127,17 +127,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Verify the model in image domain with multiple clusters can be scaled up and down.
+ * Verify scaling up and down the clusters in the domain with different domain types.
  * Also verify the sample application can be accessed via NGINX ingress controller.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify scaling multiple clusters domain and the sample application can be accessed via NGINX")
+@DisplayName("Verify scaling the clusters in the domain with different domain types and "
+    + "the sample application can be accessed via NGINX ingress controller")
 @IntegrationTest
 class ItParameterizedScaleDomainNginx {
-
-  // mii constants
-  private static final String WDT_MODEL_FILE = "model-multiclusterdomain-sampleapp-wls.yaml";
-  private static final String MII_IMAGE_NAME = "mii-image";
 
   // domain constants
   private static final int NUMBER_OF_CLUSTERS_MIIDOMAIN = 2;
@@ -150,7 +147,7 @@ class ItParameterizedScaleDomainNginx {
   private static final String WLDF_OPENSESSION_APP_CONTEXT_ROOT = "opensession";
   private static final String wlSecretName = "weblogic-credentials";
 
-  private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
+  private static String wlsBaseImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
   private static String opNamespace = null;
   private static String opServiceAccount = null;
   private static HelmParams nginxHelmParams = null;
@@ -163,7 +160,8 @@ class ItParameterizedScaleDomainNginx {
   private String curlCmd = null;
 
   /**
-   * Install operator and NGINX. Create model in image domain with multiple clusters.
+   * Install operator and NGINX.
+   * Create three different type of domains: model in image, domain in PV and domain in image.
    * Create ingress for the domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
@@ -183,6 +181,8 @@ class ItParameterizedScaleDomainNginx {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     String nginxNamespace = namespaces.get(1);
 
+    // get unique namespaces for three different type of domains
+    logger.info("Getting unique namespaces for three different type of domains");
     assertNotNull(namespaces.get(2));
     String miiDomainNamespace = namespaces.get(2);
     assertNotNull(namespaces.get(3));
@@ -200,6 +200,7 @@ class ItParameterizedScaleDomainNginx {
     installAndVerifyOperator(opNamespace, opServiceAccount, true, externalRestHttpsPort,
         miiDomainNamespace, domainInPVNamespace, domainInImageNamespace);
 
+    // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
     String nginxServiceName = nginxHelmParams.getReleaseName() + "-nginx-ingress-controller";
     logger.info("NGINX service name: {0}", nginxServiceName);
@@ -236,9 +237,9 @@ class ItParameterizedScaleDomainNginx {
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
-      String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      String kindRepoImage = KIND_REPO + wlsBaseImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
       logger.info("Using image {0}", kindRepoImage);
-      image = kindRepoImage;
+      wlsBaseImage = kindRepoImage;
       isUseSecret = false;
     }
   }
@@ -437,18 +438,20 @@ class ItParameterizedScaleDomainNginx {
    */
   private static Domain createMiiDomainWithMultiClusters(String domainNamespace) {
 
-    String domainUid = "miidomain";
+    final String domainUid = "miidomain";
+    final String miiImageName = "mii-image";
+    final String wdtModelFileForMiiDomain = "model-multiclusterdomain-sampleapp-wls.yaml";
 
-    // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
+    // admin/managed server name here should match with WDT model yaml file
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
     // create image with model files
-    logger.info("Creating image with model file and verify");
+    logger.info("Creating image with model file {0} and verify", wdtModelFileForMiiDomain);
     List<String> appSrcDirList = new ArrayList<>();
     appSrcDirList.add(MII_BASIC_APP_NAME);
     appSrcDirList.add(WLDF_OPENSESSION_APP);
     String miiImage =
-        createMiiImageAndVerify(MII_IMAGE_NAME, Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE),
+        createMiiImageAndVerify(miiImageName, Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForMiiDomain),
             appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS_DOMAIN_TYPE, false);
 
     // docker login and push image to docker registry if necessary
@@ -612,7 +615,7 @@ class ItParameterizedScaleDomainNginx {
             .domainUid(domainUid)
             .domainHome("/u01/shared/domains/" + domainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
-            .image(image)
+            .image(wlsBaseImage)
             .imagePullPolicy("IfNotPresent")
             .addImagePullSecretsItem(isUseSecret ? new V1LocalObjectReference().name(OCR_SECRET_NAME) : null)
             .webLogicCredentialsSecret(new V1SecretReference()
@@ -907,7 +910,7 @@ class ItParameterizedScaleDomainNginx {
                     .restartPolicy("Never")
                     .addInitContainersItem(new V1Container()
                         .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(image)
+                        .image(wlsBaseImage)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
                         .addArgsItem("chown -R 1000:1000 /u01/shared")
@@ -920,7 +923,7 @@ class ItParameterizedScaleDomainNginx {
                             .runAsUser(0L)))
                     .addContainersItem(jobContainer  // container containing WLST or WDT details
                         .name("create-weblogic-domain-onpv-container")
-                        .image(image)
+                        .image(wlsBaseImage)
                         .imagePullPolicy("IfNotPresent")
                         .addPortsItem(new V1ContainerPort()
                             .containerPort(7001))
@@ -943,9 +946,7 @@ class ItParameterizedScaleDomainNginx {
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptCM)))) //config map containing domain scripts
                     .addImagePullSecretsItem(
-                        isUseSecret ? new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME)
-                        : null))));
+                        isUseSecret ? new V1LocalObjectReference().name(OCR_SECRET_NAME) : null))));
 
     String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
 
@@ -973,7 +974,7 @@ class ItParameterizedScaleDomainNginx {
   }
 
   /**
-   * Create a WebLogic domain in image using WDT.
+   * Create a WebLogic domain with domain type domain in image using WDT.
    *
    * @param domainNamespace namespace in which the domain to be created
    * @return oracle.weblogic.domain.Domain object
@@ -997,7 +998,8 @@ class ItParameterizedScaleDomainNginx {
         createImageAndVerify("domaininimage-wdtimage",
             Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForDomainInImage), appSrcDirList,
             Collections.singletonList(MODEL_DIR + "/" + WDT_BASIC_MODEL_PROPERTIES_FILE),
-            WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS_DOMAIN_TYPE, false, domainUid, false);
+            WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS_DOMAIN_TYPE, false,
+            WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid, false);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domainInImageWithWDTImage);

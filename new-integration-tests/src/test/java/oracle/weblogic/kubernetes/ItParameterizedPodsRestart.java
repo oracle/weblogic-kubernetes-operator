@@ -105,9 +105,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test pods are restarted after some properties in server pods are changed.
+ * Test pods are restarted by changing properties in server pods for different type of domains.
  */
-@DisplayName("Test pods are restarted after properties in server pods are changed with different type of domains")
+@DisplayName("Test pods are restarted by changing properties in server pods for different type of domains")
 @IntegrationTest
 class ItParameterizedPodsRestart {
 
@@ -116,14 +116,16 @@ class ItParameterizedPodsRestart {
   private static final String wlSecretName = "weblogic-credentials";
   private static final int replicaCount = 2;
 
-  private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
+  private static String wlsBaseImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
   private static boolean isUseSecret = true;
   private static int t3ChannelPort = 0;
   private static List<Domain> domains = new ArrayList<>();
   private static LoggingFacade logger = null;
 
   /**
-   * Get namespaces for operator and WebLogic domain and create three different type of domains.
+   * Get namespaces for operator and three different type of domains.
+   * Install operator.
+   * Create three different type of domains: model in image, domain in PV, domain in image.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
@@ -137,6 +139,8 @@ class ItParameterizedPodsRestart {
     assertNotNull(namespaces.get(0), "Namespace list is null");
     String opNamespace = namespaces.get(0);
 
+    // get unique domain namespaces for each domain
+    logger.info("Getting unique namespaces for three different type of domains");
     assertNotNull(namespaces.get(1));
     String miiDomainNamespace = namespaces.get(1);
     assertNotNull(namespaces.get(2));
@@ -149,13 +153,13 @@ class ItParameterizedPodsRestart {
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
-      String kindRepoImage = KIND_REPO + image.substring(OCR_REGISTRY.length() + 1);
+      String kindRepoImage = KIND_REPO + wlsBaseImage.substring(OCR_REGISTRY.length() + 1);
       logger.info("Using image {0}", kindRepoImage);
-      image = kindRepoImage;
+      wlsBaseImage = kindRepoImage;
       isUseSecret = false;
     }
 
-    // create domains with different domain type
+    // create domains with different domain types
     Domain miiDomain = createAndVerifyMiiDomain(miiDomainNamespace);
     Domain domainInPV = createAndVerifyDomainInPVUsingWlst(domainInPVNamespace);
     Domain domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
@@ -166,7 +170,7 @@ class ItParameterizedPodsRestart {
   }
 
   /**
-   * For each domain with different domain type, test the following.
+   * For each domain type, test the following.
    * Add/Modify server pod resources by patching the domain custom resource.
    * Verify all pods are restarted and back to ready state.
    * The resources tested: resources: limits: cpu: "1", resources: requests: cpu: "0.5"
@@ -176,10 +180,10 @@ class ItParameterizedPodsRestart {
    * @param domain oracle.weblogic.domain.Domain object
    */
   @ParameterizedTest
-  @DisplayName("Test pods are restarted after properties in server pods are changed in three different type of domains")
+  @DisplayName("Test pods are restarted by changing properties in server pods for three different type of domains")
   @MethodSource("domainProvider")
   public void testParamsServerPodsRestartByChangingResource(Domain domain) {
-    assertNotNull(domain, domain + " is null");
+    assertNotNull(domain, "domain is null");
     assertNotNull(domain.getMetadata(), domain + " metadata is null");
 
     // Add/Modify server pod resources by patching the domain custom resource
@@ -443,7 +447,6 @@ class ItParameterizedPodsRestart {
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
-            .addAccessModesItem("ReadWriteMany")
             .hostPath(new V1HostPathVolumeSource()
                 .path(pvHostPath.toString())))
         .metadata(new V1ObjectMetaBuilder()
@@ -484,7 +487,7 @@ class ItParameterizedPodsRestart {
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
-            .image(image)
+            .image(wlsBaseImage)
             .addImagePullSecretsItem(isUseSecret ? new V1LocalObjectReference().name(OCR_SECRET_NAME) : null)
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
@@ -592,7 +595,7 @@ class ItParameterizedPodsRestart {
                     .restartPolicy("Never")
                     .addInitContainersItem(new V1Container()
                         .name("fix-pvc-owner")
-                        .image(image)
+                        .image(wlsBaseImage)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
                         .addArgsItem("chown -R 1000:1000 /shared")
@@ -604,7 +607,7 @@ class ItParameterizedPodsRestart {
                             .runAsUser(0L)))
                     .addContainersItem(new V1Container()
                         .name("create-weblogic-domain-onpv-container")
-                        .image(image)
+                        .image(wlsBaseImage)
                         .addPortsItem(new V1ContainerPort()
                             .containerPort(7001))
                         .volumeMounts(Arrays.asList(

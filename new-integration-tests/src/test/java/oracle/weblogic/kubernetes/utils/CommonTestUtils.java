@@ -94,7 +94,6 @@ import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -947,6 +946,8 @@ public class CommonTestUtils {
    * @param baseImageTag - the WebLogic base image tag to be used while creating mii image
    * @param domainType - the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
    * @param modelType - create a model image only or domain in image. set to true for MII
+   * @param domainHome - the domain home in the image
+   * @param oneArchiveContainsMultiApps - whether one archive contains multiple apps
    * @return image name with tag
    */
   public static String createImageAndVerify(String imageNameBase,
@@ -1047,7 +1048,7 @@ public class CommonTestUtils {
                 .modelFiles(wdtModelList)
                 .modelVariableFiles(modelPropList)
                 .modelArchiveFiles(archiveList)
-                .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainHome)
+                .domainHome(domainHome)
                 .wdtModelOnly(modelType)
                 .wdtOperation("CREATE")
                 .wdtVersion(WDT_VERSION)
@@ -1282,7 +1283,6 @@ public class CommonTestUtils {
     List<DateTime> listOfPodCreationTimestamp = new ArrayList<>();
     for (int i = 1; i <= replicasBeforeScale; i++) {
       String managedServerPodName = manageServerPodNamePrefix + i;
-      logger.info("DEBUG: managedServerPodName={0}", managedServerPodName);
       DateTime originalCreationTimestamp =
           assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
               String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
@@ -1367,7 +1367,6 @@ public class CommonTestUtils {
 
         if (expectedServerNames != null) {
           // add the new managed server to the list
-          //expectedServerNames.add(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
           expectedServerNames.add(manageServerPodName.substring(domainUid.length() + 1));
         }
       }
@@ -1389,7 +1388,6 @@ public class CommonTestUtils {
         logger.info("Checking that managed server pod {0} was deleted from namespace {1}",
             managedServerPodName, domainNamespace);
         checkPodDoesNotExist(managedServerPodName, domainUid, domainNamespace);
-        //expectedServerNames.remove(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
         expectedServerNames.remove(managedServerPodName.substring(domainUid.length() + 1));
       }
 
