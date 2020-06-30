@@ -375,7 +375,7 @@ public class ItConfigDistributionStrategy {
 
     //deploy clusterview application
     logger.info("Deploying clusterview app {0} to cluster {1}",
-        clusterViewAppPath, clusterName);
+        clusterViewAppPath, newCluster);
     deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(adminServerT3Port),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, newCluster, clusterViewAppPath,
         domainNamespace);
@@ -404,7 +404,7 @@ public class ItConfigDistributionStrategy {
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+        domainUid + "." + newCluster + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int j = 1; j <= newClusterReplicas + 1; j++) {
       managedServers.add(managedServerNameBase + j);

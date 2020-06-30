@@ -686,29 +686,35 @@ public class ItIntrospectVersion {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, introDomainNamespace);
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
-
-      //deploy clusterview application
-      logger.info("Deploying clusterview app {0} to cluster {1}",
-          clusterViewAppPath, clusterName);
-      deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(adminServerT3Port),
-          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName, clusterViewAppPath,
-          introDomainNamespace);
-
-      //access application in new cluster managed servers through NGINX load balancer
-      logger.info("Accessing the clusterview app through NGINX load balancer");
-      String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-          + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
-          domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
-      List<String> managedServers = new ArrayList<>();
-      for (int j = 1; j <= replicaCount + 1; j++) {
-        managedServers.add(managedServerNameBase + j);
-      }
-      assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-          .as("Verify all managed servers can see each other")
-          .withFailMessage("managed servers cannot see other")
-          .isTrue();
-
     }
+
+    //create ingress controller
+    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+    clusterNameMsPortMap.put(clusterName, 8001);
+    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, introDomainNamespace);
+    createIngressForDomainAndVerify(domainUid, introDomainNamespace, clusterNameMsPortMap);
+
+    //deploy clusterview application
+    logger.info("Deploying clusterview app {0} to cluster {1}",
+        clusterViewAppPath, clusterName);
+    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(adminServerT3Port),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName, clusterViewAppPath,
+        introDomainNamespace);
+
+    //access application in new cluster managed servers through NGINX load balancer
+    logger.info("Accessing the clusterview app through NGINX load balancer");
+    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
+        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+    List<String> managedServers = new ArrayList<>();
+    for (int j = 1; j <= replicaCount + 1; j++) {
+      managedServers.add(managedServerNameBase + j);
+    }
+    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
+        .as("Verify all managed servers can see each other")
+        .withFailMessage("managed servers cannot see other")
+        .isTrue();
+
   }
 
 

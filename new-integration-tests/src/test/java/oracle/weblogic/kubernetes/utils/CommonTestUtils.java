@@ -50,6 +50,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
@@ -543,7 +544,8 @@ public class CommonTestUtils {
 
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
-    final String ingressNginxClass = "nginx";
+    String uniqueName = Namespace.uniqueName();
+    final String ingressNginxClass = "nginx-" + uniqueName;
     String ingressName = domainUid + "-" + ingressNginxClass;
 
     HashMap<String, String> annotations = new HashMap<>();
