@@ -130,16 +130,19 @@ class ItIstioTwoDomainsInImage {
   }
 
   /**
-   * Create two domain using domainhome-in-image model.
+   * Create two domains using domainhome-in-image model.
    * Add istio configuration with default readinessPort. 
    * Deploy istio gateway and virtual service on each domain namespaces.
    * Add host information to gateway and virtual service configurations.
    * Put the namespace.org as host configuration 
    * Verify domain pods runs in ready state and services are created.
-   * Verify login to WebLogic console on domain1 through istio ingress http port by passing host information in HTTP header.
-   * Deploy a web application to domain1 through istio ingress http port using host information in HTTP header. 
-   * Access web application through istio http ingress port using host information in HTTP header
-   * Repeat the same steps for domain2
+   * Verify login to WebLogic console on domain1 through istio ingress http 
+   * port by passing host information in HTTP header.
+   * Deploy a web application to domain1 through istio ingress http port 
+   * using host information in HTTP header. 
+   * Access web application through istio http ingress port using host i
+   * information in HTTP header.
+   * Repeat the same steps for domain2.
    */
   @Test
   @DisplayName("Two WebLogic domainhome-in-image with single istio ingress")
