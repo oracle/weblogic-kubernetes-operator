@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.lang.reflect.Field;
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -14,6 +15,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import org.apache.commons.collections.MapUtils;
 import org.joda.time.DateTime;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 
 public class KubernetesUtils {
@@ -128,14 +130,47 @@ public class KubernetesUtils {
     DateTime time2 = second.getCreationTimestamp();
 
     if (time1.equals(time2)) {
-      return getResourceVersion(first) > getResourceVersion(second);
+      return getResourceVersion(first).compareTo(getResourceVersion(second)) > 0;
     } else {
       return time1.isAfter(time2);
     }
   }
 
-  private static int getResourceVersion(V1ObjectMeta metadata) {
-    return Integer.parseInt(metadata.getResourceVersion());
+  /**
+   * Parse the resource version from the metadata. According to the Kubernetes design documentation,
+   * https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/
+   *  api-conventions.md#concurrency-control-and-consistency, the resource version is technically opaque; however,
+   * the Kubernetes design also requires that clients be able to list changes to resources "after" the last
+   * change to the same or different resource. Therefore, all Kubernetes implementations use a increasing positive
+   * integer value for the resource version. This can be useful to detect out-of-order watch events. This method
+   * parses the metadata's resource version into a big integer or to 0, if the value is not parsable.
+   * @param metadata Meta data containing resource version
+   * @return The integer value of the resource version or 0, if the value is not parsable
+   */
+  public static BigInteger getResourceVersion(V1ObjectMeta metadata) {
+    return getResourceVersion(Optional.ofNullable(metadata).map(V1ObjectMeta::getResourceVersion).orElse(null));
+  }
+
+  /**
+   * Parse the resource version. According to the Kubernetes design documentation,
+   * https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/
+   *  api-conventions.md#concurrency-control-and-consistency, the resource version is technically opaque; however,
+   * the Kubernetes design also requires that clients be able to list changes to resources "after" the last
+   * change to the same or different resource. Therefore, all Kubernetes implementations use a increasing positive
+   * integer value for the resource version. This can be useful to detect out-of-order watch events. This method
+   * parses the metadata's resource version into a big integer or to 0, if the value is not parsable.
+   * @param resVersion resource version
+   * @return The integer value of the resource version or 0, if the value is not parsable
+   */
+  public static BigInteger getResourceVersion(String resVersion) {
+    if (!isNullOrEmpty(resVersion)) {
+      try {
+        return new BigInteger(resVersion);
+      } catch (NumberFormatException nfe) {
+        // no-op, fall through and return 0
+      }
+    }
+    return BigInteger.ZERO;
   }
 
   public static V1ObjectMeta withOperatorLabels(String uid, V1ObjectMeta meta) {
