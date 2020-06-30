@@ -56,7 +56,7 @@ def create_static_cluster():
     cmo.setClusterMessagingMode('unicast')
 
     for count in range(1, int(server_count) + 1):
-      server = server_prefix + count
+      server = server_prefix + str(count)
       cd('/')
       cmo.createServer(server)
 
