@@ -15,13 +15,13 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.net.HttpURLConnection.HTTP_GONE;
 
 /**
@@ -33,7 +33,6 @@ import static java.net.HttpURLConnection.HTTP_GONE;
 abstract class Watcher<T> {
   static final String HAS_NEXT_EXCEPTION_MESSAGE = "IO Exception during hasNext method.";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final BigInteger IGNORED_RESOURCE_VERSION = BigInteger.ZERO;
 
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
   private final WatchTuning tuning;
@@ -52,8 +51,7 @@ abstract class Watcher<T> {
    * @param stopping an atomic boolean to watch to determine when to stop the watcher
    */
   Watcher(String resourceVersion, WatchTuning tuning, AtomicBoolean stopping) {
-    this.resourceVersion =
-        !isNullOrEmpty(resourceVersion) ? new BigInteger(resourceVersion) : BigInteger.ZERO;
+    this.resourceVersion = KubernetesUtils.getResourceVersion(resourceVersion);
     this.tuning = tuning;
     this.stopping = stopping;
   }
@@ -225,14 +223,7 @@ abstract class Watcher<T> {
       if (index1 > 0) {
         int index2 = message.indexOf(')', index1 + 1);
         if (index2 > 0) {
-          String val = message.substring(index1 + 1, index2);
-          if (!isNullOrEmpty(val)) {
-            try {
-              return new BigInteger(val);
-            } catch (NumberFormatException nfe) {
-              // no-op
-            }
-          }
+          return KubernetesUtils.getResourceVersion(message.substring(index1 + 1, index2));
         }
       }
     }
@@ -264,11 +255,10 @@ abstract class Watcher<T> {
     try {
       Method getMetadata = object.getClass().getDeclaredMethod("getMetadata");
       V1ObjectMeta metadata = (V1ObjectMeta) getMetadata.invoke(object);
-      String val = metadata.getResourceVersion();
-      return !isNullOrEmpty(val) ? new BigInteger(val) : BigInteger.ZERO;
+      return KubernetesUtils.getResourceVersion(metadata);
     } catch (Exception e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
-      return IGNORED_RESOURCE_VERSION;
+      return BigInteger.ZERO;
     }
   }
 
