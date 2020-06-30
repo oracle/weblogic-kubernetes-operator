@@ -553,10 +553,10 @@ public class JobHelper {
     if (logged == null || !logged.booleanValue()) {
       packet.put(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED, Boolean.valueOf(true));
       LOGGER.info(INTROSPECTOR_JOB_FAILED,
-          domainIntrospectorJob.getMetadata().getNamespace(),
           domainIntrospectorJob.getMetadata().getName(),
-          jobPodName,
-          domainIntrospectorJob.getStatus());
+          domainIntrospectorJob.getMetadata().getNamespace(),
+          domainIntrospectorJob.getStatus(),
+          jobPodName);
       LOGGER.fine(INTROSPECTOR_JOB_FAILED_DETAIL,
           domainIntrospectorJob.getMetadata().getNamespace(),
           domainIntrospectorJob.getMetadata().getName(),
