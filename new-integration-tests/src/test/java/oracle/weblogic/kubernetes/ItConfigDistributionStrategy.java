@@ -383,6 +383,7 @@ public class ItConfigDistributionStrategy {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(configUpdated());
+    restartDataSource(dsName);
 
     //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
     //https://jira.oraclecorp.com/jira/browse/OWLS-82976
