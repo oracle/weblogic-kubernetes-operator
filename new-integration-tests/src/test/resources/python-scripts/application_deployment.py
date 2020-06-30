@@ -52,8 +52,11 @@ def deploy_application():
     print 'connecting to admin server'
     connect(admin_username, admin_password, t3url)
     try:
+      edit()
+      startEdit()
       print 'Undeploying ' + application_name + ' if it exists'
       undeploy(application_name)
+      activate()
     except:      
       print('Application does not exist')
     print 'Running deploy(' + application_name + ', ' + archive_name + ', ' + targets + 'remote=\'true\', upload=\'true\')'

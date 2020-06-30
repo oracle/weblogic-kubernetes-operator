@@ -807,7 +807,7 @@ public class ItConfigDistributionStrategy {
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(()
-        -> File.createTempFile("domain", "properties"),
+        -> File.createTempFile("domain", ".properties"),
         "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("domain_path", "/shared/domains");
