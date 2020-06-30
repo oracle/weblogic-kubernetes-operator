@@ -257,7 +257,7 @@ public class ItConfigDistributionStrategy {
     deleteSecret(dsSecret, domainNamespace);
     String patchStr
         = "["
-        + "{\"op\": \"remove\", \"path\": \"/spec/configuration/overridesConfigMap\"},"
+        + "{\"op\": \"replace\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"\"},"
         + "{\"op\": \"remove\", \"path\": \"/spec/configuration/secrets\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
