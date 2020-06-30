@@ -184,6 +184,10 @@ public class ItConfigDistributionStrategy {
    * Assigns unique namespaces for operator and domains.
    * Pulls WebLogic image if running tests in Kind cluster.
    * Installs operator.
+   * Creates 2 MySQL database instances.
+   * Creates and starts WebLogic domain containing 2 instances in dynamic cluser.
+   * Creates 2 JDBC data sources targeted to cluster.
+   * Deploys clusterview application to cluster and admin targets.
    *
    * @param namespaces injected by JUnit
    */
@@ -257,7 +261,8 @@ public class ItConfigDistributionStrategy {
     deleteSecret(dsSecret, domainNamespace);
     String patchStr
         = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"\"},"
+        + "{\"op\": \"remove\", \"path\": \"/spec/configuration/overrideDistributionStrategy\"},"
+        + "{\"op\": \"remove\", \"path\": \"/spec/configuration/overridesConfigMap\"},"
         + "{\"op\": \"remove\", \"path\": \"/spec/configuration/secrets\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
@@ -270,8 +275,7 @@ public class ItConfigDistributionStrategy {
    * Test server configuration and JDBC datasource configurations are overridden dynamically when
    * /spec/configuration/overrideDistributionStrategy: field is not set. By default it should be DYNAMIC.
    *
-   * <p>Test sets the /spec/configuration/overridesConfigMap and /spec/configuration/secrets with new configuration
-   * and new secrets.
+   * <p>Test sets the /spec/configuration/overridesConfigMap and with new configuration for config.xml and datasources.
    *
    * <p>Verifies after introspector runs the server configuration and JDBC datasource configurations are updated
    * as expected.
@@ -293,7 +297,7 @@ public class ItConfigDistributionStrategy {
     //create config override map and secrets
     createConfigMapFromFiles(overridecm, overrideFiles, domainNamespace);
 
-    logger.info("patch the domain resource with overridesConfigMap, secrets , cluster and introspectVersion");
+    logger.info("patch the domain resource with overridesConfigMap and introspectVersion");
     String patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
