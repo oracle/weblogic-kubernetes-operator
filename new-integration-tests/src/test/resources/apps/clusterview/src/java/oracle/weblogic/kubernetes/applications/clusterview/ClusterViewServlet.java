@@ -101,7 +101,6 @@ public class ClusterViewServlet extends HttpServlet {
       out.println("</head>");
       out.println("<body>");
       out.println("<pre>");
-      out.println("<h1>Servlet ClusterViewServlet at " + request.getContextPath() + "</h1>");
 
       String queryServers = request.getParameter("queryServers");
       if (queryServers != null) {
@@ -129,14 +128,14 @@ public class ClusterViewServlet extends HttpServlet {
         out.println("ServerName:" + serverRuntime.getName());
 
         // lookup JNDI for other clustered servers bound in tree
-        try {
-          for (String serverName : serverNames) {
+        for (String serverName : serverNames) {
+          try {
             if (ctx.lookup(serverName) != null) {
               out.println("Bound:" + serverName);
             }
+          } catch (NameNotFoundException nnfex) {
+            out.println(nnfex.getMessage());
           }
-        } catch (NameNotFoundException nnfex) {
-          out.println(nnfex.getMessage());
         }
       }
 
@@ -168,6 +167,9 @@ public class ClusterViewServlet extends HttpServlet {
           out.println("<BR>");
         }
       }
+      out.println("</pre>");
+      out.println("</body>");
+      out.println("</html>");
     } catch (NamingException | InstanceNotFoundException
         | IntrospectionException | ReflectionException ex) {
       Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
