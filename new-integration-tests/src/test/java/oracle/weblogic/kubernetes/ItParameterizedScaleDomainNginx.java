@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
@@ -89,8 +90,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
-import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRole;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRoleBinding;
@@ -109,6 +108,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForD
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOCRRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
@@ -576,8 +576,45 @@ class ItParameterizedScaleDomainNginx {
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
-    createPV(pvName, domainUid);
-    createPVC(pvName, pvcName, domainUid, domainNamespace);
+    // create persistent volume and persistent volume claims
+    Path pvHostPath =
+        get(PV_ROOT, ItParameterizedScaleDomainNginx.class.getSimpleName(), pvcName);
+
+    logger.info("Creating PV directory {0}", pvHostPath);
+    assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
+    assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
+
+    V1PersistentVolume v1pv = new V1PersistentVolume()
+        .spec(new V1PersistentVolumeSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName(domainUid + "-weblogic-domain-storage-class")
+            .volumeMode("Filesystem")
+            .putCapacityItem("storage", Quantity.fromString("5Gi"))
+            .persistentVolumeReclaimPolicy("Recycle")
+            .hostPath(new V1HostPathVolumeSource()
+                .path(pvHostPath.toString())))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(pvName)
+            .build()
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUid", domainUid));
+
+    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
+        .spec(new V1PersistentVolumeClaimSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName(domainUid + "-weblogic-domain-storage-class")
+            .volumeName(pvName)
+            .resources(new V1ResourceRequirements()
+                .putRequestsItem("storage", Quantity.fromString("5Gi"))))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(pvcName)
+            .withNamespace(domainNamespace)
+            .build()
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUid", domainUid));
+
+    String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace);
 
     // create a temporary WebLogic domain property file as a input for WDT model file
     File domainPropertiesFile = assertDoesNotThrow(() -> createTempFile("domaininpv", "properties"),
@@ -731,72 +768,6 @@ class ItParameterizedScaleDomainNginx {
     }
 
     return managedServerNames;
-  }
-
-  /**
-   * Create a persistent volume.
-   *
-   * @param pvName name of the persistent volume to create
-   * @param domainUid UID of the domain
-   */
-  private static void createPV(String pvName, String domainUid) {
-    logger.info("creating persistent volume");
-
-    Path pvHostPath = null;
-    try {
-      pvHostPath = get(PV_ROOT, ItParameterizedScaleDomainNginx.class.getSimpleName(), pvName);
-
-      logger.info("Creating PV directory host path {0}", pvHostPath);
-      deleteDirectory(pvHostPath.toFile());
-      createDirectories(pvHostPath);
-    } catch (IOException ioex) {
-      logger.severe(ioex.getMessage());
-      fail("Create persistent volume host path failed");
-    }
-
-    V1PersistentVolume v1pv = new V1PersistentVolume()
-        .spec(new V1PersistentVolumeSpec()
-            .addAccessModesItem("ReadWriteMany")
-            .storageClassName("weblogic-domain-storage-class")
-            .volumeMode("Filesystem")
-            .putCapacityItem("storage", Quantity.fromString("5Gi"))
-            .persistentVolumeReclaimPolicy("Recycle")
-            .hostPath(new V1HostPathVolumeSource()
-                .path(pvHostPath.toString())))
-        .metadata(new V1ObjectMeta()
-            .name(pvName)
-            .putLabelsItem("weblogic.domainUid", domainUid));
-    assertTrue(assertDoesNotThrow(() -> createPersistentVolume(v1pv),
-        "create persistent volume failed with ApiException"),
-        "PersistentVolume creation failed");
-  }
-
-  /**
-   * Create a persistent volume claim.
-   *
-   * @param pvName name of the persistent volume
-   * @param pvcName name of the persistent volume to create
-   * @param domainUid UID of the WebLogic domain
-   * @param namespace name of the namespace in which to create the persistent volume claim
-   */
-  private static void createPVC(String pvName, String pvcName, String domainUid, String namespace) {
-    logger.info("creating persistent volume claim");
-
-    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
-        .spec(new V1PersistentVolumeClaimSpec()
-            .addAccessModesItem("ReadWriteMany")
-            .storageClassName("weblogic-domain-storage-class")
-            .volumeName(pvName)
-            .resources(new V1ResourceRequirements()
-                .putRequestsItem("storage", Quantity.fromString("5Gi"))))
-        .metadata(new V1ObjectMeta()
-            .name(pvcName)
-            .namespace(namespace)
-            .putLabelsItem("weblogic.domainUid", domainUid));
-
-    assertTrue(assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
-        "create persistent volume claim failed with ApiException"),
-        "PersistentVolumeClaim creation failed");
   }
 
   /**
