@@ -207,7 +207,7 @@ public class ItConfigDistributionStrategy {
     domainNamespace = namespaces.get(1);
     logger.info("Assign a unique namespace for NGINX");
     assertNotNull(namespaces.get(2), "Namespace is null");
-    domainNamespace = namespaces.get(2);
+    nginxNamespace = namespaces.get(2);
 
 
     // build the clusterview application
