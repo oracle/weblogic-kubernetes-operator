@@ -552,16 +552,13 @@ public class ItConfigDistributionStrategy {
       assertTrue(response.body().contains("MaxMessageSize=10000000"), "Didn't get MaxMessageSize=10000000");
     }
 
-    String serverListUri = "ClusterViewServlet?listServer=true";
+    String serverListUri = "ClusterViewServlet?listServers=true";
     response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
 
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
     if (configUpdated) {
-      assertTrue(response.body().contains("mystaticcluster-ms-1:0"), "Didn't get mystaticcluster-ms-1:0");
-      assertTrue(response.body().contains("mystaticcluster-ms-2:1"), "Didn't get mystaticcluster-ms-2:1");
-    } else {
-      assertTrue(response.body().contains("mystaticcluster-ms-1:1"), "Didn't get mystaticcluster-ms-1:1");
-      assertTrue(response.body().contains("mystaticcluster-ms-2:1"), "Didn't get mystaticcluster-ms-2:1");
+      assertTrue(response.body().contains("mystaticcluster-ms-1:HEALTH_OK"),
+          "Didn't get mystaticcluster-ms-1:HEALTH_OK");
     }
   }
 

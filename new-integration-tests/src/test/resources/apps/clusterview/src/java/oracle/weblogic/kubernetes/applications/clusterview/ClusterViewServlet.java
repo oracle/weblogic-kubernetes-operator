@@ -103,16 +103,19 @@ public class ClusterViewServlet extends HttpServlet {
       out.println("<pre>");
       out.println("<h1>Servlet ClusterViewServlet at " + request.getContextPath() + "</h1>");
 
-      // print all mbeans and its attributes in the server runtime
-      out.println("Querying server: " + localMBeanServer.toString());
-      Set<ObjectInstance> mbeans = localMBeanServer.queryMBeans(null, null);
-      for (ObjectInstance mbeanInstance : mbeans) {
-        out.println("<br>ObjectName: " + mbeanInstance.getObjectName() + "<br>");
-        MBeanInfo mBeanInfo = localMBeanServer.getMBeanInfo(mbeanInstance.getObjectName());
-        MBeanAttributeInfo[] attributes = mBeanInfo.getAttributes();
-        for (MBeanAttributeInfo attribute : attributes) {
-          out.println("<br>Type: " + attribute.getType() + "<br>");
-          out.println("<br>Name: " + attribute.getName() + "<br>");
+      String queryServers = request.getParameter("queryServers");
+      if (queryServers != null) {
+        // print all mbeans and its attributes in the server runtime
+        out.println("Querying server: " + localMBeanServer.toString());
+        Set<ObjectInstance> mbeans = localMBeanServer.queryMBeans(null, null);
+        for (ObjectInstance mbeanInstance : mbeans) {
+          out.println("<br>ObjectName: " + mbeanInstance.getObjectName() + "<br>");
+          MBeanInfo mBeanInfo = localMBeanServer.getMBeanInfo(mbeanInstance.getObjectName());
+          MBeanAttributeInfo[] attributes = mBeanInfo.getAttributes();
+          for (MBeanAttributeInfo attribute : attributes) {
+            out.println("<br>Type: " + attribute.getType() + "<br>");
+            out.println("<br>Name: " + attribute.getName() + "<br>");
+          }
         }
       }
 
