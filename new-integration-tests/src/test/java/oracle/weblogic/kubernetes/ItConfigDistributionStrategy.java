@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
@@ -247,13 +248,13 @@ public class ItConfigDistributionStrategy {
    */
   @BeforeEach
   public void beforeEach() {
-    //print the configuration overrides before override
+    //check configuration values before override
     verifyConfigXMLOverride(false);
     verifyResourceJDBC0Override(false);
   }
 
   /**
-   * Delete the overrides, secrets and restart domain to get clean state.
+   * Delete the overrides and restart domain to get clean state.
    */
   @AfterEach
   public void afterEach() {
@@ -292,7 +293,7 @@ public class ItConfigDistributionStrategy {
     overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
     overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
 
-    //create config override map and secrets
+    //create config override map
     createConfigMapFromFiles(overridecm, overrideFiles, domainNamespace);
 
     logger.info("patch the domain resource with overridesConfigMap and introspectVersion");
@@ -301,7 +302,7 @@ public class ItConfigDistributionStrategy {
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
         + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"1\"}"
         + "]";
-    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
@@ -326,8 +327,8 @@ public class ItConfigDistributionStrategy {
    * Test server configuration and datasource configurations are dynamically overridden when
    * /spec/configuration/overrideDistributionStrategy is set to DYNAMIC.
    *
-   * <p>Test sets the above field to DYNAMIC and overrides the /spec/configuration/overridesConfigMap and
-   * /spec/configuration/secrets with new configuration and new secrets.
+   * <p>Test sets the above field to DYNAMIC and overrides the /spec/configuration/overridesConfigMap
+   * with new configuration.
    *
    * <p>Verifies after introspector runs and the server configuration and JDBC datasource configurations are
    * updated as expected.
@@ -359,7 +360,7 @@ public class ItConfigDistributionStrategy {
     overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
     overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
 
-    //create config override map and secrets
+    //create config override map
     createConfigMapFromFiles(overridecm, overrideFiles, domainNamespace);
 
     logger.info("patch the domain resource with overridesConfigMap, secrets , cluster and introspectVersion");
@@ -368,7 +369,7 @@ public class ItConfigDistributionStrategy {
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
         + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
         + "]";
-    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
     patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
@@ -397,7 +398,7 @@ public class ItConfigDistributionStrategy {
    * /spec/configuration/secrets with new configuration and new secrets.
    *
    * <p>Verifies after introspector runs the server configuration and JDBC datasource configurations are not
-   * updated. After domain restart the overrides are applied.
+   * updated. Verifies the overrides are applied only after a domain restart.
    */
   @Order(3)
   @Test
@@ -420,8 +421,7 @@ public class ItConfigDistributionStrategy {
     //store the pod creation timestamps
     storePodCreationTimestamps();
 
-    logger.info("Creating config overrides");
-
+    logger.info("Creating secrets for JDBC datasource overrides");
     //create new secrets for jdbc datasource
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("dbusername", "root");
@@ -447,8 +447,8 @@ public class ItConfigDistributionStrategy {
     overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
     overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
 
-    //create config override map and secrets
-    setupCustomConfigOverrides();
+    //create config override map
+    createConfigMapFromFiles(overridecm, overrideFiles, domainNamespace);
 
     //patch the domain resource with overridesConfigMap, secrets and introspectVersion
     patchStr
@@ -464,6 +464,13 @@ public class ItConfigDistributionStrategy {
 
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
+
+    try {
+      //wait for a minute to see if the overrides are not applied
+      TimeUnit.MINUTES.sleep(1);
+    } catch (InterruptedException ex) {
+      //ignore
+    }
 
     //verify the overrides are not applied
     verifyConfigXMLOverride(false);
@@ -655,39 +662,6 @@ public class ItConfigDistributionStrategy {
     String introspectPodName = domainUid + "-" + "introspect-domain-job";
     checkPodExists(introspectPodName, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
-  }
-
-  //method to create custom configuration overrides
-  private void setupCustomConfigOverrides() {
-    logger.info("Creating config overrides");
-
-    //create new secrets for jdbc datasource
-    Map<String, String> secretMap = new HashMap<>();
-    secretMap.put("dbusername", "root");
-    secretMap.put("dbpassword", "root456");
-
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-        .metadata(new V1ObjectMeta()
-            .name(dsSecret)
-            .namespace(domainNamespace))
-        .stringData(secretMap)), "Creating secret for datasource failed.");
-    assertTrue(secretCreated, String.format("creating secret failed %s", dsSecret));
-
-    //copy the template datasource file for override after replacing JDBC_URL with new datasource url
-    Path srcDsOverrideFile = Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/jdbc-JdbcTestDataSource-0.xml");
-    Path dstDsOverrideFile = Paths.get(WORK_DIR, "jdbc-JdbcTestDataSource-0.xml");
-    String tempString = assertDoesNotThrow(()
-        -> Files.readString(srcDsOverrideFile).replaceAll("JDBC_URL", dsUrl2));
-    assertDoesNotThrow(()
-        -> Files.write(dstDsOverrideFile, tempString.getBytes(StandardCharsets.UTF_8)));
-
-    //create custom config override map with all the files
-    ArrayList<Path> configfiles = new ArrayList<>();
-    configfiles.add(dstDsOverrideFile);
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    createConfigMapFromFiles(overridecm, configfiles, domainNamespace);
-
   }
 
   //create a standard WebLogic domain.
