@@ -49,7 +49,6 @@ spec:
   # data storage directories are determined from the WebLogic domain home configuration.
   dataHome: "%DATA_HOME%"
 
-
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "NEVER" will not start any server in the domain
