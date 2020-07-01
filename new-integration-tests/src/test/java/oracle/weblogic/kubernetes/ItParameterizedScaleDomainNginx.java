@@ -58,7 +58,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.api.Test;
+//import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.io.File.createTempFile;
@@ -153,6 +154,9 @@ class ItParameterizedScaleDomainNginx {
   private static boolean isUseSecret = true;
   private static List<Domain> domains = new ArrayList<>();
   private static LoggingFacade logger = null;
+  private static Domain miiDomain = null;
+  private static Domain domainInPV = null;
+  private static Domain domainInImage = null;
 
   private String curlCmd = null;
 
@@ -213,13 +217,13 @@ class ItParameterizedScaleDomainNginx {
     logger.info("NGINX http node port: {0}", nodeportshttp);
 
     // create model in image domain with multiple clusters
-    //Domain miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
+    miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
     // create domain in pv
-    Domain domainInPV = createDomainInPvUsingWdt(domainInPVNamespace);
+    domainInPV = createDomainInPvUsingWdt(domainInPVNamespace);
     // create domain in image
-    Domain domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
+    domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
 
-    //domains.add(miiDomain);
+    domains.add(miiDomain);
     domains.add(domainInImage);
     domains.add(domainInPV);
 
@@ -276,17 +280,37 @@ class ItParameterizedScaleDomainNginx {
   /**
    * Scale cluster using WLDF policy for three different type of domains.
    *
-   * @param domain oracle.weblogic.domain.Domain object
    */
-  @ParameterizedTest
+  //@ParameterizedTest
+  @Test
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
-  @MethodSource("domainProvider")
-  public void testParamsScaleClustersWithWLDF(Domain domain) {
-    assertDomainNotNull(domain);
+  //@MethodSource("domainProvider")
+  public void testParamsScaleClustersWithWLDFWithMiiDomain() {
+    assertDomainNotNull(miiDomain);
 
     // Verify scale cluster of the domain with WLDF policy
-    logger.info("testScaleClustersWithWLDF with domain {0}", domain.getMetadata().getName());
-    testScaleClustersWithWLDF(domain);
+    logger.info("testScaleClustersWithWLDF with domain {0}", miiDomain.getMetadata().getName());
+    testScaleClustersWithWLDF(miiDomain);
+  }
+
+  @Test
+  @DisplayName("scale cluster using WLDF policy for three different type of domains")
+  public void testParamsScaleClustersWithWLDFWithDomainInPV() {
+    assertDomainNotNull(domainInPV);
+
+    // Verify scale cluster of the domain with WLDF policy
+    logger.info("testScaleClustersWithWLDF with domain {0}", domainInPV.getMetadata().getName());
+    testScaleClustersWithWLDF(domainInPV);
+  }
+
+  @Test
+  @DisplayName("scale cluster using WLDF policy for three different type of domains")
+  public void testParamsScaleClustersWithWLDFWithDomainInImage() {
+    assertDomainNotNull(domainInImage);
+
+    // Verify scale cluster of the domain with WLDF policy
+    logger.info("testScaleClustersWithWLDF with domain {0}", domainInImage.getMetadata().getName());
+    testScaleClustersWithWLDF(domainInImage);
   }
 
   /**
