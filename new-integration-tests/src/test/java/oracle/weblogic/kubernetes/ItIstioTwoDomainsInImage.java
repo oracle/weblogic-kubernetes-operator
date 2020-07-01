@@ -24,7 +24,6 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
@@ -66,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to create WebLogic domain in domainhome-in-image model with istio configuration")
+@DisplayName("Test to create two WebLogic domains in domainhome-in-image model with istio configuration")
 @IntegrationTest
 class ItIstioTwoDomainsInImage {
 
@@ -101,15 +100,15 @@ class ItIstioTwoDomainsInImage {
         .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
-    logger.info("Creating unique namespace for Operator");
+    logger.info("Assigning unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    logger.info("Creating unique namespace for Domain1");
+    logger.info("Assigning unique namespace for domain1");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace1 = namespaces.get(1);
 
-    logger.info("Creating unique namespace for Domain2");
+    logger.info("Assigning unique namespace for domain2");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domainNamespace2 = namespaces.get(2);
 
@@ -121,7 +120,8 @@ class ItIstioTwoDomainsInImage {
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace2,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
 
-    logger.info("Namespaces [{0}, {1}, {2}] Labeled ",opNamespace, domainNamespace1, domainNamespace2);
+    logger.info("Namespaces [{0}, {1}, {2}] labeled with istio-injection",
+         opNamespace, domainNamespace1, domainNamespace2);
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace1,domainNamespace2);
@@ -145,7 +145,6 @@ class ItIstioTwoDomainsInImage {
   @Test
   @DisplayName("Two WebLogic domainhome-in-image with single istio ingress")
   @Slow
-  @MustNotRunInParallel
   public void testIstioTwoDomainsWithSingleIngress() {
     final String managedServerPrefix1 = domainUid1 + "-managed-server";
     final String managedServerPrefix2 = domainUid2 + "-managed-server";
@@ -193,14 +192,31 @@ class ItIstioTwoDomainsInImage {
                 condition.getRemainingTimeInMS()))
         .until(domainExists(domainUid2, DOMAIN_VERSION, domainNamespace2));
 
-    // check admin server pod is ready
+    // check admin services are created 
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName1, domainNamespace1);
+    checkServiceExists(adminServerPodName1, domainNamespace1);
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName2, domainNamespace2);
+    checkServiceExists(adminServerPodName2, domainNamespace2);
+
+    // check admin server pods are ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName1, domainNamespace1);
     checkPodReady(adminServerPodName1, domainUid1, domainNamespace1);
-
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName2, domainNamespace2);
     checkPodReady(adminServerPodName2, domainUid2, domainNamespace2);
+
+    // check managed server services are created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managedserver service {0} is created in namespace {1}",
+          managedServerPrefix1 + i, domainNamespace1);
+      checkServiceExists(managedServerPrefix1 + i, domainNamespace1);
+      logger.info("Check managedserver service {0} is created in namespace {1}",
+          managedServerPrefix2 + i, domainNamespace2);
+      checkServiceExists(managedServerPrefix2 + i, domainNamespace2);
+    }
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
@@ -210,23 +226,6 @@ class ItIstioTwoDomainsInImage {
       logger.info("Wait for managed pod {0} to be ready in namespace {1}",
           managedServerPrefix2 + i, domainNamespace2);
       checkPodReady(managedServerPrefix2 + i, domainUid2, domainNamespace2);
-    }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName1, domainNamespace1);
-    checkServiceExists(adminServerPodName1, domainNamespace1);
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName2, domainNamespace2);
-    checkServiceExists(adminServerPodName2, domainNamespace2);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managedserver service {0} is created in namespace {1}",
-          managedServerPrefix1 + i, domainNamespace1);
-      checkServiceExists(managedServerPrefix1 + i, domainNamespace1);
-      logger.info("Check managedserver service {0} is created in namespace {1}",
-          managedServerPrefix2 + i, domainNamespace2);
-      checkServiceExists(managedServerPrefix2 + i, domainNamespace2);
     }
 
     String clusterService1 = domainUid1 + "-cluster-" + clusterName + "." + domainNamespace1 + ".svc.cluster.local";
@@ -289,7 +288,7 @@ class ItIstioTwoDomainsInImage {
         clusterName, archivePath, domainNamespace1 + ".org", "testwebapp");
     assertNotNull(result, "Application deployment failed on domain1");
     logger.info("Application deployment on domain1 returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Deployment does not return HTTP status code 202");
+    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
 
     String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);
@@ -305,7 +304,7 @@ class ItIstioTwoDomainsInImage {
         clusterName, archivePath, domainNamespace2 + ".org", "testwebapp");
     assertNotNull(result, "Application deployment on domain2 failed");
     logger.info("Application deployment on domain2 returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Deployment does not return HTTP status code 202");
+    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
 
     logger.info("Application Access URL {0}", url);
     checkApp = checkAppUsingHostHeader(url, domainNamespace2 + ".org");

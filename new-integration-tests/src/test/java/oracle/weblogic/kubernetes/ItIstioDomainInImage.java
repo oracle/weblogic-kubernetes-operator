@@ -24,7 +24,6 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
@@ -98,11 +97,11 @@ class ItIstioDomainInImage {
         .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
-    logger.info("Creating unique namespace for Operator");
+    logger.info("Assigning unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    logger.info("Creating unique namespace for Domain");
+    logger.info("Assigning unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
@@ -132,7 +131,6 @@ class ItIstioDomainInImage {
   @Test
   @DisplayName("Create WebLogic domainhome-in-image with istio")
   @Slow
-  @MustNotRunInParallel
   public void testIstioDomainHomeInImageUsingWdt() {
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
@@ -161,27 +159,28 @@ class ItIstioDomainInImage {
                 condition.getRemainingTimeInMS()))
         .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
 
+    // check admin server service is created
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
+
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managedserver service {0} is created in namespace {1}",
+      logger.info("Check managed service {0} is created in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkServiceExists(managedServerPrefix + i, domainNamespace);
+    }
+
+    // check managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
@@ -227,12 +226,12 @@ class ItIstioDomainInImage {
         clusterName, archivePath, domainNamespace + ".org", "testwebapp");
     assertNotNull(result, "Application deployment failed");
     logger.info("Application deployment returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Deployment does not return HTTP status code 202");
+    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
 
     String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);
     boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
-    assertTrue(checkApp, "Failed to access WebLogic appliation");
+    assertTrue(checkApp, "Failed to access WebLogic application");
   }
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,

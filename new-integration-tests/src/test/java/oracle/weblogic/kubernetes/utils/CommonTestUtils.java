@@ -1822,7 +1822,7 @@ public class CommonTestUtils {
   }
 
   /**
-   * Check the WebLogic application using host information in the header.
+   * Check the application running in WebLogic server using host information in the header.
    * @param url url to access the application
    * @param hostHeader host information to be passed as http header
    * @return true if curl command returns HTTP code 200 otherwise false
@@ -1862,7 +1862,6 @@ public class CommonTestUtils {
   }
 
   /** Create a persistent volume.
-   *
    * @param pvName name of the persistent volume to create
    * @param domainUid domain UID
    * @param className name of the class to call this method
