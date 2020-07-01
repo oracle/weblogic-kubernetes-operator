@@ -213,13 +213,13 @@ class ItParameterizedScaleDomainNginx {
     logger.info("NGINX http node port: {0}", nodeportshttp);
 
     // create model in image domain with multiple clusters
-    Domain miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
+    //Domain miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
     // create domain in pv
     Domain domainInPV = createDomainInPvUsingWdt(domainInPVNamespace);
     // create domain in image
     Domain domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
 
-    domains.add(miiDomain);
+    //domains.add(miiDomain);
     domains.add(domainInPV);
     domains.add(domainInImage);
 
@@ -246,7 +246,7 @@ class ItParameterizedScaleDomainNginx {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
-  @ParameterizedTest
+  //@ParameterizedTest
   @DisplayName("scale cluster by patching domain resource with three different type of domains")
   @MethodSource("domainProvider")
   public void testParamsScaleClustersByPatchingDomainResource(Domain domain) {
@@ -262,7 +262,7 @@ class ItParameterizedScaleDomainNginx {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
-  @ParameterizedTest
+  //@ParameterizedTest
   @DisplayName("scale cluster using REST API for three different type of domains")
   @MethodSource("domainProvider")
   public void testParamsScaleClustersWithRestApi(Domain domain) {
@@ -511,7 +511,15 @@ class ItParameterizedScaleDomainNginx {
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addEnvItem(new V1EnvVar()
+                    .name("WLDF_DEBUG")
+                    .value("-Dweblogic.debug.DebugDiagnosticsExpressionFunctionMapper=true "
+                        + "-Dweblogic.StdoutDebugEnabled=true -Dweblogic.log.LogSeverity=Debug "
+                        + "-Dweblogic.log.LoggerSeverity=Debug -Dweblogic.debug.DebugDiagnosticsUtils=true "
+                        + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctions=true "
+                        + "-Dweblogic.debug.DebugDiagnosticsExpressionPoller=true "
+                        + "-Dweblogic.debug.DebugDiagnosticWatch=true")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
