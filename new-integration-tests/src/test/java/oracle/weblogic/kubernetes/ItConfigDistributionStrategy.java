@@ -172,7 +172,7 @@ public class ItConfigDistributionStrategy {
 
   String dsName0 = "JdbcTestDataSource-0";
   String dsName1 = "JdbcTestDataSource-1";
-  String dsSecret = domainUid.concat("-mysql-secrets");
+  String dsSecret = domainUid.concat("-mysql-secret");
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
