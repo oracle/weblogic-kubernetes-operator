@@ -23,30 +23,12 @@ using the operator to deploy and run a WebLogic domain container-packaged web ap
 ***
 #### Current production release
 
-The [current production release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.0.0.
+The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.0.0.
 This release was published on July 1, 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
 
 This release introduces _non-backward compatible_ changes; however, this release can be run in the same
 cluster as the 2.6.0 version of the operator allowing for staged migration.  You can also upgrade from 2.6.0 to 3.0.0 without needing to restart or recreate
 any existing domains.
-
-The feature changes in 3.0.0 are:
-
-* Introduction of a new ["Model In Image"]({{% relref "/userguide/managing-domains/model-in-image" %}}) feature which allows you to have a domain
-  created at pod startup time from a WebLogic Deploy Tool model and archive.
-  This supports user-requested use cases like creating multiple domains from
-  the same model and automated updating of the domain based on model changes.
-  The operator automates management of the domain encryption keys to ensure
-  that they are not changed during domain updates.
-  We provide a [sample]({{% relref "/samples/simple/domains/model-in-image" %}}) that
-  demonstrates the key use cases for this feature.
-* Support for running the operator on Kubernetes 1.16, 1.17 and 1.18.
-* Deprecation and removal of support for running the operator on Kubernetes 1.13
-  and earlier versions.
-* Deprecation and removal of support for Helm 2.x.  Helm 2.x uses the "tiller" pod
-  which needs to run with elevated privileges (`cluster-admin` or very close to that)
-  and which could be a vector for a privilege escalation attack.  Helm 3.x removes
-  Tiller and does not create the same exposure.
 
 ***
 

@@ -31,7 +31,6 @@ For the current production release 3.0.0:
   not need the `cluster-admin` role at runtime.
 * We do not currently support running WebLogic in non-Linux containers.
 
-
 ### Cloud providers
 
 The Oracle [Global Pricing and Licensing site](https://www.oracle.com/corporate/pricing/specialty-topics.html)
@@ -66,7 +65,7 @@ AKS support and limitations:
 
 [Oracle Linux Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
 
-WebLogic Server and the WebLogic Server Kubernetes Operator are certified and supported on Oracle Linux Cloud Native Environment. Operator 2.6.0 and above provide certified support of OLCNE 1.1 with Kubernetes 1.17.0.
+WebLogic Server and the WebLogic Server Kubernetes Operator are certified and supported on Oracle Linux Cloud Native Environment. Operator 2.6.0 provides certified support of OLCNE 1.1 with Kubernetes 1.17.0.
 
 
 ### OpenShift
