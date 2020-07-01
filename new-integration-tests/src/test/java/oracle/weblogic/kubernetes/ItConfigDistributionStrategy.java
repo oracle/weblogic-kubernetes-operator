@@ -100,6 +100,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
+import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
@@ -297,11 +298,13 @@ public class ItConfigDistributionStrategy {
     //create config override map
     createConfigMapFromFiles(overridecm, overrideFiles, domainNamespace);
 
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
+
     logger.info("patch the domain resource with overridesConfigMap and introspectVersion");
     String patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"1\"}"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
@@ -350,7 +353,7 @@ public class ItConfigDistributionStrategy {
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    //does changing overrideDistributionStrategy needs restart of server pods?
+    //TODO: - does changing overrideDistributionStrategy needs restart of server pods?
     restartDomain(); // if above is a bug, remove this after the above bug is fixed
 
     //store the pod creation timestamps
@@ -365,11 +368,13 @@ public class ItConfigDistributionStrategy {
     //create config override map
     createConfigMapFromFiles(overridecm, overrideFiles, domainNamespace);
 
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
+
     logger.info("patch the domain resource with overridesConfigMap, secrets , cluster and introspectVersion");
     patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     patch = new V1Patch(patchStr);
@@ -418,7 +423,7 @@ public class ItConfigDistributionStrategy {
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    //does changing overrideDistributionStrategy needs restart of server pods?
+    //TODO: - does changing overrideDistributionStrategy needs restart of server pods?
     restartDomain(); // if above is a bug, remove this after the above bug is fixed
 
     //store the pod creation timestamps
@@ -453,12 +458,14 @@ public class ItConfigDistributionStrategy {
     //create config override map
     createConfigMapFromFiles(overridecm, overrideFiles, domainNamespace);
 
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
+
     //patch the domain resource with overridesConfigMap, secrets and introspectVersion
     patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     patch = new V1Patch(patchStr);

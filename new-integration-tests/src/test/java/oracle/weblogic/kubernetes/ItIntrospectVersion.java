@@ -99,6 +99,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
+import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
@@ -394,10 +395,11 @@ public class ItIntrospectVersion {
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
     // patch the domain to increase the replicas of the cluster and add introspectVersion field
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
     String patchStr =
         "["
             + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3},"
-            + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
+            + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
             + "]";
 
     logger.info("Updating replicas in cluster {0} using patch string: {1}", clusterName, patchStr);
@@ -615,8 +617,12 @@ public class ItIntrospectVersion {
   }
 
   /**
-   * Test, a new cluster can be created using online WLST change and new server pods can be brought
-   * up by patching domain resource with new cluster info and running the introspector.
+   * Test brings up a new cluster and verifies it can successfully start by doing the following.
+   * a. Creates new WebLogic static cluster using WLST.
+   * b. Patch the Domain Resource with cluster
+   * c. Update the introspectVersion version
+   * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
+   * pre-existing WebLogic cluster.
    */
   @Order(3)
   @Test
@@ -656,13 +662,15 @@ public class ItIntrospectVersion {
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
+
     logger.info("patch the domain resource with new cluster and introspectVersion");
     String patchStr
         = "["
         + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
         + "    {\"clusterName\" : \"" + clusterName + "\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
         + "},"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"4\"}"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     V1Patch patch = new V1Patch(patchStr);

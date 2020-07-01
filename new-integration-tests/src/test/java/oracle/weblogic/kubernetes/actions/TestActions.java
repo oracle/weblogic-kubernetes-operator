@@ -223,6 +223,24 @@ public class TestActions {
   }
 
   /**
+   * Get next introspectVersion for a given domain.
+   *
+   * @param domainUid domain id
+   * @param namespace namespace in which the domain resource exists
+   * @return String containing next introspectVersion
+   * @throws ApiException when getting domain resource fails
+   */
+  public static String getNextIntrospectVersion(String domainUid, String namespace) throws ApiException {
+    oracle.weblogic.domain.Domain domain = Domain.getDomainCustomResource(domainUid, namespace);
+    String introspectVersion = domain.getSpec().getIntrospectVersion();
+    if (null != introspectVersion) {
+      return Integer.toString(Integer.valueOf(introspectVersion));
+    } else {
+      return Integer.toString(1);
+    }
+  }
+
+  /**
    * Scale the cluster of the domain in the specified namespace by patching the domain resource.
    *
    * @param domainUid domainUid of the domain to be scaled
