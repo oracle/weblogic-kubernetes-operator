@@ -377,7 +377,7 @@ public class ItDomainInPV {
     logger.info("Accessing the sample app through NGINX load balancer");
     wdtCurlRequest = String.format("curl --silent --show-error --noproxy '*' "
             + "-H 'host: %s' http://%s:%s/testwebapp/index.jsp",
-        wdtDomainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+        wdtDomainUid + "." + wdtDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     for (int i = 1; i <= replicaCount; i++) {
       wdtDomainManagedServers.add(wdtDomainUid + "-" + wdtManagedServerNameBase + i);
     }
@@ -651,7 +651,7 @@ public class ItDomainInPV {
     logger.info("Accessing the sample app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
             + "-H 'host: %s' http://%s:%s/testwebapp/index.jsp",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+        domainUid + "." + wlstDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
       managedServers.add(domainUid + "-" + managedServerNameBase + i);
