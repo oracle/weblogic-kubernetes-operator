@@ -193,6 +193,14 @@ class ItParameterizedScaleDomainNginx {
     // get a free port for external REST HTTPS port
     externalRestHttpsPort = getNextFreePort(31001, 31201);
 
+    //determine if the tests are running in Kind cluster. if true use images from Kind registry
+    if (KIND_REPO != null) {
+      String kindRepoImage = KIND_REPO + wlsBaseImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      logger.info("Using image {0}", kindRepoImage);
+      wlsBaseImage = kindRepoImage;
+      isUseSecret = false;
+    }
+
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, externalRestHttpsPort,
         miiDomainNamespace, domainInPVNamespace, domainInImageNamespace);
@@ -230,14 +238,6 @@ class ItParameterizedScaleDomainNginx {
       }
       logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
       createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap);
-    }
-
-    //determine if the tests are running in Kind cluster. if true use images from Kind registry
-    if (KIND_REPO != null) {
-      String kindRepoImage = KIND_REPO + wlsBaseImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      logger.info("Using image {0}", kindRepoImage);
-      wlsBaseImage = kindRepoImage;
-      isUseSecret = false;
     }
   }
 
