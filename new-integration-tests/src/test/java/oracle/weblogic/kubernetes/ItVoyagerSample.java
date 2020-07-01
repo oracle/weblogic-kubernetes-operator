@@ -31,6 +31,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -67,6 +68,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test Voyager is installed and the Voyager ingress is created successfully")
 @IntegrationTest
+@Disabled("Voyager resource conflict issue need to be fixed for parallel runs")
 class ItVoyagerSample {
 
   // constants for operator and WebLogic domain
