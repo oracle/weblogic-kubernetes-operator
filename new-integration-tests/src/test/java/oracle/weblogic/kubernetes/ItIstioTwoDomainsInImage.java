@@ -146,7 +146,7 @@ class ItIstioTwoDomainsInImage {
   @DisplayName("Two WebLogic domainhome-in-image with single istio ingress")
   @Slow
   @MustNotRunInParallel
-  public void testIstioTwoDomainsiWithSingleIngress() {
+  public void testIstioTwoDomainsWithSingleIngress() {
     final String managedServerPrefix1 = domainUid1 + "-managed-server";
     final String managedServerPrefix2 = domainUid2 + "-managed-server";
     final int replicaCount = 2;
@@ -286,7 +286,7 @@ class ItIstioTwoDomainsInImage {
     result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
-        clusterName, archivePath, domainNamespace1 + ".org");
+        clusterName, archivePath, domainNamespace1 + ".org", "testwebapp");
     assertNotNull(result, "Application deployment failed on domain1");
     logger.info("Application deployment on domain1 returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment does not return HTTP status code 202");
@@ -302,7 +302,7 @@ class ItIstioTwoDomainsInImage {
     result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
-        clusterName, archivePath, domainNamespace2 + ".org");
+        clusterName, archivePath, domainNamespace2 + ".org", "testwebapp");
     assertNotNull(result, "Application deployment on domain2 failed");
     logger.info("Application deployment on domain2 returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment does not return HTTP status code 202");

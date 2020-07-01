@@ -1823,16 +1823,24 @@ public class CommonTestUtils {
 
   /**
    * Check the WebLogic application using host information in the header.
-   * @param url url to access the appliation
-   * @param hostHeader host information to be passed as Header
+   * @param url url to access the application
+   * @param hostHeader host information to be passed as http header
    * @return true if curl command returns HTTP code 200 otherwise false
   */
   public static boolean checkAppUsingHostHeader(String url, String hostHeader) {
     LoggingFacade logger = getLogger();
     StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    StringBuffer headerString = null;
+    if (hostHeader != null) {
+      headerString = new StringBuffer("-H 'host: ");
+      headerString.append(hostHeader)
+                  .append(" ' ");
+    } else {
+      headerString = new StringBuffer("");
+    }
     curlString.append(" --noproxy '*' ")
          .append(" --silent --show-error ")
-         .append("-H 'host: " + hostHeader  + "' ")
+         .append(headerString.toString())
          .append(url)
          .append(" -o /dev/null")
          .append(" -w %{http_code});")
