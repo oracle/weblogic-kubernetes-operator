@@ -220,8 +220,8 @@ class ItParameterizedScaleDomainNginx {
     Domain domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
 
     //domains.add(miiDomain);
-    domains.add(domainInPV);
     domains.add(domainInImage);
+    domains.add(domainInPV);
 
     // create ingress for each domain
     for (Domain domain: domains) {
@@ -686,6 +686,14 @@ class ItParameterizedScaleDomainNginx {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addEnvItem(new V1EnvVar()
+                    .name("WLDF_DEBUG")
+                    .value("-Dweblogic.debug.DebugDiagnosticsExpressionFunctionMapper=true "
+                        + "-Dweblogic.StdoutDebugEnabled=true -Dweblogic.log.LogSeverity=Debug "
+                        + "-Dweblogic.log.LoggerSeverity=Debug -Dweblogic.debug.DebugDiagnosticsUtils=true "
+                        + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctions=true "
+                        + "-Dweblogic.debug.DebugDiagnosticsExpressionPoller=true "
+                        + "-Dweblogic.debug.DebugDiagnosticWatch=true"))
                 .addVolumesItem(new V1Volume()
                     .name(pvName)
                     .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
@@ -1023,6 +1031,14 @@ class ItParameterizedScaleDomainNginx {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addEnvItem(new V1EnvVar()
+                    .name("WLDF_DEBUG")
+                    .value("-Dweblogic.debug.DebugDiagnosticsExpressionFunctionMapper=true "
+                        + "-Dweblogic.StdoutDebugEnabled=true -Dweblogic.log.LogSeverity=Debug "
+                        + "-Dweblogic.log.LoggerSeverity=Debug -Dweblogic.debug.DebugDiagnosticsUtils=true "
+                        + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctions=true "
+                        + "-Dweblogic.debug.DebugDiagnosticsExpressionPoller=true "
+                        + "-Dweblogic.debug.DebugDiagnosticWatch=true"))
                 .resources(new V1ResourceRequirements()
                     .limits(new HashMap<>())
                     .requests(new HashMap<>())))
