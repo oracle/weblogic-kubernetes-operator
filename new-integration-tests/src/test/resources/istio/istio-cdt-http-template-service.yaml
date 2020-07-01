@@ -25,7 +25,8 @@ spec:
   gateways:
     - istio-cdt-http-gateway
   hosts:
-    - '*'
+    #- '*'
+    - 'domain1-NAMESPACE.org'
   http:
     - match:
         - uri:

@@ -57,6 +57,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
@@ -265,7 +266,24 @@ public class ItIstioCrossDomainTransaction {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    String curlRequest = String.format("curl -v --show-error --noproxy '*' --user weblogic:welcome1 "
+    logger.info("Validating WebLogic admin server access by login to console");
+    /*
+    boolean loginSuccessful = assertDoesNotThrow(() -> {
+      return TestAssertions.adminNodePortAccessible(istioIngressPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    }, "Access to admin server node port failed");
+    assertTrue(loginSuccessful, "Console login validation failed");
+
+     */
+
+    String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+    boolean checkConsole =
+        checkAppUsingHostHeader(consoleUrl, "domain1-" + domain1Namespace + ".org");
+    assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
+    logger.info("WebLogic console on domain1 is accessible");
+
+    //+ "-H 'host:domain1-" + domain1Namespace + ".org' "
+    String curlRequest = String.format("curl -v --show-error --noproxy '*' "
+            + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
         K8S_NODEPORT_HOST, istioIngressPort, domain1AdminServerPodName, domain1Namespace,
         domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace,
@@ -275,6 +293,7 @@ public class ItIstioCrossDomainTransaction {
     logger.info("curl command {0}", curlRequest);
     result = assertDoesNotThrow(
         () -> exec(curlRequest, true));
+    logger.info("curl result {0}", result.exitValue());
     if (result.exitValue() == 0) {
       logger.info("\n HTTP response is \n " + result.stdout());
       logger.info("curl command returned {0}", result.toString());

@@ -130,6 +130,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
@@ -153,7 +154,7 @@ public class CommonTestUtils {
 
   private static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
-      .atMost(12, SECONDS).await();
+      .atMost(120, SECONDS).await();
 
   /**
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
@@ -1733,5 +1734,37 @@ public class CommonTestUtils {
       replaceStringInFile(out, entry.getKey(), entry.getValue()); 
     }
     return targetFile;
+  }
+
+  /**
+   * Check the WebLogic application using host information in the header.
+   * @param url url to access the appliation
+   * @param hostHeader host information to be passed as Header
+   * @return true if curl command returns HTTP code 200 otherwise false
+   */
+  public static boolean checkAppUsingHostHeader(String url, String hostHeader) {
+    LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    curlString.append(" --noproxy '*' ")
+        .append("-H 'host: " + hostHeader  + "' ")
+        .append(" --silent --show-error ")
+        .append(url)
+        .append(" -o /dev/null")
+        .append(" -w %{http_code});")
+        .append("echo ${status}");
+    logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
+    withQuickRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for server to be ready {0} "
+                    + "(elapsed time {1} ms, remaining time {2} ms)",
+                url,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> {
+          return () -> {
+            return exec(new String(curlString), true).stdout().contains("200");
+          };
+        }));
+    return true;
   }
 }
