@@ -679,7 +679,11 @@ function wdtCreatePrimordialDomain() {
     > ${WDT_OUTPUT}
   ret=$?
   if [ $ret -ne 0 ]; then
-    trace SEVERE "WDT Create Domain Failed ${ret}"
+    if [ "JRF" == "$WDT_DOMAIN_TYPE" ] ; then
+      trace SEVERE "MII Fatal Error: WDT Create Domain Failed ${ret}"
+    else
+      trace SEVERE "WDT Create Domain Failed ${ret}"
+    fi
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
       cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
     fi

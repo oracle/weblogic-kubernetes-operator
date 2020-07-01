@@ -64,6 +64,7 @@ import oracle.kubernetes.weblogic.domain.model.AdminServer;
 import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
@@ -175,13 +176,23 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static class IntrospectionRequestStep extends Step {
 
     private final String requestedIntrospectVersion;
+    private final String existingError;
 
     public IntrospectionRequestStep(DomainPresenceInfo info) {
       this.requestedIntrospectVersion = info.getDomain().getIntrospectVersion();
+      this.existingError = Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getMessage)
+          .orElse(null);
     }
 
     @Override
     public NextAction apply(Packet packet) {
+      if (existingError != null && existingError.startsWith("MII Fatal Error")) {
+          LOGGER.fine("Fatal Error will not continue to retry introspection: " + existingError);
+          return null;
+      }
       if (!Objects.equals(requestedIntrospectVersion, packet.get(INTROSPECTION_STATE_LABEL))) {
         packet.put(DOMAIN_INTROSPECT_REQUESTED, Optional.ofNullable(requestedIntrospectVersion).orElse("0"));
       }
