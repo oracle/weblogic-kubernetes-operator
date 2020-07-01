@@ -67,6 +67,7 @@ az account set -s $SUBSCRIPTION_ID
 Create the new Service Principal with the following commands.  
 
 ```
+# Please change to a unique name.
 SP_NAME=myAKSClusterServicePrincipal
 
 # Create Service Principal
