@@ -142,6 +142,9 @@ echo 'Create a cluster with the local registry enabled in containerd'
 cat <<EOF | kind create cluster --name "${kind_name}" --kubeconfig "${RESULT_ROOT}/kubeconfig" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  disableDefaultCNI: true # disable kindnet
+  podSubnet: 192.168.0.0/16 # set to Calico's default subnet
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${reg_port}"]
@@ -161,6 +164,11 @@ echo "  export KUBECONFIG=\"${RESULT_ROOT}/kubeconfig\""
 echo "  kubectl cluster-info --context \"kind-${kind_name}\""
 export KUBECONFIG="${RESULT_ROOT}/kubeconfig"
 kubectl cluster-info --context "kind-${kind_name}"
+
+echo "Install Calico"
+kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+
 kubectl get node -o wide
 
 for node in $(kind get nodes --name "${kind_name}"); do
