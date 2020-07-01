@@ -12,14 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 import javax.json.JsonValue;
 import javax.validation.constraints.NotNull;
 
-import com.google.common.collect.Sets;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
@@ -279,10 +276,20 @@ public class ConfigMapHelper {
       return !COMPARATOR.containsAll(existingMap, getModel());
     }
 
-    Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
-      Map<String, String> updated = Objects.requireNonNull(existingConfigMap.getData());
-      updated.putAll(contents);
-      return updated;
+    V1ConfigMap withPreservedData(V1ConfigMap originalMap) {
+      if (originalMap != null && originalMap.getData() != null) {
+        originalMap.setData(withPreservedEntries(originalMap.getData()));
+      }
+      return originalMap;
+    }
+
+    private Map<String, String> withPreservedEntries(Map<String, String> data) {
+      data.entrySet().removeIf(this::shouldRemove);
+      return data;
+    }
+
+    boolean shouldRemove(Map.Entry<String, String> entry) {
+      return false;
     }
 
     class ReadResponseStep extends DefaultResponseStep<V1ConfigMap> {
@@ -294,7 +301,7 @@ public class ConfigMapHelper {
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
         DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).map(Domain::getIntrospectVersion)
               .ifPresent(value -> addLabel(INTROSPECTION_STATE_LABEL, value));
-        V1ConfigMap existingMap = callResponse.getResult();
+        V1ConfigMap existingMap = withPreservedData(callResponse.getResult());
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
         } else if (isIncompatibleMap(existingMap)) {
@@ -349,6 +356,12 @@ public class ConfigMapHelper {
       private boolean labelsNotDefined(V1ConfigMap currentMap) {
         return Objects.requireNonNull(currentMap.getMetadata()).getLabels() == null;
       }
+    }
+
+    private Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
+      Map<String, String> updated = Objects.requireNonNull(existingConfigMap.getData());
+      updated.putAll(contents);
+      return updated;
     }
 
     private ResponseStep<V1ConfigMap> createCreateResponseStep(Step next) {
@@ -614,37 +627,19 @@ public class ConfigMapHelper {
     }
 
     @Override
-    Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
-      final Map<String, String> combinedData = super.getCombinedData(existingConfigMap);
-      getExtraKeys(existingConfigMap).forEach(combinedData::remove);
-      return combinedData;
+    boolean isIncompatibleMap(V1ConfigMap existingMap) {
+      return !patchOnly && super.isIncompatibleMap(existingMap);
     }
 
     @Override
-    boolean isIncompatibleMap(V1ConfigMap existingMap) {
-      return !patchOnly && (hasExtraKeys(existingMap) || super.isIncompatibleMap(existingMap));
-    }
-
-    private boolean hasExtraKeys(V1ConfigMap existingMap) {
-      return !getExtraKeys(existingMap).isEmpty();
-    }
-
-    private Set<String> getExtraKeys(V1ConfigMap existingMap) {
-      return getLeftoverKeys(existingMap).stream().filter(this::isRemovableKey).collect(Collectors.toSet());
+    boolean shouldRemove(Map.Entry<String, String> entry) {
+      return isRemovableKey(entry.getKey());
     }
 
     private boolean isRemovableKey(String key) {
       return key.startsWith(SIT_CONFIG_FILE_PREFIX);
     }
 
-    // returns a set containing the keys in the existing map which are not also in the new data.
-    private Set<String> getLeftoverKeys(V1ConfigMap existingMap) {
-      return Sets.difference(getKeys(existingMap), getKeys(getModel()));
-    }
-
-    private Set<String> getKeys(V1ConfigMap existingMap) {
-      return Objects.requireNonNull(existingMap.getData()).keySet();
-    }
   }
 
   /**
