@@ -1,12 +1,6 @@
 # Running a WebLogic Cluster on the Azure Kubernetes Service
 
-This guide demonstrates how to use the [Oracle WebLogic Kubernetes
-Operator](https://oracle.github.io/weblogic-kubernetes-operator/)
-(hereafter "the Operator") to set up a WebLogic cluster on the Azure
-Kubernetes Service (AKS). After going through the steps in the guide, your WebLogic
-cluster domain runs on an AKS cluster instance and you can manage your
-WebLogic domain with a browser by accessing the WebLogic Server Console
-portal.
+This guide demonstrates how to use the [Oracle WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator/) (hereafter "the Operator") to set up a WebLogic cluster on the Azure Kubernetes Service (AKS). After going through the steps in the guide, your WebLogic cluster domain runs on an AKS cluster instance and you can manage your WebLogic domain with a browser by accessing the WebLogic Server Console portal.
 
 Table of Contents
 =================
@@ -29,7 +23,10 @@ This guide assumes the following prerequisites.
 
 ### Environment for Setup
 
-There are two ways to setup an environment you will need to complete this guide. You can use a local environment setup. This allows for the greatest flexiblity while requiring some setup effort. It is also possible to use the Azure Cloud Shell which is a browser based utility and runs on the Azure Portal. This option may be best for users already familiar with the utility and Azure. It is also suitable for users wanting to forego additional software installations on their local machine.
+This guide was written with two execution environments in mind.
+
+1. Run the commands on your local computer. This allows for the greatest flexibility while requiring some setup effort.
+1. Run the commands in the Azure Cloud Shell. Cloud Shell is a browser based utility and runs on the Azure portal. This option may be best for users already familiar with the utility and Azure. It is also suitable for users wanting to avoid installing additional software on their local computer.
 
 #### Local Environment Setup
 
@@ -53,7 +50,7 @@ We will use a service principal to create an AKS cluster. Follow the commands be
 
 If you run commands in your local environment, please run `az login` first. Skip that command if you run on the Azure Cloud Shell. Do set the subscription you want to work with. You can get a list of your subscriptions by running `az account list`.
 
-```
+```bash
 # Login
 az login
 
@@ -66,8 +63,7 @@ az account set -s $SUBSCRIPTION_ID
 
 Create the new Service Principal with the following commands.  
 
-```
-# Please change to a unique name.
+```bash
 SP_NAME=myAKSClusterServicePrincipal
 
 # Create Service Principal
@@ -82,9 +78,18 @@ az ad sp create-for-rbac --skip-assignment --name $SP_NAME
 az role assignment create --assignee <appId> --role Contributor
 ```
 
+If you see an error similar to the following
+
+```bash
+Found an existing application instance of "5ca2f201-ad4d-43a1-a942-c9e9571de3ec". We will patch it
+Insufficient privileges to complete the operation.
+```
+
+The problem may be a pre-existing Service Principal with the same name.  Either delete the other Service Principal or pick a different name.
+
 ### Docker Hub
 
-You will need a Docker Hub account. If you don't have an existing account, please sign up for a new account at [DockerHub](https://hub.docker.com/). Please note down your username, password and  email for Docker Hub. Also, please do a checkout of [Oracle WebLogic Server](https://hub.docker.com/_/oracle-weblogic-server-12c), we will use 12.2.1.3 by default.
+You will need a Docker Hub account. If you don't have an existing account, please sign up for a new account at [DockerHub](https://hub.docker.com/). Note down your username, password and  email for Docker Hub. Because this guide uses a Docker image for a specific version of WLS, and WLS requires accepting license terms, do a Docker Hub "checkout" of [Oracle WebLogic Server](https://hub.docker.com/_/oracle-weblogic-server-12c).  This guide was written with 12.2.1.3, but other versions may work as well.
 
 ### Clone WebLogic Operator Repository
 
