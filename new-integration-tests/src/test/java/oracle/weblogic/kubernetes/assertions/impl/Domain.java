@@ -38,8 +38,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
-
 public class Domain {
 
   static {
@@ -186,20 +184,6 @@ public class Domain {
 
     getLogger().info("Accessing WebLogic console with url {0}", consoleUrl);
     final WebClient webClient = new WebClient();
-    withQuickRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for istio ingress to be ready "
-                    + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
-          HtmlPage loginPage = webClient.getPage(consoleUrl);
-          if (loginPage != null) {
-            logger.info("loginPage returned {0}", loginPage.toString());
-          }
-          return (loginPage != null);
-        });
-
     final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
         "connection to the WebLogic admin console failed");
     HtmlForm form = loginPage.getFormByName("loginData");
