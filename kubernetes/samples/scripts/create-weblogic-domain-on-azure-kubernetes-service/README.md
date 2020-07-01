@@ -1,9 +1,8 @@
 # Running a WebLogic Cluster on the Azure Kubernetes Service
 
-This guide demonstrates how to use the [Oracle WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator/) (hereafter "the Operator") to set up a WebLogic cluster on the Azure Kubernetes Service (AKS). After going through the steps in the guide, your WebLogic cluster domain runs on an AKS cluster instance and you can manage your WebLogic domain with a browser by accessing the WebLogic Server Console portal.
+This guide demonstrates how to use the [Oracle WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator/) (hereafter "the Operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS). After going through the steps in the guide, your WLS cluster domain runs on an AKS cluster instance and you can manage your WLS domain with a browser by accessing the WebLogic Server Console portal.
 
-Table of Contents
-=================
+## Table of Contents
 
 [Prerequisites](#prerequisites)  
 [Generate Configuration Files](#generate-configuration-files)  
@@ -73,9 +72,6 @@ az ad sp create-for-rbac --skip-assignment --name $SP_NAME
 # Copy the output to a file, we will use it to 
 # grant your service principal with a contributor role in AKS.
 # Specifically we will need the app ID, client secret and tenant ID later.
-
-# Use the <appId> from the output of the last command 
-az role assignment create --assignee <appId> --role Contributor
 ```
 
 If you see an error similar to the following
@@ -86,6 +82,11 @@ Insufficient privileges to complete the operation.
 ```
 
 The problem may be a pre-existing Service Principal with the same name.  Either delete the other Service Principal or pick a different name.
+
+```bash
+# Use the <appId> from the output of the last command 
+az role assignment create --assignee <appId> --role Contributor
+```
 
 ### Docker Hub
 
