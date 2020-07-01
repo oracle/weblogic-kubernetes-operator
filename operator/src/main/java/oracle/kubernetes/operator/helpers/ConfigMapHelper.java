@@ -12,11 +12,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 import javax.json.JsonValue;
 import javax.validation.constraints.NotNull;
 
+import com.google.common.collect.Sets;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
@@ -46,6 +49,7 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAINZIP_HAS
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SECRETS_MD_5;
+import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SIT_CONFIG_FILE_PREFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
@@ -271,8 +275,14 @@ public class ConfigMapHelper {
           .createConfigMapAsync(namespace, getModel(), createCreateResponseStep(next));
     }
 
-    boolean isCompatibleMap(V1ConfigMap existingMap) {
-      return COMPARATOR.containsAll(existingMap, getModel());
+    boolean isIncompatibleMap(V1ConfigMap existingMap) {
+      return !COMPARATOR.containsAll(existingMap, getModel());
+    }
+
+    Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
+      Map<String, String> updated = Objects.requireNonNull(existingConfigMap.getData());
+      updated.putAll(contents);
+      return updated;
     }
 
     class ReadResponseStep extends DefaultResponseStep<V1ConfigMap> {
@@ -287,7 +297,7 @@ public class ConfigMapHelper {
         V1ConfigMap existingMap = callResponse.getResult();
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
-        } else if (!isCompatibleMap(existingMap)) {
+        } else if (isIncompatibleMap(existingMap)) {
           return doNext(updateConfigMap(getNext(), existingMap), packet);
         } else if (mustPatchCurrentMap(existingMap)) {
           return doNext(patchCurrentMap(existingMap, getNext()), packet);
@@ -339,12 +349,6 @@ public class ConfigMapHelper {
       private boolean labelsNotDefined(V1ConfigMap currentMap) {
         return Objects.requireNonNull(currentMap.getMetadata()).getLabels() == null;
       }
-    }
-
-    private Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
-      Map<String, String> updated = Objects.requireNonNull(existingConfigMap.getData());
-      updated.putAll(contents);
-      return updated;
     }
 
     private ResponseStep<V1ConfigMap> createCreateResponseStep(Step next) {
@@ -584,45 +588,6 @@ public class ConfigMapHelper {
     }
   }
 
-  /**
-   * Creates a step to add entries to the introspector config map. Uses Packet.getSpi to retrieve
-   * the current domain presence info.
-   *
-   *
-   * @param info the domain info
-   * @param entries a map of entries to add
-   * @param next the next step to process after the config map is updated
-   * @return the created step
-   */
-  public static Step addIntrospectorConfigMapEntriesStep(DomainPresenceInfo info, Map<String, String> entries,
-                                                         Step next) {
-    return new AddIntrospectorConfigEntriesStep(info, entries, next);
-  }
-
-  /**
-   * A step which starts a chain to add entries to the domain config map.
-   */
-  static class AddIntrospectorConfigEntriesStep extends Step {
-
-    private final DomainPresenceInfo info;
-    private final Map<String, String> additionalEntries;
-
-    public AddIntrospectorConfigEntriesStep(DomainPresenceInfo info, Map<String, String> additionalEntries, Step next) {
-      super(next);
-      this.info = info;
-      this.additionalEntries = new HashMap<>(additionalEntries);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      return doNext(createContext().verifyConfigMap(getNext()), packet);
-    }
-
-    private IntrospectorConfigMapContext createContext() {
-      return new IntrospectorConfigMapContext(this, info.getDomain(), additionalEntries, info);
-    }
-  }
-
   public static class IntrospectorConfigMapContext extends ConfigMapContext {
     final String domainUid;
     private boolean patchOnly;
@@ -649,8 +614,36 @@ public class ConfigMapHelper {
     }
 
     @Override
-    boolean isCompatibleMap(V1ConfigMap existingMap) {
-      return patchOnly || super.isCompatibleMap(existingMap);
+    Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
+      final Map<String, String> combinedData = super.getCombinedData(existingConfigMap);
+      getExtraKeys(existingConfigMap).forEach(combinedData::remove);
+      return combinedData;
+    }
+
+    @Override
+    boolean isIncompatibleMap(V1ConfigMap existingMap) {
+      return !patchOnly && (hasExtraKeys(existingMap) || super.isIncompatibleMap(existingMap));
+    }
+
+    private boolean hasExtraKeys(V1ConfigMap existingMap) {
+      return !getExtraKeys(existingMap).isEmpty();
+    }
+
+    private Set<String> getExtraKeys(V1ConfigMap existingMap) {
+      return getLeftoverKeys(existingMap).stream().filter(this::isRemovableKey).collect(Collectors.toSet());
+    }
+
+    private boolean isRemovableKey(String key) {
+      return key.startsWith(SIT_CONFIG_FILE_PREFIX);
+    }
+
+    // returns a set containing the keys in the existing map which are not also in the new data.
+    private Set<String> getLeftoverKeys(V1ConfigMap existingMap) {
+      return Sets.difference(getKeys(existingMap), getKeys(getModel()));
+    }
+
+    private Set<String> getKeys(V1ConfigMap existingMap) {
+      return Objects.requireNonNull(existingMap.getData()).keySet();
     }
   }
 
@@ -726,8 +719,7 @@ public class ConfigMapHelper {
       copyMapEntryToPacket(result, packet, DOMAINZIP_HASH);
       copyMapEntryToPacket(result, packet, DOMAIN_RESTART_VERSION);
       copyMapEntryToPacket(result, packet, DOMAIN_INPUTS_HASH);
-      copyMapEntryToPacket(result, packet, IntrospectorConfigMapKeys.CONFIGURATION_OVERRIDES);
-      
+
       DomainTopology domainTopology =
             Optional.ofNullable(result)
                   .map(V1ConfigMap::getData)
