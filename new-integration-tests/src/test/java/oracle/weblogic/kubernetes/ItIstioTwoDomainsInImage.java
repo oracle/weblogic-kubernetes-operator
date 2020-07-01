@@ -133,7 +133,7 @@ class ItIstioTwoDomainsInImage {
    * Deploy istio gateway and virtual service on each domain namespaces.
    * Add host information to gateway and virtual service configurations.
    * Put the namespace.org as host configuration 
-   * Verify domain pods runs in ready state and services are created.
+   * Verify server pods are in ready state and services are created
    * Verify login to WebLogic console on domain1 through istio ingress http 
    * port by passing host information in HTTP header.
    * Deploy a web application to domain1 through istio ingress http port 

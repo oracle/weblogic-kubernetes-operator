@@ -124,7 +124,7 @@ class ItIstioDomainInImage {
    * Add istio configuration with default readinessPort 
    * Do not add any AdminService under AdminServer configuration
    * Deploy istio gateways and virtual service 
-   * Verify servers pods are in ready state and services are created.
+   * Verify server pods are in ready state and services are created.
    * Verify login to WebLogic console is successful thru istio ingress http port.
    * Deploy a web application thru istio http ingress port using REST api  
    * Access web application thru istio http ingress port using curl
