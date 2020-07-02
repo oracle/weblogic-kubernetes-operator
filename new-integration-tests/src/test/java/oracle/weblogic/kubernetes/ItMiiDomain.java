@@ -410,7 +410,7 @@ class ItMiiDomain {
         } catch (InterruptedException ie) {
           // do nothing
         }
- 
+
         // check the application availability data that we have collected, and see if
         // the application has been available all the time since the beginning of this test method
         logger.info("Verify that V2 application was available when domain {0} was being patched with image {1}",
@@ -1045,7 +1045,7 @@ class ItMiiDomain {
       String appPath
   ) {
     boolean v2AppAvailable = false;
- 
+
     // Access the pod periodically to check application's availability across the duration
     // of patching the domain with newer version of the application.
     while (!v2AppAvailable)  {
@@ -1074,6 +1074,7 @@ class ItMiiDomain {
       
       if (count == 0) {
         logger.info("XXXXXXXXXXX: application not available XXXXXXXX");
+        break;
       } else {
         logger.fine("YYYYYYYYYYY: application available YYYYYYYY count = " + count);   
       }
