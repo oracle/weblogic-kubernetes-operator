@@ -190,8 +190,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     @Override
     public NextAction apply(Packet packet) {
       if (existingError != null && existingError.startsWith("MII Fatal Error")) {
-          LOGGER.fine("Fatal Error will not continue to retry introspection: " + existingError);
-          return null;
+        LOGGER.fine("Fatal Error stop introspection retries: " + existingError);
+        return null;
       }
       if (!Objects.equals(requestedIntrospectVersion, packet.get(INTROSPECTION_STATE_LABEL))) {
         packet.put(DOMAIN_INTROSPECT_REQUESTED, Optional.ofNullable(requestedIntrospectVersion).orElse("0"));
