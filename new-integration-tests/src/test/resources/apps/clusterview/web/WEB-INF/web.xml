@@ -12,6 +12,14 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
         <servlet-name>ClusterViewServlet</servlet-name>
         <url-pattern>/ClusterViewServlet</url-pattern>
     </servlet-mapping>
+    <servlet>
+        <servlet-name>ConfigServlet</servlet-name>
+        <servlet-class>oracle.weblogic.kubernetes.applications.clusterview.ConfigServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ConfigServlet</servlet-name>
+        <url-pattern>/ConfigServlet</url-pattern>
+    </servlet-mapping>
     <session-config>
         <session-timeout>
             30
