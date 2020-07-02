@@ -37,7 +37,7 @@ import oracle.kubernetes.operator.work.Step;
  */
 public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, PodAwaiterStepFactory {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final String DOMAIN_INTROSPECTOR_JOB_SUFFIX = "-introspect-domain-job";
+  private static final String DOMAIN_INTROSPECTOR_JOB_SUFFIX = "introspect-domain-job";
   private final String namespace;
   private final WatchListener<V1Pod> listener;
 
@@ -142,8 +142,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     String podName = pod.getMetadata().getName();
     switch (item.type) {
       case "ADDED":
-        copyOf(getOnModifiedCallbacks(podName)).forEach(c -> c.accept(pod));
-        break;
       case "MODIFIED":
         if (podName.contains(DOMAIN_INTROSPECTOR_JOB_SUFFIX) && isFailed(pod)) {
           LOGGER.info(MessageKeys.INTROSPECTOR_POD_FAILED,
