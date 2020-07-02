@@ -31,7 +31,6 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 
@@ -54,7 +53,6 @@ public class CleanupUtil {
   public static void cleanup(List<String> namespaces) {
     LoggingFacade logger = getLogger();
     try {
-      uninstallIstio();
       // If namespace list is empty or null return
       if (namespaces == null || namespaces.isEmpty()) {
         logger.info("Nothing to cleanup");
