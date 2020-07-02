@@ -21,9 +21,9 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
         <jdbc:properties>
             <jdbc:property>
                 <jdbc:name>user</jdbc:name>
-                <jdbc:value jdbcf:combine-mode="replace">${secret:mydomain-mysql-secrets.dbusername}</jdbc:value>
+                <jdbc:value jdbcf:combine-mode="replace">${secret:mydomain-mysql-secret.dbusername}</jdbc:value>
             </jdbc:property>
         </jdbc:properties>
-        <jdbc:password-encrypted jdbcf:combine-mode="replace">${secret:mydomain-mysql-secrets.dbpassword:encrypt}</jdbc:password-encrypted>
+        <jdbc:password-encrypted jdbcf:combine-mode="replace">${secret:mydomain-mysql-secret.dbpassword:encrypt}</jdbc:password-encrypted>
     </jdbc:jdbc-driver-params>
 </jdbc:jdbc-data-source>
