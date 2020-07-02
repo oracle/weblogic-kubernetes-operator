@@ -179,7 +179,7 @@ public class CommonTestUtils {
 
   private static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
-      .atMost(12, SECONDS).await();
+      .atMost(120, SECONDS).await();
 
   /**
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
@@ -1794,10 +1794,12 @@ public class CommonTestUtils {
 
   /**
    * Generate a text file in RESULTS_ROOT directory by replacing template value.
-   * @param inputTemplateFile input template file
-   * @param outputFile output file to be generated
+   * @param inputTemplateFile input template file 
+   * @param outputFile output file to be generated. This file will be copied to RESULTS_ROOT. If outputFile contains
+   *                   a directory, then the directory will created if it does not exist.
+   *                   example - crossdomxaction/istio-cdt-http-srvice.yaml
    * @param templateMap map containing template variable(s) to be replaced
-   * @return path of the generated file
+   * @return path of the generated file - will be under RESULTS_ROOT
   */
   public static Path generateFileFromTemplate(
        String inputTemplateFile, String outputFile,
@@ -1805,9 +1807,13 @@ public class CommonTestUtils {
 
     LoggingFacade logger = getLogger();
 
+    Path targetFileParent = Paths.get(outputFile).getParent();
+    if (targetFileParent != null) {
+      checkDirectory(targetFileParent.toString());
+    }
     Path srcFile = Paths.get(inputTemplateFile);
-    Path targetFile = Paths.get(RESULTS_ROOT,outputFile);
-    logger.info("Copying  source file {0} to target file {1}",inputTemplateFile, targetFile.toString());
+    Path targetFile = Paths.get(RESULTS_ROOT, outputFile);
+    logger.info("Copying  source file {0} to target file {1}", inputTemplateFile, targetFile.toString());
 
     // Add the parent directory for the target file
     Path parentDir = targetFile.getParent();
