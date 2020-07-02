@@ -276,14 +276,14 @@ public class ConfigMapHelper {
       return !COMPARATOR.containsAll(existingMap, getModel());
     }
 
-    V1ConfigMap withPreservedData(V1ConfigMap originalMap) {
+    V1ConfigMap withoutTransientData(V1ConfigMap originalMap) {
       if (originalMap != null && originalMap.getData() != null) {
-        originalMap.setData(withPreservedEntries(originalMap.getData()));
+        originalMap.setData(withoutTransientEntries(originalMap.getData()));
       }
       return originalMap;
     }
 
-    private Map<String, String> withPreservedEntries(Map<String, String> data) {
+    private Map<String, String> withoutTransientEntries(Map<String, String> data) {
       data.entrySet().removeIf(this::shouldRemove);
       return data;
     }
@@ -301,7 +301,7 @@ public class ConfigMapHelper {
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
         DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).map(Domain::getIntrospectVersion)
               .ifPresent(value -> addLabel(INTROSPECTION_STATE_LABEL, value));
-        V1ConfigMap existingMap = withPreservedData(callResponse.getResult());
+        V1ConfigMap existingMap = withoutTransientData(callResponse.getResult());
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
         } else if (isIncompatibleMap(existingMap)) {
@@ -633,7 +633,7 @@ public class ConfigMapHelper {
 
     @Override
     boolean shouldRemove(Map.Entry<String, String> entry) {
-      return isRemovableKey(entry.getKey());
+      return !patchOnly && isRemovableKey(entry.getKey());
     }
 
     private boolean isRemovableKey(String key) {

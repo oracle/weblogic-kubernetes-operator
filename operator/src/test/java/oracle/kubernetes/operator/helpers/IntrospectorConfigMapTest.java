@@ -389,4 +389,15 @@ public class IntrospectorConfigMapTest {
 
     assertThat(getIntrospectorConfigMapData(), allOf(not(hasKey("Sit-Cfg-1")), not(hasKey("Sit-Cfg-2"))));
   }
+
+  @Test
+  public void whenNoTopologySpecified_dontRemoveSitConfigEntries() {
+    testSupport.defineResources(
+          createIntrospectorConfigMap(Map.of(TOPOLOGY_YAML, TOPOLOGY_VALUE, "Sit-Cfg-1", "value1")));
+    introspectResult.defineFile(SECRETS_MD_5, "not telling").addToPacket();
+
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+
+    assertThat(getIntrospectorConfigMapValue("Sit-Cfg-1"), equalTo("value1"));
+  }
 }
