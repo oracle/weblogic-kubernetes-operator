@@ -58,8 +58,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.params.ParameterizedTest;
+//import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.io.File.createTempFile;
@@ -217,13 +217,13 @@ class ItParameterizedScaleDomainNginx {
     logger.info("NGINX http node port: {0}", nodeportshttp);
 
     // create model in image domain with multiple clusters
-    miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
+    //miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
     // create domain in pv
     domainInPV = createDomainInPvUsingWdt(domainInPVNamespace);
     // create domain in image
     domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
 
-    domains.add(miiDomain);
+    //domains.add(miiDomain);
     domains.add(domainInImage);
     domains.add(domainInPV);
 
@@ -281,8 +281,19 @@ class ItParameterizedScaleDomainNginx {
    * Scale cluster using WLDF policy for three different type of domains.
    *
    */
+  @ParameterizedTest
+  @DisplayName("scale cluster using WLDF policy for three different type of domains")
+  @MethodSource("domainProvider")
+  public void testParamsScaleClustersWithWLDF(Domain domain) {
+    assertDomainNotNull(domain);
+
+    // Verify scale cluster of the domain with WLDF policy
+    logger.info("testScaleClustersWithWLDF with domain {0}", domain.getMetadata().getName());
+    testScaleClustersWithWLDF(domain);
+  }
+
   //@ParameterizedTest
-  @Test
+  //@Test
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
   //@MethodSource("domainProvider")
   public void testParamsScaleClustersWithWLDFWithMiiDomain() {
@@ -293,7 +304,7 @@ class ItParameterizedScaleDomainNginx {
     testScaleClustersWithWLDF(miiDomain);
   }
 
-  @Test
+  //@Test
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
   public void testParamsScaleClustersWithWLDFWithDomainInPV() {
     assertDomainNotNull(domainInPV);
@@ -303,7 +314,7 @@ class ItParameterizedScaleDomainNginx {
     testScaleClustersWithWLDF(domainInPV);
   }
 
-  @Test
+  //@Test
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
   public void testParamsScaleClustersWithWLDFWithDomainInImage() {
     assertDomainNotNull(domainInImage);
@@ -532,18 +543,16 @@ class ItParameterizedScaleDomainNginx {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .addEnvItem(new V1EnvVar()
-                    .name("WLDF_DEBUG")
-                    .value("-Dweblogic.debug.DebugDiagnosticsExpressionFunctionMapper=true "
+                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctionMapper=true "
                         + "-Dweblogic.StdoutDebugEnabled=true -Dweblogic.log.LogSeverity=Debug "
                         + "-Dweblogic.log.LoggerSeverity=Debug -Dweblogic.debug.DebugDiagnosticsUtils=true "
                         + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctions=true "
                         + "-Dweblogic.debug.DebugDiagnosticsExpressionPoller=true "
-                        + "-Dweblogic.debug.DebugDiagnosticWatch=true")))
+                        + "-Dweblogic.debug.DebugDiagnosticWatch=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
@@ -706,18 +715,16 @@ class ItParameterizedScaleDomainNginx {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .addEnvItem(new V1EnvVar()
-                    .name("WLDF_DEBUG")
-                    .value("-Dweblogic.debug.DebugDiagnosticsExpressionFunctionMapper=true "
+                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctionMapper=true "
                         + "-Dweblogic.StdoutDebugEnabled=true -Dweblogic.log.LogSeverity=Debug "
                         + "-Dweblogic.log.LoggerSeverity=Debug -Dweblogic.debug.DebugDiagnosticsUtils=true "
                         + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctions=true "
                         + "-Dweblogic.debug.DebugDiagnosticsExpressionPoller=true "
                         + "-Dweblogic.debug.DebugDiagnosticWatch=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
                 .addVolumesItem(new V1Volume()
                     .name(pvName)
                     .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
@@ -1051,18 +1058,16 @@ class ItParameterizedScaleDomainNginx {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .addEnvItem(new V1EnvVar()
-                    .name("WLDF_DEBUG")
-                    .value("-Dweblogic.debug.DebugDiagnosticsExpressionFunctionMapper=true "
+                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctionMapper=true "
                         + "-Dweblogic.StdoutDebugEnabled=true -Dweblogic.log.LogSeverity=Debug "
                         + "-Dweblogic.log.LoggerSeverity=Debug -Dweblogic.debug.DebugDiagnosticsUtils=true "
                         + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctions=true "
                         + "-Dweblogic.debug.DebugDiagnosticsExpressionPoller=true "
                         + "-Dweblogic.debug.DebugDiagnosticWatch=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
                 .resources(new V1ResourceRequirements()
                     .limits(new HashMap<>())
                     .requests(new HashMap<>())))
