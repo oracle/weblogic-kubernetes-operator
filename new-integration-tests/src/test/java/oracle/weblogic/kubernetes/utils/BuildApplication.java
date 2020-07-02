@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -15,10 +16,13 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -151,14 +155,20 @@ public class BuildApplication {
     V1Pod webLogicPod = setupWebLogicPod(namespace, buildContainer);
 
     try {
-
       //copy the zip file to /u01 location inside pod
       Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
           null, zipFile, Paths.get("/u01", zipFile.getFileName().toString()));
+    } catch (ApiException | IOException  ioex) {
+      logger.info(ioex.getMessage());
+    }
+    try {
       //copy the build script to /u01 location inside pod
       Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
           null, BUILD_SCRIPT_SOURCE_PATH, Paths.get("/u01", BUILD_SCRIPT));
-
+    } catch (ApiException | IOException  ioex) {
+      logger.info(ioex.getMessage());
+    }
+    try {
       //Kubernetes.exec(webLogicPod, new String[]{"/bin/sh", "/u01/" + BUILD_SCRIPT});
       ExecResult exec = Exec.exec(webLogicPod, null, false, "/bin/sh", "/u01/" + BUILD_SCRIPT);
       assertEquals(0, exec.exitValue());
@@ -168,15 +178,13 @@ public class BuildApplication {
       if (exec.stderr() != null) {
         logger.info(exec.stderr());
       }
-
       Kubernetes.copyDirectoryFromPod(webLogicPod,
           Paths.get(APPLICATIONS_PATH, archiveDistDir).toString(), destArchiveBaseDir);
-
     } catch (ApiException | IOException | InterruptedException ioex) {
       logger.info(ioex.getMessage());
     }
-    destDir = Paths.get(destArchiveBaseDir.toString(), "u01/application", archiveDistDir);
-    return destDir;
+
+    return destDir = Paths.get(destArchiveBaseDir.toString(), "u01/application", archiveDistDir);
   }
 
 
@@ -193,6 +201,7 @@ public class BuildApplication {
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
         .atMost(3, MINUTES).await();
+    verifyDefaultTokenExists();
 
     final String podName = "weblogic-build-pod-" + namespace;
     V1Pod podBody = new V1Pod()
@@ -259,5 +268,32 @@ public class BuildApplication {
     }
     logger.info("Using image {0}", image);
   }
+
+  private static void verifyDefaultTokenExists() {
+    final LoggingFacade logger = getLogger();
+
+    ConditionFactory withStandardRetryPolicy
+        = with().pollDelay(0, SECONDS)
+        .and().with().pollInterval(5, SECONDS)
+        .atMost(5, MINUTES).await();
+
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> logger.info("Waiting for the default token to be available in default service account, "
+                + "elapsed time {0}, remaining time {1}",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(() -> {
+          V1ServiceAccountList sas = Kubernetes.listServiceAccounts("default");
+          for (V1ServiceAccount sa : sas.getItems()) {
+            if (sa.getMetadata().getName().equals("default")) {
+              List<V1ObjectReference> secrets = sa.getSecrets();
+              return !secrets.isEmpty();
+            }
+          }
+          return false;
+        });
+  }
+
+
 
 }

@@ -34,6 +34,13 @@ public class Configuration {
           + " it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value.")
   private Long introspectorJobActiveDeadlineSeconds;
 
+  @ApiModelProperty(
+      "Determines how updated configuration overrides are distributed to already running WebLogic servers "
+      + "following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides "
+      + "are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. "
+      + "Legal values are DYNAMIC (the default) and ON_RESTART. See also introspectVersion.")
+  private String overrideDistributionStrategy;
+
   @ApiModelProperty("Istio service mesh integration")
   private Istio istio;
 
@@ -78,6 +85,19 @@ public class Configuration {
 
   public List<String> secrets() {
     return secrets;
+  }
+
+  public Configuration overrideDistributionStrategy(String overrideDistributionStrategy) {
+    this.overrideDistributionStrategy = overrideDistributionStrategy;
+    return this;
+  }
+
+  public String getOverrideDistributionStrategy() {
+    return overrideDistributionStrategy;
+  }
+
+  public void setOverrideDistributionStrategy(String overrideDistributionStrategy) {
+    this.overrideDistributionStrategy = overrideDistributionStrategy;
   }
 
   /**

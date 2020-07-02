@@ -138,4 +138,7 @@ public interface TestConstants {
   // istio constants
   public static final String ISTIO_VERSION = "1.5.4";
 
+  //MySQL database constants
+  public static final String MYSQL_VERSION = "5.6";
+
 }
