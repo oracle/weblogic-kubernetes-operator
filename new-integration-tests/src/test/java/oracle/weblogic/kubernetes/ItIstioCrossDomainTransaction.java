@@ -76,6 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify cross domain transaction with istio enabled is successful")
 @IntegrationTest
@@ -267,13 +268,6 @@ public class ItIstioCrossDomainTransaction {
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
     logger.info("Validating WebLogic admin server access by login to console");
-    /*
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return TestAssertions.adminNodePortAccessible(istioIngressPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
-
-     */
 
     String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
     boolean checkConsole =
@@ -294,6 +288,7 @@ public class ItIstioCrossDomainTransaction {
     result = assertDoesNotThrow(
         () -> exec(curlRequest, true));
     logger.info("curl result {0}", result.exitValue());
+    assertTrue((result.exitValue() == 0), "curl command failed");
     if (result.exitValue() == 0) {
       logger.info("\n HTTP response is \n " + result.stdout());
       logger.info("curl command returned {0}", result.toString());
