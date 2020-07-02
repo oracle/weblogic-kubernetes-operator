@@ -8,12 +8,4 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
         <d:name>admin-server</d:name>
         <d:max-message-size f:combine-mode="add">66666666</d:max-message-size>
     </d:server>
-    <d:server>
-        <d:name>ms-1</d:name>
-        <d:max-message-size f:combine-mode="add">77777777</d:max-message-size>
-    </d:server>
-    <d:server>
-        <d:name>ms-2</d:name>
-        <d:max-message-size f:combine-mode="add">88888888</d:max-message-size>
-    </d:server>
 </d:domain>

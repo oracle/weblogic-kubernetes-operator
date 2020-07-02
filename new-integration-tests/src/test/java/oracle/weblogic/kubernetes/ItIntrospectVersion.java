@@ -184,15 +184,6 @@ public class ItIntrospectVersion {
     assertNotNull(namespaces.get(2), "Namespace is null");
     nginxNamespace = namespaces.get(2);
 
-
-    // build the clusterview application
-    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
-        "dist", introDomainNamespace);
-    assertTrue(Paths.get(distDir.toString(),
-        "clusterview.war").toFile().exists(),
-        "Application archive is not available");
-    clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
-
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, introDomainNamespace);
 
@@ -213,6 +204,14 @@ public class ItIntrospectVersion {
       // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
       createOCRRepoSecret(introDomainNamespace);
     }
+
+    // build the clusterview application
+    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
+        "dist", introDomainNamespace);
+    assertTrue(Paths.get(distDir.toString(),
+        "clusterview.war").toFile().exists(),
+        "Application archive is not available");
+    clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
 
   }
 
@@ -670,7 +669,7 @@ public class ItIntrospectVersion {
         + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
         + "    {\"clusterName\" : \"" + clusterName + "\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
         + "},"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     V1Patch patch = new V1Patch(patchStr);

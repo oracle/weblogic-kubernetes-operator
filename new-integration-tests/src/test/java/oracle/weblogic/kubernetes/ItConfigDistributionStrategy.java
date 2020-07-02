@@ -68,7 +68,6 @@ import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -108,6 +107,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -206,13 +206,6 @@ public class ItConfigDistributionStrategy {
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
 
-
-    // build the clusterview application
-    Path distDir = buildApplication(Paths.get(APP_DIR, "clusterview"),
-        null, null, "dist", domainNamespace);
-    clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
-    assertTrue(clusterViewAppPath.toFile().exists(), "Application archive is not available");
-
     //start two MySQL database instances
     mysqlDBPort1 = getNextFreePort(30000, 32767);
     createMySQLDB("mysqldb-1", "root", "root123", mysqlDBPort1, domainNamespace, null);
@@ -235,6 +228,12 @@ public class ItConfigDistributionStrategy {
       // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
       createOCRRepoSecret(domainNamespace);
     }
+
+    // build the clusterview application
+    Path distDir = buildApplication(Paths.get(APP_DIR, "clusterview"),
+        null, null, "dist", domainNamespace);
+    clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
+    assertTrue(clusterViewAppPath.toFile().exists(), "Application archive is not available");
 
     //create and start WebLogic domain
     createDomain();
@@ -264,7 +263,6 @@ public class ItConfigDistributionStrategy {
     deleteConfigMap(overridecm, domainNamespace);
     String patchStr
         = "["
-        + "{\"op\": \"remove\", \"path\": \"/spec/configuration/overrideDistributionStrategy\"},"
         + "{\"op\": \"remove\", \"path\": \"/spec/configuration/overridesConfigMap\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
@@ -338,7 +336,6 @@ public class ItConfigDistributionStrategy {
    * d. Reruns the introspector and verifies that the new configuration is applied as per the new config.xml override
    * file.
    */
-  @Disabled
   @Order(2)
   @Test
   @DisplayName("Test new overrides are applied as per the files in recreated configmap")
@@ -363,7 +360,7 @@ public class ItConfigDistributionStrategy {
     String patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
@@ -388,6 +385,13 @@ public class ItConfigDistributionStrategy {
     logger.info("Deleting the old override configmap {0}", overridecm);
     deleteConfigMap(overridecm, domainNamespace);
 
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> logger.info("Waiting for configmap {0} to be deleted. Elapsed time{1}, remaining time {2}",
+            overridecm, condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(() -> {
+              return listConfigMaps(domainNamespace).getItems().stream().noneMatch((cm)
+                  -> (cm.getMetadata().getName().equals(overridecm)));
+            });
+
 
     Path srcOverrideFile = Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config1.xml");
     Path dstOverrideFile = Paths.get(WORK_DIR, "config.xml");
@@ -400,6 +404,7 @@ public class ItConfigDistributionStrategy {
     overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
 
     //recreate config override map with new content
+    logger.info("Recreating configmap {0} with new override files {1}", overridecm, overrideFiles);
     createConfigMapFromFiles(overridecm, overrideFiles, domainNamespace);
 
     introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
@@ -407,7 +412,7 @@ public class ItConfigDistributionStrategy {
     logger.info("patch the domain resource with overridesConfigMap and introspectVersion");
     patchStr
         = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     patch = new V1Patch(patchStr);
@@ -428,36 +433,6 @@ public class ItConfigDistributionStrategy {
 
     verifyResourceJDBC0Override(true);
 
-    int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/";
-
-    //verify server attribute MaxMessageSize to be equal to 66666666
-    String adminUri = "ConfigServlet?"
-        + "attributeTest=true"
-        + "&serverType=adminserver"
-        + "&serverName=" + adminServerName;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + adminUri, true));
-    // check admin server override
-    assertTrue(response.body().contains("MaxMessageSize=66666666"), "Didn't get MaxMessageSize=66666666");
-
-
-    //verify ms-1 server attribute MaxMessageSize to be equal to 77777777
-    String ms1Uri = "ConfigServlet?"
-        + "attributeTest=true"
-        + "&serverType=ms"
-        + "&serverName=ms-1";
-    response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + ms1Uri, true));
-    assertTrue(response.body().contains("MaxMessageSize=77777777"), "Didn't get MaxMessageSize=77777777");
-
-    //verify ms-2 server attribute MaxMessageSize to be equal to 88888888
-    String ms2Uri = "ConfigServlet?"
-        + "attributeTest=true"
-        + "&serverType=ms"
-        + "&serverName=ms-2";
-    response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + ms2Uri, true));
-    assertTrue(response.body().contains("MaxMessageSize=88888888"), "Didn't get MaxMessageSize=88888888");
-
-
   }
 
   /**
@@ -470,7 +445,6 @@ public class ItConfigDistributionStrategy {
    * <p>Verifies after introspector runs and the server configuration and JDBC datasource configurations are
    * updated as expected.
    */
-  @Disabled
   @Order(3)
   @Test
   @DisplayName("Test overrideDistributionStrategy value DYNAMIC")
@@ -507,7 +481,7 @@ public class ItConfigDistributionStrategy {
     patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     patch = new V1Patch(patchStr);
@@ -528,6 +502,15 @@ public class ItConfigDistributionStrategy {
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
+
+    patchStr
+        = "["
+        + "{\"op\": \"remove\", \"path\": \"/spec/configuration/overrideDistributionStrategy\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
   }
 
   /**
@@ -540,7 +523,6 @@ public class ItConfigDistributionStrategy {
    * <p>Verifies after introspector runs the server configuration and JDBC datasource configurations are not
    * updated. Verifies the overrides are applied only after a domain restart.
    */
-  @Disabled
   @Order(4)
   @Test
   @DisplayName("Test overrideDistributionStrategy value ON_RESTART")
@@ -598,7 +580,7 @@ public class ItConfigDistributionStrategy {
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     patch = new V1Patch(patchStr);
@@ -630,11 +612,13 @@ public class ItConfigDistributionStrategy {
     deleteSecret(dsSecret, domainNamespace);
     patchStr
         = "["
+        + "{\"op\": \"remove\", \"path\": \"/spec/configuration/overrideDistributionStrategy\"},"
         + "{\"op\": \"remove\", \"path\": \"/spec/configuration/secrets\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     patch = new V1Patch(patchStr);
-    patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
   }
 
   /**
@@ -643,7 +627,6 @@ public class ItConfigDistributionStrategy {
    *
    * <p>Test tries to set the above field to RESTART and asserts the patching fails.
    */
-  @Disabled
   @Order(5)
   @Test
   @DisplayName("Test invalid overrideDistributionStrategy value RESTART")
