@@ -23,6 +23,9 @@ public interface IntrospectorConfigMapKeys {
   /** A hash of the Model-in-Image inputs. */
   String DOMAIN_INPUTS_HASH = "weblogic.domainInputsHash";
 
-  /** The latest recorded value of the configuration overrides, including secrets. */
-  String CONFIGURATION_OVERRIDES = "configOverrides";
+  /**
+   * The prefix for a number of keys which may appear in the introspector config map.
+   * They are not preserved from one update to another.
+   */
+  String SIT_CONFIG_FILE_PREFIX = "Sit-Cfg";
 }
