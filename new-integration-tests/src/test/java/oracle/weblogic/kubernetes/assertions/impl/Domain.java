@@ -18,8 +18,11 @@ import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -30,6 +33,7 @@ import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotEx
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,6 +47,10 @@ public class Domain {
       throw new ExceptionInInitializerError(ioex);
     }
   }
+
+  private static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
+      .and().with().pollInterval(3, SECONDS)
+      .atMost(12, SECONDS).await();
 
   private static final CustomObjectsApi customObjectsApi = new CustomObjectsApi();
   private static final ApiextensionsV1beta1Api apiextensionsV1beta1Api = new ApiextensionsV1beta1Api();
@@ -164,6 +172,9 @@ public class Domain {
    */
   public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
       throws IOException {
+
+    LoggingFacade logger = getLogger();
+
     String consoleUrl = new StringBuffer()
         .append("http://")
         .append(K8S_NODEPORT_HOST)
