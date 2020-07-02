@@ -191,10 +191,16 @@ public class ItIstioCrossDomainTransaction {
    * This test verifies cross domain transaction is successful. domain in image using wdt is used
    * to create 2 domains in different namespaces. An app is deployed to both the domains and the servlet
    * is invoked which starts a transaction that spans both domains.
+   * The application consists of a servlet front-end and a remote object that defines a method to register
+   * a simple javax.transaction.Synchronization object. When the servlet is invoked, a global transaction
+   * is started, and the specified list of server URLs is used to look up the remote object and register
+   * a Synchronization object on each server.  Finally, the transaction is committed.  If the server
+   * listen-addresses are resolvable between the transaction participants, then the transaction should
+   * complete successfully.
    */
   @Test
   @DisplayName("Check cross domain transaction with istio works")
-  public void testCrossDomainTransaction() {
+  public void testIstioCrossDomainTransaction() {
 
     //build application archive
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,

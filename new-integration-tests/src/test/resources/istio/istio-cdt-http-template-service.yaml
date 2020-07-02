@@ -10,7 +10,7 @@ spec:
     istio: ingressgateway
   servers:
     - hosts:
-        - '*'
+        - 'domain1-NAMESPACE.org'
       port:
         name: http
         number: 80
@@ -30,8 +30,6 @@ spec:
     - match:
         - uri:
             prefix: /console
-        - uri:
-            prefix: /management
         - uri:
             prefix: /TxForward
         - port: 7001
