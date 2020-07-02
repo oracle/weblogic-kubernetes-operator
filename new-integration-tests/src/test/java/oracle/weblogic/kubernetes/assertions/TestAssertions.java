@@ -447,6 +447,22 @@ public class TestAssertions {
   }
 
   /**
+   * Check if the oeprator pod in a given namespace is restarted based on podCreationTimestamp.
+   *
+   * @param namespace in which the pod is running
+   * @param timestamp the initial podCreationTimestamp
+   * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
+   */
+  public static Callable<Boolean> isOperatorPodRestarted(
+      String namespace,
+      DateTime timestamp
+  ) {
+    return () -> {
+      return Kubernetes.isOperatorPodRestarted(namespace, timestamp);
+    };
+  }
+
+  /**
    * Verify the pod state is not changed.
    *
    * @param podName the name of the pod to check

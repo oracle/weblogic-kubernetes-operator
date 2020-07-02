@@ -34,9 +34,8 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isOperatorPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
-import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.checkPodRestartVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
@@ -235,18 +234,14 @@ public class ItOperatorRestartWhenPodRoll {
             opNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> operatorIsReady(opNamespace),
-          "operatorIsReady failed with ApiException"));
+        .until(assertDoesNotThrow(() -> isOperatorPodRestarted(opNamespace, opPodCreationTime),
+            "Failed to check if the operator is restarted with ApiException"));
 
-    String opPodNameNew = 
+    String opPodNameNew =
         assertDoesNotThrow(() -> getOperatorPodName(TestConstants.OPERATOR_RELEASE_NAME, opNamespace),
-        "Failed to get the name of the operator pod");
+            "Failed to get the name of the operator pod");
 
     assertFalse(opPodNameNew.equals(opPodName),
         "The operator names before and after a restart should be different");
-
-    assertTrue(assertDoesNotThrow(() -> isPodRestarted(opPodNameNew, opNamespace, opPodCreationTime),
-        "Failed to check the operator for its new creation time with ApiException"),
-        "Operator restart failed");
   }
 }
