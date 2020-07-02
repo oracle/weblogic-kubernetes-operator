@@ -46,6 +46,7 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAINZIP_HAS
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SECRETS_MD_5;
+import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SIT_CONFIG_FILE_PREFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
@@ -271,8 +272,24 @@ public class ConfigMapHelper {
           .createConfigMapAsync(namespace, getModel(), createCreateResponseStep(next));
     }
 
-    boolean isCompatibleMap(V1ConfigMap existingMap) {
-      return COMPARATOR.containsAll(existingMap, getModel());
+    boolean isIncompatibleMap(V1ConfigMap existingMap) {
+      return !COMPARATOR.containsAll(existingMap, getModel());
+    }
+
+    V1ConfigMap withoutTransientData(V1ConfigMap originalMap) {
+      if (originalMap != null && originalMap.getData() != null) {
+        originalMap.setData(withoutTransientEntries(originalMap.getData()));
+      }
+      return originalMap;
+    }
+
+    private Map<String, String> withoutTransientEntries(Map<String, String> data) {
+      data.entrySet().removeIf(this::shouldRemove);
+      return data;
+    }
+
+    boolean shouldRemove(Map.Entry<String, String> entry) {
+      return false;
     }
 
     class ReadResponseStep extends DefaultResponseStep<V1ConfigMap> {
@@ -284,10 +301,10 @@ public class ConfigMapHelper {
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
         DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).map(Domain::getIntrospectVersion)
               .ifPresent(value -> addLabel(INTROSPECTION_STATE_LABEL, value));
-        V1ConfigMap existingMap = callResponse.getResult();
+        V1ConfigMap existingMap = withoutTransientData(callResponse.getResult());
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
-        } else if (!isCompatibleMap(existingMap)) {
+        } else if (isIncompatibleMap(existingMap)) {
           return doNext(updateConfigMap(getNext(), existingMap), packet);
         } else if (mustPatchCurrentMap(existingMap)) {
           return doNext(patchCurrentMap(existingMap, getNext()), packet);
@@ -584,45 +601,6 @@ public class ConfigMapHelper {
     }
   }
 
-  /**
-   * Creates a step to add entries to the introspector config map. Uses Packet.getSpi to retrieve
-   * the current domain presence info.
-   *
-   *
-   * @param info the domain info
-   * @param entries a map of entries to add
-   * @param next the next step to process after the config map is updated
-   * @return the created step
-   */
-  public static Step addIntrospectorConfigMapEntriesStep(DomainPresenceInfo info, Map<String, String> entries,
-                                                         Step next) {
-    return new AddIntrospectorConfigEntriesStep(info, entries, next);
-  }
-
-  /**
-   * A step which starts a chain to add entries to the domain config map.
-   */
-  static class AddIntrospectorConfigEntriesStep extends Step {
-
-    private final DomainPresenceInfo info;
-    private final Map<String, String> additionalEntries;
-
-    public AddIntrospectorConfigEntriesStep(DomainPresenceInfo info, Map<String, String> additionalEntries, Step next) {
-      super(next);
-      this.info = info;
-      this.additionalEntries = new HashMap<>(additionalEntries);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      return doNext(createContext().verifyConfigMap(getNext()), packet);
-    }
-
-    private IntrospectorConfigMapContext createContext() {
-      return new IntrospectorConfigMapContext(this, info.getDomain(), additionalEntries, info);
-    }
-  }
-
   public static class IntrospectorConfigMapContext extends ConfigMapContext {
     final String domainUid;
     private boolean patchOnly;
@@ -649,9 +627,19 @@ public class ConfigMapHelper {
     }
 
     @Override
-    boolean isCompatibleMap(V1ConfigMap existingMap) {
-      return patchOnly || super.isCompatibleMap(existingMap);
+    boolean isIncompatibleMap(V1ConfigMap existingMap) {
+      return !patchOnly && super.isIncompatibleMap(existingMap);
     }
+
+    @Override
+    boolean shouldRemove(Map.Entry<String, String> entry) {
+      return !patchOnly && isRemovableKey(entry.getKey());
+    }
+
+    private boolean isRemovableKey(String key) {
+      return key.startsWith(SIT_CONFIG_FILE_PREFIX);
+    }
+
   }
 
   /**
@@ -726,8 +714,7 @@ public class ConfigMapHelper {
       copyMapEntryToPacket(result, packet, DOMAINZIP_HASH);
       copyMapEntryToPacket(result, packet, DOMAIN_RESTART_VERSION);
       copyMapEntryToPacket(result, packet, DOMAIN_INPUTS_HASH);
-      copyMapEntryToPacket(result, packet, IntrospectorConfigMapKeys.CONFIGURATION_OVERRIDES);
-      
+
       DomainTopology domainTopology =
             Optional.ofNullable(result)
                   .map(V1ConfigMap::getData)
