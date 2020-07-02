@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -321,10 +322,142 @@ public class ItConfigDistributionStrategy {
                 + "(elapsed time {0} ms, remaining time {1} ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(configUpdated());
+        .until(configUpdated("78787878"));
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
+  }
+
+  /**
+   * Test server configuration and JDBC datasource configurations are updated from previous overrides when underlying
+   * override files are changed, configmap is recreated with new files with same name and introspector rerun.
+   * a. Test sets the /spec/configuration/overridesConfigMap with configuration for config.xml and datasources.
+   * b. Verifies after introspector runs the server configuration and JDBC datasource configurations are updated
+   * as expected.
+   * c. Recreate the same configmap with modified config.xml and recreates the map.
+   * d. Reruns the introspector and verifies that the new configuration is applied as per the new config.xml override
+   * file.
+   */
+  @Disabled
+  @Order(2)
+  @Test
+  @DisplayName("Test new overrides are applied as per the files in recreated configmap")
+  public void testModifiedOverrideContent() {
+
+    //store the pod creation timestamps
+    storePodCreationTimestamps();
+
+    //create first set of override
+    List<Path> overrideFiles = new ArrayList<>();
+    overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
+    overrideFiles.add(
+        Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/jdbc-JdbcTestDataSource-0.xml"));
+    overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
+
+    //create config override map
+    createConfigMapFromFiles(overridecm, overrideFiles, domainNamespace);
+
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
+
+    logger.info("patch the domain resource with overridesConfigMap and introspectVersion");
+    String patchStr
+        = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"" + overridecm + "\"},"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    verifyIntrospectorRuns();
+    verifyPodsStateNotChanged();
+
+    //wait until config is updated upto 5 minutes
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for server configuration to be updated"
+                    + "(elapsed time {0} ms, remaining time {1} ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(configUpdated("78787878"));
+
+    verifyConfigXMLOverride(true);
+    verifyResourceJDBC0Override(true);
+
+    logger.info("Deleting the old override configmap {0}", overridecm);
+    deleteConfigMap(overridecm, domainNamespace);
+
+
+    Path srcOverrideFile = Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config1.xml");
+    Path dstOverrideFile = Paths.get(WORK_DIR, "config.xml");
+    assertDoesNotThrow(() -> Files.copy(srcOverrideFile, dstOverrideFile, StandardCopyOption.REPLACE_EXISTING));
+
+    overrideFiles = new ArrayList<>();
+    overrideFiles.add(dstOverrideFile);
+    overrideFiles.add(
+        Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/jdbc-JdbcTestDataSource-0.xml"));
+    overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
+
+    //recreate config override map with new content
+    createConfigMapFromFiles(overridecm, overrideFiles, domainNamespace);
+
+    introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
+
+    logger.info("patch the domain resource with overridesConfigMap and introspectVersion");
+    patchStr
+        = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    verifyIntrospectorRuns();
+    verifyPodsStateNotChanged();
+
+    //wait until config is updated upto 5 minutes
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for server configuration to be updated"
+                    + "(elapsed time {0} ms, remaining time {1} ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(configUpdated("66666666"));
+
+    verifyResourceJDBC0Override(true);
+
+    int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/";
+
+    //verify server attribute MaxMessageSize to be equal to 66666666
+    String adminUri = "ConfigServlet?"
+        + "attributeTest=true"
+        + "&serverType=adminserver"
+        + "&serverName=" + adminServerName;
+    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + adminUri, true));
+    // check admin server override
+    assertTrue(response.body().contains("MaxMessageSize=66666666"), "Didn't get MaxMessageSize=66666666");
+
+
+    //verify ms-1 server attribute MaxMessageSize to be equal to 77777777
+    String ms1Uri = "ConfigServlet?"
+        + "attributeTest=true"
+        + "&serverType=ms"
+        + "&serverName=ms-1";
+    response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + ms1Uri, true));
+    assertTrue(response.body().contains("MaxMessageSize=77777777"), "Didn't get MaxMessageSize=77777777");
+
+    //verify ms-2 server attribute MaxMessageSize to be equal to 88888888
+    String ms2Uri = "ConfigServlet?"
+        + "attributeTest=true"
+        + "&serverType=ms"
+        + "&serverName=ms-2";
+    response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + ms2Uri, true));
+    assertTrue(response.body().contains("MaxMessageSize=88888888"), "Didn't get MaxMessageSize=88888888");
+
+
   }
 
   /**
@@ -338,7 +471,7 @@ public class ItConfigDistributionStrategy {
    * updated as expected.
    */
   @Disabled
-  @Order(2)
+  @Order(3)
   @Test
   @DisplayName("Test overrideDistributionStrategy value DYNAMIC")
   public void testDynamicOverride() {
@@ -391,7 +524,7 @@ public class ItConfigDistributionStrategy {
                 + "(elapsed time {0} ms, remaining time {1} ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(configUpdated());
+        .until(configUpdated("78787878"));
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -408,7 +541,7 @@ public class ItConfigDistributionStrategy {
    * updated. Verifies the overrides are applied only after a domain restart.
    */
   @Disabled
-  @Order(3)
+  @Order(4)
   @Test
   @DisplayName("Test overrideDistributionStrategy value ON_RESTART")
   public void testOnRestartOverride() {
@@ -511,7 +644,7 @@ public class ItConfigDistributionStrategy {
    * <p>Test tries to set the above field to RESTART and asserts the patching fails.
    */
   @Disabled
-  @Order(4)
+  @Order(5)
   @Test
   @DisplayName("Test invalid overrideDistributionStrategy value RESTART")
   public void testOverrideNegative() {
@@ -530,7 +663,7 @@ public class ItConfigDistributionStrategy {
     verifyConfigXMLOverride(false);
   }
 
-  private Callable<Boolean> configUpdated() {
+  private Callable<Boolean> configUpdated(String maxMessageSize) {
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(domainNamespace, adminServerPodName
@@ -545,7 +678,6 @@ public class ItConfigDistributionStrategy {
         + "serverName=" + adminServerName;
     String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
 
-    String maxMessageSize = "78787878";
     return (()
         -> {
       HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
