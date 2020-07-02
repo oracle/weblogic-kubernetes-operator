@@ -330,7 +330,7 @@ public class LoggingUtil {
             .containers(Arrays.asList(
                 new V1Container()
                     .name("pv-container")
-                    .image("oraclelinux")
+                    .image("oraclelinux:7")
                     .imagePullPolicy("IfNotPresent")
                     .volumeMounts(Arrays.asList(
                         new V1VolumeMount()

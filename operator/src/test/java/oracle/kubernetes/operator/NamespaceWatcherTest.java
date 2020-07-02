@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.math.BigInteger;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -20,7 +21,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class NamespaceWatcherTest extends WatcherTestBase 
     implements WatchListener<V1Namespace> {
 
-  private static final int INITIAL_RESOURCE_VERSION = 456;
+  private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("456");
 
   @Override
   public void receivedResponse(Watch.Response<V1Namespace> response) {
@@ -33,7 +34,7 @@ public class NamespaceWatcherTest extends WatcherTestBase
 
     assertThat(
         StubWatchFactory.getRequestParameters().get(0),
-        hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)));
+        hasEntry("resourceVersion", INITIAL_RESOURCE_VERSION.toString()));
   }
 
   @SuppressWarnings("unchecked")
@@ -43,8 +44,8 @@ public class NamespaceWatcherTest extends WatcherTestBase
   }
 
   @Override
-  protected NamespaceWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
-    return NamespaceWatcher.create((ThreadFactory)this, Integer.toString(rv), 
+  protected NamespaceWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
+    return NamespaceWatcher.create((ThreadFactory)this, rv.toString(),
         tuning, (WatchListener<V1Namespace>)this, stopping);
   }
 }

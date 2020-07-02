@@ -56,14 +56,6 @@ public class AuthenticationProxy {
   }
 
   private V1TokenReview prepareTokenReview(String token) {
-    LOGGER.entering();
-    V1TokenReviewSpec spec = new V1TokenReviewSpec();
-    spec.setToken(token);
-    V1TokenReview tokenReview = new V1TokenReview();
-    tokenReview.setSpec(spec);
-    // Can't just log token review since it prints out the token, which is sensitive data.
-    // It doesn't contain any other useful data, so don't log any return info.
-    LOGGER.exiting();
-    return tokenReview;
+    return new V1TokenReview().spec(new V1TokenReviewSpec().token(token));
   }
 }

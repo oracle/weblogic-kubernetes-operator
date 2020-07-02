@@ -77,6 +77,7 @@ import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
@@ -86,6 +87,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 // TODO ryan - in here we want to implement all of the kubernetes
 // primitives that we need, using the API, not spawning a process
@@ -1118,6 +1120,52 @@ public class Kubernetes {
   }
 
   /**
+   * Replace a Kubernetes Config Map.
+   * The following command updates a complete configMap.
+   *
+   * @param configMap V1ConfigMap object containing config map configuration data
+   * @return true if successful
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean replaceConfigMap(V1ConfigMap configMap) throws ApiException {
+    LoggingFacade logger = getLogger();
+    if (configMap == null) {
+      throw new IllegalArgumentException(
+              "Parameter 'configMap' cannot be null when calling patchConfigMap()");
+    }
+
+    if (configMap.getMetadata() == null) {
+      throw new IllegalArgumentException(
+              "'metadata' field of the parameter 'configMap' cannot be null when calling patchConfigMap()");
+    }
+
+    if (configMap.getMetadata().getNamespace() == null) {
+      throw new IllegalArgumentException(
+              "'namespace' field in the metadata cannot be null when calling patchConfigMap()");
+    }
+
+    String namespace = configMap.getMetadata().getNamespace();
+
+    V1ConfigMap cm;
+    try {
+      cm = coreV1Api.replaceNamespacedConfigMap(
+              configMap.getMetadata().getName(),
+              namespace,
+              configMap, // config map configuration data
+              PRETTY, // pretty print output
+              null, // indicates that modifications should not be persisted
+              null // name associated with the actor or entity that is making these changes
+      );
+      assertNotNull(cm, "cm replace failed ");
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
    * List Config Maps in the Kubernetes cluster.
    *
    * @param namespace Namespace in which to query
@@ -1158,7 +1206,6 @@ public class Kubernetes {
   public static boolean deleteConfigMap(String name, String namespace) {
 
     KubernetesApiResponse<V1ConfigMap> response = configMapClient.delete(namespace, name, deleteOptions);
-
     if (!response.isSuccess()) {
       getLogger().warning("Failed to delete config map '" + name + "' from namespace: "
           + namespace + " with HTTP status code: " + response.getHttpStatusCode());

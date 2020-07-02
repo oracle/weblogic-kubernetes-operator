@@ -78,6 +78,24 @@ public class Nginx {
                                       String domainNamespace,
                                       String domainUid,
                                       Map<String, Integer> clusterNameMsPortMap) {
+    return createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap, true);
+  }
+
+  /**
+   * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
+   * The ingress host is set to 'domainUid.clusterName.test'.
+   *
+   * @param ingressName name of the ingress to be created
+   * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
+   * @param domainUid the WebLogic domainUid which is backend to the ingress
+   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
+   * @param setIngressHost if false will set to any
+   * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
+   */
+  public static List<String> createIngress(String ingressName,
+                                           String domainNamespace,
+                                           String domainUid,
+                                           Map<String, Integer> clusterNameMsPortMap, boolean setIngressHost) {
 
     // set the annotation for kubernetes.io/ingress.class to "nginx"
     HashMap<String, String> annotation = new HashMap<>();
@@ -88,35 +106,40 @@ public class Nginx {
     clusterNameMsPortMap.forEach((clusterName, managedServerPort) -> {
       // set the http ingress paths
       ExtensionsV1beta1HTTPIngressPath httpIngressPath = new ExtensionsV1beta1HTTPIngressPath()
-          .path(null)
-          .backend(new ExtensionsV1beta1IngressBackend()
-              .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
-              .servicePort(new IntOrString(managedServerPort))
-          );
+              .path(null)
+              .backend(new ExtensionsV1beta1IngressBackend()
+                      .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
+                      .servicePort(new IntOrString(managedServerPort))
+              );
       ArrayList<ExtensionsV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
       httpIngressPaths.add(httpIngressPath);
 
       // set the ingress rule
       String ingressHost = domainUid + "." + clusterName + ".test";
+      if (!setIngressHost) {
+        ingressHost = "";
+        ingressHostList.add("*");
+      }
       ExtensionsV1beta1IngressRule ingressRule = new ExtensionsV1beta1IngressRule()
-          .host(ingressHost)
-          .http(new ExtensionsV1beta1HTTPIngressRuleValue()
-              .paths(httpIngressPaths));
+              .host(ingressHost)
+              .http(new ExtensionsV1beta1HTTPIngressRuleValue()
+                      .paths(httpIngressPaths));
 
       ingressRules.add(ingressRule);
       ingressHostList.add(ingressHost);
+
     });
 
     // set the ingress
     ExtensionsV1beta1Ingress ingress = new ExtensionsV1beta1Ingress()
-        .apiVersion(INGRESS_API_VERSION)
-        .kind(INGRESS_KIND)
-        .metadata(new V1ObjectMeta()
-            .name(ingressName)
-            .namespace(domainNamespace)
-            .annotations(annotation))
-        .spec(new ExtensionsV1beta1IngressSpec()
-            .rules(ingressRules));
+            .apiVersion(INGRESS_API_VERSION)
+            .kind(INGRESS_KIND)
+            .metadata(new V1ObjectMeta()
+                    .name(ingressName)
+                    .namespace(domainNamespace)
+                    .annotations(annotation))
+            .spec(new ExtensionsV1beta1IngressSpec()
+                    .rules(ingressRules));
 
     // create the ingress
     try {

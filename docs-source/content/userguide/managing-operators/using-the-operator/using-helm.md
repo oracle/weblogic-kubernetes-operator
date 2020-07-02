@@ -190,7 +190,7 @@ For more information about managing `domainNamespaces`, see [Managing domain nam
 
 ##### `domainPresenceFailureRetryMaxCount` and `domainPresenceFailureRetrySeconds`
 
-Specify the number of introspector job retries for a domain resource and the interval in seconds between these retries. 
+Specify the number of introspector job retries for a domain resource and the interval in seconds between these retries.
 
 Defaults to 5 retries and 10 seconds between each retry.
 
