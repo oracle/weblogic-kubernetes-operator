@@ -65,20 +65,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to create WebLogic domain in domainhome-in-image model with istio configuration")
+@DisplayName("Test to create two WebLogic domains in domainhome-in-image model with istio configuration")
 @IntegrationTest
-class ItIstioDomainInImage {
+class ItIstioTwoDomainsInImage {
 
   private static HelmParams opHelmParams = null;
   private static String opNamespace = null;
   private static String operatorImage = null;
-  private static String domainNamespace = null;
+  private static String domainNamespace1 = null;
+  private static String domainNamespace2 = null;
   private static ConditionFactory withStandardRetryPolicy = null;
   private static String dockerConfigJson = "";
-  private final String domainUid = "istio-dii-wdt";
   private final String clusterName = "cluster-1"; // do not modify 
   private final String adminServerName = "admin-server"; // do not modify
-  private final String adminServerPodName = domainUid + "-" + adminServerName;
+  private final String domainUid1 = "istio-dii-wdt-1";
+  private final String domainUid2 = "istio-dii-wdt-2";
+  private final String adminServerPodName1 = domainUid1 + "-" + adminServerName;
+  private final String adminServerPodName2 = domainUid2 + "-" + adminServerName;
 
   private static Map<String, Object> secretNameMap;
   private static LoggingFacade logger = null;
@@ -89,7 +92,7 @@ class ItIstioDomainInImage {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  public static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
@@ -101,112 +104,172 @@ class ItIstioDomainInImage {
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    logger.info("Assigning unique namespace for Domain");
+    logger.info("Assigning unique namespace for domain1");
     assertNotNull(namespaces.get(1), "Namespace list is null");
-    domainNamespace = namespaces.get(1);
+    domainNamespace1 = namespaces.get(1);
+
+    logger.info("Assigning unique namespace for domain2");
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    domainNamespace2 = namespaces.get(2);
 
     // Label the domain/operator namespace with istio-injection=enabled
-    
     Map<String, String> labelMap = new HashMap();
     labelMap.put("istio-injection", "enabled");
 
-    assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace1,labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace2,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
 
-    // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
+    logger.info("Namespaces [{0}, {1}, {2}] labeled with istio-injection",
+         opNamespace, domainNamespace1, domainNamespace2);
 
+    // install and verify operator
+    installAndVerifyOperator(opNamespace, domainNamespace1,domainNamespace2);
   }
 
   /**
-   * Create a domain using domainhome-in-image model.
-   * Add istio configuration with default readinessPort 
-   * Do not add any AdminService under AdminServer configuration
-   * Deploy istio gateways and virtual service 
-   * Verify server pods are in ready state and services are created.
-   * Verify login to WebLogic console is successful thru istio ingress http port.
-   * Deploy a web application thru istio http ingress port using REST api  
-   * Access web application thru istio http ingress port using curl
+   * Create two domains using domainhome-in-image model.
+   * Add istio configuration with default readinessPort. 
+   * Deploy istio gateway and virtual service on each domain namespaces.
+   * Add host information to gateway and virtual service configurations.
+   * Put the namespace.org as host configuration 
+   * Verify server pods are in ready state and services are created
+   * Verify login to WebLogic console on domain1 through istio ingress http 
+   * port by passing host information in HTTP header.
+   * Deploy a web application to domain1 through istio ingress http port 
+   * using host information in HTTP header. 
+   * Access web application through istio http ingress port using host 
+   * information in HTTP header.
+   * Repeat the same steps for domain2.
    */
   @Test
-  @DisplayName("Create WebLogic domainhome-in-image with istio")
+  @DisplayName("Two WebLogic domainhome-in-image with single istio ingress")
   @Slow
-  public void testIstioDomainHomeInImageUsingWdt() {
-    final String managedServerPrefix = domainUid + "-managed-server";
+  public void testIstioTwoDomainsWithSingleIngress() {
+    final String managedServerPrefix1 = domainUid1 + "-managed-server";
+    final String managedServerPrefix2 = domainUid2 + "-managed-server";
     final int replicaCount = 2;
 
     // Create the repo secret to pull the image
-    createDockerRegistrySecret(domainNamespace);
+    createDockerRegistrySecret(domainNamespace1);
+    createDockerRegistrySecret(domainNamespace2);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    String adminSecretName1 = "weblogic-credentials-1";
+    createSecretWithUsernamePassword(adminSecretName1, domainNamespace1, 
+         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-    // create the domain CR
-    createDomainResource(domainUid, domainNamespace, adminSecretName, REPO_SECRET_NAME,
+    String adminSecretName2 = "weblogic-credentials-2";
+    createSecretWithUsernamePassword(adminSecretName2, domainNamespace2, 
+         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create the domain CR(s)
+    createDomainResource(domainUid1, domainNamespace1, adminSecretName1, REPO_SECRET_NAME,
+        replicaCount);
+    createDomainResource(domainUid2, domainNamespace2, adminSecretName2, REPO_SECRET_NAME,
         replicaCount);
 
-    // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
+    logger.info("Check for domain custom resource in namespace {0}", domainNamespace1);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                domainNamespace,
+                domainUid1,
+                domainNamespace1,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+        .until(domainExists(domainUid1, DOMAIN_VERSION, domainNamespace1));
 
-    // check admin server service is created
+    logger.info("Check for domain custom resource in namespace {0}", domainNamespace2);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainUid2,
+                domainNamespace2,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainExists(domainUid2, DOMAIN_VERSION, domainNamespace2));
+
+    // check admin services are created 
     logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
+        adminServerPodName1, domainNamespace1);
+    checkServiceExists(adminServerPodName1, domainNamespace1);
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName2, domainNamespace2);
+    checkServiceExists(adminServerPodName2, domainNamespace2);
 
-    // check admin server pod is ready
+    // check admin server pods are ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+        adminServerPodName1, domainNamespace1);
+    checkPodReady(adminServerPodName1, domainUid1, domainNamespace1);
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName2, domainNamespace2);
+    checkPodReady(adminServerPodName2, domainUid2, domainNamespace2);
 
-    // check managed server services created
+    // check managed server services are created
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
+      logger.info("Check managedserver service {0} is created in namespace {1}",
+          managedServerPrefix1 + i, domainNamespace1);
+      checkServiceExists(managedServerPrefix1 + i, domainNamespace1);
+      logger.info("Check managedserver service {0} is created in namespace {1}",
+          managedServerPrefix2 + i, domainNamespace2);
+      checkServiceExists(managedServerPrefix2 + i, domainNamespace2);
     }
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+          managedServerPrefix1 + i, domainNamespace1);
+      checkPodReady(managedServerPrefix1 + i, domainUid1, domainNamespace1);
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedServerPrefix2 + i, domainNamespace2);
+      checkPodReady(managedServerPrefix2 + i, domainUid2, domainNamespace2);
     }
 
-    String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
-
+    String clusterService1 = domainUid1 + "-cluster-" + clusterName + "." + domainNamespace1 + ".svc.cluster.local";
     Map<String, String> templateMap  = new HashMap();
-    templateMap.put("NAMESPACE", domainNamespace);
-    templateMap.put("DUID", domainUid);
-    templateMap.put("ADMIN_SERVICE",adminServerPodName);
-    templateMap.put("CLUSTER_SERVICE", clusterService);
+    templateMap.put("NAMESPACE", domainNamespace1);
+    templateMap.put("DUID", domainUid1);
+    templateMap.put("ADMIN_SERVICE",adminServerPodName1);
+    templateMap.put("CLUSTER_SERVICE", clusterService1);
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
-    logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
-    
+        () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http1.yaml", templateMap));
+    logger.info("Generated Http VS/Gateway file path is {0} for domain1", targetHttpFile);
     boolean deployRes = assertDoesNotThrow(
         () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile)); 
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
 
     Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
     Path targetDrFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr.yaml", templateMap));
+        () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr1.yaml", templateMap));
     logger.info("Generated DestinationRule file path is {0}", targetDrFile);
 
     deployRes = assertDoesNotThrow(
         () -> deployIstioDestinationRule(targetDrFile));
+    assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
+    String clusterService2 = domainUid2 + "-cluster-" + clusterName + "." + domainNamespace2 + ".svc.cluster.local";
+    templateMap.put("NAMESPACE", domainNamespace2);
+    templateMap.put("DUID", domainUid2);
+    templateMap.put("ADMIN_SERVICE",adminServerPodName2);
+    templateMap.put("CLUSTER_SERVICE", clusterService2);
+
+    Path targetHttpFile2 = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http2.yaml", templateMap));
+    logger.info("Generated Http VS/Gateway file path is {0} for domain2", targetHttpFile);
+    deployRes = assertDoesNotThrow(
+        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile2)); 
+    assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
+    
+    Path targetDrFile2 = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr2.yaml", templateMap));
+    logger.info("Generated DestinationRule file path is {0}", targetDrFile);
+
+    deployRes = assertDoesNotThrow(
+        () -> deployIstioDestinationRule(targetDrFile2));
     assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
 
     int istioIngressPort = getIstioHttpIngressPort();
@@ -214,24 +277,39 @@ class ItIstioDomainInImage {
 
     String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
     boolean checkConsole = 
-         checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
-    assertTrue(checkConsole, "Failed to access WebLogic console");
-    logger.info("WebLogic console is accessible");
-
+         checkAppUsingHostHeader(consoleUrl, domainNamespace1 + ".org");
+    assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
+    logger.info("WebLogic console on domain1 is accessible");
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
     result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
-        clusterName, archivePath, domainNamespace + ".org", "testwebapp");
-    assertNotNull(result, "Application deployment failed");
-    logger.info("Application deployment returned {0}", result.toString());
+        clusterName, archivePath, domainNamespace1 + ".org", "testwebapp");
+    assertNotNull(result, "Application deployment failed on domain1");
+    logger.info("Application deployment on domain1 returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
 
     String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);
-    boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
-    assertTrue(checkApp, "Failed to access WebLogic application");
+    boolean checkApp = checkAppUsingHostHeader(url, domainNamespace1 + ".org");
+    assertTrue(checkApp, "Failed to access WebLogic application on domain1");
+
+    checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace2 + ".org");
+    assertTrue(checkConsole, "Failed to access domain2 WebLogic console");
+    logger.info("WebLogic console on domain2 is accessible");
+    result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
+        String.valueOf(istioIngressPort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
+        clusterName, archivePath, domainNamespace2 + ".org", "testwebapp");
+    assertNotNull(result, "Application deployment on domain2 failed");
+    logger.info("Application deployment on domain2 returned {0}", result.toString());
+    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
+
+    logger.info("Application Access URL {0}", url);
+    checkApp = checkAppUsingHostHeader(url, domainNamespace2 + ".org");
+    assertTrue(checkApp, "Failed to access WebLogic application on domain2");
+
   }
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
