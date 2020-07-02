@@ -15,8 +15,10 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
@@ -35,7 +37,7 @@ import oracle.kubernetes.operator.work.Step;
  */
 public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, PodAwaiterStepFactory {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
+  private static final String DOMAIN_INTROSPECTOR_JOB_SUFFIX = "-introspect-domain-job";
   private final String namespace;
   private final WatchListener<V1Pod> listener;
 
@@ -140,7 +142,15 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     String podName = pod.getMetadata().getName();
     switch (item.type) {
       case "ADDED":
+        copyOf(getOnModifiedCallbacks(podName)).forEach(c -> c.accept(pod));
+        break;
       case "MODIFIED":
+        if (podName.contains(DOMAIN_INTROSPECTOR_JOB_SUFFIX) && isFailed(pod)) {
+          LOGGER.info(MessageKeys.INTROSPECTOR_POD_FAILED,
+              pod.getMetadata().getName(),
+              pod.getMetadata().getNamespace(),
+              pod.getStatus().toString());
+        }
         copyOf(getOnModifiedCallbacks(podName)).forEach(c -> c.accept(pod));
         break;
       case "DELETED":
@@ -151,6 +161,35 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     }
 
     LOGGER.exiting();
+  }
+
+  /**
+   * Test if pod is failed.
+   * @param pod pob
+   * @return true, if failed
+   */
+  private static boolean isFailed(V1Pod pod) {
+    if (pod == null) {
+      return false;
+    }
+
+    V1PodStatus status = pod.getStatus();
+    LOGGER.fine(
+        "PodWatcher.isFailed status of pod " + pod.getMetadata().getName() + ": " + status);
+    if (status != null) {
+      java.util.List<V1ContainerStatus> conStatuses = status.getContainerStatuses();
+      if (conStatuses != null) {
+        for (V1ContainerStatus conStatus : conStatuses) {
+          if (!conStatus.getReady()
+              && conStatus.getState() != null
+              && (conStatus.getState().getWaiting() != null && conStatus.getState().getWaiting().getMessage() != null
+                  || conStatus.getState().getTerminated().getReason().contains("Error"))) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   // make a copy to avoid concurrent modification
