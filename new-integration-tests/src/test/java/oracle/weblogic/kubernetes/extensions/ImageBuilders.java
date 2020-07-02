@@ -73,6 +73,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -187,6 +189,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
           pullImageFromOcrAndPushToKind(images);
         }
+        logger.info("Installing istio before any test suites are run");
+        installIstio();
       } finally {
         // Initialization is done. Release all waiting other threads. The latch is now disabled so
         // other threads
@@ -216,6 +220,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   @Override
   public void close() {
     LoggingFacade logger = getLogger();
+    logger.info("Cleanup istio after all test suites are run");
+    uninstallIstio();
+
     logger.info("Cleanup images after all test suites are run");
 
     // delete all the images from local repo

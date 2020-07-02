@@ -1828,26 +1828,34 @@ public class CommonTestUtils {
   }
 
   /**
-   * Check the WebLogic application using host information in the header.
-   * @param url url to access the appliation
-   * @param hostHeader host information to be passed as Header
+   * Check the application running in WebLogic server using host information in the header.
+   * @param url url to access the application
+   * @param hostHeader host information to be passed as http header
    * @return true if curl command returns HTTP code 200 otherwise false
-   */
+  */
   public static boolean checkAppUsingHostHeader(String url, String hostHeader) {
     LoggingFacade logger = getLogger();
     StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    StringBuffer headerString = null;
+    if (hostHeader != null) {
+      headerString = new StringBuffer("-H 'host: ");
+      headerString.append(hostHeader)
+                  .append(" ' ");
+    } else {
+      headerString = new StringBuffer("");
+    }
     curlString.append(" --noproxy '*' ")
-        .append("-H 'host: " + hostHeader  + "' ")
-        .append(" --silent --show-error ")
-        .append(url)
-        .append(" -o /dev/null")
-        .append(" -w %{http_code});")
-        .append("echo ${status}");
+         .append(" --silent --show-error ")
+         .append(headerString.toString())
+         .append(url)
+         .append(" -o /dev/null")
+         .append(" -w %{http_code});")
+         .append("echo ${status}");
     logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
     withQuickRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for server to be ready {0} "
-                    + "(elapsed time {1} ms, remaining time {2} ms)",
+            condition -> logger.info("Waiting for appliation to be ready {0} "
+                + "(elapsed time {1} ms, remaining time {2} ms)",
                 url,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
@@ -1859,13 +1867,11 @@ public class CommonTestUtils {
     return true;
   }
 
-  /**
-   * Create a persistent volume.
-   *
+  /** Create a persistent volume.
    * @param pvName name of the persistent volume to create
    * @param domainUid domain UID
    * @param className name of the class to call this method
-   */
+  */
   public static void createPV(String pvName, String domainUid, String className) {
 
     LoggingFacade logger = getLogger();
