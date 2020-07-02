@@ -97,17 +97,13 @@ fi
 
 echo "Using Kubernetes version: ${k8s_version}"
 
-networking=""
+disableDefaultCNI="false"
 if [ "${cni_implementation}" = "calico" ]; then
   if [ "${k8s_version}" = "1.15" ] || [ "${k8s_version}" = "1.15.11" ] || [ "${k8s_version}" = "1.14" ] || [ "${k8s_version}" = "1.14.10" ]; then
     echo "Calico CNI is not supported with Kubernetes versions below 1.16."
     exit 1
   fi
-  read -d '' networking << EOF
-networking:
-  disableDefaultCNI: true # disable kindnet
-  podSubnet: 192.168.0.0/16 # set to Calico's default subnet
-EOF
+  disableDefaultCNI="true"
 elif [ "${cni_implementation}" != "kindnet" ]; then
   echo "Unsupported CNI implementation: ${cni_implementation}"
   exit 1
@@ -163,7 +159,9 @@ echo 'Create a cluster with the local registry enabled in containerd'
 cat <<EOF | kind create cluster --name "${kind_name}" --kubeconfig "${RESULT_ROOT}/kubeconfig" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-${networking}
+networking:
+  disableDefaultCNI: ${disableDefaultCNI}
+  podSubnet: 192.168.0.0/16
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${reg_port}"]
@@ -184,9 +182,11 @@ echo "  kubectl cluster-info --context \"kind-${kind_name}\""
 export KUBECONFIG="${RESULT_ROOT}/kubeconfig"
 kubectl cluster-info --context "kind-${kind_name}"
 
-echo "Install Calico"
-kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
-kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+if [ "${cni_implementation}" = "calico" ]; then
+  echo "Install Calico"
+  kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+  kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+fi
 
 kubectl get node -o wide
 
