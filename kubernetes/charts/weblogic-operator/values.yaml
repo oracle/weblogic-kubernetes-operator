@@ -30,7 +30,7 @@ image: "oracle/weblogic-kubernetes-operator:3.0.0"
 # imagePullPolicy specifies the image pull policy for the operator docker image.
 imagePullPolicy: "IfNotPresent"
 
-# imagePullSecrets contains an optional list of Kubernetes secrets, in the operator's namepace,
+# imagePullSecrets contains an optional list of Kubernetes secrets, in the operator's namespace,
 # that are needed to access the registry containing the operator Docker image.
 # The customer is responsible for creating the secret.
 # If no secrets are required, then omit this property.
@@ -48,7 +48,7 @@ imagePullPolicy: "IfNotPresent"
 # property.
 #
 # If set to true, then the customer must provide the SSL certificate and private key for
-# the operator's external REST intervace by specifying the 'externalOperatorCert' and
+# the operator's external REST interface by specifying the 'externalOperatorCert' and
 # 'externalOperatorKey' properties.
 externalRestEnabled: false
 
@@ -58,7 +58,7 @@ externalRestEnabled: false
 externalRestHttpsPort: 31001
 
 # The name of the secret used to store the certificate and private key to use for the external operator REST https interface.
-# The secret has to be created in the same namespace of the welbogic operator.
+# The secret has to be created in the same namespace of the WebLogic operator.
 # This parameter is required if 'externalRestEnabled' is true. Otherwise, it is ignored.
 # As example, an external rest identity can be created using the following sample script 
 # kubernetes/samples/scripts/rest/generate-external-rest-identity.sh
@@ -108,9 +108,9 @@ elasticSearchPort: 9200
 
 # dns1123Fields overrides the default list of field names that the operator
 # converts to DNS-1123 legal values when replacing variable references in the 
-# domain resource. The default list can be found inside the class Legalnames 
+# domain resource. The default list can be found inside the class LegalNames
 # in the oracle.kubernetes.operator.helpers package.
-# Supply a comma seperated list of field names to customize the list of fields
+# Supply a comma separated list of field names to customize the list of fields
 # such as "name, claimName, volumeName", or leave it commented out to use 
 # the default list of field names.
 # dns1123Fields: ""
