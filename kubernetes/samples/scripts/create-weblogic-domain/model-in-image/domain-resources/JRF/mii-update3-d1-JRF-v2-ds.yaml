@@ -61,7 +61,11 @@ spec:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
-      value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx1024m "
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1280Mi"
 
     # Optional volumes and mounts for the domain's pods. See also 'logHome'.
     #volumes:
@@ -83,6 +87,11 @@ spec:
     #  channels:
     #  - channelName: default
     #    nodePort: 30701
+    serverPod:
+      # Optional new or overridden environment variables for the admin pods
+      env:
+      - name: USER_MEM_ARGS
+        value: "-Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m "
    
   # The number of managed servers to start for unlisted clusters
   replicas: 1
