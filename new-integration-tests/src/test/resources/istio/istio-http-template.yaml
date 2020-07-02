@@ -4,14 +4,14 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: DUID-istio-http-gateway
+  name: NAMESPACE-istio-http-gateway
   namespace: NAMESPACE
 spec:
   selector:
     istio: ingressgateway
   servers:
     - hosts:
-        - '*'
+        - 'NAMESPACE.org'
       port:
         name: http
         number: 80
@@ -20,13 +20,13 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: DUID-istio-http-virtualservice
+  name: NAMESPACE-istio-http-virtualservice
   namespace: NAMESPACE
 spec:
   gateways:
-    - DUID-istio-http-gateway
+    - NAMESPACE-istio-http-gateway
   hosts:
-    - '*'
+    - 'NAMESPACE.org'
   http:
     - match:
         - uri:

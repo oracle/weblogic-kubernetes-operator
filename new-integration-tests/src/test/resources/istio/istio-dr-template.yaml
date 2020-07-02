@@ -4,7 +4,7 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
-  name: "DUID-destination-rule"
+  name: "NAMESPACE-destination-rule"
   namespace: "NAMESPACE"
 spec:
   host: "*.NAMESPACE.svc.cluster.local"
