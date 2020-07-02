@@ -171,12 +171,11 @@ public class BuildApplication {
 
       Kubernetes.copyDirectoryFromPod(webLogicPod,
           Paths.get(APPLICATIONS_PATH, archiveDistDir).toString(), destArchiveBaseDir);
-      destDir = Paths.get(destArchiveBaseDir.toString(), "u01/application", archiveDistDir);
 
     } catch (ApiException | IOException | InterruptedException ioex) {
       logger.info(ioex.getMessage());
     }
-
+    destDir = Paths.get(destArchiveBaseDir.toString(), "u01/application", archiveDistDir);
     return destDir;
   }
 
