@@ -224,8 +224,8 @@ class ItParameterizedScaleDomainNginx {
     domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
 
     //domains.add(miiDomain);
-    domains.add(domainInImage);
     domains.add(domainInPV);
+    domains.add(domainInImage);
 
     // create ingress for each domain
     for (Domain domain: domains) {
