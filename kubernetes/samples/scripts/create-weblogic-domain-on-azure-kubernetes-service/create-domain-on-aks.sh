@@ -335,7 +335,7 @@ EOF
 function createWebLogicDomain {
     # Create WebLogic Domain Credentials.
     echo Creating weblogic credentials, with user ${weblogicUserName}, domainUID ${domainUID}
-    bash ${dirCreateDomainCredentials}/create-weblogic-credentials.sh -u ${weblogicUserName} \
+    bash ${dirCreateDomainCredentials}/create-weblogic-credentials-secret.sh -u ${weblogicUserName} \
     -p ${weblogicAccountPassword} -d ${domainUID}
 
     # Create Docker Credentials.

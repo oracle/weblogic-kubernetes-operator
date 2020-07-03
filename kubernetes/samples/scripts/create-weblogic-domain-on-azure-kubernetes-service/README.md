@@ -8,7 +8,7 @@ AKS is a managed Kubernetes service that lets you quickly deploy and manage Kube
 
 [Prerequisites](#prerequisites)  
 [Generate Configuration Files](#generate-configuration-files)  
-[Create AKS cluster](#create-aks-cluster)   
+[Create AKS cluster](#create-aks-cluster)
 [Create Storage and Set Up File Share](#create-storage-and-set-up-file-share)  
 [Install WebLogic Operator](#install-weblogic-operator)  
 [Create WebLogic Domain](#create-weblogic-domain)  
@@ -213,7 +213,7 @@ Use the following command to generate configuration files, assuming the output d
 #cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
 mkdir ~/azure
 cp create-domain-on-aks-inputs.yaml my-create-domain-on-aks-inputs.yaml
-bash create-domain-on-aks.sh -i my-create-domain-on-aks-inputs.yaml -o ~/azure
+./create-domain-on-aks.sh -i my-create-domain-on-aks-inputs.yaml -o ~/azure
 ```
 
 After running the command, all needed configuration files are generated and output to `~/azure/weblogic-on-aks`:
@@ -231,7 +231,7 @@ Completed
 
 ## Apply Generated Configuration Files
 
-In order to mount the file share as a persistent volume, we have provided a configuration file `pv.yaml`. You can find it from your output directory. The following content is an example that uses default value `weblogic` as "shareName", `azure-secret` as "secretName", and default persistent volume claim name `azurefile`.
+In order to mount the file share as a persistent volume, we have provided a configuration file `pv.yaml`. You can find it from your output directory. The following content is an example that uses the default value `weblogic` as "shareName", `azure-secret` as "secretName", and default persistent volume claim name `azurefile`.
 
 ```yaml
 apiVersion: v1
@@ -307,7 +307,7 @@ Carefully inspect the output and verify it matches the above. `ACCESS MODES`, `C
 
 ## Install WebLogic Operator
 
-The Oracle WebLogic Server Kubernetes Operator (the Operator) is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WebLogic Server instances.
+The Oracle WebLogic Server Kubernetes Operator (the Operator) is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WebLogic Server instances.  The WLS operator runs as a Kubernetes pod and stands ready to perform actions related to running WLS on Kubernetes.
 
 The official Oracle documentation for the Operator is available at this location: [https://oracle.github.io/weblogic-kubernetes-operator/](https://oracle.github.io/weblogic-kubernetes-operator/).
 
@@ -381,27 +381,31 @@ You will have to press Ctrl-C to exit this command due to the `-w` flag.
 
 ## Create WebLogic Domain
 
-1. We will use the [create-weblogic-credentials.sh](../create-weblogic-domain-credentials/create-weblogic-credentials.sh) to create the domain credentials.
+Now that we have created the AKS cluster, installed the WLS operator, and verified the operator is ready to go, we can ask the operator to create a WLS domain.
 
-  ```
-  #cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-credentials
-  ./create-weblogic-credentials.sh -u weblogic -p welcome1 -d domain1
-  ```
+1. We will use the [create-weblogic-credentials-secret.sh](../create-weblogic-domain-credentials/create-weblogic-credentials-secret.sh) script to create the domain credentials as a Kubernetes secret.
 
-2. Create the Docker Hub credentials for pulling the WebLogic image. Please change
-   `docker-username`, `docker-password`, `docker-email` to your Docker Hub account details.
-
+   ```bash
+   #cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-credentials
+   ./create-weblogic-credentials-secret.sh -u weblogic -p welcome1 -d domain1
    ```
-   kubectl create secret docker-registry regcred \
-   --docker-server=docker.io \
-   --docker-username=username \
-   --docker-password=password \
-   --docker-email=test@example.com
+
+   Successful output should look similar to the following.
+
+   ```bash
+   secret/domain1-weblogic-credentials labeled
+   The secret domain1-weblogic-credentials has been successfully created in the default namespace.
+    ```
+
+2. We will use the [create-docker-credentials-secret.sh](../create-weblogic-domain-credentials/create-docker-credentials-secret.sh) script to create the docker credentials as a Kubernetes secret.  For example:
+
+   ```bash
+   ./create-docker-credentials-secret.sh -e foo@bar.com -p myDockerPassword -u myDockerUserId
    ```
 
    Verify secrets with the following command:
 
-   ```
+   ```bash
    kubectl get secret
    ```
 
@@ -417,34 +421,20 @@ You will have to press Ctrl-C to exit this command due to the `-w` flag.
    weblogic-operator-secrets                 Opaque                                1      2d21h
    ```
 
+   In the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this guide to ensure you correctly followed all of them.  The `default-token-mwdj8` shown above will have a different ending in your output.
+
 3. We will use [create-domain.sh](../create-weblogic-domain/domain-home-on-pv/create-domain.sh) to create the domain in the persistent volume we created previously.
 
-   First, we need to set up domain configuration for the WebLogic domain. We have created a file `~/azure/weblogic-on-aks/domain1.yaml` by changing the [create-domain-inputs.yaml](../create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml) with the following values.
+   First, we need to set up domain configuration for the WebLogic domain.  This step uses the configuration generated previously.
 
-   * `image`: Set to the DockerHub path of the image, with the value `store/oracle/weblogic:12.2.1.3` by default.
-   * `imagePullSecretName`: Uncommented and set to the DockerHub credential you created previously, named `regcred` by default.
-   * `exposeAdminNodePort`: Set to true, as we will use the Admin Console Portal to manage WebLogic Server.
-   * `persistentVolumeClaimName`: We will persist data to default value `azurefile` by default.
-
-   Here is the example snippet:
-
-   ```
-   image: store/oracle/weblogic:12.2.1.3
-   imagePullSecretName: regcred
-   exposeAdminNodePort: true
-   persistentVolumeClaimName: azurefile
-   ```
-
-   Create `domain1` with the following command:
-
-   ```
+   ```bash
    #cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
    ./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v
    ```
 
    The following example output shows the WebLogic domain was created successfully.
 
-   ```
+   ```bash
    NAME: weblogic-operator
    LAST DEPLOYED: Mon Mar 30 10:29:58 2020
    NAMESPACE: default
@@ -489,9 +479,9 @@ You will have to press Ctrl-C to exit this command due to the `-w` flag.
    export istioEnabled="false"
    export istioReadinessPort="8888"
 
-   Generating /home/haixia/azure/weblogic-domains/domain1/create-domain-job.yaml
-   Generating /home/haixia/azure/weblogic-domains/domain1/delete-domain-job.yaml
-   Generating /home/haixia/azure/weblogic-domains/domain1/domain.yaml
+   Generating /home/username/azure/weblogic-domains/domain1/create-domain-job.yaml
+   Generating /home/username/azure/weblogic-domains/domain1/delete-domain-job.yaml
+   Generating /home/username/azure/weblogic-domains/domain1/domain.yaml
    Checking to see if the secret domain1-weblogic-credentials exists in namespace default
    Checking if the persistent volume claim azurefile in NameSpace default exists
    The persistent volume claim azurefile already exists in NameSpace default
@@ -500,7 +490,7 @@ You will have to press Ctrl-C to exit this command due to the `-w` flag.
    configmap/domain1-create-weblogic-sample-domain-job-cm labeled
    Checking if object type job with name domain1-create-weblogic-sample-domain-job exists
    No resources found in default namespace.
-   Creating the domain by creating the job /home/haixia/azure/weblogic-domains/domain1/create-domain-job.yaml
+   Creating the domain by creating the job /home/username/azure/weblogic-domains/domain1/create-domain-job.yaml
    job.batch/domain1-create-weblogic-sample-domain-job created
    Waiting for the job to complete...
    Error from server (BadRequest): container "create-weblogic-sample-domain-job" in pod "domain1-create-weblogic-sample-domain-job-p5htr" is waiting to start: PodInitializing
@@ -515,11 +505,11 @@ You will have to press Ctrl-C to exit this command due to the `-w` flag.
 
    Domain domain1 was created and will be started by the WebLogic Kubernetes Operator
 
-   Administration console access is available at http://wlssimplec-wls-aks-simple-c-685ba0-35aaf494.hcp.eastus.azmk8s.io:30701/console
+   Administration console access is available at http://jyffvzcyrp-jyf-nxf-fvzcyr-p-685on0-35nns494.upc.rnfghf.nmzx8f.io:30701/console
    The following files were generated:
-     /home/haixia/azure/weblogic-domains/domain1/create-domain-inputs.yaml
-     /home/haixia/azure/weblogic-domains/domain1/create-domain-job.yaml
-     /home/haixia/azure/weblogic-domains/domain1/domain.yaml
+     /home/username/azure/weblogic-domains/domain1/create-domain-inputs.yaml
+     /home/username/azure/weblogic-domains/domain1/create-domain-job.yaml
+     /home/username/azure/weblogic-domains/domain1/domain.yaml
 
    Completed
    ```
