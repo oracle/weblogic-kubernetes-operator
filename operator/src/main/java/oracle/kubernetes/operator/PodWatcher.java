@@ -15,6 +15,9 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
+import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -181,15 +184,28 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       if (conStatuses != null) {
         for (V1ContainerStatus conStatus : conStatuses) {
           if (!conStatus.getReady()
-              && conStatus.getState() != null
-              && (conStatus.getState().getWaiting() != null && conStatus.getState().getWaiting().getMessage() != null
-                  || conStatus.getState().getTerminated().getReason().contains("Error"))) {
+              && (getContainerStateWaitingMessage(conStatus) != null
+              || getContainerStateTerminatedReason(conStatus).contains("Error"))) {
             return true;
           }
         }
       }
     }
     return false;
+  }
+
+  private static String getContainerStateTerminatedReason(V1ContainerStatus conStatus) {
+    return Optional.of(conStatus)
+        .map(V1ContainerStatus::getState)
+        .map(V1ContainerState::getTerminated)
+        .map(V1ContainerStateTerminated::getReason).orElse("");
+  }
+
+  private static String getContainerStateWaitingMessage(V1ContainerStatus conStatus) {
+    return Optional.of(conStatus)
+        .map(V1ContainerStatus::getState)
+        .map(V1ContainerState::getWaiting)
+        .map(V1ContainerStateWaiting::getMessage).orElse(null);
   }
 
   // make a copy to avoid concurrent modification
