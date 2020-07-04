@@ -335,7 +335,7 @@ You should see this output:
 clusterrolebinding.rbac.authorization.k8s.io/helm-user-cluster-admin-role created
 ```
 
-Install the WebLogic Operator, the Operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Please check the Helm version first if you are using the Azure Cloud Shell, and run the corresponding command.
+Install the WebLogic Operator. The Operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Please check the Helm version first if you are using the Azure Cloud Shell, and run the corresponding command.
 
 ```bash
 # Check the helm version
@@ -393,6 +393,7 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
    Successful output should look similar to the following.
 
    ```bash
+   secret/domain1-weblogic-credentials created
    secret/domain1-weblogic-credentials labeled
    The secret domain1-weblogic-credentials has been successfully created in the default namespace.
     ```
@@ -411,7 +412,7 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
 
    Example output:
 
-   ```
+   ```text
    NAME                                      TYPE                                  DATA   AGE
    azure-secret                              Opaque                                2      2d21h
    default-token-mwdj8                       kubernetes.io/service-account-token   3      2d22h
@@ -430,6 +431,17 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
    ```bash
    #cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
    ./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v
+   ```
+
+   You may observe error related output during the creation of the domain.  This is due to timing issues during domain creation.  The script accounts for this with a series of retries.  The error output looks similar to the following.
+
+   ```text
+   Waiting for the job to complete...
+   Waiting for the job to complete...
+   Error from server (BadRequest): container "create-weblogic-sample-domain-job" in pod domain1-create-weblogic-sample-domain-job-9pnxj" is waiting to start: PodInitializing
+   status on iteration 1 of 20
+   pod domain1-create-weblogic-sample-domain-job-9pnxj status is Init:0/1
+   status on iteration 2 of 20
    ```
 
    The following example output shows the WebLogic domain was created successfully.
@@ -513,17 +525,16 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
 
    Completed
    ```
-   
+
    If your output does not show a successful completion, you must
    troubleshoot the reason and resolve it before proceeding to the next
    step.
 
-4. In order to expose the power of WebLogic to the outside world, you
-   must create `LoadBalancer` services for the Admin Server and the cluster.
+4. You must create `LoadBalancer` service for the Admin Server and the WLS cluster.  This enables WLS to service requests from outside the AKS cluster.
 
-  Use the configuration file in `~/azure/weblogic-on-aks/admin-lb.yaml` to create a load balancer for the admin server. The following content is an example of `admin-lb.yaml`, with default domain uid  `domain1`, admin server name `admin-server`, and default port `7001`.
+   Use the configuration file in `~/azure/weblogic-on-aks/admin-lb.yaml` to create a load balancer for the admin server. The following content is an example of `admin-lb.yaml`, with default domain uid  `domain1`, admin server name `admin-server`, and default port `7001`.
 
-   ```
+   ```yaml
    apiVersion: v1
    kind: Service
    metadata:
@@ -544,14 +555,20 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
 
    Create the admin load balancer service using the following command.
 
+   ```bash
+   kubectl apply -f ~/azure/weblogic-on-aks/admin-lb.yaml
    ```
-   kubectl  apply -f ~/azure/weblogic-on-aks/admin-lb.yaml
+
+   You should see the following output.
+
+   ```text
+   service/domain1-admin-server-external-lb created
    ```
 
    Use the configuration file in `~/azure/weblogic-on-aks/cluster-lb.yaml` to create a load balancer for the managed servers. The following content is an example of `cluster-lb.yaml`, with default domain uid `domain1`, cluster name `cluster-1`, and default managed server port `8001`.
 
 
-   ```
+   ```yaml
    apiVersion: v1
    kind: Service
    metadata:
@@ -572,13 +589,19 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
 
    Create the cluster load balancer service using the following command.
 
-   ```
+   ```bash
    kubectl  apply -f ~/azure/weblogic-on-aks/cluster-lb.yaml
+   ```
+
+   You should see the following output.
+
+   ```text
+   service/domain1-cluster-1-external-lb created
    ```
 
    Get the addresses of the Admin and Managed Servers (please wait for the external IP addresses to be assigned):
 
-   ```
+   ```bash
    kubectl get svc --watch
    ```
 
