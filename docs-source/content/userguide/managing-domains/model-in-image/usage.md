@@ -6,10 +6,6 @@ pre = "<b> </b>"
 description = "Steps for creating and deploying Model in Image images and their associated domain resources."
 +++
 
-{{% notice info %}}
-This feature is supported only in 3.0.0.
-{{% /notice %}}
-
 This document describes what's needed to create and deploy a typical Model in Image domain.
 
 ### Contents
@@ -34,7 +30,7 @@ Model in Image requires creating a Docker image that has WebLogic Server and WDT
 First, obtain a base image:
 
 - You can start with a WebLogic Server 12.2.1.3 or later Oracle Container Registry pre-built base image such as `container-registry.oracle.com/middleware/weblogic:12.2.1.3` for WLS domains or `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` for JRF domains. For an example of this approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
-- Or you can manually build your own base image as per [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#creating-a-custom-image-with-patches-applied" >}}). This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch). 
+- Or you can manually build your own base image as per [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#creating-a-custom-image-with-patches-applied" >}}). This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch).
 
 After you have a base image, Model in Image requires layering the following directory structure for its (optional) WDT model artifacts and (required) WDT binaries:
 
@@ -173,8 +169,8 @@ Here are the required domain resource and model YAML file settings for Model in 
 
 It is important to save a JRF domain's OPSS wallet password and wallet file so that you can restore them as needed. This ensures that a restart or migration of the domain can continue to access the domain's FMW infrastructure database.
 
-When you deploy a JRF domain for the first time, the domain will add itself to its RCU database tables, and also create a 'wallet' file in the domain's home directory that enables access to the domain's data in the RCU database. This wallet is encrypted using an OPSS key password that you supply to the domain using a secret that is referenced by your domain resource `configuration.opss.walletPasswordSecret` attribute. 
- 
+When you deploy a JRF domain for the first time, the domain will add itself to its RCU database tables, and also create a 'wallet' file in the domain's home directory that enables access to the domain's data in the RCU database. This wallet is encrypted using an OPSS key password that you supply to the domain using a secret that is referenced by your domain resource `configuration.opss.walletPasswordSecret` attribute.
+
 For a domain that has been started by Model in Image, the operator will copy the wallet file from the domain home of a new JRF domain and store it in the domain's introspector domain ConfigMap in file `ewallet.p12`. Here is how to export this wallet file from the introspector domain ConfigMap:
 
 - Option 1

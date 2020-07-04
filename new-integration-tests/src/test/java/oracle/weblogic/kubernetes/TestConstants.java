@@ -99,6 +99,7 @@ public interface TestConstants {
   public static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
   // WDT domain-in-image constants
+
   public static final String WDT_BASIC_MODEL_FILE = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
   public static final String WDT_BASIC_IMAGE_NAME = REPO_NAME + "wdt-basic-image";
@@ -133,5 +134,11 @@ public interface TestConstants {
   public static final String JRF_BASE_IMAGE_TAG = "12.2.1.4";
   public static final String DB_IMAGE_NAME = OCR_REGISTRY + "/database/enterprise";
   public static final String DB_IMAGE_TAG = "12.2.0.1-slim";
+
+  // istio constants
+  public static final String ISTIO_VERSION = "1.5.4";
+
+  //MySQL database constants
+  public static final String MYSQL_VERSION = "5.6";
 
 }

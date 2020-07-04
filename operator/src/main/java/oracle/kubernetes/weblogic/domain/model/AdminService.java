@@ -20,15 +20,15 @@ public class AdminService implements ServiceConfigurator {
   @SerializedName("channels")
   @Description(
       "Specifies which of the Administration Server's WebLogic channels should be exposed outside "
-          + "the Kubernetes cluster via a node port service, along with the node port for "
-          + "each channel. If not specified, the Administration Server's node port service will "
+          + "the Kubernetes cluster via a NodePort Service, along with the port for "
+          + "each channel. If not specified, the Administration Server's NodePort Service will "
           + "not be created.")
   private final List<Channel> channels = new ArrayList<>();
 
-  @Description("Labels to associate with the external channel service.")
+  @Description("Labels to associate with the Administration Server's Service(s).")
   private final Map<String, String> labels = new HashMap<>();
 
-  @Description("Annotations to associate with the external channel service.")
+  @Description("Annotations to associate with the Administration Server's Service(s).")
   private final Map<String, String> annotations = new HashMap<>();
 
   /**

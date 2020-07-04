@@ -5,48 +5,51 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1OwnerReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.CONFIGURATION_OVERRIDES;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SECRETS_MD_5;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.TOPOLOGY_YAML;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory.forDomain;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -71,6 +74,7 @@ public class IntrospectorConfigMapTest {
     mementos.add(testSupport.install());
     mementos.add(ScanCacheStub.install());
 
+    testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(info);
     testSupport.addToPacket(JobHelper.START_TIME, System.currentTimeMillis() - 10);
   }
@@ -101,12 +105,96 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenNoTopologySpecified_abortProcessing() {
+  public void whenNoTopologySpecified_continueProcessing() {
+    testSupport.defineResources(
+          createIntrospectorConfigMap(Map.of(TOPOLOGY_YAML, TOPOLOGY_VALUE, SECRETS_MD_5, MD5_SECRETS)));
     introspectResult.defineFile(SECRETS_MD_5, "not telling").addToPacket();
 
     testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
 
-    assertThat(terminalStep.wasRun(), is(false));
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  public void whenNoTopologySpecified_dontUpdateConfigMap() {
+    testSupport.defineResources(
+          createIntrospectorConfigMap(Map.of(TOPOLOGY_YAML, TOPOLOGY_VALUE, SECRETS_MD_5, MD5_SECRETS)));
+    introspectResult.defineFile(SECRETS_MD_5, "not telling").addToPacket();
+
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+
+    assertThat(getIntrospectorConfigMapValue(SECRETS_MD_5), equalTo(MD5_SECRETS));
+  }
+
+  @Test
+  public void whenNoTopologySpecified_addIntrospectionVersionLabel() {
+    forDomain(domain).withIntrospectVersion("4");
+    testSupport.defineResources(
+          createIntrospectorConfigMap(Map.of(TOPOLOGY_YAML, TOPOLOGY_VALUE, SECRETS_MD_5, MD5_SECRETS)));
+    introspectResult.defineFile(SECRETS_MD_5, "not telling").addToPacket();
+
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+
+    assertThat(getIntrospectionVersion(), equalTo(domain.getIntrospectVersion()));
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private String getIntrospectorConfigMapValue(String key) {
+    return getIntrospectionConfigMap()
+          .map(V1ConfigMap::getData)
+          .map(m -> m.get(key))
+          .orElse(null);
+  }
+
+  private String getIntrospectionVersion() {
+    return getIntrospectionConfigMap()
+          .map(V1ConfigMap::getMetadata)
+          .map(V1ObjectMeta::getLabels)
+          .map(m -> m.get(INTROSPECTION_STATE_LABEL))
+          .orElse(null);
+  }
+
+  @Nonnull
+  private Optional<V1ConfigMap> getIntrospectionConfigMap() {
+    return testSupport.<V1ConfigMap>getResources(KubernetesTestSupport.CONFIG_MAP)
+          .stream()
+          .filter(this::isInstrospectConfigMap)
+          .findFirst();
+  }
+
+  private boolean isInstrospectConfigMap(V1ConfigMap configMap) {
+    return Optional.ofNullable(configMap)
+          .map(V1ConfigMap::getMetadata)
+          .map(V1ObjectMeta::getName)
+          .filter(name -> name.equals(getIntrospectorConfigMapName()))
+          .isPresent();
+  }
+
+  private static String getIntrospectorConfigMapName() {
+    return ConfigMapHelper.getIntrospectorConfigMapName(UID);
+  }
+
+  @Test
+  public void whenTopologyNotValid_reportInDomainStatus() {
+    introspectResult.defineFile(TOPOLOGY_YAML,
+          "domainValid: false", "validationErrors: [first problem, second problem]").addToPacket();
+
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+
+    assertThat(getDomain(), hasStatus("BadTopology", perLine("first problem", "second problem")));
+  }
+
+  @NotNull
+  private String perLine(String... errors) {
+    return String.join(lineSeparator(), errors);
+  }
+
+  @NotNull
+  private Domain getDomain() {
+    return testSupport.<Domain>getResources(KubernetesTestSupport.DOMAIN)
+          .stream()
+          .findFirst()
+          .orElse(new Domain());
   }
 
   @Test
@@ -163,8 +251,29 @@ public class IntrospectorConfigMapTest {
   }
 
   public Map<String, String> getIntrospectorConfigMapData() {
-    final KubernetesTestSupport testSupport = this.testSupport;
-    return IntrospectorCMTestUtils.getIntrospectorConfigMapData(testSupport);
+    return getIntrospectorConfigMapData(testSupport);
+  }
+
+  /**
+   * Returns the data portion of the introspector config map for the test domain.
+   * @param testSupport the instance of KubernetesTestSupport holding the data
+   */
+  @Nonnull
+  public static Map<String, String> getIntrospectorConfigMapData(KubernetesTestSupport testSupport) {
+    return testSupport.getResources(KubernetesTestSupport.CONFIG_MAP).stream()
+          .map(V1ConfigMap.class::cast)
+          .filter(IntrospectorConfigMapTest::isIntrospectorConfigMap)
+          .map(V1ConfigMap::getData)
+          .findFirst()
+          .orElseGet(Collections::emptyMap);
+  }
+
+  private static boolean isIntrospectorConfigMap(V1ConfigMap configMap) {
+    return getIntrospectorConfigMapName().equals(getConfigMapName(configMap));
+  }
+
+  private static String getConfigMapName(V1ConfigMap configMap) {
+    return Optional.ofNullable(configMap.getMetadata()).map(V1ObjectMeta::getName).orElse("");
   }
 
   @Test
@@ -180,6 +289,18 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
+  public void whenTopologyAndMIISecretsHashPresent_addToConfigMap() {
+    introspectResult
+          .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
+          .defineFile(SECRETS_MD_5, MD5_SECRETS)
+          .addToPacket();
+
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+
+    assertThat(getIntrospectorConfigMapData(), hasEntry(SECRETS_MD_5, MD5_SECRETS));
+  }
+
+  @Test
   public void whenDomainHasRestartVersion_addToPacket() {
     configureDomain().withRestartVersion(RESTART_VERSION);
     introspectResult
@@ -192,7 +313,7 @@ public class IntrospectorConfigMapTest {
   }
 
   private DomainConfigurator configureDomain() {
-    return DomainConfiguratorFactory.forDomain(domain);
+    return forDomain(domain);
   }
 
   @Test
@@ -207,45 +328,10 @@ public class IntrospectorConfigMapTest {
     assertThat(packet.get(DOMAIN_INPUTS_HASH), notNullValue());
   }
 
-  @Test
-  public void whenIntrospectorConfigMapExists_addEntries() {
-    testSupport.defineResources(createIntrospectorConfigMap(Map.of(SECRETS_MD_5, MD5_SECRETS)));
-
-    Step chain = ConfigMapHelper.addIntrospectorConfigMapEntriesStep(info, Map.of("a", "b", "c", "d"), terminalStep);
-    testSupport.runSteps(chain);
-
-    assertThat(getIntrospectorConfigMapData(),
-          allOf(hasEntry(SECRETS_MD_5, MD5_SECRETS), hasEntry("a", "b"), hasEntry("c", "d")));
-  }
-
   private V1ConfigMap createIntrospectorConfigMap(Map<String, String> entries) {
     return new V1ConfigMap()
-          .metadata(new V1ObjectMeta().name(IntrospectorCMTestUtils.getIntrospectorConfigMapName()).namespace(NS))
+          .metadata(new V1ObjectMeta().name(getIntrospectorConfigMapName()).namespace(NS))
           .data(new HashMap<>(entries));
-  }
-
-  @Test
-  public void whenIntrospectorConfigMapDoesNotExist_addEntries() {
-    Step chain = ConfigMapHelper.addIntrospectorConfigMapEntriesStep(info, Map.of("a", "b", "c", "d"), terminalStep);
-    testSupport.runSteps(chain);
-
-    assertThat(getIntrospectorConfigMapData(), allOf(hasEntry("a", "b"), hasEntry("c", "d")));
-  }
-
-  @Test
-  public void whenIntrospectorConfigMapDoesNotExist_createWithOwnerReference() {
-    V1OwnerReference expectedReference = new V1OwnerReference()
-        .apiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
-        .kind(KubernetesConstants.DOMAIN)
-        .name(DomainProcessorTestSetup.UID)
-        .uid(DomainProcessorTestSetup.KUBERNETES_UID)
-        .controller(true);
-
-    Step chain = ConfigMapHelper.addIntrospectorConfigMapEntriesStep(info, Map.of("a", "b", "c", "d"), terminalStep);
-    testSupport.runSteps(chain);
-
-    assertThat(IntrospectorCMTestUtils.getIntrospectorConfigMapMetadata(testSupport).getOwnerReferences(),
-        contains(expectedReference));
   }
 
   @Test
@@ -255,8 +341,7 @@ public class IntrospectorConfigMapTest {
           SECRETS_MD_5, MD5_SECRETS,
           DOMAINZIP_HASH, DOMAIN_HASH_VALUE,
           DOMAIN_RESTART_VERSION, RESTART_VERSION,
-          DOMAIN_INPUTS_HASH, INPUTS_HASH_VALUE,
-          CONFIGURATION_OVERRIDES, OVERRIDES_VALUE)));
+          DOMAIN_INPUTS_HASH, INPUTS_HASH_VALUE)));
 
     Packet packet = testSupport.runSteps(ConfigMapHelper.readExistingIntrospectorConfigMap(NS, UID));
 
@@ -264,7 +349,6 @@ public class IntrospectorConfigMapTest {
     assertThat(packet.get(DOMAINZIP_HASH), equalTo(DOMAIN_HASH_VALUE));
     assertThat(packet.get(DOMAIN_RESTART_VERSION), equalTo(RESTART_VERSION));
     assertThat(packet.get(DOMAIN_INPUTS_HASH), equalTo(INPUTS_HASH_VALUE));
-    assertThat(packet.get(CONFIGURATION_OVERRIDES), equalTo(OVERRIDES_VALUE));
     assertThat(packet.get(DOMAIN_TOPOLOGY), equalTo(getParsedDomain(TOPOLOGY_VALUE)));
   }
 
@@ -276,4 +360,44 @@ public class IntrospectorConfigMapTest {
           .orElse(null);
   }
 
+  @Test
+  public void whenOrdinaryEntriesMissingFromIntrospectionResult_doNotRemoveFromConfigMap() {
+    testSupport.defineResources(createIntrospectorConfigMap(Map.of(
+          TOPOLOGY_YAML, TOPOLOGY_VALUE,
+          "oldEntry1", "value1",
+          "oldEntry2", "value2")));
+    introspectResult
+          .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
+          .addToPacket();
+
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+
+    assertThat(getIntrospectorConfigMapData(), allOf(hasEntry("oldEntry1", "value1"), hasEntry("oldEntry2", "value2")));
+  }
+
+  @Test
+  public void whenSitConfigEntriesMissingFromIntrospectionResult_removeFromConfigMap() {
+    testSupport.defineResources(createIntrospectorConfigMap(Map.of(
+          TOPOLOGY_YAML, TOPOLOGY_VALUE,
+          "Sit-Cfg-1", "value1",
+          "Sit-Cfg-2", "value2")));
+    introspectResult
+          .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
+          .addToPacket();
+
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+
+    assertThat(getIntrospectorConfigMapData(), allOf(not(hasKey("Sit-Cfg-1")), not(hasKey("Sit-Cfg-2"))));
+  }
+
+  @Test
+  public void whenNoTopologySpecified_dontRemoveSitConfigEntries() {
+    testSupport.defineResources(
+          createIntrospectorConfigMap(Map.of(TOPOLOGY_YAML, TOPOLOGY_VALUE, "Sit-Cfg-1", "value1")));
+    introspectResult.defineFile(SECRETS_MD_5, "not telling").addToPacket();
+
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+
+    assertThat(getIntrospectorConfigMapValue("Sit-Cfg-1"), equalTo("value1"));
+  }
 }

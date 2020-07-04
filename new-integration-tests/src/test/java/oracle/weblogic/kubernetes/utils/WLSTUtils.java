@@ -24,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -42,8 +43,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -59,8 +60,8 @@ public class WLSTUtils {
 
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(5, MINUTES).await();
 
   /**
    * Execute WLST script.
@@ -70,7 +71,7 @@ public class WLSTUtils {
    * @param namespace namespace in which to run the job
    */
   public static void executeWLSTScript(Path wlstScript, Path domainProperties, String namespace) {
-
+    final LoggingFacade logger = getLogger();
     setImage(namespace);
 
     String wlstScriptFileName = wlstScript.getFileName().toString();
@@ -109,7 +110,8 @@ public class WLSTUtils {
    * @throws ApiException when Kubernetes cluster query fails
    */
   public static void createWLSTJob(String wlstJobName, String wlstScriptConfigMapName, String namespace,
-      V1Container jobContainer) throws ApiException {
+                                   V1Container jobContainer) throws ApiException {
+    LoggingFacade logger = getLogger();
     logger.info("Running Kubernetes job to execute WLST script");
 
     V1Job jobBody = new V1Job()
@@ -146,7 +148,7 @@ public class WLSTUtils {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
-                + "(elapsed time {2} ms, remaining time {3} ms)",
+                    + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
                 namespace,
                 condition.getElapsedTimeInMS(),
@@ -206,7 +208,7 @@ public class WLSTUtils {
       }
       isUseSecret = true;
     }
-    logger.info("Using image {0}", image);
+    getLogger().info("Using image {0}", image);
   }
 
 }

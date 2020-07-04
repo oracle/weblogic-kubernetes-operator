@@ -153,7 +153,9 @@ function trace() {
       ;;
   esac
 
-  logPrefix="@[`timestamp`][$logLoc][$logLevel]"
+  function logPrefix() {
+    echo "@[`timestamp`][$logLoc][$logLevel]"
+  }
 
   case $logMode in 
     -pipe) 
@@ -162,15 +164,15 @@ function trace() {
           # -r cause read to treat backslashes as-is, e.g. '\n' --> '\n'
           IFS=''
           while read -r line; do
-            echo "$logPrefix" "$@" "$line"
+            echo "$(logPrefix)" "$@" "$line"
           done
           )
           ;;
     -n)
-          echo -n "$logPrefix" "$@"
+          echo -n "$(logPrefix)" "$@"
           ;;
     *)
-          echo "$logPrefix" "$@"
+          echo "$(logPrefix)" "$@"
           ;;
   esac
   )
@@ -276,7 +278,8 @@ function traceEnv() {
     NODEMGR_HOME \
     INTROSPECT_HOME \
     PATH \
-    TRACE_TIMING
+    TRACE_TIMING \
+    OPERATOR_ENVVAR_NAMES
   do
     echo "    ${env_var}='${!env_var}'"
   done

@@ -28,7 +28,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
 import org.awaitility.core.ConditionFactory;
@@ -49,7 +49,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodIP;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
@@ -58,6 +57,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -68,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // which load and verify the cache.
 @DisplayName("Test to create a WebLogic domain with Coherence and verify the use of Coherence cache service")
 @IntegrationTest
-class ItCoherenceTests implements LoggedTest {
+class ItCoherenceTests {
 
   // constants for Coherence
   private static final String PROXY_CLIENT_APP_NAME = "coherence-proxy-client";
@@ -96,6 +96,7 @@ class ItCoherenceTests implements LoggedTest {
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
   private static Map<String, Object> secretNameMap;
+  private static LoggingFacade logger = null;
 
   /**
    * Install Operator.
@@ -105,6 +106,7 @@ class ItCoherenceTests implements LoggedTest {
    */
   @BeforeAll
   public static void init(@Namespaces(2) List<String> namespaces) {
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
       .and().with().pollInterval(10, SECONDS)
@@ -164,15 +166,15 @@ class ItCoherenceTests implements LoggedTest {
             serverName, domainNamespace));
 
     assertAll("Check that the cache loaded successfully",
-        () -> assertTrue(execResult1.exitValue() == 0, "Failed to load the catche"),
-        () -> assertTrue(execResult1.stdout().contains(successMarker), "Failed to load the catche")
+        () -> assertTrue(execResult1.exitValue() == 0, "Failed to load the cache"),
+        () -> assertTrue(execResult1.stdout().contains(successMarker), "Failed to load the cache")
     );
 
     logger.info("\n Coherence proxy client {0} returns {1} \n ",
         OP_CACHE_LOAD, execResult1.stdout());
 
     // patch domain to rolling restart it by change restartVersion
-    roolingRestartDomainAndVerify();
+    rollingRestartDomainAndVerify();
 
     // build the Coherence proxy client program in the server pods
     // which load and verify the cache
@@ -262,7 +264,6 @@ class ItCoherenceTests implements LoggedTest {
   private static String createAndVerifyDomainImage() {
     // create image with model files
     logger.info("Create image with model file and verify");
-    // build the model file list
     String miiImage = createImageAndVerify(
         COHERENCE_IMAGE_NAME, COHERENCE_MODEL_FILE,
             PROXY_SERVER_APP_NAME, COHERENCE_MODEL_PROP, domainUid);
@@ -298,39 +299,29 @@ class ItCoherenceTests implements LoggedTest {
         domainUid, domainNamespace, miiImage);
     createDomainCrAndVerify(adminSecretName, miiImage);
 
-    // check that admin server pod exists in the domain namespace
-    logger.info("Checking that admin server pod {0} exists in namespace {1}",
+    // check that admin service exists in the domain namespace
+    logger.info("Checking that admin service {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
 
     // check that admin server pod is ready
     logger.info("Checking that admin server pod {0} is ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
-    // check that admin service exists in the domain namespace
-    logger.info("Checking that admin service {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
     // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPrefix + i;
-
-      // check that the managed server pod exists
-      logger.info("Checking that managed server pod {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodExists(managedServerPodName, domainUid, domainNamespace);
-
-      // check that the managed server pod is ready
-      logger.info("Checking that managed server pod {0} is ready in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodReady(managedServerPodName, domainUid, domainNamespace);
 
       // check that the managed server service exists in the domain namespace
       logger.info("Checking that managed server service {0} exists in namespace {1}",
           managedServerPodName, domainNamespace);
       checkServiceExists(managedServerPodName, domainNamespace);
+
+      // check that the managed server pod is ready
+      logger.info("Checking that managed server pod {0} is ready in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkPodReady(managedServerPodName, domainUid, domainNamespace);
     }
   }
 
@@ -384,7 +375,7 @@ class ItCoherenceTests implements LoggedTest {
         + "for %s in namespace %s", domainUid, domainNamespace));
   }
 
-  private void roolingRestartDomainAndVerify() {
+  private void rollingRestartDomainAndVerify() {
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
     // get the creation time of the server pods before patching
     DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);

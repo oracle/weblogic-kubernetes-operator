@@ -20,7 +20,6 @@ import io.kubernetes.client.openapi.models.V1Status;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -462,8 +461,6 @@ public class ServiceHelper {
       getServiceLabels().forEach(metadata::putLabelsItem);
 
       metadata
-          .putLabelsItem(
-              LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");

@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -15,13 +16,17 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -38,7 +43,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
@@ -92,8 +97,8 @@ public class BuildApplication {
    * @return Path path of the archive built
    */
   public static Path buildApplication(Path appSrcPath, Map<String, String> antParams,
-      String antTargets, String archiveDistDir, String namespace) {
-
+                                      String antTargets, String archiveDistDir, String namespace) {
+    final LoggingFacade logger = getLogger();
     setImage(namespace);
 
     // Path of temp location for application source directory
@@ -150,14 +155,20 @@ public class BuildApplication {
     V1Pod webLogicPod = setupWebLogicPod(namespace, buildContainer);
 
     try {
-
       //copy the zip file to /u01 location inside pod
       Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
           null, zipFile, Paths.get("/u01", zipFile.getFileName().toString()));
+    } catch (ApiException | IOException  ioex) {
+      logger.info(ioex.getMessage());
+    }
+    try {
       //copy the build script to /u01 location inside pod
       Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
           null, BUILD_SCRIPT_SOURCE_PATH, Paths.get("/u01", BUILD_SCRIPT));
-
+    } catch (ApiException | IOException  ioex) {
+      logger.info(ioex.getMessage());
+    }
+    try {
       //Kubernetes.exec(webLogicPod, new String[]{"/bin/sh", "/u01/" + BUILD_SCRIPT});
       ExecResult exec = Exec.exec(webLogicPod, null, false, "/bin/sh", "/u01/" + BUILD_SCRIPT);
       assertEquals(0, exec.exitValue());
@@ -167,16 +178,13 @@ public class BuildApplication {
       if (exec.stderr() != null) {
         logger.info(exec.stderr());
       }
-
       Kubernetes.copyDirectoryFromPod(webLogicPod,
           Paths.get(APPLICATIONS_PATH, archiveDistDir).toString(), destArchiveBaseDir);
-      destDir = Paths.get(destArchiveBaseDir.toString(), "u01/application", archiveDistDir);
-
     } catch (ApiException | IOException | InterruptedException ioex) {
       logger.info(ioex.getMessage());
     }
 
-    return destDir;
+    return destDir = Paths.get(destArchiveBaseDir.toString(), "u01/application", archiveDistDir);
   }
 
 
@@ -189,10 +197,11 @@ public class BuildApplication {
    * @throws ApiException when create pod fails
    */
   private static V1Pod setupWebLogicPod(String namespace, V1Container container) {
-
+    final LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
         .atMost(3, MINUTES).await();
+    verifyDefaultTokenExists();
 
     final String podName = "weblogic-build-pod-" + namespace;
     V1Pod podBody = new V1Pod()
@@ -205,7 +214,7 @@ public class BuildApplication {
                 .addArgsItem("600")))
             .imagePullSecrets(isUseSecret
                 ? Arrays.asList(new V1LocalObjectReference()
-                    .name(OCR_SECRET_NAME))
+                .name(OCR_SECRET_NAME))
                 : null)) // the persistent volume claim used by the test
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
@@ -215,7 +224,7 @@ public class BuildApplication {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
-                + "(elapsed time {2} , remaining time {3}",
+                    + "(elapsed time {2} , remaining time {3}",
                 podName,
                 namespace,
                 condition.getElapsedTimeInMS(),
@@ -231,6 +240,7 @@ public class BuildApplication {
    * @param namespace namespace in which secrets needs to be created
    */
   private static void setImage(String namespace) {
+    final LoggingFacade logger = getLogger();
     //determine if the tests are running in Kind cluster.
     //if true use images from Kind registry
     String ocrImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
@@ -258,5 +268,32 @@ public class BuildApplication {
     }
     logger.info("Using image {0}", image);
   }
+
+  private static void verifyDefaultTokenExists() {
+    final LoggingFacade logger = getLogger();
+
+    ConditionFactory withStandardRetryPolicy
+        = with().pollDelay(0, SECONDS)
+        .and().with().pollInterval(5, SECONDS)
+        .atMost(5, MINUTES).await();
+
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> logger.info("Waiting for the default token to be available in default service account, "
+                + "elapsed time {0}, remaining time {1}",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(() -> {
+          V1ServiceAccountList sas = Kubernetes.listServiceAccounts("default");
+          for (V1ServiceAccount sa : sas.getItems()) {
+            if (sa.getMetadata().getName().equals("default")) {
+              List<V1ObjectReference> secrets = sa.getSecrets();
+              return !secrets.isEmpty();
+            }
+          }
+          return false;
+        });
+  }
+
+
 
 }

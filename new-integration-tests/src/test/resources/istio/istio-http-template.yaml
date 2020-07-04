@@ -1,0 +1,51 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: NAMESPACE-istio-http-gateway
+  namespace: NAMESPACE
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - 'NAMESPACE.org'
+      port:
+        name: http
+        number: 80
+        protocol: HTTP
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: NAMESPACE-istio-http-virtualservice
+  namespace: NAMESPACE
+spec:
+  gateways:
+    - NAMESPACE-istio-http-gateway
+  hosts:
+    - 'NAMESPACE.org'
+  http:
+    - match:
+        - uri:
+            prefix: /console
+        - uri:
+            prefix: /management
+        - port: 7001
+      route:
+        - destination:
+            host: ADMIN_SERVICE
+            port:
+              number: 7001
+
+    - match:
+        - uri:
+            prefix: /testwebapp
+        - port: 8001
+      route:
+        - destination:
+            host: CLUSTER_SERVICE
+            port:
+              number: 8001

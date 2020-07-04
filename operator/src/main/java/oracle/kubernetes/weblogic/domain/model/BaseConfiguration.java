@@ -35,11 +35,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public abstract class BaseConfiguration {
 
-  @Description("Configuration affecting server pods.")
+  @Description("Customization affecting the generation of Pods for WebLogic Server instances.")
   private final ServerPod serverPod = new ServerPod();
 
   @Description(
-      "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
+      "Customization affecting the generation of Kubernetes Services for WebLogic Server instances.")
   @SerializedName("serverService")
   @Expose
   private final ServerService serverService = new ServerService();
@@ -47,7 +47,7 @@ public abstract class BaseConfiguration {
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
   @EnumClass(ServerStartState.class)
   @Description(
-      "The state in which the server is to be started. Use ADMIN if server should start "
+      "The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start "
           + "in the admin state. Defaults to RUNNING.")
   private String serverStartState;
 
@@ -61,8 +61,9 @@ public abstract class BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "If present, every time this value is updated the operator will restart"
-          + " the required servers.")
+      "Changes to this field cause the operator to restart WebLogic Server instances. More info: "
+      + "https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
+      + "domain-lifecycle/startup/#restarting-servers.")
   private String restartVersion;
 
   /**

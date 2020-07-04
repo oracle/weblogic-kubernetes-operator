@@ -34,7 +34,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -95,6 +95,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPus
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -104,7 +105,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model in image domain and start the domain")
 @IntegrationTest
-class ItMiiDomain implements LoggedTest {
+class ItMiiDomain {
 
   private static HelmParams opHelmParams = null;
   private static V1ServiceAccount serviceAccount = null;
@@ -122,6 +123,7 @@ class ItMiiDomain implements LoggedTest {
   private String miiImagePatchAppV2 = null;
   private String miiImageAddSecondApp = null;
   private String miiImage = null;
+  private static LoggingFacade logger = null;
 
   private static Map<String, Object> secretNameMap;
 
@@ -132,6 +134,7 @@ class ItMiiDomain implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -407,7 +410,7 @@ class ItMiiDomain implements LoggedTest {
         } catch (InterruptedException ie) {
           // do nothing
         }
- 
+
         // check the application availability data that we have collected, and see if
         // the application has been available all the time since the beginning of this test method
         logger.info("Verify that V2 application was available when domain {0} was being patched with image {1}",
@@ -1042,7 +1045,7 @@ class ItMiiDomain implements LoggedTest {
       String appPath
   ) {
     boolean v2AppAvailable = false;
- 
+
     // Access the pod periodically to check application's availability across the duration
     // of patching the domain with newer version of the application.
     while (!v2AppAvailable)  {
@@ -1071,6 +1074,7 @@ class ItMiiDomain implements LoggedTest {
       
       if (count == 0) {
         logger.info("XXXXXXXXXXX: application not available XXXXXXXX");
+        break;
       } else {
         logger.fine("YYYYYYYYYYY: application available YYYYYYYY count = " + count);   
       }

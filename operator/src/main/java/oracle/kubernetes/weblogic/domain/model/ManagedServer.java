@@ -12,12 +12,13 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description("ManagedServer represents the operator configuration for a single Managed Server.")
 public class ManagedServer extends Server implements Comparable<ManagedServer> {
   /** The name of the Managed Server. Required. */
   @SerializedName("serverName")
   @Expose
-  @Description("The name of the Managed Server. Required.")
+  @Description("The name of the Managed Server. This name must match the name of a Managed Server instance or of a "
+      + "dynamic cluster member name from a server template already defined in the WebLogic domain configuration. "
+      + "Required.")
   @Nonnull
   private String serverName;
 

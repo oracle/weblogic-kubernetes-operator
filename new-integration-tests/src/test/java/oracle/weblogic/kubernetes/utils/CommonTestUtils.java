@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -20,14 +21,34 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gson.JsonObject;
+import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
+import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -37,6 +58,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 
@@ -60,6 +82,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
@@ -67,6 +90,7 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
@@ -95,8 +119,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccoun
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
@@ -104,10 +130,13 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
 import static oracle.weblogic.kubernetes.actions.TestActions.installVoyager;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
+import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
@@ -126,16 +155,18 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The common utility class for tests.
@@ -146,6 +177,10 @@ public class CommonTestUtils {
       with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(5, MINUTES).await();
+
+  private static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
+      .and().with().pollInterval(3, SECONDS)
+      .atMost(120, SECONDS).await();
 
   /**
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
@@ -175,7 +210,7 @@ public class CommonTestUtils {
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
                                                     String... domainNamespace) {
-
+    LoggingFacade logger = getLogger();
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
     assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
@@ -259,7 +294,8 @@ public class CommonTestUtils {
    * @return true if successful
    */
   public static boolean upgradeAndVerifyOperator(String opNamespace,
-                                                    String... domainNamespace) {
+                                                 String... domainNamespace) {
+    LoggingFacade logger = getLogger();
     // Helm upgrade parameters
     HelmParams opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -304,10 +340,10 @@ public class CommonTestUtils {
   public static HelmParams installAndVerifyNginx(String nginxNamespace,
                                                  int nodeportshttp,
                                                  int nodeportshttps) {
-
+    LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
-        .releaseName(NGINX_RELEASE_NAME)
+        .releaseName(NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3))
         .namespace(nginxNamespace)
         .repoUrl(GOOGLE_REPO_URL)
         .repoName(STABLE_REPO_NAME)
@@ -315,9 +351,13 @@ public class CommonTestUtils {
 
     // NGINX chart values to override
     NginxParams nginxParams = new NginxParams()
-        .helmParams(nginxHelmParams)
-        .nodePortsHttp(nodeportshttp)
-        .nodePortsHttps(nodeportshttps);
+        .helmParams(nginxHelmParams);
+
+    if (nodeportshttp != 0 && nodeportshttps != 0) {
+      nginxParams
+          .nodePortsHttp(nodeportshttp)
+          .nodePortsHttps(nodeportshttps);
+    }
 
     // install NGINX
     assertThat(installNginx(nginxParams))
@@ -358,7 +398,7 @@ public class CommonTestUtils {
   public static HelmParams installAndVerifyVoyager(String voyagerNamespace,
                                                    String cloudProvider,
                                                    boolean enableValidatingWebhook) {
-
+    LoggingFacade logger = getLogger();
     final String voyagerPodNamePrefix = VOYAGER_CHART_NAME +  "-release-";
 
     // Helm install parameters
@@ -395,10 +435,10 @@ public class CommonTestUtils {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info(
-              "Waiting for Voyager to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-              voyagerNamespace,
-              condition.getElapsedTimeInMS(),
-              condition.getRemainingTimeInMS()))
+                "Waiting for Voyager to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+                voyagerNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> isVoyagerReady(voyagerNamespace, voyagerPodNamePrefix),
             "isVoyagerReady failed with ApiException"));
 
@@ -412,7 +452,7 @@ public class CommonTestUtils {
    * @param domainNamespace namespace in which the domain will be created
    */
   public static void createDomainAndVerify(Domain domain, String domainNamespace) {
-
+    LoggingFacade logger = getLogger();
     // create the domain CR
     assertNotNull(domain, "domain is null");
     assertNotNull(domain.getSpec(), "domain spec is null");
@@ -450,8 +490,24 @@ public class CommonTestUtils {
   public static List<String> createIngressForDomainAndVerify(String domainUid,
                                                              String domainNamespace,
                                                              Map<String, Integer> clusterNameMSPortMap) {
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, true);
+  }
 
-    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap);
+  /**
+   * Create an ingress for the domain with domainUid in the specified namespace.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @param setIngressHost set specific host or set it to all
+   * @return list of ingress hosts
+   */
+  public static List<String> createIngressForDomainAndVerify(String domainUid,
+                                                             String domainNamespace,
+                                                             Map<String, Integer> clusterNameMSPortMap,
+                                                             boolean setIngressHost) {
+
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, setIngressHost);
   }
 
   /**
@@ -468,6 +524,26 @@ public class CommonTestUtils {
                                                              int nodeport,
                                                              Map<String, Integer> clusterNameMSPortMap) {
 
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, nodeport, clusterNameMSPortMap, true);
+  }
+
+  /**
+   * Create an ingress for the domain with domainUid in the specified namespace.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param nodeport node port of the ingress controller
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @param setIngressHost if false does not set ingress host
+   * @return list of ingress hosts
+   */
+  public static List<String> createIngressForDomainAndVerify(String domainUid,
+                                                             String domainNamespace,
+                                                             int nodeport,
+                                                             Map<String, Integer> clusterNameMSPortMap,
+                                                             boolean setIngressHost) {
+
+    LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
     final String ingressNginxClass = "nginx";
     String ingressName = domainUid + "-" + ingressNginxClass;
@@ -476,19 +552,19 @@ public class CommonTestUtils {
     annotations.put("kubernetes.io/ingress.class", ingressNginxClass);
 
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations);
+            createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, setIngressHost);
 
     assertNotNull(ingressHostList,
-        String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
+            String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-        .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
-        .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
-        .contains(ingressName);
+            .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
+            .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
+            .contains(ingressName);
 
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
-        ingressName, domainUid, domainNamespace);
+            ingressName, domainUid, domainNamespace);
 
     // check the ingress is ready to route the app to the server pod
     if (nodeport != 0) {
@@ -518,7 +594,7 @@ public class CommonTestUtils {
                                                             String domainNamespace,
                                                             String ingressName,
                                                             Map<String, Integer> clusterNameMSPortMap) {
-
+    LoggingFacade logger = getLogger();
     final String voyagerIngressName = VOYAGER_CHART_NAME + "-" + ingressName;
     final String channelName = "tcp-80";
     final String ingressType = "NodePort";
@@ -533,7 +609,7 @@ public class CommonTestUtils {
 
     // create an ingress in domain namespace
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations);
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true);
 
     // wait until the Voyager ingress pod is ready.
     withStandardRetryPolicy
@@ -558,7 +634,7 @@ public class CommonTestUtils {
     // get ingress service Nodeport
     int ingressServiceNodePort = assertDoesNotThrow(
         () -> getServiceNodePort(domainNamespace, voyagerIngressName, channelName),
-            "Getting admin server node port failed");
+        "Getting admin server node port failed");
     logger.info("Node port for {0} is: {1} :", voyagerIngressName, ingressServiceNodePort);
 
     // check the ingress is ready to route the app to the server pod
@@ -587,6 +663,7 @@ public class CommonTestUtils {
    * @param domainNamespace the domain namespace in which the domain exists
    */
   public static void checkPodExists(String podName, String domainUid, String domainNamespace) {
+    LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be created in namespace {1} "
@@ -608,6 +685,7 @@ public class CommonTestUtils {
    * @param domainNamespace the domain namespace in which the domain exists
    */
   public static void checkPodReady(String podName, String domainUid, String domainNamespace) {
+    LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
@@ -618,7 +696,7 @@ public class CommonTestUtils {
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
             String.format("podReady failed with ApiException for pod %s in namespace %s",
-               podName, domainNamespace)));
+                podName, domainNamespace)));
   }
 
   /**
@@ -635,15 +713,16 @@ public class CommonTestUtils {
       String podName,
       DateTime lastCreationTime
   ) {
+    LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
-            podName,
-            domNamespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, domNamespace, lastCreationTime),
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domNamespace, lastCreationTime),
             String.format(
                 "pod %s has not been restarted in namespace %s", podName, domNamespace)));
   }
@@ -655,6 +734,7 @@ public class CommonTestUtils {
    * @param namespace the namespace in which to check for the service
    */
   public static void checkServiceExists(String serviceName, String namespace) {
+    LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for service {0} to exist in namespace {1} "
@@ -676,6 +756,7 @@ public class CommonTestUtils {
    * @param namespace the namespace in which to check whether the pod exists
    */
   public static void checkPodDoesNotExist(String podName, String domainUid, String namespace) {
+    LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
@@ -696,6 +777,7 @@ public class CommonTestUtils {
    * @param namespace the namespace in which to check the service does not exist
    */
   public static void checkServiceDoesNotExist(String serviceName, String namespace) {
+    LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for service {0} to be deleted in namespace {1} "
@@ -778,16 +860,16 @@ public class CommonTestUtils {
    * @return image name with tag
    */
   public static String createMiiImageAndVerify(String miiImageNameBase,
-                                                List<String> wdtModelList,
-                                                List<String> appSrcDirList,
-                                                String baseImageName,
-                                                String baseImageTag,
-                                                String domainType,
-                                                boolean oneArchiveContainsMultiApps) {
+                                               List<String> wdtModelList,
+                                               List<String> appSrcDirList,
+                                               String baseImageName,
+                                               String baseImageTag,
+                                               String domainType,
+                                               boolean oneArchiveContainsMultiApps) {
 
     return createImageAndVerify(
-        miiImageNameBase, wdtModelList, appSrcDirList, null, baseImageName,
-        baseImageTag, domainType, true, null, oneArchiveContainsMultiApps);
+            miiImageNameBase, wdtModelList, appSrcDirList, null, baseImageName,
+            baseImageTag, domainType, true, null, oneArchiveContainsMultiApps);
   }
 
   /**
@@ -802,19 +884,19 @@ public class CommonTestUtils {
    * @return image name with tag
    */
   public static String createImageAndVerify(String imageNameBase,
-                                             String wdtModelFile,
-                                             String appName,
-                                             String modelPropFile,
-                                             String altModelDir,
-                                             String domainHome) {
+                                            String wdtModelFile,
+                                            String appName,
+                                            String modelPropFile,
+                                            String altModelDir,
+                                            String domainHome) {
 
     final List<String> wdtModelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
     final List<String> appSrcDirList = Collections.singletonList(appName);
     final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
 
     return createImageAndVerify(
-        imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
-        WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
+      imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
+      WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
   }
 
   /**
@@ -837,8 +919,8 @@ public class CommonTestUtils {
     final List<String> modelPropList = Collections.singletonList(MODEL_DIR + "/" + modelPropFile);
 
     return createImageAndVerify(
-        imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
-        WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
+            imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
+            WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
   }
 
   /**
@@ -855,15 +937,17 @@ public class CommonTestUtils {
    * @return image name with tag
    */
   public static String createImageAndVerify(String imageNameBase,
-                                               List<String> wdtModelList,
-                                               List<String> appSrcDirList,
-                                               List<String> modelPropList,
-                                               String baseImageName,
-                                               String baseImageTag,
-                                               String domainType,
-                                               boolean modelType,
-                                               String domainHome,
-                                               boolean oneArchiveContainsMultiApps) {
+                                            List<String> wdtModelList,
+                                            List<String> appSrcDirList,
+                                            List<String> modelPropList,
+                                            String baseImageName,
+                                            String baseImageTag,
+                                            String domainType,
+                                            boolean modelType,
+                                            String domainHome,
+                                            boolean oneArchiveContainsMultiApps) {
+
+    LoggingFacade logger = getLogger();
 
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -893,10 +977,10 @@ public class CommonTestUtils {
 
       if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
         assertTrue(archiveApp(defaultAppParams()
-            .srcDirList(archiveAppsList)));
+                .srcDirList(archiveAppsList)));
         //archive provided ear or war file
         String appName = archiveAppsList.get(0).substring(archiveAppsList.get(0).lastIndexOf("/") + 1,
-            appSrcDirList.get(0).lastIndexOf("."));
+                appSrcDirList.get(0).lastIndexOf("."));
 
         // build the archive list
         String zipAppFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
@@ -909,8 +993,8 @@ public class CommonTestUtils {
         String zipFile = "";
         if (oneArchiveContainsMultiApps) {
           assertTrue(buildAppArchive(defaultAppParams()
-                  .srcDirList(buildAppDirList)),
-              String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
+                          .srcDirList(buildAppDirList)),
+                  String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
           zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
           // build the archive list
           archiveList.add(zipFile);
@@ -925,8 +1009,8 @@ public class CommonTestUtils {
         } else {
           for (String appName : buildAppDirList) {
             assertTrue(buildAppArchive(defaultAppParams()
-                    .srcDirList(Collections.singletonList(appName))
-                    .appName(appName)),
+                .srcDirList(Collections.singletonList(appName))
+                .appName(appName)),
                 String.format("Failed to create app archive for %s", appName));
             zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
             // build the archive list
@@ -954,43 +1038,43 @@ public class CommonTestUtils {
     boolean result = false;
     if (!modelType) {  //create a domain home in image image
       result = createImage(
-          new WitParams()
-              .baseImageName(baseImageName)
-              .baseImageTag(baseImageTag)
-              .domainType(domainType)
-              .modelImageName(imageName)
-              .modelImageTag(imageTag)
-              .modelFiles(wdtModelList)
-              .modelVariableFiles(modelPropList)
-              .modelArchiveFiles(archiveList)
-              .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainHome)
-              .wdtModelOnly(modelType)
-              .wdtOperation("CREATE")
-              .wdtVersion(WDT_VERSION)
-              .env(env)
-              .redirect(true));
+              new WitParams()
+                .baseImageName(baseImageName)
+                .baseImageTag(baseImageTag)
+                .domainType(domainType)
+                .modelImageName(imageName)
+                .modelImageTag(imageTag)
+                .modelFiles(wdtModelList)
+                .modelVariableFiles(modelPropList)
+                .modelArchiveFiles(archiveList)
+                .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainHome)
+                .wdtModelOnly(modelType)
+                .wdtOperation("CREATE")
+                .wdtVersion(WDT_VERSION)
+                .env(env)
+                .redirect(true));
     } else {
       result = createImage(
-          new WitParams()
-              .baseImageName(baseImageName)
-              .baseImageTag(baseImageTag)
-              .domainType(domainType)
-              .modelImageName(imageName)
-              .modelImageTag(imageTag)
-              .modelFiles(wdtModelList)
-              .modelVariableFiles(modelPropList)
-              .modelArchiveFiles(archiveList)
-              .wdtModelOnly(modelType)
-              .wdtVersion(WDT_VERSION)
-              .env(env)
-              .redirect(true));
+              new WitParams()
+                .baseImageName(baseImageName)
+                .baseImageTag(baseImageTag)
+                .domainType(domainType)
+                .modelImageName(imageName)
+                .modelImageTag(imageTag)
+                .modelFiles(wdtModelList)
+                .modelVariableFiles(modelPropList)
+                .modelArchiveFiles(archiveList)
+                .wdtModelOnly(modelType)
+                .wdtVersion(WDT_VERSION)
+                .env(env)
+                .redirect(true));
     }
 
     assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 
     // Check image exists using docker images | grep image tag.
     assertTrue(doesImageExist(imageTag),
-        String.format("Image %s does not exist", image));
+            String.format("Image %s does not exist", image));
 
     logger.info("Image {0} are created successfully", image);
     return image;
@@ -1002,7 +1086,7 @@ public class CommonTestUtils {
    * @param namespace namespace in which the secret will be created
    */
   public static void createOCRRepoSecret(String namespace) {
-
+    LoggingFacade logger = getLogger();
     logger.info("Creating image pull secret in namespace {0}", namespace);
     createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
   }
@@ -1028,7 +1112,7 @@ public class CommonTestUtils {
    * @param namespace namespace in which to create the secret
    */
   public static void createDockerRegistrySecret(String userName, String password,
-      String email, String registry, String secretName, String namespace) {
+                                                String email, String registry, String secretName, String namespace) {
 
     // Create registry secret in the namespace to pull the image from repository
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
@@ -1055,6 +1139,7 @@ public class CommonTestUtils {
    * @param dockerImage the Docker image to push to registry
    */
   public static void dockerLoginAndPushImageToRegistry(String dockerImage) {
+    LoggingFacade logger = getLogger();
     // push image, if necessary
     if (!REPO_NAME.isEmpty() && dockerImage.contains(REPO_NAME)) {
       // docker login, if necessary
@@ -1091,6 +1176,33 @@ public class CommonTestUtils {
         .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
   }
+
+  /**
+   * Create a RCU secret with username, password and sys_username, sys_password in the specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param username RCU schema username
+   * @param password RCU schema passowrd
+   * @param sysUsername DB sys username
+   * @param sysPassword DB sys password
+   */
+  public static void createRcuSecretWithUsernamePassword(String secretName, String namespace,
+      String username, String password, String sysUsername, String sysPassword) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("username", username);
+    secretMap.put("password", password);
+    secretMap.put("sys_username", sysUsername);
+    secretMap.put("sys_password", sysPassword);
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
+
 
   /** Scale the WebLogic cluster to specified number of servers.
    *  Verify the sample app can be accessed through NGINX if curlCmd is not null.
@@ -1165,7 +1277,7 @@ public class CommonTestUtils {
                                            String curlCmdForWLDFApp,
                                            String curlCmd,
                                            List<String> expectedServerNames) {
-
+    LoggingFacade logger = getLogger();
     // get the original managed server pod creation timestamp before scale
     List<DateTime> listOfPodCreationTimestamp = new ArrayList<>();
     for (int i = 1; i <= replicasBeforeScale; i++) {
@@ -1274,7 +1386,9 @@ public class CommonTestUtils {
         logger.info("Checking that managed server pod {0} was deleted from namespace {1}",
             manageServerPodNamePrefix + i, domainNamespace);
         checkPodDoesNotExist(manageServerPodNamePrefix + i, domainUid, domainNamespace);
-        expectedServerNames.remove(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
+        if (expectedServerNames != null) {
+          expectedServerNames.remove(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
+        }
       }
 
       if (curlCmd != null && expectedServerNames != null) {
@@ -1306,7 +1420,7 @@ public class CommonTestUtils {
                                                       String promVersion,
                                                       int promServerNodePort,
                                                       int alertManagerNodePort) {
-
+    LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams promHelmParams = new HelmParams()
         .releaseName(promReleaseName)
@@ -1365,11 +1479,11 @@ public class CommonTestUtils {
    * @return the grafana Helm installation parameters
    */
   public static HelmParams installAndVerifyGrafana(String grafanaReleaseName,
-                                                      String grafanaNamespace,
-                                                      String grafanaValueFile,
-                                                      String grafanaVersion,
-                                                      int grafanaNodePort) {
-
+                                                   String grafanaNamespace,
+                                                   String grafanaValueFile,
+                                                   String grafanaVersion,
+                                                   int grafanaNodePort) {
+    LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams grafanaHelmParams = new HelmParams()
         .releaseName(grafanaReleaseName)
@@ -1406,7 +1520,7 @@ public class CommonTestUtils {
     logger.info("Wait for the grafana pod is ready in namespace {0}", grafanaNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for prometheus to be running in namespace {0} "
+            condition -> logger.info("Waiting for grafana to be running in namespace {0} "
                     + "(elapsed time {1}ms, remaining time {2}ms)",
                 grafanaNamespace,
                 condition.getElapsedTimeInMS(),
@@ -1431,7 +1545,7 @@ public class CommonTestUtils {
                                           V1PersistentVolumeClaim v1pvc,
                                           String labelSelector,
                                           String namespace) {
-
+    LoggingFacade logger = getLogger();
     assertNotNull(v1pv, "v1pv is null");
     assertNotNull(v1pvc, "v1pvc is null");
 
@@ -1508,7 +1622,7 @@ public class CommonTestUtils {
    * @param namespace the namespace in which the job will be created
    */
   public static void createJobAndWaitUntilComplete(V1Job jobBody, String namespace) {
-
+    LoggingFacade logger = getLogger();
     String jobName = assertDoesNotThrow(() -> createNamespacedJob(jobBody), "createNamespacedJob failed");
 
     logger.info("Checking if the job {0} completed in namespace {1}", jobName, namespace);
@@ -1531,6 +1645,7 @@ public class CommonTestUtils {
    * @return PodCreationTimestamp of the pod
    */
   public static DateTime getPodCreationTime(String namespace, String podName) {
+    LoggingFacade logger = getLogger();
     DateTime podCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
             String.format("Couldn't get PodCreationTimestamp for pod %s", podName));
@@ -1555,7 +1670,7 @@ public class CommonTestUtils {
       String domainUid,
       String namespace,
       List<String> modelFiles) {
-
+    LoggingFacade logger = getLogger();
     assertNotNull(configMapName, "ConfigMap name cannot be null");
 
     Map<String, String> labels = new HashMap<>();
@@ -1591,7 +1706,8 @@ public class CommonTestUtils {
    * @throws java.io.IOException when copying files from source location to staging area fails
    */
   public static void replaceStringInFile(String filePath, String oldValue, String newValue)
-          throws IOException {
+      throws IOException {
+    LoggingFacade logger = getLogger();
     Path src = Paths.get(filePath);
     logger.info("Copying {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
@@ -1605,6 +1721,7 @@ public class CommonTestUtils {
    * Read the content of a model file as a String and add it to a map.
    */
   private static void addModelFile(Map<String, String> data, String modelFileName) {
+    LoggingFacade logger = getLogger();
     logger.info("Add model file {0}", modelFileName);
     String dsModelFile = String.format("%s/%s", MODEL_DIR, modelFileName);
 
@@ -1649,4 +1766,339 @@ public class CommonTestUtils {
 
     return Command.withParams(params).execute();
   }
+
+  /**
+   * Check that the given credentials are valid to access the WebLogic domain.
+   *
+   * @param podName name of the admin server pod
+   * @param namespace name of the namespace that the pod is running in
+   * @param username WebLogic admin username
+   * @param password WebLogic admin password
+   * @param expectValid true if the check expects a successful result
+   */
+  public static void verifyCredentials(
+      String podName,
+      String namespace,
+      String username,
+      String password,
+      boolean expectValid) {
+    LoggingFacade logger = getLogger();
+    String msg = expectValid ? "valid" : "invalid";
+    logger.info("Check if the given WebLogic admin credentials are {0}", msg);
+    withQuickRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Checking that credentials {0}/{1} are {2}"
+                    + "(elapsed time {3}ms, remaining time {4}ms)",
+                username,
+                password,
+                msg,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(
+            expectValid
+                ?
+            () -> credentialsValid(K8S_NODEPORT_HOST, podName, namespace, username, password)
+                :
+            () -> credentialsNotValid(K8S_NODEPORT_HOST, podName, namespace, username, password),
+            String.format(
+                "Failed to validate credentials %s/%s on pod %s in namespace %s",
+                username, password, podName, namespace)));
+  }
+
+
+  /**
+   * Generate a text file in RESULTS_ROOT directory by replacing template value.
+   * @param inputTemplateFile input template file 
+   * @param outputFile output file to be generated. This file will be copied to RESULTS_ROOT. If outputFile contains
+   *                   a directory, then the directory will created if it does not exist.
+   *                   example - crossdomxaction/istio-cdt-http-srvice.yaml
+   * @param templateMap map containing template variable(s) to be replaced
+   * @return path of the generated file - will be under RESULTS_ROOT
+  */
+  public static Path generateFileFromTemplate(
+       String inputTemplateFile, String outputFile,
+       Map<String, String> templateMap) throws IOException {
+
+    LoggingFacade logger = getLogger();
+
+    Path targetFileParent = Paths.get(outputFile).getParent();
+    if (targetFileParent != null) {
+      checkDirectory(targetFileParent.toString());
+    }
+    Path srcFile = Paths.get(inputTemplateFile);
+    Path targetFile = Paths.get(RESULTS_ROOT, outputFile);
+    logger.info("Copying  source file {0} to target file {1}", inputTemplateFile, targetFile.toString());
+
+    // Add the parent directory for the target file
+    Path parentDir = targetFile.getParent();
+    Files.createDirectories(parentDir);
+    Files.copy(srcFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+    String out = targetFile.toString();
+    for (Map.Entry<String, String> entry : templateMap.entrySet()) {
+      logger.info("Replacing String {0} with the value {1}", entry.getKey(), entry.getValue());
+      replaceStringInFile(out, entry.getKey(), entry.getValue());
+    }
+    return targetFile;
+  }
+
+  /**
+   * Check the application running in WebLogic server using host information in the header.
+   * @param url url to access the application
+   * @param hostHeader host information to be passed as http header
+   * @return true if curl command returns HTTP code 200 otherwise false
+  */
+  public static boolean checkAppUsingHostHeader(String url, String hostHeader) {
+    LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    StringBuffer headerString = null;
+    if (hostHeader != null) {
+      headerString = new StringBuffer("-H 'host: ");
+      headerString.append(hostHeader)
+                  .append(" ' ");
+    } else {
+      headerString = new StringBuffer("");
+    }
+    curlString.append(" --noproxy '*' ")
+         .append(" --silent --show-error ")
+         .append(headerString.toString())
+         .append(url)
+         .append(" -o /dev/null")
+         .append(" -w %{http_code});")
+         .append("echo ${status}");
+    logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
+    withQuickRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for appliation to be ready {0} "
+                + "(elapsed time {1} ms, remaining time {2} ms)",
+                url,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> {
+          return () -> {
+            return exec(new String(curlString), true).stdout().contains("200");
+          };
+        }));
+    return true;
+  }
+
+  /** Create a persistent volume.
+   * @param pvName name of the persistent volume to create
+   * @param domainUid domain UID
+   * @param className name of the class to call this method
+  */
+  public static void createPV(String pvName, String domainUid, String className) {
+
+    LoggingFacade logger = getLogger();
+    logger.info("creating persistent volume for pvName {0}, domainUid: {1}, className: {2}",
+        pvName, domainUid, className);
+    Path pvHostPath = null;
+    try {
+      pvHostPath = Files.createDirectories(Paths.get(
+          PV_ROOT, className, pvName));
+      logger.info("Creating PV directory host path {0}", pvHostPath);
+      org.apache.commons.io.FileUtils.deleteDirectory(pvHostPath.toFile());
+      Files.createDirectories(pvHostPath);
+    } catch (IOException ioex) {
+      logger.severe(ioex.getMessage());
+      fail("Create persistent volume host path failed");
+    }
+
+    V1PersistentVolume v1pv = new V1PersistentVolume()
+        .spec(new V1PersistentVolumeSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName("weblogic-domain-storage-class")
+            .volumeMode("Filesystem")
+            .putCapacityItem("storage", Quantity.fromString("5Gi"))
+            .persistentVolumeReclaimPolicy("Recycle")
+            .accessModes(Arrays.asList("ReadWriteMany"))
+            .hostPath(new V1HostPathVolumeSource()
+                .path(pvHostPath.toString())))
+        .metadata(new V1ObjectMeta()
+            .name(pvName)
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUid", domainUid));
+    boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
+        "Failed to create persistent volume");
+    assertTrue(success, "PersistentVolume creation failed");
+  }
+
+  /**
+   * Create a persistent volume claim.
+   *
+   * @param pvName name of the persistent volume
+   * @param pvcName name of the persistent volume claim to create
+   * @param domainUid UID of the WebLogic domain
+   * @param namespace name of the namespace in which to create the persistent volume claim
+   */
+  public static void createPVC(String pvName, String pvcName, String domainUid, String namespace) {
+
+    LoggingFacade logger = getLogger();
+    logger.info("creating persistent volume claim for pvName {0}, pvcName {1}, "
+        + "domainUid: {2}, namespace: {3}", pvName, pvcName, domainUid, namespace);
+    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
+        .spec(new V1PersistentVolumeClaimSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName("weblogic-domain-storage-class")
+            .volumeName(pvName)
+            .resources(new V1ResourceRequirements()
+                .putRequestsItem("storage", Quantity.fromString("5Gi"))))
+        .metadata(new V1ObjectMeta()
+            .name(pvcName)
+            .namespace(namespace)
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUid", domainUid));
+
+    boolean success = assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
+        "Failed to create persistent volume claim");
+    assertTrue(success, "PersistentVolumeClaim creation failed");
+  }
+
+  /**
+   * Create configmap containing domain creation scripts.
+   *
+   * @param configMapName name of the configmap to create
+   * @param files files to add in configmap
+   * @param namespace name of the namespace in which to create configmap
+   * @param className name of the class to call this method
+   * @throws IOException when reading the domain script files fail
+   * @throws ApiException if create configmap fails
+   */
+  public static void createConfigMapForDomainCreation(String configMapName, List<Path> files,
+      String namespace, String className)
+      throws ApiException, IOException {
+
+    LoggingFacade logger = getLogger();
+    logger.info("Creating configmap {0}, namespace {1}, className {2}", configMapName, namespace, className);
+
+    Path domainScriptsDir = Files.createDirectories(
+        Paths.get(TestConstants.LOGS_DIR, className, namespace));
+
+    // add domain creation scripts and properties files to the configmap
+    Map<String, String> data = new HashMap<>();
+    for (Path file : files) {
+      logger.info("Adding file {0} in configmap", file);
+      data.put(file.getFileName().toString(), Files.readString(file));
+      logger.info("Making a copy of file {0} to {1} for diagnostic purposes", file,
+          domainScriptsDir.resolve(file.getFileName()));
+      Files.copy(file, domainScriptsDir.resolve(file.getFileName()));
+    }
+    V1ObjectMeta meta = new V1ObjectMeta()
+        .name(configMapName)
+        .namespace(namespace);
+    V1ConfigMap configMap = new V1ConfigMap()
+        .data(data)
+        .metadata(meta);
+
+    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
+        String.format("Failed to create configmap %s with files %s", configMapName, files));
+    assertTrue(cmCreated, String.format("Failed while creating ConfigMap %s", configMapName));
+  }
+
+  /**
+   * Create a job to create a domain in persistent volume.
+   *
+   * @param image image name used to create the domain
+   * @param isUseSecret true for non Kind Kubernetes cluster
+   * @param pvName name of the persistent volume to create domain in
+   * @param pvcName name of the persistent volume claim
+   * @param domainScriptCM configmap holding domain creation script files
+   * @param namespace name of the domain namespace in which the job is created
+   * @param jobContainer V1Container with job commands to create domain
+   */
+  public static void createDomainJob(String image, boolean isUseSecret, String pvName,
+                               String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
+
+    LoggingFacade logger = getLogger();
+    logger.info("Running Kubernetes job to create domain for image: {1}, isUserSecret: {2} "
+        + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image, isUseSecret,
+        pvName, pvcName, domainScriptCM, namespace);
+    V1Job jobBody = new V1Job()
+        .metadata(
+            new V1ObjectMeta()
+                .name("create-domain-onpv-job-" + pvName) // name of the create domain job
+                .namespace(namespace))
+        .spec(new V1JobSpec()
+            .backoffLimit(0) // try only once
+            .template(new V1PodTemplateSpec()
+                .spec(new V1PodSpec()
+                    .restartPolicy("Never")
+                    .initContainers(Arrays.asList(new V1Container()
+                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
+                        .image(image)
+                        .addCommandItem("/bin/sh")
+                        .addArgsItem("-c")
+                        .addArgsItem("chown -R 1000:1000 /shared")
+                        .volumeMounts(Arrays.asList(
+                            new V1VolumeMount()
+                                .name(pvName)
+                                .mountPath("/shared")))
+                        .securityContext(new V1SecurityContext()
+                            .runAsGroup(0L)
+                            .runAsUser(0L))))
+                    .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
+                        .name("create-weblogic-domain-onpv-container")
+                        .image(image)
+                        .imagePullPolicy("Always")
+                        .ports(Arrays.asList(new V1ContainerPort()
+                            .containerPort(7001)))
+                        .volumeMounts(Arrays.asList(
+                            new V1VolumeMount()
+                                .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
+                                .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
+                            new V1VolumeMount()
+                                .name(pvName) // location to write domain
+                                .mountPath("/shared"))))) // mounted under /shared inside pod
+                    .volumes(Arrays.asList(
+                        new V1Volume()
+                            .name(pvName)
+                            .persistentVolumeClaim(
+                                new V1PersistentVolumeClaimVolumeSource()
+                                    .claimName(pvcName)),
+                        new V1Volume()
+                            .name("create-weblogic-domain-job-cm-volume")
+                            .configMap(
+                                new V1ConfigMapVolumeSource()
+                                    .name(domainScriptCM)))) //config map containing domain scripts
+                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                        new V1LocalObjectReference()
+                            .name(OCR_SECRET_NAME))
+                        : null))));
+    String jobName = assertDoesNotThrow(()
+        -> createNamespacedJob(jobBody), "Failed to create Job");
+
+    logger.info("Checking if the domain creation job {0} completed in namespace {1}",
+        jobName, namespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
+                    + "(elapsed time {2} ms, remaining time {3} ms)",
+                jobName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(jobCompleted(jobName, null, namespace));
+
+    // check job status and fail test if the job failed to create domain
+    V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
+        "Getting the job failed");
+    if (job != null) {
+      V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
+          v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
+          .findAny()
+          .orElse(null);
+      if (jobCondition != null) {
+        logger.severe("Job {0} failed to create domain", jobName);
+        List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
+            namespace, "job-name=" + jobName).getItems(),
+            "Listing pods failed");
+        if (!pods.isEmpty()) {
+          String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
+              "Failed to get pod log");
+          logger.severe(podLog);
+          fail("Domain create job failed");
+        }
+      }
+    }
+  }
+
 }
