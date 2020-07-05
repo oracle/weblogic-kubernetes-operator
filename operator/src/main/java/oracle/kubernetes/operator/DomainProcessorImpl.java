@@ -176,23 +176,13 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static class IntrospectionRequestStep extends Step {
 
     private final String requestedIntrospectVersion;
-    private final String existingError;
 
     public IntrospectionRequestStep(DomainPresenceInfo info) {
       this.requestedIntrospectVersion = info.getDomain().getIntrospectVersion();
-      this.existingError = Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getMessage)
-          .orElse(null);
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      if (existingError != null && existingError.startsWith("MII Fatal Error")) {
-        LOGGER.fine("Fatal Error stop introspection retries: " + existingError);
-        return null;
-      }
       if (!Objects.equals(requestedIntrospectVersion, packet.get(INTROSPECTION_STATE_LABEL))) {
         packet.put(DOMAIN_INTROSPECT_REQUESTED, Optional.ofNullable(requestedIntrospectVersion).orElse("0"));
       }
@@ -636,10 +626,20 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private boolean isShouldContinue() {
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
+      String existingError = Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getMessage)
+          .orElse(null);
       if (cachedInfo == null || cachedInfo.getDomain() == null) {
         return true;
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
+      } else if (existingError != null && existingError.startsWith("MII Fatal Error")
+          && !isSpecChanged(liveInfo, cachedInfo)) {
+        LOGGER.fine("DomainProcessorImpl.isShouldContinue: Fatal Error stop introspection retries: "
+            + existingError);
+        return false;
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
         return true;
       }
