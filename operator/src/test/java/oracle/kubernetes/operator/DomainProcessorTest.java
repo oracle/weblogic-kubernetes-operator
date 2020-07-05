@@ -634,16 +634,6 @@ public class DomainProcessorTest {
     assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
     assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("managedServers", "ms1"));
   }
-
-  @Test
-  public void whenDomainStatusHasFatalError_noIntrospectJob() throws Exception {
-    establishPreviousIntrospection(this::configureForModelInImage);
-    DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(newDomain);
-    domainPresenceInfo.getDomain().setStatus(new DomainStatus()
-        .withMessage("MII Fatal Error: WDT Create Domain Failed"));
-    processor.createMakeRightOperation(domainPresenceInfo).interrupt().execute();
-    assertThat(job, nullValue());
-  }
   
   private String getStatusReason(Domain updatedDomain) {
     return Optional.ofNullable(updatedDomain).map(Domain::getStatus).map(DomainStatus::getReason).orElse(null);
