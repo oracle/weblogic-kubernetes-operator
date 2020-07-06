@@ -603,13 +603,30 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
    service/domain1-cluster-1-external-lb created
    ```
 
+   After a short time, you will see the Administration Server and Managed Servers running. Use the following command to check server pod status.
+
+   ```bash
+   kubectl get pods --watch
+   ```
+
+   It may take you up to 20 minutes to deploy all pods, please wait and make sure everything is ready. The final example of pod output is as following:
+
+   ```
+   NAME                                              READY   STATUS      RESTARTS   AGE
+   domain1-admin-server                              1/1     Running     0          9m42s
+   domain1-create-weblogic-sample-domain-job-qqmkn   0/1     Completed   0          11m
+   domain1-managed-server1                           1/1     Running     0          3m1s
+   domain1-managed-server2                           1/1     Running     0          3m1s
+   weblogic-operator-754447455c-kbmnm                1/1     Running     0          12m
+   ``` 
+
    Get the addresses of the Admin and Managed Servers (please wait for the external IP addresses to be assigned):
 
    ```bash
    kubectl get svc --watch
    ```
 
-   It may take you up to 20 minutes to deploy all pods, please wait and make sure everything is ready. The final example output is as following:
+   The final example of servcie output is as following:
 
    ```
    NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP      PORT(S)              AGE
@@ -623,7 +640,58 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
    internal-weblogic-operator-svc     ClusterIP      10.0.192.13   <none>           8082/TCP             2d22h
    kubernetes                         ClusterIP      10.0.0.1      <none>           443/TCP              2d22h
    ```
+
    In the example, the URL to access the admin server is: http://52.188.176.103:7001/console
+
+   If the admin console is still not available, use `kubectl describe domain` to check domain status.
+
+   ```bash
+   kubectl describe domain domain1
+   ```
+
+   Make sure status of cluster-1 is `ServersReady` and `Available`.
+
+   ```
+   Status:
+    Clusters:
+      Cluster Name:      cluster-1
+      Maximum Replicas:  5
+      Minimum Replicas:  1
+      Ready Replicas:    2
+      Replicas:          2
+      Replicas Goal:     2
+    Conditions:
+      Last Transition Time:  2020-07-06T05:39:32.539Z
+      Reason:                ServersReady
+      Status:                True
+      Type:                  Available
+    Replicas:                2
+    Servers:
+      Desired State:  RUNNING
+      Node Name:      aks-nodepool1-11471722-vmss000001
+      Server Name:    admin-server
+      State:          RUNNING
+      Cluster Name:   cluster-1
+      Desired State:  RUNNING
+      Node Name:      aks-nodepool1-11471722-vmss000001
+      Server Name:    managed-server1
+      State:          RUNNING
+      Cluster Name:   cluster-1
+      Desired State:  RUNNING
+      Node Name:      aks-nodepool1-11471722-vmss000001
+      Server Name:    managed-server2
+      State:          RUNNING
+      Cluster Name:   cluster-1
+      Desired State:  SHUTDOWN
+      Server Name:    managed-server3
+      Cluster Name:   cluster-1
+      Desired State:  SHUTDOWN
+      Server Name:    managed-server4
+      Cluster Name:   cluster-1
+      Desired State:  SHUTDOWN
+      Server Name:    managed-server5
+  ```
+
 
 ## Automation
 
