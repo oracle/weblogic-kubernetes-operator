@@ -35,12 +35,13 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.helpers.LegalNames.DOMAIN_INTROSPECTOR_JOB_SUFFIX;
+
 /**
  * Watches for changes to pods.
  */
 public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, PodAwaiterStepFactory {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final String DOMAIN_INTROSPECTOR_JOB_SUFFIX = "introspect-domain-job";
   private final String namespace;
   private final WatchListener<V1Pod> listener;
 
@@ -181,7 +182,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       java.util.List<V1ContainerStatus> conStatuses = status.getContainerStatuses();
       if (conStatuses != null) {
         for (V1ContainerStatus conStatus : conStatuses) {
-          if (!conStatus.getReady()
+          if (!isReady(conStatus)
               && (getContainerStateWaitingMessage(conStatus) != null
               || getContainerStateTerminatedReason(conStatus).contains("Error"))) {
             return true;
@@ -190,6 +191,10 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       }
     }
     return false;
+  }
+
+  private static boolean isReady(V1ContainerStatus conStatus) {
+    return Optional.ofNullable(conStatus).map(V1ContainerStatus::getReady).orElse(false);
   }
 
   private static String getContainerStateTerminatedReason(V1ContainerStatus conStatus) {
