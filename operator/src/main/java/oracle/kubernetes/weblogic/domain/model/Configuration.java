@@ -21,11 +21,11 @@ public class Configuration {
 
   @Description(
       "A list of names of the Secrets for WebLogic configuration overrides or model. If this field is specified,"
-          + " then the value of spec.configOverrideSecrets is ignored.")
+          + " then the value of `spec.configOverrideSecrets` is ignored.")
   private List<String> secrets;
 
   @Description("The name of the ConfigMap for WebLogic configuration overrides. If this field is specified,"
-          + " then the value of spec.configOverrides is ignored.")
+          + " then the value of `spec.configOverrides` is ignored.")
   private String overridesConfigMap;
 
   @Description("The introspector job timeout value in seconds. If this field is specified, "
@@ -34,8 +34,8 @@ public class Configuration {
   private Long introspectorJobActiveDeadlineSeconds;
 
   @Description(
-      "Determines how updated configuration overrides are distributed to already running WebLogic Servers "
-      + "following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides "
+      "Determines how updated configuration overrides are distributed to already running WebLogic Server instances "
+      + "following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides "
       + "are generated during introspection from Secrets, the `overrideConfigMap` field, and WebLogic domain topology. "
       + "Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides "
       + "dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration "
