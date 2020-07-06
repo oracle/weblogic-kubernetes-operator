@@ -380,12 +380,21 @@ function waitForJobComplete {
     # If the job is completed, there should have no service in pending status.
     pendingCount=`kubectl get svc | grep -c "pending"`
     if [ ${pendingCount} -ne 0 ]; then svcState="running"; fi
+
+    # If the job is completed, there should have the following pods running
+    #    ${domainUID}-${adminServerName}, e.g. domain1-admin-server
+    #    ${domainUID}-${managedServerNameBase}1, e.g. domain1-managed-server1 
+    #    to
+    #    ${domainUID}-${managedServerNameBase}n, e.g. domain1-managed-servern, n = initialManagedServerReplicas
+    runningPodCount=`kubectl get pods | grep "${domainUID}" | grep -c "Running"`
+    if [  $runningPodsCount -le ${initialManagedServerReplicas} ]; then svcState="running"; fi
   done
 
   # If all the services are completed, print service details
   # Otherwise, ask the user to refer to document for troubleshooting
   if [ "$svcState" == "completed" ];
   then 
+    kubectl get pods
     kubectl get svc
   else
     echo It takes a little long to create domain, please refer to README.md#troubleshooting to check pod status. 
