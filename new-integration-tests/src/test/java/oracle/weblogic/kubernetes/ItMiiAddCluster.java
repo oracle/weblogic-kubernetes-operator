@@ -107,7 +107,7 @@ class ItMiiAddCluster {
   private static String dockerConfigJson = "";
 
   private static int replicaCount = 2;
-  private static final String domainUid = "miiaddcluster";
+  private static final String domainUid = "mii-add-cluster";
 
   private StringBuffer checkCluster = null;
   private V1Patch patch = null;
