@@ -9,7 +9,7 @@ that the domain will run in.
 To use the sample, run the command:
 
 ```
-$ ./create-weblogic-credentials-secret.sh -u username -p password -d domainUID -n namespace -s secretName
+$ ./create-weblogic-credentials.sh -u username -p password -d domainUID -n namespace -s secretName
 ```
 
 The parameters are as follows:
