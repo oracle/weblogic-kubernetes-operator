@@ -286,9 +286,10 @@ function createFileShare {
 
     # Create a Kubernetes secret
     echo Creating kubectl secret for Azure File Share ${azureFileShareSecretName}.
-    kubectl create secret generic ${azureFileShareSecretName} \
-    --from-literal=azurestorageaccountname=$storageAccountName \
-    --from-literal=azurestorageaccountkey=$azureStorageKey
+    bash $dirKuberetesSecrets/create-azure-storage-credentials-secret.sh \
+      -s ${azureFileShareSecretName} \
+      -a $storageAccountName \
+      -k $azureStorageKey
 
     # Mount the file share as a volume
     echo Mounting file share as a volume.
@@ -335,15 +336,16 @@ EOF
 function createWebLogicDomain {
     # Create WebLogic Domain Credentials.
     echo Creating weblogic credentials, with user ${weblogicUserName}, domainUID ${domainUID}
-    bash ${dirCreateDomainCredentials}/create-weblogic-credentials-secret.sh -u ${weblogicUserName} \
+    bash ${dirCreateDomainCredentials}/create-weblogic-credentials.sh -u ${weblogicUserName} \
     -p ${weblogicAccountPassword} -d ${domainUID}
 
     # Create Docker Credentials.
-    kubectl create secret docker-registry ${imagePullSecretName} \
-    --docker-server=docker.io \
-    --docker-username=${dockerUserName} \
-    --docker-password=${dockerPassword} \
-    --docker-email=${docker-email}
+    bash $dirKuberetesSecrets/create-docker-credentials-secret.sh \
+      -e ${docker-email} \
+      -p ${dockerPassword} \
+      -u ${dockerUserName} \
+      -s ${imagePullSecretName} \
+      -d docker.io
 
     # Create Weblogic Domain
     echo Creating weblogic domain ${domainUID}
@@ -428,6 +430,7 @@ cd ..
 export dirSampleScripts=`pwd`
 export dirCreateDomain="${dirSampleScripts}/create-weblogic-domain/domain-home-on-pv"
 export dirCreateDomainCredentials="${dirSampleScripts}/create-weblogic-domain-credentials"
+export dirKuberetesSecrets="${dirSampleScripts}/create-kuberetes-secrets"
 export selectorAdminServerName="serverName"
 export selectorClusterServerName="clusterName"
 export azureResourceUID=`date +%s`

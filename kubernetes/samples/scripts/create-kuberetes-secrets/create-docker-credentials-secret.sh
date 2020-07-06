@@ -27,11 +27,12 @@ function validateKubectlAvailable {
 }
 
 function usage {
-  echo usage: ${script} -e email -p password -u username [-s dockerServer] [-n namespace] [-h]
+  echo usage: ${script} -e email -p password -u username [-s secretName] [-d dockerServer] [-n namespace] [-h]
   echo "  -e email, must be specified."
   echo "  -p password, must be specified."
   echo "  -u username, must be specified."
-  echo "  -s docker server, optional, Use docker.io if not specified."
+  echo "  -s secret name, optional, Use regcred if not specified."
+  echo "  -d docker server, optional, Use docker.io if not specified."
   echo "  -n namespace, optional. Use the default namespace if not specified"
   echo "  -h Help"
   exit $1
@@ -43,7 +44,7 @@ function usage {
 secretName=regcred
 namespace=default
 dockerServer=docker.io
-while getopts "he:p:u:n:d:s:" opt; do
+while getopts "he:p:u:n:d:s:d:" opt; do
   case $opt in
     e) email="${OPTARG}"
     ;;
@@ -51,7 +52,9 @@ while getopts "he:p:u:n:d:s:" opt; do
     ;;
     u) username="${OPTARG}"
     ;;
-    s) dockerServer="${OPTARG}"
+    s) secretName="${OPTARG}"
+    ;;
+    d) dockerServer="${OPTARG}"
     ;;
     n) namespace="${OPTARG}"
     ;;

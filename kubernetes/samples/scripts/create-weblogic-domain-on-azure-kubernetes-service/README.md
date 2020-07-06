@@ -186,10 +186,14 @@ az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORA
 
 The WLS Operator uses Kubernetes secrets.  We need a storage key for the secret. These commands query the storage account to obtain the key, and then stores the storage account key as a Kubernetes secret.
 
-```
+```bash
 STORAGE_KEY=$(az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" -o tsv)
+```
 
-kubectl create secret generic azure-secret --from-literal=azurestorageaccountname=$AKS_PERS_STORAGE_ACCOUNT_NAME --from-literal=azurestorageaccountkey=$STORAGE_KEY
+We will use the [create-azure-storage-credentials-secret.sh](../create-kubernetes-secrets/create-azure-storage-credentials-secret.sh) script to create the storage account key as a Kubernetes secret, leave secret name with default value `azure-secret`.  For example:
+
+```bash
+./create-azure-storage-credentials-secret.sh -a $AKS_PERS_STORAGE_ACCOUNT_NAME -k $STORAGE_KEY
 ```
 
 ## Generate Configuration Files
@@ -383,11 +387,11 @@ You will have to press Ctrl-C to exit this command due to the `-w` flag.
 
 Now that we have created the AKS cluster, installed the WLS operator, and verified the operator is ready to go, we can ask the operator to create a WLS domain.
 
-1. We will use the [create-weblogic-credentials-secret.sh](../create-weblogic-domain-credentials/create-weblogic-credentials-secret.sh) script to create the domain credentials as a Kubernetes secret.
+1. We will use the [create-weblogic-credentials.sh](../create-weblogic-domain-credentials/create-weblogic-credentials.sh) script to create the domain credentials as a Kubernetes secret.
 
    ```bash
    #cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-credentials
-   ./create-weblogic-credentials-secret.sh -u weblogic -p welcome1 -d domain1
+   ./create-weblogic-credentials.sh -u weblogic -p welcome1 -d domain1
    ```
 
    Successful output should look similar to the following.
@@ -398,7 +402,7 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
    The secret domain1-weblogic-credentials has been successfully created in the default namespace.
     ```
 
-2. We will use the [create-docker-credentials-secret.sh](../create-weblogic-domain-credentials/create-docker-credentials-secret.sh) script to create the docker credentials as a Kubernetes secret.  For example:
+2. We will use the [create-docker-credentials-secret.sh](../create-kubernetes-secrets/create-docker-credentials-secret.sh) script to create the docker credentials as a Kubernetes secret.  For example:
 
    ```bash
    ./create-docker-credentials-secret.sh -e foo@bar.com -p myDockerPassword -u myDockerUserId

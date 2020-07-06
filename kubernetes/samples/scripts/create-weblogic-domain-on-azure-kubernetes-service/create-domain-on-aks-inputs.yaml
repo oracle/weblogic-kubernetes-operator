@@ -16,7 +16,7 @@ azureServicePrincipalAppId: azure-service-principal-app-id
 # A client secret of the service principal.
 azureServicePrincipalClientSecret: azure-service-principal-client-secret
 
-# Tenant (Directory ) id of the service principal.
+# Tenant (Directory) id of the service principal.
 azureServicePrincipalTenantId: azure-service-principal-tenant-id
 
 # Docker email, used to pull the WebLogic Server Docker image
