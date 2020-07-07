@@ -3,8 +3,8 @@ title: "Startup and shutdown"
 date: 2019-02-23T17:04:41-05:00
 draft: false
 weight: 1
-description: "There are properties on the domain resource that specify which servers should be running
-and which servers should be restarted. To start, stop, or restart servers, modify these properties on the domain resource."
+description: "There are fields on the Domain that specify which WebLogic Server instances should be running,
+started or restarted. To start, stop, or restart servers, modify these fields on the Domain."
 ---
 
 #### Contents
@@ -16,15 +16,15 @@ and which servers should be restarted. To start, stop, or restart servers, modif
     * [Rolling restarts](#rolling-restarts)
     * [Common restarting scenarios](#common-restarting-scenarios)
 
-There are properties on the domain resource that specify which servers should be running,
-which servers should be restarted and the desired initial state. To start, stop, or restart servers, modify these properties on the domain resource
+There are fields on the Domain that specify which servers should be running,
+which servers should be restarted and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain
 (for example, by using `kubectl` or the Kubernetes REST API).  The operator will notice the changes and apply them.  Beginning,
-with operator version 2.2, there are now properties to control server shutdown handling, such as whether the shutdown
+with operator version 2.2, there are now fields to control server shutdown handling, such as whether the shutdown
 will be graceful, the timeout, and if in-flight sessions are given the opportunity to complete.
 
 ### Starting and stopping servers
 
-The `serverStartPolicy` property on the domain resource controls which servers should be running.
+The `serverStartPolicy` field of the Domain controls which servers should be running.
 The operator runtime monitors this property and creates or deletes the corresponding server pods.
 
 {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers.
@@ -86,7 +86,7 @@ Changes to the `serverStartState` property do not affect already started servers
 
 #### Normal running state
 Normally, the Administration Server, all of the standalone Managed Servers, and enough Managed Servers in each cluster to satisfy its `replicas` count, should be started.
-In this case, the domain resource does not need to specify `serverStartPolicy`, or list any `clusters` or `servers`, but it does need to specify a `replicas` count.
+In this case, the Domain does not need to specify `serverStartPolicy`, or list any `clusters` or `servers`, but it does need to specify a `replicas` count.
 
 For example:
 ```
@@ -121,7 +121,7 @@ Sometimes you want to start the Administration Server only, that is, take the do
 ```
 
 #### Shut down a cluster
-To shut down a cluster (for example, take it out of service), add it to the domain resource and set its `serverStartPolicy` to `NEVER`.
+To shut down a cluster (for example, take it out of service), add it to the Domain and set its `serverStartPolicy` to `NEVER`.
 ```
   kind: Domain
   metadata:
@@ -134,7 +134,7 @@ To shut down a cluster (for example, take it out of service), add it to the doma
 ```
 
 #### Shut down a specific standalone server
-To shut down a specific standalone server, add it to the domain resource and set its `serverStartPolicy` to `NEVER`.
+To shut down a specific standalone server, add it to the Domain and set its `serverStartPolicy` to `NEVER`.
 ```
   kind: Domain
   metadata:
@@ -150,7 +150,7 @@ To shut down a specific standalone server, add it to the domain resource and set
 Normally, all of the Managed Servers in a cluster are identical and it doesn't matter which ones are running as long as the operator starts enough of them to get to the cluster's `replicas` count.
 However, sometimes some of the Managed Servers are different (for example, support some extra services that the other servers in the cluster use) and need to always be started.
 
-This is done by adding the server to the domain resource and setting its `serverStartPolicy` to `ALWAYS`.
+This is done by adding the server to the Domain and setting its `serverStartPolicy` to `ALWAYS`.
 ```
   kind: Domain
   metadata:
@@ -168,10 +168,10 @@ The server will count toward the cluster's `replicas` count.  Also, if you confi
 
 ### Shutdown options
 
-The domain resource includes the element `serverPod` that is available under `spec`, `adminServer` and each entry of
-`clusters` and `managedServers`. The `serverPod` element controls many details of how pods are created for server instances.
+The Domain YAML file includes the field `serverPod` that is available under `spec`, `adminServer` and each entry of
+`clusters` and `managedServers`. The `serverPod` field controls many details of how pods are created for server instances.
 
-The `shutdown` element of `serverPod` controls how servers will be shutdown.  This element has three properties:
+The `shutdown` field of `serverPod` controls how servers will be shutdown and has three fields:
 `shutdownType`, `timeoutSeconds`, and `ignoreSessions`.  The `shutdownType` property can be set to either `Graceful`, the default,
 or `Forced` specifying the type of shutdown.  The `timeoutSeconds` property configures how long the server is given to
 complete shutdown before the server is killed.  The `ignoreSessions` property, which is only applicable for graceful shutdown, when `false`,
@@ -194,12 +194,12 @@ the operator will not override the environment variable based on the shutdown co
 
 #### `shutdown` rules
 
-You can specify the `serverPod` element, including the `shutdown` element, at the domain, cluster, and server levels. If
+You can specify the `serverPod` field, including the `shutdown` field, at the domain, cluster, and server levels. If
 `shutdown` is specified at multiple levels, such as for a cluster and for a member server that is part of that cluster,
 then the shutdown configuration for a specific server is the combination of all of the relevant values with each field
-having the value from the `shutdown` element at the most specific scope.  
+having the value from the `shutdown` field at the most specific scope.  
 
-For instance, given the following domain resource:
+For instance, given the following Domain YAML file:
 ```
   kind: Domain
   metadata:
@@ -229,13 +229,13 @@ instance will not ignore sessions and will have a longer timeout.
 
 ### Restarting servers
 
-The operator runtime automatically recreates (restarts) server pods when properties on the domain resource that affect server pods change (such as `image`, `volumes`, and `env`).
-The `restartVersion` property on the domain resource lets you force the operator to restart a set of server pods.
+The operator runtime automatically recreates (restarts) WebLogic Server instance Pods when fields on the Domain that affect Pod generation change (such as `image`, `volumes`, and `env`).
+The `restartVersion` field on the Domain lets you force the operator to restart a set of WebLogic Server instance Pods.
 
 The operator runtime does rolling restarts of clustered servers so that service is maintained.
 
-#### Properties that cause servers to be restarted
-The operator will restart servers when any of the follow properties on the domain resource that affect the server are changed:
+#### Fields that cause servers to be restarted
+The operator will restart servers when any of the follow fields on the Domain that affect the WebLogic Server instance Pod generation are changed:
 
 * `containerSecurityContext`
 * `domainHome`
@@ -260,12 +260,12 @@ The operator will restart servers when any of the follow properties on the domai
 {{% notice note %}}
 If the only change detected is the addition or modification of a domain-specified label or annotation,
 the operator will *patch* the server's pod rather than restarting it. Removing a label or annotation from
-the domain resource will cause neither a restart nor a patch. It is possible to force a restart to remove
+the Domain will cause neither a restart nor a patch. It is possible to force a restart to remove
 such a label or annotation by modifying the `restartVersion`.
 {{% /notice %}}
 
 {{% notice note %}}
-Prior to version 2.2, the operator incorrectly restarted servers when the `serverStartState` property was changed.  Now,
+Prior to version 2.2, the operator incorrectly restarted servers when the `serverStartState` field was changed.  Now,
 this property has no affect on already running servers.
 {{% /notice %}}
 
@@ -273,7 +273,7 @@ this property has no affect on already running servers.
 
 Clustered servers that need to be restarted are gradually restarted (for example, `rolling restarted`) so that the cluster is not taken out of service and in-flight work can be migrated to other servers in the cluster.
 
-The `maxUnavailable` property on the domain resource determines how many of the cluster's servers may be taken out of service at a time when doing a rolling restart.
+The `maxUnavailable` field on the Domain determines how many of the cluster's servers may be taken out of service at a time when doing a rolling restart.
 It can be specified at the domain and cluster levels and defaults to 1 (that is, by default, clustered servers are restarted one at a time).
 
 When using in-memory session replication, Oracle WebLogic Server employs a primary-secondary session replication model to provide high availability of application session state (that is, HTTP and EJB sessions).
@@ -296,12 +296,12 @@ If the value is different, then the server pod is old and needs to be restarted.
 
 Each time you want to restart some servers, you need to set `restartVersion` to a different string (the particular value doesn't matter).
 
-The operator will notice the new value and restart the affected servers (using the same mechanisms as when other properties that affect the server pods are changed, including doing rolling restarts of clustered servers).
+The operator will notice the new value and restart the affected servers (using the same mechanisms as when other fields that affect the WebLogic Server instance Pod generation are changed, including doing rolling restarts of clustered servers).
 
 The `restartVersion` property can be specified at the domain, cluster, and server levels.  A server will be restarted if any of these three values change.
 
 {{% notice note %}}
-The servers will also be restarted if `restartVersion` is removed from the domain resource (for example, if you had previously specified a value to cause a restart, then you remove that value after the previous restart has completed).
+The servers will also be restarted if `restartVersion` is removed from the Domain (for example, if you had previously specified a value to cause a restart, then you remove that value after the previous restart has completed).
 {{% /notice %}}
 
 
@@ -371,7 +371,7 @@ then restart them.  Unlike rolling restarts, the operator cannot detect and init
 
 To manually initiate a full domain restart:
 
-1. Change the domain level `serverStartPolicy` on the domain resource to `NEVER`.
+1. Change the domain-level `serverStartPolicy` on the Domain to `NEVER`.
 ```
   kind: Domain
   metadata:

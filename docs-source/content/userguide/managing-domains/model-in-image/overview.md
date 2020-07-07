@@ -19,7 +19,7 @@ description = "Introduction to Model in Image, description of its runtime behavi
 
 Model in Image is an alternative to the operator's Domain in Image and Domain in PV domain types. See [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) for a comparison of operator domain types.
 
-Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource.
+Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.
 
 It enables:
 
@@ -39,7 +39,7 @@ WDT models are a convenient and simple alternative to WebLogic Scripting Tool (W
 
 #### Runtime behavior
 
-When you deploy a Model in Image domain resource:
+When you deploy a Model in Image Domain YAML file:
 
   - The operator will run a Kubernetes Job called the 'introspector job' that:
     - Merges your WDT artifacts.
@@ -53,7 +53,7 @@ When you deploy a Model in Image domain resource:
 
 #### Runtime updates
 
-Model updates can be applied at runtime by changing the image, secrets, or WDT model ConfigMap after initial deployment. If the image name changes, or the domain resource `restartVersion` changes, then this will cause the introspector job to rerun and generate a new domain home, and subsequently the changed domain home will be propagated to the domain's WebLogic Server pods using a rolling upgrade (each pod restarting one at a time). See [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
+Model updates can be applied at runtime by changing the image, secrets, or WDT model ConfigMap after initial deployment. If the image name changes, or the Domain `restartVersion` changes, then this will cause the introspector job to rerun and generate a new domain home, and subsequently the changed domain home will be propagated to the domain's WebLogic Server pods using a rolling upgrade (each pod restarting one at a time). See [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
 #### Continuous integration and delivery (CI/CD)
 

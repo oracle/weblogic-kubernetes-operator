@@ -15,17 +15,17 @@ The following blogs provide more in-depth information on support for scaling Web
 
 The operator provides several ways to initiate scaling of WebLogic clusters, including:
 
-* [On-demand, updating the domain resource directly (using `kubectl`)](#on-demand-updating-the-domain-resource-directly).
+* [On-demand, updating the Domain directly (using `kubectl`)](#on-demand-updating-the-domain-directly).
 * [Calling the operator's REST scale API, for example, from `curl`](#calling-the-operators-rest-scale-api).
 * [Using a WLDF policy rule and script action to call the operator's REST scale API](#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api).
 * [Using a Prometheus alert action to call the operator's REST scale API](#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api).
 
-#### On-demand, updating the domain resource directly
-The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the `replicas` property within a domain resource.  This can be done by using the `kubectl` command-line interface for running commands against Kubernetes clusters.  More specifically, you can modify the domain resource directly by using the `kubectl edit` command.  For example:
+#### On-demand, updating the Domain directly
+The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the `replicas` field within a Domain. This can be done by using the `kubectl` command-line interface for running commands against Kubernetes clusters.  More specifically, you can modify the Domain directly by using the `kubectl edit` command.  For example:
 ```
 $ kubectl edit domain domain1 -n [namespace]
 ```
-Here we are editing a domain resource named `domain1`.  The `kubectl edit` command will open the domain resource definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding dynamic cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
+Here we are editing a Domain named `domain1`.  The `kubectl edit` command will open the Domain definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding dynamic cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
 ```
 spec:
   ...
@@ -35,7 +35,7 @@ spec:
   ...
 ```
 
-Alternatively, you can specify a default `replicas` value for all the clusters.  If you do this, then you don't need to list the cluster in the domain resource (unless you want to customize another property of the cluster).
+Alternatively, you can specify a default `replicas` value for all the clusters.  If you do this, then you don't need to list the cluster in the Domain (unless you want to customize another property of the cluster).
 ```
 spec:
   ...
@@ -110,11 +110,11 @@ When the operator receives a scaling request, it will:
 *	Validate that the specified domain, identified by `domainUID`, exists.
 *	Validate that the WebLogic cluster, identified by `clusterName`, exists.
 *	Verify that the specified WebLogic cluster has a sufficient number of configured servers to satisfy the scaling request.
-*	Initiate scaling by setting the `replicas` property within the corresponding domain resource, which can be done in either:
+*	Initiate scaling by setting the `replicas` field within the corresponding Domain, which can be done in either:
       *	A `cluster` entry, if defined within its cluster list.
       *	At the domain level, if not defined in a `cluster` entry.
 
-In response to a change to either `replicas` property, in the domain resource, the operator will increase or decrease the number of pods (Managed Servers) to match the desired replica count.
+In response to a change to either `replicas` field, in the Domain, the operator will increase or decrease the number of pods (Managed Servers) to match the desired replica count.
 
 #### Using a WLDF policy rule and script action to call the operator's REST scale API
 The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
@@ -193,7 +193,7 @@ A more in-depth description and example on using WLDF's Policies and Actions com
 
 
 ##### Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information
-The script `scalingAction.sh`, specified in the WLDF script action above, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) in order to query the Kubernetes API server for both configuration and runtime information of the domain resource.
+The script `scalingAction.sh`, specified in the WLDF script action above, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) in order to query the Kubernetes API server for both configuration and runtime information of the Domain.
 The following is an example YAML file for creating the appropriate Kubernetes ClusterRole bindings:
 
 {{% notice note %}}
@@ -285,7 +285,7 @@ an HTTPS scale request requires these mandatory header properties:
 * `X-Requested-By` header value
 
 The following shell script is an example of how to issue a scaling request, with the necessary HTTP request header values, using `curl`.
-This example assumes the operator and domain resource are configured with the following properties in Kubernetes:
+This example assumes the operator and Domain YAML file are configured with the following fields in Kubernetes:
 
 * Operator properties:
   * externalRestEnabled: `true`

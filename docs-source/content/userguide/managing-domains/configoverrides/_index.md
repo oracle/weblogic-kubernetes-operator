@@ -39,7 +39,7 @@ You can use overrides to customize domains as they are moved from QA to producti
 * Create a Kubernetes configuration map that contains:
   * Override templates (also known as situational configuration templates), with names and syntax as described in [Override template names and syntax](#override-template-names-and-syntax).
   * A file named `version.txt` that contains the exact string `2.0`.
-* Set your domain resource `configuration.overridesConfigMap` to the name of this configuration map.
+* Set your Domain resource `configuration.overridesConfigMap` to the name of this configuration map.
 * If templates leverage `secret macros`:
   * Create Kubernetes Secrets that contain template macro values.
   * Set your domain `configuration.secrets` to reference the aforementioned secrets.
@@ -314,18 +314,18 @@ Best practices for data source modules and their overrides:
     kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret
     kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID=DOMAIN_UID
     ```
-* Configure the name of the configuration map in the domain CR `configuration.overridesConfigMap` field.
-* Configure the names of each secret in domain CR.
-  * If the secret contains the WebLogic admin `username` and `password` keys, then set the domain CR `webLogicCredentialsSecret` field.
-  * For all other secrets, add them to the domain CR `configuration.secrets` field. Note: This must be in an array format even if you only add one secret (see the sample domain resource YAML below).
-* Any override changes require stopping all WebLogic pods, applying your domain resource (if it changed), and restarting the WebLogic pods before they can take effect.
-  * Custom override changes on an existing running domain, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic Server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted with your new domain resource (if it changed), or with your existing domain resource (if you haven't changed it).
-  * To stop all running WebLogic Server pods in your domain, apply a changed resource, and then start/restart the domain:
-      * Set your domain resource `serverStartPolicy` to `NEVER`, wait, and apply your latest domain resource with the `serverStartPolicy` restored back to `ALWAYS` or `IF_NEEDED` (See [Starting and stopping servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
-      * Or delete your domain resource, wait, and apply your (potentially changed) domain resource.
+* Configure the name of the ConfigMap in the Domain YAML file `configuration.overridesConfigMap` field.
+* Configure the names of each Secret in Domain YAML file.
+  * If the Secret contains the WebLogic admin `username` and `password` keys, then set the Domain YAML file `webLogicCredentialsSecret` field.
+  * For all other secrets, add them to the Domain YAML file `configuration.secrets` field. Note: This must be in an array format even if you only add one secret (see the sample Domain resource YAML below).
+* Any override changes require stopping all WebLogic Server instance Pods, applying your Domain YAML file (if it changed), and restarting the WebLogic Server instance Pods before they can take effect.
+  * Custom override changes on an existing running domain, such as updating an override ConfigMap, a Secret, or a Domain, will not take effect until all running WebLogic Server instance Pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted with your new Domain (if it changed), or with your existing Domain (if you haven't changed it).
+  * To stop all running WebLogic Server instance Pods for your domain, apply a changed resource, and then start/restart the domain:
+      * Set your Domain `serverStartPolicy` field to `NEVER`, wait, and apply your latest Domain YAML file with the `serverStartPolicy` restored back to `ALWAYS` or `IF_NEEDED` (See [Starting and stopping servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
+      * Or delete your Domain, wait, and apply your (potentially changed) Domain YAML file.
 * See [Debugging](#debugging) for ways to check if the situational configuration is taking effect or if there are errors.
 
-Example domain resource YAML:
+Example Domain resource YAML:
 ```
 apiVersion: "weblogic.oracle/v2"
 kind: Domain
@@ -380,7 +380,7 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
          ```
   * Look in your `DOMAIN_HOME/optconfig` directory.
     * This directory, or a subdirectory within this directory, should contain each of your custom situational configuration files.
-    * If it doesn't, then this likely indicates your domain resource `configuration.overridesConfigMap` was not set to match your custom override configuration map name, or that your custom override configuration map does not contain your override files.
+    * If it doesn't, then this likely indicates your Domain resource `configuration.overridesConfigMap` was not set to match your custom override configuration map name, or that your custom override configuration map does not contain your override files.
 
 * If the Administration Server pod does start but fails to reach ready state or tries to restart:
   * Check for this message ` WebLogic Server failed to start due to missing or invalid situational configuration files` in the Administration Server pod's `kubectl log`
@@ -405,7 +405,7 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
   > get('/Servers/admin-server/MaxMessageSize')
   > exit()
   ```
-* To cause the WebLogic situational configuration feature to produce additional debugging information in the WebLogic Server logs, configure the `JAVA_OPTIONS` environment variable in your domain resource with:
+* To cause the WebLogic situational configuration feature to produce additional debugging information in the WebLogic Server logs, configure the `JAVA_OPTIONS` environment variable in your Domain resource with:
 ```
 -Dweblogic.debug.DebugSituationalConfig=true
 -Dweblogic.debug.DebugSituationalConfigDumpXml=true
@@ -419,7 +419,7 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
 
 * When a domain is first deployed, or is restarted, the operator runtime creates a Kubernetes introspector job named `DOMAIN_UID-introspect-domain-job`.
 * The introspector job's pod:
-  * Mounts the Kubernetes configuration map and secrets specified by using the operator domain resource `configuration.overridesConfigMap`, `webLogicCredentialsSecret`, and `configuration.secrets` fields.
+  * Mounts the Kubernetes configuration map and secrets specified by using the operator Domain resource `configuration.overridesConfigMap`, `webLogicCredentialsSecret`, and `configuration.secrets` fields.
   * Reads the mounted situational configuration templates from the configuration map and expands them to create the actual situational configuration files for the domain:
       * It expands some fixed replaceable values (for example, `${env:DOMAIN_UID}`).
       * It expands referenced secrets by reading the value from the corresponding mounted secret file (for example, `${secret:mysecret.mykey}`).
