@@ -2,7 +2,8 @@
 title: "Boot identity not valid"
 date: 2020-03-02T08:08:19-04:01
 draft: false
-weight: 20
+weight: 3
+description: "One or more WebLogic Server instances in my domain will not start and I see errors in the server log like this: Boot identity not valid."
 ---
 
 > One or more WebLogic Server instances in my domain will not start and I see errors in the server log like this:

@@ -2,11 +2,16 @@
 title: "Using an OCI load balancer"
 date: 2019-09-25T12:41:38-04:00
 draft: false
-weight: 50
+weight: 8
+description: "If you are running your Kubernetes cluster on Oracle Container Engine
+for Kubernetes (OKE), then you can have OCI automatically
+provision load balancers for you by creating a `Service` of type
+`LoadBalancer` instead of (or in addition to) installing an
+ingress controller like Traefik or Voyager."
 ---
 
 If you are running your Kubernetes cluster on Oracle Container Engine
-for Kubernetes (commonly known as OKE), you can have OCI automatically
+for Kubernetes (commonly known as OKE), then you can have OCI automatically
 provision load balancers for you by creating a `Service` of type
 `LoadBalancer` instead of (or in addition to) installing an
 ingress controller like Traefik or Voyager.
