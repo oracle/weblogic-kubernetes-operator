@@ -2,7 +2,8 @@
 title: "Cannot pull image"
 date: 2019-03-23T08:08:19-04:00
 draft: false
-weight: 10
+weight: 2
+description: "My domain will not start and I see errors like `ImagePullBackoff` or `Cannot pull image`."
 ---
 
 > My domain will not start and I see errors like `ImagePullBackoff` or `Cannot pull image`
@@ -132,7 +133,7 @@ If you have an image in your local repository that you would like to copy to
 a remote repository, then the Docker steps are:
 
 - Use [docker login](https://docs.docker.com/engine/reference/commandline/login/)
-  to log in to the target repository's registry. For example: 
+  to log in to the target repository's registry. For example:
   ```
   docker login some.registry.com -u username -p password
   ```
