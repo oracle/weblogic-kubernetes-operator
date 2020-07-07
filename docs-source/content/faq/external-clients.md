@@ -2,7 +2,8 @@
 title: "External WebLogic clients"
 date: 2019-11-21T21:23:03Z
 draft: false
-weight: 80
+weight: 11
+description: "There are two supported approaches for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster: load balancer tunneling and Kubernetes `NodePorts`."
 ---
 
 #### Approaches

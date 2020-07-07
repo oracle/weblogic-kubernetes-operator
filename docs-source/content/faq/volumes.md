@@ -2,7 +2,8 @@
 title: "Providing access to a PersistentVolumeClaim"
 date: 2020-01-07T15:02:28-05:00
 draft: false
-weight: 60
+weight: 9
+description: "I need to provide an instance with access to a PersistentVolumeClaim."
 ---
 > I need to provide an instance with access to a PersistentVolumeClaim.
 
