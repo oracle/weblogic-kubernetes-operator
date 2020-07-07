@@ -18,14 +18,14 @@ started or restarted. To start, stop, or restart servers, modify these fields on
 
 There are fields on the Domain that specify which servers should be running,
 which servers should be restarted and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain
-(for example, by using `kubectl` or the Kubernetes REST API).  The operator will notice the changes and apply them.  Beginning,
-with operator version 2.2, there are now fields to control server shutdown handling, such as whether the shutdown
+(for example, by using `kubectl` or the Kubernetes REST API).  The operator will detect the changes and apply them. Beginning,
+with operator version 2.2.0, there are now fields to control server shutdown handling, such as whether the shutdown
 will be graceful, the timeout, and if in-flight sessions are given the opportunity to complete.
 
 ### Starting and stopping servers
 
-The `serverStartPolicy` field of the Domain controls which servers should be running.
-The operator runtime monitors this property and creates or deletes the corresponding server pods.
+The `serverStartPolicy` and `replicas` fields of the Domain controls which servers should be running.
+The operator monitors these fields and creates or deletes the corresponding WebLogic Server instance Pods.
 
 {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers.
 {{% /notice %}}
@@ -69,14 +69,14 @@ Servers configured as `ALWAYS` count toward the cluster's `replicas` count.
 {{% /notice %}}
 
 {{% notice note %}}
-If more servers are configured as `ALWAYS` than the cluster's `replicas` count, they will all be started and the `replicas` count will be ignored.
+If more servers are configured as `ALWAYS` than the cluster's `replicas` count, they will all be started and the `replicas` count will be exceeded.
 {{% /notice %}}
 
 ### Server start state
 
-For some use cases, such as an externally managed zero downtime patching (ZDP), it may be necessary to start WebLogic Server
+For some use cases, such as an externally managed zero downtime patching (ZDP), it may be necessary to start WebLogic Server instances
 so that at the end of its startup process, the server is in an administrative state.  This can be achieved using the `serverStartState`
-property, which is available at domain, cluster, and server levels.  When `serverStartState` is set to `ADMIN`, then servers will
+field, which is available at domain, cluster, and server levels. When `serverStartState` is set to `ADMIN`, then servers will
 progress only to the administrative state.  Then you could use the WebLogic Server Administration Console, REST API, or a WLST script to make any necessary
 updates before advancing the server to the running state.
 
@@ -85,7 +85,7 @@ Changes to the `serverStartState` property do not affect already started servers
 ### Common starting and stopping scenarios
 
 #### Normal running state
-Normally, the Administration Server, all of the standalone Managed Servers, and enough Managed Servers in each cluster to satisfy its `replicas` count, should be started.
+Normally, the Administration Server, all of the standalone Managed Servers, and enough Managed Servers members in each cluster to satisfy its `replicas` count, should be started.
 In this case, the Domain does not need to specify `serverStartPolicy`, or list any `clusters` or `servers`, but it does need to specify a `replicas` count.
 
 For example:
@@ -95,7 +95,7 @@ For example:
     name: domain1
   spec:
     image: ...
-    replicas: 10
+    replicas: 3
 ```
 
 #### Shut down all the servers
@@ -110,7 +110,7 @@ Sometimes you need to completely shut down the domain (for example, take it out 
 ```
 
 #### Only start the Administration Server
-Sometimes you want to start the Administration Server only, that is, take the domain out of service but leave the Administration Server running so that you can administer the domain.
+Sometimes you want to start the Administration Server only, that is, take the Managed Servers out of service but leave the Administration Server running so that you can administer the domain.
 ```
   kind: Domain
   metadata:
@@ -147,7 +147,7 @@ To shut down a specific standalone server, add it to the Domain and set its `ser
 ```
 
 #### Force a specific clustered Managed Server to start
-Normally, all of the Managed Servers in a cluster are identical and it doesn't matter which ones are running as long as the operator starts enough of them to get to the cluster's `replicas` count.
+Normally, all of the Managed Servers members in a cluster are identical and it doesn't matter which ones are running as long as the operator starts enough of them to get to the cluster's `replicas` count.
 However, sometimes some of the Managed Servers are different (for example, support some extra services that the other servers in the cluster use) and need to always be started.
 
 This is done by adding the server to the Domain and setting its `serverStartPolicy` to `ALWAYS`.
@@ -169,20 +169,20 @@ The server will count toward the cluster's `replicas` count.  Also, if you confi
 ### Shutdown options
 
 The Domain YAML file includes the field `serverPod` that is available under `spec`, `adminServer` and each entry of
-`clusters` and `managedServers`. The `serverPod` field controls many details of how pods are created for server instances.
+`clusters` and `managedServers`. The `serverPod` field controls many details of how Pods are generated for WebLogic Server instances.
 
 The `shutdown` field of `serverPod` controls how servers will be shutdown and has three fields:
-`shutdownType`, `timeoutSeconds`, and `ignoreSessions`.  The `shutdownType` property can be set to either `Graceful`, the default,
+`shutdownType`, `timeoutSeconds`, and `ignoreSessions`.  The `shutdownType` field can be set to either `Graceful`, the default,
 or `Forced` specifying the type of shutdown.  The `timeoutSeconds` property configures how long the server is given to
 complete shutdown before the server is killed.  The `ignoreSessions` property, which is only applicable for graceful shutdown, when `false`,
 the default, allows the shutdown process to take longer to give time for any active sessions to complete up to the configured timeout.
 The operator runtime monitors this property but will not restart any server pods solely to adjust the shutdown options.
 Instead, server pods created or restarted because of another property change will be configured to shutdown, at the appropriate
-time, using the shutdown options set when the server pod is created.
+time, using the shutdown options set when the WebLogic Server instance Pod is created.
 
 #### Shutdown environment variables
 
-The operator runtime configures shutdown behavior with the use of the following environment variables. Users may
+The operator configures shutdown behavior with the use of the following environment variables. Users may
 instead simply configure these environment variables directly.  When a user-configured environment variable is present,
 the operator will not override the environment variable based on the shutdown configuration.
 
@@ -229,10 +229,10 @@ instance will not ignore sessions and will have a longer timeout.
 
 ### Restarting servers
 
-The operator runtime automatically recreates (restarts) WebLogic Server instance Pods when fields on the Domain that affect Pod generation change (such as `image`, `volumes`, and `env`).
+The operator automatically recreates (restarts) WebLogic Server instance Pods when fields on the Domain that affect Pod generation change (such as `image`, `volumes`, and `env`).
 The `restartVersion` field on the Domain lets you force the operator to restart a set of WebLogic Server instance Pods.
 
-The operator runtime does rolling restarts of clustered servers so that service is maintained.
+The operator does rolling restarts of clustered servers so that service is maintained.
 
 #### Fields that cause servers to be restarted
 The operator will restart servers when any of the follow fields on the Domain that affect the WebLogic Server instance Pod generation are changed:
@@ -258,14 +258,14 @@ The operator will restart servers when any of the follow fields on the Domain th
 * `volumeMounts`
 
 {{% notice note %}}
-If the only change detected is the addition or modification of a domain-specified label or annotation,
-the operator will *patch* the server's pod rather than restarting it. Removing a label or annotation from
+If the only change detected is the addition or modification of a customer-specified label or annotation,
+the operator will *patch* the Pod rather than restarting it. Removing a label or annotation from
 the Domain will cause neither a restart nor a patch. It is possible to force a restart to remove
 such a label or annotation by modifying the `restartVersion`.
 {{% /notice %}}
 
 {{% notice note %}}
-Prior to version 2.2, the operator incorrectly restarted servers when the `serverStartState` field was changed.  Now,
+Prior to version 2.2.0, the operator incorrectly restarted servers when the `serverStartState` field was changed.  Now,
 this property has no affect on already running servers.
 {{% /notice %}}
 
@@ -291,12 +291,9 @@ If you are supplying updated models or secrets for a running Model in Image doma
 
 The `restartVersion` property lets you force the operator to restart servers.
 
-It's basically a user-specified string that gets added to new server pods (as a label) so that the operator can tell which servers need to be restarted.
-If the value is different, then the server pod is old and needs to be restarted.  If the value matches, then the server pod has already been restarted.
+Each time you want to restart some servers, you need to set `restartVersion` to a different value. The specific value does not matter so most customers use whole number values.
 
-Each time you want to restart some servers, you need to set `restartVersion` to a different string (the particular value doesn't matter).
-
-The operator will notice the new value and restart the affected servers (using the same mechanisms as when other fields that affect the WebLogic Server instance Pod generation are changed, including doing rolling restarts of clustered servers).
+The operator will detect the new value and restart the affected servers (using the same mechanisms as when other fields that affect the WebLogic Server instance Pod generation are changed, including doing rolling restarts of clustered servers).
 
 The `restartVersion` property can be specified at the domain, cluster, and server levels.  A server will be restarted if any of these three values change.
 
@@ -314,7 +311,7 @@ Set `restartVersion` at the domain level to a new value.
   metadata:
     name: domain1
   spec:
-    restartVersion: "domainV1"
+    restartVersion: "5"
     ...
 ```
 
@@ -329,7 +326,7 @@ Set `restartVersion` at the cluster level to a new value.
   spec:
     clusters:
     - clusterName : "cluster1"
-      restartVersion: "cluster1V1"
+      restartVersion: "5"
       maxUnavailable: 2
     ...
 ```
@@ -344,7 +341,7 @@ Set `restartVersion` at the `adminServer` level to a new value.
     name: domain1
   spec:
     adminServer:
-      restartVersion: "adminV1"
+      restartVersion: "5"
     ...
 ```
 
@@ -359,14 +356,14 @@ Set `restartVersion` at the `managedServer` level to a new value.
   spec:
     managedServers:
     - serverName: "standalone_server1"
-      restartVersion: "v1"
+      restartVersion: "1"
     - serverName: "cluster1_server1"
-      restartVersion: "v1"
+      restartVersion: "2"
     ...
 ```
 #### Full domain restarts
 
-To do a full domain restart, first shut down all of the domain's servers (Administration Server and Managed Servers), taking the domain out of service,
+To do a full domain restart, first shut down all servers (Administration Server and Managed Servers), taking the domain out of service,
 then restart them.  Unlike rolling restarts, the operator cannot detect and initiate a full domain restart; you must always manually initiate it.
 
 To manually initiate a full domain restart:
