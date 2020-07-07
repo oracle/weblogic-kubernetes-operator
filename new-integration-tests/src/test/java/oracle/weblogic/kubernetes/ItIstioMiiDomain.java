@@ -65,11 +65,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Test to create a WebLogic Domain in model in image with ISTIO enabled
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to create a WebLogic Domain in mii model with ISTIO enabled")
+@DisplayName("Test istio enabled WebLogic Domain in mii model")
 @IntegrationTest
-class ItMiiIstioDomain {
+class ItIstioMiiDomain {
 
   private static HelmParams opHelmParams = null;
   private static V1ServiceAccount serviceAccount = null;
@@ -133,7 +132,7 @@ class ItMiiIstioDomain {
    */
   @Test
   @DisplayName("Create WebLogic Domain with mii model with istio")
-  public void testCreateMiiIstioDomain() {
+  public void testIstioModelInImage() {
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;

@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to create WebLogic domain in domainhome-in-image model with istio configuration")
+@DisplayName("Verify istio enabled WebLogic domain in domainhome-in-image model")
 @IntegrationTest
 class ItIstioDomainInImage {
 
@@ -119,7 +119,7 @@ class ItIstioDomainInImage {
   }
 
   /**
-   * Create a domain using domainhome-in-image model.
+   * Create a domain using domainhome-in-image model using wdt.
    * Add istio configuration with default readinessPort 
    * Do not add any AdminService under AdminServer configuration
    * Deploy istio gateways and virtual service 
@@ -131,7 +131,7 @@ class ItIstioDomainInImage {
   @Test
   @DisplayName("Create WebLogic domainhome-in-image with istio")
   @Slow
-  public void testIstioDomainHomeInImageUsingWdt() {
+  public void testIstioDomainHomeInImage() {
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
 

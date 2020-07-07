@@ -110,7 +110,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests to create domain in persistent volume using WLST.
  */
-@DisplayName("Test to create WebLogic domain in domainhome-on-pv model with istio configuration")
+@DisplayName("Verify istio enabled WebLogic domain in domainhome-on-pv model")
 @IntegrationTest
 public class ItIstioDomainInPV  {
 
@@ -173,7 +173,7 @@ public class ItIstioDomainInPV  {
   }
 
   /**
-   * Create a WebLogic domain using WLST in a persistent volume.
+   * Create a WebLogic domain using WLST in a persistent volume using wdt.
    * Add istio configuration. 
    * Deploy istio gateways and virtual service.
    * Verify domain pods runs in ready state and services are created.
@@ -181,7 +181,7 @@ public class ItIstioDomainInPV  {
    */
   @Test
   @DisplayName("Create WebLogic domain in PV with Istio")
-  public void testIstioDomainInPvUsingWlst() {
+  public void testIstioDomainHomeInPv() {
 
     final String managedServerNameBase = "wlst-ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
@@ -202,7 +202,7 @@ public class ItIstioDomainInPV  {
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
-    // these resources should be labeled with domainUid for cleanup after testing
+    // these resources should be labeled with domainUid for cleanup after test
     createPV(pvName, domainUid);
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
