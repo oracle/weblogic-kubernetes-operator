@@ -651,7 +651,7 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
 
    Make sure status of cluster-1 is `ServersReady` and `Available`.
 
-   ```
+   ```yaml
    Status:
     Clusters:
       Cluster Name:      cluster-1
@@ -692,7 +692,6 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
       Server Name:    managed-server5
    ```
 
-
 ## Automation
 
 If you want to automate all the above steps, please use the [create-domain-on-aks.sh](create-domain-on-aks.sh).
@@ -723,26 +722,13 @@ bash create-domain-on-aks.sh -i <your-input>.yaml -o ~/azure -e
 
 The script will print the Admin Server IP address after successful deployment.
 
-It may take you up to 20 minutes to deploy all pods, please wait and make sure everything is ready. The final example output of `kubectl get svc` is as following:
+## Deployment Summary
 
-   ```
-   NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP      PORT(S)              AGE
-   domain1-admin-server               ClusterIP      None          <none>           30012/TCP,7001/TCP   2d20h
-   domain1-admin-server-external      NodePort       10.0.182.50   <none>           7001:30701/TCP       2d20h
-   domain1-admin-server-external-lb   LoadBalancer   10.0.67.79    52.188.176.103   7001:32227/TCP       2d20h
-   domain1-cluster-1-lb               LoadBalancer   10.0.112.43   104.45.176.215   8001:30874/TCP       2d17h
-   domain1-cluster-cluster-1          ClusterIP      10.0.162.19   <none>           8001/TCP             2d20h
-   domain1-managed-server1            ClusterIP      None          <none>           8001/TCP             2d20h
-   domain1-managed-server2            ClusterIP      None          <none>           8001/TCP             2d20h
-   internal-weblogic-operator-svc     ClusterIP      10.0.192.13   <none>           8082/TCP             2d22h
-   kubernetes                         ClusterIP      10.0.0.1      <none>           443/TCP              2d22h
-   ```
-   
-In the example, the URL to access the admin server is: http://52.188.176.103:7001/console
+You now have created an AKS cluster with `PersistentVolumeClaim` and `PersistentVolume` to contain the WLS domain configuration files.  Using those artifacts, you have used the Operator to create a WLS domain.
 
 ## Deploy Sample Application
 
-You may optionally test the cluster by deploying the simple sample application included in this guide:
+Now that you have WLS running in AKS, you can test the cluster by deploying the simple sample application included in this guide:
 
 1. Go to the admin server console, click "Lock & Edit".
 2. Click Deployments.
