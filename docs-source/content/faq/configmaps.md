@@ -2,7 +2,8 @@
 title: "Providing access to a ConfigMap"
 date: 2020-01-07T15:02:28-05:00
 draft: false
-weight: 70
+weight: 10
+description: "I need to provide an instance with access to a ConfigMap."
 ---
 > I need to provide an instance with access to a ConfigMap.
 
