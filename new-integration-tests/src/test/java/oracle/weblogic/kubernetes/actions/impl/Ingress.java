@@ -31,7 +31,7 @@ public class Ingress {
 
   /**
    * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
-   * The ingress host is set to 'domainUid.clusterName.test'.
+   * The ingress host is set to 'domainUid.domainNamespace.clusterName.test'.
    *
    * @param ingressName name of the ingress to be created
    * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
@@ -60,7 +60,7 @@ public class Ingress {
       httpIngressPaths.add(httpIngressPath);
 
       // set the ingress rule
-      String ingressHost = domainUid + "." + clusterName + ".test";
+      String ingressHost = domainUid + "." + domainNamespace + "." + clusterName + ".test";
       ExtensionsV1beta1IngressRule ingressRule = new ExtensionsV1beta1IngressRule()
           .host(ingressHost)
           .http(new ExtensionsV1beta1HTTPIngressRuleValue()
@@ -94,7 +94,7 @@ public class Ingress {
 
   /**
    * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
-   * The ingress host is set to 'domainUid.clusterName.test'.
+   * The ingress host is set to 'domainUid.domainNamespace.clusterName.test'.
    *
    * @param ingressName name of the ingress to be created
    * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
@@ -124,7 +124,7 @@ public class Ingress {
       httpIngressPaths.add(httpIngressPath);
 
       // set the ingress rule
-      String ingressHost = domainUid + "." + clusterName + ".test";
+      String ingressHost = domainUid + "." + domainNamespace + "." + clusterName + ".test";
       if (!setIngressHost) {
         ingressHost = "";
         ingressHostList.add("*");
