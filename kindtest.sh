@@ -184,6 +184,7 @@ echo 'Set up test running ENVVARs...'
 export KIND_REPO="localhost:${reg_port}/"
 export K8S_NODEPORT_HOST=`kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}'`
 export JAVA_HOME="${JAVA_HOME:-`type -p java|xargs readlink -f|xargs dirname|xargs dirname`}"
+export NUMBER_OF_THREADS="2"
 
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
