@@ -113,11 +113,12 @@ class ItCoherenceTests {
       .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
-    logger.info("Creating unique namespace for Operator");
+    logger.info("Assigning a unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    logger.info("Creating unique namespace for Domain");
+    // get a new unique domainNamespace
+    logger.info("Assigning a unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
@@ -145,7 +146,7 @@ class ItCoherenceTests {
   @DisplayName("Create domain with a Coherence cluster using WDT and test rolling restart")
   @Slow
   @MustNotRunInParallel
-  public void testRollingRestart() {
+  public void testCohernceServerRollingRestart() {
     final String successMarker = "CACHE-SUCCESS";
 
     // create and verify WebLogic domain image using model in image with model files
@@ -191,10 +192,10 @@ class ItCoherenceTests {
         () -> assertTrue(execResult2.stdout().contains(successMarker), "Failed to validate the cache")
     );
 
-    logger.info("\n Coherence proxy client {0} returns {1} \n ",
+    logger.info("Coherence proxy client {0} returns {1}",
         OP_CACHE_VALIDATE, execResult2.stdout());
 
-    logger.info("SUCCESS --- testRollingRestart");
+    logger.info("SUCCESS --- Coherence Server restarted in rolling fashion");
   }
 
   private void copyCohProxyClientAppToPods() {
@@ -256,7 +257,7 @@ class ItCoherenceTests {
         execCommand(domainNamespace, serverName, containerName, true,
             "/bin/sh", "-c", coherenceProxyClientCmd.toString());
 
-    logger.info("\n Coherence proxy client returns \n " + execResult.stdout());
+    logger.info("Coherence proxy client returns {0}", execResult.stdout());
 
     return execResult;
   }

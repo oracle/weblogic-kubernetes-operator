@@ -26,7 +26,7 @@ import com.tangosol.net.NamedCache;
 
 
 /**
- * MBean unit test class. This test creates a coherence cluster
+ * This test creates a coherence cluster.
  */
 public class CacheClient {
 
