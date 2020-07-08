@@ -1,8 +1,11 @@
 ---
-title: "Coherence Requirements"
+title: "Coherence requirements"
 date: 2019-08-12T12:41:38-04:00
 draft: false
-weight: 90
+weight: 12
+description: "If you are running Coherence on Kubernetes, either inside a WebLogic domain
+or standalone, then there are some additional requirements to make sure
+that Coherence can form clusters."
 ---
 
 If you are running Coherence on Kubernetes, either inside a WebLogic domain

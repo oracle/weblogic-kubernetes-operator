@@ -6,10 +6,6 @@ pre = "<b> </b>"
 description = "Updating a running Model in Image domain's images and model files."
 +++
 
-{{% notice info %}}
-This feature is supported only in 3.0.0.
-{{% /notice %}}
-
 #### Contents
 
  - [Overview](#overview)

@@ -1,0 +1,50 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: istio-cdt-http-gateway
+  namespace: NAMESPACE
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - 'domain1-NAMESPACE.org'
+      port:
+        name: http
+        number: 80
+        protocol: HTTP
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: istio-cdt-http-virtualservice
+  namespace: NAMESPACE
+spec:
+  gateways:
+    - istio-cdt-http-gateway
+  hosts:
+    - 'domain1-NAMESPACE.org'
+  http:
+    - match:
+        - uri:
+            prefix: /console
+        - uri:
+            prefix: /TxForward
+        - port: 7001
+      route:
+        - destination:
+            host: ADMIN_SERVICE
+            port:
+              number: 7001
+
+    - match:
+        - uri:
+            prefix: /TxForward
+        - port: 8001
+      route:
+        - destination:
+            host: CLUSTER_SERVICE
+            port:
+              number: 8001

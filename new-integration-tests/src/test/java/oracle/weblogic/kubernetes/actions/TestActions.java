@@ -177,8 +177,8 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean restartDomain(String domainUid, String namespace) {
-    return Domain.restart(domainUid, namespace);
+  public static boolean startDomain(String domainUid, String namespace) {
+    return Domain.start(domainUid, namespace);
   }
 
   /**
@@ -220,6 +220,28 @@ public class TestActions {
   public static boolean patchDomainResourceWithNewIntrospectVersion(
       String domainUid, String namespace) throws ApiException {
     return Domain.patchDomainResourceWithNewIntrospectVersion(domainUid, namespace);
+  }
+
+  /**
+   * Get next introspectVersion for a given domain.
+   *
+   * @param domainUid domain id
+   * @param namespace namespace in which the domain resource exists
+   * @return String containing next introspectVersion
+   * @throws ApiException when getting domain resource fails
+   */
+  public static String getNextIntrospectVersion(String domainUid, String namespace) throws ApiException {
+    LoggingFacade logger = getLogger();
+    oracle.weblogic.domain.Domain domain = Domain.getDomainCustomResource(domainUid, namespace);
+    String introspectVersion = domain.getSpec().getIntrospectVersion();
+    if (null != introspectVersion) {
+      logger.info("current introspectVersion: {0}", introspectVersion);
+      introspectVersion = Integer.toString(Integer.valueOf(introspectVersion) + 1);
+      logger.info("modified introspectVersion: {0}", introspectVersion);
+    } else {
+      introspectVersion = Integer.toString(1);
+    }
+    return introspectVersion;
   }
 
   /**

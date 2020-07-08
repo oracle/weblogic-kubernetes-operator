@@ -2,13 +2,19 @@
 title: "Using OCI File Storage (FSS) for persistent volumes"
 date: 2020-02-12T12:12:12-05:00
 draft: false
-weight: 40
+weight: 7
+description: "If you are running your Kubernetes cluster on Oracle Container Engine
+for Kubernetes (OKE), and you use OCI File Storage (FSS)
+for persistent volumes to store the WebLogic domain home, then the file system
+handling, as demonstrated in the operator persistent volume sample, will require
+an update to properly initialize the file ownership on the persistent volume
+when the domain is initially created."
 ---
 
 If you are running your Kubernetes cluster on Oracle Container Engine
 for Kubernetes (commonly known as OKE), and you use OCI File Storage (FSS)
 for persistent volumes to store the WebLogic domain home, then the file system
-handling demonstrated in the operator persistent volume sample will require
+handling, as demonstrated in the operator persistent volume sample, will require
 an update to properly initialize the file ownership on the persistent volume
 when the domain is initially created.
 

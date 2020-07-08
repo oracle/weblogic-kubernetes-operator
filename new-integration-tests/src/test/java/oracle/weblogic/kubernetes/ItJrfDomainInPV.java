@@ -126,6 +126,15 @@ public class ItJrfDomainInPV {
     assertNotNull(namespaces.get(2), "Namespace is null");
     jrfDomainNamespace = namespaces.get(2);
 
+    //determine if the tests are running in Kind cluster. if true use images from Kind registry
+    if (KIND_REPO != null) {
+      dbImage = KIND_REPO + DB_IMAGE_NAME.substring(OCR_REGISTRY.length() + 1)
+          + ":" + DB_IMAGE_TAG;
+      fmwImage = KIND_REPO + JRF_BASE_IMAGE_NAME.substring(OCR_REGISTRY.length() + 1)
+          + ":" + JRF_BASE_IMAGE_TAG;
+      isUseSecret = false;
+    }
+
     final int dbPort = getNextFreePort(30000, 32767);
     logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, dbPort: {2} "
         + "dbUrl: {3} dbImage: {4},  fmwImage: {5} isUseSecret: {6}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl,
@@ -136,15 +145,6 @@ public class ItJrfDomainInPV {
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, jrfDomainNamespace);
-
-    //determine if the tests are running in Kind cluster. if true use images from Kind registry
-    if (KIND_REPO != null) {
-      dbImage = KIND_REPO + DB_IMAGE_NAME.substring(OCR_REGISTRY.length() + 1)
-        + ":" + DB_IMAGE_TAG;
-      fmwImage = KIND_REPO + JRF_BASE_IMAGE_NAME.substring(OCR_REGISTRY.length() + 1)
-        + ":" + JRF_BASE_IMAGE_TAG;
-      isUseSecret = false;
-    }
 
     logger.info("For ItJrfDomainInPV using DB image: {0}, FMW image {1}", dbImage, fmwImage);
 

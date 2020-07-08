@@ -6,10 +6,6 @@ pre = "<b> </b>"
 description = "Debugging a deployed Model in Image domain."
 +++
 
-{{% notice info %}}
-This feature is supported only in 3.0.0.
-{{% /notice %}}
-
 Here are some suggestions for debugging problems with Model in Image after your domain resource is deployed.
 
 #### Contents

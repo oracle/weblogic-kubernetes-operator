@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -98,6 +99,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
+import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
@@ -182,15 +184,6 @@ public class ItIntrospectVersion {
     assertNotNull(namespaces.get(2), "Namespace is null");
     nginxNamespace = namespaces.get(2);
 
-
-    // build the clusterview application
-    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
-        "dist", introDomainNamespace);
-    assertTrue(Paths.get(distDir.toString(),
-        "clusterview.war").toFile().exists(),
-        "Application archive is not available");
-    clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
-
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, introDomainNamespace);
 
@@ -211,6 +204,14 @@ public class ItIntrospectVersion {
       // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
       createOCRRepoSecret(introDomainNamespace);
     }
+
+    // build the clusterview application
+    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
+        "dist", introDomainNamespace);
+    assertTrue(Paths.get(distDir.toString(),
+        "clusterview.war").toFile().exists(),
+        "Application archive is not available");
+    clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
 
   }
 
@@ -393,10 +394,11 @@ public class ItIntrospectVersion {
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
     // patch the domain to increase the replicas of the cluster and add introspectVersion field
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
     String patchStr =
         "["
             + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3},"
-            + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
+            + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
             + "]";
 
     logger.info("Updating replicas in cluster {0} using patch string: {1}", clusterName, patchStr);
@@ -486,7 +488,7 @@ public class ItIntrospectVersion {
     logger.info("Deploying clusterview app {0} to cluster {1}",
         clusterViewAppPath, clusterName);
     deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName, clusterViewAppPath,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
         introDomainNamespace);
 
     //access application in managed servers through NGINX load balancer
@@ -612,6 +614,104 @@ public class ItIntrospectVersion {
         .isTrue();
 
   }
+
+  /**
+   * Test brings up a new cluster and verifies it can successfully start by doing the following.
+   * a. Creates new WebLogic static cluster using WLST.
+   * b. Patch the Domain Resource with cluster
+   * c. Update the introspectVersion version
+   * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
+   * pre-existing WebLogic cluster.
+   */
+  @Order(3)
+  @Test
+  @DisplayName("Test new cluster creation on demand using WLST and introspection")
+  public void testCreateNewCluster() {
+
+    final String domainUid = "mydomain";
+    final String clusterName = "cl2";
+
+    final String adminServerName = "admin-server";
+    final String adminServerPodName = domainUid + "-" + adminServerName;
+
+    final String managedServerNameBase = "cl2-ms-";
+    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+
+    final int replicaCount = 2;
+
+    logger.info("Getting node port for default channel");
+    int adminServerT3Port = getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel");
+
+    // create a temporary WebLogic WLST property file
+    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+        "Creating WLST properties file failed");
+    Properties p = new Properties();
+    p.setProperty("admin_host", K8S_NODEPORT_HOST);
+    p.setProperty("admin_port", Integer.toString(adminServerT3Port));
+    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("test_name", "create_cluster");
+    p.setProperty("cluster_name", clusterName);
+    p.setProperty("server_prefix", managedServerNameBase);
+    p.setProperty("server_count", "3");
+    assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
+        "Failed to write the WLST properties to file");
+
+    // changet the admin server port to a different value to force pod restart
+    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
+    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
+
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
+
+    logger.info("patch the domain resource with new cluster and introspectVersion");
+    String patchStr
+        = "["
+        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
+        + "    {\"clusterName\" : \"" + clusterName + "\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
+        + "},"
+        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    //verify the introspector pod is created and runs
+    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+
+    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+
+    // verify new cluster managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, introDomainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+    }
+
+    // verify new cluster managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
+          managedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    }
+
+    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + adminServerT3Port + "/clusterview/";
+
+    String serverListUri = "ClusterViewServlet?listServers=true";
+    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
+
+    assertEquals(200, response.statusCode(), "Status code not equals to 200");
+
+    // verify managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking {0} health", managedServerNameBase + i);
+      assertTrue(response.body().contains(managedServerNameBase + i + ":HEALTH_OK"),
+          "Didn't get " + managedServerNameBase + i + ":HEALTH_OK");
+    }
+
+  }
+
 
   /**
    * Create a WebLogic domain on a persistent volume by doing the following.
