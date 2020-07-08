@@ -690,7 +690,7 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
       Cluster Name:   cluster-1
       Desired State:  SHUTDOWN
       Server Name:    managed-server5
-  ```
+   ```
 
 
 ## Automation
