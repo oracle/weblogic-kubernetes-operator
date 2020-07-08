@@ -58,7 +58,7 @@ The diagram below shows the components inside the containers running WebLogic Se
 
 The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. All containers running WebLogic Server use this same Docker image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory.
 {{% notice note %}}
-During a rolling event caused by a change to the Domain resource's `image` field, containers will be using a mix of the updated value of the `image` field and its previous value.
+During a rolling event caused by a change to the Domain's `image` field, containers will be using a mix of the updated value of the `image` field and its previous value.
 {{% /notice %}}
 Within the container, the following aspects are configured by the operator:
 

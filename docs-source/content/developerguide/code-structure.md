@@ -13,11 +13,11 @@ This project has the following directory structure:
 * `json-schema-maven-plugin`: Maven plugin for schema generator
 * `kubernetes/charts`: Helm charts
 * `kubernetes/samples`: All samples, including for WebLogic domain creation
-* `model`: Domain resource Java model
+* `model`: Domain Java model
 * `operator`: Operator runtime
 * `site`: This documentation
 * `src/scripts`: Scripts operator injects into WebLogic Server instance Pods
-* `swagger`: Swagger files for the Kubernetes API server and Domain resource
+* `swagger`: Swagger files for the Kubernetes API server and Domain type
 
 ### Watch package
 

@@ -15,7 +15,7 @@ This document describes what's needed to create and deploy a typical Model in Im
    - [Optional WDT model ConfigMap](#optional-wdt-model-configmap)
    - [Required runtime encryption secret](#required-runtime-encryption-secret)
    - [Secrets for model macros](#secrets-for-model-macros)
-   - [Domain resource attributes](#domain-resource-attributes)
+   - [Domain fields](#domain-fields)
    - [Always use external state](#always-use-external-state)
    - [Requirements for JRF domain types](#requirements-for-jrf-domain-types)
 
@@ -100,7 +100,7 @@ Corresponding Domain YAML file snippet:
 
 Create additional secrets as needed by macros in your model files. For example, these can store database URLs and credentials that are accessed using `@@SECRET` macros in your model that reference the secrets.  For a discussion of model macros, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}).
 
-### Domain resource attributes
+### Domain fields
 
 The following Domain fields are specific to Model in Image domains.
 

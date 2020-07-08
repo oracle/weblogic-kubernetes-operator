@@ -179,7 +179,7 @@ weight: 1
  - [Introduction to JRF setups](#introduction-to-jrf-setups)
  - [Set up and initialize an infrastructure database](#set-up-and-initialize-an-infrastructure-database)
  - [Increase introspection job timeout](#increase-introspection-job-timeout)
- - [Important considerations for RCU model attributes, Domain resource attributes, and secrets](#important-considerations-for-rcu-model-attributes-domain-resource-attributes-and-secrets)
+ - [Important considerations for RCU model attributes, Domain fields, and secrets](#important-considerations-for-rcu-model-attributes-domain-fields-and-secrets)
 
 ##### Introduction to JRF setups
 
@@ -249,9 +249,9 @@ A JRF domain requires an infrastructure database and requires initializing this 
 
 ##### Increase introspection job timeout
 
-The JRF domain home creation can take more time than the introspection job's default timeout. You should increase the timeout for the introspection job. Use the `configuration.introspectorJobActiveDeadlineSeconds` in your Domain resource to override the default with a value of at least 300 seconds (the default is 120 seconds). Note that the `JRF` versions of the Domain YAML files that are provided in `/tmp/mii-sample/domain-resources` already set this value.
+The JRF domain home creation can take more time than the introspection job's default timeout. You should increase the timeout for the introspection job. Use the `configuration.introspectorJobActiveDeadlineSeconds` in your Domain to override the default with a value of at least 300 seconds (the default is 120 seconds). Note that the `JRF` versions of the Domain YAML files that are provided in `/tmp/mii-sample/domain-resources` already set this value.
 
-##### Important considerations for RCU model attributes, Domain resource attributes, and secrets
+##### Important considerations for RCU model attributes, Domain fields, and secrets
 
 To allow Model in Image to access the database and OPSS wallet, you must create an RCU access secret containing the database connect string, user name, and password that's referenced from your model and an OPSS wallet password secret that's referenced from your Domain before deploying your domain.  It's also necessary to define an `RCUDbInfo` stanza in your model.
 
@@ -312,7 +312,7 @@ Alternatively, use the sample's wallet utility:
   # For help: /tmp/mii-sample/utils/opss-wallet.sh -?
 ```
 
-2. Modify your Domain resource JRF YAML files to provide the wallet file secret name, for example:
+2. Modify your Domain JRF YAML files to provide the wallet file secret name, for example:
 
 ```
   configuration:
@@ -322,4 +322,4 @@ Alternatively, use the sample's wallet utility:
       # Name of secret with walletFile containing base64 encoded opss wallet
       walletFileSecret: sample-domain1-opss-walletfile-secret
 ```
-> **Note**: The sample JRF Domain resource files included in `/tmp/mii-sample/domain-resources` already have the above YAML file stanza.
+> **Note**: The sample JRF Domain YAML files included in `/tmp/mii-sample/domain-resources` already have the above YAML file stanza.

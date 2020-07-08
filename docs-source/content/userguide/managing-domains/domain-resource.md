@@ -16,12 +16,12 @@ Swagger documentation is available [here](https://oracle.github.io/weblogic-kube
 The following prerequisites must be fulfilled before proceeding with the creation of the resource:
 
 * Make sure the WebLogic Server Kubernetes Operator is running.
-* Create a Kubernetes Namespace for the Domain resource unless the intention is to use the default namespace.
-* Create the Kubernetes Secrets containing the `username` and `password` of the administrative account in the same Kubernetes Namespace as the Domain resource.
+* Create a Kubernetes Namespace for the Domain unless the intention is to use the default namespace.
+* Create the Kubernetes Secrets containing the `username` and `password` of the administrative account in the same Kubernetes Namespace as the Domain.
 
 #### YAML files
 
-Domain resources are defined using YAML files. For each WebLogic Server domain you want to run, you should create one Domain resource YAML file and apply it. In the example referenced below, the sample scripts generate a Domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WebLogic Server domain parameters that define your domain.
+Domains are defined using YAML files. For each WebLogic Server domain you want to run, you should create one Domain resource YAML file and apply it. In the example referenced below, the sample scripts generate a Domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WebLogic Server domain parameters that define your domain.
 
 See the WebLogic Server samples, [Domain home on a PV]({{< relref "/samples/simple/domains/domain-home-on-pv/_index.md" >}}),
 [Domain home in Image]({{< relref "/samples/simple/domains/domain-home-in-image/_index.md" >}}), and [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}).
@@ -36,7 +36,7 @@ $ kubectl apply -f domain-resource.yaml
 
 #### Verify the results
 
-To confirm that the Domain resource was created, use this command:
+To confirm that the Domain was created, use this command:
 
 ```none
 $ kubectl describe domain [domain name] -n [namespace]
@@ -66,7 +66,7 @@ After the CustomResourceDefinition is installed, either by the operator or using
 $ kubectl get crd domains.weblogic.oracle
 ```
 
-If you are using Kubernetes 1.16 or above, you can access the description of any field of the Domain resource using `kubectl explain`. For instance, the following command displays the description of the `domainUID` field:
+If you are using Kubernetes 1.16 or above, you can access the description of any field of the Domain using `kubectl explain`. For instance, the following command displays the description of the `domainUID` field:
 
 ```none
 $ kubectl explain domains.spec.domainUID
@@ -180,12 +180,12 @@ You can use the following environment variables to specify JVM memory and JVM op
 
 * The following behavior occurs depending on whether or not `NODEMGR_JAVA_OPTIONS` and `NODEMGR_MEM_ARGS` are defined:
   * If `NODEMGR_JAVA_OPTIONS` is not defined and `JAVA_OPTIONS` is defined, then the `JAVA_OPTIONS` value will be applied to the Node Manager instance.
-  * If `NODEMGR_MEM_ARGS` is not defined, then default memory and Java security property values (`-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom`) will be applied to the Node Manager instance. It can be explicitly set to another value in your Domain resource YAML file using the `env` attribute under the `serverPod` configuration.
-* The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your Domain resource YAML file using the `env` attribute under the `serverPod` configuration.
+  * If `NODEMGR_MEM_ARGS` is not defined, then default memory and Java security property values (`-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom`) will be applied to the Node Manager instance. It can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
+* The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
 * Notice that the `NODEMGR_MEM_ARGS` and `USER_MEM_ARGS` environment variables both set `-Djava.security.egd=file:/dev/./urandom` by default. This respectively helps to speed up the Node Manager and WebLogic Server startup on systems with low entropy. 
 * You can use `JAVA_OPTIONS` and `WLSDEPLOY_PROPERTIES` to disable Fast Application Notifications (FAN); see the [Disable Fast Application Notifications FAQ]({{<relref "/faq/fan.md">}}) for details.
 
-This example snippet illustrates how to add some of the above environment variables using the `env` attribute under the `serverPod` configuration in your Domain resource YAML file.
+This example snippet illustrates how to add some of the above environment variables using the `env` attribute under the `serverPod` configuration in your Domain YAML file.
 ```yaml
 # Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.

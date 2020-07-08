@@ -57,7 +57,7 @@ The PV and PVC creation inputs can be customized by editing the `create-pv-pvc-i
 
 | Parameter | Definition | Default |
 | --- | --- | --- |
-| `domainUID` | ID of the Domain resource to which the generated PV and PVC will be dedicated. Leave it empty if the PV and PVC are going to be shared by multiple domains. | no default |
+| `domainUID` | ID of the Domain to which the generated PV and PVC will be dedicated. Leave it empty if the PV and PVC are going to be shared by multiple domains. | no default |
 | `namespace` | Kubernetes Namespace to create the PVC. | `default` |
 | `baseName` | Base name of the PV and PVC. The generated PV and PVC will be `<baseName>-pv` and `<baseName>-pvc` respectively. | `weblogic-sample` |
 | `weblogicDomainStoragePath` | Physical path of the storage for the PV.  When `weblogicDomainStorageType` is set to `HOST_PATH`, this value should be set the to path to the domain storage on the Kubernetes host.  When `weblogicDomainStorageType` is set to NFS, then `weblogicDomainStorageNFSServer` should be set to the IP address or name of the DNS server, and this value should be set to the exported path on that server.  Note that the path where the domain is mounted in the WebLogic containers is not affected by this setting; that is determined when you create your domain. | no default |
