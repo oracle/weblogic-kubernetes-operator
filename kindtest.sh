@@ -36,7 +36,7 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
 function usage {
-  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-h]"
+  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-p <true/false>] [-th <number_of_threads>] [-h]"
   echo "  -v Kubernetes version (optional) "
   echo "      (default: 1.15.11, supported values: 1.18, 1.18.2, 1.17, 1.17.5, 1.16, 1.16.9, 1.15, 1.15.11, 1.14, 1.14.10) "
   echo "  -n Kind cluster name (optional) "
@@ -47,6 +47,8 @@ function usage {
   echo "      (default: **/It*) "
   echo "  -p Run It classes in parallel"
   echo "      (default: false) "
+  echo "  -th Number of threads to run the classes in parallel"
+  echo "      (default: 2) "
   echo "  -h Help"
   exit $1
 }
@@ -60,8 +62,9 @@ else
 fi
 test_filter="**/It*"
 parallel_classes="false"
+number_of_threads=2
 
-while getopts ":h:n:o:t:v:p:" opt; do
+while getopts ":h:n:o:t:v:p:th" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
@@ -72,6 +75,8 @@ while getopts ":h:n:o:t:v:p:" opt; do
     t) test_filter="${OPTARG}"
     ;;
     p) parallel_classes="${OPTARG}"
+    ;;
+    th) number_of_threads="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -184,11 +189,10 @@ echo 'Set up test running ENVVARs...'
 export KIND_REPO="localhost:${reg_port}/"
 export K8S_NODEPORT_HOST=`kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}'`
 export JAVA_HOME="${JAVA_HOME:-`type -p java|xargs readlink -f|xargs dirname|xargs dirname`}"
-export NUMBER_OF_THREADS="2"
 
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
 echo 'Running mvn -Dit.test=\"${test_filter}\" -DPARALLEL_CLASSES=\"${parallel_classes}\" -pl new-integration-tests -P integration-tests verify'
-time mvn -Dit.test="${test_filter}" -DPARALLEL_CLASSES="${parallel_classes}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+time mvn -Dit.test="${test_filter}" -DPARALLEL_CLASSES="${parallel_classes}" -DNUMBER_OF_THREADS="${number_of_threads}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
