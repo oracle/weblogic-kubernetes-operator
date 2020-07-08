@@ -122,13 +122,13 @@ class ItIstioMiiDomain {
 
   /**
    * Create a domain using model-in-image model.
-   * Add istio configuration with default readinessPort 
-   * Do not add any AdminService under AdminServer configuration
-   * Deploy istio gateways and virtual service 
+   * Add istio configuration with default readinessPort.
+   * Do not add any AdminService under AdminServer configuration.
+   * Deploy istio gateways and virtual service.
    * Verify server pods are in ready state and services are created.
    * Verify login to WebLogic console is successful thru istio ingress port.
-   * Deploy a web application thru istio http ingress port using REST api  
-   * Access web application thru istio http ingress port using curl
+   * Deploy a web application thru istio http ingress port using REST api.  
+   * Access web application thru istio http ingress port using curl.
    */
   @Test
   @DisplayName("Create WebLogic Domain with mii model with istio")

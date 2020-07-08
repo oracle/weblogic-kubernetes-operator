@@ -173,7 +173,7 @@ public class ItIstioDomainInPV  {
   }
 
   /**
-   * Create a WebLogic domain using WLST in a persistent volume using wdt.
+   * Create a WebLogic domain using WLST in a persistent volume.
    * Add istio configuration. 
    * Deploy istio gateways and virtual service.
    * Verify domain pods runs in ready state and services are created.
@@ -186,7 +186,7 @@ public class ItIstioDomainInPV  {
     final String managedServerNameBase = "wlst-ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
-    final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
+    final int t3ChannelPort = getNextFreePort(31000, 32767);
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
