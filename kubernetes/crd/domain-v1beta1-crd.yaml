@@ -46,7 +46,7 @@ spec:
                     use updated configuration overrides only after the server's next
                     restart. The selection of ON_RESTART will not cause servers to
                     restart when there are updated configuration overrides available.
-                    See also `introspectVersion`. Defaults to DYNAMIC.
+                    See also `domains.spec.introspectVersion`. Defaults to DYNAMIC.
                   enum:
                   - DYNAMIC
                   - ON_RESTART
@@ -10743,7 +10743,7 @@ spec:
                 For the FromModel `domainHomeSourceType`, introspection also occurs
                 when a running server must be restarted because of changes to any
                 of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted.
-                See also `overridesConfigurationStrategy`.'
+                See also `domains.spec.configuration.overridesConfigurationStrategy`.'
             dataHome:
               type: string
               description: An optional directory in a server's container for data

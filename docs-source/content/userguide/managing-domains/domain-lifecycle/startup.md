@@ -271,7 +271,7 @@ this property has no affect on already running servers.
 
 ### Rolling restarts
 
-Clustered servers that need to be restarted are gradually restarted (for example, `rolling restarted`) so that the cluster is not taken out of service and in-flight work can be migrated to other servers in the cluster.
+Clustered servers that need to be restarted are gradually restarted (for example, "rolling restarted") so that the cluster is not taken out of service and in-flight work can be migrated to other servers in the cluster.
 
 The `maxUnavailable` field on the Domain determines how many of the cluster's servers may be taken out of service at a time when doing a rolling restart.
 It can be specified at the domain and cluster levels and defaults to 1 (that is, by default, clustered servers are restarted one at a time).

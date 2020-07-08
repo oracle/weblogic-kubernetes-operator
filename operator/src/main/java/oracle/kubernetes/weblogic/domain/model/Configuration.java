@@ -40,7 +40,7 @@ public class Configuration {
       + "Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides "
       + "dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration "
       + "overrides only after the server's next restart. The selection of ON_RESTART will not cause servers to "
-      + "restart when there are updated configuration overrides available. See also `introspectVersion`. "
+      + "restart when there are updated configuration overrides available. See also `domains.spec.introspectVersion`. "
       + "Defaults to DYNAMIC.")
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
