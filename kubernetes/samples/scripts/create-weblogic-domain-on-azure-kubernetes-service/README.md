@@ -692,6 +692,36 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
       Server Name:    managed-server5
    ```
 
+## Automation
+
+If you want to automate all the above steps, please use the [create-domain-on-aks.sh](create-domain-on-aks.sh).
+
+For input values, you can edit [create-domain-on-aks-inputs.yaml](create-domain-on-aks-inputs.yaml) directly, or copy the file and edit in your copy. The following values must be specified.
+  * `azureServicePrincipalAppId`: Application id of the service principal, must be specified, refer to the application id in [Create Service Principal](#create-service-principal-for-aks) section.
+  * `azureServicePrincipalClientSecret`: A client secret of the service principal, must be specified, refer to the client secret in [Create Service Principal](#create-service-principal-for-aks) section.
+  * `azureServicePrincipalTenantId`: Tenant(Directory ) id of the service principal, must be specified, refer to the client secret in [Create Service Principal](#create-service-principal-for-aks) section.
+  * `dockerUserName`: Your docker user name, must be specified, refer to [Docker Hub](#docker-hub) section.
+  * `dockerPassword`: Your docker password, must be specified, refer to [Docker Hub](#docker-hub) section.
+  * `dockerEmail`: Your docker email, must be specified, refer to [Docker Hub](#docker-hub) section.
+
+  You can use the default value for other parameters, if you don't want to change them.
+  Please make sure no extra whitespaces are added!
+
+```
+# Use ~/azure as output directory, please change it according to your requirement.
+
+# Use create-domain-on-aks-inputs.yaml as input file
+# cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
+bash create-domain-on-aks.sh -i create-domain-on-aks-inputs.yaml -o ~/azure -e
+
+# Use your own input file.
+# cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
+bash create-domain-on-aks.sh -i <your-input>.yaml -o ~/azure -e
+
+```
+
+The script will print the Admin Server IP address after successful deployment.
+
 ## Deployment Summary
 
 You now have created an AKS cluster with `PersistentVolumeClaim` and `PersistentVolume` to contain the WLS domain configuration files.  Using those artifacts, you have used the Operator to create a WLS domain.
@@ -808,55 +838,6 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
    internal-weblogic-operator-svc     ClusterIP      10.0.1.23     <none>          8082/TCP             9m59s
    kubernetes                         ClusterIP      10.0.0.1      <none>          443/TCP              16m
    ```
-
-## Automation
-
-If you want to automate all the above steps, please use the [create-domain-on-aks.sh](create-domain-on-aks.sh).
-
-For input values, you can edit [create-domain-on-aks-inputs.yaml](create-domain-on-aks-inputs.yaml) directly, or copy the file and edit in your copy. The following values must be specified.
-  * `azureServicePrincipalAppId`: Application id of the service principal, must be specified, refer to the application id in [Create Service Principal](#create-service-principal-for-aks) section.
-  * `azureServicePrincipalClientSecret`: A client secret of the service principal, must be specified, refer to the client secret in [Create Service Principal](#create-service-principal-for-aks) section.
-  * `azureServicePrincipalTenantId`: Tenant(Directory ) id of the service principal, must be specified, refer to the client secret in [Create Service Principal](#create-service-principal-for-aks) section.
-  * `dockerUserName`: Your docker user name, must be specified, refer to [Docker Hub](#docker-hub) section.
-  * `dockerPassword`: Your docker password, must be specified, refer to [Docker Hub](#docker-hub) section.
-  * `dockerEmail`: Your docker email, must be specified, refer to [Docker Hub](#docker-hub) section.
-
-  You can use the default value for other parameters, if you don't want to change them.
-  Please make sure no extra whitespaces are added!
-
-```
-# Use ~/azure as output directory, please change it according to your requirement.
-
-# Use create-domain-on-aks-inputs.yaml as input file
-# cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
-bash create-domain-on-aks.sh -i create-domain-on-aks-inputs.yaml -o ~/azure -e
-
-# Use your own input file.
-# cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
-bash create-domain-on-aks.sh -i <your-input>.yaml -o ~/azure -e
-
-```
-
-The script will print the Admin Server IP address after successful deployment.
-
-It may take you up to 20 minutes to deploy all pods, please wait and make sure everything is ready. The final example output of `kubectl get svc` is as following:
-
-   ```
-   NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP      PORT(S)              AGE
-   domain1-admin-server               ClusterIP      None          <none>           30012/TCP,7001/TCP   2d20h
-   domain1-admin-server-external      NodePort       10.0.182.50   <none>           7001:30701/TCP       2d20h
-   domain1-admin-server-external-lb   LoadBalancer   10.0.67.79    52.188.176.103   7001:32227/TCP       2d20h
-   domain1-cluster-1-lb               LoadBalancer   10.0.112.43   104.45.176.215   8001:30874/TCP       2d17h
-   domain1-cluster-cluster-1          ClusterIP      10.0.162.19   <none>           8001/TCP             2d20h
-   domain1-managed-server1            ClusterIP      None          <none>           8001/TCP             2d20h
-   domain1-managed-server2            ClusterIP      None          <none>           8001/TCP             2d20h
-   internal-weblogic-operator-svc     ClusterIP      10.0.192.13   <none>           8082/TCP             2d22h
-   kubernetes                         ClusterIP      10.0.0.1      <none>           443/TCP              2d22h
-   ```
-   
-In the example, the URL to access the admin server is: http://52.188.176.103:7001/console
-
-
 
 ## Useful Links
 
