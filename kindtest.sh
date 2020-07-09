@@ -65,7 +65,7 @@ fi
 test_filter="**/It*"
 cni_implementation="kindnet"
 parallel_classes="false"
-number_of_threads=2
+number_of_threads=3
 
 while getopts ":h:n:o:t:v:c:p:th" opt; do
   case $opt in
@@ -221,5 +221,5 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
-echo 'Running mvn -Dit.test=\"${test_filter}\" -DPARALLEL_CLASSES=\"${parallel_classes}\" -DNUMBER_OF_THREADS=\"${number_of_threads}\" -pl new-integration-tests -P integration-tests verify'
+echo 'Running mvn -Dit.test=${test_filter} -DPARALLEL_CLASSES=${parallel_classes} -DNUMBER_OF_THREADS=${number_of_threads} -pl new-integration-tests -P integration-tests verify'
 time mvn -Dit.test="${test_filter}" -DPARALLEL_CLASSES="${parallel_classes}" -DNUMBER_OF_THREADS="${number_of_threads}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
