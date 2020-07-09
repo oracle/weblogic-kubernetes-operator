@@ -24,7 +24,7 @@
 #      and 'https://github.com/oracle/weblogic-image-tool/releases/latest' respectively.
 #
 #      To override an installer URL, export the URL env to point to a specific zip file, for example:
-#      export WDT_INSTALLER_URL=https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.7.0/weblogic-deploy.zip
+#      export WDT_INSTALLER_URL=https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.9.1/weblogic-deploy.zip
 #
 
 set -o pipefail
