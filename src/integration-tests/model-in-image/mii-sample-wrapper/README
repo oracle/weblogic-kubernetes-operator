@@ -91,7 +91,7 @@ DOWNLOAD_WDT ::: When to download the WDT installer zip.
 WDT_INSTALLER_URL ::: WDT installer URL
   Used by './stage-tooling.sh' to obtain the WDT installer.
   Set to a specific zip loc to download specific version, for example:
-   'https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.8.1/weblogic-deploy.zip'
+   'https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.9.1/weblogic-deploy.zip'
   TBD before releasing 3.0, update example version above to correspond to latest and greatest version - and/or point to where we document the supported version 
   Defaults to 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
 
@@ -102,7 +102,7 @@ DOWNLOAD_WIT ::: When to download the WIT installer zip.
 WIT_INSTALLER_URL ::: WIT installer URL
   Used by './stage-tooling.sh' to obtain the WIT installer.
   Set to zip loc to download specific version, for example:
-   'https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.5/imagetool.zip'
+   'https://github.com/oracle/weblogic-image-tool/releases/download/release-1.9.1/imagetool.zip'
   Defaults to 'https://github.com/oracle/weblogic-image-tool/releases/latest'
 
 DOMAIN_RESOURCE_TEMPLATE ::: Domain resource template
