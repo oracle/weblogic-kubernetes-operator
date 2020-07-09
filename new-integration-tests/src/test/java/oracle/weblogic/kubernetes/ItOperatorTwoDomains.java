@@ -219,7 +219,7 @@ public class ItOperatorTwoDomains {
 
       String domainUid = domainUids.get(i);
       String domainNamespace = domainNamespaces.get(i);
-      String pvName = domainUid + "-pv";
+      String pvName = domainUid + "-pv-" + domainNamespace;
       String pvcName = domainUid + "-pvc";
 
       // create WebLogic credentials secret

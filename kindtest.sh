@@ -36,7 +36,7 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
 function usage {
-  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-h]"
+  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-h]"
   echo "  -v Kubernetes version (optional) "
   echo "      (default: 1.15.11, supported values: 1.18, 1.18.2, 1.17, 1.17.5, 1.16, 1.16.9, 1.15, 1.15.11, 1.14, 1.14.10) "
   echo "  -n Kind cluster name (optional) "
@@ -49,6 +49,8 @@ function usage {
   echo "      (default: kindnet, supported values: kindnet, calico) "
   echo "  -p Run It classes in parallel"
   echo "      (default: false) "
+  echo "  -x Number of threads to run the classes in parallel"
+  echo "      (default: 2) "
   echo "  -h Help"
   exit $1
 }
@@ -62,9 +64,10 @@ else
 fi
 test_filter="**/It*"
 cni_implementation="kindnet"
-parallel_classes="false"
+parallel_run="false"
+threads="2"
 
-while getopts ":h:n:o:t:v:c:p:" opt; do
+while getopts ":h:n:o:t:v:c:x:p:" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
@@ -76,7 +79,9 @@ while getopts ":h:n:o:t:v:c:p:" opt; do
     ;;
     c) cni_implementation="${OPTARG}"
     ;;
-    p) parallel_classes="${OPTARG}"
+    x) threads="${OPTARG}"
+    ;;
+    p) parallel_run="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -216,5 +221,5 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
-echo 'Running mvn -Dit.test=\"${test_filter}\" -DPARALLEL_CLASSES=\"${parallel_classes}\" -pl new-integration-tests -P integration-tests verify'
-time mvn -Dit.test="${test_filter}" -DPARALLEL_CLASSES="${parallel_classes}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+echo "Running mvn -Dit.test=${test_filter} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads} -pl new-integration-tests -P integration-tests verify"
+time mvn -Dit.test="${test_filter}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
