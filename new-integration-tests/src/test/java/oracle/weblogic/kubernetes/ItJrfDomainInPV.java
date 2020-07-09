@@ -135,13 +135,12 @@ public class ItJrfDomainInPV {
       isUseSecret = false;
     }
 
-    final int dbPort = getNextFreePort(30000, 32767);
-    logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, dbPort: {2} "
-        + "dbUrl: {3} dbImage: {4},  fmwImage: {5} isUseSecret: {6}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl,
+    logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, "
+        + "dbUrl: {2}, dbImage: {3},  fmwImage: {4} isUseSecret: {5}", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
         dbImage, fmwImage, isUseSecret);
     assertDoesNotThrow(() -> DbUtils.setupDBandRCUschema(dbImage, fmwImage, RCUSCHEMAPREFIX, dbNamespace,
-        dbPort, dbUrl, isUseSecret), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbPort %s and dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbPort, dbUrl, isUseSecret));
+        0, dbUrl, isUseSecret), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
+        + "dbUrl %s, isUseSecret %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, isUseSecret));
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, jrfDomainNamespace);
