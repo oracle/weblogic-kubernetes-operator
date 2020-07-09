@@ -5,8 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -16,28 +14,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PersistentVolume;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -57,7 +46,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -75,16 +63,12 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
-import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
-import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
-import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
@@ -203,8 +187,8 @@ public class ItIstioDomainInPV  {
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after test
-    createPV(pvName, domainUid);
-    createPVC(pvName, pvcName, domainUid, domainNamespace);
+    CommonTestUtils.createPV(pvName, domainUid, this.getClass().getSimpleName());
+    CommonTestUtils.createPVC(pvName, pvcName, domainUid, domainNamespace);
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() ->
@@ -381,7 +365,8 @@ public class ItIstioDomainInPV  {
     logger.info("Creating a config map to hold domain creation scripts");
     String domainScriptConfigMapName = "create-domain-scripts-cm";
     assertDoesNotThrow(
-        () -> createConfigMapForDomainCreation(domainScriptConfigMapName, domainScriptFiles, namespace),
+        () -> CommonTestUtils.createConfigMapForDomainCreation(domainScriptConfigMapName, domainScriptFiles, 
+           namespace, this.getClass().getSimpleName()),
         "Create configmap for domain creation failed");
 
     // create a V1Container with specific scripts and properties for creating domain
@@ -396,43 +381,6 @@ public class ItIstioDomainInPV  {
     logger.info("Running a Kubernetes job to create the domain");
     createDomainJob(pvName, pvcName, domainScriptConfigMapName, namespace, jobCreationContainer);
 
-  }
-
-  /**
-   * Create configmap containing domain creation scripts.
-   *
-   * @param configMapName name of the configmap to create
-   * @param files         files to add in configmap
-   * @param namespace     name of the namespace in which to create configmap
-   * @throws IOException  when reading the domain script files fail
-   * @throws ApiException if create configmap fails
-   */
-  private void createConfigMapForDomainCreation(String configMapName, List<Path> files, String namespace)
-      throws ApiException, IOException {
-    logger.info("Creating configmap {0}", configMapName);
-
-    Path domainScriptsDir = Files.createDirectories(
-        Paths.get(TestConstants.LOGS_DIR, this.getClass().getSimpleName(), namespace));
-
-    // add domain creation scripts and properties files to the configmap
-    Map<String, String> data = new HashMap<>();
-    for (Path file : files) {
-      logger.info("Adding file {0} in configmap", file);
-      data.put(file.getFileName().toString(), Files.readString(file));
-      logger.info("Making a copy of file {0} to {1} for diagnostic purposes", file,
-          domainScriptsDir.resolve(file.getFileName()));
-      Files.copy(file, domainScriptsDir.resolve(file.getFileName()));
-    }
-    V1ObjectMeta meta = new V1ObjectMeta()
-        .name(configMapName)
-        .namespace(namespace);
-    V1ConfigMap configMap = new V1ConfigMap()
-        .data(data)
-        .metadata(meta);
-
-    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
-        String.format("Failed to create configmap %s with files %s", configMapName, files));
-    assertTrue(cmCreated, String.format("Failed while creating ConfigMap %s", configMapName));
   }
 
   /**
@@ -540,76 +488,6 @@ public class ItIstioDomainInPV  {
       }
     }
 
-  }
-
-  /**
-   * Create a persistent volume.
-   *
-   * @param pvName    name of the persistent volume to create
-   * @param domainUid domain UID
-   * @throws IOException when creating pv path fails
-   */
-  private void createPV(String pvName, String domainUid) {
-    logger.info("creating persistent volume");
-
-    Path pvHostPath = null;
-    try {
-      pvHostPath = Files.createDirectories(Paths.get(
-          PV_ROOT, this.getClass().getSimpleName(), pvName));
-      logger.info("Creating PV directory host path {0}", pvHostPath);
-      FileUtils.deleteDirectory(pvHostPath.toFile());
-      Files.createDirectories(pvHostPath);
-    } catch (IOException ioex) {
-      logger.severe(ioex.getMessage());
-      fail("Create persistent volume host path failed");
-    }
-
-    V1PersistentVolume v1pv = new V1PersistentVolume()
-        .spec(new V1PersistentVolumeSpec()
-            .addAccessModesItem("ReadWriteMany")
-            .storageClassName("weblogic-domain-storage-class")
-            .volumeMode("Filesystem")
-            .putCapacityItem("storage", Quantity.fromString("5Gi"))
-            .persistentVolumeReclaimPolicy("Recycle")
-            .accessModes(Arrays.asList("ReadWriteMany"))
-            .hostPath(new V1HostPathVolumeSource()
-                .path(pvHostPath.toString())))
-        .metadata(new V1ObjectMeta()
-            .name(pvName)
-            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
-            .putLabelsItem("weblogic.domainUid", domainUid));
-    boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
-        "Failed to create persistent volume");
-    assertTrue(success, "PersistentVolume creation failed");
-  }
-
-  /**
-   * Create a persistent volume claim.
-   *
-   * @param pvName    name of the persistent volume
-   * @param pvcName   name of the persistent volume to create
-   * @param domainUid UID of the WebLogic domain
-   * @param namespace name of the namespace in which to create the persistent volume claim
-   */
-  private void createPVC(String pvName, String pvcName, String domainUid, String namespace) {
-    logger.info("creating persistent volume claim");
-
-    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
-        .spec(new V1PersistentVolumeClaimSpec()
-            .addAccessModesItem("ReadWriteMany")
-            .storageClassName("weblogic-domain-storage-class")
-            .volumeName(pvName)
-            .resources(new V1ResourceRequirements()
-                .putRequestsItem("storage", Quantity.fromString("5Gi"))))
-        .metadata(new V1ObjectMeta()
-            .name(pvcName)
-            .namespace(namespace)
-            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
-            .putLabelsItem("weblogic.domainUid", domainUid));
-
-    boolean success = assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
-        "Failed to create persistent volume claim");
-    assertTrue(success, "PersistentVolumeClaim creation failed");
   }
 
   /**

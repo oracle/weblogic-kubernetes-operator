@@ -90,9 +90,8 @@ class ItIstioMiiDomain {
 
   /**
    * Install Operator.
-   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   JUnit engine parameter resolution mechanism
-   */
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher
+  */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
@@ -290,7 +289,6 @@ class ItIstioMiiDomain {
                      .model(new Model()
                          .domainType("WLS")
                          .runtimeEncryptionSecret(encryptionSecretName))
-
             .introspectorJobActiveDeadlineSeconds(300L)));
   }
 
