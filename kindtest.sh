@@ -221,5 +221,5 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
-echo 'Running mvn -Dit.test=\"${test_filter}\" -DPARALLEL_CLASSES=\"${parallel_classes}\" -pl new-integration-tests -P integration-tests verify'
+echo 'Running mvn -Dit.test=\"${test_filter}\" -DPARALLEL_CLASSES=\"${parallel_classes}\" -DNUMBER_OF_THREADS=\"${number_of_threads}\" -pl new-integration-tests -P integration-tests verify'
 time mvn -Dit.test="${test_filter}" -DPARALLEL_CLASSES="${parallel_classes}" -DNUMBER_OF_THREADS="${number_of_threads}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
