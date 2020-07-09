@@ -398,7 +398,8 @@ class ItScaleMiiDomainNginx {
   private String generateCurlCmd(String clusterName, String appContextRoot) {
 
     return String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);
+        domainUid + "." + domainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp,
+        appContextRoot);
   }
 
   /**
