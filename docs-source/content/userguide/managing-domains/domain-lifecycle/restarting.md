@@ -57,7 +57,7 @@ Otherwise, use of a new image that does not have compatible encryption keys or a
 
 * **Model in Image:**
 
-    * Any image that supplies configuration changes that are incompatible with the current running domain require a full shutdown before changing the Domain `image` field, instead of a rolling restart. For changes that support a rolling restart, see [Supported and unsupported updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#supported-and-unsupported-updates" >}}).
+    * Any image that supplies configuration changes that are incompatible with the current running domain require a full shut down before changing the Domain `image` field, instead of a rolling restart. For changes that support a rolling restart, see [Supported and unsupported updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#supported-and-unsupported-updates" >}}).
 
     * If you create a new image with a new name, and you want to avoid a rolling restart, see [Avoiding a rolling restart when changing the image field on a Domain](#avoiding-a-rolling-restart-when-changing-the-image-field-on-a-domain).
 
@@ -71,7 +71,7 @@ Otherwise, use of a new image that does not have compatible encryption keys or a
 * **Domain in PV:**
 
 For Domain in PV, the type of restart needed depends on the nature of the WebLogic domain configuration change:
-    * With operator version 3.0.0, domain configuration changes that add clusters, either static or dynamic, cluster member servers, or standalone servers can now be performed dynamically. This support requires that the new clusters or servers are added to the domain configuration and then [triggering the operator's introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}) of that new configuration.
+    * With operator version 3.0.0, domain configuration changes that add clusters, either configured or dynamic, cluster member servers, or standalone servers can now be performed dynamically. This support requires that the new clusters or servers are added to the domain configuration and then [triggering the operator's introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}) of that new configuration.
     * Other changes to parts of the domain configuration that the operator introspects, require a full restart, even if the changes are dynamic.
       The following are the other types of changes to the domain configuration that the operator introspects:
         * Adding or removing a network access point
@@ -95,7 +95,7 @@ Changes to configuration overrides include:
   * Changing the contents of the ConfigMap referenced by `configuration.overridesConfigMap`
   * Changing the contents to any of the Secrets referenced by `configuration.secrets`
   
-The changes to the above fields or contents of related resources are not processed automatically. Instead, these fields are only processed when you [trigger operator introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}). The operator will then apply the new configuration overrides dynamically or only apply the overrides when WebLogic Server instances restart, depending on the strategy that you select.
+The changes to the above fields or contents of related resources are not processed automatically. Instead, these fields are processed only when you [trigger operator introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}). The operator then will apply the new configuration overrides dynamically or only apply the overrides when WebLogic Server instances restart, depending on the strategy that you select.
 
 #### Changing the WebLogic Server credentials
 

@@ -54,11 +54,11 @@ The introspection will be periodically retried and then will eventually timeout 
 
 #### Adding clusters or Managed Servers to the WebLogic domain configuration
 
-When you have an existing WebLogic domain home on a persistent volume ("Domain in PV") and you currently have WebLogic Server instances running, it is now possible to define new WebLogic clusters or Managed Servers in the domain configuration and start these new instances without affecting the lifecycle of any WebLogic Server instances that are already running.
+When you have an existing WebLogic domain home on a persistent volume ("Domain in PV") and you currently have WebLogic Server instances running, it is now possible to define new WebLogic clusters or Managed Servers in the domain configuration and start these new instances without affecting the life cycle of any WebLogic Server instances that are already running.
 
-Prior to operator 3.0.0, this was not possible because there was no mechanism to initiate introspection other than a full domain shutdown and restart and so the operator was unaware of the new clusters or Managed Servers. Now, after updating the domain configuration, you can initiate introspection by changing the `introspectVersion`.
+Prior to operator 3.0.0, this was not possible because there was no mechanism to initiate introspection other than a full domain shut down and restart and so the operator was unaware of the new clusters or Managed Servers. Now, after updating the domain configuration, you can initiate introspection by changing the `introspectVersion`.
 
-For instance, if you had a domain configuration with a single cluster named "cluster-1" then your Domain YAML may have content like this:
+For instance, if you had a domain configuration with a single cluster named "cluster-1" then your Domain YAML file may have content like this:
 
 ```
 spec:
@@ -69,7 +69,7 @@ spec:
   ...
 ```
 
-If you modified your WebLogic domain configuration (using the console or WLST) to add a new dynamic cluster named "cluster-2" then you could immediately start cluster members of this new cluster by updating your Domain YAML like this:
+If you modified your WebLogic domain configuration (using the console or WLST) to add a new dynamic cluster named "cluster-2", then you could immediately start cluster members of this new cluster by updating your Domain YAML file like this:
 
 ```
 spec:
@@ -87,12 +87,12 @@ When this updated Domain YAML file is applied, the operator will initiate a new 
 
 #### Distributing changes to configuration overrides
 
-The operator supports customer-provided [configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md">}}). These configuration overrides, which are supported with Domain in PV or Domain in Image, allow you to override elements of the domian configuration, such as data source URL's or credentials.
+The operator supports customer-provided [configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md">}}). These configuration overrides, which are supported with Domain in PV or Domain in Image, allow you to override elements of the domain configuration, such as data source URL's or credentials.
 
 With operator 3.0.0, you can now change the configuration overrides and distribute these new configuration overrides to already running WebLogic Server instances. To do this, update the ConfigMap that contains the configuration overrides or update one or more of the Secrets referenced by those configuration overrides and then initiate introspection by changing the `introspectVersion` field.
 
-We have introduced a new field, called `overrideDistributionStrategy`, and located under `configuration` that controls whether updated configuration overrides are distributed dynamically to already running WebLogic Server instances or if the new configuration overrides are only applied when servers are started or restarted.
+We have introduced a new field, called `overrideDistributionStrategy` and located under `configuration`, that controls whether updated configuration overrides are distributed dynamically to already running WebLogic Server instances or if the new configuration overrides are only applied when servers are started or restarted.
 
 The default value for `overrideDistributionStrategy` is DYNAMIC, which means that new configuration overrides are distributed dynamically to already running WebLogic Server instances. 
 
-Alternately, you can set `overrideDistributionStrategy` to ON_RESTART, which means that the new configuration overrides will not be distributed to already running WebLogic Server instances, but will instead only be applied to servers as they start or restart. Use of this value will *not* cause WebLogic Server instances to restart absent changes to other fields, such as `restartVersion`.
+Alternately, you can set `overrideDistributionStrategy` to ON_RESTART, which means that the new configuration overrides will not be distributed to already running WebLogic Server instances, but will instead be applied only to servers as they start or restart. Use of this value will *not* cause WebLogic Server instances to restart absent changes to other fields, such as `restartVersion`.

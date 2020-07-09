@@ -4,7 +4,7 @@ date: 2019-02-23T17:04:41-05:00
 draft: false
 weight: 1
 description: "There are fields on the Domain that specify which WebLogic Server instances should be running,
-started or restarted. To start, stop, or restart servers, modify these fields on the Domain."
+started, or restarted. To start, stop, or restart servers, modify these fields on the Domain."
 ---
 
 #### Contents
@@ -17,8 +17,8 @@ started or restarted. To start, stop, or restart servers, modify these fields on
     * [Common restarting scenarios](#common-restarting-scenarios)
 
 There are fields on the Domain that specify which servers should be running,
-which servers should be restarted and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain
-(for example, by using `kubectl` or the Kubernetes REST API).  The operator will detect the changes and apply them. Beginning,
+which servers should be restarted, and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain
+(for example, by using `kubectl` or the Kubernetes REST API).  The operator will detect the changes and apply them. Beginning
 with operator version 2.2.0, there are now fields to control server shutdown handling, such as whether the shutdown
 will be graceful, the timeout, and if in-flight sessions are given the opportunity to complete.
 
@@ -168,10 +168,10 @@ The server will count toward the cluster's `replicas` count.  Also, if you confi
 
 ### Shutdown options
 
-The Domain YAML file includes the field `serverPod` that is available under `spec`, `adminServer` and each entry of
+The Domain YAML file includes the field `serverPod` that is available under `spec`, `adminServer`, and each entry of
 `clusters` and `managedServers`. The `serverPod` field controls many details of how Pods are generated for WebLogic Server instances.
 
-The `shutdown` field of `serverPod` controls how servers will be shutdown and has three fields:
+The `shutdown` field of `serverPod` controls how servers will be shut down and has three fields:
 `shutdownType`, `timeoutSeconds`, and `ignoreSessions`.  The `shutdownType` field can be set to either `Graceful`, the default,
 or `Forced` specifying the type of shutdown.  The `timeoutSeconds` property configures how long the server is given to
 complete shutdown before the server is killed.  The `ignoreSessions` property, which is only applicable for graceful shutdown, when `false`,

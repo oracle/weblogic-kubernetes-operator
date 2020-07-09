@@ -21,7 +21,7 @@ The operator provides several ways to initiate scaling of WebLogic clusters, inc
 * [Using a Prometheus alert action to call the operator's REST scale API](#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api).
 
 #### On-demand, updating the Domain directly
-The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the `replicas` field of a Domain. This can be done by using the `kubectl`. More specifically, you can modify the Domain directly by using the `kubectl edit` command.  For example:
+The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the `replicas` field of a Domain. This can be done by using `kubectl`. More specifically, you can modify the Domain directly by using the `kubectl edit` command.  For example:
 ```
 $ kubectl edit domain domain1 -n [namespace]
 ```

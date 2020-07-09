@@ -44,17 +44,17 @@ $ kubectl describe domain [domain name] -n [namespace]
 
 #### Domain resource overview
 
-The Domain type is defined by a CustomResourceDefinition and, like all [Kubernetes objects](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/), is described by three sections: `metadata`, `spec`, and `status`.
+The Domain type is defined by a CustomResourceDefinition (CRD) and, like all [Kubernetes objects](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/), is described by three sections: `metadata`, `spec`, and `status`.
 
 The operator installs the CustomResourceDefinition for the Domain type when the operator first starts. Customers may also install the CustomResourceDefinition in advance by using one of the provided YAML files.
 
-For Kubernetes 1.16 and above:
+For Kubernetes 1.16 and later:
 
 ```none
 $ kubectl create -f kubernetes/crd/domain-crd.yaml
 ```
 
-For Kubernetes 1.15 and below:
+For Kubernetes 1.15 and earlier:
 
 ```none
 $ kubectl create -f kubernetes/crd/domain-v1beta1-crd.yaml
@@ -66,7 +66,7 @@ After the CustomResourceDefinition is installed, either by the operator or using
 $ kubectl get crd domains.weblogic.oracle
 ```
 
-If you are using Kubernetes 1.16 or above, you can access the description of any field of the Domain using `kubectl explain`. For instance, the following command displays the description of the `domainUID` field:
+If you are using Kubernetes 1.16 or later, you can access the description of any field of the Domain using `kubectl explain`. For instance, the following command displays the description of the `domainUID` field:
 
 ```none
 $ kubectl explain domains.spec.domainUID
@@ -99,7 +99,7 @@ Elements related to domain identification, container image, and domain home:
 
 * `domainUID`: Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.
 * `image`: The WebLogic container image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
-* `imagePullPolicy`: The image pull policy for the WebLogic container image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.
+* `imagePullPolicy`: The image pull policy for the WebLogic container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.
 * `imagePullSecrets`: A list of image pull Secrets for the WebLogic container image.
 * `domainHome`: The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/domains/<domainUID> if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/<domainUID> if `domainHomeSourceType` is FromModel.
 * `domainHomeSourceType`: Domain home file system source type: Legal values: Image, PersistentVolume, FromModel. Image indicates that the domain home file system is present in the container image specified by the `image` field. PersistentVolume indicates that the domain home file system is located on a persistent volume. FromModel indicates that the domain home file system will be created and managed by the operator based on a WDT domain model. If this field is specified, it overrides the value of `domainHomeInImage`. If both fields are unspecified, then `domainHomeSourceType` defaults to Image.
@@ -125,7 +125,7 @@ Elements related to domain [startup and shutdown]({{< relref "/userguide/managin
 * `replicas`: The default number of cluster member Managed Server instances to start for each WebLogic cluster in the domain configuration, unless `replicas` is specified for that cluster under the `clusters` field. For each cluster, the operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as "managed-server10" come after "managed-server9". The operator will then start Managed Servers from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Servers will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their entries under `managedServers`, then a cluster may have more cluster members running than its `replicas` count. Defaults to 0.
 * `maxClusterConcurrentStartup`: The maximum number of cluster member Managed Server instances that the operator will start in parallel for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the `clusters` field. A value of 0 means there is no configured limit. Defaults to 0.
 * `allowReplicasBelowMinDynClusterSize`: Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the `clusters` field. Defaults to true.
-* `introspectVersion`: Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shutdown. For the FromModel `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields [listed here](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted). See also `overridesConfigurationStrategy`.
+* `introspectVersion`: Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the FromModel `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields [listed here](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted). See also `overridesConfigurationStrategy`.
 
 Elements related to specifying and overriding WebLogic domain configuration:
 
@@ -174,7 +174,7 @@ You can use the following environment variables to specify JVM memory and JVM op
 * `NODEMGR_JAVA_OPTIONS`: Java options for starting a Node Manager instance.
 * `NODEMGR_MEM_ARGS`: JVM memory arguments for starting a Node Manager instance.
 * `WLST_PROPERTIES`: System properties for WLST commands in introspector jobs or WebLogic Server instance containers.
-* `WLSDEPLOY_PROPERTIES`: System properties for WebLogic Deploy Tool commands during model in Image introspector jobs or WebLogic Server instance containers.
+* `WLSDEPLOY_PROPERTIES`: System properties for WebLogic Deploy Tool commands during Model in Image introspector jobs or WebLogic Server instance containers.
 
 **Notes:**
 

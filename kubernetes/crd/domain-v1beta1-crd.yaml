@@ -10678,7 +10678,7 @@ spec:
             imagePullPolicy:
               type: string
               description: The image pull policy for the WebLogic container image.
-                Legal values are Always, Never and IfNotPresent. Defaults to Always
+                Legal values are Always, Never, and IfNotPresent. Defaults to Always
                 if image ends in :latest; IfNotPresent, otherwise.
               enum:
               - Always
@@ -10739,7 +10739,7 @@ spec:
                 to regenerate configuration overrides, or to regenerate the WebLogic
                 domain home when the `domainHomeSourceType` is FromModel. Introspection
                 occurs automatically, without requiring change to this field, when
-                servers are first started or restarted after a full domain shutdown.
+                servers are first started or restarted after a full domain shut down.
                 For the FromModel `domainHomeSourceType`, introspection also occurs
                 when a running server must be restarted because of changes to any
                 of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted.
