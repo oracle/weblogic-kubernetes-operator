@@ -495,7 +495,7 @@ public class ItIntrospectVersion {
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
             + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+        domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount + 1; i++) {
       managedServers.add(managedServerNameBase + i);
@@ -603,7 +603,7 @@ public class ItIntrospectVersion {
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
             + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+        domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
       managedServers.add(managedServerNameBase + i);
