@@ -65,7 +65,7 @@ fi
 test_filter="**/It*"
 cni_implementation="kindnet"
 parallel_classes="false"
-number_of_threads=3
+number_of_threads=2
 
 while getopts ":h:n:o:t:v:c:p:th" opt; do
   case $opt in
