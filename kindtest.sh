@@ -64,10 +64,10 @@ else
 fi
 test_filter="**/It*"
 cni_implementation="kindnet"
-parallel_classes="false"
-number_of_threads="2"
+parallel_run="false"
+threads="2"
 
-while getopts ":h:n:o:t:v:c:x:p" opt; do
+while getopts ":h:n:o:t:v:c:x:p:" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
@@ -79,9 +79,9 @@ while getopts ":h:n:o:t:v:c:x:p" opt; do
     ;;
     c) cni_implementation="${OPTARG}"
     ;;
-    x) number_of_threads="${OPTARG}"
+    x) threads="${OPTARG}"
     ;;
-    p) parallel_classes="${OPTARG}"
+    p) parallel_run="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -221,5 +221,5 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
-echo "Running mvn -Dit.test=${test_filter} -DPARALLEL_CLASSES=${parallel_classes} -DNUMBER_OF_THREADS=${number_of_threads} -pl new-integration-tests -P integration-tests verify"
-time mvn -Dit.test="${test_filter}" -DPARALLEL_CLASSES="${parallel_classes}" -DNUMBER_OF_THREADS="${number_of_threads}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+echo "Running mvn -Dit.test=${test_filter} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads} -pl new-integration-tests -P integration-tests verify"
+time mvn -Dit.test="${test_filter}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
