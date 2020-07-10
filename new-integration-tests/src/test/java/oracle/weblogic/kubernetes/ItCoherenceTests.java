@@ -149,11 +149,11 @@ class ItCoherenceTests {
   public void testCohernceServerRollingRestart() {
     final String successMarker = "CACHE-SUCCESS";
 
-    // create and verify WebLogic domain image using model in image with model files
-    String miiImage = createAndVerifyDomainImage();
+    // create a DomainHomeInImage image using WebLogic Image Tool
+    String domImage = createAndVerifyDomainImage();
 
     // create and verify a WebLogic domain with a Coherence cluster
-    createAndVerifyDomain(miiImage);
+    createAndVerifyDomain(domImage);
 
     // build the Coherence proxy client program in the server pods
     // which load and verify the cache
@@ -171,7 +171,7 @@ class ItCoherenceTests {
         () -> assertTrue(execResult1.stdout().contains(successMarker), "Failed to load the cache")
     );
 
-    logger.info("\n Coherence proxy client {0} returns {1} \n ",
+    logger.info("Coherence proxy client {0} returns {1} \n ",
         OP_CACHE_LOAD, execResult1.stdout());
 
     // patch domain to rolling restart it by change restartVersion
@@ -195,7 +195,7 @@ class ItCoherenceTests {
     logger.info("Coherence proxy client {0} returns {1}",
         OP_CACHE_VALIDATE, execResult2.stdout());
 
-    logger.info("SUCCESS --- Coherence Server restarted in rolling fashion");
+    logger.info("Coherence Server restarted in rolling fashion");
   }
 
   private void copyCohProxyClientAppToPods() {
@@ -265,22 +265,22 @@ class ItCoherenceTests {
   private static String createAndVerifyDomainImage() {
     // create image with model files
     logger.info("Create image with model file and verify");
-    String miiImage = createImageAndVerify(
+    String domImage = createImageAndVerify(
         COHERENCE_IMAGE_NAME, COHERENCE_MODEL_FILE,
             PROXY_SERVER_APP_NAME, COHERENCE_MODEL_PROP, domainUid);
 
     // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    dockerLoginAndPushImageToRegistry(domImage);
 
     // create docker registry secret to pull the image from registry
     logger.info("Create docker registry secret in namespace {0}", domainNamespace);
     assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
         String.format("create Docker Registry Secret failed for %s", REPO_SECRET_NAME));
 
-    return miiImage;
+    return domImage;
   }
 
-  private static void createAndVerifyDomain(String miiImage) {
+  private static void createAndVerifyDomain(String domImage) {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
@@ -297,8 +297,8 @@ class ItCoherenceTests {
 
     // create domain and verify
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, miiImage);
-    createDomainCrAndVerify(adminSecretName, miiImage);
+        domainUid, domainNamespace, domImage);
+    createDomainCrAndVerify(adminSecretName, domImage);
 
     // check that admin service exists in the domain namespace
     logger.info("Checking that admin service {0} exists in namespace {1}",
@@ -326,7 +326,7 @@ class ItCoherenceTests {
     }
   }
 
-  private static void createDomainCrAndVerify(String adminSecretName, String miiImage) {
+  private static void createDomainCrAndVerify(String adminSecretName, String domImage) {
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -337,7 +337,7 @@ class ItCoherenceTests {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHomeSourceType("Image")
-            .image(miiImage)
+            .image(domImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()

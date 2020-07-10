@@ -784,7 +784,6 @@ public class TestActions {
   /**
    * Create an application archive that can be used by WebLogic Image Tool
    * to create an image with coh-proxy-server.gar for testing Coherence use case
-   * using   model-in-image.
    *
    * @param params the parameters for creating a model-in-image Docker image
    * @return true if the operation succeeds

@@ -195,7 +195,7 @@ public class FileUtils {
       try {
         ExecResult execResult = execCommand(namespace,
             pod, container, redirectToStdout,"/bin/sh", "-c", mkCmd);
-        getLogger().info("\n directory created \n " + execResult.stdout());
+        getLogger().info("Directory created " + execResult.stdout());
       } catch (Exception ex) {
         throw new RuntimeException(ex);
       }
