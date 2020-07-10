@@ -132,7 +132,7 @@ function testapp() {
       cat $target_file
 
       num_tries=$((num_tries + 1))
-      [ $num_tries -gt 5 ] && return 1
+      [ $num_tries -gt 15 ] && return 1
       echo "@@ Info: Curl command failed on try number '$num_tries'. Sleeping 5 seconds and retrying."
       sleep 5
 
