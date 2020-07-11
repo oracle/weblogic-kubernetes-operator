@@ -256,7 +256,7 @@ public class LoggingUtil {
                   podName, containerName, namespace);
             } else {
               writeToFile(result.stdout(), resultDir,
-                  namespace + ".pod." + podName + ".container." + containerName + ".log");
+                  namespace + ".pod." + podName + ".container." + containerName + ".log", false);
             }
 
           }
@@ -277,11 +277,25 @@ public class LoggingUtil {
    */
   private static void writeToFile(Object obj, String resultDir, String fileName)
       throws IOException {
+    writeToFile(obj, resultDir, fileName, true);
+  }
+
+  /**
+   * Write the YAML representation of object or String to a file in the resultDir.
+   *
+   * @param obj to write to the file as YAML or String
+   * @param resultDir directory in which to write the log file
+   * @param fileName name of the log file
+   * @param asYaml write as yaml or string
+   * @throws IOException when write fails
+   */
+  private static void writeToFile(Object obj, String resultDir, String fileName, boolean asYaml)
+      throws IOException {
     LoggingFacade logger = getLogger();
     logger.info("Generating {0}", Paths.get(resultDir, fileName));
     if (obj != null) {
       Files.write(Paths.get(resultDir, fileName),
-          dump(obj).getBytes(StandardCharsets.UTF_8)
+          (asYaml == true ? dump(obj).getBytes(StandardCharsets.UTF_8) : ((String)obj).getBytes(StandardCharsets.UTF_8))
       );
     } else {
       logger.info("Nothing to write in {0} list is empty", Paths.get(resultDir, fileName));
