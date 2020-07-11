@@ -488,6 +488,20 @@ public class Kubernetes {
   }
 
   /**
+   * Returns the IP address allocated to the pod with following parameters.
+   *
+   * @param namespace in which to check for the pod existence
+   * @param labelSelectors in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod to return
+   * @return IP address allocated to the pod
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getPodIP(String namespace, String labelSelectors, String podName) throws ApiException {
+    V1Pod pod = getPod(namespace, labelSelectors, podName);
+    return pod.getStatus().getPodIP();
+  }
+
+  /**
    * Get the creationTimestamp for a given pod with following parameters.
    *
    * @param namespace in which to check for the pod existence
