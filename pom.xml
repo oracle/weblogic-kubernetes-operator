@@ -507,7 +507,7 @@
       <dependency>
         <groupId>org.glassfish</groupId>
         <artifactId>jakarta.json</artifactId>
-        <version>1.1.5</version>
+        <version>1.1.6</version>
       </dependency>
       <dependency>
         <groupId>org.glassfish.jersey.core</groupId>
