@@ -3,7 +3,7 @@ title = "Configuration overrides"
 date = 2019-02-23T16:45:16-05:00
 weight = 5
 pre = "<b> </b>"
-+++
++++ 
 
 #### Contents
 
@@ -28,9 +28,9 @@ pre = "<b> </b>"
 Configuration overrides can only be used in combination with Domain in Image and Domain in PV domains. For Model in Image domains, use [Model in Image Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
 {{% /notice %}}
 
-Use configuration overrides (also called _situational configuration_) to customize a Domain in Image or Domain in PV domain's WebLogic domain home configuration without modifying the domain's actual `config.xml` or system resource files. For example, you may want to override a JDBC data source XML module user name, password, and URL so that it references a local database.
+Use configuration overrides (also called _situational configuration_) to customize a Domain in Image or Domain in PV domain's WebLogic domain configuration without modifying the domain's actual `config.xml` or system resource files. For example, you may want to override a JDBC data source XML module user name, password, and URL so that it references a local database.
 
-You can use overrides to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site.
+You can use overrides to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site. Beginning with operator version 3.0.0, you can now modify configuration overrides for running WebLogic Server instances and have these new overrides take effect dynamically. There are [limitations](#unsupported-overrides) to the WebLogic configuration attributes that can be modified by overrides and only changes to dynamic configuration MBean attributes may be changed while a server is running. Other changes, specifically overrides to non-dynamic MBeans, must be applied when servers are starting or restarting.
 
 #### How do you specify overrides?
 
@@ -40,35 +40,41 @@ You can use overrides to customize domains as they are moved from QA to producti
   * Override templates (also known as situational configuration templates), with names and syntax as described in [Override template names and syntax](#override-template-names-and-syntax).
   * A file named `version.txt` that contains the exact string `2.0`.
 * Set your Domain `configuration.overridesConfigMap` field to the name of this ConfigMap.
-* If templates leverage `secret macros`:
+* If templates leverage secret macros:
   * Create Kubernetes Secrets that contain template macro values.
   * Set your domain `configuration.secrets` to reference the aforementioned Secrets.
-* Stop all running WebLogic Server instance Pods in your domain. (See [Starting and stopping servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
-* Start or restart your domain. (See [Starting and stopping servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}) and [Restarting servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}).)
+* If your configuration overrides modify non-dynamic MBean attributes and you currently have WebLogic Server instances from this domain running:
+  * Decide if the changes you are making to non-dynamic MBean attributes can be applied by rolling the affected clusters or Managed Server instances or if the change required a full domain shutdown.
+  * If a full domain shut down is requried, stop all running WebLogic Server instance Pods in your domain and then restart them. (See [Starting and stopping servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
+  * Otherwise, simply restart your domain, which includes rolling clusters. (See [Restarting servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}).)
 * Verify your overrides are taking effect.  (See [Debugging](#debugging)).
 
 For a detailed walk-through of these steps, see the [Step-by-step guide](#step-by-step-guide).
 
 #### How do overrides work during runtime?
 
-* When a domain is first deployed, or is restarted after shutting down all the WebLogic Server instance Pods, the operator will:
+* Configuration overrides are processed during the operator's [introspection](({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}})) phase. 
+* Introspection automatically occurs when:
+  1. The operator is starting a WebLogic Server instance when there are currently no other servers running. This occurs when the operator first starts servers for a domain or when starting servers following a full domain shutdown.
+  2. For Model in Image, the operator determines that at least one WebLogic Server instance that is currently running must be shut down and restarted. This could be a rolling of one or more clusters, the shut down and restart of one or more WebLogic Server instances, or a combination.
+* You can [initiate introspection](({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md#initiate-introspection" >}})) by changing the value of the Domain `introspectVersion` field.
+* For configuration overrides and during introspection, the operator will:
   * Resolve any macros in your override templates.
   * Place expanded override templates in the `optconfig` directory located in each WebLogic domain home directory.  
-* When the WebLogic Servers start, they will:
+* When the WebLogic Server instances start, they will:
   * Automatically load the override files from the `optconfig` directory.
   * Use the override values in the override files instead of the values specified in their `config.xml` or system resource XML files.
+* WebLogic Server instances monitor the files in the `optconfig` directory so that if these files change while the server is running, WebLogic will detect and use the new configuration values based on the updated contents of these files. This only works for changes to configuration overrides related to dynamic configuration MBean attributes.  
 
 For a detailed walk-through of the runtime flow, see the [Internal design flow](#internal-design-flow).
 
 ---
 ### Prerequisites
 
-* Configuration overrides can be used in combination with Domain in Image and Domain in PV domains in releases before 3.0.0.
-  In release 3.0.0, configuration overrides can be used in combination with Domain in Image and Domain in PV
-  domains (the `domainHomeSourceType` must be either `PersistentVolume` or `Image`). For Model in Image domains (introduced in 3.0.0)
-  (`domainHomeSourceType` is `FromModel`), use [Model in Image Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
+* Configuration overrides can be used in combination with Domain in Image and Domain in PV domains.
+  For Model in Image domains (introduced in 3.0.0), use [Model in Image Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
 
-* A WebLogic domain home must not contain any situational configuration XML file in its `optconfig` directory that was not placed there by the operator. Any existing situational configuration XML files in this directory will be deleted and replaced by your operator override templates (if any).
+* A WebLogic domain home must not contain any situational configuration XML file in its `optconfig` directory that was not placed there by the operator. Any existing situational configuration XML files in this directory will be deleted and replaced by your operator override templates, if any.
 
 * If you want to override a JDBC, JMS, or WLDF (diagnostics) module, then the original module must be located in your domain home `config/jdbc`, `config/jms`, and `config/diagnostics` directory, respectively. These are the default locations for these types of modules.
 
@@ -91,7 +97,7 @@ Typical attributes for overrides include:
 ---
 ### Unsupported overrides
 
-**IMPORTANT: The operator does not support custom overrides in the following areas.**
+**IMPORTANT: The operator does not support customer-provided overrides in the following areas.**
 
 * Domain topology (cluster members)
 * Network channel listen address, port, and enabled configuration
@@ -115,14 +121,14 @@ Typical attributes for overrides include:
   * Node Manager access credentials
   * Any existing MBean name (for example, you cannot change the domain name)
 
-Note that it's OK, even expected, to override network access point `public` or `external` addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the network access point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
+Note that it's supported, even expected, to override network access point `public` or `external` addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the network access point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
 
 The behavior when using an unsupported override is undefined.
 
 ---
 ### Override template names and syntax
 
-Overrides leverage a built-in WebLogic feature called "Configuration Overriding" which is often informally called "Situational Configuration." Situational configuration consists of XML formatted files that closely resemble the structure of WebLogic `config.xml` and system resource module XML files. In addition, the attribute fields in these files can embed `add`, `replace`, and `delete` verbs to specify the desired override action for the field.
+Overrides leverage a built-in WebLogic feature called "Configuration Overriding" which is often informally called "Situational Configuration." Configuration overriding consists of XML formatted files that closely resemble the structure of WebLogic `config.xml` and system resource module XML files. In addition, the attribute fields in these files can embed `add`, `replace`, and `delete` verbs to specify the desired override action for the field.
 
 #### Override template names
 
@@ -185,7 +191,7 @@ _`diagnostics-MODULENAME.xml`_
 
 The operator supports embedding macros within override templates. This helps make your templates flexibly handle multiple use cases, such as specifying a different URL, user name, and password for a different deployment.
 
-Two types of macros are supported, `environment variable macros` and `secret macros`:
+Two types of macros are supported, environment variable macros and secret macros:
 
 * Environment variable macros have the syntax `${env:ENV-VAR-NAME}`, where the supported environment variables include `DOMAIN_UID`, `DOMAIN_NAME`, `DOMAIN_HOME`,  and `LOG_HOME`.
 
@@ -304,7 +310,7 @@ Best practices for data source modules and their overrides:
     kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
     kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
     ```
-* Create any Kubernetes Secrets referenced by a template 'secret macro'.
+* Create any Kubernetes Secrets referenced by a template "secret macro".
   * Secrets can have multiple keys (files) that can hold either cleartext or base64 values. We recommend that you use base64 values for passwords by using `Opaque` type secrets in their `data` field, so that they can't be easily read at a casual glance. For more information, see https://kubernetes.io/docs/concepts/configuration/secret/.
   * Secrets must be in the same Kubernetes Namespace as the domain.
   * If a Secret is going to be used by a single `DOMAIN_UID`, then we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
@@ -318,16 +324,16 @@ Best practices for data source modules and their overrides:
 * Configure the names of each Secret in Domain YAML file.
   * If the Secret contains the WebLogic admin `username` and `password` keys, then set the Domain YAML file `webLogicCredentialsSecret` field.
   * For all other Secrets, add them to the Domain YAML file `configuration.secrets` field. Note: This must be in an array format even if you only add one Secret (see the sample Domain YAML below).
-* Any override changes require stopping all WebLogic Server instance Pods, applying your Domain YAML file (if it changed), and restarting the WebLogic Server instance Pods before they can take effect.
-  * Custom override changes on an existing running domain, such as updating an override ConfigMap, a Secret, or a Domain, will not take effect until all running WebLogic Server instance Pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted with your new Domain (if it changed), or with your existing Domain (if you haven't changed it).
-  * To stop all running WebLogic Server instance Pods for your domain, apply a changed resource, and then start/restart the domain:
-      * Set your Domain `serverStartPolicy` field to `NEVER`, wait, and apply your latest Domain YAML file with the `serverStartPolicy` restored back to `ALWAYS` or `IF_NEEDED` (See [Starting and stopping servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
-      * Or delete your Domain, wait, and apply your (potentially changed) Domain YAML file.
+* Changes to configuration overrides, including the contents of the ConfigMap containing the override templates or the contents of referenced Secrets, do not take affect until the operator runs or repeats its [introspection](({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}})) of the WebLogic domain configuration.
+* If your configuration overrides modify non-dynamic MBean attributes and you currently have WebLogic Server instances from this domain running:
+  * Decide if the changes you are making to non-dynamic MBean attributes can be applied by rolling the affected clusters or Managed Server instances or if the change required a full domain shutdown.
+  * If a full domain shut down is requried, stop all running WebLogic Server instance Pods in your domain and then restart them. (See [Starting and stopping servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
+  * Otherwise, simply restart your domain, which includes rolling clusters. (See [Restarting servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}).)
 * See [Debugging](#debugging) for ways to check if the situational configuration is taking effect or if there are errors.
 
 Example Domain YAML:
 ```
-apiVersion: "weblogic.oracle/v2"
+apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
   name: domain1
@@ -349,7 +355,7 @@ spec:
 
 Incorrectly formatted override files may be accepted without warnings or errors and may not prevent WebLogic Server instance Pods from booting. So, it is important to make sure that the template files are correct in a QA environment, otherwise your WebLogic Servers may start even though critically required overrides are failing to take effect.
 
-On WebLogic Servers that support the `weblogic.SituationalConfig.failBootOnError` system property ( Note: It is not supported in WebLogic Server 12.2.1.3.0 ),
+On WebLogic Server versions that support the `weblogic.SituationalConfig.failBootOnError` system property (Note: It is not supported in WebLogic Server 12.2.1.3.0),
 by default the WebLogic Server will fail to boot if any situational configuration files are invalid,
 or if it encounters an error while loading situational configuration files.
 By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in the Kubernetes containers for the WebLogic Servers to `false`, you can start up the WebLogic Servers even with incorrectly formatted override files.
