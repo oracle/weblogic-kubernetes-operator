@@ -612,11 +612,6 @@
         <version>1.0.38</version>
       </dependency>
       <dependency>
-        <groupId>joda-time</groupId>
-        <artifactId>joda-time</artifactId>
-        <version>${jodatime-version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-lang3</artifactId>
         <version>3.10</version>
@@ -702,7 +697,6 @@
     <spotbugs-maven-plugin-version>3.1.12.2</spotbugs-maven-plugin-version>
     <spotbugs-version>3.1.12</spotbugs-version>
     <swagger-core-version>1.6.2</swagger-core-version>
-    <jodatime-version>2.10.6</jodatime-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
     <assertj.core.version>3.15.0</assertj.core.version>
     <commons.io.version>2.6</commons.io.version>
