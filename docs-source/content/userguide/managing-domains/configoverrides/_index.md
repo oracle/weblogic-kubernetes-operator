@@ -74,7 +74,7 @@ For a detailed walk-through of the runtime flow, see the [Internal design flow](
 * Configuration overrides can be used in combination with Domain in Image and Domain in PV domains.
   For Model in Image domains (introduced in 3.0.0), use [Model in Image Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
 
-* A WebLogic domain home must not contain any situational configuration XML file in its `optconfig` directory that was not placed there by the operator. Any existing situational configuration XML files in this directory will be deleted and replaced by your operator override templates, if any.
+* A WebLogic domain home must not contain any configuration overrides XML file in its `optconfig` directory that was not placed there by the operator. Any existing configuration overrides XML files in this directory will be deleted and replaced by your operator override templates, if any.
 
 * If you want to override a JDBC, JMS, or WLDF (diagnostics) module, then the original module must be located in your domain home `config/jdbc`, `config/jms`, and `config/diagnostics` directory, respectively. These are the default locations for these types of modules.
 
@@ -132,7 +132,7 @@ Overrides leverage a built-in WebLogic feature called "Configuration Overriding"
 
 #### Override template names
 
-The operator requires a different file name format for override templates than WebLogic's built-in situational configuration feature.  It converts the names to the format required by situational configuration when it moves the templates to the domain home `optconfig` directory.  The following table describes the format:
+The operator requires a different file name format for override templates than WebLogic's built-in configuration overrides feature.  It converts the names to the format required by the configuration overrides feature when it moves the templates to the domain home `optconfig` directory.  The following table describes the format:
 
 | Original Configuration |  Required Override Name |
 | --------------- |  ---------------------  |
@@ -145,7 +145,7 @@ A `MODULENAME` must correspond to the MBean name of a system resource defined in
 
 #### Override template schemas
 
-An override template must define the exact schemas required by the situational configuration feature.  The schemas vary based on the file type you wish to override.
+An override template must define the exact schemas required by the configuration overrides feature.  The schemas vary based on the file type you wish to override.
 
 _`config.xml`_
 ```
@@ -199,16 +199,16 @@ Two types of macros are supported, environment variable macros and secret macros
 
 The secret macro `SECRETNAME` field must reference the name of a Kubernetes Secret, and the `SECRETKEY` field must reference a key within that Secret. For example, if you have created a Secret named `dbuser` with a key named `username` that contains the value `scott`, then the macro `${secret:dbuser.username}` will be replaced with the word `scott` before the template is copied into its WebLogic Server instance Pod.
 
-**SECURITY NOTE: Use the `:encrypt` suffix in a secret macro to encrypt its replacement value with the WebLogic WLST `encrypt` command (instead of leaving it at its plain text value).  This is useful for overriding MBean attributes that expect encrypted values, such as the `password-encrypted` field of a data source, and is also useful for ensuring that a custom override situational configuration file the operator places in the domain home does not expose passwords in plain-text.**
+**SECURITY NOTE: Use the `:encrypt` suffix in a secret macro to encrypt its replacement value with the WebLogic WLST `encrypt` command (instead of leaving it at its plain text value).  This is useful for overriding MBean attributes that expect encrypted values, such as the `password-encrypted` field of a data source, and is also useful for ensuring that a custom overrides configuration file the operator places in the domain home does not expose passwords in plain-text.**
 
 #### Override template syntax special requirements
 
-**Check each item below for best practices and to ensure custom situational configuration takes effect:**
+**Check each item below for best practices and to ensure custom overrides configuration takes effect:**
 
 * Reference the name of the current bean and each parent bean in any hierarchy you override.
   * Note that the `combine-mode` verbs (`add` and `replace`) should be omitted for beans that are already defined in your original domain home configuration.
        * See [Override template samples](#override-template-samples) for examples.
-* Use situational config `replace` and `add` verbs as follows:
+* Use `replace` and `add` verbs as follows:
   * If you are adding a new bean that doesn't already exist in your original domain home `config.xml`, then specify `add` on the MBean itself and on each attribute within the bean.
        * See the `server-debug` stanza in [Override template samples](#override-template-samples) for an example.
   * If you are adding a new attribute to an existing bean in the domain home `config.xml`, then the attribute needs an `add` verb.
@@ -217,7 +217,7 @@ The secret macro `SECRETNAME` field must reference the name of a Kubernetes Secr
        * See the `public-address` stanza in  [Override template samples](#override-template-samples) for an example.
 * When overriding `config.xml`:
   * The XML namespace (`xmlns:` in the XML) must be exactly as specified in [Override template schemas](#override-template-schemas).
-       * For example, use `d:` to reference `config.xml` beans and attributes, `f:` for `add` and `replace` `domain-fragment` verbs, and `s:` to reference the situational configuration schema.
+       * For example, use `d:` to reference `config.xml` beans and attributes, `f:` for `add` and `replace` `domain-fragment` verbs, and `s:` to reference the configuration overrides schema.
   * Avoid specifying the domain name stanza, as this may cause some overrides to be ignored (for example, server-template scoped overrides).
 * When overriding modules:
   * It is a best practice to use XML namespace abbreviations `jms:`, `jdbc:`, and `wldf:` respectively for JMS, JDBC, and WLDF (diagnostics) module override files.
@@ -261,7 +261,7 @@ The following `config.xml` override file demonstrates:
 
 #### Overriding a data source module
 
-The following `jdbc-testDS.xml` override template demonstrates setting the URL, user name, and password-encrypted fields of a JDBC module named `testDS` by using `secret macros`.  The generated situational configuration that replaces the macros with secret values will be located in the `DOMAIN_HOME/optconfig/jdbc` directory.   The `password-encrypted` field will be populated with an encrypted value because it uses a secret macro with an `:encrypt` suffix.  The Secret is named `dbsecret` and contains three keys: `url`, `username`, and `password`.
+The following `jdbc-testDS.xml` override template demonstrates setting the URL, user name, and password-encrypted fields of a JDBC module named `testDS` by using `secret macros`.  The generated configuration overrides that replaces the macros with secret values will be located in the `DOMAIN_HOME/optconfig/jdbc` directory.   The `password-encrypted` field will be populated with an encrypted value because it uses a secret macro with an `:encrypt` suffix.  The Secret is named `dbsecret` and contains three keys: `url`, `username`, and `password`.
 
 Best practices for data source modules and their overrides:
 
@@ -294,7 +294,7 @@ Best practices for data source modules and their overrides:
 
 * Make sure your domain home meets the prerequisites. See [Prerequisites](#prerequisites).
 * Make sure your overrides are supported. See [Typical overrides](#typical-overrides) and [Unsupported overrides](#unsupported-overrides).
-* Create a directory containing (A) a set of situational configuration templates for overriding the MBean properties you want to replace and (B) a `version.txt` file.
+* Create a directory containing (A) a set of configuration overrides templates for overriding the MBean properties you want to replace and (B) a `version.txt` file.
   * This directory must not contain any other files.
   * The `version.txt` file must contain exactly the string `2.0`.
       * Note: This version.txt file must stay `2.0` even when you are updating your templates from a previous deployment.
@@ -329,7 +329,7 @@ Best practices for data source modules and their overrides:
   * Decide if the changes you are making to non-dynamic MBean attributes can be applied by rolling the affected clusters or Managed Server instances or if the change required a full domain shutdown.
   * If a full domain shut down is requried, stop all running WebLogic Server instance Pods in your domain and then restart them. (See [Starting and stopping servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
   * Otherwise, simply restart your domain, which includes rolling clusters. (See [Restarting servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}).)
-* See [Debugging](#debugging) for ways to check if the situational configuration is taking effect or if there are errors.
+* See [Debugging](#debugging) for ways to check if the configuration overrides are taking effect or if there are errors.
 
 Example Domain YAML:
 ```
@@ -356,8 +356,8 @@ spec:
 Incorrectly formatted override files may be accepted without warnings or errors and may not prevent WebLogic Server instance Pods from booting. So, it is important to make sure that the template files are correct in a QA environment, otherwise your WebLogic Servers may start even though critically required overrides are failing to take effect.
 
 On WebLogic Server versions that support the `weblogic.SituationalConfig.failBootOnError` system property (Note: It is not supported in WebLogic Server 12.2.1.3.0),
-by default the WebLogic Server will fail to boot if any situational configuration files are invalid,
-or if it encounters an error while loading situational configuration files.
+by default the WebLogic Server will fail to boot if any configuration overrides files are invalid,
+or if it encounters an error while loading configuration overrides files.
 By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in the Kubernetes containers for the WebLogic Servers to `false`, you can start up the WebLogic Servers even with incorrectly formatted override files.
 
 * Make sure you've followed each step in the [Step-by-step guide](#step-by-step-guide).
@@ -373,8 +373,8 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
   * Search your Administration Server Pod's `kubectl log` for the keyword `situational`, for example `kubectl logs MYADMINPOD | grep -i situational`.
       * The only WebLogic Server log lines that match should look something like:
          * `<Dec 14, 2018 12:20:47 PM UTC> <Info> <Management> <BEA-141330> <Loading situational configuration file: /shared/domains/domain1/optconfig/custom-situational-config.xml>`
-         * This line indicates a situational configuration file has been loaded.
-      * If the search yields Warning or Error lines, then the format of the custom situational configuration template is incorrect, and the Warning or Error text should describe the problem.
+         * This line indicates a configuration overrides file has been loaded.
+      * If the search yields Warning or Error lines, then the format of the custom configuration overrides template is incorrect, and the Warning or Error text should describe the problem.
       * Note: The following exception may show up in your server logs when overriding JDBC modules. It is not expected to affect runtime behavior, and can be ignored (a fix is pending for them):
          ```
          java.lang.NullPointerException
@@ -385,7 +385,7 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
            ...
          ```
   * Look in your `DOMAIN_HOME/optconfig` directory.
-    * This directory, or a subdirectory within this directory, should contain each of your custom situational configuration files.
+    * This directory, or a subdirectory within this directory, should contain each of your custom configuration ovrrides files.
     * If it doesn't, then this likely indicates your Domain YAML file `configuration.overridesConfigMap` was not set to match your custom override ConfigMap name, or that your custom override ConfigMap does not contain your override files.
 
 * If the Administration Server Pod does start but fails to reach ready state or tries to restart:
@@ -396,7 +396,7 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
         * `<Jun 20, 2019 3:48:45 AM GMT> <Warning> <Management> <BEA-141323> <The situational config file has an invalid format, it is being ignored: XMLSituationalConfigFile[/shared/domains/domain1/optconfig/jdbc/testDS-0527-jdbc-situational-config.xml] because org.xml.sax.SAXParseException; lineNumber: 8; columnNumber: 3; The element type "jdbc:jdbc-driver-params" must be terminated by the matching end-tag "</jdbc:jdbc-driver-params>".`
       * The warning message suggests a syntax error is found in the provided configuration override file for the testDS JDBC datasource.
 
-* If you'd like to verify that the situational configuration is taking effect in the WebLogic MBean tree, then one way to do this is to compare the `server config` and `domain config` MBean tree values.
+* If you'd like to verify that the configuration overrides are taking effect in the WebLogic MBean tree, then one way to do this is to compare the `server config` and `domain config` MBean tree values.
   * The `domain config` value should reflect the original value in your domain home configuration.
   * The `server config` value should reflect the overridden value.
   * For example, assuming your `DOMAIN_UID` is `domain1`, and your domain contains a WebLogic Server named `admin-server`, then:
@@ -411,7 +411,7 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
   > get('/Servers/admin-server/MaxMessageSize')
   > exit()
   ```
-* To cause the WebLogic situational configuration feature to produce additional debugging information in the WebLogic Server logs, configure the `JAVA_OPTIONS` environment variable in your Domain YAML file with:
+* To cause the WebLogic configuration overrides feature to produce additional debugging information in the WebLogic Server logs, configure the `JAVA_OPTIONS` environment variable in your Domain YAML file with:
 ```
 -Dweblogic.debug.DebugSituationalConfig=true
 -Dweblogic.debug.DebugSituationalConfigDumpXml=true
@@ -423,27 +423,33 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
 ---
 ### Internal design flow
 
-* When a domain is first deployed, or is restarted, the operator runtime creates a Kubernetes introspector job named `DOMAIN_UID-introspect-domain-job`.
+* The operator generates the final configuration overrides, which include the merging of operator-generated overrides and the processing of any customer-provided configuration overrides templates and Secrets, during its introspection phase.
+* The operator creates a Kubernetes Job for introspection named `DOMAIN_UID-introspect-domain-job`.
 * The introspector Job's Pod:
   * Mounts the Kubernetes ConfigMap and Secrets specified by using the operator Domain `configuration.overridesConfigMap`, `webLogicCredentialsSecret`, and `configuration.secrets` fields.
-  * Reads the mounted situational configuration templates from the ConfigMap and expands them to create the actual situational configuration files for the domain:
+  * Reads the mounted configuration overrides templates from the ConfigMap and expands them to create the actual configuration overrides files for the domain:
       * It expands some fixed replaceable values (for example, `${env:DOMAIN_UID}`).
       * It expands referenced Secrets by reading the value from the corresponding mounted secret file (for example, `${secret:mysecret.mykey}`).
       * It optionally encrypts secrets using offline WLST to encrypt the value - useful for passwords (for example, `${secret:mysecret.mykey:encrypt}`).
-      * It returns expanded situational configuration files to the operator.
+      * It returns expanded configuration overrides files to the operator.
       * It reports any errors when attempting expansion to the operator.
 * The operator runtime:
-  * Reads the expanded situational configuration files or errors from the introspector.
+  * Reads the expanded configuration overrides files or errors from the introspector.
   * And, if the introspector reported no errors, it:
-      * Puts situational configuration files in a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm`.
+      * Puts configuration overrides files in a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm`.
       * Mounts this ConfigMap into the WebLogic Server instance Pods.
-      * Starts the WebLogic Server instance Pods.
   * Otherwise, if the introspector reported errors, it:
       * Logs warning, error, or severe messages.
-      * Will not start WebLogic Server instance Pods.
+      * Will not start WebLogic Server instance Pods; however, any already running Pods are preserved.
 * The `startServer.sh` script in the WebLogic Server instance Pods:
-  * Copies the expanded situational configuration files to a special location where the WebLogic runtime can find them:
+  * Copies the expanded configuration overrides files to a special location where the WebLogic runtime can find them:
       * `config.xml` overrides are copied to the `optconfig` directory in its domain home.
       * Module overrides are copied to the `optconfig/jdbc`, `optconfig/jms`, or `optconfig/diagnostics` directory.
-  * Deletes any situational configuration files in the `optconfig` directory that do not have corresponding template files in the ConfigMap.
+  * Deletes any configuration overrides files in the `optconfig` directory that do not have corresponding template files in the ConfigMap.
 * WebLogic Servers read their overrides from their domain home's `optconfig` directory.
+* If WebLogic Server instance Pods are already running when introspection is repeated and this new introspection generates different configuration overrides then:
+  * After the operator updates the ConfigMap, Kubernetes modifies the mounted files in running containers to match the new contents of the ConfigMap.
+  * The rate of this periodic sync of ConfigMap data by `kubelet` is configurable, but defaults to 10 seconds.
+  * If `overridesDistributionStrategy` is DYNAMIC, then the `livenessProbe.sh` script, which is already periodically invoked by Kubernetes, will perform the same actions as `startServer.sh` to update the files in `optconfig`.
+  * WebLogic Server instances monitor the files in `optconfig` and dynamically update the active configuration based on the current contents of the configuration overrides files.
+  * Otherwise, if the `overridesDistributionStrategy` is ON_RESTART, then the updated files at the ConfigMap's mount point are not copied to `optconfig` while the WebLogic Server instance is running and, therefore, don't affect the active configuration.
