@@ -35,7 +35,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
@@ -71,9 +70,13 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyF
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapForDomainCreation;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -189,8 +192,8 @@ public class ItDomainInPV {
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
-    CommonTestUtils.createPV(pvName, wdtDomainUid, this.getClass().getSimpleName());
-    CommonTestUtils.createPVC(pvName, pvcName, wdtDomainUid, wdtDomainNamespace);
+    createPV(pvName, wdtDomainUid, this.getClass().getSimpleName());
+    createPVC(pvName, pvcName, wdtDomainUid, wdtDomainNamespace);
 
     // create a temporary WebLogic domain property file as a input for WDT model file
     File domainPropertiesFile = assertDoesNotThrow(() ->
@@ -462,8 +465,8 @@ public class ItDomainInPV {
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
-    CommonTestUtils.createPV(pvName, domainUid, this.getClass().getSimpleName());
-    CommonTestUtils.createPVC(pvName, pvcName, domainUid, wlstDomainNamespace);
+    createPV(pvName, domainUid, this.getClass().getSimpleName());
+    createPVC(pvName, pvcName, domainUid, wlstDomainNamespace);
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() ->
@@ -662,7 +665,7 @@ public class ItDomainInPV {
     logger.info("Creating a config map to hold domain creation scripts");
     String domainScriptConfigMapName = "create-domain-scripts-cm";
     assertDoesNotThrow(
-        () -> CommonTestUtils.createConfigMapForDomainCreation(
+        () -> createConfigMapForDomainCreation(
             domainScriptConfigMapName, domainScriptFiles, namespace, this.getClass().getSimpleName()),
         "Create configmap for domain creation failed");
 
@@ -707,7 +710,7 @@ public class ItDomainInPV {
     logger.info("Creating a config map to hold domain creation scripts");
     String domainScriptConfigMapName = "create-domain-scripts-cm";
     assertDoesNotThrow(
-        () -> CommonTestUtils.createConfigMapForDomainCreation(
+        () -> createConfigMapForDomainCreation(
             domainScriptConfigMapName, domainScriptFiles, namespace, this.getClass().getSimpleName()),
         "Create configmap for domain creation failed");
 
@@ -740,7 +743,7 @@ public class ItDomainInPV {
    * @param namespace name of the namespace in which to create secret
    */
   private void createOCRRepoSecret(String namespace) {
-    CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+    createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
         OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
   }
 

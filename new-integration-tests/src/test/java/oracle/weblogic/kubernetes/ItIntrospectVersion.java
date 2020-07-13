@@ -85,7 +85,10 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotEx
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapForDomainCreation;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
@@ -707,7 +710,7 @@ public class ItIntrospectVersion {
     logger.info("Creating a config map to hold domain creation scripts");
     String domainScriptConfigMapName = "create-domain-scripts-cm";
     assertDoesNotThrow(
-        () -> CommonTestUtils.createConfigMapForDomainCreation(
+        () -> createConfigMapForDomainCreation(
             domainScriptConfigMapName, domainScriptFiles, namespace, this.getClass().getSimpleName()),
         "Create configmap for domain creation failed");
 
@@ -721,7 +724,7 @@ public class ItIntrospectVersion {
         .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName()); //domain property file
 
     logger.info("Running a Kubernetes job to create the domain");
-    CommonTestUtils.createDomainJob(image, isUseSecret, pvName, pvcName, domainScriptConfigMapName,
+    createDomainJob(image, isUseSecret, pvName, pvcName, domainScriptConfigMapName,
         namespace, jobCreationContainer);
 
   }
@@ -743,7 +746,7 @@ public class ItIntrospectVersion {
       }
     }
     if (!secretExists) {
-      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+      createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
           OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
     }
   }
