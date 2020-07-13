@@ -39,7 +39,7 @@ This document describes what actions you need to take to properly restart your s
 * Changing the WebLogic Server credentials (the user name and password)
 * Changing fields on the Domain that [affect WebLogic Server instance Pod generation]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}) (such as `image`, `volumes`, and `env`)
 * Applying WebLogic Server patches
-* Updating deployed applications for Domain in Image
+* Updating deployed applications for Domain in Image or Model in Image
 
 ### Use cases
 
@@ -47,53 +47,52 @@ This document describes what actions you need to take to properly restart your s
 
 Changes to the WebLogic domain configuration may require either a rolling or full domain restart depending on the domain home location and the type of configuration change.
 
-* **Domain in Image:**
+##### Domain in Image
 
 For Domain in Image, you may only perform a rolling restart if both the WebLogic configuration changes between the present image and a new image are dynamic and you have [followed the CI/CD guidelines]({{< relref "/userguide/cicd/mutate-the-domain-layer">}}) to create an image with compatible encryption keys.
 
-Otherwise, use of a new image that does not have compatible encryption keys or any non-dynamic configuration changes require a full domain restart.  
-    * If you create a new image with a new name, then you must avoid a rolling restart, which can cause unexpected behavior for the running domain due to configuration inconsistencies as seen by the various servers, by following the steps in [Avoiding a rolling restart when changing image field on a Domain](#avoiding-a-rolling-restart-when-changing-image-field-on-a-domain).
-    * If you create a new image with the same name, then you must manually initiate a full domain restart. See [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}).
+Otherwise, use of a new image that does not have compatible encryption keys or any non-dynamic configuration changes require a full domain restart. 
+ 
+* If you create a new image with a new name, then you must avoid a rolling restart, which can cause unexpected behavior for the running domain due to configuration inconsistencies as seen by the various servers, by following the steps in [Avoiding a rolling restart when changing image field on a Domain](#avoiding-a-rolling-restart-when-changing-image-field-on-a-domain).
+* If you create a new image with the same name, then you must manually initiate a full domain restart. See [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}).
 
-* **Model in Image:**
+##### Model in Image
 
-    * Any image that supplies configuration changes that are incompatible with the current running domain require a full shut down before changing the Domain `image` field, instead of a rolling restart. For changes that support a rolling restart, see [Supported and unsupported updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#supported-and-unsupported-updates" >}}).
+* Any image that supplies configuration changes that are incompatible with the current running domain require a full shut down before changing the Domain `image` field, instead of a rolling restart. For changes that support a rolling restart, see [Supported and unsupported updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#supported-and-unsupported-updates" >}}).
 
-    * If you create a new image with a new name, and you want to avoid a rolling restart, see [Avoiding a rolling restart when changing the image field on a Domain](#avoiding-a-rolling-restart-when-changing-the-image-field-on-a-domain).
+* If you create a new image with a new name, and you want to avoid a rolling restart, see [Avoiding a rolling restart when changing the image field on a Domain](#avoiding-a-rolling-restart-when-changing-the-image-field-on-a-domain).
 
-    * If you create a new image with the same name, then you must manually initiate either a full domain restart or rolling restart for pods to run with the new image. To initiate a full restart, see [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}). To initiate a rolling restart, change the value of your Domain `restartVersion` field.  See [Restarting servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}) and [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#rolling-restarts" >}}).
+* If you create a new image with the same name, then you must manually initiate either a full domain restart or rolling restart for pods to run with the new image. To initiate a full restart, see [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}). To initiate a rolling restart, change the value of your Domain `restartVersion` field.  See [Restarting servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}) and [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#rolling-restarts" >}}).
 
-    * If you are supplying updated models or Secrets for a running domain, and you want the configuration updates to take effect using a rolling restart, then do one of the following:
-      * Supply a new value for the `image` field in the Domain or any of the other [fields affecting WebLogic Server instance Pod generation]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}).
-      * Change the Domain `restartVersion` field. This will cause the operator to restart all running servers and, prior to the restarts, the operator will introspect any new configuration.
-      * Change the Domain `introspectVersion` field. This will cause the operator to introspect any new configuration and, if needed, restart servers to use that new configuration.
+* If you are supplying updated models or Secrets for a running domain, and you want the configuration updates to take effect using a rolling restart, then do one of the following:
+  * Supply a new value for the `image` field in the Domain or any of the other [fields affecting WebLogic Server instance Pod generation]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}).
+  * Change the Domain `restartVersion` field. This will cause the operator to restart all running servers and, prior to the restarts, the operator will introspect any new configuration.
+  * Change the Domain `introspectVersion` field. This will cause the operator to introspect any new configuration and, if needed, restart servers to use that new configuration.
 
-* **Domain in PV:**
+##### Domain in PV
 
 For Domain in PV, the type of restart needed depends on the nature of the WebLogic domain configuration change:
-    * With operator version 3.0.0, domain configuration changes that add clusters, either configured or dynamic, cluster member servers, or standalone servers can now be performed dynamically. This support requires that the new clusters or servers are added to the domain configuration and then [triggering the operator's introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}) of that new configuration.
-    * Other changes to parts of the domain configuration that the operator introspects, require a full restart, even if the changes are dynamic.
-      The following are the other types of changes to the domain configuration that the operator introspects:
-        * Adding or removing a network access point
-        * Changing a cluster, server, dynamic server, or network access point name
-        * Enabling or disabling the listen port, SSL port, or admin port
-        * Changing any port numbers
-        * Changing a network access point's public address
-    * Other dynamic WebLogic configuration changes do not require a restart. For example, a change to a server's connection timeout property
-is dynamic and does not require a restart.
+* With operator version 3.0.0, domain configuration changes that add clusters, either configured or dynamic, cluster member servers, or standalone servers can now be performed dynamically. This support requires that the new clusters or servers are added to the domain configuration and then [triggering the operator's introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}) of that new configuration.
+* Other changes to parts of the domain configuration that the operator introspects, require a full restart, even if the changes are dynamic.
+  * The following are the other types of changes to the domain configuration that the operator introspects:
+    * Adding or removing a network access point
+    * Changing a cluster, server, dynamic server, or network access point name
+    * Enabling or disabling the listen port, SSL port, or admin port
+    * Changing any port numbers
+    * Changing a network access point's public address
+  * Other dynamic WebLogic configuration changes do not require a restart. For example, a change to a server's connection timeout property is dynamic and does not require a restart.
     * Other non-dynamic domain configuration changes require either a manually initiated rolling restart or a full domain restart, depending on the nature of the change.
-      For example, a rolling restart is applicable when changing a WebLogic Server `stuck thread timer interval` property. See [Restart all the servers in the domain]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restart-all-the-servers-in-the-domain" >}}).
-
+    * For example, a rolling restart is applicable when changing a WebLogic Server `stuck thread timer interval` property. See [Restart all the servers in the domain]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restart-all-the-servers-in-the-domain" >}}).
 
 #### Changing the domain configuration overrides
 
 With operator version 3.0.0, changes to domain configuration overrides can be applied dynamically or as part of a rolling restart. Previously, any change to configuration overrides required a full domain restart.
 Changes to configuration overrides include:
 
-  * Changing the Domain YAML file's `configuration.overridesConfigMap` to point to a different ConfigMap
-  * Changing the Domain YAML file's `configuration.secrets` to point to a different list of Secrets
-  * Changing the contents of the ConfigMap referenced by `configuration.overridesConfigMap`
-  * Changing the contents to any of the Secrets referenced by `configuration.secrets`
+* Changing the Domain YAML file's `configuration.overridesConfigMap` to point to a different ConfigMap
+* Changing the Domain YAML file's `configuration.secrets` to point to a different list of Secrets
+* Changing the contents of the ConfigMap referenced by `configuration.overridesConfigMap`
+* Changing the contents to any of the Secrets referenced by `configuration.secrets`
   
 The changes to the above fields or contents of related resources are not processed automatically. Instead, these fields are processed only when you [trigger operator introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}). The operator then will apply the new configuration overrides dynamically or only apply the overrides when WebLogic Server instances restart, depending on the strategy that you select.
 

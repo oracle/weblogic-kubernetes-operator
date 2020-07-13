@@ -6,7 +6,7 @@ weight: 8
 ---
 
 
-When the operator starts, it lists all existing Domains and processes these Domains to create the necessary Kubernetes resources, such as Pods and Services, if they don't already exist.  This initialization also includes looking for any stranded resources that, while created by the operator, no longer correlate with a Domain.
+When the operator starts, it lists all the existing Domains and then processes these Domains to create the necessary Kubernetes resources, such as Pods and Services, if they don't already exist. This initialization also includes looking for any stranded resources that, while created by the operator, no longer correlate with a Domain.
 
 After this, the operator starts watches for changes to Domains and any changes to other resources created by the operator.  When a watch event is received, the operator processes the modified Domain to again bring the runtime presence into alignment with the desired state.
 

@@ -453,3 +453,6 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
   * If `overridesDistributionStrategy` is DYNAMIC, then the `livenessProbe.sh` script, which is already periodically invoked by Kubernetes, will perform the same actions as `startServer.sh` to update the files in `optconfig`.
   * WebLogic Server instances monitor the files in `optconfig` and dynamically update the active configuration based on the current contents of the configuration overrides files.
   * Otherwise, if the `overridesDistributionStrategy` is ON_RESTART, then the updated files at the ConfigMap's mount point are not copied to `optconfig` while the WebLogic Server instance is running and, therefore, don't affect the active configuration.
+
+{{% notice note %}} Changes to configuration overrides distributed to running WebLogic Server instances can only take effect if the corresponding WebLogic configuration MBean attribute is "dynamic". For instance, the Data Source "passwordEncrypted" attribute is dynamic while the "Url" attribute is non-dynamic.
+{{% /notice %}}

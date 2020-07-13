@@ -7,11 +7,11 @@ description: "This document describes domain introspection in the Oracle WebLogi
 ---
 
 
-This document describes domain introspection, when it occurs automatically, and how and when to trigger additional introspections of the domain configuration in the Oracle WebLogic Server in Kubernetes environment.
+This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in Kubernetes environment.
 
 In order to manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic
-domain configuration using an "introspection" job. This job must successfully complete before the operator will begin to start WebLogic Server instances. Because each of the
-[domain home source types](({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}})) are different (for instance, Domain in PV uses a domain home on a PersistentVolume while Model in Image generates the domain home dynamically from a WDT model), the introspection runs in a Kubernetes Pod
+domain configuration using an "introspection" job. This Job will be named `DOMAIN_UID-introspect-domain-job`, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances. Because each of the
+[domain home source types](({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}})) are different (for instance, Domain in PV uses a domain home on a PersistentVolume while Model in Image generates the domain home dynamically from a WDT model), the Pod created by this Job will be
 as similar as possible to the Pod that will later be generated for the Administration Server. This guarantees that the operator is
 analyzing the same WebLogic domain configuration that WebLogic Server instances will use.
 
@@ -46,9 +46,13 @@ As with `restartVersion`, the `introspectVersion` field has no required format; 
 
 #### Failed introspection
 
+Sometimes the Kubernetes Job, named `DOMAIN_UID-introspect-domain-job`, created for the introspection will fail.
+
 When introspection fails, the operator will not start any WebLogic Server instances. If this is not the initial introspection and there are already WebLogic Server instances running, then a failed introspection will leave the existing WebLogic Server instances running without making any changes to the operational state of the domain.
 
 The introspection will be periodically retried and then will eventually timeout with the Domain `status` indicating the processing failed. To recover from a failed state, correct the underlying problem and update the `introspectVersion`.
+
+Please review the details for diagnosing introspection failures related to [configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md#debugging">}}) or [Model in Image domain home generation]({{<relref "/userguide/managing-domains/model-in-image/debugging.md">}}).
 
 ### Introspection use cases
 
@@ -96,3 +100,6 @@ We have introduced a new field, called `overrideDistributionStrategy` and locate
 The default value for `overrideDistributionStrategy` is DYNAMIC, which means that new configuration overrides are distributed dynamically to already running WebLogic Server instances. 
 
 Alternately, you can set `overrideDistributionStrategy` to ON_RESTART, which means that the new configuration overrides will not be distributed to already running WebLogic Server instances, but will instead be applied only to servers as they start or restart. Use of this value will *not* cause WebLogic Server instances to restart absent changes to other fields, such as `restartVersion`.
+
+{{% notice note %}} Changes to configuration overrides distributed to running WebLogic Server instances can only take effect if the corresponding WebLogic configuration MBean attribute is "dynamic". For instance, the Data Source "passwordEncrypted" attribute is dynamic while the "Url" attribute is non-dynamic.
+{{% /notice %}}
