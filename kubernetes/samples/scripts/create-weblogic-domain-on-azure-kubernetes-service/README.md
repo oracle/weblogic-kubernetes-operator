@@ -761,7 +761,7 @@ NAME                            TYPE           CLUSTER-IP     EXTERNAL-IP     PO
 domain1-cluster-1-external-lb   LoadBalancer   10.0.108.249   52.224.248.40   8001:32695/TCP   30m
 ```
 
-In the example, the application address is: http://52.224.248.40:8001/testwebapp.
+In the example, the application address is: `http://52.224.248.40:8001/testwebapp`.
 
 The test application will list the server host and server IP on the page.
 
