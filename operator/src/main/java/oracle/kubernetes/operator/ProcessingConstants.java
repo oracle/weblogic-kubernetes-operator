@@ -33,7 +33,6 @@ public interface ProcessingConstants {
 
   String ENCODED_CREDENTIALS = "encodedCredentials";
   String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
-  //  String UNRECOVERABLE_INTROSPECT_ERRORS = "unrecoverableIntrospectErrors";
   String INTROSPECTOR_JOB_FAILURE_LOGGED = "introspectorJobfailureLogged";
   String WAIT_FOR_POD_READY = "waitForPodReady";
 

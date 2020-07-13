@@ -674,6 +674,13 @@ function wdtCreatePrimordialDomain() {
 
   export __WLSDEPLOY_STORE_MODEL__=1
 
+  if [ "JRF" == "$WDT_DOMAIN_TYPE" ] ; then
+    if [ -z "${OPSS_FLAGS}" ] ; then
+      trace "Creating JRF primordial domain"
+    else
+      trace "Creating JRF primordial domain with opss wallet and password"
+    fi
+  fi
   ${WDT_BINDIR}/createDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
   ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}  ${UPDATE_RCUPWD_FLAG}  \
     > ${WDT_OUTPUT}
