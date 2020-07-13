@@ -58,7 +58,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-//import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -217,13 +216,13 @@ class ItParameterizedScaleDomainNginx {
     logger.info("NGINX http node port: {0}", nodeportshttp);
 
     // create model in image domain with multiple clusters
-    //miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
+    miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
     // create domain in pv
     domainInPV = createDomainInPvUsingWdt(domainInPVNamespace);
     // create domain in image
     domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
 
-    //domains.add(miiDomain);
+    domains.add(miiDomain);
     domains.add(domainInPV);
     domains.add(domainInImage);
 
@@ -292,38 +291,6 @@ class ItParameterizedScaleDomainNginx {
     testScaleClustersWithWLDF(domain);
   }
 
-  //@ParameterizedTest
-  //@Test
-  @DisplayName("scale cluster using WLDF policy for three different type of domains")
-  //@MethodSource("domainProvider")
-  public void testParamsScaleClustersWithWLDFWithMiiDomain() {
-    assertDomainNotNull(miiDomain);
-
-    // Verify scale cluster of the domain with WLDF policy
-    logger.info("testScaleClustersWithWLDF with domain {0}", miiDomain.getMetadata().getName());
-    testScaleClustersWithWLDF(miiDomain);
-  }
-
-  //@Test
-  @DisplayName("scale cluster using WLDF policy for three different type of domains")
-  public void testParamsScaleClustersWithWLDFWithDomainInPV() {
-    assertDomainNotNull(domainInPV);
-
-    // Verify scale cluster of the domain with WLDF policy
-    logger.info("testScaleClustersWithWLDF with domain {0}", domainInPV.getMetadata().getName());
-    testScaleClustersWithWLDF(domainInPV);
-  }
-
-  //@Test
-  @DisplayName("scale cluster using WLDF policy for three different type of domains")
-  public void testParamsScaleClustersWithWLDFWithDomainInImage() {
-    assertDomainNotNull(domainInImage);
-
-    // Verify scale cluster of the domain with WLDF policy
-    logger.info("testScaleClustersWithWLDF with domain {0}", domainInImage.getMetadata().getName());
-    testScaleClustersWithWLDF(domainInImage);
-  }
-
   /**
    * Generate a steam of Domain objects used in parameterized tests.
    * @return stream of oracle.weblogic.domain.Domain objects
@@ -358,7 +325,7 @@ class ItParameterizedScaleDomainNginx {
 
       logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
           clusterName, domainUid, domainNamespace, numberOfServers);
-      curlCmd = generateCurlCmd(domainUid, clusterName, SAMPLE_APP_CONTEXT_ROOT);
+      curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
       List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
       scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
           replicaCount, numberOfServers, curlCmd, managedServersBeforeScale);
@@ -388,7 +355,7 @@ class ItParameterizedScaleDomainNginx {
 
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
         clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
-    curlCmd = generateCurlCmd(domainUid, clusterName, SAMPLE_APP_CONTEXT_ROOT);
+    curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
     List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         replicaCount, numberOfServers, true, externalRestHttpsPort, opNamespace, opServiceAccount,
@@ -417,13 +384,14 @@ class ItParameterizedScaleDomainNginx {
     int numClusters = domain.getSpec().getClusters().size();
     String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
 
-    curlCmd = generateCurlCmd(domainUid, clusterName, SAMPLE_APP_CONTEXT_ROOT);
+    curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
 
     // scale up the cluster by 1 server
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
         clusterName, domainUid, domainNamespace, replicaCount, replicaCount + 1);
     List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
-    String curlCmdForWLDFScript = generateCurlCmd(domainUid, clusterName, WLDF_OPENSESSION_APP_CONTEXT_ROOT);
+    String curlCmdForWLDFScript =
+        generateCurlCmd(domainUid, domainNamespace, clusterName, WLDF_OPENSESSION_APP_CONTEXT_ROOT);
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         replicaCount, replicaCount + 1, false, 0, opNamespace, opServiceAccount,
@@ -785,14 +753,16 @@ class ItParameterizedScaleDomainNginx {
    * Generate the curl command to access the sample app from the ingress controller.
    *
    * @param domainUid uid of the domain
+   * @param domainNamespace the namespace in which the domain exists
    * @param clusterName WebLogic cluster name which is the backend of the ingress
    * @param appContextRoot the context root of the application
    * @return curl command string
    */
-  private String generateCurlCmd(String domainUid, String clusterName, String appContextRoot) {
+  private String generateCurlCmd(String domainUid, String domainNamespace, String clusterName, String appContextRoot) {
 
     return String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);
+        domainUid + "." + domainNamespace + "." + clusterName + ".test",
+        K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);
   }
 
   /**
