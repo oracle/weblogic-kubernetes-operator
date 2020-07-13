@@ -54,6 +54,16 @@ if [ -d ${istiodir} ]; then
    exit 0 
 else 
    install_istio ${version} ${workdir}
-   exit 0 
+   # Additional check for Istio Service. 
+   # Make sure a not-null Service Port returned.
+   HTTP2_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
+   if [ -z ${HTTP2_PORT} ]; then 
+     echo "Istio installation fails"
+     echo "Istio Http2 NodePort Service is not listening"
+     exit -1
+   else 
+     echo "Istio installation is SUCCESS"
+     echo "Http2 NodePort Service is listening on port [${HTTP2_PORT}]"
+     exit 0
+   fi
 fi
-

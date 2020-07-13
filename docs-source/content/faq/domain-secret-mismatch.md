@@ -2,7 +2,8 @@
 title: "Domain secret mismatch"
 date: 2020-03-02T08:08:19-04:00
 draft: false
-weight: 21
+weight: 4
+description: "One or more WebLogic Server instances in my domain will not start and the domain resource `status` or the pod log reports errors like this: Domain secret mismatch."
 ---
 
 > One or more WebLogic Server instances in my domain will not start and the domain resource `status` or the pod log reports errors like this:

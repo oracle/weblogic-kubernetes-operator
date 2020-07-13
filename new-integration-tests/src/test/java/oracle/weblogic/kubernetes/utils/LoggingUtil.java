@@ -32,6 +32,7 @@ import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
+import org.awaitility.core.ConditionTimeoutException;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -248,7 +249,8 @@ public class LoggingUtil {
           for (var container : containers) {
             String containerName = container.getName();
             writeToFile(Kubernetes.getPodLog(podName, namespace, containerName), resultDir,
-                namespace + ".pod." + podName + ".container." + containerName + ".log");
+                namespace + ".pod." + podName + ".container." + containerName + ".log", false);
+
           }
         }
       }
@@ -267,11 +269,25 @@ public class LoggingUtil {
    */
   private static void writeToFile(Object obj, String resultDir, String fileName)
       throws IOException {
+    writeToFile(obj, resultDir, fileName, true);
+  }
+
+  /**
+   * Write the YAML representation of object or String to a file in the resultDir.
+   *
+   * @param obj to write to the file as YAML or String
+   * @param resultDir directory in which to write the log file
+   * @param fileName name of the log file
+   * @param asYaml write as yaml or string
+   * @throws IOException when write fails
+   */
+  private static void writeToFile(Object obj, String resultDir, String fileName, boolean asYaml)
+      throws IOException {
     LoggingFacade logger = getLogger();
     logger.info("Generating {0}", Paths.get(resultDir, fileName));
     if (obj != null) {
       Files.write(Paths.get(resultDir, fileName),
-          dump(obj).getBytes(StandardCharsets.UTF_8)
+          (asYaml ? dump(obj).getBytes(StandardCharsets.UTF_8) : ((String)obj).getBytes(StandardCharsets.UTF_8))
       );
     } else {
       logger.info("Nothing to write in {0} list is empty", Paths.get(resultDir, fileName));
@@ -320,7 +336,7 @@ public class LoggingUtil {
     final LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
-        .atMost(1, MINUTES).await();
+        .atMost(3, MINUTES).await();
 
     // Create the temporary pod with oraclelinux image
     // oraclelinux:7-slim is not useful, missing tar utility
@@ -349,15 +365,19 @@ public class LoggingUtil {
         .kind("Pod");
     V1Pod pvPod = Kubernetes.createPod(namespace, podBody);
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
-                + "(elapsed time {2} , remaining time {3}",
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(podReady(podName, null, namespace));
+    try {
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
+                      + "(elapsed time {2} , remaining time {3}",
+                  podName,
+                  namespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(podReady(podName, null, namespace));
+    } catch (ConditionTimeoutException ex) {
+      logger.warning("Condition not met", ex);
+    }
 
     return pvPod;
   }
@@ -372,21 +392,25 @@ public class LoggingUtil {
     LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(5, SECONDS)
         .and().with().pollInterval(5, SECONDS)
-        .atMost(1, MINUTES).await();
+        .atMost(3, MINUTES).await();
 
     // Delete the temporary pod
     Kubernetes.deletePod(podName, namespace);
 
     // Wait for the pod to be deleted
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for {0} to be deleted in namespace {1}, "
-                + "(elapsed time {2} , remaining time {3}",
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(podDoesNotExist(podName, null, namespace));
+    try {
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for {0} to be deleted in namespace {1}, "
+                      + "(elapsed time {2} , remaining time {3}",
+                  podName,
+                  namespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(podDoesNotExist(podName, null, namespace));
+    } catch (ConditionTimeoutException ex) {
+      logger.warning("Condition not met", ex);
+    }
   }
 
   // The io.kubernetes.client.Copy.copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
