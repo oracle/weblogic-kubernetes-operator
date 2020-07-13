@@ -1808,7 +1808,7 @@ public class CommonTestUtils {
 
   /**
    * Generate a text file in RESULTS_ROOT directory by replacing template value.
-   * @param inputTemplateFile input template file 
+   * @param inputTemplateFile input template file
    * @param outputFile output file to be generated. This file will be copied to RESULTS_ROOT. If outputFile contains
    *                   a directory, then the directory will created if it does not exist.
    *                   example - crossdomxaction/istio-cdt-http-srvice.yaml
@@ -1906,7 +1906,7 @@ public class CommonTestUtils {
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName("weblogic-domain-storage-class")
+            .storageClassName(className)
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
