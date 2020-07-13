@@ -407,10 +407,13 @@ function printSummary {
 	echo ""
     echo "The following Azure Resouces are created: "
     echo "  Resource group: ${azureResourceGroupName}"
-    echo "  Kubernetes service: ${aksClusterName}"
+    echo "  Kubernetes service cluster name: ${aksClusterName}"
     echo "  Storage account: ${storageAccountName}"
     echo ""
     echo "Domain ${domainName} was created and was started by the WebLogic Kubernetes Operator"
+    echo ""
+    echo "Connect your kubectl to this cluster with this command:"
+    echo "  az aks get-credentials --resource-group ${azureResourceGroupName} --name ${aksClusterName}"
     echo ""
 
     if [ "${exposeAdminNodePort}" = true ]; then
