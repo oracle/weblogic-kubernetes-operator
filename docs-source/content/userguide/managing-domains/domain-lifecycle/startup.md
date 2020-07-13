@@ -235,6 +235,7 @@ The `restartVersion` field on the Domain lets you force the operator to restart 
 The operator does rolling restarts of clustered servers so that service is maintained.
 
 #### Fields that cause servers to be restarted
+
 The operator will restart servers when any of the follow fields on the Domain that affect the WebLogic Server instance Pod generation are changed:
 
 * `containerSecurityContext`
@@ -256,6 +257,8 @@ The operator will restart servers when any of the follow fields on the Domain th
 * `restartVersion`
 * `volumes`
 * `volumeMounts`
+
+For Model in Image, a change to the `introspectVersion` field, which causes the operator to initiate a new [introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}), will result in the restarting of servers if the introspection results in the generation of a modified WebLogic domain home. See the documentation on Model in Image [runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) for a description of changes to the model or associated resources, such as Secrets, that will cause the generation of a modified WebLogic domain home.
 
 {{% notice note %}}
 If the only change detected is the addition or modification of a customer-specified label or annotation,

@@ -86,7 +86,7 @@ For Domain in PV, the type of restart needed depends on the nature of the WebLog
 
 #### Changing the domain configuration overrides
 
-With operator version 3.0.0, changes to domain configuration overrides can be applied dynamically or as part of a rolling restart. Previously, any change to configuration overrides required a full domain restart.
+Beginning with operator version 3.0.0, many changes to domain configuration overrides can be applied dynamically or as part of a rolling restart. Previously, any changes to the configuration overrides required a full domain shutdown and restart.
 Changes to configuration overrides include:
 
 * Changing the Domain YAML file's `configuration.overridesConfigMap` to point to a different ConfigMap
@@ -94,7 +94,10 @@ Changes to configuration overrides include:
 * Changing the contents of the ConfigMap referenced by `configuration.overridesConfigMap`
 * Changing the contents to any of the Secrets referenced by `configuration.secrets`
   
-The changes to the above fields or contents of related resources are not processed automatically. Instead, these fields are processed only when you [trigger operator introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}). The operator then will apply the new configuration overrides dynamically or only apply the overrides when WebLogic Server instances restart, depending on the strategy that you select.
+The changes to the above fields or contents of related resources are not processed automatically. Instead, these fields are processed only when you [initiate operator introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}). The operator then will apply the new configuration overrides dynamically or only apply the overrides when WebLogic Server instances restart, depending on the strategy that you select.
+
+{{% notice note %}} Changes to configuration overrides distributed to running WebLogic Server instances can only take effect if the corresponding WebLogic configuration MBean attribute is "dynamic". For instance, the Data Source "passwordEncrypted" attribute is dynamic while the "Url" attribute is non-dynamic.
+{{% /notice %}}
 
 #### Changing the WebLogic Server credentials
 

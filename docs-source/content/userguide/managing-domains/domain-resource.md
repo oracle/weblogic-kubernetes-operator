@@ -46,7 +46,7 @@ $ kubectl describe domain [domain name] -n [namespace]
 
 The Domain type is defined by a CustomResourceDefinition (CRD) and, like all [Kubernetes objects](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/), is described by three sections: `metadata`, `spec`, and `status`.
 
-The operator installs the CustomResourceDefinition for the Domain type when the operator first starts. Customers may also install the CustomResourceDefinition in advance by using one of the provided YAML files.
+The operator installs the CRD for the Domain type when the operator first starts. Customers may also choose to install the CRD in advance by using one of the provided YAML files. Installing the CRD in advance allows you to run the operator without giving it privilege (through Kubernetes roles and bindings) to access or update the CRD or other cluster-scoped resources. This may be necessary in environments where the operator cannot have cluster-scoped privileges, such as OpenShift Dedicated. The operator's role based access control (RBAC) requirements are documented [here]({{< relref "/security/rbac.md" >}}).
 
 For Kubernetes 1.16 and later:
 
