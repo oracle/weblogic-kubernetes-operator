@@ -838,7 +838,6 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
    internal-weblogic-operator-svc     ClusterIP      10.0.1.23     <none>          8082/TCP             9m59s
    kubernetes                         ClusterIP      10.0.0.1      <none>          443/TCP              16m
    ```
-
 ## Useful Links
 
 * [Quickstart: Deploy an Azure Kubernetes Service cluster using the Azure CLI](https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough)  
