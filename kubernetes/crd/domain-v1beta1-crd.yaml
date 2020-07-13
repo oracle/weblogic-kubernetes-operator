@@ -102,8 +102,10 @@ spec:
                     readinessPort:
                       type: number
                       description: The operator will create a WebLogic network access
-                        point with this port for use by the readiness probe. Defaults
-                        to 8888.
+                        point with this port that will then be exposed from the container
+                        running the WebLogic Server instance. The readiness probe
+                        will use this network access point to verify that the server
+                        instance is ready for application traffic. Defaults to 8888.
                     enabled:
                       type: boolean
                       description: True, if this domain is deployed under an Istio

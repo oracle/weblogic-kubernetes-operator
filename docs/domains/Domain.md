@@ -196,7 +196,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `enabled` | Boolean | True, if this domain is deployed under an Istio service mesh. Defaults to true when the `istio` field is specified. |
-| `readinessPort` | number | The operator will create a WebLogic network access point with this port for use by the readiness probe. Defaults to 8888. |
+| `readinessPort` | number | The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The readiness probe will use this network access point to verify that the server instance is ready for application traffic. Defaults to 8888. |
 
 ### Model
 

@@ -150,7 +150,7 @@ Elements related to specifying and overriding WebLogic domain configuration:
 * These elements are under `configuration.istio`.
 
   * `enabled`: True, if this domain is deployed under an Istio service mesh. Defaults to true when the `istio` field is specified.
-  * `readinessPort`: The operator will create a WebLogic network access point with this port for use by the readiness probe. Defaults to 8888.
+  * `readinessPort`: The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The readiness probe will use this network access point to verify that the server instance is ready for application traffic. Defaults to 8888.
 
 Elements related to Kubernetes Pod and Service generation:
 
