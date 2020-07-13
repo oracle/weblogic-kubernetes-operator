@@ -190,8 +190,6 @@ public class ItDomainInPV {
     createSecretWithUsernamePassword(wlSecretName, wdtDomainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-    // create persistent volume and persistent volume claim for domain
-    // these resources should be labeled with domainUid for cleanup after testing
     createPV(pvName, wdtDomainUid, this.getClass().getSimpleName());
     createPVC(pvName, pvcName, wdtDomainUid, wdtDomainNamespace);
 
@@ -449,7 +447,7 @@ public class ItDomainInPV {
     final int managedServerPort = 8001;
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
-    final int t3ChannelPort = getNextFreePort(31101, 32767);  // the port range has to be between 30,000 to 32,767
+    final int t3ChannelPort = getNextFreePort(31101, 32767);
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim

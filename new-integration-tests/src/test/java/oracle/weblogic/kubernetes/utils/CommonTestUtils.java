@@ -1892,6 +1892,7 @@ public class CommonTestUtils {
     logger.info("creating persistent volume for pvName {0}, domainUid: {1}, className: {2}",
         pvName, domainUid, className);
     Path pvHostPath = null;
+    // when tests are running in local box the PV directories needs to exist
     try {
       pvHostPath = Files.createDirectories(Paths.get(
           PV_ROOT, className, pvName));
@@ -1906,7 +1907,7 @@ public class CommonTestUtils {
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName(className)
+            .storageClassName("weblogic-domain-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
