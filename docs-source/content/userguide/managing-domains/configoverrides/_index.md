@@ -11,6 +11,7 @@ pre = "<b> </b>"
 * [Prerequisites](#prerequisites)
 * [Typical overrides](#typical-overrides)
 * [Unsupported overrides](#unsupported-overrides)
+* [Overrides distribution](#overrides-distribution)
 * [Override template names and syntax](#override-template-names-and-syntax)
   * [Override template names](#override-template-names)
   * [Override template schemas](#override-template-schemas)
@@ -94,6 +95,8 @@ Typical attributes for overrides include:
 * Debugging
 * Tuning (`MaxMessageSize`, and such)
 
+See [overrides distribution](#overrides-distribution) for a discussion of distributing new or changed configuration overrides to already running WebLogic Server instances.
+
 ---
 ### Unsupported overrides
 
@@ -124,6 +127,12 @@ Typical attributes for overrides include:
 Note that it's supported, even expected, to override network access point `public` or `external` addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the network access point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
 
 The behavior when using an unsupported override is undefined.
+
+### Overrides distribution
+
+The operator generates the final configuration overrides, combining customer-provided configuration overrides and operator-generated overrides, during the operator's introspection phase. These overrides are then used when starting or restarting WebLogic Server instances. Starting with operator version 3.0.0, these [overrides can also be distributed](({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md#distributing-changes-to-configuration-overrides" >}})) and applied to already running WebLogic Server instances.
+
+For [Domain in PV](({{< relref "/userguide/managing-domains/domain-lifecycle/restarting.md#domain-in-pv" >}})), the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides to support use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.
 
 ---
 ### Override template names and syntax
@@ -293,7 +302,7 @@ Best practices for data source modules and their overrides:
 ### Step-by-step guide
 
 * Make sure your domain home meets the prerequisites. See [Prerequisites](#prerequisites).
-* Make sure your overrides are supported. See [Typical overrides](#typical-overrides) and [Unsupported overrides](#unsupported-overrides).
+* Make sure your overrides are supported. See [Typical overrides](#typical-overrides), [Overrides distribution](#overrides-distribution), and [Unsupported overrides](#unsupported-overrides).
 * Create a directory containing (A) a set of configuration overrides templates for overriding the MBean properties you want to replace and (B) a `version.txt` file.
   * This directory must not contain any other files.
   * The `version.txt` file must contain exactly the string `2.0`.
@@ -324,9 +333,9 @@ Best practices for data source modules and their overrides:
 * Configure the names of each Secret in Domain YAML file.
   * If the Secret contains the WebLogic admin `username` and `password` keys, then set the Domain YAML file `webLogicCredentialsSecret` field.
   * For all other Secrets, add them to the Domain YAML file `configuration.secrets` field. Note: This must be in an array format even if you only add one Secret (see the sample Domain YAML below).
-* Changes to configuration overrides, including the contents of the ConfigMap containing the override templates or the contents of referenced Secrets, do not take affect until the operator runs or repeats its [introspection](({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}})) of the WebLogic domain configuration.
+* Changes to configuration overrides, including the contents of the ConfigMap containing the override templates or the contents of referenced Secrets, do not take effect until the operator runs or repeats its [introspection](({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}})) of the WebLogic domain configuration.
 * If your configuration overrides modify non-dynamic MBean attributes and you currently have WebLogic Server instances from this domain running:
-  * Decide if the changes you are making to non-dynamic MBean attributes can be applied by rolling the affected clusters or Managed Server instances or if the change required a full domain shutdown.
+  * Decide if the changes you are making to non-dynamic MBean attributes can be applied by rolling the affected clusters or Managed Server instances, or if the change requires a full domain shutdown. (See [Overrides distribution](#overrides-distribution))
   * If a full domain shut down is requried, stop all running WebLogic Server instance Pods in your domain and then restart them. (See [Starting and stopping servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
   * Otherwise, simply restart your domain, which includes rolling clusters. (See [Restarting servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}).)
 * See [Debugging](#debugging) for ways to check if the configuration overrides are taking effect or if there are errors.
