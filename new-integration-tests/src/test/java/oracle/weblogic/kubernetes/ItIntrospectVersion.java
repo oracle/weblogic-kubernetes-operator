@@ -242,7 +242,7 @@ public class ItIntrospectVersion {
 
     int replicaCount = 2;
 
-    final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
+    final int t3ChannelPort = getNextFreePort(30100, 32767);  // the port range has to be between 30,000 to 32,767
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim

@@ -802,7 +802,7 @@ public class ItConfigDistributionStrategy {
     createPV(pvName, domainUid);
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
-    t3ChannelPort = getNextFreePort(30000, 32767);
+    t3ChannelPort = getNextFreePort(31500, 32767);
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(()
