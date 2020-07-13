@@ -73,7 +73,7 @@ Otherwise, use of a new image that does not have compatible encryption keys or a
 
 For Domain in PV, the type of restart needed depends on the nature of the WebLogic domain configuration change:
 * Starting with operator version 3.0.0, domain configuration changes that add new clusters (either configured or dynamic), member servers for these new clusters, or non-clustered servers can now be performed dynamically. This support requires that the new clusters or servers are added to the domain configuration and then that you [initiate the operator's introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}) of that new configuration.
-* Other changes to parts of the domain configuration that the operator introspects, require a full shutdown and restart, even if the changes are dynamic, such as:
+* Other changes to parts of the domain configuration that the operator introspects, require a full shutdown and restart, even if the changes are dynamic for WebLogic Server, such as:
   * Adding or removing a network access point
   * Adding a server to an existing cluster
   * Changing a cluster, server, dynamic server, or network access point name
