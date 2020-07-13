@@ -84,7 +84,7 @@ For Domain in PV, the type of restart needed depends on the nature of the WebLog
 * Other non-dynamic domain configuration changes require either a manually initiated rolling restart or a full domain shut down and restart, depending on the nature of the change.
   * For example, a rolling restart is applicable when changing a WebLogic Server `stuck thread timer interval` property. See [Restart all the servers in the domain]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restart-all-the-servers-in-the-domain" >}}).
 
-{{% notice note %}} The preceding description of the operator's lifecycle of responding to WebLogic domain configuration changes applies to version 3.0.0 and later. Prior to operator version 3.0.0, while you could make changes to WebLogic domain configuration using the Administration Console or WLST, the operator would only detect and respond to those changes following a full domain shut down and restart.
+{{% notice note %}} The preceding description of the operator's life cycle of responding to WebLogic domain configuration changes applies to version 3.0.0 and later. Prior to operator version 3.0.0, while you could make changes to WebLogic domain configuration using the Administration Console or WLST, the operator would only detect and respond to those changes following a full domain shut down and restart.
 {{% /notice %}}
 
 #### Changing the domain configuration overrides
