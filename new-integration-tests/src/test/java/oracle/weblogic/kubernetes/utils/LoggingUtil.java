@@ -287,7 +287,7 @@ public class LoggingUtil {
     logger.info("Generating {0}", Paths.get(resultDir, fileName));
     if (obj != null) {
       Files.write(Paths.get(resultDir, fileName),
-          (asYaml == true ? dump(obj).getBytes(StandardCharsets.UTF_8) : ((String)obj).getBytes(StandardCharsets.UTF_8))
+          (asYaml ? dump(obj).getBytes(StandardCharsets.UTF_8) : ((String)obj).getBytes(StandardCharsets.UTF_8))
       );
     } else {
       logger.info("Nothing to write in {0} list is empty", Paths.get(resultDir, fileName));
