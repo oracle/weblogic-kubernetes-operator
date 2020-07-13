@@ -86,7 +86,7 @@ public class Domain {
     // change the /spec/serverStartPolicy to NEVER to shut down all servers in the domain
     // create patch string to shut down the domain
     StringBuffer patchStr = new StringBuffer("[{")
-        .append("\"op\": \"add\", ")
+        .append("\"op\": \"replace\", ")
         .append("\"path\": \"/spec/serverStartPolicy\", ")
         .append("\"value\": \"NEVER\"")
         .append("}]");
@@ -100,13 +100,13 @@ public class Domain {
   }
 
   /**
-   * Restart a domain in the specified namespace.
+   * Start domain in the specified namespace.
    *
    * @param domainUid the domain to restart
    * @param namespace the namespace in which the domain exists
    * @return true if patching domain resource succeeded, false otherwise
    */
-  public static boolean restart(String domainUid, String namespace) {
+  public static boolean start(String domainUid, String namespace) {
     LoggingFacade logger = getLogger();
     // change the /spec/serverStartPolicy to IF_NEEDED to start all servers in the domain
     // create patch string to start the domain

@@ -3,6 +3,7 @@ title: "Managing domain namespaces"
 date: 2019-09-19T10:41:32-05:00
 draft: false
 weight: 1
+description: "Considerations for managing namespaces while the operator is running."
 ---
 
 Each operator deployment manages a number of Kubernetes Namespaces. For more information, see [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values" >}}). A number of Kubernetes resources

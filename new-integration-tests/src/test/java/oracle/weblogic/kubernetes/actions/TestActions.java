@@ -177,8 +177,8 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean restartDomain(String domainUid, String namespace) {
-    return Domain.restart(domainUid, namespace);
+  public static boolean startDomain(String domainUid, String namespace) {
+    return Domain.start(domainUid, namespace);
   }
 
   /**
@@ -220,6 +220,28 @@ public class TestActions {
   public static boolean patchDomainResourceWithNewIntrospectVersion(
       String domainUid, String namespace) throws ApiException {
     return Domain.patchDomainResourceWithNewIntrospectVersion(domainUid, namespace);
+  }
+
+  /**
+   * Get next introspectVersion for a given domain.
+   *
+   * @param domainUid domain id
+   * @param namespace namespace in which the domain resource exists
+   * @return String containing next introspectVersion
+   * @throws ApiException when getting domain resource fails
+   */
+  public static String getNextIntrospectVersion(String domainUid, String namespace) throws ApiException {
+    LoggingFacade logger = getLogger();
+    oracle.weblogic.domain.Domain domain = Domain.getDomainCustomResource(domainUid, namespace);
+    String introspectVersion = domain.getSpec().getIntrospectVersion();
+    if (null != introspectVersion) {
+      logger.info("current introspectVersion: {0}", introspectVersion);
+      introspectVersion = Integer.toString(Integer.valueOf(introspectVersion) + 1);
+      logger.info("modified introspectVersion: {0}", introspectVersion);
+    } else {
+      introspectVersion = Integer.toString(1);
+    }
+    return introspectVersion;
   }
 
   /**
@@ -760,6 +782,20 @@ public class TestActions {
   }
 
   /**
+   * Create an application archive that can be used by WebLogic Image Tool
+   * to create an image with coh-proxy-server.gar for testing Coherence use case
+   *
+   * @param params the parameters for creating a model-in-image Docker image
+   * @return true if the operation succeeds
+   */
+  public static boolean buildCoherenceArchive(AppParams params) {
+    return
+      AppBuilder
+        .withParams(params)
+        .buildCoherence();
+  }
+
+  /**
    * Archive an application from provided ear or war file that can be used by WebLogic Image Tool
    * to create an image with the application for a model-in-image use case.
    *
@@ -929,6 +965,19 @@ public class TestActions {
    **/
   public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
     return Pod.getPod(namespace, labelSelector, podName);
+  }
+
+  /**
+   * Get the IP address allocated to the pod with following parameters.
+   *
+   * @param namespace namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod to return
+   * @return IP address allocated to the pod
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static String getPodIP(String namespace, String labelSelector, String podName) throws ApiException {
+    return Pod.getPodIP(namespace, labelSelector, podName);
   }
 
   /**

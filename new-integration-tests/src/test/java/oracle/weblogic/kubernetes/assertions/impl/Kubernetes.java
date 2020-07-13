@@ -776,4 +776,31 @@ public class Kubernetes {
     Copy copy = new Copy(apiClient);
     copy.copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
+
+  /**
+   * Check if the operator pod in the given namespace is restarted based on podCreationTimestamp.
+   *
+   * @param namespace in which the operator pod is running
+   * @param timestamp the initial podCreationTimestamp
+   * @return true if the pod's creation timestamp is later than the initial PodCreationTimestamp
+   * @throws ApiException when query fails
+   */
+  public static Boolean isOperatorPodRestarted(String namespace, DateTime timestamp) throws ApiException {
+    String labelSelector = String.format("weblogic.operatorName in (%s)", namespace);
+    V1Pod pod = getPod(namespace, labelSelector, "weblogic-operator-");
+    if (pod != null) {
+      // get the podCondition with the 'Ready' type field
+      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
+          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+          .findAny()
+          .orElse(null);
+
+      if (v1PodReadyCondition != null
+          && v1PodReadyCondition.getStatus().equalsIgnoreCase("true")) {
+        String podName = pod.getMetadata().getName();
+        return isPodRestarted(podName, namespace, timestamp);
+      }
+    }
+    return false;
+  }
 }

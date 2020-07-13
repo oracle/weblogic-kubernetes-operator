@@ -272,27 +272,41 @@ public class DeployUtil {
   }
 
   /**
-   * Deploy application using REST API with curl utility.
-   *
+   * Deploy application to a cluster using REST API with curl utility.
    * @param host name of the admin server host
    * @param port node port of admin server
    * @param userName admin server user name
    * @param password admin server password
    * @param cluster name of the cluster to deploy application
    * @param archivePath local path of the application archive
+   * @param hostHeader name of the cluster to deploy application
+   * @param appName name of the application
+   * @return ExecResult 
    */
   public static ExecResult deployUsingRest(String host, String port,
-                                           String userName, String password, String cluster, Path archivePath) {
+            String userName, String password, String cluster, 
+            Path archivePath, String hostHeader, String appName) {
     final LoggingFacade logger = getLogger();
     ExecResult result = null;
+    StringBuffer headerString = null;
+    if (hostHeader != null) {
+      headerString = new StringBuffer("-H 'host: ");
+      headerString.append(hostHeader)
+                  .append(" ' ");
+    } else {
+      headerString = new StringBuffer("");
+    }
     StringBuffer curlString = new StringBuffer("status=$(curl --noproxy '*' ");
     curlString.append(" --user " + userName + ":" + password);
     curlString.append(" -w %{http_code} --show-error -o /dev/null ")
+        .append(headerString.toString())
         .append("-H X-Requested-By:MyClient ")
         .append("-H Accept:application/json  ")
         .append("-H Content-Type:multipart/form-data ")
         .append("-H Prefer:respond-async ")
-        .append("-F \"model={ name: 'testwebapp', targets: [ { identity: [ clusters, '")
+        .append("-F \"model={ name: '")
+        .append(appName)
+        .append("', targets: [ { identity: [ clusters, '")
         .append(cluster + "' ] } ] }\" ")
         .append(" -F \"sourcePath=@")
         .append(archivePath.toString() + "\" ")

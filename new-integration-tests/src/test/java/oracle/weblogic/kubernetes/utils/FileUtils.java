@@ -13,6 +13,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -21,6 +23,7 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.cleanDirectory;
 
@@ -130,6 +133,73 @@ public class FileUtils {
                                    Path srcPath,
                                    Path destPath) throws ApiException, IOException {
     Kubernetes.copyFileToPod(namespace, pod, container, srcPath, destPath);
+  }
+
+  /**
+   * Copy a directory to a pod in specified namespace.
+   * @param namespace namespace in which the pod exists
+   * @param pod name of pod where the file will be copied to
+   * @param container name of the container inside of the pod
+   * @param srcPath source location of the directory
+   * @param destPath destination location of the directory
+   * @throws ApiException if Kubernetes API client call fails
+   * @throws IOException if copy fails
+   */
+  public static void copyFolderToPod(String namespace,
+                                     String pod,
+                                     String container,
+                                     Path srcPath,
+                                     Path destPath) throws ApiException, IOException {
+
+    Stream<Path> walk = Files.walk(srcPath);
+    // find only regular files
+    List<String> result = walk.filter(Files::isRegularFile)
+        .map(x -> x.toString()).collect(Collectors.toList());
+
+    result.forEach(fileOnHost -> {
+      // resolve the given path against this path.
+      Path fileInPod = destPath.resolve(srcPath.relativize(Paths.get(fileOnHost)));
+      getLogger().info("Copying {0} to {1} ", fileOnHost, fileInPod);
+
+      try {
+        // copy each file to the pod.
+        Kubernetes.copyFileToPod(namespace, pod, container, Paths.get(fileOnHost), fileInPod);
+        getLogger().info("File {0} copied to {1} in Pod {2} in namespace {3} ",
+            fileOnHost, fileInPod, pod, namespace);
+      } catch (Exception ex) {
+        throw new RuntimeException(ex);
+      }
+    });
+  }
+
+  /**
+   * Create a directory in a pod in specified namespace.
+   * @param namespace The Kubernetes namespace that the pod is in
+   * @param pod The name of the Kubernetes pod where the command is expected to run
+   * @param container The container in the Pod where the command is to be run. If no
+   *                         container name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy process output to stdout
+   * @param directoryToCreate namespace in which the pod exists
+   */
+  public static void makeDirectories(String namespace,
+                                     String pod,
+                                     String container,
+                                     boolean redirectToStdout,
+                                     List<String> directoryToCreate
+  ) throws IOException, ApiException, InterruptedException  {
+    //Create directories.
+    directoryToCreate.forEach(newDir -> {
+      String mkCmd = "mkdir -p " + newDir;
+      getLogger().info("Newdir to make {0} ", mkCmd);
+
+      try {
+        ExecResult execResult = execCommand(namespace,
+            pod, container, redirectToStdout,"/bin/sh", "-c", mkCmd);
+        getLogger().info("Directory created " + execResult.stdout());
+      } catch (Exception ex) {
+        throw new RuntimeException(ex);
+      }
+    });
   }
 
   private static void copy(Path source, Path dest) throws IOException {

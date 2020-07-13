@@ -78,6 +78,19 @@ public class Pod {
   }
 
   /**
+   * Get the IP address allocated to the pod with following parameters.
+   *
+   * @param namespace namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod to return
+   * @return IP address allocated to the pod
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getPodIP(String namespace, String labelSelector, String podName) throws ApiException {
+    return Kubernetes.getPodIP(namespace, labelSelector, podName);
+  }
+
+  /**
    * Patch domain to shutdown a WebLogic  server by changing the value of
    * its serverStartPolicy property to NEVER.
    *
