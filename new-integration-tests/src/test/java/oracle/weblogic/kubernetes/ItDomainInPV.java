@@ -484,7 +484,7 @@ public class ItDomainInPV {
     final int managedServerPort = 8001;
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
-    final int t3ChannelPort = getNextFreePort(32001, 32767);  // the port range has to be between 30,000 to 32,767
+    final int t3ChannelPort = getNextFreePort(31101, 32767);  // the port range has to be between 30,000 to 32,767
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
