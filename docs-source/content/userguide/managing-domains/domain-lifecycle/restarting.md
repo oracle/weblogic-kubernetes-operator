@@ -72,17 +72,17 @@ Otherwise, use of a new image that does not have compatible encryption keys or a
 ##### Domain in PV
 
 For Domain in PV, the type of restart needed depends on the nature of the WebLogic domain configuration change:
-* With operator version 3.0.0, domain configuration changes that add clusters, either configured or dynamic, cluster member servers, or standalone servers can now be performed dynamically. This support requires that the new clusters or servers are added to the domain configuration and then [triggering the operator's introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}) of that new configuration.
-* Other changes to parts of the domain configuration that the operator introspects, require a full restart, even if the changes are dynamic.
-  * The following are the other types of changes to the domain configuration that the operator introspects:
-    * Adding or removing a network access point
-    * Changing a cluster, server, dynamic server, or network access point name
-    * Enabling or disabling the listen port, SSL port, or admin port
-    * Changing any port numbers
-    * Changing a network access point's public address
-  * Other dynamic WebLogic configuration changes do not require a restart. For example, a change to a server's connection timeout property is dynamic and does not require a restart.
-    * Other non-dynamic domain configuration changes require either a manually initiated rolling restart or a full domain restart, depending on the nature of the change.
-    * For example, a rolling restart is applicable when changing a WebLogic Server `stuck thread timer interval` property. See [Restart all the servers in the domain]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restart-all-the-servers-in-the-domain" >}}).
+* Starting with operator version 3.0.0, domain configuration changes that add new clusters (either configured or dynamic), member servers for these new clusters, or non-clustered servers can now be performed dynamically. This support requires that the new clusters or servers are added to the domain configuration and then that you [initiate the operator's introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}) of that new configuration.
+* Other changes to parts of the domain configuration that the operator introspects, require a full shutdown and restart, even if the changes are dynamic, such as:
+  * Adding or removing a network access point
+  * Adding a server to an existing cluster
+  * Changing a cluster, server, dynamic server, or network access point name
+  * Enabling or disabling the listen port, SSL port, or admin port
+  * Changing any port numbers
+  * Changing a network access point's public address
+* Other dynamic WebLogic configuration changes do not require a restart. For example, a change to a server's connection timeout property is dynamic and does not require a restart.
+* Other non-dynamic domain configuration changes require either a manually initiated rolling restart or a full domain shut down and restart, depending on the nature of the change.
+  * For example, a rolling restart is applicable when changing a WebLogic Server `stuck thread timer interval` property. See [Restart all the servers in the domain]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restart-all-the-servers-in-the-domain" >}}).
 
 #### Changing the domain configuration overrides
 
