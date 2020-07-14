@@ -11,7 +11,7 @@ description: "My domain will not start and I see errors like `ImagePullBackoff` 
 When you see these kinds of errors, it means that Kubernetes cannot find your Docker image.
 The most common causes are:
 
-* The `image` value in your domain resource is set incorrectly, meaning Kubernetes will be
+* The `image` value in your Domain is set incorrectly, meaning Kubernetes will be
   trying to pull the wrong image.
 * The image requires authentication or permission in order to pull it and you have not
   configured Kubernetes with the necessary credentials, for example in an `imagePullSecret`.
@@ -172,4 +172,4 @@ docker load < domain1.tar
 
 After you have ensured that the images are accessible on all worker nodes, you may need to restart
 the pods so that Kubernetes will attempt to pull the images again.   You can do this by
-deleting the pods themselves, or deleting the domain resource and then recreating it.
+deleting the pods themselves, or deleting the Domain and then recreating it.
