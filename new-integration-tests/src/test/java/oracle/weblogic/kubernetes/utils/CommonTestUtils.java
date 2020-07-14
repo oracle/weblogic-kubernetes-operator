@@ -1892,7 +1892,7 @@ public class CommonTestUtils {
     logger.info("creating persistent volume for pvName {0}, domainUid: {1}, className: {2}",
         pvName, domainUid, className);
     Path pvHostPath = null;
-    // when tests are running in local box the PV directories needs to exist
+    // when tests are running in local box the PV directories need to exist
     try {
       pvHostPath = Files.createDirectories(Paths.get(
           PV_ROOT, className, pvName));

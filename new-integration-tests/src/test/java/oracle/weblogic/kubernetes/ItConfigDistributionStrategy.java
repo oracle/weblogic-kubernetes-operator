@@ -81,10 +81,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getNamespacedService;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -1027,12 +1027,10 @@ public class ItConfigDistributionStrategy {
 
   private static Integer getMySQLNodePort(String namespace, String dbName) {
     logger.info(dump(Kubernetes.listServices(namespace)));
-    String serviceName = dbName + "-external-" + namespace;
-    V1Service service = getNamespacedService(namespace, serviceName);
-    if (service != null) {
-      Integer nodePort = service.getSpec().getPorts().get(0).getNodePort();
-      if (nodePort != null) {
-        return nodePort;
+    List<V1Service> services = listServices(namespace).getItems();
+    for (V1Service service : services) {
+      if (service.getMetadata().getName().startsWith(dbName)) {
+        return service.getSpec().getPorts().get(0).getNodePort();
       }
     }
     return -1;
