@@ -73,24 +73,23 @@ First, you need to create two secrets with TLS certificates, one with the common
 $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out /tmp/tls1.crt -subj "/CN=domain1.org"
 $ kubectl create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
 
-# create a TLS secret for domain2
-$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls2.key -out /tmp/tls2.crt -subj "/CN=domain2.org"
-$ kubectl -n test1 create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
 ```
-Then deploy the TLS Ingress.
+Then deploy the TLS Ingress and Ingress Route.
 ```
 $ kubectl create -f samples/tls.yaml
+$ kubectl create -f samples/ingress-route.yaml
 ```
-Now you can access the two WLS domains with different hostnames using the HTTPS endpoint.
+Now you can access application on the WLS domain with hostname in HTTP header.
+The loadbalancer secure port can be obtained dynamically form traefik-operator service on traefik namespace. 
 ```
-$ curl -k -H 'host: domain1.org' https://${HOSTNAME}:30443/testwebapp/
-$ curl -k -H 'host: domain2.org' https://${HOSTNAME}:30443/testwebapp/
+LB_PORT=`kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}'`
+$ curl -k -H 'host: domain1.org' https://${HOSTNAME}:${LB_PORT}/testwebapp/
 ```
 
 ## Uninstall the Traefik operator
 After removing all the Ingress resources, uninstall the Traefik operator:
 ```
-$ helm delete --purge traefik-operator
+$ helm uninstall traefik-operator --namespace traefik --keep-history
 ```
 ## Install and uninstall the Traefik operator with setup.sh
 Alternatively, you can run the helper script `setup.sh`, under the `kubernetes/samples/charts/util` folder, to install and uninstall Traefik.
