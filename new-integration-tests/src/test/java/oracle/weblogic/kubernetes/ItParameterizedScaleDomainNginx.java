@@ -424,9 +424,16 @@ class ItParameterizedScaleDomainNginx {
           .isTrue();
     }
 
-    // delete cluster role binding created for WLDF policy
-    if (assertDoesNotThrow(() -> clusterRoleBindingExists(WLDF_CLUSTER_ROLE_BINDING_NAME))) {
-      assertTrue(deleteClusterRoleBinding(WLDF_CLUSTER_ROLE_BINDING_NAME));
+    for (Domain domain : domains) {
+      assertDomainNotNull(domain);
+
+      String domainNamespace = domain.getMetadata().getNamespace();
+
+      // delete cluster role binding created for WLDF policy
+      if (assertDoesNotThrow(
+          () -> clusterRoleBindingExists(domainNamespace + "-" + WLDF_CLUSTER_ROLE_BINDING_NAME))) {
+        assertTrue(deleteClusterRoleBinding(domainNamespace + "-" + WLDF_CLUSTER_ROLE_BINDING_NAME));
+      }
     }
 
     // delete cluster role created for WLDF policy
