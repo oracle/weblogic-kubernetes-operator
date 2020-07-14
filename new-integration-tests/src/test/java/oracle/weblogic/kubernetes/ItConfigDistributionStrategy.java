@@ -31,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -81,6 +82,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getNamespacedService;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -182,10 +184,10 @@ public class ItConfigDistributionStrategy {
     domainNamespace = namespaces.get(1);
 
     //start two MySQL database instances
-    mysqlDBPort1 = getNextFreePort(30020, 32767);
-    createMySQLDB("mysqldb-1", "root", "root123", mysqlDBPort1, domainNamespace, null);
-    mysqlDBPort2 = getNextFreePort(31020, 32767);
-    createMySQLDB("mysqldb-2", "root", "root456", mysqlDBPort2, domainNamespace, null);
+    createMySQLDB("mysqldb-1", "root", "root123", 0, domainNamespace, null);
+    mysqlDBPort1 = getMySQLNodePort(domainNamespace, "mysqldb-1");
+    createMySQLDB("mysqldb-2", "root", "root456", 0, domainNamespace, null);
+    mysqlDBPort1 = getMySQLNodePort(domainNamespace, "mysqldb-2");
 
     dsUrl1 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort1;
     dsUrl2 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort2;
@@ -1019,6 +1021,18 @@ public class ItConfigDistributionStrategy {
       createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
           OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
     }
+  }
+
+  private static Integer getMySQLNodePort(String namespace, String dbName) {
+    String serviceName = dbName + "-external-" + namespace;
+    V1Service service = getNamespacedService(namespace, serviceName);
+    if (service != null) {
+      Integer nodePort = service.getSpec().getPorts().get(0).getNodePort();
+      if (nodePort != null) {
+        return nodePort;
+      }
+    }
+    return -1;
   }
 
 }

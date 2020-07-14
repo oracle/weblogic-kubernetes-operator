@@ -16,6 +16,7 @@ import javax.management.ObjectName;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -45,9 +46,8 @@ public class ConfigServlet extends HttpServlet {
   RuntimeServiceMBean runtimeService;
   DomainRuntimeServiceMBean domainRuntimeServiceMbean;
 
-
-  public void initMBeans() {
-    closeContext();
+  @Override
+  public void init(ServletConfig config) throws ServletException {
     try {
       ctx = new InitialContext();
       localMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/runtime");
@@ -56,7 +56,6 @@ public class ConfigServlet extends HttpServlet {
       runtimeService = (RuntimeServiceMBean) MBeanServerInvocationHandler
           .newProxyInstance(localMBeanServer, runtimeserviceObjectName);
       serverRuntime = runtimeService.getServerRuntime();
-
 
       domainMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/domainRuntime");
       ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
@@ -68,7 +67,8 @@ public class ConfigServlet extends HttpServlet {
     }
   }
 
-  public void closeContext() {
+  @Override
+  public void destroy() {
     try {
       ctx.close();
     } catch (NamingException ex) {
@@ -87,7 +87,6 @@ public class ConfigServlet extends HttpServlet {
   protected void processRequest(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
     response.setContentType("text/html;charset=UTF-8");
-    initMBeans();
     try (PrintWriter out = response.getWriter()) {
 
       // check attributes of server configurations
@@ -179,16 +178,19 @@ public class ConfigServlet extends HttpServlet {
 
     String dsName = request.getParameter("dsName");
     String serverName = request.getParameter("serverName");
-
-    ServerRuntimeMBean serverRuntime = getServerRuntime(serverName);
-    JDBCDataSourceRuntimeMBean[] jdbcDataSourceRuntimeMBeans = serverRuntime.getJDBCServiceRuntime().getJDBCDataSourceRuntimeMBeans();
-    for (JDBCDataSourceRuntimeMBean jdbcDataSourceRuntimeMBean : jdbcDataSourceRuntimeMBeans) {
-      if (jdbcDataSourceRuntimeMBean.getName().equals(dsName)) {
-        String testPool = jdbcDataSourceRuntimeMBean.testPool();
-        if (testPool == null) {
-          out.println("Connection successful");
+    try {
+      ServerRuntimeMBean serverRuntime = getServerRuntime(serverName);
+      JDBCDataSourceRuntimeMBean[] jdbcDataSourceRuntimeMBeans = serverRuntime.getJDBCServiceRuntime().getJDBCDataSourceRuntimeMBeans();
+      for (JDBCDataSourceRuntimeMBean jdbcDataSourceRuntimeMBean : jdbcDataSourceRuntimeMBeans) {
+        if (jdbcDataSourceRuntimeMBean.getName().equals(dsName)) {
+          String testPool = jdbcDataSourceRuntimeMBean.testPool();
+          if (testPool == null) {
+            out.println("Connection successful");
+          }
         }
       }
+    } catch (Exception ex) {
+      ex.printStackTrace();
     }
   }
 
