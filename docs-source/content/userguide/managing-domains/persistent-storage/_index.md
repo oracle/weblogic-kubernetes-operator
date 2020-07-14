@@ -11,7 +11,7 @@ This document outlines how to set up a Kubernetes PersistentVolume and Persisten
 
 The following prerequisites must be fulfilled before proceeding with the creation of the volume:
 
-* Create a Kubernetes Namespace for the PersistentVolumeClaim unless the intention is to use the default namespace. Note that a PersistentVolumeClaim has to be in the same namespace as the domain resource that uses it.
+* Create a Kubernetes Namespace for the PersistentVolumeClaim unless the intention is to use the default namespace. Note that a PersistentVolumeClaim has to be in the same namespace as the Domain that uses it.
 * Make sure that all the servers in the WebLogic domain are able to reach the storage location.
 * Make sure that the host directory that will be used, already exists and has the appropriate file permissions set.
 

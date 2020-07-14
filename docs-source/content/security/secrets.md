@@ -20,7 +20,7 @@ the secret is specified using `webLogicCredentialsSecret` in the WebLogic `Domai
 Also, the domain credentials secret must be created in the namespace where the `Domain` will be running.
 
 {{% notice note %}}
-For an example of a WebLogic domain resource using `webLogicCredentialsSecret`,
+For an example of a WebLogic Domain YAML file using `webLogicCredentialsSecret`,
 see [Docker Image Protection]({{<relref "/security/domain-security/image-protection#1-use-imagepullsecrets-with-the-domain-resource">}}).
 {{% /notice %}}
 

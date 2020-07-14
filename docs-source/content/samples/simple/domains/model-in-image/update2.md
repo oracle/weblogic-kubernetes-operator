@@ -17,7 +17,7 @@ Note that this use case shows Model in Image's unique ability to quickly deploy 
 - Domain in Image does not support overriding the domain name, but different domain names are necessary when two domains need to interoperate. This use case takes advantage of model macros to ensure that its two different domains have a different domain name:
 
   - First, you define the domain name in the model YAML file using the `@@ENV:CUSTOM_DOMAIN_NAME@@` environment variable macro.
-  - Second, you set the value of the `CUSTOM_DOMAIN_NAME` environment variable to be different using the `env` stanza in each domain's domain resource.
+  - Second, you set the value of the `CUSTOM_DOMAIN_NAME` environment variable to be different using the `env` stanza in each Domain's YAML file.
 
 - Domain in Image requires that its images embed a WebLogic `security/SerializedSystemIni.dat` domain encryption key that cannot be changed for the image (see [Why layering matters]({{< relref "/userguide/cicd/why-layering-matters.md" >}}) in CI/CD considerations). This necessarily means that two Domain in Image domains that share the same image can decrypt each other's encrypted passwords. On the other hand, a Model in Image's domain encryption key is not embedded in the image and instead, is dynamically and uniquely created each time the domain is started.
 
@@ -52,7 +52,7 @@ Here are the steps for this use case:
        - To 'future proof' the new domain so that changes to the original domain or new domain's ConfigMap can be independent.
 
 
-1. Create the secrets that are referenced by the WDT model files in the image and ConfigMap; they also will be referenced by the domain resource.
+1. Create the secrets that are referenced by the WDT model files in the image and ConfigMap; they also will be referenced by the Domain YAML file.
 
    Run the following commands:
    ```
@@ -114,16 +114,16 @@ Here are the steps for this use case:
    ```
    {{% /expand %}}
 
-1. Set up a domain resource that is similar to your Update 1 use case domain resource but with a different domain UID, domain name, model update ConfigMap reference, and secret references:
+1. Set up a Domain YAML file that is similar to your Update 1 use case Domain YAML file but with a different domain UID, domain name, model update ConfigMap reference, and Secret references:
 
-    - Option 1: Update a copy of your domain resource file from the Update 1 use case.
+    - Option 1: Update a copy of your Domain YAML file from the Update 1 use case.
 
       - In the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
-        - We suggest copying this domain resource file and naming the copy `/tmp/mii-sample/mii-update2.yaml` before making any changes.
+        - We suggest copying this Domain YAML file and naming the copy `/tmp/mii-sample/mii-update2.yaml` before making any changes.
 
         - Working on a copy is not strictly necessary, but it helps keep track of your work for the different use cases in this sample and provides you a backup of your previous work.
 
-      - Change the `/tmp/mii-sample/mii-update2.yaml` domain resource name and `weblogic.domainUID` label to `sample-domain2`.
+      - Change the `/tmp/mii-sample/mii-update2.yaml` Domain YAML file name and `weblogic.domainUID` label to `sample-domain2`.
 
         The final result will look something like this:
 
@@ -139,11 +139,11 @@ Here are the steps for this use case:
 
         > __NOTE__: We are leaving the namespace `sample-domain1-ns` unchanged because you will be deploying domain `sample-domain2` to the same namespace as `sample-domain1`.
 
-      - Change the `/tmp/mii-sample/mii-update2.yaml` domain resource's `CUSTOM_DOMAIN_NAME` environment variable from `domain1` to `domain2`.
+      - Change the `/tmp/mii-sample/mii-update2.yaml` Domain YAML file's `CUSTOM_DOMAIN_NAME` environment variable from `domain1` to `domain2`.
 
         The model file in the image uses macro `@@ENV:CUSTOM_DOMAIN_NAME@@` to reference this environment variable when setting its domain name.
 
-        Specifically, change the corresponding domain resource `spec.serverPod.env` YAML file stanza to look something like this:
+        Specifically, change the corresponding Domain `spec.serverPod.env` YAML file stanza to look something like this:
 
         ```
         ...
@@ -157,7 +157,7 @@ Here are the steps for this use case:
           ...
         ```
 
-      - Change the `/tmp/mii-sample/mii-update2.yaml` domain resource `spec.domainHome` value to `/u01/domains/sample-domain2`. The corresponding YAML file stanza will look something like this:
+      - Change the `/tmp/mii-sample/mii-update2.yaml` Domain YAML file's `spec.domainHome` value to `/u01/domains/sample-domain2`. The corresponding YAML file stanza will look something like this:
 
         ```
         ...
@@ -209,7 +209,7 @@ Here are the steps for this use case:
         > __NOTE__: If you are following the `JRF` path through the sample, similarly change your `spec.configuration.opss.walletPasswordSecret` and the RCU secret name referenced in `spec.configuration.secrets`.
 
 
-      - Change the domain resource's `spec.configuration.model.configMap` value from `sample-domain1-wdt-config-map` to `sample-domain2-wdt-config-map`. The corresponding YAML file stanza will look something like this:
+      - Change the Domain YAML file's `spec.configuration.model.configMap` value from `sample-domain1-wdt-config-map` to `sample-domain2-wdt-config-map`. The corresponding YAML file stanza will look something like this:
          ```
          spec:
            ...
@@ -220,7 +220,7 @@ Here are the steps for this use case:
                configMap: sample-domain2-wdt-config-map
          ```
 
-      - Now, compare your original and changed domain resource files to double check your changes.
+      - Now, compare your original and changed Domain YAML files to double check your changes.
 
           ```
           $ diff /tmp/mii-sample/mii-update1.yaml /tmp/mii-sample/mii-update2.yaml
@@ -282,17 +282,17 @@ Here are the steps for this use case:
         > __NOTE__: The diff should _not_ contain a namespace change. You are deploying domain `sample-domain2` to the same namespace as `sample-domain1` (namespace `sample-domain1-ns`).
 
 
-      - Apply your changed domain resource:
+      - Apply your changed Domain YAML file:
 
-          > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+          > **Note**: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
           ```
           $ kubectl apply -f /tmp/mii-sample/mii-update2.yaml
           ```
 
-    - Option 2: Use the updated domain resource file that is supplied with the sample:
+    - Option 2: Use the updated Domain YAML file that is supplied with the sample:
 
-        > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        > **Note**: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update2-d2-WLS-v1-ds.yaml

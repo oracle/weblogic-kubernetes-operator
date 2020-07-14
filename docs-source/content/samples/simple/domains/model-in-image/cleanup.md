@@ -6,7 +6,7 @@ weight: 6
 
 To remove the resources you have created in these samples:
 
-1. Delete the domain resources.
+1. Delete the resources associated with the domain.
    ```
    $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
    $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2
