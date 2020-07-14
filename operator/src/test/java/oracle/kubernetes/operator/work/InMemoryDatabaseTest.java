@@ -8,8 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressList;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.junit.Test;
 
@@ -25,11 +25,11 @@ public class InMemoryDatabaseTest {
   private static final String NAME1 = "name1";
   private static final String NAME2 = "name2";
 
-  private InMemoryDatabase<NetworkingV1beta1Ingress, NetworkingV1beta1IngressList> database =
-      new InMemoryDatabase<NetworkingV1beta1Ingress, NetworkingV1beta1IngressList>() {
+  private InMemoryDatabase<ExtensionsV1beta1Ingress, ExtensionsV1beta1IngressList> database =
+      new InMemoryDatabase<ExtensionsV1beta1Ingress, ExtensionsV1beta1IngressList>() {
         @Override
-        NetworkingV1beta1IngressList createList(List<NetworkingV1beta1Ingress> items) {
-          return new NetworkingV1beta1IngressList().items(items);
+        ExtensionsV1beta1IngressList createList(List<ExtensionsV1beta1Ingress> items) {
+          return new ExtensionsV1beta1IngressList().items(items);
         }
       };
 
@@ -49,7 +49,7 @@ public class InMemoryDatabaseTest {
 
     try {
       database.create(
-          new NetworkingV1beta1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
+          new ExtensionsV1beta1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
           keys().namespace(NS1).map());
       fail("Should have thrown an InMemoryDatabaseException");
     } catch (InMemoryDatabaseException e) {
@@ -57,16 +57,16 @@ public class InMemoryDatabaseTest {
     }
   }
 
-  private NetworkingV1beta1Ingress createItem(String name, String namespace) {
-    NetworkingV1beta1Ingress item =
-        new NetworkingV1beta1Ingress().metadata(new V1ObjectMeta().namespace(namespace).name(name));
+  private ExtensionsV1beta1Ingress createItem(String name, String namespace) {
+    ExtensionsV1beta1Ingress item =
+        new ExtensionsV1beta1Ingress().metadata(new V1ObjectMeta().namespace(namespace).name(name));
     database.create(item, keys().namespace(namespace).map());
     return item;
   }
 
   @Test
   public void afterItemCreated_canRetrieveIt() throws Exception {
-    NetworkingV1beta1Ingress item = createItem(NAME1, NS1);
+    ExtensionsV1beta1Ingress item = createItem(NAME1, NS1);
 
     assertThat(database.read(keys().name(NAME1).namespace(NS1).map()), equalTo(item));
   }
@@ -75,7 +75,7 @@ public class InMemoryDatabaseTest {
   public void whenItemAbsent_replaceThrowsException() throws Exception {
     try {
       database.replace(
-          new NetworkingV1beta1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
+          new ExtensionsV1beta1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
           keys().namespace(NS1).map());
       fail("Should have thrown an InMemoryDatabaseException");
     } catch (InMemoryDatabaseException e) {
@@ -87,8 +87,8 @@ public class InMemoryDatabaseTest {
   public void afterReplaceItem_canRetrieveNewItem() throws Exception {
     createItem(NAME1, NS1).kind("old item");
 
-    NetworkingV1beta1Ingress replacement =
-        new NetworkingV1beta1Ingress()
+    ExtensionsV1beta1Ingress replacement =
+        new ExtensionsV1beta1Ingress()
             .metadata(new V1ObjectMeta().namespace(NS1).name(NAME1))
             .kind("new item");
     database.replace(replacement, keys().namespace(NS1).map());
@@ -116,9 +116,9 @@ public class InMemoryDatabaseTest {
 
   @Test
   public void afterItemsCreated_canListMatches() throws Exception {
-    NetworkingV1beta1Ingress item1 = createItem(NAME1, NS1);
-    NetworkingV1beta1Ingress item2 = createItem(NAME2, NS1);
-    NetworkingV1beta1Ingress item3 = createItem(NAME1, NS2);
+    ExtensionsV1beta1Ingress item1 = createItem(NAME1, NS1);
+    ExtensionsV1beta1Ingress item2 = createItem(NAME2, NS1);
+    ExtensionsV1beta1Ingress item3 = createItem(NAME1, NS2);
 
     assertThat(
         database.list(keys().namespace(NS1).map()).getItems(), containsInAnyOrder(item1, item2));
