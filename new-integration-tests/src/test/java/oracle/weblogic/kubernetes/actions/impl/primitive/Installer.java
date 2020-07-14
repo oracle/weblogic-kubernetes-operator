@@ -207,7 +207,7 @@ public class Installer {
         actualLocation = location.replace("latest", "download/" + version);
       }
     }
-    getLogger().info("the actualdownload location is {0}.", actualLocation);
+    getLogger().info("The actual download location for {0} is {1}.", params.type(), actualLocation);
     return actualLocation;
   }
 
