@@ -53,7 +53,9 @@ function usage() {
     IMAGE_PULL_SECRET_NAME: (not set)
     DB_NAMESPACE          : default (used by -db and -rcu)
     DB_IMAGE_PULL_SECRET  : docker-secret (used by -db and -rcu)
-    TRAEFIK_NAMESPACE     : traefik-operator-ns (used by -traefik)
+    TRAEFIK_NAMESPACE     : traefik-operator-ns (used by -traefik and by tests)
+    TRAEFIK_HTTP_NODEPORT : 30305 (used by -traefik and by tests, can be 0 to dynamically choose)
+    TRAEFIK_HTTPS_NODEPORT: 30433 (used by -traefik, can be 0 to dynamically choose)
     OPER_NAMESPACE        : sample-weblogic-operator-ns (used by -oper)
 
     (see test-env.sh for full list)

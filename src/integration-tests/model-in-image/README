@@ -38,8 +38,11 @@ NOTES:
   - Make sure Oracle DB is running in DB_NAMESPACE and 
     can be reached by the URLs and credentials defined
     in the sample's secrets.
-  - Make sure traefik is running with node port 30305, and
-    is monitoring DOMAIN_NAMESPACE.
+  - Make sure traefik is running with node port 
+    TRAEFIK_HTTP_NODEPORT (default 30305), in namespace
+    TRAEFIK_NAMESPACE. If TRAEFIK_HTTP_NODEPORT is set
+    to 0 that's fine, the test will dynamically find
+    the actual nodeport.
 
 - Do not call '-rcu' if the database is already RCU initialized.
 
