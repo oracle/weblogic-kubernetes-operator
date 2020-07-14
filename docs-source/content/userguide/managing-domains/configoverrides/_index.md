@@ -132,7 +132,7 @@ The behavior when using an unsupported override is undefined.
 
 The operator generates the final configuration overrides, combining customer-provided configuration overrides and operator-generated overrides, during the operator's introspection phase. These overrides are then used when starting or restarting WebLogic Server instances. Starting with operator version 3.0.0, these [overrides can also be distributed](({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md#distributing-changes-to-configuration-overrides" >}})) and applied to already running WebLogic Server instances.
 
-For [Domain in PV](({{< relref "/userguide/managing-domains/domain-lifecycle/restarting.md#domain-in-pv" >}})), the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides to support use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.
+For [Domain in PV](({{< relref "/userguide/managing-domains/domain-lifecycle/restarting.md#domain-in-pv" >}})), the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.
 
 ---
 ### Override template names and syntax
