@@ -105,6 +105,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.archiveApp;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
+import static oracle.weblogic.kubernetes.actions.TestActions.buildCoherenceArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
@@ -960,12 +961,17 @@ public class CommonTestUtils {
     if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
       List<String> archiveAppsList = new ArrayList<>();
       List<String> buildAppDirList = new ArrayList<>(appSrcDirList);
+      boolean buildCoherenceGar = false;
 
       for (String appSrcDir : appSrcDirList) {
         if (appSrcDir.contains(".war") || appSrcDir.contains(".ear")) {
           //remove from build
           buildAppDirList.remove(appSrcDir);
           archiveAppsList.add(appSrcDir);
+        }
+
+        if (appSrcDir.contains("coherence")) {
+          buildCoherenceGar = true;
         }
       }
 
@@ -989,6 +995,14 @@ public class CommonTestUtils {
           assertTrue(buildAppArchive(defaultAppParams()
                           .srcDirList(buildAppDirList)),
                   String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
+          zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
+          // build the archive list
+          archiveList.add(zipFile);
+        } else if (buildCoherenceGar) {
+          // build the Coherence GAR file
+          assertTrue(buildCoherenceArchive(defaultAppParams()
+                  .srcDirList(buildAppDirList)),
+              String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
           zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
           // build the archive list
           archiveList.add(zipFile);
