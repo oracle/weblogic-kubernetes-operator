@@ -5,8 +5,8 @@ package oracle.kubernetes.operator.utils;
 
 import java.nio.file.Path;
 
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 
@@ -35,7 +35,7 @@ public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
     return getSecrets().find("weblogic-operator-secrets");
   }
 
-  public ExtensionsV1beta1Deployment getOperatorDeployment() {
+  public V1Deployment getOperatorDeployment() {
     return getDeployments().find("weblogic-operator");
   }
 
