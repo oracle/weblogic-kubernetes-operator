@@ -215,12 +215,9 @@ public class Installer {
       String location,
       String type
   ) {
-    if (type == WDT && WDT_DOWNLOAD_URL_DEFAULT.equals(location)) {
+    if (type == WDT && WDT_DOWNLOAD_URL_DEFAULT.equals(location)
+        || type == WIT && WIT_DOWNLOAD_URL_DEFAULT.equals(location)) {
       return true;
     }
-    if (type == WIT && WIT_DOWNLOAD_URL_DEFAULT.equals(location)) {
-      return true;
-    }
-    return false;
   }
 }
