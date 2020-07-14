@@ -686,6 +686,8 @@ function wdtCreatePrimordialDomain() {
     > ${WDT_OUTPUT}
   ret=$?
   if [ $ret -ne 0 ]; then
+    # MII Fatal Error is handled by DomainProcessorImpl.isShouldContinue
+    # If it is detected then it will stop the periodic retry
     if [ "JRF" == "$WDT_DOMAIN_TYPE" ] ; then
       trace SEVERE "MII Fatal Error: WDT Create Domain Failed ${ret}"
     else
