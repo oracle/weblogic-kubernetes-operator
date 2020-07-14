@@ -79,7 +79,7 @@ public interface TestConstants {
 
   // Voyager constants
   public static final String APPSCODE_REPO_URL = "https://charts.appscode.com/stable/";
-  public static final String VOYAGER_RELEASE_NAME = "voyager-release";
+  public static final String VOYAGER_RELEASE_NAME = "voyager-release" + BUILD_ID;
   public static final String APPSCODE_REPO_NAME = "appscode";
   public static final String VOYAGER_CHART_NAME = "voyager";
   public static final String VOYAGER_CHART_VERSION = "12.0.0";
