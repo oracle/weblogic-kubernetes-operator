@@ -219,5 +219,6 @@ public class Installer {
         || type == WIT && WIT_DOWNLOAD_URL_DEFAULT.equals(location)) {
       return true;
     }
+    return false;
   }
 }
