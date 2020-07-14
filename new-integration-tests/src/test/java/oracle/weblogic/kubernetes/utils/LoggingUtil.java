@@ -248,16 +248,6 @@ public class LoggingUtil {
           logger.info("Found {0} container(s) in the pod {1}", containers.size(), podName);
           for (var container : containers) {
             String containerName = container.getName();
-            // write pod logs using kubectl logs command
-            /* ExecResult result = ExecCommand.exec(
-                "kubectl logs " + podName + " -n " + namespace + " -c " + containerName);
-            if (result.exitValue() != 0) {
-              getLogger().warning("kubectl logs failed, not collecting pod {0}/container {1} logs in namespace {2}",
-                  podName, containerName, namespace);
-            } else {
-              writeToFile(result.stdout(), resultDir,
-                  namespace + ".pod." + podName + ".container." + containerName + ".log", false);
-            } */
             writeToFile(Kubernetes.getPodLog(podName, namespace, containerName), resultDir,
                 namespace + ".pod." + podName + ".container." + containerName + ".log", false);
 
