@@ -120,6 +120,7 @@ echo "port: $port" >> scalingAction.log
 
 # Retrieve Custom Resource Definition for WebLogic domain
 CRD=`curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" -X GET $kubernetes_master/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/domains.weblogic.oracle`
+echo "CRD: $CRD" >> scalingAction.log
 if [ $? -ne 0 ]
   then
     echo "Failed to retrieve Custom Resource Definition for WebLogic domain" >> scalingAction.log
@@ -137,6 +138,7 @@ echo "domain_api_version: $domain_api_version" >> scalingAction.log
 
 # Reteive Custom Resource Domain 
 DOMAIN=`curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" $kubernetes_master/apis/weblogic.oracle/$domain_api_version/namespaces/$wls_domain_namespace/domains/$domain_uid`
+echo "DOMAIN: $DOMAIN" >> scalingAction.log
 if [ $? -ne 0 ]
   then
     echo "Failed to retrieve WebLogic Domain Custom Resource Definition" >> scalingAction.log
