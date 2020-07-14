@@ -193,7 +193,7 @@ public class DomainStatusUpdater {
       Domain oldDomain = context.getDomain();
       Domain newDomain = new Domain()
           .withKind(KubernetesConstants.DOMAIN)
-          .withApiVersion(oldDomain.getApiVersion())
+          .withApiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE)
           .withMetadata(oldDomain.getMetadata())
           .withSpec(null)
           .withStatus(newStatus);

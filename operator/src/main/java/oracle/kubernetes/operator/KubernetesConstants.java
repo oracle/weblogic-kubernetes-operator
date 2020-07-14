@@ -18,6 +18,8 @@ public interface KubernetesConstants {
   String DOMAIN_SHORT = "dom";
   String DOMAIN_VERSION = "v8";
 
+  String API_VERSION_WEBLOGIC_ORACLE = DOMAIN_GROUP + "/" + DOMAIN_VERSION;
+
   String DOMAIN_PATH = "/apis/" + DOMAIN_GROUP + "/" + DOMAIN_VERSION + "/namespaces/{namespace}/" + DOMAIN_PLURAL;
   String DOMAIN_SPECIFIC_PATH = DOMAIN_PATH + "/{name}";
   String DOMAIN_SCALE_PATH = DOMAIN_SPECIFIC_PATH + "/scale";
