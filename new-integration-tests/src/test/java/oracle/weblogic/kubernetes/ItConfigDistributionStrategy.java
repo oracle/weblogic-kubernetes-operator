@@ -189,7 +189,7 @@ public class ItConfigDistributionStrategy {
     createMySQLDB("mysqldb-1", "root", "root123", 0, domainNamespace, null);
     mysqlDBPort1 = getMySQLNodePort(domainNamespace, "mysqldb-1");
     createMySQLDB("mysqldb-2", "root", "root456", 0, domainNamespace, null);
-    mysqlDBPort1 = getMySQLNodePort(domainNamespace, "mysqldb-2");
+    mysqlDBPort2 = getMySQLNodePort(domainNamespace, "mysqldb-2");
 
     dsUrl1 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort1;
     dsUrl2 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort2;
