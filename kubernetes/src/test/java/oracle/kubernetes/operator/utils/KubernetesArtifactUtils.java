@@ -16,14 +16,14 @@ import com.appscode.voyager.client.models.V1beta1IngressSpec;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.ApiregistrationV1beta1ServiceReference;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1DeploymentSpec;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
+import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1DeploymentSpec;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
@@ -124,8 +124,8 @@ public class KubernetesArtifactUtils {
    * Create deployment.
    * @return deployment
    */
-  public static ExtensionsV1beta1Deployment newDeployment() {
-    return (new ExtensionsV1beta1Deployment())
+  public static V1Deployment newDeployment() {
+    return (new V1Deployment())
         .apiVersion(API_VERSION_APPS_V1)
         .kind(KIND_DEPLOYMENT);
   }
@@ -248,8 +248,8 @@ public class KubernetesArtifactUtils {
     return new V1ObjectMeta();
   }
 
-  public static ExtensionsV1beta1DeploymentSpec newDeploymentSpec() {
-    return new ExtensionsV1beta1DeploymentSpec();
+  public static V1DeploymentSpec newDeploymentSpec() {
+    return new V1DeploymentSpec();
   }
 
   public static V1JobSpec newJobSpec() {

@@ -3,8 +3,8 @@
 
 package oracle.kubernetes.operator.create;
 
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
 
@@ -51,8 +51,8 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
   }
 
   @Override
-  public ExtensionsV1beta1Deployment getExpectedWeblogicOperatorDeployment() {
-    ExtensionsV1beta1Deployment expected = super.getExpectedWeblogicOperatorDeployment();
+  public V1Deployment getExpectedWeblogicOperatorDeployment() {
+    V1Deployment expected = super.getExpectedWeblogicOperatorDeployment();
     V1Container operatorContainer =
         expected.getSpec().getTemplate().getSpec().getContainers().get(0);
     operatorContainer.addVolumeMountsItem(
