@@ -513,6 +513,9 @@ public class DomainStatusUpdaterTest {
     assertThat(
         getRecordedDomain(),
         hasCondition(Available).withStatus("True").withReason(SERVERS_READY_REASON));
+    assertThat(
+        getRecordedDomain().getApiVersion(),
+        equalTo(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE));
   }
 
   private void setAllDesiredServersRunning() {
