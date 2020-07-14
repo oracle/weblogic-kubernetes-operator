@@ -24,7 +24,7 @@
 #      "curl -s -S -m 10 http://sample-domain2-cluster-cluster-1:8001/myapp_war/index.jsp"
 # 
 
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: traefik-ingress-sample-domain2-cluster-cluster-1

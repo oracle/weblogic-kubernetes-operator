@@ -33,10 +33,10 @@ import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
-import io.kubernetes.client.openapi.apis.ExtensionsV1beta1Api;
+import io.kubernetes.client.openapi.apis.NetworkingV1beta1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressList;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
@@ -2232,13 +2232,13 @@ public class Kubernetes {
    * List Ingresses in the given namespace.
    *
    * @param namespace name of the namespace
-   * @return ExtensionsV1beta1IngressList list of {@link ExtensionsV1beta1Ingress} objects
+   * @return NetworkingV1beta1IngressList list of {@link NetworkingV1beta1Ingress} objects
    * @throws ApiException when listing fails
    */
-  public static ExtensionsV1beta1IngressList listNamespacedIngresses(String namespace) throws ApiException {
-    ExtensionsV1beta1IngressList ingressList;
+  public static NetworkingV1beta1IngressList listNamespacedIngresses(String namespace) throws ApiException {
+    NetworkingV1beta1IngressList ingressList;
     try {
-      ExtensionsV1beta1Api apiInstance = new ExtensionsV1beta1Api(apiClient);
+      NetworkingV1beta1Api apiInstance = new NetworkingV1beta1Api(apiClient);
       ingressList = apiInstance.listNamespacedIngress(
           namespace, // namespace
           PRETTY, // String | If 'true', then the output is pretty printed.
@@ -2263,13 +2263,13 @@ public class Kubernetes {
    *
    * @param namespace name of the namespace
    * @param name name of the Ingress object
-   * @return ExtensionsV1beta1Ingress Ingress object when found, otherwise null
+   * @return NetworkingV1beta1Ingress Ingress object when found, otherwise null
    * @throws ApiException when get fails
    */
-  public static ExtensionsV1beta1Ingress getNamespacedIngress(String namespace, String name)
+  public static NetworkingV1beta1Ingress getNamespacedIngress(String namespace, String name)
       throws ApiException {
     try {
-      for (ExtensionsV1beta1Ingress item
+      for (NetworkingV1beta1Ingress item
           : listNamespacedIngresses(namespace).getItems()) {
         if (name.equals(item.getMetadata().getName())) {
           return item;
@@ -2372,18 +2372,18 @@ public class Kubernetes {
    * Create an Ingress in the specified namespace.
    *
    * @param namespace the namespace in which the ingress will be created
-   * @param ingressBody ExtensionsV1beta1Ingress object, representing the ingress details
+   * @param ingressBody NetworkingV1beta1Ingress object, representing the ingress details
    * @return the ingress created
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static ExtensionsV1beta1Ingress createIngress(String namespace, ExtensionsV1beta1Ingress ingressBody)
+  public static NetworkingV1beta1Ingress createIngress(String namespace, NetworkingV1beta1Ingress ingressBody)
       throws ApiException {
-    ExtensionsV1beta1Ingress ingress;
+    NetworkingV1beta1Ingress ingress;
     try {
-      ExtensionsV1beta1Api apiInstance = new ExtensionsV1beta1Api(apiClient);
+      NetworkingV1beta1Api apiInstance = new NetworkingV1beta1Api(apiClient);
       ingress = apiInstance.createNamespacedIngress(
           namespace, //namespace
-          ingressBody, // ExtensionsV1beta1Ingress object, representing the ingress details
+          ingressBody, // NetworkingV1beta1Ingress object, representing the ingress details
           PRETTY, // pretty print output
           null, // when present, indicates that modifications should not be persisted
           null // a name associated with the actor or entity that is making these changes

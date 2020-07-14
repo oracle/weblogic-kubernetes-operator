@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -333,7 +333,7 @@ public class CleanupUtil {
       try {
         if (!Kubernetes.listNamespacedIngresses(namespace).getItems().isEmpty()) {
           logger.info("Ingresses still exists!!!");
-          List<ExtensionsV1beta1Ingress> items = Kubernetes.listNamespacedIngresses(namespace).getItems();
+          List<NetworkingV1beta1Ingress> items = Kubernetes.listNamespacedIngresses(namespace).getItems();
           for (var item : items) {
             logger.info(item.getMetadata().getName());
           }

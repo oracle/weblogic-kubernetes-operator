@@ -52,8 +52,8 @@ weight: 1
 
     - Option 1: To create the ingresses, use the following YAML file to create a file called `/tmp/mii-sample/ingresses/myingresses.yaml` and then call `kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml`:
 
-       ```
-       apiVersion: extensions/v1beta1
+       ```yaml
+       apiVersion: networking.k8s.io/v1beta1
        kind: Ingress
        metadata:
          name: traefik-ingress-sample-domain1-admin-server
@@ -72,7 +72,7 @@ weight: 1
                  serviceName: sample-domain1-admin-server
                  servicePort: 7001
        ---
-       apiVersion: extensions/v1beta1
+       apiVersion: networking.k8s.io/v1beta1
        kind: Ingress
        metadata:
          name: traefik-ingress-sample-domain1-cluster-cluster-1
@@ -91,7 +91,7 @@ weight: 1
                  serviceName: sample-domain1-cluster-cluster-1
                  servicePort: 8001
        ---
-       apiVersion: extensions/v1beta1
+       apiVersion: networking.k8s.io/v1beta1
        kind: Ingress
        metadata:
          name: traefik-ingress-sample-domain2-cluster-cluster-1

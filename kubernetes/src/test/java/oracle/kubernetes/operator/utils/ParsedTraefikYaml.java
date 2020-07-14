@@ -5,8 +5,8 @@ package oracle.kubernetes.operator.utils;
 
 import java.nio.file.Path;
 
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.kubernetes.operator.helpers.LegalNames;
@@ -34,7 +34,7 @@ public class ParsedTraefikYaml extends ParsedKubernetesYaml {
     return getServiceAccounts().find(getTraefikScope());
   }
 
-  public ExtensionsV1beta1Deployment getTraefikDeployment() {
+  public V1Deployment getTraefikDeployment() {
     return getDeployments().find(getTraefikScope());
   }
 

@@ -5,7 +5,7 @@ package oracle.kubernetes.operator.utils;
 
 import java.nio.file.Path;
 
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1beta1APIService;
@@ -25,7 +25,7 @@ public class ParsedVoyagerOperatorYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
-  public ExtensionsV1beta1Deployment getVoyagerOperatorDeployment() {
+  public V1Deployment getVoyagerOperatorDeployment() {
     return getDeployments().find(getVoyagerOperatorName());
   }
 
