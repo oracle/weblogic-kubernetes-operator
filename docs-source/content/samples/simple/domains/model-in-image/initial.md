@@ -26,9 +26,9 @@ In this use case, you set up an initial WebLogic domain. This involves:
   - A WDT model that describes your WebLogic configuration.
   - A Docker image that contains your WDT model files and archive.
   - Creating secrets for the domain.
-  - Creating a domain resource for the domain that references your secrets and image.
+  - Creating a Domain YAML for the domain that references your Secrets and image.
 
-After the domain resource is deployed, the operator starts an 'introspector job' that converts your models into a WebLogic configuration, and then passes this configuration to each WebLogic Server in the domain.
+After the Domain is deployed, the operator starts an 'introspector job' that converts your models into a WebLogic configuration, and then passes this configuration to each WebLogic Server in the domain.
 
 {{% notice note %}}
 Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/simple/domains/model-in-image/prerequisites.md" >}}) before performing the steps in this use case.  
@@ -39,7 +39,7 @@ If you are taking the `JRF` path through the sample, then substitute `JRF` for `
 
 The goal of the initial use case 'image creation' is to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that you will stage to `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
 
-Overall, a Model in Image image must contain a WebLogic installation and a WebLogic Deploy Tooling installation in its `/u01/wdt/weblogic-deploy` directory. In addition, if you have WDT model archive files, then the image must also contain these files in its `/u01/wdt/models` directory. Finally, an image optionally may also contain your WDT model YAML file and properties files in the same `/u01/wdt/models` directory. If you do not specify a WDT model YAML file in your `/u01/wdt/models` directory, then the model YAML file must be supplied dynamically using a Kubernetes ConfigMap that is referenced by your domain resource `spec.model.configMap` attribute. We provide an example of using a model ConfigMap later in this sample.
+Overall, a Model in Image image must contain a WebLogic installation and a WebLogic Deploy Tooling installation in its `/u01/wdt/weblogic-deploy` directory. In addition, if you have WDT model archive files, then the image must also contain these files in its `/u01/wdt/models` directory. Finally, an image optionally may also contain your WDT model YAML file and properties files in the same `/u01/wdt/models` directory. If you do not specify a WDT model YAML file in your `/u01/wdt/models` directory, then the model YAML file must be supplied dynamically using a Kubernetes ConfigMap that is referenced by your Domain `spec.model.configMap` field. We provide an example of using a model ConfigMap later in this sample.
 
 Here are the steps for creating the image `model-in-image:WLS-v1`:
 
@@ -237,11 +237,11 @@ The model files:
 - Leverage macros to inject external values:
   - The property file `CLUSTER_SIZE` property is referenced in the model YAML file `DynamicClusterSize` and `MaxDynamicClusterSize` fields using a PROP macro.
   - The model file domain name is injected using a custom environment variable named `CUSTOM_DOMAIN_NAME` using an ENV macro.
-    - You set this environment variable later in this sample using an `env` field in its domain resource.
+    - You set this environment variable later in this sample using an `env` field in its Domain.
     - _This conveniently provides a simple way to deploy multiple differently named domains using the same model image._
   - The model file administrator user name and password are set using a `weblogic-credentials` secret macro reference to the WebLogic credential secret.
-    - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the domain resource.
-    - The `weblogic-credentials` is a reserved name that always dereferences to the owning domain resource actual WebLogic credentials secret name.
+    - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
+    - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
 
 A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete discussion of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) in the Model in Image user documentation.
 
@@ -299,14 +299,14 @@ Also, if you run the `docker images` command, then you will see a Docker image n
 
 In this section, you will deploy the new image to namespace `sample-domain1-ns`, including the following steps:
 
-  - Create a secret containing your WebLogic administrator user name and password.
-  - Create a secret containing your Model in Image runtime encryption password:
-    - All Model in Image domains must supply a runtime encryption secret with a `password` value.
+  - Create a Secret containing your WebLogic administrator user name and password.
+  - Create a Secret containing your Model in Image runtime encryption password:
+    - All Model in Image domains must supply a runtime encryption Secret with a `password` value.
     - It is used to encrypt configuration that is passed around internally by the operator.
     - The value must be kept private but can be arbitrary; you can optionally supply a different secret value every time you restart the domain.
   - If your domain type is `JRF`, create secrets containing your RCU access URL, credentials, and prefix.
-  - Deploy a domain resource YAML file that references the new image.
-  - Wait for the domain's pods to start and reach their ready state.
+  - Deploy a Domain YAML file that references the new image.
+  - Wait for the domain's Pods to start and reach their ready state.
 
 #### Secrets
 
@@ -334,13 +334,13 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   - The WebLogic credentials secret:
     - It is required and must contain `username` and `password` fields.
-    - It must be referenced by the `spec.webLogicCredentialsSecret` field in your domain resource.
+    - It must be referenced by the `spec.webLogicCredentialsSecret` field in your Domain.
     - It also must be referenced by macros in the `domainInfo.AdminUserName` and `domainInfo.AdminPassWord` fields in your model YAML file.
 
   - The Model WDT runtime secret:
     - This is a special secret required by Model in Image.
     - It must contain a `password` field.
-    - It must be referenced using the `spec.model.runtimeEncryptionSecret` attribute in its domain resource.
+    - It must be referenced using the `spec.model.runtimeEncryptionSecret` field in its Domain.
     - It must remain the same for as long as the domain is deployed to Kubernetes but can be changed between deployments.
     - It is used to encrypt data as it's internally passed using log files from the domain's introspector job and on to its WebLogic Server pods.
 
@@ -380,11 +380,11 @@ Run the following `kubectl` commands to deploy the required secrets:
 
 #### Domain resource
 
-Now, you create a domain resource. A domain resource is the key resource that tells the operator how to deploy a WebLogic domain.
+Now, you create a Domain YAML file. A Domain is the key resource that tells the operator how to deploy a WebLogic domain.
 
 Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or use the file `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
 
-  {{%expand "Click here to view the WLS domain resource YAML file." %}}
+  {{%expand "Click here to view the WLS Domain YAML file." %}}
   ```
     #
     # This is an example of how to define a Domain resource.
@@ -504,7 +504,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   ```
   {{% /expand %}}
 
-  {{%expand "Click here to view the JRF domain resource YAML file." %}}
+  {{%expand "Click here to view the JRF Domain YAML file." %}}
   ```
   # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
   # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
@@ -638,7 +638,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   ```
   {{% /expand %}}
 
-  > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+  > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
   Run the following command to create the domain custom resource:
 
@@ -646,7 +646,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
   ```
 
-  > Note: If you are choosing _not_ to use the predefined domain resource YAML file and instead created your own domain resource file earlier, then substitute your custom file name in the above command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
+  > Note: If you are choosing _not_ to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the above command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
 
   If you run `kubectl get pods -n sample-domain1-ns --watch`, then you will see the introspector job run and your WebLogic Server pods start. The output will look something like this:
 
@@ -698,9 +698,9 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
       pod_count > 0   : Wait until exactly 'pod_count' WebLogic Server pods for
                         a domain all (a) are ready, (b) have the same
                         'domainRestartVersion' label value as the
-                        current domain resource's 'spec.restartVersion, and
-                        (c) have the same image as the current domain
-                        resource's image.
+                        current Domain's 'spec.restartVersion, and
+                        (c) have the same image as the current Domain's
+                        image.
 
       pod_count = 0   : Wait until there are no running WebLogic Server pods
                         for a domain. The default.

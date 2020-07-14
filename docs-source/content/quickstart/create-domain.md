@@ -44,7 +44,7 @@ weight: 6
 
 1.	Confirm that the operator started the servers for the domain:
 
-    a. Use `kubectl` to show that the domain resource was created:
+    a. Use `kubectl` to show that the Domain was created:
 
     ```bash
     $ kubectl describe domain sample-domain1 -n sample-domain1-ns
