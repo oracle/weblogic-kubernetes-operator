@@ -34,10 +34,12 @@ export DB_IMAGE_NAME=${DB_IMAGE_NAME:-container-registry.oracle.com/database/ent
 export DB_IMAGE_TAG=${DB_IMAGE_TAG:-12.2.0.1-slim}
 export DB_IMAGE_PULL_SECRET=${DB_IMAGE_PULL_SECRET:-docker-secret}
 
-# ::: Traefik name and namespace
-#  Defaults are 'traefik-operator' and '${TRAEFIK_NAME}-ns'
-# export TRAEFIK_NAME=
-# export TRAEFIK_NAMESPACE=
+# ::: Traefik settings/defaults, set NODEPORT values to 0 to have
+#     K8S dynamically choose the values for Traefik
+export TRAEFIK_NAME=${TRAEFIK_NAME:-traefik-operator}
+export TRAEFIK_NAMESPACE=${TRAEFIK_NAMESPACE:-traefik-operator-ns}
+export TRAEFIK_HTTP_NODEPORT=${TRAEFIK_HTTP_NODEPORT:-30305}
+export TRAEFIK_HTTPS_NODEPORT=${TRAEFIK_HTTPS_NODEPORT:-30433}
 
 export DOMAIN_UID1="${DOMAIN_UID1:-sample-domain1}"
 export DOMAIN_UID2="${DOMAIN_UID2:-sample-domain2}"
