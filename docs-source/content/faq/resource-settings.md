@@ -3,13 +3,13 @@ title: "Pod memory and CPU resources"
 date: 2020-06-30T08:55:00-05:00
 draft: false
 weight: 13
-description: "Tune container memory and CPU usage by configuring Kubernetes resource requests and limits, and tune a WebLogic JVM heap usage using the `USER_MEM_ARGS` environment variable in your Domain resource."
+description: "Tune container memory and CPU usage by configuring Kubernetes resource requests and limits, and tune a WebLogic JVM heap usage using the `USER_MEM_ARGS` environment variable in your Domain YAML file."
 ---
 
 #### Contents
 
  - [Introduction](#introduction)
- - [Setting resource requests and limits in a Domain resource](#setting-resource-requests-and-limits-in-a-domain-resource)
+ - [Setting resource requests and limits in a Domain YAML file](#setting-resource-requests-and-limits-in-a-domain)
  - [Determining Pod Quality Of Service](#determining-pod-quality-of-service)
  - [Java heap size and memory resource considerations](#java-heap-size-and-memory-resource-considerations)
    - [Importance of setting heap size and memory resources](#importance-of-setting-heap-size-and-memory-resources)
@@ -23,13 +23,13 @@ description: "Tune container memory and CPU usage by configuring Kubernetes reso
 
 #### Introduction
 
-The operator creates a container in its own Pod for each WebLogic Server instance. You can tune container memory and CPU usage by configuring Kubernetes resource requests and limits, and you can tune a WebLogic JVM heap usage using the `USER_MEM_ARGS` environment variable in your Domain resource. A resource request sets the minimum amount of a resource that a container requires. A resource limit is the maximum amount of a resource a container is given and prevents a container from using more than its share of a resource. Additionally, resource requests and limits determine a Pod's quality of service.
+The operator creates a container in its own Pod for each WebLogic Server instance. You can tune container memory and CPU usage by configuring Kubernetes resource requests and limits, and you can tune a WebLogic JVM heap usage using the `USER_MEM_ARGS` environment variable in your Domain YAML file. A resource request sets the minimum amount of a resource that a container requires. A resource limit is the maximum amount of a resource a container is given and prevents a container from using more than its share of a resource. Additionally, resource requests and limits determine a Pod's quality of service.
 
 This FAQ discusses tuning these parameters so WebLogic Server instances run efficiently.
 
-#### Setting resource requests and limits in a Domain resource
+#### Setting resource requests and limits in a Domain
 
-You can set Kubernetes memory and CPU requests and limits in a [Domain resource]({{< relref "/userguide/managing-domains/domain-resource" >}}) using its `spec.serverPod.resources` stanza, and you can override the setting for individual WebLogic Server instances or clusters using the `serverPod.resources` element in `spec.adminServer`, `spec.clusters`, or `spec.managedServers`. For example:
+You can set Kubernetes memory and CPU requests and limits in a [Domain YAML file]({{< relref "/userguide/managing-domains/domain-resource" >}}) using its `spec.serverPod.resources` stanza, and you can override the setting for individual WebLogic Server instances or clusters using the `serverPod.resources` element in `spec.adminServer`, `spec.clusters`, or `spec.managedServers`. For example:
 
 ```
   spec:
@@ -63,7 +63,7 @@ For most use cases, Oracle recommends configuring WebLogic Pods with memory and 
 {{% /notice %}}
 
 {{% notice note %}}
-In later versions of Kubernetes, it is possible to fine tune scheduling and eviction policies using [Pod Priority Preemption](https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/) in combination with the `serverPod.priorityClassName` Domain resource attribute. Note that Kubernetes already ships with two PriorityClasses: `system-cluster-critical` and `system-node-critical`. These are common classes and are used to [ensure that critical components are always scheduled first](https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/).
+In later versions of Kubernetes, it is possible to fine tune scheduling and eviction policies using [Pod Priority Preemption](https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/) in combination with the `serverPod.priorityClassName` Domain field. Note that Kubernetes already ships with two PriorityClasses: `system-cluster-critical` and `system-node-critical`. These are common classes and are used to [ensure that critical components are always scheduled first](https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/).
 {{% /notice %}}
 
 #### Java heap size and memory resource considerations
@@ -99,7 +99,7 @@ With the latest Java versions, Java 8 update 191 and later, or Java 11, if you d
 
 ##### Configuring heap size
 
-If you specify Pod memory limits, Oracle recommends configuring WebLogic Server heap sizes as a percentage. The JVM will interpret the percentage as a fraction of the limit. This is done using the JVM `-XX:MinRAMPercentage` and `-XX:MaxRAMPercentage` options in the `USER_MEM_ARGS` [Domain resource environment variable]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}).  For example:
+If you specify Pod memory limits, Oracle recommends configuring WebLogic Server heap sizes as a percentage. The JVM will interpret the percentage as a fraction of the limit. This is done using the JVM `-XX:MinRAMPercentage` and `-XX:MaxRAMPercentage` options in the `USER_MEM_ARGS` [Domain environment variable]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}).  For example:
 
 ```
   spec:
@@ -144,13 +144,13 @@ Events:
 
 #### Operator sample heap and resource configuration
 
-The operator samples configure non-default minimum and maximum heap sizes for WebLogic Server JVMs of at least 256MB and 512MB respectively. You can edit a sample's template or Domain resource `resources.env` `USER_MEM_ARGS` to have different values. See [Configuring heap size](#configuring-heap-size).
+The operator samples configure non-default minimum and maximum heap sizes for WebLogic Server JVMs of at least 256MB and 512MB respectively. You can edit a sample's template or Domain YAML file `resources.env` `USER_MEM_ARGS` to have different values. See [Configuring heap size](#configuring-heap-size).
 
 Similarly, the operator samples configure CPU and memory resource requests to at least `250m` and `768Mi` respectively.
 
 There's no memory or CPU limit configured by default in samples and so the default QoS for sample WebLogic Server Pod's is `burstable`.
 
-If you wish to set resource requests or limits differently on a sample Domain resource or Domain resource template, see [Setting resource requests and limits in a Domain resource](#setting-resource-requests-and-limits-in-a-domain-resource). Or, for samples that generate their Domain resource using an 'inputs' file, see the `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, and `serverPodCpuLimit` parameters in the sample's `create-domain.sh` input file.
+If you wish to set resource requests or limits differently on a sample Domain YAML file or template, see [Setting resource requests and limits in a Domain resource](#setting-resource-requests-and-limits-in-a-domain-resource). Or, for samples that generate their Domain resource using an 'inputs' file, see the `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, and `serverPodCpuLimit` parameters in the sample's `create-domain.sh` input file.
 
 #### Configuring CPU affinity
 

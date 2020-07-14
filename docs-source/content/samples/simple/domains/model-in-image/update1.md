@@ -102,12 +102,12 @@ Here are the steps:
      - To make it obvious which ConfigMap belong to which domains.
      - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
-1. Update your domain resource to refer to the ConfigMap and secret.
+1. Update your Domain YAML file to refer to the ConfigMap and Secret.
 
-    - Option 1: Update a copy of your domain resource file from the Initial use case.
+    - Option 1: Update a copy of your Domain YAML file from the Initial use case.
 
-      - In the [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}) use case, we suggested creating a domain resource file named `/tmp/mii-sample/mii-initial.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` file that is supplied with the sample.
-        - We suggest copying the original domain resource and naming the copy `/tmp/mii-sample/mii-update1.yaml` before making any changes.
+      - In the [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}) use case, we suggested creating a Domain YAML file named `/tmp/mii-sample/mii-initial.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` file that is supplied with the sample.
+        - We suggest copying the original Domain YAML file and naming the copy `/tmp/mii-sample/mii-update1.yaml` before making any changes.
 
         - Working on a copy is not strictly necessary, but it helps keep track of your work for the different use cases in this sample and provides you a backup of your previous work.
 
@@ -135,17 +135,17 @@ Here are the steps:
                 configMap: sample-domain1-wdt-config-map
           ```
 
-      - Apply your changed domain resource:
+      - Apply your changed Domain YAML file:
 
-        > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```
         $ kubectl apply -f /tmp/mii-sample/mii-update1.yaml
         ```
 
-    - Option 2: Use the updated domain resource file that is supplied with the sample:
+    - Option 2: Use the updated Domain YAML file that is supplied with the sample:
 
-        > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml
@@ -154,7 +154,7 @@ Here are the steps:
 
 1. Restart ('roll') the domain.
 
-   Now that the data source is deployed in a ConfigMap and its secret is also deployed, and you have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the ConfigMap and secret, tell the operator to roll the domain.
+   Now that the data source is deployed in a ConfigMap and its secret is also deployed, and you have applied an updated Domain YAML file with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the ConfigMap and secret, tell the operator to roll the domain.
 
    When a model domain restarts, it will rerun its introspector job in order to regenerate its configuration, and it will also pass the configuration changes found by the introspector to each restarted server.
    One way to cause a running domain to restart is to change the domain's `spec.restartVersion`. To do this:
@@ -211,9 +211,9 @@ Here are the steps:
          pod_count > 0   : Wait until exactly 'pod_count' WebLogic Server pods for
                            a domain all (a) are ready, (b) have the same
                            'domainRestartVersion' label value as the
-                           current domain resource's 'spec.restartVersion, and
-                           (c) have the same image as the current domain
-                           resource's image.
+                           current Domain's 'spec.restartVersion, and
+                           (c) have the same image as the current Domain's
+                           image.
 
          pod_count = 0   : Wait until there are no running WebLogic Server pods
                            for a domain. The default.
