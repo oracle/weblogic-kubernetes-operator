@@ -11,11 +11,11 @@ public class InstallParams {
 
   // WIT or WDT
   private String type;
-  
-  // The version of the tool
-  private String version;
-  
-  // The download site location
+
+  // The download site location or local file system location to get the installer
+  // Examples:
+  // https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.9.0
+  // https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.5
   private String location;
   
   // The installer file name
@@ -41,15 +41,6 @@ public class InstallParams {
 
   public String type() {
     return type;
-  }
-
-  public InstallParams version(String version) {
-    this.version = version;
-    return this;
-  }
-
-  public String version() {
-    return version;
   }
 
   public InstallParams location(String location) {

@@ -9,12 +9,12 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_FILE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_FILE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -42,7 +42,6 @@ public class Installer {
         .defaults()
         .type(WDT)
         .fileName(WDT_FILE_NAME)
-        .version(WDT_VERSION)
         .location(WDT_DOWNLOAD_URL)
         .verify(true)
         .unzip(false);
@@ -57,7 +56,6 @@ public class Installer {
         .defaults()
         .type(WIT)
         .fileName(WIT_FILE_NAME)
-        .version(WIT_VERSION)
         .location(WIT_DOWNLOAD_URL)
         .verify(true)
         .unzip(true);
@@ -95,7 +93,7 @@ public class Installer {
       
       // we are about to download the installer. We need to get the real version that is requested
       try {
-        params.version(getActualVersionIfNeeded(params.location(), params.type(), params.version()));      
+        params.location(getActualLocationIfNeeded(params.location(), params.type()));
       } catch (RuntimeException re) {
         // already logged
         return false;
@@ -128,9 +126,8 @@ public class Installer {
 
   private String buildDownloadCommand() {
     String command = String.format(
-        "curl -fL %s/releases/download/%s/%s -o %s/%s", 
-        params.location(), 
-        params.version(),
+        "curl -fL %s/%s -o %s/%s",
+        params.location(),
         params.fileName(),
         DOWNLOAD_DIR,
         params.fileName());
@@ -145,14 +142,15 @@ public class Installer {
    * @return the version number that is determined
    * @throws RuntimeException if the operation failed for any reason
    */
-  private String getActualVersionIfNeeded(
+  private String getActualLocationIfNeeded(
       String location,
-      String type,
-      String version
+      String type
   ) throws RuntimeException {
-    if (version == null || version.equalsIgnoreCase("latest")) {
+    String actualLocation = location;
+    if (needToGetActualLocation(location, type)) {
+      String version = "";
       String command = String.format(
-          "curl -fL %s/releases/latest -o %s/%s-%s", 
+          "curl -fL %s -o %s/%s-%s",
           location,
           DOWNLOAD_DIR,
           type,
@@ -192,7 +190,7 @@ public class Installer {
       if (Command.withParams(params).execute()
           && params.stdout() != null
           && params.stdout().length() != 0) {
-        return params.stdout();
+        version = params.stdout();
       } else {
         RuntimeException exception =
             new RuntimeException(String.format("Failed to get the version number of the requested %s release.", type));
@@ -204,7 +202,25 @@ public class Installer {
             exception);
         throw exception;
       }
+
+      if (version != null) {
+        actualLocation = location.replace("latest", "download/" + version);
+      }
     }
-    return version;
+    getLogger().info("the actualdownload location is {0}.", actualLocation);
+    return actualLocation;
+  }
+
+  private boolean needToGetActualLocation(
+      String location,
+      String type
+  ) {
+    if (type == WDT && WDT_DOWNLOAD_URL_DEFAULT.equals(location)) {
+      return true;
+    }
+    if (type == WIT && WIT_DOWNLOAD_URL_DEFAULT.equals(location)) {
+      return true;
+    }
+    return false;
   }
 }
