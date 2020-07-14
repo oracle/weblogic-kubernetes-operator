@@ -70,11 +70,11 @@ For a description of model file macro references to secrets and environment vari
 
       - Model files encrypted with the WDT [Encrypt Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/encrypt.md) are not supported. Use secrets instead.
 
-    - You can use model macros to reference arbitrary environment variables from model files. This is useful for handling plain text mutable values that you can define using an `env` stanza in your domain resource, and is also useful for accessing the built in `DOMAIN_UID` environment variable. See [Using environment variables in model files](#using-environment-variables-in-model-files).
+    - You can use model macros to reference arbitrary environment variables from model files. This is useful for handling plain text mutable values that you can define using an `env` stanza in your Domain YAML file, and is also useful for accessing the built in `DOMAIN_UID` environment variable. See [Using environment variables in model files](#using-environment-variables-in-model-files).
 
     - For most models, it's useful to minimize or eliminate the usage of model variable files (also known as property files) and use secrets or environment variables instead.
 
-- A model __must__ contain a `domainInfo` stanza that references your WebLogic administrative credentials. You can use the `@@SECRET` macro with the reserved secret name `__weblogic-credentials__` to reference your domain resource's WebLogic credentials secret for this purpose. For example:
+- A model __must__ contain a `domainInfo` stanza that references your WebLogic administrative credentials. You can use the `@@SECRET` macro with the reserved secret name `__weblogic-credentials__` to reference your Domain YAML file's WebLogic credentials secret for this purpose. For example:
 
     ```
     domainInfo:
@@ -139,9 +139,9 @@ You can use WDT model `@@SECRET` macros to reference the WebLogic administrator 
 
 For example, you can reference the WebLogic credential user name using `@@SECRET:__weblogic-credentials__:username@@`, and you can reference a custom secret `mysecret` with key `mykey` using `@@SECRET:mysecret:mykey@@`.
 
-Any secrets that are referenced by an `@@SECRET` macro must be deployed to the same namespace as your domain resource, and must be referenced in your domain resource using the `weblogicCredentialsSecret` and `configuration.secrets` fields.
+Any secrets that are referenced by an `@@SECRET` macro must be deployed to the same namespace as your Domain, and must be referenced in your Domain YAML file using the `weblogicCredentialsSecret` and `configuration.secrets` fields.
 
-Here's a sample snippet from a domain resource that sets a `webLogicCredentialsSecret` and two custom secrets `my-custom-secret1` and `my-custom-secret2`.
+Here's a sample snippet from a Domain YAML file that sets a `webLogicCredentialsSecret` and two custom secrets `my-custom-secret1` and `my-custom-secret2`.
 
   ```
   ...
@@ -155,7 +155,7 @@ Here's a sample snippet from a domain resource that sets a `webLogicCredentialsS
 
 ##### Using environment variables in model files
 
-You can reference operator environment variables in model files. This includes any that you define yourself in your domain resource, or the built-in `DOMAIN_UID` environment variable.
+You can reference operator environment variables in model files. This includes any that you define yourself in your Domain YAML file, or the built-in `DOMAIN_UID` environment variable.
 
 For example, the `@@ENV:DOMAIN_UID@@` macro resolves to the current domain's domain UID.
 

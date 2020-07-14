@@ -3,7 +3,7 @@ title: "FMW Infrastructure domain"
 date: 2019-04-18T07:32:31-05:00
 weight: 5
 description: "Sample for creating an FMW Infrastructure domain home on an existing PV or
-PVC, and the domain resource YAML file for deploying the generated WebLogic domain."
+PVC, and the Domain YAML file for deploying the generated WebLogic domain."
 ---
 
 
@@ -112,7 +112,7 @@ The following parameters can be provided in the inputs file.
 | `createDomainScriptName` | Script that the create domain script uses to create a WebLogic domain. The `create-domain.sh` script creates a Kubernetes Job to run this script to create a domain home. The script is located in the in-pod directory that is specified in the `createDomainScriptsMountPath` property. If you need to provide your own scripts to create the domain home, instead of using the built-it scripts, you must use this property to set the name of the script that you want the create domain job to run. | `create-domain-job.sh` |
 | `domainHome` | Home directory of the WebLogic domain. If not specified, the value is derived from the `domainUID` as `/shared/domains/<domainUID>`. | `/shared/domains/domain1` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. | `/shared` |
-| `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes Service name. | `domain1` |
+| `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Domain. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes Service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `httpAccessLogInLogHome` | Boolean indicating if server HTTP access log files should be written to the same directory as `logHome`. Otherwise, server HTTP access log files will be written to the directory specified in the WebLogic domain home configuration. | `true` |

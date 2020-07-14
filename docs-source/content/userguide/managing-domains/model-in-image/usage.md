@@ -3,7 +3,7 @@ title = "Usage"
 date = 2020-03-11T16:45:16-05:00
 weight = 20
 pre = "<b> </b>"
-description = "Steps for creating and deploying Model in Image images and their associated domain resources."
+description = "Steps for creating and deploying Model in Image images and their associated Domain YAML files."
 +++
 
 This document describes what's needed to create and deploy a typical Model in Image domain.
@@ -15,7 +15,7 @@ This document describes what's needed to create and deploy a typical Model in Im
    - [Optional WDT model ConfigMap](#optional-wdt-model-configmap)
    - [Required runtime encryption secret](#required-runtime-encryption-secret)
    - [Secrets for model macros](#secrets-for-model-macros)
-   - [Domain resource attributes](#domain-resource-attributes)
+   - [Domain fields](#domain-fields)
    - [Always use external state](#always-use-external-state)
    - [Requirements for JRF domain types](#requirements-for-jrf-domain-types)
 
@@ -41,7 +41,7 @@ After you have a base image, Model in Image requires layering the following dire
 | `/u01/wdt/models`         | Application archives               | `.zip`        |
 | `/u01/wdt/weblogic-deploy`| Unzipped WebLogic deploy install   |             |
 
-> **Note**: Model YAML and variable files are optional in a Model in Image image `/u01/wdt/models` directory because Model in Image also supports [supplying them dynamically]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) using a ConfigMap referenced by the domain resource `spec.model.configMap` field. Application archives, if any, must be supplied in the Model in Image image.  Application archives are not supported in a `spec.model.configMap`.
+> **Note**: Model YAML and variable files are optional in a Model in Image image `/u01/wdt/models` directory because Model in Image also supports [supplying them dynamically]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) using a ConfigMap referenced by the Domain YAML file `spec.model.configMap` field. Application archives, if any, must be supplied in the Model in Image image.  Application archives are not supported in a `spec.model.configMap`.
 
 There are two methods for layering Model in Image artifacts on top of a base image:
 
@@ -53,7 +53,7 @@ For more information about model file syntax, see [Model files]({{< relref "/use
 
 ### Optional WDT model ConfigMap
 
-You can create a WDT model ConfigMap that defines additional model `.yaml` and `.properties` files beyond what you've already supplied in your image, and then reference this ConfigMap using your domain resource's `configuration.model.configMap` attribute. This is optional if the supplied image already fully defines your model.
+You can create a WDT model ConfigMap that defines additional model `.yaml` and `.properties` files beyond what you've already supplied in your image, and then reference this ConfigMap using your Domain YAML file's `configuration.model.configMap` attribute. This is optional if the supplied image already fully defines your model.
 
 WDT model ConfigMap files will be merged with the WDT files defined in your image at runtime before your domain home is created. The ConfigMap files can add to, remove from, or alter the model configuration that you supplied within your image.
 
@@ -88,7 +88,7 @@ Example:
     weblogic.domainUID=MY-DOMAINUID
   ```
 
-Corresponding domain resource snippet:
+Corresponding Domain YAML file snippet:
 
   ```
   configuration:
@@ -100,9 +100,9 @@ Corresponding domain resource snippet:
 
 Create additional secrets as needed by macros in your model files. For example, these can store database URLs and credentials that are accessed using `@@SECRET` macros in your model that reference the secrets.  For a discussion of model macros, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}).
 
-### Domain resource attributes
+### Domain fields
 
-The following domain resource attributes are specific to Model in Image domains.
+The following Domain fields are specific to Model in Image domains.
 
 | Domain Resource Attribute                    |  Notes |
 | -------------------------                    |  ------------------ |
@@ -115,11 +115,11 @@ The following domain resource attributes are specific to Model in Image domains.
 
 **Notes**:
 
- - There are additional attributes that are common to all domain home source types, such as the `image` field. See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}) for a full list of domain resource fields.
+ - There are additional attributes that are common to all domain home source types, such as the `image` field. See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}) for a full list of Domain fields.
 
  - There are also additional fields that are specific to JRF domain types. For more information, see [Requirements for JRF domain types](#requirements-for-jrf-domain-types).
 
- - Sample domain resource: For an example of a fully specified sample domain resource, see the the operator source's `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/k8s-domain.yaml.template` file for the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample. Note that the `@@` entries in this template are not processed by the operator; they need to replaced with actual values before the resource can be applied.
+ - Sample Domain YAML file: For an example of a fully specified sample Domain YAML file, see the the operator source's `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/k8s-domain.yaml.template` file for the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample. Note that the `@@` entries in this template are not processed by the operator; they need to replaced with actual values before the resource can be applied.
 
 ### Always use external state
 
@@ -142,9 +142,9 @@ A JRF domain requires an infrastructure database, initializing this database usi
 
 Furthermore, if you want to safely ensure that a restarted JRF domain can access updates to the infrastructure database that the domain made at an earlier time, the original domain's wallet file must be safely saved as soon as practical, and the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain.
 
-#### JRF domain resource and model YAML file settings
+#### JRF Domain YAML file and model YAML file settings
 
-Here are the required domain resource and model YAML file settings for Model in Image JRF domains:
+Here are the required Domain YAML file and model YAML file settings for Model in Image JRF domains:
 
 - Set `configuration.model.domainType` to `JRF`.
 
@@ -154,7 +154,7 @@ Here are the required domain resource and model YAML file settings for Model in 
 
 - Set the `configuration.introspectorJobActiveDeadlineSeconds` introspection job timeout to at least 600 seconds. This is in an optional field but is needed because domain home creation takes a considerable amount of time the first time a JRF domain is created (due to initializing the domain's database tables), and because Model in Image creates your domain home for you using the introspection job.
 
-- Define an `RCUDbInfo` stanza in your model. Access to an database requires defining a `RCUDbInfo` stanza in your model's `domainInfo` stanza with the necessary information for accessing the domain's schema within the database. Usually this information should be supplied using a secret that you deploy and reference in your domain resource's `configuration.secrets` field. Here's an example `RCUDbInfo` stanza:
+- Define an `RCUDbInfo` stanza in your model. Access to an database requires defining a `RCUDbInfo` stanza in your model's `domainInfo` stanza with the necessary information for accessing the domain's schema within the database. Usually this information should be supplied using a secret that you deploy and reference in your Domain YAML file's `configuration.secrets` field. Here's an example `RCUDbInfo` stanza:
 
   ```
   domainInfo:
@@ -169,7 +169,7 @@ Here are the required domain resource and model YAML file settings for Model in 
 
 It is important to save a JRF domain's OPSS wallet password and wallet file so that you can restore them as needed. This ensures that a restart or migration of the domain can continue to access the domain's FMW infrastructure database.
 
-When you deploy a JRF domain for the first time, the domain will add itself to its RCU database tables, and also create a 'wallet' file in the domain's home directory that enables access to the domain's data in the RCU database. This wallet is encrypted using an OPSS key password that you supply to the domain using a secret that is referenced by your domain resource `configuration.opss.walletPasswordSecret` attribute.
+When you deploy a JRF domain for the first time, the domain will add itself to its RCU database tables, and also create a 'wallet' file in the domain's home directory that enables access to the domain's data in the RCU database. This wallet is encrypted using an OPSS key password that you supply to the domain using a Secret that is referenced by your Domain YAML file `configuration.opss.walletPasswordSecret` field.
 
 For a domain that has been started by Model in Image, the operator will copy the wallet file from the domain home of a new JRF domain and store it in the domain's introspector domain ConfigMap in file `ewallet.p12`. Here is how to export this wallet file from the introspector domain ConfigMap:
 
@@ -207,7 +207,7 @@ To reuse the wallet:
       weblogic.domainUID=sample-domain1
     ```
     Alternatively, you can use the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -r` command to deploy a local wallet file as a secret (pass `-?` to get this script's command-line arguments and defaults).
-  - Make sure that your domain resource `configuration.opss.walletPasswordSecret` attribute names the OPSS password secret, and make sure that your domain resource `configuration.opss.walletFileSecret` attribute names the OPSS wallet file secret.
+  - Make sure that your Domain YAML file `configuration.opss.walletPasswordSecret` field names the OPSS password Secret, and make sure that your Domain YAML file `configuration.opss.walletFileSecret` field names the OPSS wallet file secret.
 
 
 #### Instructions for changing a JRF domain's database password

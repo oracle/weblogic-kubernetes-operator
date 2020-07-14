@@ -12,7 +12,7 @@ description = "Updating a running Model in Image domain's images and model files
  - [Important notes](#important-notes)
  - [Frequently asked questions](#frequently-asked-questions)
  - [Supported and unsupported updates](#supported-and-unsupported-updates)
- - [Changing a domain resource `restartVersion`](#changing-a-domain-resource-restartversion)
+ - [Changing a Domain `restartVersion`](#changing-a-domain-restartversion)
  - [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools)
  - [Example of adding a data source](#example-of-adding-a-data-source)
 
@@ -22,11 +22,11 @@ If you want to make a configuration change to a running Model in Image domain, a
 
   - Changing secrets or environment variables that are referenced by macros in your model files.
 
-  - Specifying a new or updated WDT ConfigMap that contains model files and use your domain resource `configuration.model.configMap` field to reference the map.
+  - Specifying a new or updated WDT ConfigMap that contains model files and use your Domain YAML file `configuration.model.configMap` field to reference the map.
 
   - Supplying a new image with new or changed model files.
 
-After the changes are in place, you can tell the operator to apply the changes and propagate them to a running domain by altering the domain resource's `image` or `restartVersion` attribute.
+After the changes are in place, you can tell the operator to apply the changes and propagate them to a running domain by altering the Domain YAML file's `image` or `restartVersion` attribute.
 
 #### Important notes
 
@@ -36,7 +36,7 @@ After the changes are in place, you can tell the operator to apply the changes a
 
  - You can use the WDT Discover Domain and Compare Domain Tools to help generate your model file updates. See [Using the WDT Discover Domain and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools).
 
- - For simple ways to change `restartVersion`, see [Changing a domain resource `restartVersion`](#changing-a-domain-resource-restartversion).
+ - For simple ways to change `restartVersion`, see [Changing a Domain `restartVersion`](#changing-a-domain-restartversion).
 
  - For a sample of adding a data source to a running domain, see [Example of adding a data source](#example-of-adding-a-data-source).
 
@@ -52,11 +52,11 @@ Similar to Domain in Image, if you make a direct runtime WebLogic configuration 
 
 _How do Model in Image updates work during runtime?_
 
-After you make a change to your domain resource `restartVersion` or `image` attribute, the operator will rerun the domain's introspector job. This job will reload all of your secrets and environment variables, merge all of your model files, and generate a new domain home. If the job succeeds, then the operator will make the updated domain home available to pods using a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm`. Finally, the operator will subsequently roll (restart) each running WebLogic Server pod in the domain so that it can load the new configuration. A domain roll begins by restarting the domain's Administration Server and then proceeds to restart each Managed Server in the domain.
+After you make a change to your Domain `restartVersion` or `image` attribute, the operator will rerun the domain's introspector job. This job will reload all of your secrets and environment variables, merge all of your model files, and generate a new domain home. If the job succeeds, then the operator will make the updated domain home available to pods using a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm`. Finally, the operator will subsequently roll (restart) each running WebLogic Server pod in the domain so that it can load the new configuration. A domain roll begins by restarting the domain's Administration Server and then proceeds to restart each Managed Server in the domain.
 
 _Can we use custom configuration overrides to do the updates instead?_
 
-No. Custom configuration overrides, which are WebLogic configuration overrides specified using a domain resource `configuration.overridesConfigMap`, as described in [Configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}), aren't supported in combination with Model in Image. Model in Image will generate an error if custom overrides are specified. This should not be a concern because model file, secret, or model image updates are simpler and more flexible than custom configuration override updates. Unlike configuration overrides, the syntax for a model file update exactly matches the syntax for specifying your model file in the first place.
+No. Custom configuration overrides, which are WebLogic configuration overrides specified using a Domain YAML file `configuration.overridesConfigMap`, as described in [Configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}), aren't supported in combination with Model in Image. Model in Image will generate an error if custom overrides are specified. This should not be a concern because model file, secret, or model image updates are simpler and more flexible than custom configuration override updates. Unlike configuration overrides, the syntax for a model file update exactly matches the syntax for specifying your model file in the first place.
 
 
 #### Supported and unsupported updates
@@ -120,9 +120,9 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
 Due to security considerations, we strongly recommend that T3 or any RMI protocol should not be exposed outside the cluster.
 {{% /notice %}}
 
-#### Changing a domain resource `restartVersion`
+#### Changing a Domain `restartVersion`
 
-As was mentioned in the [overview](#overview), one way to tell the operator to apply your configuration changes to a running domain is by altering the domain resource `restartVersion`. Here are some common ways to do this:
+As was mentioned in the [overview](#overview), one way to tell the operator to apply your configuration changes to a running domain is by altering the Domain `restartVersion`. Here are some common ways to do this:
 
  - You can alter `restartVersion` interactively using `kubectl edit -n MY_NAMESPACE domain MY_DOMAINUID`.
 

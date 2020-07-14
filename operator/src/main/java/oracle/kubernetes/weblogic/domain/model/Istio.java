@@ -15,8 +15,9 @@ public class Istio {
           + "Defaults to true when the `istio` field is specified.")
   private Boolean enabled = true;
 
-  @Description("The operator will create a WebLogic network access point with this port for use by the "
-      + "readiness probe. Defaults to 8888.")
+  @Description("The operator will create a WebLogic network access point with this port that will then be exposed "
+          + "from the container running the WebLogic Server instance. The readiness probe will use this network "
+          + "access point to verify that the server instance is ready for application traffic. Defaults to 8888.")
   private Integer readinessPort = 8888;
 
   /**
