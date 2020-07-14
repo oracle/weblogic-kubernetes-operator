@@ -3,7 +3,7 @@
 
 package oracle.kubernetes.operator.create;
 
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
 
@@ -20,8 +20,8 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesDisabledTestBa
   }
 
   @Override
-  protected ExtensionsV1beta1Deployment getExpectedWeblogicOperatorDeployment() {
-    ExtensionsV1beta1Deployment expected = super.getExpectedWeblogicOperatorDeployment();
+  protected V1Deployment getExpectedWeblogicOperatorDeployment() {
+    V1Deployment expected = super.getExpectedWeblogicOperatorDeployment();
     expectProbes(expected.getSpec().getTemplate().getSpec().getContainers().get(0));
     return expected;
   }

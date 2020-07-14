@@ -16,9 +16,9 @@ import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
-import io.kubernetes.client.openapi.apis.ExtensionsV1beta1Api;
+import io.kubernetes.client.openapi.apis.NetworkingV1beta1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressList;
 import io.kubernetes.client.openapi.models.V1APIGroup;
 import io.kubernetes.client.openapi.models.V1APIGroupList;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
@@ -60,7 +60,7 @@ public class K8sTestUtils {
   private CoreV1Api coreV1Api = new CoreV1Api();
   private BatchV1Api batchV1Api = new BatchV1Api();
   private AppsV1Api appsV1Api = new AppsV1Api();
-  private ExtensionsV1beta1Api extensionsV1beta1Api = new ExtensionsV1beta1Api();
+  private NetworkingV1beta1Api networkingV1beta1Api = new NetworkingV1beta1Api();
   private RbacAuthorizationV1Api rbacAuthorizationV1Api = new RbacAuthorizationV1Api();
   private ApiextensionsV1beta1Api apiextensionsV1beta1Api = new ApiextensionsV1beta1Api();
   private ApiextensionsV1Api apiextensionsV1Api = new ApiextensionsV1Api();
@@ -271,8 +271,8 @@ public class K8sTestUtils {
   public void verifyIngresses(
       String domainNs, String domainUid, String labelSelectors, int expectedLabeled)
       throws Exception {
-    ExtensionsV1beta1IngressList labeledIngressList =
-        extensionsV1beta1Api.listIngressForAllNamespaces(
+    NetworkingV1beta1IngressList labeledIngressList =
+        networkingV1beta1Api.listIngressForAllNamespaces(
             Boolean.FALSE,
             null,
             null,
@@ -287,8 +287,8 @@ public class K8sTestUtils {
         labeledIngressList.getItems().size(), expectedLabeled, "Number of labeled ingress");
     labeledIngressList.getItems().stream()
         .forEach(li -> li.getMetadata().getNamespace().equals(domainNs));
-    ExtensionsV1beta1IngressList traefikIngressList =
-        extensionsV1beta1Api.listIngressForAllNamespaces(
+    NetworkingV1beta1IngressList traefikIngressList =
+        networkingV1beta1Api.listIngressForAllNamespaces(
             Boolean.FALSE,
             null,
             String.format("metadata.name=traefik-hostrouting-%s", domainUid),

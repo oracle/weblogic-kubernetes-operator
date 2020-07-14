@@ -9,13 +9,13 @@ import java.util.Map;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1HTTPIngressPath;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1HTTPIngressRuleValue;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressBackend;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressRule;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressSpec;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressList;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -47,23 +47,23 @@ public class Ingress {
                                            Map<String, String> annotations) {
     LoggingFacade logger = getLogger();
     List<String> ingressHostList = new ArrayList<>();
-    ArrayList<ExtensionsV1beta1IngressRule> ingressRules = new ArrayList<>();
+    ArrayList<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
     clusterNameMsPortMap.forEach((clusterName, managedServerPort) -> {
       // set the http ingress paths
-      ExtensionsV1beta1HTTPIngressPath httpIngressPath = new ExtensionsV1beta1HTTPIngressPath()
+      NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
           .path(null)
-          .backend(new ExtensionsV1beta1IngressBackend()
+          .backend(new NetworkingV1beta1IngressBackend()
               .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
               .servicePort(new IntOrString(managedServerPort))
         );
-      ArrayList<ExtensionsV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+      ArrayList<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
       httpIngressPaths.add(httpIngressPath);
 
       // set the ingress rule
       String ingressHost = domainUid + "." + domainNamespace + "." + clusterName + ".test";
-      ExtensionsV1beta1IngressRule ingressRule = new ExtensionsV1beta1IngressRule()
+      NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
           .host(ingressHost)
-          .http(new ExtensionsV1beta1HTTPIngressRuleValue()
+          .http(new NetworkingV1beta1HTTPIngressRuleValue()
               .paths(httpIngressPaths));
 
       ingressRules.add(ingressRule);
@@ -71,14 +71,14 @@ public class Ingress {
     });
 
     // set the ingress
-    ExtensionsV1beta1Ingress ingress = new ExtensionsV1beta1Ingress()
+    NetworkingV1beta1Ingress ingress = new NetworkingV1beta1Ingress()
         .apiVersion(INGRESS_API_VERSION)
         .kind(INGRESS_KIND)
         .metadata(new V1ObjectMeta()
             .name(ingressName)
             .namespace(domainNamespace)
             .annotations(annotations))
-        .spec(new ExtensionsV1beta1IngressSpec()
+        .spec(new NetworkingV1beta1IngressSpec()
             .rules(ingressRules));
 
     // create the ingress
@@ -111,16 +111,16 @@ public class Ingress {
                                            Map<String, String> annotations, boolean setIngressHost) {
 
     List<String> ingressHostList = new ArrayList<>();
-    ArrayList<ExtensionsV1beta1IngressRule> ingressRules = new ArrayList<>();
+    ArrayList<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
     clusterNameMsPortMap.forEach((clusterName, managedServerPort) -> {
       // set the http ingress paths
-      ExtensionsV1beta1HTTPIngressPath httpIngressPath = new ExtensionsV1beta1HTTPIngressPath()
+      NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
               .path(null)
-              .backend(new ExtensionsV1beta1IngressBackend()
+              .backend(new NetworkingV1beta1IngressBackend()
                       .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
                       .servicePort(new IntOrString(managedServerPort))
               );
-      ArrayList<ExtensionsV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+      ArrayList<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
       httpIngressPaths.add(httpIngressPath);
 
       // set the ingress rule
@@ -129,9 +129,9 @@ public class Ingress {
         ingressHost = "";
         ingressHostList.add("*");
       }
-      ExtensionsV1beta1IngressRule ingressRule = new ExtensionsV1beta1IngressRule()
+      NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
               .host(ingressHost)
-              .http(new ExtensionsV1beta1HTTPIngressRuleValue()
+              .http(new NetworkingV1beta1HTTPIngressRuleValue()
                       .paths(httpIngressPaths));
 
       ingressRules.add(ingressRule);
@@ -139,14 +139,14 @@ public class Ingress {
     });
 
     // set the ingress
-    ExtensionsV1beta1Ingress ingress = new ExtensionsV1beta1Ingress()
+    NetworkingV1beta1Ingress ingress = new NetworkingV1beta1Ingress()
             .apiVersion(INGRESS_API_VERSION)
             .kind(INGRESS_KIND)
             .metadata(new V1ObjectMeta()
                     .name(ingressName)
                     .namespace(domainNamespace)
                     .annotations(annotations))
-            .spec(new ExtensionsV1beta1IngressSpec()
+            .spec(new NetworkingV1beta1IngressSpec()
                     .rules(ingressRules));
 
     // create the ingress
@@ -170,8 +170,8 @@ public class Ingress {
   public static List<String> listIngresses(String namespace) throws ApiException {
 
     List<String> ingressNames = new ArrayList<>();
-    ExtensionsV1beta1IngressList ingressList = Kubernetes.listNamespacedIngresses(namespace);
-    List<ExtensionsV1beta1Ingress> listOfIngress = ingressList.getItems();
+    NetworkingV1beta1IngressList ingressList = Kubernetes.listNamespacedIngresses(namespace);
+    List<NetworkingV1beta1Ingress> listOfIngress = ingressList.getItems();
 
     listOfIngress.forEach(ingress -> {
       if (ingress.getMetadata() != null) {

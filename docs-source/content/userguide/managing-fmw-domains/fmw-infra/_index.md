@@ -167,7 +167,7 @@ Here is an example of a Kubernetes YAML file to define a deployment of the Oracl
 database:
 
 ```yaml
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: oracle-db
