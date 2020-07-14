@@ -29,7 +29,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
  */
 public class Nginx {
 
-  private static final String INGRESS_API_VERSION = "extensions/v1beta1";
+  private static final String INGRESS_API_VERSION = "networking.k8s.io/v1beta1";
   private static final String INGRESS_KIND = "Ingress";
   private static final String INGRESS_NGINX_CLASS = "nginx";
 
