@@ -21,7 +21,6 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -46,8 +45,8 @@ public class ClusterViewServlet extends HttpServlet {
   MBeanServer domainMBeanServer;
   DomainRuntimeServiceMBean domainRuntimeServiceMbean;
 
-  @Override
-  public void init(ServletConfig config) throws ServletException {
+  public void initMBeans() {
+    closeContext();
     try {
       ctx = new InitialContext();
       localMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/runtime");
@@ -76,8 +75,7 @@ public class ClusterViewServlet extends HttpServlet {
     }
   }
 
-  @Override
-  public void destroy() {
+  public void closeContext() {
     try {
       ctx.unbind(serverRuntime.getName());
       ctx.close();
@@ -97,6 +95,7 @@ public class ClusterViewServlet extends HttpServlet {
   protected void processRequest(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
     response.setContentType("text/html;charset=UTF-8");
+    initMBeans();
     try (PrintWriter out = response.getWriter()) {
       out.println("<!DOCTYPE html>");
       out.println("<html>");
