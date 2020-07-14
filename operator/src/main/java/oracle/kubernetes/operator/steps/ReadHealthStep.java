@@ -245,8 +245,7 @@ public class ReadHealthStep extends Step {
           portalIP =
               getService().getMetadata().getName()
                   + "."
-                  + getService().getMetadata().getNamespace()
-                  + ".pod.cluster.local";
+                  + getService().getMetadata().getNamespace();
         }
       }
       return portalIP;
