@@ -59,9 +59,9 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The directory containing the WebLogic domain configuration inside the container."
-          + " Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume."
-          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image."
-          + " Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel.")
+          + " Defaults to /shared/domains/domains/<domainUID> if `domainHomeSourceType` is PersistentVolume."
+          + " Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image."
+          + " Defaults to /u01/domains/<domainUID> if `domainHomeSourceType` is FromModel.")
   private String domainHome;
 
   /**
@@ -145,7 +145,7 @@ public class DomainSpec extends BaseConfiguration {
   private String image;
 
   /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
+   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and,
    * IfNotPresent.
    *
    * <p>Defaults to Always if image ends in :latest; IfNotPresent, otherwise.
@@ -154,7 +154,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The image pull policy for the WebLogic container image. "
-          + "Legal values are Always, Never and IfNotPresent. "
+          + "Legal values are Always, Never, and IfNotPresent. "
           + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
@@ -240,11 +240,11 @@ public class DomainSpec extends BaseConfiguration {
       + "such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, "
       + "or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs "
       + "automatically, without requiring change to this field, when servers are first started or restarted after a "
-      + "full domain shutdown. For the FromModel `domainHomeSourceType`, introspection also occurs when a running "
+      + "full domain shut down. For the FromModel `domainHomeSourceType`, introspection also occurs when a running "
       + "server must be restarted because of changes to any of the fields listed here: "
       + "https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. "
-      + "See also `overridesConfigurationStrategy`.")
+      + "See also `domains.spec.configuration.overridesConfigurationStrategy`.")
   private String introspectVersion;
 
   @Description("Models and overrides affecting the WebLogic domain configuration.")

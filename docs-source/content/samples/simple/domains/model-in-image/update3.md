@@ -11,9 +11,9 @@ In the use case, you will:
  - Create an image `model-in-image:WLS-v2` that is similar to the currently active `model-in-image:WLS-v1` image, but with the following updates:
    - An updated web application `v2` at the `myapp-v2` directory path within the WDT application archive instead of `myapp-v1`.
    - An updated model YAML file within the image that points to the new web application path.
- - Apply an updated domain resource that references the new image while still referencing the original [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case secrets and model ConfigMap.
+ - Apply an updated Domain YAML file that references the new image while still referencing the original [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case secrets and model ConfigMap.
 
-After the updated domain resource is applied, the operator will:
+After the updated Domain YAML file is applied, the operator will:
 
  - Rerun the introspector job and generate a new domain home based on the new model.
  - Restart the domain's Administration Server pod so that it loads the new image and new domain home.
@@ -127,19 +127,19 @@ Here are the steps for this use case:
 
 #### Deploy resources - Introduction
 
-1. Set up and apply a domain resource that is similar to your Update 1 use case domain resource but with a different image:
+1. Set up and apply a Domain YAML file that is similar to your Update 1 use case Domain YAML file but with a different image:
 
    > **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the paths, files, and image names below.
 
-   - Option 1: Update a copy of your domain resource file from the Update 1 use case.
+   - Option 1: Update a copy of your Domain YAML file from the Update 1 use case.
 
      - In the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
 
-       - We suggest copying this domain resource file and naming the copy `/tmp/mii-sample/mii-update3.yaml` before making any changes.
+       - We suggest copying this Domain YAML file and naming the copy `/tmp/mii-sample/mii-update3.yaml` before making any changes.
 
        - Working on a copy is not strictly necessary, but it helps keep track of your work for the different use cases in this sample and provides you a backup of your previous work.
 
-     - Change the `/tmp/mii-sample/mii-update3.yaml` domain resource `image` field to reference `model-in-image:WLS-v2` instead of `model-in-image:WLS-v1`.
+     - Change the `/tmp/mii-sample/mii-update3.yaml` Domain YAML file's `image` field to reference `model-in-image:WLS-v2` instead of `model-in-image:WLS-v1`.
 
         The final result will look something like this:
 
@@ -150,17 +150,17 @@ Here are the steps for this use case:
           image: "model-in-image:WLS-v2"
         ```
 
-      - Apply your changed domain resource:
+      - Apply your changed Domain YAML file:
 
-          > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+          > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
           ```
           $ kubectl apply -f /tmp/mii-sample/mii-update3.yaml
           ```
 
-    - Option 2: Use the updated domain resource file that is supplied with the sample:
+    - Option 2: Use the updated Domain YAML file that is supplied with the sample:
 
-        > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        > **Note**: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update3-d1-WLS-v2-ds.yaml
@@ -169,7 +169,7 @@ Here are the steps for this use case:
 
 1. Wait for the roll to complete.
 
-   Now that you've applied a domain resource with an updated image, the operator will automatically rerun the domain's introspector job in order to generate a new domain home, and then will restart ('roll') each of the domain's pods so that they use the new domain home and the new image. You'll need to wait for this roll to complete before you can verify that the new image and its associated new application have been deployed.
+   Now that you've applied a Domain YAML file with an updated image, the operator will automatically rerun the domain's introspector job in order to generate a new domain home, and then will restart ('roll') each of the domain's pods so that they use the new domain home and the new image. You'll need to wait for this roll to complete before you can verify that the new image and its associated new application have been deployed.
 
    - One way to do this is to call `kubectl get pods -n sample-domain1-ns --watch` and wait for the pods to cycle back to their `ready` state.
 
@@ -197,9 +197,9 @@ Here are the steps for this use case:
          pod_count > 0   : Wait until exactly 'pod_count' WebLogic Server pods for
                            a domain all (a) are ready, (b) have the same
                            'domainRestartVersion' label value as the
-                           current domain resource's 'spec.restartVersion, and
-                           (c) have the same image as the current domain
-                           resource's image.
+                           current Domain's 'spec.restartVersion, and
+                           (c) have the same image as the current Domain's
+                           image.
 
          pod_count = 0   : Wait until there are no running WebLogic Server pods
                            for a domain. The default.
