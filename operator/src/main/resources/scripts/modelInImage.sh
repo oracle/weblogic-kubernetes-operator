@@ -676,9 +676,9 @@ function wdtCreatePrimordialDomain() {
 
   if [ "JRF" == "$WDT_DOMAIN_TYPE" ] ; then
     if [ -z "${OPSS_FLAGS}" ] ; then
-      trace "Creating JRF primordial domain"
+      trace "Creating JRF Primordial Domain"
     else
-      trace "Creating JRF primordial domain with opss wallet and password"
+      trace "Creating JRF Primordial Domain with OPSS Wallet and Password"
     fi
   fi
   ${WDT_BINDIR}/createDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
@@ -688,10 +688,10 @@ function wdtCreatePrimordialDomain() {
   if [ $ret -ne 0 ]; then
     # MII Fatal Error is handled by DomainProcessorImpl.isShouldContinue
     # If it is detected then it will stop the periodic retry
-    if [ "JRF" == "$WDT_DOMAIN_TYPE" ] ; then
-      trace SEVERE "MII Fatal Error: WDT Create Domain Failed ${ret}"
+    if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] ; then
+      trace SEVERE "MII Fatal Error: WDT Create Primordial Domain Failed ${ret}"
     else
-      trace SEVERE "WDT Create Domain Failed ${ret}"
+      trace SEVERE "WDT Create Primordial Domain Failed ${ret}"
     fi
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
       cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
