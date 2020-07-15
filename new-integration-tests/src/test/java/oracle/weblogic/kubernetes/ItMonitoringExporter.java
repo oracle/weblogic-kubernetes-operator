@@ -1906,7 +1906,7 @@ class ItMonitoringExporter {
    */
   private void replaceMetricsNoRestPortConfiguration() throws Exception {
     HtmlPage page =
-        submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/norestport.yaml");
+        submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/exporrter-config-norestport.yaml");
     assertNotNull(page);
     assertFalse(page.asText().contains("restPort"));
     Thread.sleep(20 * 1000);
