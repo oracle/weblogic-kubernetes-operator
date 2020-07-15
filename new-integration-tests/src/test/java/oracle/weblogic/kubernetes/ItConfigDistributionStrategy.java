@@ -248,6 +248,20 @@ public class ItConfigDistributionStrategy {
     V1Patch patch = new V1Patch(patchStr);
     patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
     restartDomain();
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Getting the list of servers using the listServers");
+    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/";
+    String serverListUri = "ClusterViewServlet?listServers=true";
+    for (int i = 0; i < 5; i++) {
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
+      assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    }
   }
 
   /**
@@ -924,8 +938,21 @@ public class ItConfigDistributionStrategy {
     startDomain(domainUid, domainNamespace);
     //make sure that the introspector runs on a cold start
     verifyIntrospectorRuns();
+
+
+    // verify the admin server service created
+    checkServiceExists(adminServerPodName, domainNamespace);
+
     logger.info("Checking for admin server pod readiness");
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    // verify managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
+    }
+
     logger.info("Checking for managed servers pod readiness");
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
