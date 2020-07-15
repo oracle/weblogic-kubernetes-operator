@@ -112,7 +112,7 @@ do
 
 $(get_help "# " "$service_name")
 
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: traefik-ingress-$(get_service_name $service_name)
@@ -149,7 +149,7 @@ EOF
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: traefik-ingress-$(get_service_name $service_name)

@@ -61,9 +61,9 @@ helm install $OPER_NAME kubernetes/charts/weblogic-operator \
   --set       image=$OPER_IMAGE \
   --set       serviceAccount=$OPER_SA \
   --set       "domainNamespaces={$DOMAIN_NAMESPACE}" \
+  --set       "javaLoggingLevel=FINE" \
   --wait
 
-#  --set       "javaLoggingLevel=FINEST" 
 
 kubectl get deployments -n $OPER_NAMESPACE
 

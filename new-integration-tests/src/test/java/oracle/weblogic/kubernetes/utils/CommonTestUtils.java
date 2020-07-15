@@ -399,11 +399,11 @@ public class CommonTestUtils {
                                                    String cloudProvider,
                                                    boolean enableValidatingWebhook) {
     LoggingFacade logger = getLogger();
-    final String voyagerPodNamePrefix = VOYAGER_CHART_NAME +  "-release-";
+    final String voyagerPodNamePrefix = VOYAGER_CHART_NAME +  "-release";
 
     // Helm install parameters
     HelmParams voyagerHelmParams = new HelmParams()
-        .releaseName(VOYAGER_RELEASE_NAME)
+        .releaseName(VOYAGER_RELEASE_NAME + "-" + voyagerNamespace.substring(3))
         .namespace(voyagerNamespace)
         .repoUrl(APPSCODE_REPO_URL)
         .repoName(APPSCODE_REPO_NAME)
