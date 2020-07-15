@@ -27,10 +27,14 @@ SRCDIR="$( cd "$TESTDIR/../../.." > /dev/null 2>&1 ; pwd -P )"
 set -eu
 set -o pipefail
 
+source $TESTDIR/test-env.sh
+
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 
 TRAEFIK_NAME=${TRAEFIK_NAME:-traefik-operator}
-TRAEFIK_NAMESPACE=${TRAEFIK_NAMESPACE:-${TRAEFIK_NAME}-ns}
+TRAEFIK_NAMESPACE=${TRAEFIK_NAMESPACE:-traefik-operator-ns}
+TRAEFIK_HTTP_NODEPORT=${TRAEFIK_HTTP_NODEPORT:-30305}
+TRAEFIK_HTTPS_NODEPORT=${TRAEFIK_HTTPS_NODEPORT:-30433}
 
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 
@@ -49,32 +53,60 @@ set +e
 helm get values ${TRAEFIK_NAME} -n ${TRAEFIK_NAMESPACE} > $WORKDIR/test-out/traefik-values.cur 2>&1
 res=$?
 set -e
-echo ${DOMAIN_NAMESPACE} >> $WORKDIR/test-out/traefik-values.cur
+for evar in DOMAIN_NAMESPACE TRAEFIK_NAMESPACE TRAEFIK_NAME TRAEFIK_HTTP_NODEPORT TRAEFIK_HTTPS_NODEPORT; do
+  echo "${evar}=${!evar}" >> $WORKDIR/test-out/traefik-values.cur
+done
 if [ $res -eq 0 ] \
    && [ -e "$WORKDIR/test-out/traefik-values.orig" ] \
    && [ "$(cat $WORKDIR/test-out/traefik-values.cur)" = "$(cat $WORKDIR/test-out/traefik-values.orig)" ]; then
   echo "@@"
-  echo "@@ Traefik already installed. Skipping uninstall/install."
+  echo "@@ Traefik already installed. Skipping uninstall/install. Current values:"
+  cat $WORKDIR/test-out/traefik-values.orig
   echo "@@"
 else
   set +e
+  echo "@@"
+  echo "@@ Uninstalling old install (if any) using 'helm uninstall $TRAEFIK_NAME -n $TRAEFIK_NAMESPACE'"
+  echo "@@"
   helm uninstall $TRAEFIK_NAME -n $TRAEFIK_NAMESPACE
+  echo "@@ Creating traefik namespace '$TRAEFIK_NAMESPACE' and domain namepace '$DOMAIN_NAMESPACE'"
   kubectl create namespace $TRAEFIK_NAMESPACE
   kubectl create namespace $DOMAIN_NAMESPACE
   set -e
 
   cd ${SRCDIR}
 
+  echo "@@ Installing traefik"
+
   # you only need to add the repo once, but we do it every time for simplicity
   helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+
+  set -x
 
   helm install ${TRAEFIK_NAME} stable/traefik \
     --namespace $TRAEFIK_NAMESPACE \
     --values kubernetes/samples/charts/traefik/values.yaml \
     --set "kubernetes.namespaces={$TRAEFIK_NAMESPACE,$DOMAIN_NAMESPACE}" \
+    --set "service.nodePorts.http=${TRAEFIK_HTTP_NODEPORT}" \
+    --set "service.nodePorts.https=${TRAEFIK_HTTPS_NODEPORT}" \
     --wait
+
+  set +x
 
   # Save Traefik settings (we will check this if this script is run again)
   helm get values ${TRAEFIK_NAME} -n ${TRAEFIK_NAMESPACE} > $WORKDIR/test-out/traefik-values.orig 2>&1
-  echo ${DOMAIN_NAMESPACE} >> $WORKDIR/test-out/traefik-values.orig
+  for evar in DOMAIN_NAMESPACE TRAEFIK_NAMESPACE TRAEFIK_NAME TRAEFIK_HTTP_NODEPORT TRAEFIK_HTTPS_NODEPORT; do
+    echo "${evar}=${!evar}" >> $WORKDIR/test-out/traefik-values.orig
+  done
 fi
+
+cat<<EOF
+
+    HTTP node port:
+      kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="http")].nodePort}'
+      =$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+
+    HTTPS node port:
+      kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="https")].nodePort}'
+      =$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
+EOF

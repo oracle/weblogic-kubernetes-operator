@@ -4,11 +4,11 @@
 package oracle.kubernetes.operator.create;
 
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1Probe;
@@ -160,11 +160,11 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
         yamlEqualTo(getExpectedWeblogicOperatorDeployment()));
   }
 
-  private ExtensionsV1beta1Deployment getActualWeblogicOperatorDeployment() {
+  private V1Deployment getActualWeblogicOperatorDeployment() {
     return getGeneratedFiles().getOperatorDeployment();
   }
 
-  protected ExtensionsV1beta1Deployment getExpectedWeblogicOperatorDeployment() {
+  protected V1Deployment getExpectedWeblogicOperatorDeployment() {
     return newDeployment()
         .metadata(
             newObjectMeta()
