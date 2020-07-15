@@ -47,7 +47,8 @@ public class NamespaceTest {
   public static final String NAMESPACE_STOPPING_MAP = "namespaceStoppingMap";
 
   private Domain domain = DomainProcessorTestSetup.createTestDomain();
-  private final TuningParameters.WatchTuning tuning = new TuningParameters.WatchTuning(30, 0);
+  private final TuningParameters.WatchTuning tuning
+          = new TuningParameters.WatchTuning(30, 0, 5);
   private List<Memento> mementos = new ArrayList<>();
   private Set<String> currentNamespaces = new HashSet<>();
   private Map<String,String> helmValues = new HashMap<>();
