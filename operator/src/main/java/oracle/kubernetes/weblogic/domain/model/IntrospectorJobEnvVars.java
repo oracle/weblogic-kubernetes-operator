@@ -71,6 +71,7 @@ public class IntrospectorJobEnvVars {
    * Istio pod namespace.
    */
   public static final String ISTIO_POD_NAMESPACE = "ISTIO_POD_NAMESPACE";
+  public static final String MII_MODEL_HOME = "MII_MODEL_HOME";
 
   /**
    * Returns true if the specified environment variable name is reserved by the operator for communication with

@@ -22,6 +22,9 @@ public class Model {
   @Description("Name of a ConfigMap containing the WebLogic Deploy Tooling model.")
   private String configMap;
 
+  @Description("Location of the WDT model home.")
+  private String modelHome;
+
   @Valid
   @Nullable
   @Description("Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel.")
@@ -65,6 +68,18 @@ public class Model {
 
   public Model withRuntimeEncryptionSecret(String runtimeEncryptionSecret) {
     this.runtimeEncryptionSecret = runtimeEncryptionSecret;
+    return this;
+  }
+
+  String getModelHome() {
+    return modelHome;
+  }
+
+  void setModelHome(String modelHome) {
+    this.modelHome = modelHome;
+  }
+  public Model withModelHome(String modelHome) {
+    this.modelHome = modelHome;
     return this;
   }
 

@@ -538,6 +538,15 @@ public class Domain {
         .map(Configuration::getSecrets).orElse(spec.getConfigOverrideSecrets());
   }
 
+  /**
+   * Returns the domain's model home.
+   *
+   * @return domain's model home
+   */
+  public String getModelHome() {
+    return Optional.ofNullable(spec.getConfiguration())
+        .map(Configuration::getModel).map(Model::getModelHome).orElse(null);
+  }
 
   @Override
   public String toString() {

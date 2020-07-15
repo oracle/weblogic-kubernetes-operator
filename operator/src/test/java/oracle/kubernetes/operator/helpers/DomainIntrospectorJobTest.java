@@ -68,6 +68,7 @@ public class DomainIntrospectorJobTest {
   private static final String OVERRIDE_SECRET_2 = "override-secret-2";
   private static final String LOG_HOME = "/shared/logs/" + UID;
   private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
+  private static final String MII_MODEL_HOME = "/u01/wdt/models";
   private static final String LATEST_IMAGE = "image:latest";
   private static final String ADMIN_NAME = "admin";
   private static final int MAX_SERVERS = 2;
@@ -255,6 +256,7 @@ public class DomainIntrospectorJobTest {
             hasEnvVar("LOG_HOME", LOG_HOME),
             hasEnvVar("INTROSPECT_HOME", getDomainHome()),
             hasEnvVar("SERVER_OUT_IN_POD_LOG", "true"),
+            hasEnvVar("MII_MODLE_HOME", MII_MODEL_HOME),
             hasEnvVar("CREDENTIALS_SECRET_NAME", CREDENTIALS_SECRET_NAME)));
   }
 
