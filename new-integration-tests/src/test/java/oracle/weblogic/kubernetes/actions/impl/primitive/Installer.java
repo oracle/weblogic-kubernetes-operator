@@ -8,13 +8,13 @@ import java.io.File;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL_DEFAULT;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_FILE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_FILENAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL_DEFAULT;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_FILE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -41,7 +41,7 @@ public class Installer {
     return new InstallParams()
         .defaults()
         .type(WDT)
-        .fileName(WDT_FILE_NAME)
+        .fileName(WDT_DOWNLOAD_FILENAME)
         .location(WDT_DOWNLOAD_URL)
         .verify(true)
         .unzip(false);
@@ -55,7 +55,7 @@ public class Installer {
     return new InstallParams()
         .defaults()
         .type(WIT)
-        .fileName(WIT_FILE_NAME)
+        .fileName(WIT_DOWNLOAD_FILENAME)
         .location(WIT_DOWNLOAD_URL)
         .verify(true)
         .unzip(true);

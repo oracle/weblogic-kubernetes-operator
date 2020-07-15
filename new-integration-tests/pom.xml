@@ -20,6 +20,8 @@
         <skipITs>false</skipITs>
         <wit.version>latest</wit.version>
         <wdt.version>latest</wdt.version>
+        <wit.download.filename>imagetool.zip</wit.download.filename>
+        <wdt.download.filename>weblogic-deploy.zip</wdt.download.filename>
         <wdt.download.url>https://github.com/oracle/weblogic-deploy-tooling/releases/latest</wdt.download.url>
         <wit.download.url>https://github.com/oracle/weblogic-image-tool/releases/latest</wit.download.url>
         <includes-failsafe>**/It*</includes-failsafe>
@@ -137,6 +139,8 @@
                                 </java.util.logging.SimpleFormatter.format>
                                 <wdt.version>${wdt.version}</wdt.version>
                                 <wit.version>${wit.version}</wit.version>
+                                <wdt.download.filename>${wdt.download.filename}</wdt.download.filename>
+                                <wit.download.filename>${wit.download.filename}</wit.download.filename>
                                 <wdt.download.url>${wdt.download.url}</wdt.download.url>
                                 <wit.download.url>${wit.download.url}</wit.download.url>
                             </systemPropertyVariables>
