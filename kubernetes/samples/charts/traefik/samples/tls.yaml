@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion:networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: traefik-tls
@@ -20,7 +20,7 @@ spec:
     - domain1.org
     secretName: domain1-tls-cert
 ---
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: traefik-tls-2

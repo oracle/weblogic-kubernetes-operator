@@ -70,6 +70,6 @@ public interface ActionConstants {
       = "https://github.com/oracle/weblogic-monitoring-exporter.git";
 
   // ------------ Ingress constants----------------------------
-  public static final String INGRESS_API_VERSION = "extensions/v1beta1";
+  public static final String INGRESS_API_VERSION = "networking.k8s.io/v1beta1";
   public static final String INGRESS_KIND = "Ingress";
 }

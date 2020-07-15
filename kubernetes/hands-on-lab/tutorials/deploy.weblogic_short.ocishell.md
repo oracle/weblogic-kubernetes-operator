@@ -82,7 +82,7 @@ As a simple solution, it's best to configure path routing, which will route exte
 Execute the following Ingress resource definition:
 ```bash
 cat << EOF | kubectl apply -f -
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: traefik-pathrouting-1
