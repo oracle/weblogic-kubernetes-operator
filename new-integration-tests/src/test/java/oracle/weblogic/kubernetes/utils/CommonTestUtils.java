@@ -544,7 +544,7 @@ public class CommonTestUtils {
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
     final String ingressNginxClass = "nginx";
-    String ingressName = domainUid + "-" + ingressNginxClass;
+    String ingressName = domainUid + "-" + domainNamespace + "-" + ingressNginxClass;
 
     HashMap<String, String> annotations = new HashMap<>();
     annotations.put("kubernetes.io/ingress.class", ingressNginxClass);

@@ -115,6 +115,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
@@ -241,6 +242,14 @@ class ItParameterizedScaleDomainNginx {
       }
       logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
       createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap);
+
+      // TODO: debug for domaininpv nginx access in parallel run
+      String curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
+      List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
+      assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServersBeforeScale, 50))
+          .as("Verify NGINX can access the sample app from the original managed servers in the domain")
+          .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
+          .isTrue();
     }
   }
 
@@ -764,7 +773,8 @@ class ItParameterizedScaleDomainNginx {
    * @param appContextRoot the context root of the application
    * @return curl command string
    */
-  private String generateCurlCmd(String domainUid, String domainNamespace, String clusterName, String appContextRoot) {
+  private static String generateCurlCmd(String domainUid, String domainNamespace, String clusterName,
+                                        String appContextRoot) {
 
     return String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
         domainUid + "." + domainNamespace + "." + clusterName + ".test",
@@ -779,7 +789,8 @@ class ItParameterizedScaleDomainNginx {
    * @param replicasBeforeScale the replicas of WebLogic cluster before scale
    * @return list of managed servers in the cluster before scale
    */
-  private List<String> listManagedServersBeforeScale(int numClusters, String clusterName, int replicasBeforeScale) {
+  private static List<String> listManagedServersBeforeScale(int numClusters, String clusterName,
+                                                            int replicasBeforeScale) {
 
     List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicasBeforeScale; i++) {
