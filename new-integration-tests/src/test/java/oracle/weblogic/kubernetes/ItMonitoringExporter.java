@@ -107,7 +107,6 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
@@ -1235,7 +1234,7 @@ class ItMonitoringExporter {
             WLS_BASE_IMAGE_TAG,
             WLS,
             false,
-            WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domain2Uid, true);
+            domain2Uid, true);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(wdtImage);

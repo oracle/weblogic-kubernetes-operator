@@ -1015,7 +1015,7 @@ class ItParameterizedScaleDomainNginx {
         Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForDomainInImage), appSrcDirList,
         Collections.singletonList(MODEL_DIR + "/" + WDT_BASIC_MODEL_PROPERTIES_FILE),
         WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS_DOMAIN_TYPE, false,
-        WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid, false);
+        domainUid, false);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domainInImageWithWDTImage);

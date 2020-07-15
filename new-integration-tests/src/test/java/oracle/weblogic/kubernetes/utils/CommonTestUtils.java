@@ -94,6 +94,7 @@ import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -1063,7 +1064,7 @@ public class CommonTestUtils {
                 .modelFiles(wdtModelList)
                 .modelVariableFiles(modelPropList)
                 .modelArchiveFiles(archiveList)
-                .domainHome(domainHome)
+                .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainHome)
                 .wdtModelOnly(modelType)
                 .wdtOperation("CREATE")
                 .wdtVersion(WDT_VERSION)
