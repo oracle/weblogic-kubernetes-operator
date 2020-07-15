@@ -320,24 +320,24 @@ public class ItIntrospectVersion {
     // verify the domain custom resource is created
     createDomainAndVerify(domain, introDomainNamespace);
 
-    // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
-
     // verify the admin server service created
     checkServiceExists(adminServerPodName, introDomainNamespace);
 
-    // verify managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
-    }
+    // verify admin server pod is ready
+    checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, introDomainNamespace);
       checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+    }
+
+    // verify managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
+          managedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
     // get the pod creation time stamps
@@ -404,21 +404,21 @@ public class ItIntrospectVersion {
         );
 
     // verify the 3rd server pod comes up
-    checkPodReady(managedServerPodNamePrefix + 3, domainUid, introDomainNamespace);
     checkServiceExists(managedServerPodNamePrefix + 3, introDomainNamespace);
-
-    // verify existing managed server pods are not affected
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
-    }
+    checkPodReady(managedServerPodNamePrefix + 3, domainUid, introDomainNamespace);
 
     // verify existing managed server services are not affected
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, introDomainNamespace);
       checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+    }
+
+    // verify existing managed server pods are not affected
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
+          managedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
     // verify existing pods are not restarted
@@ -567,6 +567,26 @@ public class ItIntrospectVersion {
 
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
+    
+    // verify the admin server service created
+    checkServiceExists(adminServerPodName, introDomainNamespace);
+
+    // verify admin server pod is ready
+    checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
+
+    // verify managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, introDomainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+    }
+
+    // verify managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
+          managedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    }
 
     // verify the admin port is changed to newAdminPort
     assertEquals(newAdminPort, assertDoesNotThrow(()
