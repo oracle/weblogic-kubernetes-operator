@@ -66,7 +66,8 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
     WatchTuning watch =
         new WatchTuning(
             (int) readTuningParameter("watchLifetime", 300),
-            (int) readTuningParameter("watchMinimumDelay", 5));
+            (int) readTuningParameter("watchMinimumDelay", 5),
+            (int) readTuningParameter("watchBackstopRecheckDelaySeconds", 5));
 
     PodTuning pod =
         new PodTuning(
