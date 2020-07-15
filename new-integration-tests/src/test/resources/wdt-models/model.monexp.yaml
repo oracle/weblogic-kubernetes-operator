@@ -20,10 +20,20 @@ topology:
   Server:
     "admin-server":
       ListenPort: 7001
+ #   "managed-server1":
+ #    ListenPort : 8001
+ #     SSL:
+  #      Enabled: true
+  #      ListenPort: 8100
+  #      HostnameVerificationIgnored: true
   ServerTemplate:
     "cluster-1-template":
       Cluster: "cluster-1"
       ListenPort : 8001
+      SSL:
+        Enabled: true
+        ListenPort: 8100
+        HostnameVerificationIgnored: true
 
 appDeployments:
   Application:

@@ -23,6 +23,7 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
+import com.gargoylesoftware.htmlunit.TextPage;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlFileInput;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
@@ -79,6 +80,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
@@ -92,6 +94,7 @@ import static java.nio.file.Paths.get;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
@@ -121,9 +124,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -153,6 +158,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+
 /**
  * Verify Prometheus, Grafana, Webhook, Coordinator are installed and running
  * Verify the monitoring exporter installed in model in image domain can generate the WebLogic metrics.
@@ -169,10 +175,13 @@ class ItMonitoringExporter {
   private static int managedServersCount = 2;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
+  private static String domain3Namespace = null;
   private static String domain1Uid = "monexp-domain-1";
   private static String domain2Uid = "monexp-domain-2";
+  private static String domain3Uid = "monexp-domain-3";
   private static HelmParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
+  private static int nodeportshttps = 0;
   private static List<String> ingressHost1List = null;
   private static List<String> ingressHost2List = null;
 
@@ -215,7 +224,7 @@ class ItMonitoringExporter {
    */
   @BeforeAll
 
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  public static void initAll(@Namespaces(7) List<String> namespaces) {
 
     logger = getLogger();
     // create standard, reusable retry/backoff policy
@@ -247,15 +256,18 @@ class ItMonitoringExporter {
     assertNotNull(namespaces.get(5), "Namespace list is null");
     final String nginxNamespace = namespaces.get(5);
 
+    logger.info("Get a unique namespace for domain3");
+    assertNotNull(namespaces.get(6), "Namespace list is null");
+    domain3Namespace = namespaces.get(6);
 
     logger.info("install and verify operator");
-    installAndVerifyOperator(opNamespace, domain1Namespace,domain2Namespace);
+    installAndVerifyOperator(opNamespace, domain1Namespace,domain2Namespace,domain3Namespace);
 
-    logger.info("nstall monitoring exporter");
+    logger.info("install monitoring exporter");
     installMonitoringExporter();
 
     logger.info("create and verify WebLogic domain image using model in image with model files");
-    miiImage = createAndVerifyMiiImage();
+    miiImage = createAndVerifyMiiImage(monitoringExporterAppDir);
 
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
@@ -267,7 +279,9 @@ class ItMonitoringExporter {
     String nginxServiceName = nginxHelmParams.getReleaseName() + "-nginx-ingress-controller";
     logger.info("NGINX service name: {0}", nginxServiceName);
     nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+    nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
     logger.info("NGINX http node port: {0}", nodeportshttp);
+    logger.info("NGINX https node port: {0}", nodeportshttps);
 
     // create ingress for the domain
     logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
@@ -277,7 +291,6 @@ class ItMonitoringExporter {
         createIngressForDomainAndVerify(domain1Uid, domain1Namespace,clusterNameMsPortMap, false);
 
     exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp);
-
     logger.info("create pv and pvc for monitoring");
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
@@ -348,13 +361,10 @@ class ItMonitoringExporter {
   @Test
   @DisplayName("Test Basic Functionality of Monitoring Exporter.")
   public void testBasicFunctionality() throws Exception {
-
+    verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0),1);
     installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
             domain1Namespace,
             domain1Uid);
-
-    //verify access to Monitoring Exporter
-    verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0),1);
 
     try {
       logger.info("Testing replace configuration");
@@ -365,8 +375,6 @@ class ItMonitoringExporter {
       replaceOneAttributeValueAsArrayConfiguration();
       logger.info("Testing append One Attribute Value AsArray configuration");
       appendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration();
-      logger.info("Testing replace with empty configuration");
-      replaceWithEmptyConfiguration();
       logger.info("Testing append with empty configuration");
       appendWithEmptyConfiguration();
       logger.info("Testing append with invalid yaml configuration");
@@ -395,9 +403,52 @@ class ItMonitoringExporter {
       changeConfigEmptyPass();
       logger.info("Testing replace with domain qualifier configuration");
       replaceMetricsDomainQualifierTrueConfiguration();
+      logger.info("Testing replace with no restPort configuration");
+      replaceMetricsNoRestPortConfiguration();
     } finally {
       //restore configuration
       submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/exporter-config.yaml");
+    }
+  }
+
+  /**
+   * Verify access to monitoring exporter WebLogic metrics via https.
+   */
+  @Test
+  @DisplayName("Test Monitoring Exporter access to metrics via https.")
+  public void testAccessExporterViaHttps() throws Exception {
+    String miiImage1 = null;
+    try {
+      logger.info("create and verify WebLogic domain image using model in image with model files for norestport");
+      miiImage1 = createAndVerifyMiiImage(monitoringExporterAppDir + "/norestport");
+
+      // create and verify one cluster mii domain
+      logger.info("Create domain and verify that it's running");
+      createAndVerifyDomain(miiImage1, domain3Uid, domain3Namespace, "FromModel", 1);
+      //verify access to Monitoring Exporter
+      logger.info("checking access to wls metrics via http connection");
+      assertTrue(verifyMonExpAppAccess("wls-exporter/metrics", "wls_servlet_invocation_total_count", false));
+      logger.info("checking access to wl metrics via https connection");
+      //set to listen only ssl
+      changeListenPort("False");
+      assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
+          "wls_servlet_invocation_total_count", true),
+          "monitoring exporter metrics page can't be accessed via https");
+    } finally {
+      logger.info("Printing Log from managed server"
+          + Kubernetes.getPodLog(domain3Uid + "-managed-server1", domain3Namespace));
+      logger.info("Shutting down domain3");
+      assertTrue(shutdownDomain(domain3Uid, domain3Namespace),
+          String.format("shutdown domain %s in namespace %s failed", domain3Uid, domain3Namespace));
+      if (miiImage1 != null) {
+        deleteImage(miiImage1);
+      }
+
+      // Delete domain custom resource
+      logger.info("Delete domain custom resource in namespace {0}", domain3Namespace);
+      assertDoesNotThrow(() -> deleteDomainCustomResource(domain3Uid, domain3Namespace),
+          "deleteDomainCustomResource failed with ApiException");
+      logger.info("Deleted Domain Custom Resource " + domain3Uid + " from " + domain3Namespace);
     }
   }
 
@@ -417,6 +468,7 @@ class ItMonitoringExporter {
 
 
       //verify access to Monitoring Exporter
+      logger.info("verify http access");
       verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0),managedServersCount);
       //verify metrics via prometheus
       String testappPrometheusSearchKey =
@@ -1092,12 +1144,19 @@ class ItMonitoringExporter {
     Path monitoringTemp = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringTemp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringTemp));
-    Path monitoringApp = Paths.get(RESULTS_ROOT, "monitoringexp", "apps");
+    Path monitoringApp = Paths.get(RESULTS_ROOT, "monitoringexp", "apps", "norestport");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringApp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringApp));
+    String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
+        //.orElse("master");
+        .orElse("update_rest_port");
 
     CommandParams params = Command.defaultCommandParams()
-        .command("git clone " + MONITORING_EXPORTER_DOWNLOAD_URL + " " + monitoringTemp)
+        .command("git clone -b "
+            + monitoringExporterBranch
+            + " "
+            + MONITORING_EXPORTER_DOWNLOAD_URL
+            + " " + monitoringTemp)
         .saveResults(true)
         .redirect(false);
     assertTrue(() -> Command.withParams(params)
@@ -1107,35 +1166,77 @@ class ItMonitoringExporter {
     monitoringExporterEndToEndDir = monitoringTemp + "/samples/kubernetes/end2end/";
     String monitoringExporterVersion = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_VERSION"))
         .orElse(MONITORING_EXPORTER_VERSION);
+
+    //adding ability to build monitoring exporter if branch is not master or version number does not match latest 1.1.2
+    boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase("1.1.2")
+        || !monitoringExporterBranch.equalsIgnoreCase(("master")));
     logger.info("create a monitoring exporter version {0} ",monitoringExporterVersion);
-    monitoringExporterAppDir = monitoringApp.toString();
-    String monitoringExporterBuildFile = String.format(
-        "%s/get%s.sh", monitoringExporterAppDir, monitoringExporterVersion);
-    logger.info("Download a monitoring exporter build file {0} ", monitoringExporterBuildFile);
-    String curlDownloadCmd = String.format("cd %s && "
-        + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get%s.sh",
-        monitoringExporterAppDir,
-        monitoringExporterVersion,
-        monitoringExporterVersion);
-    logger.info("execute command  a monitoring exporter curl command {0} ",curlDownloadCmd);
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command(curlDownloadCmd))
-        .execute(),"Failed to download monitoring exporter webapp");
-    String command = String.format("chmod 777 %s ", monitoringExporterBuildFile);
-    assertTrue(new Command()
-        .withParams(new CommandParams()
+    monitoringExporterAppDir = monitoringApp.toString() + "/../";
+    toBuildMonitoringExporter = true;
+    if (!toBuildMonitoringExporter) {
+      String monitoringExporterBuildFile = String.format(
+          "%s/get%s.sh", monitoringExporterAppDir, monitoringExporterVersion);
+      logger.info("Download a monitoring exporter build file {0} ", monitoringExporterBuildFile);
+      String curlDownloadCmd = String.format("cd %s && "
+              + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get%s.sh",
+          monitoringExporterAppDir,
+          monitoringExporterVersion,
+          monitoringExporterVersion);
+      logger.info("execute command  a monitoring exporter curl command {0} ", curlDownloadCmd);
+      assertTrue(new Command()
+          .withParams(new CommandParams()
+              .command(curlDownloadCmd))
+          .execute(), "Failed to download monitoring exporter webapp");
+      String command = String.format("chmod 777 %s ", monitoringExporterBuildFile);
+      assertTrue(new Command()
+          .withParams(new CommandParams()
+              .command(command))
+          .execute(), "Failed to build monitoring exporter webapp");
+
+      command = String.format("cd %s && %s  %s/exporter/exporter-config.yaml",
+          monitoringExporterAppDir,
+          monitoringExporterBuildFile,
+          RESOURCE_DIR);
+      assertTrue(new Command()
+          .withParams(new CommandParams()
+              .command(command))
+          .execute(), "Failed to build monitoring exporter webapp");
+      command = String.format("cd %s && %s  %s/exporter/exporter-config-norestport.yaml",
+          monitoringExporterAppDir + "/norestport",
+          monitoringExporterBuildFile,
+          RESOURCE_DIR);
+      assertTrue(new Command()
+          .withParams(new CommandParams()
+              .command(command))
+          .execute(), "Failed to build monitoring exporter webapp with no restport");
+    } else {
+      String command = String.format("cd %s && mvn install",
+          monitoringExporterSrcDir);
+      assertTrue(new oracle.weblogic.kubernetes.actions.impl.primitive.Command()
+          .withParams(new oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams()
+              .command(command))
+          .execute(), "Failed to build monitoring exporter");
+      buildMonitoringExporterApp("exporter-config.yaml", monitoringExporterAppDir);
+      buildMonitoringExporterApp("exporter-config-noresport.yaml", monitoringExporterAppDir + "/norestport");
+    }
+    logger.info("Finished to build Monitoring Exporter webapp.");
+  }
+
+  private static void buildMonitoringExporterApp(String configFile, String appDir) {
+
+    String command = String.format("cd %s/webapp && mvn package -Dconfiguration=%s/exporter/%s",
+        monitoringExporterSrcDir,
+        RESOURCE_DIR,
+        configFile);
+    assertTrue(new oracle.weblogic.kubernetes.actions.impl.primitive.Command()
+        .withParams(new oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams()
             .command(command))
-        .execute(),"Failed to build monitoring exporter webapp");
-    String appDest = monitoringExporterAppDir;
-    command = String.format("cd %s && %s  %s/exporter/exporter-config.yaml",
-            appDest,
-            monitoringExporterBuildFile,
-            RESOURCE_DIR);
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command(command))
-        .execute(),"Failed to build monitoring exporter webapp");
+        .execute(), "Failed to build monitoring exporter webapp");
+    java.nio.file.Path srcFile = java.nio.file.Paths.get(monitoringExporterSrcDir,
+        "webapp","target", "wls-exporter.war");
+    java.nio.file.Path targetFile = java.nio.file.Paths.get(appDir, "wls-exporter.war");
+    assertDoesNotThrow(() ->
+        java.nio.file.Files.copy(srcFile, targetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING));
   }
 
   /**
@@ -1154,10 +1255,10 @@ class ItMonitoringExporter {
   /**
    * Create mii image with monitoring exporter webapp.
    */
-  private static String createAndVerifyMiiImage() {
+  private static String createAndVerifyMiiImage(String monexpAppDir) {
     // create image with model files
     logger.info("Create image with model file with monitoring exporter app and verify");
-    String appPath = String.format("%s/wls-exporter.war", monitoringExporterAppDir);
+    String appPath = String.format("%s/wls-exporter.war", monexpAppDir);
     List<String> appList = new ArrayList();
     appList.add(appPath);
     appList.add(SESSMIGR_APP_NAME);
@@ -1169,11 +1270,6 @@ class ItMonitoringExporter {
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
-
-    // create docker registry secret to pull the image from registry
-    logger.info("Create docker registry secret in namespace {0}", domain1Namespace);
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domain1Namespace),
-            String.format("create Docker Registry Secret failed for %s", REPO_SECRET_NAME));
 
     return miiImage;
   }
@@ -1241,11 +1337,6 @@ class ItMonitoringExporter {
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(wdtImage);
 
-    // create docker registry secret to pull the image from registry
-    logger.info("Create docker registry secret in namespace {0}", domain2Namespace);
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domain2Namespace),
-        String.format("create Docker Registry Secret failed for %s", REPO_SECRET_NAME));
-
     return wdtImage;
   }
 
@@ -1255,6 +1346,10 @@ class ItMonitoringExporter {
                                             String namespace,
                                             String domainHomeSource,
                                             int replicaCount) {
+    // create docker registry secret to pull the image from registry
+    logger.info("Create docker registry secret in namespace {0}", namespace);
+    assertDoesNotThrow(() -> createDockerRegistrySecret(namespace),
+        String.format("create Docker Registry Secret failed for %s", REPO_SECRET_NAME));
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
@@ -1337,7 +1432,13 @@ class ItMonitoringExporter {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.security.SSL.ignoreHostnameVerification=true "
+                        + "-DUseSunHttpHandler=true -Dssl.debug=true "
+                        + "-Djavax.net.debug=all -Dweblogic.security.SSL.verbose=true "
+                        + "-Dweblogic.StdoutDebugEnabled=true -Djavax.net.debug=all "
+                        + "-Djava.security.debug=all -Dweblogic.wsee.security.verbose=true "
+                        + "-Dweblogic.wsee.security.debug=true -Dweblogic.webservice.verbose=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
@@ -1376,15 +1477,52 @@ class ItMonitoringExporter {
     // check that NGINX can access the sample apps from all managed servers in the domain
     String curlCmd =
         String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s:%s/wls-exporter/metrics",
-                nginxHost,
-                ADMIN_USERNAME_DEFAULT,
-                ADMIN_PASSWORD_DEFAULT,
-                K8S_NODEPORT_HOST,
-                nodeportshttp);
+            nginxHost,
+            ADMIN_USERNAME_DEFAULT,
+            ADMIN_PASSWORD_DEFAULT,
+            K8S_NODEPORT_HOST,
+            nodeportshttp);
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
-        .as("Verify NGINX can access the monitoring exporter metrics from all managed servers in the domain")
-        .withFailMessage("NGINX can not access the monitoring exporter metrics from one or more of the managed servers")
+        .as("Verify NGINX can access the monitoring exporter metrics "
+            + "from all managed servers in the domain via http")
+        .withFailMessage("NGINX can not access the monitoring exporter metrics "
+            + "from one or more of the managed servers via http")
         .isTrue();
+  }
+
+  /**
+   * Verify the monitoring exporter app can be accessed from all managed servers in the domain
+   * through direct access to managed server dashboard.
+   */
+  private boolean verifyMonExpAppAccess(String uri, String searchKey, boolean isHttps) {
+    String protocol = "http";
+    String port = "8001";
+    if (isHttps) {
+      protocol = "https";
+      port = "8100";
+    }
+    // access metrics
+    final String command = String.format(
+        "kubectl exec -n " + domain3Namespace + "  " + domain3Uid + "-managed-server1 -- curl -k %s://"
+            + ADMIN_USERNAME_DEFAULT
+            + ":"
+            + ADMIN_PASSWORD_DEFAULT
+            + "@" + domain3Uid + "-managed-server1:%s/%s", protocol, port, uri);
+    logger.info("accessing managed server exporter via " + command);
+
+    boolean isFound = false;
+    try {
+      ExecResult result = ExecCommand.exec(command, true);
+      String response = result.stdout().trim();
+      logger.info("Response : exitValue {0}, stdout {1}, stderr {2}",
+          result.exitValue(), response, result.stderr());
+      isFound = response.contains(searchKey);
+      logger.info("isFound value:" + isFound);
+    } catch (Exception ex) {
+      logger.info("Can't execute command " + command + ex.getStackTrace());
+      return false;
+    }
+    return isFound;
   }
 
   /**
@@ -1546,10 +1684,20 @@ class ItMonitoringExporter {
     fileField.setContentType("multipart/form-data");
 
     // Now submit the form by clicking the button and get back the second page.
-    HtmlPage page2 = button.click();
-    assertNotNull(page2, "can't reach page after submit");
-    assertFalse((page2.asText()).contains("Error 500--Internal Server Error"),
-            "page returns Error 500--Internal Server Error");
+    HtmlPage page2 = null;
+    try {
+      page2 = button.click();
+      assertNotNull(page2, "can't reach page after submit");
+      assertFalse((page2.asText()).contains("Error 500--Internal Server Error"),
+          "page returns Error 500--Internal Server Error");
+    } catch (ClassCastException ex) {
+      logger.info(" Can't generate html page, collecting the error ");
+      TextPage page3 = button.click();
+      assertNotNull(page3, "can't reach page after submit");
+      assertTrue(page3.getContent().contains("Unable to contact the REST API"),
+          "submit does not return html page, here is received page "
+          + page3.getContent());
+    }
     // wait time to update configuration
     Thread.sleep(15 * 1000);
     return page2;
@@ -1644,8 +1792,9 @@ class ItMonitoringExporter {
    * @throws Exception if test fails
    */
   private void replaceWithEmptyConfiguration() throws Exception {
-    HtmlPage page = submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_empty.yaml");
-    assertTrue(page.asText().contains("queries:") && !page.asText().contains("values"));
+    submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_empty.yaml");
+    assertFalse(verifyMonExpAppAccess("wls-exporter","values", false));
+    assertTrue(verifyMonExpAppAccess("wls-exporter","queries", false));
   }
 
   /**
@@ -1654,9 +1803,10 @@ class ItMonitoringExporter {
    * @throws Exception if failed to apply configuration or check the expected values.
    */
   private void appendWithEmptyConfiguration() throws Exception {
-    final WebClient webClient = new WebClient();
-    HtmlPage originalPage = webClient.getPage(exporterUrl);
-    assertNotNull(originalPage);
+    HtmlPage originalPage = submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_jvm.yaml");
+    assertNotNull(originalPage, "Failed to replace configuration");
+    assertTrue(originalPage.asText().contains("JVMRuntime"),
+        "Page does not contain expected JVMRuntime configuration");
     HtmlPage page = submitConfigureForm(exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_empty.yaml");
     assertTrue(originalPage.asText().equals(page.asText()));
   }
@@ -1746,6 +1896,24 @@ class ItMonitoringExporter {
     assertFalse(page.asText().contains("metricsNameSnakeCase"));
     String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
     checkMetricsViaPrometheus(searchKey, "sessmigr");
+  }
+
+  /**
+   * Try to replace monitoring exporter configuration with configuration file with
+   * no restPort value.
+   *
+   * @throws Exception if failed to apply configuration or check the expected values.
+   */
+  private void replaceMetricsNoRestPortConfiguration() throws Exception {
+    HtmlPage page =
+        submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/norestport.yaml");
+    assertNotNull(page);
+    assertFalse(page.asText().contains("restPort"));
+    Thread.sleep(20 * 1000);
+    // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
+    String prometheusSearchKey1 =
+        "heap_free_current%7Bname%3D%22managed-server1%22%7D%5B15s%5D";
+    checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1");
   }
 
   /**
@@ -1839,4 +2007,57 @@ class ItMonitoringExporter {
             ADMIN_USERNAME_DEFAULT,
             "");
   }
+
+  private boolean changeListenPort(String setListenPortEnabled) throws Exception {
+    // copy changeListenPort.py and callpyscript.sh to Admin Server pod
+    String adminServerPodName = domain1Uid + "-" + ADMIN_SERVER_NAME_BASE;
+    V1Pod adminPod = Kubernetes.getPod(domain1Namespace, null, adminServerPodName);
+    if (adminPod == null) {
+      logger.info("The admin pod {0} does not exist in namespace {1}!", adminServerPodName, domain1Namespace);
+      return false;
+    }
+
+    logger.info("Copying changeListenPort.py and callpyscript.sh to admin server pod");
+    try {
+      copyFileToPod(domain1Namespace, adminServerPodName, null,
+          Paths.get(RESOURCE_DIR, "python-scripts", "changeListenPort.py"),
+          Paths.get("/u01/oracle/changeListenPort.py"));
+
+      copyFileToPod(domain1Namespace, adminServerPodName, null,
+          Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
+          Paths.get("/u01/oracle/callpyscript.sh"));
+    } catch (ApiException apex) {
+      logger.severe("Got ApiException while copying file to admin pod {0}", apex.getResponseBody());
+      return false;
+    } catch (IOException ioex) {
+      logger.severe("Got IOException while copying file to admin pod {0}", ioex.getStackTrace());
+      return false;
+    }
+
+    logger.info("Adding execute mode for callpyscript.sh");
+    ExecResult result = exec(adminPod, null, true,
+        "/bin/sh", "-c", "chmod +x /u01/oracle/callpyscript.sh");
+    if (result.exitValue() != 0) {
+      return false;
+    }
+    logger.info("Changing ListenPortEnabled");
+    String command = new StringBuffer("/u01/oracle/callpyscript.sh /u01/oracle/changeListenPort.py ")
+        .append(ADMIN_USERNAME_DEFAULT)
+        .append(" ")
+        .append(ADMIN_PASSWORD_DEFAULT)
+        .append(" t3://")
+        .append(adminServerPodName)
+        .append(":7001 ")
+        .append(setListenPortEnabled)
+        .append(" ")
+        .append("managed-server1")
+        .toString();
+
+    result = exec(adminPod, null, true, "/bin/sh", "-c", command);
+    if (result.exitValue() != 0) {
+      return false;
+    }
+    return true;
+  }
+
 }
