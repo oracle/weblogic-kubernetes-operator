@@ -24,7 +24,7 @@
 #   kubectl delete -f kubernetes/samples/scripts/elasticsearch_and_kibana.yaml
 
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: "default"
@@ -78,7 +78,7 @@ spec:
     app: "elasticsearch"
 
 ---
-apiVersion: "apps/v1beta1"
+apiVersion: "apps/v1"
 kind: "Deployment"
 metadata:
   namespace: "default"
