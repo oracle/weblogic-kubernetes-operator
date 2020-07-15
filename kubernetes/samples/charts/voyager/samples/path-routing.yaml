@@ -19,7 +19,7 @@ spec:
           servicePort: '8001'
       - path: /domain2
         backend:
-          serviceName: domain2-cluster-cluster-1.test1
+          serviceName: domain2-cluster-cluster-1
           servicePort: '8001'
 ---
 apiVersion: v1

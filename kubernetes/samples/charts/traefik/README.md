@@ -5,31 +5,33 @@ load balancing for WebLogic clusters.
 
 ## Install the Traefik operator with a Helm chart
 The Traefik Helm chart is located in the official Helm project `charts` directory at https://github.com/helm/charts/tree/master/stable/traefik.
-The chart is in the default repository for Helm.
+The Traefik Chart from above charts repository is still using Traefik v1.7.
+For conversion of artifacts from v1.x to v2.x refer to https://docs.traefik.io/v2.0/migration/v1-to-v2/
+
+Since traefik Release 2.x, Traefik Helm chart is located at https://github.com/containous/traefik-helm-chart. 
+For more information about Traefik refer to https://docs.traefik.io/ 
+This document is based on Traefik version 2.x
 
 To install the Traefik operator in the `traefik` namespace with default settings:
 ```
-$ helm install --name traefik-operator --namespace traefik stable/traefik
+$ helm repo add traefik https://containous.github.io/traefik-helm-chart
+$ helm repo update
+$ helm install traefik-operator traefik/traefik --namespace traefik
 ```
 Or, with a given `values.yaml`:
 ```
-$ helm install --name traefik-operator --namespace traefik --values values.yaml stable/traefik
+$ helm install traefik-operator traefik/traefik --namespace traefik --values values.yaml
 ```
-With the dashboard enabled, you can access the Traefik dashboard with the URL `http://${HOSTNAME}:30305`, with the HTTP host `traefik.example.com`.
+With the dashboard enabled, you can access the Traefik dashboard  
 ```
-$ curl -H 'host: traefik.example.com' http://${HOSTNAME}:30305/
-```
-
-## Optionally, download the Traefik Helm chart
-If you want, you can download the Traefik Helm chart and untar it into a local folder:
-```
-$ helm fetch  stable/traefik --untar
+$ kubectl port-forward $(kubectl get pods --selector "app.kubernetes.io/name=traefik" --output=name -n traefik) 9000:9000 -n traefik
+$ curl http://localhost:9000/dashboard/
 ```
 
 ## Update the Traefik operator
 After the Traefik operator is installed and running, if you want to change some configurations of the operator, use `helm upgrade` to achieve this.
 ```
-$ helm upgrade traefik-operator stable/traefik --values values.yaml 
+$ helm upgrade traefik-operator traefik/traefik --values values.yaml 
 ```
 
 ## Configure Traefik as a load balancer for WLS domains
@@ -39,8 +41,8 @@ In this section we'll demonstrate how to use Traefik to handle traffic to backen
 Now we need to prepare some domains for Traefik load balancing.
 
 Create two WLS domains:
-- One domain with name `domain1` under namespace `default`.
-- One domain with name `domain2` under namespace `test1`.
+- One domain with name `domain1` under namespace `weblogic-domain1`.
+- One domain with name `domain2` under namespace `weblogic-domain2`.
 - Each domain has a web application installed with the URL context `testwebapp`.
 
 ### 2. Install the Traefik Ingress
@@ -50,8 +52,9 @@ $ kubectl create -f samples/host-routing.yaml
 ```
 Now you can send requests to different WLS domains with the unique entry point of Traefik with different hostnames.
 ```
-$ curl -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp/
-$ curl -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
+$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
+$ curl -H 'host: domain1.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
+$ curl -H 'host: domain2.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 ```
 #### Install a path-routing Ingress
 ```
@@ -59,8 +62,9 @@ $ kubectl create -f samples/path-routing.yaml
 ```
 Now you can send requests to different WLS domains with the unique entry point of Traefik with different paths.
 ```
-$ curl http://${HOSTNAME}:30305/domain1/
-$ curl http://${HOSTNAME}:30305/domain2/
+$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
+$ curl http://${HOSTNAME}:${LB_PORT}/domain1/
+$ curl http://${HOSTNAME}:${LB_PORT}/domain2/
 ```
 #### Install a TLS-enabled Ingress
 This sample demonstrates accessing the two WLS domains using an HTTPS endpoint and the WLS domains are protected by different TLS certificates.
@@ -71,13 +75,17 @@ First, you need to create two secrets with TLS certificates, one with the common
 ```
 # create a TLS secret for domain1
 $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out /tmp/tls1.crt -subj "/CN=domain1.org"
-$ kubectl create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
+$ kubectl -n weblogic-domain1 create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
+# create a TLS secret for domain2
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls2.key -out /tmp/tls2.crt -subj "/CN=domain2.org"
+$ kubectl -n weblogic-domain2 create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
+
+```
 
 ```
 Then deploy the TLS Ingress and Ingress Route.
 ```
 $ kubectl create -f samples/tls.yaml
-$ kubectl create -f samples/ingress-route.yaml
 ```
 Now you can access application on the WLS domain with hostname in HTTP header.
 The loadbalancer secure port can be obtained dynamically form traefik-operator service on traefik namespace. 

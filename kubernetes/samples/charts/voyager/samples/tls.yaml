@@ -2,7 +2,7 @@ apiVersion: voyager.appscode.com/v1beta1
 kind: Ingress
 metadata:
   name: voyager-ssl-1
-  namespace: default
+  namespace: weblogic-domain1
   annotations:
     ingress.appscode.com/type: 'NodePort'
     ingress.appscode.com/stats: 'true'
@@ -25,7 +25,7 @@ apiVersion: voyager.appscode.com/v1beta1
 kind: Ingress
 metadata:
   name: voyager-ssl-2
-  namespace: test1
+  namespace: weblogic-domain2
   annotations:
     ingress.appscode.com/type: 'NodePort'
     ingress.appscode.com/stats: 'true'

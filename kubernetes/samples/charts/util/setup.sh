@@ -4,6 +4,7 @@
 
 # This script is to create or delete Ingress controllers. 
 # Currently the script supports two ingress controllers: Traefik and Voyager.
+# Usage $0 create|delete traefik|voyager traefik_version|voyager_version
 
 UTILDIR="$(dirname "$(readlink -f "$0")")"
 VNAME=voyager-operator  # release name for Voyager
@@ -83,6 +84,7 @@ function createTraefik() {
 
   if [ "$(helm search repo traefik/traefik | grep traefik |  wc -l)" = 0 ]; then
     # https://containous.github.io/traefik-helm-chart/
+    # https://docs.traefik.io/getting-started/install-traefik/
     echo "Add containous.github.io chart repository"
     helm repo add traefik https://containous.github.io/traefik-helm-chart
     helm repo update

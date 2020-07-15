@@ -21,7 +21,7 @@ spec:
       nodePort: '30305'
       paths:
       - backend:
-          serviceName: domain2-cluster-cluster-1.test1
+          serviceName: domain2-cluster-cluster-1
           servicePort: '8001'
 
 ---
