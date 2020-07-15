@@ -175,10 +175,18 @@ public interface TuningParameters extends Map<String, String> {
   public static class WatchTuning {
     public final int watchLifetime;
     public final int watchMinimumDelay;
+    public final int watchBackstopRecheckDelay;
 
-    public WatchTuning(int watchLifetime, int watchMinimumDelay) {
+    /**
+     * Create watch tuning.
+     * @param watchLifetime Watch lifetime
+     * @param watchMinimumDelay Minimum delay before accepting new events to prevent hot loops
+     * @param watchBackstopRecheckDelay Recheck delay for get while waiting for a status to backstop missed watch events
+     */
+    public WatchTuning(int watchLifetime, int watchMinimumDelay, int watchBackstopRecheckDelay) {
       this.watchLifetime = watchLifetime;
       this.watchMinimumDelay = watchMinimumDelay;
+      this.watchBackstopRecheckDelay = watchBackstopRecheckDelay;
     }
 
     @Override
@@ -186,12 +194,14 @@ public interface TuningParameters extends Map<String, String> {
       return new ToStringBuilder(this)
           .append("watchLifetime", watchLifetime)
           .append("watchMinimumDelay", watchMinimumDelay)
+          .append("watchBackstopRecheckDelay", watchBackstopRecheckDelay)
           .toString();
     }
 
     @Override
     public int hashCode() {
-      return new HashCodeBuilder().append(watchLifetime).append(watchMinimumDelay).toHashCode();
+      return new HashCodeBuilder()
+              .append(watchLifetime).append(watchMinimumDelay).append(watchBackstopRecheckDelay).toHashCode();
     }
 
     @Override
@@ -206,6 +216,7 @@ public interface TuningParameters extends Map<String, String> {
       return new EqualsBuilder()
           .append(watchLifetime, wt.watchLifetime)
           .append(watchMinimumDelay, wt.watchMinimumDelay)
+          .append(watchBackstopRecheckDelay, wt.watchBackstopRecheckDelay)
           .isEquals();
     }
   }

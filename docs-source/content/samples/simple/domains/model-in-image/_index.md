@@ -26,7 +26,7 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
 ### Introduction
 
 
-This sample demonstrates deploying a Model in Image [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}). Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource. Instead, Model in Image uses a WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
+This sample demonstrates deploying a Model in Image [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}). Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file. Instead, Model in Image uses a WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
 
 WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source, [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/archive.md).
 
@@ -55,7 +55,7 @@ This sample demonstrates four Model in Image use cases:
    - Kubernetes Secrets:
      - WebLogic credentials
      - Required WDT runtime password
-   - A domain resource with:
+   - A Domain with:
      - `metadata.name` and `weblogic.domainUID` label set to `sample-domain1`
      - `spec.domainHomeSourceType: FromModel`
      - `spec.image: model-in-image:WLS-v1`
@@ -69,7 +69,7 @@ This sample demonstrates four Model in Image use cases:
      - Same as Initial use case, plus secrets for data source credentials and URL
    - Kubernetes ConfigMap with:
      - A WDT model for a data source targeted to the cluster
-   - A domain resource, same as Initial use case, plus:
+   - A Domain, same as Initial use case, plus:
      - `spec.model.configMap` referencing the ConfigMap
      - References to data source secrets
 
@@ -79,7 +79,7 @@ This sample demonstrates four Model in Image use cases:
     - Same image as the Initial and Update 1 use cases
   - Kubernetes Secrets and ConfigMap:
     - Similar to the Update 1 use case, except names and labels are decorated with a new domain UID
-  - A domain resource, similar to Update 1 use case, except:
+  - A Domain, similar to Update 1 use case, except:
     - Its `metadata.name` and `weblogic.domainUid` label become `sample-domain2` instead of `sample-domain1`
     - Its secret/ConfigMap references are decorated with `sample-domain2` instead of `sample-domain1`
     - Has a changed `env` variable that sets a new domain name
@@ -91,7 +91,7 @@ This sample demonstrates four Model in Image use cases:
     - An updated model that points to the new web application path
   - Kubernetes Secrets and ConfigMap:
     - Same as the Update 1 use case
-  - A domain resource:
+  - A Domain:
     - Same as the Update 1 use case, except `spec.image` is `model-in-image:WLS-v2`
 
 #### Sample directory structure
@@ -100,7 +100,7 @@ The sample contains the following files and directories:
 
 Location | Description |
 ------------- | ----------- |
-`domain-resources` | JRF and WLS domain resources. |
+`domain-resources` | JRF and WLS Domain YAML files. |
 `archives` | Source code location for WebLogic Deploy Tooling application ZIP archives. |
 `model-images` | Staging for each model image's WDT YAML files, WDT properties, and WDT archive ZIP files. The directories in `model images` are named for their respective images. |
 `model-configmaps` | Staging files for a model ConfigMap that configures a data source. |
@@ -117,9 +117,9 @@ For example, if you have permission to put the image in a Docker repository that
   - After you've created an image:
     - `docker tag` the image with a target image name (including the registry host name, port, repository name, and the tag, if needed).
     - `docker push` the tagged image to the target repository.
-  - Before you deploy a domain resource:
-    - Modify the domain resource file's `image:` value to match the Docker tag for the image in the repository.
-    - If the repository requires a login, then also deploy a corresponding Kubernetes `docker secret` to the same namespace that the domain resource will use, and modify the domain resource file's `imagePullSecrets:` to reference this secret.
+  - Before you deploy a Domain:
+    - Modify the Domain YAML file's `image:` value to match the Docker tag for the image in the repository.
+    - If the repository requires a login, then also deploy a corresponding Kubernetes `docker secret` to the same namespace that the Domain will use, and modify the Domain YAML file's `imagePullSecrets:` to reference this secret.
 
 Alternatively, if you have access to the local Docker image cache on each worker node in the cluster, then you can use a Docker command to save the image to a file, copy the image file to each worker node, and use a `docker` command to load the image file into the node's image cache.
 

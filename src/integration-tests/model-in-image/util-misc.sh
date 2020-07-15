@@ -61,22 +61,6 @@ function get_curl_command() {
   echo "curl -s -S $(curl_timeout_parms) -H 'host: $(get_sample_host $1)'"
 }
 
-function get_help() {
-  # $1 is echo prefix
-  # $2 is service name
-  echo "${1:-}"
-  echo "${1:-} This is a Traefik ingress for service '${2}'. Sample curl access:"
-  echo "${1:-}"
-  echo "${1:-}   $(get_curl_command $2) \\"
-  echo "${1:-}     http://$(hostname).$(dnsdomainname):30305/myapp_war/index.jsp"
-  echo "${1:-}                         - or -"
-  echo "${1:-}   $(get_curl_command $2) \\"
-  echo "${1:-}     http://$(get_kube_address):30305/myapp_war/index.jsp"
-  echo "${1:-}"
-}
-
-
-
 # testapp
 #
 # Use 'testapp internal|traefik cluster-1|cluster-2 somestring' to invoke the test
@@ -94,6 +78,7 @@ function testapp() {
   #       curl's internal retry doesn't actually retry if there's a 'connect failure'
 
   local num_tries=0
+  local traefik_nodeport=''
 
   while [ 1 = 1 ] 
   do
@@ -106,10 +91,22 @@ function testapp() {
       local command="kubectl exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp_war/index.jsp\""
 
     elif [ "$1" = "traefik" ]; then
-      local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):30305/myapp_war/index.jsp"
+      if [ -z "$traefik_nodeport" ]; then
+        echo "@@ Info: Obtaining traefik nodeport by calling:"
+        cat<<EOF
+          kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="http")].nodePort}'
+EOF
+        traefik_nodeport=$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+        if [ -z "$traefik_nodeport" ]; then
+          echo "@@ Error: Could not obtain traefik nodeport."
+          return 1
+        fi
+      fi
+      local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):${traefik_nodeport}/myapp_war/index.jsp"
 
     else
       echo "@@ Error: Unexpected value for '$1' - must be 'traefik' or 'internal'"
+      return 1
 
     fi
 

@@ -177,7 +177,7 @@
       "type": "object",
       "properties": {
         "overrideDistributionStrategy": {
-          "description": "Determines how updated configuration overrides are distributed to already running WebLogic Servers following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides are generated during introspection from Secrets, the `overrideConfigMap` field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server\u0027s next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also `introspectVersion`. Defaults to DYNAMIC.",
+          "description": "Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overrideConfigMap` field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server\u0027s next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also `domains.spec.introspectVersion`. Defaults to DYNAMIC.",
           "type": "string",
           "enum": [
             "DYNAMIC",
@@ -193,7 +193,7 @@
           "$ref": "#/definitions/Model"
         },
         "secrets": {
-          "description": "A list of names of the Secrets for WebLogic configuration overrides or model. If this field is specified, then the value of spec.configOverrideSecrets is ignored.",
+          "description": "A list of names of the Secrets for WebLogic configuration overrides or model. If this field is specified, then the value of `spec.configOverrideSecrets` is ignored.",
           "type": "array",
           "items": {
             "type": "string"
@@ -204,7 +204,7 @@
           "$ref": "#/definitions/Istio"
         },
         "overridesConfigMap": {
-          "description": "The name of the ConfigMap for WebLogic configuration overrides. If this field is specified, then the value of spec.configOverrides is ignored.",
+          "description": "The name of the ConfigMap for WebLogic configuration overrides. If this field is specified, then the value of `spec.configOverrides` is ignored.",
           "type": "string"
         },
         "introspectorJobActiveDeadlineSeconds": {
@@ -284,7 +284,7 @@
           "$ref": "#/definitions/ServerService"
         },
         "domainHome": {
-          "description": "The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/domains/\u003cdomainUID\u003e if domainHomeSourceType is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image. Defaults to /u01/domains/\u003cdomainUID\u003e if domainHomeSourceType is FromModel.",
+          "description": "The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is FromModel.",
           "type": "string"
         },
         "domainHomeSourceType": {
@@ -336,7 +336,7 @@
           "type": "string"
         },
         "imagePullPolicy": {
-          "description": "The image pull policy for the WebLogic container image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "description": "The image pull policy for the WebLogic container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
           "type": "string",
           "enum": [
             "Always",
@@ -373,7 +373,7 @@
           "type": "string"
         },
         "introspectVersion": {
-          "description": "Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shutdown. For the FromModel `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. See also `overridesConfigurationStrategy`.",
+          "description": "Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the FromModel `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. See also `domains.spec.configuration.overridesConfigurationStrategy`.",
           "type": "string"
         },
         "dataHome": {
@@ -454,7 +454,7 @@
       "type": "object",
       "properties": {
         "readinessPort": {
-          "description": "The operator will create a WebLogic network access point with this port for use by the readiness probe. Defaults to 8888.",
+          "description": "The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The readiness probe will use this network access point to verify that the server instance is ready for application traffic. Defaults to 8888.",
           "type": "number"
         },
         "enabled": {
@@ -549,11 +549,11 @@
       "type": "object",
       "properties": {
         "walletFileSecret": {
-          "description": "Name of a Secret containing the OPSS key wallet file.",
+          "description": "Name of a Secret containing the OPSS key wallet file, which must be in a field named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time.",
           "type": "string"
         },
         "walletPasswordSecret": {
-          "description": "Name of a Secret containing the OPSS key passphrase.",
+          "description": "Name of a Secret containing the OPSS key passphrase, which must be in a field named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain\u0027s entries in its RCU database.",
           "type": "string"
         }
       }

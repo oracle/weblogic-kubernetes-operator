@@ -35,7 +35,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("214748364700");
   private static final String NAMESPACE = "testspace";
   private final RuntimeException hasNextException = new RuntimeException(Watcher.HAS_NEXT_EXCEPTION_MESSAGE);
-  final WatchTuning tuning = new WatchTuning(30, 0);
+  final WatchTuning tuning = new WatchTuning(30, 0, 5);
   private List<Memento> mementos = new ArrayList<>();
   private List<Watch.Response<?>> callBacks = new ArrayList<>();
   private BigInteger resourceVersion = INITIAL_RESOURCE_VERSION;

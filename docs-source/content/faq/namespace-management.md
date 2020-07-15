@@ -63,7 +63,7 @@ $ helm list --all-namespaces
 If you want an operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to already exist, for example, using the `kubectl create` command.
 
 Adding a namespace to the `domainNamespaces` list tells the operator deployment or runtime
-to initialize the necessary Kubernetes resources for the namespace so that the operator is ready to host WebLogic domain resources in that namespace.
+to initialize the necessary Kubernetes resources for the namespace so that the operator is ready to run and monitor WebLogic Server instances in that namespace.
 
 When the operator is running and managing the `default` namespace, the following example Helm command adds the namespace `ns1` to the `domainNamespaces` list, where `weblogic-operator` is the release name of the operator, and `kubernetes/charts/weblogic-operator` is the location of the operator's Helm charts.
 
@@ -79,11 +79,11 @@ $ helm upgrade \
 
 {{% notice note %}}
 Changes to the `domainNamespaces` list might not be picked up by the operator right away because the operator
-monitors the changes to the setting periodically. The operator becomes ready to host domain resources in
+monitors the changes to the setting periodically. The operator becomes ready to manage Domains in
 a namespace only after the required `configmap` (namely `weblogic-scripts-cm`) is initialized in the namespace.
 {{% /notice %}}
 
-You can verify that the operator is ready to host domain resources in a namespace by confirming the existence of the required `configmap` resource.
+You can verify that the operator has initialized a namespace by confirming the existence of the required `configmap` resource.
 
 ```
 $ kubetctl get cm -n <namespace>
@@ -130,7 +130,7 @@ using the `helm upgrade` commands that were illustrated previously.
 Make sure that you wait a sufficient period of time between deleting and recreating the
 namespace because it takes time for the resources in a namespace to go away after the namespace is deleted.
 In addition, as mentioned above, changes to the `domainNamespaces` setting is monitored by the operator
-periodically, and the operator becomes ready to host domain resources only after the required domain
+periodically, and the operator becomes ready to manage Domains only after the required domain
 `configmap` (namely `weblogic-scripts-cm`) is initialized in the namespace.
 {{% /notice %}}
 

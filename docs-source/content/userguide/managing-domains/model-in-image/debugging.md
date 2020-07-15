@@ -6,20 +6,20 @@ pre = "<b> </b>"
 description = "Debugging a deployed Model in Image domain."
 +++
 
-Here are some suggestions for debugging problems with Model in Image after your domain resource is deployed.
+Here are some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed.
 
 #### Contents
 
- - [Check the domain resource status](#check-the-domain-resource-status)
+ - [Check the Domain status](#check-the-domain-status)
  - [Check the introspector job](#check-the-introspector-job)
  - [Check the WebLogic Server pods](#check-the-weblogic-server-pods)
  - [Check the operator log](#check-the-operator-log)
  - [Check the FAQ](#check-the-faq)
 
 
-#### Check the domain resource status
+#### Check the Domain status
 
-To check the domain resource status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID`.
+To check the Domain status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID`.
 
 #### Check the introspector job
 
@@ -69,7 +69,7 @@ For example, assuming your domain UID is `sample-domain1` and your domain namesp
   ```
 
 {{% notice tip %}}
-If a model file error references a model file in your `spec.configuration.model.configMap`, then you can correct the error by redeploying the ConfigMap with a corrected model file and then initiating a domain restart or roll. Similarly, if a model file error references a model file in your model image, then you can correct the error by deploying a corrected image, modifying your domain resource to reference the new image, and then initiating a domain restart or roll.
+If a model file error references a model file in your `spec.configuration.model.configMap`, then you can correct the error by redeploying the ConfigMap with a corrected model file and then initiating a domain restart or roll. Similarly, if a model file error references a model file in your model image, then you can correct the error by deploying a corrected image, modifying your Domain YAML file to reference the new image, and then initiating a domain restart or roll.
 {{% /notice %}}
 
 #### Check the WebLogic Server pods
@@ -107,5 +107,5 @@ Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
 #### Check the FAQ
 
 Common issues that have corresponding FAQ entries include:
-- When a domain resource is deployed and no introspector or WebLogic Server pods start, plus the operator log contains no mention of the domain, then check to make sure that the domain resource's namespace has been set up to be monitored by an operator. See the [Managing domain namespaces FAQ]({{<relref "/faq/namespace-management">}}).
+- When a Domain YAML file is deployed and no introspector or WebLogic Server pods start, plus the operator log contains no mention of the domain, then check to make sure that the Domain's namespace has been set up to be monitored by an operator. See the [Managing domain namespaces FAQ]({{<relref "/faq/namespace-management">}}).
 - If a `describe` of an introspector job or WebLogic Server pod reveals image access errors, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).

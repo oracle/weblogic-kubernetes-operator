@@ -30,8 +30,8 @@ kubectl create namespace database-namespace
 Next, create a file called `database.yml` with the following content.  Make sure you update the
 password field with your chosen administrator password for the database.
 
-```
-apiVersion: extensions/v1beta1
+```yaml
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: database
