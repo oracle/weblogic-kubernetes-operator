@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -350,7 +351,7 @@ public class ItIntrospectVersion {
           getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
     }
 
-    logger.info("change the cluster size and verify the introspector runs and updates the domain status");
+    logger.info("change the cluster size to 3 and verify the introspector runs and updates the domain status");
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
@@ -467,6 +468,15 @@ public class ItIntrospectVersion {
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
         introDomainNamespace);
 
+    logger.info("Getting the list of servers using the listServers");
+    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/";
+    String serverListUri = "ClusterViewServlet?listServers=true";
+    for (int i = 0; i < 5; i++) {
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
+      assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    }
+
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
@@ -539,7 +549,8 @@ public class ItIntrospectVersion {
     assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
         "Failed to write the WLST properties to file");
 
-    // changet the admin server port to a different value to force pod restart
+    // change the admin server port to a different value to force pod restart
+    logger.info("changing the admin server port to a different value to force pod restart");
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
@@ -574,6 +585,15 @@ public class ItIntrospectVersion {
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")
             .statusCode(), "Status code not equals to 200");
+
+    logger.info("Getting the list of servers using the listServers");
+    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + adminServerNodePort + "/clusterview/";
+    String serverListUri = "ClusterViewServlet?listServers=true";
+    for (int i = 0; i < 5; i++) {
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
+      assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    }
 
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
@@ -672,12 +692,15 @@ public class ItIntrospectVersion {
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
+    logger.info("Getting the list of servers using the listServers");
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + adminServerT3Port + "/clusterview/";
-
     String serverListUri = "ClusterViewServlet?listServers=true";
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
-
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    HttpResponse<String> response = null;
+    for (int i = 0; i < 5; i++) {
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
+      response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
+      assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    }
 
     // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
