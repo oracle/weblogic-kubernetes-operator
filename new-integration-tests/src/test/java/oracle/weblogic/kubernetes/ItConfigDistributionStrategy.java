@@ -185,15 +185,6 @@ public class ItConfigDistributionStrategy {
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
 
-    //start two MySQL database instances
-    createMySQLDB("mysqldb-1", "root", "root123", 0, domainNamespace, null);
-    mysqlDBPort1 = getMySQLNodePort(domainNamespace, "mysqldb-1");
-    createMySQLDB("mysqldb-2", "root", "root456", 0, domainNamespace, null);
-    mysqlDBPort2 = getMySQLNodePort(domainNamespace, "mysqldb-2");
-
-    dsUrl1 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort1;
-    dsUrl2 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort2;
-
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
 
@@ -207,6 +198,15 @@ public class ItConfigDistributionStrategy {
       // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
       createOCRRepoSecret(domainNamespace);
     }
+
+    //start two MySQL database instances
+    createMySQLDB("mysqldb-1", "root", "root123", 0, domainNamespace, null);
+    mysqlDBPort1 = getMySQLNodePort(domainNamespace, "mysqldb-1");
+    createMySQLDB("mysqldb-2", "root", "root456", 0, domainNamespace, null);
+    mysqlDBPort2 = getMySQLNodePort(domainNamespace, "mysqldb-2");
+
+    dsUrl1 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort1;
+    dsUrl2 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort2;
 
     // build the clusterview application
     Path distDir = buildApplication(Paths.get(APP_DIR, "clusterview"),
