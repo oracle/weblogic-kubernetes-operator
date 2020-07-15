@@ -249,7 +249,7 @@ class ItParameterizedScaleDomainNginx {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
-  //@ParameterizedTest
+  @ParameterizedTest
   @DisplayName("scale cluster by patching domain resource with three different type of domains")
   @MethodSource("domainProvider")
   public void testParamsScaleClustersByPatchingDomainResource(Domain domain) {
@@ -265,7 +265,7 @@ class ItParameterizedScaleDomainNginx {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
-  //@ParameterizedTest
+  @ParameterizedTest
   @DisplayName("scale cluster using REST API for three different type of domains")
   @MethodSource("domainProvider")
   public void testParamsScaleClustersWithRestApi(Domain domain) {
@@ -592,7 +592,6 @@ class ItParameterizedScaleDomainNginx {
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
-    // create persistent volume and persistent volume claims
     Path pvHostPath =
         get(PV_ROOT, ItParameterizedScaleDomainNginx.class.getSimpleName(), pvcName);
 

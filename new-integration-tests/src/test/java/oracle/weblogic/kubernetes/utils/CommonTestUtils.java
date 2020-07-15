@@ -174,7 +174,7 @@ public class CommonTestUtils {
   private static ConditionFactory withStandardRetryPolicy =
       with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
-          .atMost(90, MINUTES).await();
+          .atMost(5, MINUTES).await();
 
   private static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
