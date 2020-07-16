@@ -137,8 +137,6 @@
                                 <wdt.version>${wdt.version}</wdt.version>
                                 <wdt.download.url>${wdt.download.url}</wdt.download.url>
                                 <wit.download.url>${wit.download.url}</wit.download.url>
-                                <WDT_INSTALLER_URL>${wdt.download.url}</WDT_INSTALLER_URL>
-                                <WIT_INSTALLER_URL>${wit.download.url}</WIT_INSTALLER_URL>
                             </systemPropertyVariables>
                             <trimStackTrace>false</trimStackTrace>
                         </configuration>
