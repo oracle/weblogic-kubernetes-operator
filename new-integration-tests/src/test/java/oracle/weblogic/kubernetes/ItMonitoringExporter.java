@@ -364,60 +364,60 @@ class ItMonitoringExporter {
   @Test
   @DisplayName("Test Basic Functionality of Monitoring Exporter.")
   public void testBasicFunctionality() throws Exception {
-   try {
-     // create and verify one cluster mii domain
-     logger.info("Create domain and verify that it's running");
-     createAndVerifyDomain(miiImage, domain4Uid, domain4Namespace, "FromModel", 1);
-     // create ingress for the domain
-     logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
-     ingressHost1List =
+    try {
+      // create and verify one cluster mii domain
+      logger.info("Create domain and verify that it's running");
+      createAndVerifyDomain(miiImage, domain4Uid, domain4Namespace, "FromModel", 1);
+      // create ingress for the domain
+      logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
+      ingressHost1List =
          createIngressForDomainAndVerify(domain4Uid, domain4Namespace, clusterNameMsPortMap, false);
-     verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1);
-     installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-         domain4Namespace,
-         domain4Uid);
+      verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1);
+      installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+          domain4Namespace,
+          domain4Uid);
 
-     logger.info("Testing replace configuration");
-     replaceConfiguration();
-     logger.info("Testing append configuration");
-     appendConfiguration();
-     logger.info("Testing replace One Attribute Value AsArray configuration");
-     replaceOneAttributeValueAsArrayConfiguration();
-     logger.info("Testing append One Attribute Value AsArray configuration");
-     appendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration();
-     logger.info("Testing append with empty configuration");
-     appendWithEmptyConfiguration();
-     logger.info("Testing append with invalid yaml configuration");
-     appendWithNotYamlConfiguration();
-     logger.info("Testing replace with invalid yaml configuration");
-     replaceWithNotYamlConfiguration();
-     logger.info("Testing append with corrupted yaml configuration");
-     appendWithCorruptedYamlConfiguration();
-     logger.info("Testing replace with corrupted yaml configuration");
-     replaceWithCorruptedYamlConfiguration();
-     logger.info("Testing replace with dublicated values yaml configuration");
-     replaceWithDublicatedValuesConfiguration();
-     logger.info("Testing append with corrupted yaml configuration");
-     appendWithDuplicatedValuesConfiguration();
-     logger.info("Testing replace with name snake false yaml configuration");
-     replaceMetricsNameSnakeCaseFalseConfiguration();
-     logger.info("Testing change with no credentials configuration");
-     changeConfigNoCredentials();
-     logger.info("Testing change with no invalid user configuration");
-     changeConfigInvalidUser();
-     logger.info("Testing change with no invalid pass configuration");
-     changeConfigInvalidPass();
-     logger.info("Testing change with empty user configuration");
-     changeConfigEmptyUser();
-     logger.info("Testing change with no empty pass configuration");
-     changeConfigEmptyPass();
-     logger.info("Testing replace with domain qualifier configuration");
-     replaceMetricsDomainQualifierTrueConfiguration();
-     logger.info("Testing replace with no restPort configuration");
-     replaceMetricsNoRestPortConfiguration();
-   } finally {
-    logger.info("Shutting down domain4");
-    shutdownDomain(domain4Uid, domain4Namespace);
+      logger.info("Testing replace configuration");
+      replaceConfiguration();
+      logger.info("Testing append configuration");
+      appendConfiguration();
+      logger.info("Testing replace One Attribute Value AsArray configuration");
+      replaceOneAttributeValueAsArrayConfiguration();
+      logger.info("Testing append One Attribute Value AsArray configuration");
+      appendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration();
+      logger.info("Testing append with empty configuration");
+      appendWithEmptyConfiguration();
+      logger.info("Testing append with invalid yaml configuration");
+      appendWithNotYamlConfiguration();
+      logger.info("Testing replace with invalid yaml configuration");
+      replaceWithNotYamlConfiguration();
+      logger.info("Testing append with corrupted yaml configuration");
+      appendWithCorruptedYamlConfiguration();
+      logger.info("Testing replace with corrupted yaml configuration");
+      replaceWithCorruptedYamlConfiguration();
+      logger.info("Testing replace with dublicated values yaml configuration");
+      replaceWithDublicatedValuesConfiguration();
+      logger.info("Testing append with corrupted yaml configuration");
+      appendWithDuplicatedValuesConfiguration();
+      logger.info("Testing replace with name snake false yaml configuration");
+      replaceMetricsNameSnakeCaseFalseConfiguration();
+      logger.info("Testing change with no credentials configuration");
+      changeConfigNoCredentials();
+      logger.info("Testing change with no invalid user configuration");
+      changeConfigInvalidUser();
+      logger.info("Testing change with no invalid pass configuration");
+      changeConfigInvalidPass();
+      logger.info("Testing change with empty user configuration");
+      changeConfigEmptyUser();
+      logger.info("Testing change with no empty pass configuration");
+      changeConfigEmptyPass();
+      logger.info("Testing replace with domain qualifier configuration");
+      replaceMetricsDomainQualifierTrueConfiguration();
+      logger.info("Testing replace with no restPort configuration");
+      replaceMetricsNoRestPortConfiguration();
+    } finally {
+      logger.info("Shutting down domain4");
+      shutdownDomain(domain4Uid, domain4Namespace);
     }
   }
 
@@ -1516,7 +1516,8 @@ class ItMonitoringExporter {
    * Verify the monitoring exporter app can be accessed from all managed servers in the domain
    * through direct access to managed server dashboard.
    */
-  private boolean verifyMonExpAppAccess(String uri, String searchKey, String domainUid, String domainNS, boolean isHttps) {
+  private boolean verifyMonExpAppAccess(String uri, String searchKey, String domainUid,
+                                        String domainNS, boolean isHttps) {
     String protocol = "http";
     String port = "8001";
     if (isHttps) {
