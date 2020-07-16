@@ -26,9 +26,6 @@ public class KubernetesExec {
   // If true, pass a stdin stream into the container
   private boolean passStdinAsStream;
 
-  // If true, stdin is a TTY (only applies if stdin is true)
-  private boolean stdinIsTty;
-
   /**
    * Set the API client for subsequent exec commands.
    *
@@ -73,16 +70,6 @@ public class KubernetesExec {
   }
 
   /**
-   * Enable the stdin input stream as a TTY terminal.
-   *
-   * @return a KubernetesExec instance where a stdin stream will be a TTY terminal
-   */
-  public KubernetesExec stdinIsTty() {
-    this.stdinIsTty = true;
-    return this;
-  }
-
-  /**
    * Execute a command in a container.
    *
    * @param command the command to run
@@ -91,6 +78,6 @@ public class KubernetesExec {
    * @throws IOException if another problem occurs while trying to run the command
    */
   public Process exec(String... command) throws ApiException, IOException {
-    return new Exec(apiClient).exec(pod, command, containerName, passStdinAsStream, stdinIsTty);
+    return new Exec(apiClient).exec(pod, command, containerName, passStdinAsStream, false);
   }
 }
