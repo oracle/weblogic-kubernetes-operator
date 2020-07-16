@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -21,6 +23,14 @@ import oracle.kubernetes.operator.work.Step;
  * @param <T> the type of resource handled by this step
  */
 abstract class WaitForReadyStep<T> extends Step {
+  private static final int DEFAULT_RECHECK_SECONDS = 5;
+
+  static int getWatchBackstopRecheckDelaySeconds() {
+    return Optional.ofNullable(TuningParameters.getInstance())
+            .map(parameters -> parameters.getWatchTuning().watchBackstopRecheckDelay)
+            .orElse(DEFAULT_RECHECK_SECONDS);
+  }
+
   private final T initialResource;
 
   /**
@@ -146,9 +156,13 @@ abstract class WaitForReadyStep<T> extends Step {
     fiber
         .createChildFiber()
         .start(
-            createReadAsyncStep(getName(), getNamespace(), resumeIfReady(callback)),
+            createReadAndIfReadyCheckStep(callback),
             packet.clone(),
             null);
+  }
+
+  private Step createReadAndIfReadyCheckStep(Callback callback) {
+    return createReadAsyncStep(getName(), getNamespace(), resumeIfReady(callback));
   }
 
   private String getNamespace() {
@@ -165,8 +179,10 @@ abstract class WaitForReadyStep<T> extends Step {
       public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
         if (isReady(callResponse.getResult())) {
           callback.proceedFromWait(callResponse.getResult());
+          return doNext(packet);
         }
-        return doNext(packet);
+        return doDelay(createReadAndIfReadyCheckStep(callback), packet,
+                getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
       }
     };
   }
