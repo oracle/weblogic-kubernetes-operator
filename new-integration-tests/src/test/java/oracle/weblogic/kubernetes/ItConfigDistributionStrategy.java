@@ -184,7 +184,7 @@ public class ItConfigDistributionStrategy {
     logger.info("Assign a unique namespace for domain namspace");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
-
+    
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
 
