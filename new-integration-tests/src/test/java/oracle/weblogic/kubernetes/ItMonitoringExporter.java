@@ -176,9 +176,11 @@ class ItMonitoringExporter {
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static String domain3Namespace = null;
+  private static String domain4Namespace = null;
   private static String domain1Uid = "monexp-domain-1";
   private static String domain2Uid = "monexp-domain-2";
   private static String domain3Uid = "monexp-domain-3";
+  private static String domain4Uid = "monexp-domain-4";
   private static HelmParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int nodeportshttps = 0;
@@ -224,7 +226,7 @@ class ItMonitoringExporter {
    */
   @BeforeAll
 
-  public static void initAll(@Namespaces(7) List<String> namespaces) {
+  public static void initAll(@Namespaces(8) List<String> namespaces) {
 
     logger = getLogger();
     // create standard, reusable retry/backoff policy
@@ -260,19 +262,18 @@ class ItMonitoringExporter {
     assertNotNull(namespaces.get(6), "Namespace list is null");
     domain3Namespace = namespaces.get(6);
 
+    logger.info("Get a unique namespace for domain3");
+    assertNotNull(namespaces.get(7), "Namespace list is null");
+    domain4Namespace = namespaces.get(7);
+
     logger.info("install and verify operator");
-    installAndVerifyOperator(opNamespace, domain1Namespace,domain2Namespace,domain3Namespace);
+    installAndVerifyOperator(opNamespace, domain1Namespace,domain2Namespace,domain3Namespace,domain4Namespace);
 
     logger.info("install monitoring exporter");
     installMonitoringExporter();
 
     logger.info("create and verify WebLogic domain image using model in image with model files");
     miiImage = createAndVerifyMiiImage(monitoringExporterAppDir);
-
-    // create and verify one cluster mii domain
-    logger.info("Create domain and verify that it's running");
-    createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1);
-
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
@@ -282,13 +283,8 @@ class ItMonitoringExporter {
     nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
     logger.info("NGINX http node port: {0}", nodeportshttp);
     logger.info("NGINX https node port: {0}", nodeportshttps);
-
-    // create ingress for the domain
-    logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
     clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
-    ingressHost1List =
-        createIngressForDomainAndVerify(domain1Uid, domain1Namespace,clusterNameMsPortMap, false);
 
     exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp);
     logger.info("create pv and pvc for monitoring");
@@ -336,6 +332,12 @@ class ItMonitoringExporter {
       logger.info("fire alert by scaling down");
       fireAlert();
       logger.info("switch to monitor another domain");
+      logger.info("create and verify WebLogic domain image using model in image with model files");
+
+      // create and verify one cluster mii domain
+      logger.info("Create domain and verify that it's running");
+      createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1);
+
       String oldRegex = String.format("regex: %s;%s;%s", domain2Namespace, domain2Uid, clusterName);
       String newRegex = String.format("regex: %s;%s;%s", domain1Namespace, domain1Uid, clusterName);
       editPrometheusCM(oldRegex, newRegex);
@@ -344,9 +346,10 @@ class ItMonitoringExporter {
       checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr");
       checkPromGrafanaLatestVersion();
     } finally {
+      logger.info("Shutting down domain1");
+      shutdownDomain(domain1Uid, domain1Namespace);
       logger.info("Shutting down domain2");
-      assertTrue(shutdownDomain(domain2Uid, domain2Namespace),
-              String.format("shutdown domain %s in namespace %s failed", domain2Uid, domain2Namespace));
+      shutdownDomain(domain2Uid, domain2Namespace);
     }
   }
 
@@ -361,53 +364,60 @@ class ItMonitoringExporter {
   @Test
   @DisplayName("Test Basic Functionality of Monitoring Exporter.")
   public void testBasicFunctionality() throws Exception {
-    verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0),1);
-    installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-            domain1Namespace,
-            domain1Uid);
+   try {
+     // create and verify one cluster mii domain
+     logger.info("Create domain and verify that it's running");
+     createAndVerifyDomain(miiImage, domain4Uid, domain4Namespace, "FromModel", 1);
+     // create ingress for the domain
+     logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
+     ingressHost1List =
+         createIngressForDomainAndVerify(domain4Uid, domain4Namespace, clusterNameMsPortMap, false);
+     verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1);
+     installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+         domain4Namespace,
+         domain4Uid);
 
-    try {
-      logger.info("Testing replace configuration");
-      replaceConfiguration();
-      logger.info("Testing append configuration");
-      appendConfiguration();
-      logger.info("Testing replace One Attribute Value AsArray configuration");
-      replaceOneAttributeValueAsArrayConfiguration();
-      logger.info("Testing append One Attribute Value AsArray configuration");
-      appendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration();
-      logger.info("Testing append with empty configuration");
-      appendWithEmptyConfiguration();
-      logger.info("Testing append with invalid yaml configuration");
-      appendWithNotYamlConfiguration();
-      logger.info("Testing replace with invalid yaml configuration");
-      replaceWithNotYamlConfiguration();
-      logger.info("Testing append with corrupted yaml configuration");
-      appendWithCorruptedYamlConfiguration();
-      logger.info("Testing replace with corrupted yaml configuration");
-      replaceWithCorruptedYamlConfiguration();
-      logger.info("Testing replace with dublicated values yaml configuration");
-      replaceWithDublicatedValuesConfiguration();
-      logger.info("Testing append with corrupted yaml configuration");
-      appendWithDuplicatedValuesConfiguration();
-      logger.info("Testing replace with name snake false yaml configuration");
-      replaceMetricsNameSnakeCaseFalseConfiguration();
-      logger.info("Testing change with no credentials configuration");
-      changeConfigNoCredentials();
-      logger.info("Testing change with no invalid user configuration");
-      changeConfigInvalidUser();
-      logger.info("Testing change with no invalid pass configuration");
-      changeConfigInvalidPass();
-      logger.info("Testing change with empty user configuration");
-      changeConfigEmptyUser();
-      logger.info("Testing change with no empty pass configuration");
-      changeConfigEmptyPass();
-      logger.info("Testing replace with domain qualifier configuration");
-      replaceMetricsDomainQualifierTrueConfiguration();
-      logger.info("Testing replace with no restPort configuration");
-      replaceMetricsNoRestPortConfiguration();
-    } finally {
-      //restore configuration
-      submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/exporter-config.yaml");
+     logger.info("Testing replace configuration");
+     replaceConfiguration();
+     logger.info("Testing append configuration");
+     appendConfiguration();
+     logger.info("Testing replace One Attribute Value AsArray configuration");
+     replaceOneAttributeValueAsArrayConfiguration();
+     logger.info("Testing append One Attribute Value AsArray configuration");
+     appendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration();
+     logger.info("Testing append with empty configuration");
+     appendWithEmptyConfiguration();
+     logger.info("Testing append with invalid yaml configuration");
+     appendWithNotYamlConfiguration();
+     logger.info("Testing replace with invalid yaml configuration");
+     replaceWithNotYamlConfiguration();
+     logger.info("Testing append with corrupted yaml configuration");
+     appendWithCorruptedYamlConfiguration();
+     logger.info("Testing replace with corrupted yaml configuration");
+     replaceWithCorruptedYamlConfiguration();
+     logger.info("Testing replace with dublicated values yaml configuration");
+     replaceWithDublicatedValuesConfiguration();
+     logger.info("Testing append with corrupted yaml configuration");
+     appendWithDuplicatedValuesConfiguration();
+     logger.info("Testing replace with name snake false yaml configuration");
+     replaceMetricsNameSnakeCaseFalseConfiguration();
+     logger.info("Testing change with no credentials configuration");
+     changeConfigNoCredentials();
+     logger.info("Testing change with no invalid user configuration");
+     changeConfigInvalidUser();
+     logger.info("Testing change with no invalid pass configuration");
+     changeConfigInvalidPass();
+     logger.info("Testing change with empty user configuration");
+     changeConfigEmptyUser();
+     logger.info("Testing change with no empty pass configuration");
+     changeConfigEmptyPass();
+     logger.info("Testing replace with domain qualifier configuration");
+     replaceMetricsDomainQualifierTrueConfiguration();
+     logger.info("Testing replace with no restPort configuration");
+     replaceMetricsNoRestPortConfiguration();
+   } finally {
+    logger.info("Shutting down domain4");
+    shutdownDomain(domain4Uid, domain4Namespace);
     }
   }
 
@@ -427,28 +437,28 @@ class ItMonitoringExporter {
       createAndVerifyDomain(miiImage1, domain3Uid, domain3Namespace, "FromModel", 1);
       //verify access to Monitoring Exporter
       logger.info("checking access to wls metrics via http connection");
-      assertTrue(verifyMonExpAppAccess("wls-exporter/metrics", "wls_servlet_invocation_total_count", false));
+      assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
+          "wls_servlet_invocation_total_count",
+          domain3Uid,
+          domain3Namespace,
+          false));
       logger.info("checking access to wl metrics via https connection");
       //set to listen only ssl
-      changeListenPort("False");
+      changeListenPort(domain3Uid, domain3Namespace,"False");
       assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
-          "wls_servlet_invocation_total_count", true),
+          "wls_servlet_invocation_total_count",
+          domain3Uid,
+          domain3Namespace,
+          true),
           "monitoring exporter metrics page can't be accessed via https");
     } finally {
       logger.info("Printing Log from managed server"
           + Kubernetes.getPodLog(domain3Uid + "-managed-server1", domain3Namespace));
       logger.info("Shutting down domain3");
-      assertTrue(shutdownDomain(domain3Uid, domain3Namespace),
-          String.format("shutdown domain %s in namespace %s failed", domain3Uid, domain3Namespace));
+      shutdownDomain(domain3Uid, domain3Namespace);
       if (miiImage1 != null) {
         deleteImage(miiImage1);
       }
-
-      // Delete domain custom resource
-      logger.info("Delete domain custom resource in namespace {0}", domain3Namespace);
-      assertDoesNotThrow(() -> deleteDomainCustomResource(domain3Uid, domain3Namespace),
-          "deleteDomainCustomResource failed with ApiException");
-      logger.info("Deleted Domain Custom Resource " + domain3Uid + " from " + domain3Namespace);
     }
   }
 
@@ -710,6 +720,18 @@ class ItMonitoringExporter {
     assertDoesNotThrow(() -> deleteDomainCustomResource(domain2Uid, domain2Namespace),
             "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domain2Uid + " from " + domain2Namespace);
+
+    // Delete domain custom resource
+    logger.info("Delete domain custom resource in namespace {0}", domain3Namespace);
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domain3Uid, domain3Namespace),
+        "deleteDomainCustomResource failed with ApiException");
+    logger.info("Deleted Domain Custom Resource " + domain3Uid + " from " + domain3Namespace);
+
+    // Delete domain custom resource
+    logger.info("Delete domain custom resource in namespace {0}", domain1Namespace);
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domain4Uid, domain4Namespace),
+        "deleteDomainCustomResource failed with ApiException");
+    logger.info("Deleted Domain Custom Resource " + domain4Uid + " from " + domain4Namespace);
 
     uninstallPrometheusGrafana();
 
@@ -1265,13 +1287,13 @@ class ItMonitoringExporter {
 
     // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + MONEXP_MODEL_FILE);
-    miiImage =
+    String myImage =
             createMiiImageAndVerify(MONEXP_IMAGE_NAME, modelList, appList);
 
     // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    dockerLoginAndPushImageToRegistry(myImage);
 
-    return miiImage;
+    return myImage;
   }
 
   /**
@@ -1494,7 +1516,7 @@ class ItMonitoringExporter {
    * Verify the monitoring exporter app can be accessed from all managed servers in the domain
    * through direct access to managed server dashboard.
    */
-  private boolean verifyMonExpAppAccess(String uri, String searchKey, boolean isHttps) {
+  private boolean verifyMonExpAppAccess(String uri, String searchKey, String domainUid, String domainNS, boolean isHttps) {
     String protocol = "http";
     String port = "8001";
     if (isHttps) {
@@ -1503,11 +1525,11 @@ class ItMonitoringExporter {
     }
     // access metrics
     final String command = String.format(
-        "kubectl exec -n " + domain3Namespace + "  " + domain3Uid + "-managed-server1 -- curl -k %s://"
+        "kubectl exec -n " + domainNS + "  " + domainUid + "-managed-server1 -- curl -k %s://"
             + ADMIN_USERNAME_DEFAULT
             + ":"
             + ADMIN_PASSWORD_DEFAULT
-            + "@" + domain3Uid + "-managed-server1:%s/%s", protocol, port, uri);
+            + "@" + domainUid + "-managed-server1:%s/%s", protocol, port, uri);
     logger.info("accessing managed server exporter via " + command);
 
     boolean isFound = false;
@@ -1793,8 +1815,8 @@ class ItMonitoringExporter {
    */
   private void replaceWithEmptyConfiguration() throws Exception {
     submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_empty.yaml");
-    assertFalse(verifyMonExpAppAccess("wls-exporter","values", false));
-    assertTrue(verifyMonExpAppAccess("wls-exporter","queries", false));
+    assertFalse(verifyMonExpAppAccess("wls-exporter","values", domain4Uid, domain4Namespace,false));
+    assertTrue(verifyMonExpAppAccess("wls-exporter","queries", domain4Uid, domain4Namespace,false));
   }
 
   /**
@@ -1906,7 +1928,7 @@ class ItMonitoringExporter {
    */
   private void replaceMetricsNoRestPortConfiguration() throws Exception {
     HtmlPage page =
-        submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/exporrter-config-norestport.yaml");
+        submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/norestport.yaml");
     assertNotNull(page);
     assertFalse(page.asText().contains("restPort"));
     Thread.sleep(20 * 1000);
@@ -2008,22 +2030,22 @@ class ItMonitoringExporter {
             "");
   }
 
-  private boolean changeListenPort(String setListenPortEnabled) throws Exception {
+  private boolean changeListenPort(String domainUid, String domainNS, String setListenPortEnabled) throws Exception {
     // copy changeListenPort.py and callpyscript.sh to Admin Server pod
-    String adminServerPodName = domain1Uid + "-" + ADMIN_SERVER_NAME_BASE;
-    V1Pod adminPod = Kubernetes.getPod(domain1Namespace, null, adminServerPodName);
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    V1Pod adminPod = Kubernetes.getPod(domainNS, null, adminServerPodName);
     if (adminPod == null) {
-      logger.info("The admin pod {0} does not exist in namespace {1}!", adminServerPodName, domain1Namespace);
+      logger.info("The admin pod {0} does not exist in namespace {1}!", adminServerPodName, domainNS);
       return false;
     }
 
     logger.info("Copying changeListenPort.py and callpyscript.sh to admin server pod");
     try {
-      copyFileToPod(domain1Namespace, adminServerPodName, null,
+      copyFileToPod(domainNS, adminServerPodName, null,
           Paths.get(RESOURCE_DIR, "python-scripts", "changeListenPort.py"),
           Paths.get("/u01/oracle/changeListenPort.py"));
 
-      copyFileToPod(domain1Namespace, adminServerPodName, null,
+      copyFileToPod(domainNS, adminServerPodName, null,
           Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
           Paths.get("/u01/oracle/callpyscript.sh"));
     } catch (ApiException apex) {
