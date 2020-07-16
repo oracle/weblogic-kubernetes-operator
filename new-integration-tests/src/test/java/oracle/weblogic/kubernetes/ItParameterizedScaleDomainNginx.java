@@ -776,7 +776,7 @@ class ItParameterizedScaleDomainNginx {
   private static String generateCurlCmd(String domainUid, String domainNamespace, String clusterName,
                                         String appContextRoot) {
 
-    return String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
+    return String.format("curl -v --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
         domainUid + "." + domainNamespace + "." + clusterName + ".test",
         K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);
   }
