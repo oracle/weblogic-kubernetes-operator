@@ -4,31 +4,26 @@ This sample demonstrates how to install the Traefik ingress controller to provid
 load balancing for WebLogic clusters.
 
 ## Install the Traefik operator with a Helm chart
-This document is based on Traefik version 2.x with Helm chart at https://github.com/containous/traefik-helm-chart.
-For more information about Traefik, see https://docs.traefik.io/
+This document is based on Traefik version 2.x with the Helm chart at [Traefik Repository](https://github.com/containous/traefik-helm-chart).
+For more information about Traefik, see [Traefik](https://traefik.io/) 
 
 To install the Traefik operator in the `traefik` namespace with default settings:
 ```
 $ helm repo add traefik https://containous.github.io/traefik-helm-chart
 $ helm repo update
+$ kubectl create namespace traefik
 $ helm install traefik-operator traefik/traefik --namespace traefik
 ```
-Or, with a given `values.yaml` For more detailed information, see https://github.com/containous/traefik-helm-chart/blob/master/traefik/values.yaml for more detail.
+You can also install the Traefik operator, with a given `values.yaml`. For more detailed information, see [Traefik GitHub Project](https://github.com/containous/traefik-helm-chart/blob/master/traefik/values.yaml) for more detail.
 ```
 $ helm install traefik-operator traefik/traefik --namespace traefik --values values.yaml
 ```
 
-## Update the Traefik operator
-After the Traefik operator is installed and running, if you want to change some operator configurations, use `helm upgrade` to achieve this.
-```
-$ helm upgrade traefik-operator traefik/traefik --values values.yaml 
-```
-
 ## Configure Traefik as a load balancer for WLS domains
-In this section we'll demonstrate how to use Traefik to handle traffic to backend WLS domains.
+In this section, we'll demonstrate how to use Traefik to handle traffic to backend WLS domains.
 
 ### 1. Install WLS domains
-First we need to prepare two domains for Traefik load balancing.
+First, we need to prepare two domains for Traefik load balancing.
 
 Create two WLS domains:
 - One domain with name `domain1` under namespace `weblogic-domain1`.
@@ -73,8 +68,8 @@ $ kubectl -n weblogic-domain2 create secret tls domain2-tls-cert --key /tmp/tls2
 # deploy the TLS IngressRoute.
 $ kubectl create -f samples/tls.yaml
 ```
-Now you can access the application on the WLS domain with hostname in HTTP header.
-The load balancer secure port can be obtained dynamically from the traefik-operator service in the traefik namespace.
+Now you can access the application on the WLS domain with the hostname in HTTP header.
+The load balancer secure port can be obtained dynamically from the `traefik-operator` service in the `traefik` namespace.
 ```
 LB_PORT=`kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}'`
 $ curl -k -H 'host: domain1.org' https://${HOSTNAME}:${LB_PORT}/testwebapp/
