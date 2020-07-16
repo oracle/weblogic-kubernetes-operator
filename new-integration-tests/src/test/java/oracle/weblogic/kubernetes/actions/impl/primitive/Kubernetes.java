@@ -2364,8 +2364,7 @@ public class Kubernetes {
         .apiClient(apiClient) // the Kubernetes api client to dispatch the "exec" command
         .pod(pod) // The pod where the command is to be run
         .containerName(containerName) // the container in which the command is to be run
-        .passStdinAsStream() // pass a stdin stream into the container
-        .stdinIsTty(); // stdin is a TTY (only applies if stdin is true)
+        .passStdinAsStream(); // pass a stdin stream into the container
   }
 
   /**
