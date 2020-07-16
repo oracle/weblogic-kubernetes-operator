@@ -94,6 +94,7 @@ function createTraefik() {
 
   if [ "$(helm list --namespace $TSPACE | grep $TNAME |  wc -l)" = 0 ]; then
     echo "Installing Traefik operator."
+    # https://github.com/containous/traefik-helm-chart/blob/master/traefik/values.yaml
     helm install $TNAME traefik/traefik --namespace ${TSPACE} \
      --set image.tag=${TraefikVersion} \
      --values ${UTILDIR}/../traefik/values.yaml 

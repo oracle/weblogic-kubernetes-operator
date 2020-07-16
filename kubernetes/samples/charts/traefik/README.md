@@ -13,7 +13,7 @@ $ helm repo add traefik https://containous.github.io/traefik-helm-chart
 $ helm repo update
 $ helm install traefik-operator traefik/traefik --namespace traefik
 ```
-Or, with a given `values.yaml`:
+Or, with a given `values.yaml` Refer to https://github.com/containous/traefik-helm-chart/blob/master/traefik/values.yaml for more detail.
 ```
 $ helm install traefik-operator traefik/traefik --namespace traefik --values values.yaml
 ```
@@ -64,7 +64,7 @@ $ curl http://${HOSTNAME}:${LB_PORT}/domain2/
 #### Install a TLS-enabled IngressRoute
 This sample demonstrates accessing the two WLS domains using an HTTPS endpoint and the WLS domains are protected by different TLS certificates.
 
-To make this sample work, you need to enable the TLS endpoint in the Traefik operator. If you use the `values.yaml` file in the same folder as this README, the TLS endpoint is already enabled.
+To make this sample work, you need to enable the TLS endpoint in the Traefik operator.
 
 First, you need to create two secrets with TLS certificates, one with the common name `domain1.org`, the other with the common name `domain2.org`. We use `openssl` to generate self-signed certificates for demonstration purposes. Note that the TLS secret needs to be in the same namespace as the WLS domain.
 ```
