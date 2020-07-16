@@ -17,11 +17,6 @@ Or, with a given `values.yaml` Refer to https://github.com/containous/traefik-he
 ```
 $ helm install traefik-operator traefik/traefik --namespace traefik --values values.yaml
 ```
-You can access the Traefik dashboard by kubectl port-forward command as follows. 
-```
-$ kubectl port-forward $(kubectl get pods --selector "app.kubernetes.io/name=traefik" --output=name -n traefik) 9000:9000 -n traefik
-$ curl http://localhost:9000/dashboard/
-```
 
 ## Update the Traefik operator
 After the Traefik operator is installed and running, if you want to change some configurations of the operator, use `helm upgrade` to achieve this.
@@ -90,14 +85,14 @@ After removing all the Ingress resources, uninstall the Traefik operator:
 ```
 $ helm uninstall traefik-operator --namespace traefik --keep-history
 ```
-## Install and uninstall the Traefik operator with setup.sh
-Alternatively, you can run the helper script `setup.sh`, under the `kubernetes/samples/charts/util` folder, to install and uninstall Traefik.
+## Install and uninstall the Traefik operator with setupLoadBalancer.sh
+Alternatively, you can run the helper script `setupLoadBalancer.sh`, under the `kubernetes/samples/charts/util` folder, to install and uninstall Traefik.
 
 To install Traefik:
 ```
-$ ./setup.sh create traefik
+$ ./setupLoadBalancer.sh create traefik
 ```
 To uninstall Traefik:
 ```
-$ ./setup.sh delete traefik
+$ ./setupLoadBalancer.sh delete traefik
 ```

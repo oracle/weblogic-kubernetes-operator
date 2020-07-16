@@ -125,14 +125,14 @@ After removing all the Voyager Ingress resources, uninstall the Voyager operator
 $ helm uninstall voyager-operator --namespace voyager
 ```
 
-## Install and uninstall the Voyager operator with setup.sh
-Alternatively, you can run the helper script `setup.sh` under the `kubernetes/samples/charts/util` folder, to install and uninstall Voyager.
+## Install and uninstall the Voyager operator with setupLoadBalancer.sh
+Alternatively, you can run the helper script ` setupLoadBalancer.sh` under the `kubernetes/samples/charts/util` folder, to install and uninstall Voyager.
 
 To install Voyager:
 ```
-$ ./setup.sh create voyager [voyager-version]
+$ ./ setupLoadBalancer.sh create voyager [voyager-version]
 ```
 To uninstall Voyager:
 ```
-$ ./setup.sh delete voyager
+$ ./ setupLoadBalancer.sh delete voyager
 ```
