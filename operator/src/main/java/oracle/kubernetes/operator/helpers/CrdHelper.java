@@ -575,7 +575,7 @@ public class CrdHelper {
 
       @Override
       protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATE_CRD_FAILED, callResponse);
+        LOGGER.info(MessageKeys.CREATE_CRD_FAILED, callResponse.getE().getResponseBody());
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
@@ -601,7 +601,7 @@ public class CrdHelper {
 
       @Override
       protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATE_CRD_FAILED, callResponse);
+        LOGGER.info(MessageKeys.CREATE_CRD_FAILED, callResponse.getE().getResponseBody());
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
@@ -627,7 +627,7 @@ public class CrdHelper {
 
       @Override
       protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.REPLACE_CRD_FAILED, callResponse);
+        LOGGER.info(MessageKeys.REPLACE_CRD_FAILED, callResponse.getE().getResponseBody());
         return isNotAuthorizedOrForbidden(callResponse)
            || ((callResponse.getE().getCause() instanceof StreamResetException) 
            && (callResponse.getExceptionString().contains(NO_ERROR)))
@@ -655,7 +655,7 @@ public class CrdHelper {
 
       @Override
       protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.REPLACE_CRD_FAILED, callResponse);
+        LOGGER.info(MessageKeys.REPLACE_CRD_FAILED, callResponse.getE().getResponseBody());
         return isNotAuthorizedOrForbidden(callResponse)
            || ((callResponse.getE().getCause() instanceof StreamResetException) 
            && (callResponse.getExceptionString().contains(NO_ERROR)))
