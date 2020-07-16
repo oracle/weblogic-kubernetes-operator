@@ -2105,6 +2105,10 @@ public class CommonTestUtils {
     }
   }
 
+  /**
+   * Verify the default secret exists for the default service account.
+   * 
+   */
   public static void verifyDefaultTokenExists() {
     final LoggingFacade logger = getLogger();
 
