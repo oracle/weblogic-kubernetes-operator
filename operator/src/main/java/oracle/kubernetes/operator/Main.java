@@ -40,6 +40,7 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ClientPool;
@@ -994,7 +995,11 @@ public class Main {
 
     @Override
     public void onThrowable(Packet packet, Throwable throwable) {
-      LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+      if (throwable instanceof FailureStatusSourceException) {
+        ((FailureStatusSourceException) throwable).log();
+      } else {
+        LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+      }
     }
   }
 
