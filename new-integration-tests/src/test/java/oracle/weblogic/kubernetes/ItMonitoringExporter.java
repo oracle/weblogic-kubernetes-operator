@@ -1170,8 +1170,8 @@ class ItMonitoringExporter {
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringApp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringApp));
     String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-        //.orElse("master");
-        .orElse("update_rest_port");
+        .orElse("master");
+
 
     CommandParams params = Command.defaultCommandParams()
         .command("git clone -b "
@@ -1455,8 +1455,8 @@ class ItMonitoringExporter {
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false "
-                        + "-Dweblogic.security.SSL.ignoreHostnameVerification=true "
-                        + "-DUseSunHttpHandler=true -Dssl.debug=true "
+                        + "-Dweblogic.security.SSL.ignoreHostnameVerification=true -Dssl.debug=true "
+                        //+ "-DUseSunHttpHandler=true -Dssl.debug=true "
                         + "-Djavax.net.debug=all -Dweblogic.security.SSL.verbose=true "
                         + "-Dweblogic.StdoutDebugEnabled=true -Djavax.net.debug=all "
                         + "-Djava.security.debug=all -Dweblogic.wsee.security.verbose=true "
