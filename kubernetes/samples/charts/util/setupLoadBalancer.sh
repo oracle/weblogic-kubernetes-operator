@@ -85,11 +85,11 @@ function createTraefik() {
   if [ "$(helm search repo traefik/traefik | grep traefik |  wc -l)" = 0 ]; then
     # https://containous.github.io/traefik-helm-chart/
     # https://docs.traefik.io/getting-started/install-traefik/
-    echo "Add containous.github.io chart repository"
+    echo "Add Traefik chart repository"
     helm repo add traefik https://containous.github.io/traefik-helm-chart
     helm repo update
   else
-    echo "Containous chart repository is already added."
+    echo "Traefik chart repository is already added."
   fi
 
   if [ "$(helm list --namespace $TSPACE | grep $TNAME |  wc -l)" = 0 ]; then
@@ -157,12 +157,12 @@ function purgeCRDs() {
 
 function deleteVoyager() {
   if [ "$(helm list --namespace $VSPACE | grep $VNAME |  wc -l)" = 1 ]; then
-    echo "Deleting voyager operator. "
+    echo "Deleting voyager operator."
     helm uninstall --namespace $VSPACE $VNAME 
     kubectl delete ns ${VSPACE}
     purgeCRDs
   else
-    echo "Voyager operator has already been deleted" 
+    echo "Voyager operator has already been deleted." 
   fi
 
   if [ "$(helm search repo appscode/voyager | grep voyager |  wc -l)" != 0 ]; then
@@ -177,10 +177,10 @@ function deleteTraefik() {
     echo "Deleting Traefik operator." 
     helm uninstall --namespace $TSPACE  $TNAME
     kubectl delete ns ${TSPACE}
-    echo "Remove traefik chart repository."
+    echo "Remove Traefik chart repository."
     helm repo remove traefik
   else
-    echo "Traefik operator has already been deleted" 
+    echo "Traefik operator has already been deleted." 
   fi
 }
 

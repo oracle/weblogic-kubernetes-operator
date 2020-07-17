@@ -33,7 +33,7 @@ Create two WebLogic domains:
 
 ### 2. Web request routing 
 #### Host based routing 
-Install a host-routing [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute)
+This sample demonstrates how to access application on two WebLogic domains using host based routing. Install a host-routing Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute)
 ```
 $ kubectl create -f samples/host-routing.yaml
 ingressroute.traefik.containo.us/traefik-hostrouting-1 created
@@ -48,7 +48,7 @@ $ curl -H 'host: domain2.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 ```
 
 #### Path based routing  
-Install a path-routing [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute) and [Middleware](https://docs.traefik.io/middlewares/overview/)
+This sample demonstrates how to access application on two WebLogic domains using path based routing. Install a path-routing Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute) and [Middleware](https://docs.traefik.io/middlewares/overview/)
 
 ```
 $ kubectl create -f samples/path-routing.yaml
@@ -57,7 +57,7 @@ middleware.traefik.containo.us/middleware-domain1 created
 ingressroute.traefik.containo.us/traefik-pathrouting-2 created
 middleware.traefik.containo.us/middleware-domain2 created
 ```
-Now you can send requests to different WebLogic domains with the unique Traefik entry point of different paths.
+Now you can send requests to different WebLogic domains with the unique Traefik entry point of different paths as defined in route section of `path-routing.yaml`.
 ```
 # Get the ingress controller web port
 $ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
@@ -65,10 +65,7 @@ $ curl http://${HOSTNAME}:${LB_PORT}/domain1/
 $ curl http://${HOSTNAME}:${LB_PORT}/domain2/
 ```
 #### Host based secured routing 
-Install a TLS-enabled [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute)
-This sample demonstrates how to access application on two WebLogic domains using a HTTPS endpoint.
-
-For this sample to work, you need to enable the TLS endpoint in the Traefik operator.
+This sample demonstrates how to access application on two WebLogic domains using a HTTPS endpoint. Install a TLS-enabled Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute)
 
 First, you need to create two secrets with TLS certificates, one with the common name `domain1.org`, the other with the common name `domain2.org`. We use `openssl` to generate self-signed certificates for demonstration purposes. Note that the TLS secret needs to be in the same namespace as the WebLogic domain.
 ```
