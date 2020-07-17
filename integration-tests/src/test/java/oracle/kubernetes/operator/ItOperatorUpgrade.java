@@ -140,7 +140,7 @@ public class ItOperatorUpgrade extends BaseTest {
     managed1CreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server1");
     managed2CreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server2");
     adminCreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-admin-server");
-    upgradeOperator();
+    uninstallAndInstallNewVersionOperatorAndVerify();
     testCompletedSuccessfully = true;
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
   }
@@ -171,7 +171,7 @@ public class ItOperatorUpgrade extends BaseTest {
     managed1CreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server1");
     managed2CreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server2");
     adminCreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-admin-server");
-    upgradeOperatorFrom2_6_0();
+    uninstallAndInstallNewVersionOperatorAndVerify();
 
     testCompletedSuccessfully = true;
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
@@ -194,22 +194,21 @@ public class ItOperatorUpgrade extends BaseTest {
    * and installing latest operator.
    * @throws Exception when upgrade fails or basic usecase testing or scaling fails.
    */
-  private void upgradeOperatorFrom2_6_0() throws Exception {
+  private void uninstallAndInstallNewVersionOperatorAndVerify() throws Exception {
     operator.destroy();
-    // Thread.sleep(30 * 1000);
     Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, "");
-    operatorMap.put("namespace", OP_NS);
+    operatorMap.put("namespace", OP_NS + "-1");
     operatorMap.put("releaseName", OP_DEP_NAME);
     operatorMap.put("serviceAccount", OP_SA);
     operatorMap.put("externalRestEnabled", true);
     operatorMap.put("javaLoggingLevel", "FINE");
+    namespaceList.append(" ").append(OP_NS + "-1");
     List<String> domNs = new ArrayList<String>();
     domNs.add(DOM_NS);
     operatorMap.put("domainNamespaces", domNs);
     operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
 
     checkCrdVersion();
-    checkDomainNotRestarted();
     testClusterScaling(operator, domain, false);
   }
 
