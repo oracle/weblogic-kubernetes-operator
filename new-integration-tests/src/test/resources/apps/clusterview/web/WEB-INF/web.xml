@@ -7,6 +7,7 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
     <servlet>
         <servlet-name>ClusterViewServlet</servlet-name>
         <servlet-class>oracle.weblogic.kubernetes.applications.clusterview.ClusterViewServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet-mapping>
         <servlet-name>ClusterViewServlet</servlet-name>
@@ -15,6 +16,7 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
     <servlet>
         <servlet-name>ConfigServlet</servlet-name>
         <servlet-class>oracle.weblogic.kubernetes.applications.clusterview.ConfigServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet-mapping>
         <servlet-name>ConfigServlet</servlet-name>
