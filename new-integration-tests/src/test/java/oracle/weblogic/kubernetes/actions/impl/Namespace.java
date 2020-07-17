@@ -12,7 +12,7 @@ import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 public class Namespace {
   public static Random random = new Random(System.currentTimeMillis());
@@ -98,7 +98,7 @@ public class Namespace {
       }
     }
     if (!found) {
-      logger.severe("Namespace {0} not found or failed to add labels", name);
+      getLogger().severe("Namespace {0} not found or failed to add labels", name);
     }
   }
 }

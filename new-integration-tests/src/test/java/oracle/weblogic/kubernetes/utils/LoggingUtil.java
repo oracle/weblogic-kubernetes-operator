@@ -30,14 +30,16 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
+import org.awaitility.core.ConditionTimeoutException;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 
 /**
@@ -55,6 +57,7 @@ public class LoggingUtil {
    * @param namespaces list of namespaces used by the test instance
    */
   public static void generateLog(Object itInstance, List namespaces) {
+    LoggingFacade logger = getLogger();
     logger.info("Generating logs...");
     String resultDirExt = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
     try {
@@ -76,6 +79,7 @@ public class LoggingUtil {
    * @param resultDir existing directory to write log files
    */
   public static void collectLogs(String namespace, String resultDir) {
+    LoggingFacade logger = getLogger();
     logger.info("Collecting logs in namespace : {0}", namespace);
 
     // get events
@@ -240,8 +244,14 @@ public class LoggingUtil {
       for (var pod : Kubernetes.listPods(namespace, null).getItems()) {
         if (pod.getMetadata() != null) {
           String podName = pod.getMetadata().getName();
-          writeToFile(Kubernetes.getPodLog(podName, namespace), resultDir,
-              namespace + ".pod." + podName + ".log");
+          List<V1Container> containers = pod.getSpec().getContainers();
+          logger.info("Found {0} container(s) in the pod {1}", containers.size(), podName);
+          for (var container : containers) {
+            String containerName = container.getName();
+            writeToFile(Kubernetes.getPodLog(podName, namespace, containerName), resultDir,
+                namespace + ".pod." + podName + ".container." + containerName + ".log", false);
+
+          }
         }
       }
     } catch (Exception ex) {
@@ -259,10 +269,25 @@ public class LoggingUtil {
    */
   private static void writeToFile(Object obj, String resultDir, String fileName)
       throws IOException {
+    writeToFile(obj, resultDir, fileName, true);
+  }
+
+  /**
+   * Write the YAML representation of object or String to a file in the resultDir.
+   *
+   * @param obj to write to the file as YAML or String
+   * @param resultDir directory in which to write the log file
+   * @param fileName name of the log file
+   * @param asYaml write as yaml or string
+   * @throws IOException when write fails
+   */
+  private static void writeToFile(Object obj, String resultDir, String fileName, boolean asYaml)
+      throws IOException {
+    LoggingFacade logger = getLogger();
     logger.info("Generating {0}", Paths.get(resultDir, fileName));
     if (obj != null) {
       Files.write(Paths.get(resultDir, fileName),
-          dump(obj).getBytes(StandardCharsets.UTF_8)
+          (asYaml ? dump(obj).getBytes(StandardCharsets.UTF_8) : ((String)obj).getBytes(StandardCharsets.UTF_8))
       );
     } else {
       logger.info("Nothing to write in {0} list is empty", Paths.get(resultDir, fileName));
@@ -308,10 +333,10 @@ public class LoggingUtil {
    */
   private static V1Pod setupPVPod(String namespace, String pvcName, String pvName)
       throws ApiException {
-
+    final LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
-        .atMost(1, MINUTES).await();
+        .atMost(3, MINUTES).await();
 
     // Create the temporary pod with oraclelinux image
     // oraclelinux:7-slim is not useful, missing tar utility
@@ -321,7 +346,7 @@ public class LoggingUtil {
             .containers(Arrays.asList(
                 new V1Container()
                     .name("pv-container")
-                    .image("oraclelinux")
+                    .image("oraclelinux:7")
                     .imagePullPolicy("IfNotPresent")
                     .volumeMounts(Arrays.asList(
                         new V1VolumeMount()
@@ -340,15 +365,19 @@ public class LoggingUtil {
         .kind("Pod");
     V1Pod pvPod = Kubernetes.createPod(namespace, podBody);
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
-                + "(elapsed time {2} , remaining time {3}",
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(podReady(podName, null, namespace));
+    try {
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
+                      + "(elapsed time {2} , remaining time {3}",
+                  podName,
+                  namespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(podReady(podName, null, namespace));
+    } catch (ConditionTimeoutException ex) {
+      logger.warning("Condition not met", ex);
+    }
 
     return pvPod;
   }
@@ -360,24 +389,28 @@ public class LoggingUtil {
    */
   private static void cleanupPVPod(String namespace) throws ApiException {
     final String podName = "pv-pod-" + namespace;
-
+    LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(5, SECONDS)
         .and().with().pollInterval(5, SECONDS)
-        .atMost(1, MINUTES).await();
+        .atMost(3, MINUTES).await();
 
     // Delete the temporary pod
     Kubernetes.deletePod(podName, namespace);
 
     // Wait for the pod to be deleted
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for {0} to be deleted in namespace {1}, "
-                + "(elapsed time {2} , remaining time {3}",
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(podDoesNotExist(podName, null, namespace));
+    try {
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for {0} to be deleted in namespace {1}, "
+                      + "(elapsed time {2} , remaining time {3}",
+                  podName,
+                  namespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(podDoesNotExist(podName, null, namespace));
+    } catch (ConditionTimeoutException ex) {
+      logger.warning("Condition not met", ex);
+    }
   }
 
   // The io.kubernetes.client.Copy.copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
@@ -395,6 +428,7 @@ public class LoggingUtil {
    */
   private static void copyDirectoryFromPod(V1Pod pvPod, Path destinationPath)
       throws ApiException {
+    LoggingFacade logger = getLogger();
     Future<String> copyJob = null;
     try {
       Runnable copy = () -> {

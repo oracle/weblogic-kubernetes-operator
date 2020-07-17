@@ -9,18 +9,15 @@ metadata:
   name: "weblogic-operator"
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    weblogic.resourceVersion: "operator-v2"
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 spec:
   selector:
     matchLabels:
-      weblogic.resourceVersion: "operator-v2"
       weblogic.operatorName: {{ .Release.Namespace | quote }}
   replicas: 1
   template:
     metadata:
      labels:
-        weblogic.resourceVersion: "operator-v2"
         weblogic.operatorName: {{ .Release.Namespace | quote }}
         app: "weblogic-operator"
     spec:

@@ -5,6 +5,6 @@ weight = 8
 pre = "<b> </b>"
 +++
 
-Learn how to start, stop, restart, and scale the domain's servers.
+Learn how to start, stop, restart, and scale the WebLogic Server instances in your domain.
 
 {{% children style="h4" description="true" %}}

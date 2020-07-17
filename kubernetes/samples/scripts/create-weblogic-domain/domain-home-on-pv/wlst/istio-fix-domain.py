@@ -46,3 +46,4 @@ updateDomain()
 closeDomain()
 print 'Domain Updated for Istio'
 print 'Done'
+

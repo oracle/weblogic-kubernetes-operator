@@ -68,7 +68,7 @@ public class ReadHealthStepTest {
           + "}";
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
-      WLS_HEALTH_READ_FAILED, WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT
+    WLS_HEALTH_READ_FAILED, WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT
   };
   private static final String DOMAIN_NAME = "domain";
   private static final String ADMIN_NAME = "admin-server";
@@ -88,6 +88,7 @@ public class ReadHealthStepTest {
           .withDynamicWlsCluster(DYNAMIC_CLUSTER_NAME, DYNAMIC_MANAGED_SERVER1)
           .withAdminServerName(ADMIN_NAME);
   private V1Service service = createStub(V1ServiceStub.class);
+  private V1Service headlessService = createStub(V1HeadlessServiceStub.class);
   private List<LogRecord> logRecords = new ArrayList<>();
   private List<Memento> mementos = new ArrayList<>();
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -106,9 +107,9 @@ public class ReadHealthStepTest {
   @Before
   public void setup() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger()
-        .collectLogMessages(logRecords, LOG_KEYS)
-        .ignoringLoggedExceptions(CLASSCAST_EXCEPTION)
-        .withLogLevel(Level.FINE));
+            .collectLogMessages(logRecords, LOG_KEYS)
+            .ignoringLoggedExceptions(CLASSCAST_EXCEPTION)
+            .withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
     mementos.add(httpSupport.install());
 
@@ -126,23 +127,31 @@ public class ReadHealthStepTest {
   }
 
   private void selectServer(String serverName) {
+    selectServer(serverName, false);
+  }
+
+  private void selectServer(String serverName, boolean headless) {
     testSupport.addToPacket(SERVER_NAME, serverName);
-    info.setServerService(serverName, service);
+    if (headless) {
+      info.setServerService(serverName, headlessService);
+    } else {
+      info.setServerService(serverName, service);
+    }
   }
 
   private void defineSecretData() {
     testSupport.defineResources(
-        new V1Secret()
-            .metadata(new V1ObjectMeta().namespace(NS).name(SECRET_NAME))
-            .data(Map.of(ADMIN_SERVER_CREDENTIALS_USERNAME, "user".getBytes(),
-                ADMIN_SERVER_CREDENTIALS_PASSWORD, "password".getBytes())));
+                new V1Secret()
+                      .metadata(new V1ObjectMeta().namespace(NS).name(SECRET_NAME))
+                      .data(Map.of(ADMIN_SERVER_CREDENTIALS_USERNAME, "user".getBytes(),
+                                   ADMIN_SERVER_CREDENTIALS_PASSWORD, "password".getBytes())));
   }
 
   @After
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
-
+  
   @Test
   public void whenReadAdminServerHealth_decrementRemainingServers() {
     selectServer(ADMIN_NAME);
@@ -154,15 +163,25 @@ public class ReadHealthStepTest {
   }
 
   private void defineResponse(int status, String body) {
-    httpSupport.defineResponse(createExpectedRequest(), createStub(HttpResponseStub.class, status, body));
+    defineResponse(status, body, null);
   }
 
-  private HttpRequest createExpectedRequest() {
-    return HttpRequest.newBuilder()
-        .uri(URI.create("https://127.0.0.1:7001/management/weblogic/latest/serverRuntime/search"))
-        .POST(HttpRequest.BodyPublishers.noBody())
-        .build();
+  private void defineResponse(int status, String body, String url) {
+    if (url == null) {
+      httpSupport.defineResponse(createExpectedRequest("127.0.0.1:7001"), createStub(HttpResponseStub.class,
+              status, body));
+    } else {
+      httpSupport.defineResponse(createExpectedRequest(url), createStub(HttpResponseStub.class, status, body));
+    }
   }
+
+  private HttpRequest createExpectedRequest(String url) {
+    return HttpRequest.newBuilder()
+          .uri(URI.create("https://" + url + "/management/weblogic/latest/serverRuntime/search"))
+          .POST(HttpRequest.BodyPublishers.noBody())
+          .build();
+  }
+
 
   @Test
   public void whenReadConfiguredManagedServerHealth_decrementRemainingServers() {
@@ -201,6 +220,17 @@ public class ReadHealthStepTest {
     assertThat(getServerStateMap(packet).get(MANAGED_SERVER1), is("RUNNING"));
   }
 
+  @Test
+  public void whenAdminPodIPNull_verifyServerHealth() {
+    selectServer(ADMIN_NAME, true);
+
+    defineResponse(200, OK_RESPONSE, "admin-server.Test:7001");
+
+    Packet packet = testSupport.runSteps(readHealthStep);
+
+    assertThat(getServerStateMap(packet).get(ADMIN_NAME), is("RUNNING"));
+  }
+
   private Map<String, ServerHealth> getServerHealthMap(Packet packet) {
     return packet.getValue(SERVER_HEALTH_MAP);
   }
@@ -218,7 +248,7 @@ public class ReadHealthStepTest {
     Packet packet = testSupport.runSteps(readHealthStep);
 
     assertThat(getServerHealthMap(packet).get(MANAGED_SERVER1).getOverallHealth(),
-        equalTo(OVERALL_HEALTH_FOR_SERVER_OVERLOADED));
+               equalTo(OVERALL_HEALTH_FOR_SERVER_OVERLOADED));
     assertThat(getServerStateMap(packet).get(MANAGED_SERVER1), is("UNKNOWN"));
   }
 
@@ -231,7 +261,7 @@ public class ReadHealthStepTest {
     Packet packet = testSupport.runSteps(readHealthStep);
 
     assertThat(getServerHealthMap(packet).get(MANAGED_SERVER1).getOverallHealth(),
-        equalTo(OVERALL_HEALTH_NOT_AVAILABLE));
+               equalTo(OVERALL_HEALTH_NOT_AVAILABLE));
     assertThat(getServerStateMap(packet).get(MANAGED_SERVER1), is("UNKNOWN"));
   }
 
@@ -242,6 +272,21 @@ public class ReadHealthStepTest {
       List<V1ServicePort> ports = new ArrayList<>();
       ports.add(new V1ServicePort().port(7001).name("default"));
       return new V1ServiceSpec().clusterIP("127.0.0.1").ports(ports);
+    }
+  }
+
+  public abstract static class V1HeadlessServiceStub extends V1Service {
+
+    @Override
+    public V1ObjectMeta getMetadata() {
+      return new V1ObjectMeta().name(ADMIN_NAME).namespace("Test");
+    }
+
+    @Override
+    public V1ServiceSpec getSpec() {
+      List<V1ServicePort> ports = new ArrayList<>();
+      ports.add(new V1ServicePort().port(7001).name("default"));
+      return new V1ServiceSpec().clusterIP("None").ports(ports);
     }
   }
 

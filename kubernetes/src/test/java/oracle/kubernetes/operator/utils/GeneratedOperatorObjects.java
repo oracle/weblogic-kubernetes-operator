@@ -3,10 +3,10 @@
 
 package oracle.kubernetes.operator.utils;
 
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1Role;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
@@ -46,7 +46,7 @@ public class GeneratedOperatorObjects {
     return securityYaml.getOperatorNamespace();
   }
 
-  public ExtensionsV1beta1Deployment getOperatorDeployment() {
+  public V1Deployment getOperatorDeployment() {
     return operatorYaml.getOperatorDeployment();
   }
 

@@ -21,6 +21,8 @@ import org.junit.Test;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
+import static oracle.kubernetes.operator.DomainSourceType.FromModel;
+import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.stringContainsInOrder;
@@ -263,16 +265,206 @@ public class DomainValidationTest {
   @Test
   public void whenConfigOverrideCmExistsTypeImage_dontReportError() {
     resourceLookup.defineResource("overrides-cm-image", KubernetesResourceType.ConfigMap, NS);
-    configureDomain(domain).withConfigOverrides("overrides-cm-image").withDomainHomeInImage(true);
+    configureDomain(domain).withConfigOverrides("overrides-cm-image").withDomainHomeSourceType(Image);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenConfigOverrideCmExistsTypeFromModel_reportError() {
+    resourceLookup.defineResource("overrides-cm-model", KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource("wdt-cm-secret", KubernetesResourceType.Secret, NS);
+    configureDomain(domain).withConfigOverrides("overrides-cm-model")
+        .withRuntimeEncryptionSecret("wdt-cm-secret")
+        .withDomainHomeSourceType(FromModel);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Configuration overridesConfigMap", 
+            "overrides-cm", "not supported", "FromModel")));
+  }
+
+  @Test
+  public void whenWdtConfigMapExists_fromModel_dontReportError() {
+    resourceLookup.defineResource("wdt-cm", KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource("wdt-cm-secret-model1", KubernetesResourceType.Secret, NS);
+    configureDomain(domain)
+        .withRuntimeEncryptionSecret("wdt-cm-secret-model1")
+        .withModelConfigMap("wdt-cm")
+        .withDomainHomeSourceType(FromModel);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenWdtConfigMapSpecifiedButDoesNotExist_fromModel_reportError() {
+    resourceLookup.defineResource("wdt-cm-secret-model2", KubernetesResourceType.Secret, NS);
+    configureDomain(domain).withRuntimeEncryptionSecret("wdt-cm-secret-model2")
+        .withModelConfigMap("wdt-configmap")
+        .withDomainHomeSourceType(FromModel);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("ConfigMap", "wdt-configmap", "spec.configuration.model.configMap", 
+            "not found", NS)));
+  }
+
+  @Test
+  public void whenWdtConfigMapSpecifiedButDoesNotExist_Image_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(Image)
+        .withModelConfigMap("wdt-configmap");
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenRuntimeEncryptionSecretSpecifiedButDoesNotExist_Image_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(Image)
+        .withRuntimeEncryptionSecret("runtime-secret");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
   public void whenRuntimeEncryptionSecretUnspecified_Image_dontReportError() {
-    configureDomain(domain).withDomainHomeInImage(true);
+    configureDomain(domain).withDomainHomeSourceType(Image);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenRuntimeEncryptionSecretSpecifiedButDoesNotExist_fromModel_reportError() {
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
+        .withRuntimeEncryptionSecret("runtime-secret");
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("RuntimeEncryption", "runtime-secret", "not found", NS)));
+  }
+
+  @Test
+  public void whenRuntimeEncryptionSecretExists_fromModel_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
+        .withRuntimeEncryptionSecret("runtime-good-secret");
+    resourceLookup.defineResource("runtime-good-secret", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenRuntimeEncryptionSecretUnspecified_fromModel_reportError() {
+    configureDomain(domain).withDomainHomeSourceType(FromModel);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("spec.configuration.model.runtimeEncryptionSecret", 
+            "must be specified", "FromModel")));
+  }
+
+  @Test
+  public void whenWalletPasswordSecretSpecifiedButDoesNotExist_fromModel_reportError() {
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withOpssWalletPasswordSecret("wallet-password-secret-missing");
+
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("secret", "wallet-password-secret-missing", "not found", NS)));
+  }
+
+  @Test
+  public void whenWalletFileSecretSpecifiedButDoesNotExist_Image_reportError() {
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withOpssWalletFileSecret("wallet-file-secret-missing");
+
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("secret", 
+            "wallet-file-secret-missing", "not found", NS)));
+  }
+
+  @Test
+  public void whenWalletPasswordSecretExists_fromModel_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withOpssWalletPasswordSecret("wallet-password-secret-good");
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("wallet-password-secret-good", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenWalletFileSecretExists_fromModel_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withOpssWalletFileSecret("wallet-file-secret-good");
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("wallet-file-secret-good", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenWalletPasswordSecretUnspecified_fromModel_jrf_reportError() {
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withDomainType("JRF");
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("spec.configuration.opss.walletPasswordSecret", 
+            "must be specified", "FromModel", "JRF")));
+  }
+
+  @Test
+  public void whenWalletFileSecretUnspecified_fromModel_jrf_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
+        .withDomainType("JRF")
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withOpssWalletPasswordSecret("wallet-password-secret-good");
+
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("wallet-password-secret-good", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenWalletPasswordSecretUnspecified_Image_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(Image)
+        .withOpssWalletFileSecret("wallet-file-secret");
+
+    resourceLookup.defineResource("wallet-file-secret", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenWalletPasswordSecretUnspecified_fromModel_wls_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(Image)
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withDomainType("WLS")
+        .withOpssWalletFileSecret("wallet-file-secret");
+
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("wallet-file-secret", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenExposingDefaultChannelIfIstio_Enabled() {
+    configureDomain(domain)
+        .withDomainHomeSourceType(Image)
+        .withIstio()
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    assertThat(domain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
+        "Istio is enabled and the domain resource specified to expose channel",
+        "default")));
   }
 
   private DomainConfigurator configureDomain(Domain domain) {

@@ -22,7 +22,7 @@ The current support for Istio has these limitations:
   multicluster installations of Istio.
 * You cannot expose any of the default channels; any attempt will result in an error when deploying the domain.  
 * If the `istio-ingressgateway` service in your environment does not have an `EXTERNAL-IP` defined,
-in order to use WLST commands, define a network access point (NAP) in your WebLogic domain and expose it as a `NodePort` in your domain resource YAML file
+in order to use WLST commands, define a network access point (NAP) in your WebLogic domain and expose it as a `NodePort` in your Domain YAML file
 and access it through the `NodePort` instead of accessing the channel through the Istio mesh network.
 
 To learn more about service mesh, see [Istio](https://istio.io/latest/docs/concepts/what-is-istio/).  
@@ -72,13 +72,12 @@ To enable Istio support for a domain, you need to add the
 following example:  
 
 ```
-apiVersion: "weblogic.oracle/v7"
+apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
   name: domain2
   namespace: domain1
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain2
 spec:
   ... other content ...
@@ -94,7 +93,7 @@ and defaults to `8888` if not provided; it is used for a readiness health check.
 
 ##### How Istio-enabled domains differ from regular domains
 
-Istio enforces a number of requirements on Pods.  When you enable Istio support in the domain resource, the
+Istio enforces a number of requirements on Pods.  When you enable Istio support in the Domain YAML file, the
 introspector job automatically creates configuration overrides with the necessary channels for the domain to satisfy Istio's requirements, including:
 
 When deploying a domain with Istio sidecar injection enabled, the operator automatically adds the following network
@@ -134,9 +133,9 @@ Additionally, when Istio support is enabled for a domain, the operator
 ensures that the Istio sidecar is not injected into the introspector job's pods.
 
 
-### Apply the domain resource YAML file
+### Apply the Domain YAML file
 
-After the domain resource YAML file is modified, apply it by:
+After the Domain YAML file is modified, apply it by:
 
 ```
 kubect apply -f domain.yaml

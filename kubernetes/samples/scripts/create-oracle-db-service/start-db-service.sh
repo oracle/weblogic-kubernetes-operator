@@ -74,7 +74,7 @@ sed -i -e "s?name: docker-store?name: ${pullsecret}?g" ${scriptDir}/common/oracl
 sed -i -e "s?image:.*?image: ${dbimage}?g" ${scriptDir}/common/oracle.db.yaml
 sed -i -e "s?namespace:.*?namespace: ${namespace}?g" ${scriptDir}/common/oracle.db.yaml
 
-# Modify the NodePort based on input
+# Modify the NodePort based on input 
 if [ "${nodeport}" = "none" ]; then
   sed -i -e "s? nodePort:? #nodePort:?g" ${scriptDir}/common/oracle.db.yaml
   sed -i -e "s? type:.*LoadBalancer? #type: LoadBalancer?g" ${scriptDir}/common/oracle.db.yaml

@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -17,7 +18,10 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
 
+import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWithName;
+import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWithNameAndValue;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 
@@ -30,6 +34,14 @@ public class Matchers {
 
   public static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
     return hasItem(new V1EnvVar().name(name).value(value));
+  }
+
+  public static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name) {
+    return hasItem(envVarWithName(name));
+  }
+
+  public static Matcher<Iterable<? super V1EnvVar>> hasEnvVarRegEx(String name, String regex) {
+    return hasItem(envVarWithNameAndValue(name,regex));
   }
 
   static Matcher<Map<? extends String, ? extends Quantity>> hasResourceQuantity(
@@ -57,9 +69,9 @@ public class Matchers {
   @SuppressWarnings("unused")
   public static class VolumeMountMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1VolumeMount> {
-    private String expectedName;
-    private String expectedPath;
-    private boolean readOnly;
+    private final String expectedName;
+    private final String expectedPath;
+    private final boolean readOnly;
 
     private VolumeMountMatcher(String expectedName, String expectedPath, boolean readOnly) {
       this.expectedName = expectedName;
@@ -105,9 +117,9 @@ public class Matchers {
   public static class ProbeMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Probe> {
     private static final Integer EXPECTED_FAILURE_THRESHOLD = 1;
-    private Integer expectedInitialDelay;
-    private Integer expectedTimeout;
-    private Integer expectedPeriod;
+    private final Integer expectedInitialDelay;
+    private final Integer expectedTimeout;
+    private final Integer expectedPeriod;
 
     private ProbeMatcher(int expectedInitialDelay, int expectedTimeout, int expectedPeriod) {
       this.expectedInitialDelay = expectedInitialDelay;
@@ -154,6 +166,67 @@ public class Matchers {
           .appendValue(expectedPeriod)
           .appendText(" and failureThreshold ")
           .appendValue(EXPECTED_FAILURE_THRESHOLD);
+    }
+  }
+
+  static class EnvVarMatcher extends TypeSafeDiagnosingMatcher<V1EnvVar> {
+    private static final String DONTCARE = "SENTINEL_DONT_CARE";
+    private final String expectedName;
+    private final String expectedValueRegEx;
+
+    private EnvVarMatcher(String expectedName) {
+      this.expectedName = expectedName;
+      this.expectedValueRegEx = DONTCARE;
+    }
+
+    private EnvVarMatcher(String expectedName, String expectedValueRegEx) {
+      this.expectedName = expectedName;
+      this.expectedValueRegEx = expectedValueRegEx;
+    }
+
+    static EnvVarMatcher envVarWithName(@Nonnull String name) {
+      return new EnvVarMatcher(name);
+    }
+
+    static EnvVarMatcher envVarWithNameAndValue(@Nonnull String name, String value) {
+      return new EnvVarMatcher(name, value);
+    }
+
+    @Override
+    protected boolean matchesSafely(V1EnvVar item, Description mismatchDescription) {
+      if (expectedValueRegEx == DONTCARE) {
+        if (expectedName.equals(item.getName())) {
+          return true;
+        }
+        mismatchDescription.appendText("EnvVar with name ").appendValue(item.getName());
+        return false;
+      }
+      if (expectedValueRegEx == null) {
+        if (expectedName.equals(item.getName()) && item.getValue() == null) {
+          return true;
+        }
+        mismatchDescription.appendText("EnvVar with name ").appendValue(item.getName());
+        return false;
+      }
+      if (expectedName.equals(item.getName()) 
+          && item.getValue() != null 
+          && item.getValue().matches(expectedValueRegEx)) {
+        return true;
+      }
+      mismatchDescription
+          .appendText("EnvVar with name=")
+          .appendValue(item.getName())
+          .appendText(" value=")
+          .appendValue(item.getValue());
+      return false;
+    }
+
+    @Override
+    public void describeTo(Description description) {
+      description.appendText("EnvVar with name=").appendValue(expectedName);
+      if (expectedValueRegEx != DONTCARE) {
+        description.appendText(" value=").appendValue(expectedValueRegEx);
+      }
     }
   }
 }

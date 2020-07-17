@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description:
@@ -45,7 +45,7 @@
 #                  default:  weblogic-deploy.zip
 #
 #   WDT_VERSION    WDT version
-#                  default:  1.7.0
+#                  default:  1.9.1
 #
 #   WDT_INSTALL_ZIP_URL   URL for downloading WDT install zip
 #                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE
@@ -75,7 +75,7 @@ WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
 WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/shared/wdt}
-WDT_VERSION=${WDT_VERSION:-1.7.1}
+WDT_VERSION=${WDT_VERSION:-1.9.1}
 
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}

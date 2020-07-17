@@ -36,25 +36,43 @@ public interface ActionConstants {
       = TestConstants.OCR_REGISTRY + "/middleware/weblogic";
   public static final String WLS_BASE_IMAGE_TAG = "12.2.1.4";
 
-  public static final String DEFAULT_IMAGE_NAME = "test-image";
-  public static final String DEFAULT_IMAGE_TAG  = "v1";
+  public static final String DEFAULT_MODEL_IMAGE_NAME = "test-mii-image";
+  public static final String DEFAULT_MODEL_IMAGE_TAG  = "v1";
 
   // ------------ WebLogic Image Tool constants----------------------------
   public static final String WIT = "WIT";
   public static final String WDT = "WDT";
 
+  public static final String WIT_DOWNLOAD_URL_DEFAULT
+      = "https://github.com/oracle/weblogic-image-tool/releases/latest";
   public static final String WIT_DOWNLOAD_URL
-      = "https://github.com/oracle/weblogic-image-tool";
-  public static final String WIT_VERSION    = System.getProperty("wit.version", "latest");
-  public static final String WIT_FILE_NAME  = "imagetool.zip";
+      = System.getProperty("wit.download.url", WIT_DOWNLOAD_URL_DEFAULT);
+  public static final String WIT_DOWNLOAD_FILENAME_DEFAULT = "imagetool.zip";
 
+  public static final String WDT_DOWNLOAD_URL_DEFAULT
+      = "https://github.com/oracle/weblogic-deploy-tooling/releases/latest";
   public static final String WDT_DOWNLOAD_URL
-      = "https://github.com/oracle/weblogic-deploy-tooling";
+      = System.getProperty("wdt.download.url", WDT_DOWNLOAD_URL_DEFAULT);
   public static final String WDT_VERSION    = System.getProperty("wdt.version", "latest");
-  public static final String WDT_FILE_NAME  = "weblogic-deploy.zip";
+  public static final String WDT_DOWNLOAD_FILENAME_DEFAULT = "weblogic-deploy.zip";
 
   public static final String IMAGE_TOOL = WORK_DIR + "/imagetool/bin/imagetool.sh";
-  public static final String WDT_ZIP_PATH = DOWNLOAD_DIR + "/" + WDT_FILE_NAME;
+  public static final String WDT_ZIP_PATH = DOWNLOAD_DIR + "/" + WDT_DOWNLOAD_FILENAME_DEFAULT;
+
+  // ------------ WLDF RBAC constants ------------------------------------------
+  public static final String WLDF_CLUSTER_ROLE_NAME = "weblogic-domain-cluster-role";
+  public static final String WLDF_CLUSTER_ROLE_BINDING_NAME = "domain-cluster-rolebinding";
+  public static final String WLDF_ROLE_BINDING_NAME = "weblogic-domain-operator-rolebinding";
+  public static final String RBAC_CLUSTER_ROLE = "ClusterRole";
+  public static final String RBAC_CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
+  public static final String RBAC_ROLE_BINDING = "RoleBinding";
+  public static final String RBAC_API_VERSION = "rbac.authorization.k8s.io/v1";
+  public static final String RBAC_API_GROUP = "rbac.authorization.k8s.io";
+
   public static final String MONITORING_EXPORTER_DOWNLOAD_URL 
       = "https://github.com/oracle/weblogic-monitoring-exporter.git";
+
+  // ------------ Ingress constants----------------------------
+  public static final String INGRESS_API_VERSION = "networking.k8s.io/v1beta1";
+  public static final String INGRESS_KIND = "Ingress";
 }

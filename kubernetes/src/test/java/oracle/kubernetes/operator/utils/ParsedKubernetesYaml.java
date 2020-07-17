@@ -8,11 +8,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -150,8 +150,8 @@ public class ParsedKubernetesYaml {
     return (TypeHandler<V1ClusterRoleBinding>) getHandler(KIND_CLUSTER_ROLE_BINDING);
   }
 
-  TypeHandler<ExtensionsV1beta1Deployment> getDeployments() {
-    return (TypeHandler<ExtensionsV1beta1Deployment>) getHandler(KIND_DEPLOYMENT);
+  TypeHandler<V1Deployment> getDeployments() {
+    return (TypeHandler<V1Deployment>) getHandler(KIND_DEPLOYMENT);
   }
 
   TypeHandler<Domain> getDomains() {
@@ -384,13 +384,13 @@ public class ParsedKubernetesYaml {
     }
   }
 
-  private static class DeploymentHandler extends TypeHandler<ExtensionsV1beta1Deployment> {
+  private static class DeploymentHandler extends TypeHandler<V1Deployment> {
     private DeploymentHandler() {
-      super(ExtensionsV1beta1Deployment.class);
+      super(V1Deployment.class);
     }
 
     @Override
-    protected V1ObjectMeta getMetadata(ExtensionsV1beta1Deployment instance) {
+    protected V1ObjectMeta getMetadata(V1Deployment instance) {
       return instance.getMetadata();
     }
   }

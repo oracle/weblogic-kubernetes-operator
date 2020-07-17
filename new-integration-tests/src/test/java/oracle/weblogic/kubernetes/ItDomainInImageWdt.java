@@ -14,8 +14,10 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -23,7 +25,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.assertions.TestAssertions;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -49,6 +51,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -57,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // Test to create model in image domain and verify the domain started successfully
 @DisplayName("Test to create domain in image domain using wdt and start the domain")
 @IntegrationTest
-class ItDomainInImageWdt implements LoggedTest {
+class ItDomainInImageWdt {
 
   private static HelmParams opHelmParams = null;
   private static String opNamespace = null;
@@ -67,6 +70,7 @@ class ItDomainInImageWdt implements LoggedTest {
   private static String dockerConfigJson = "";
   private String domainUid = "domain1";
   private static Map<String, Object> secretNameMap;
+  private static LoggingFacade logger = null;
 
   /**
    * Install Operator.
@@ -75,6 +79,7 @@ class ItDomainInImageWdt implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -205,7 +210,7 @@ class ItDomainInImageWdt implements LoggedTest {
                     .namespace(domNamespace))
             .spec(new DomainSpec()
                     .domainUid(domainUid)
-                    .domainHomeInImage(true)
+                    .domainHomeSourceType("Image")
                     .image(WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
                             .name(repoSecretName))
@@ -230,7 +235,11 @@ class ItDomainInImageWdt implements LoggedTest {
                     .addClustersItem(new Cluster()
                             .clusterName("cluster-1")
                             .replicas(replicaCount)
-                            .serverStartState("RUNNING")));
+                            .serverStartState("RUNNING"))
+                    .configuration(new Configuration()
+                            .model(new Model()
+                                    .domainType("WLS"))
+                        .introspectorJobActiveDeadlineSeconds(300L)));
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
             domainUid, domNamespace);

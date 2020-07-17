@@ -21,7 +21,7 @@ spec:
   # to be started to get to the cluster's replica count..
   serverStartPolicy: NEVER
 
-  domainHomeInImage: false
+  domainHomeSourceType: PersistentVolume
   includeServerOutInPodLog: false
 
   # Specifies the number of replicas for any clusters which do not specify their own count:

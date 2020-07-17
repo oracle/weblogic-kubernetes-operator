@@ -43,7 +43,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -67,8 +67,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.restartDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
@@ -85,6 +85,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTim
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -96,7 +97,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify operator manages multiple domains")
 @IntegrationTest
-public class ItOperatorTwoDomains implements LoggedTest {
+public class ItOperatorTwoDomains {
 
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
@@ -121,6 +122,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
   private List<DateTime> domainAdminPodOriginalTimestamps = new ArrayList<>();
   private List<DateTime> domain1ManagedServerPodOriginalTimestampList = new ArrayList<>();
   private List<DateTime> domain2ManagedServerPodOriginalTimestampList = new ArrayList<>();
+  private static LoggingFacade logger = null;
 
   /**
    * Get namespaces, install operator and initiate domain UID list.
@@ -129,7 +131,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(4) List<String> namespaces) {
-
+    logger = getLogger();
     // get unique operator namespaces
     logger.info("Get unique namespaces for operator1 and operator2");
     for (int i = 0; i < numberOfOperators; i++) {
@@ -217,7 +219,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
 
       String domainUid = domainUids.get(i);
       String domainNamespace = domainNamespaces.get(i);
-      String pvName = domainUid + "-pv";
+      String pvName = domainUid + "-pv-" + domainNamespace;
       String pvcName = domainUid + "-pvc";
 
       // create WebLogic credentials secret
@@ -245,7 +247,6 @@ public class ItOperatorTwoDomains implements LoggedTest {
           .metadata(new V1ObjectMetaBuilder()
               .withName(pvName)
               .build()
-              .putLabelsItem("weblogic.resourceVersion", "domain-v2")
               .putLabelsItem("weblogic.domainUid", domainUid));
 
       V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
@@ -259,7 +260,6 @@ public class ItOperatorTwoDomains implements LoggedTest {
               .withName(pvcName)
               .withNamespace(domainNamespace)
               .build()
-              .putLabelsItem("weblogic.resourceVersion", "domain-v2")
               .putLabelsItem("weblogic.domainUid", domainUid));
 
       String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
@@ -279,7 +279,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
           .spec(new DomainSpec()
               .domainUid(domainUid)
               .domainHome("/shared/domains/" + domainUid)
-              .domainHomeInImage(false)
+              .domainHomeSourceType("PersistentVolume")
               .image(image)
               .imagePullSecrets(isUseSecret ? Arrays.asList(
                   new V1LocalObjectReference()
@@ -528,19 +528,19 @@ public class ItOperatorTwoDomains implements LoggedTest {
     verifyDomain2NotChanged();
 
     // restart domain1
-    logger.info("Restarting domain1");
-    assertTrue(restartDomain(domain1Uid, domain1Namespace),
-        String.format("restart domain %s in namespace %s failed", domain1Uid, domain1Namespace));
+    logger.info("Starting domain1");
+    assertTrue(startDomain(domain1Uid, domain1Namespace),
+        String.format("start domain %s in namespace %s failed", domain1Uid, domain1Namespace));
 
     // verify domain1 is restarted
     // check domain1 admin server pod is ready, also check admin service exists in the domain1 namespace
-    logger.info("Checking admin server pod in domain1 was restarted");
+    logger.info("Checking admin server pod in domain1 was started");
     checkPodReadyAndServiceExists(domain1AdminServerPodName, domain1Uid, domain1Namespace);
     checkPodRestarted(domain1Uid, domain1Namespace, domain1AdminServerPodName,
         domainAdminPodOriginalTimestamps.get(0));
 
     // check managed server pods in domain1
-    logger.info("Checking managed server pods in domain1 were restarted");
+    logger.info("Checking managed server pods in domain1 were started");
     for (int i = 1; i <= replicasAfterScale; i++) {
       String domain1ManagedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
       checkPodReadyAndServiceExists(domain1ManagedServerPodName, domain1Uid, domain1Namespace);
@@ -549,7 +549,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
     }
 
     // verify domain2 was not changed after domain1 was restarted
-    logger.info("Verifying that domain2 was not changed after domain1 was restarted");
+    logger.info("Verifying that domain2 was not changed after domain1 was started");
     verifyDomain2NotChanged();
   }
 

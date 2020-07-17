@@ -25,7 +25,7 @@ source ${scriptDir}/../../common/utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file -u username -p password [-k] [-e] [-v] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-s] [-k] [-e] [-v] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated properties and YAML files, must be specified."
   echo "  -u Username used in building the Docker image for WebLogic domain in image."
@@ -34,6 +34,7 @@ function usage {
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -k Keep what has been previously from cloned https://github.com/oracle/docker-images.git, optional. "
   echo "     If not specified, this script will always remove existing project directory and clone again."
+  echo "  -s Skip the domain image build, optional. "
   echo "  -h Help"
   exit $1
 }
@@ -44,7 +45,8 @@ function usage {
 doValidation=false
 executeIt=false
 cloneIt=true
-while getopts "evhki:o:u:p:" opt; do
+skipImageBuild=false
+while getopts "evhksi:o:u:p:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
@@ -59,6 +61,8 @@ while getopts "evhki:o:u:p:" opt; do
     p) password="${OPTARG}"
     ;;
     k) cloneIt=false;
+    ;;
+    s) skipImageBuild=true;
     ;;
     h) usage 0
     ;;
@@ -171,8 +175,13 @@ function getDockerSample {
 
 #
 # Function to build docker image and create WebLogic domain home
-#
+# Image build is skipped when -s option is specified OR image is not available
+# e.g. If -s option is specified script will skip the image build only when 
+# image is available else build the image
+# If -s option is NOT specified script will ALWAYS build the image
 function createDomainHome {
+
+  if [ "${skipImageBuild}" = false ] || [ -z "$(docker images $image | grep -v TAG)" ]; then
   dockerDir=${domainHomeImageBuildPath}
   dockerPropsDir=${dockerDir}/properties
   cp ${domainPropertiesOutput} ${dockerPropsDir}/docker-build
@@ -194,6 +203,9 @@ function createDomainHome {
     sed -i -e "s|\(FROM \).*|\1 ${domainHomeImageBase}|g" ${dockerDir}/Dockerfile
   fi
 
+  # Set WDT_VERSION in case dockerDir references a WDT sample
+  # (wdtVersion comes from the inputs file)
+  export WDT_VERSION="${WDT_VERSION:-${wdtVersion:-1.9.1}}"
   bash ${dockerDir}/build.sh
 
   if [ "$?" != "0" ]; then
@@ -205,6 +217,12 @@ function createDomainHome {
 
   echo ""
   echo "Create domain ${domainName} successfully."
+
+ else 
+  echo ""
+  echo "Skipping domain image build "
+ fi 
+
 }
 
 #

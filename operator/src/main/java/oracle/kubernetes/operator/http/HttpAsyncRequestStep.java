@@ -108,7 +108,7 @@ public class HttpAsyncRequestStep extends Step {
       if (throwable != null) {
         LOGGER.fine(MessageKeys.HTTP_REQUEST_TIMED_OUT, request.method(), request.uri(), throwable);
       }
-
+      
       Optional.ofNullable(response).ifPresent(this::recordResponse);
       fiber.resume(packet);
     }

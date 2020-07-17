@@ -2,7 +2,8 @@
 title: "Providing access to a PersistentVolumeClaim"
 date: 2020-01-07T15:02:28-05:00
 draft: false
-weight: 60
+weight: 9
+description: "I need to provide an instance with access to a PersistentVolumeClaim."
 ---
 > I need to provide an instance with access to a PersistentVolumeClaim.
 
@@ -33,7 +34,7 @@ spec:
 ```
 
 To provide access to this claim to all Managed Servers in the `cluster-1` cluster, specify the following
-in your [domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md):
+in your [Domain](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md):
 
 ```
   clusters:

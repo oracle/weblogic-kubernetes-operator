@@ -6,11 +6,10 @@ package oracle.weblogic.kubernetes.assertions.impl;
 import java.io.IOException;
 
 import io.kubernetes.client.openapi.ApiException;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
  * Assertions for applications that are deployed in a domain custom resource.
@@ -18,7 +17,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
  */
 
 public class Application {
-  private static final LoggingFacade logger = LoggingFactory.getLogger(Application.class);
 
   /**
    * Check if an application is accessible inside a WebLogic server pod using
@@ -57,27 +55,27 @@ public class Application {
       if (execResult.exitValue() == 0
           && execResult.stdout() != null 
           && execResult.stdout().contains(expectedResponse)) {
-        logger.info(
+        getLogger().info(
             String.format("App is accessible inside pod %s in namespace %s",
                 podName,
                 namespace));
         return true;
       } else {
-        logger.warning(
+        getLogger().warning(
             String.format("Failed to access the app inside pod %s in namespace %s",
                 podName,
                 namespace));
         return false;
       }
     } catch (ApiException | IOException | InterruptedException e) {
-      logger.warning(
+      getLogger().warning(
           String.format("Failed to access the app inside pod %s in namespace %s",
               podName,
               namespace),
           e);
       return false;
     } catch (IllegalArgumentException iae) {
-      logger.warning(String.format("Failed to find pod %s to check the app", podName));
+      getLogger().warning(String.format("Failed to find pod %s to check the app", podName));
       return false;
     }
   } 

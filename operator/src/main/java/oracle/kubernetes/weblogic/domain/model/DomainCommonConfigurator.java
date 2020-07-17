@@ -15,13 +15,12 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 
-import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
-import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V2;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 
@@ -41,7 +40,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   private void setApiVersion(Domain domain) {
-    domain.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V2);
     domain.setApiVersion(
         KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION);
   }
@@ -117,28 +115,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
-  @Override
-  public DomainConfigurator withIstio() {
-    getOrCreateIstio();
-    return this;
-  }
-
-  private Configuration getOrCreateConfiguration() {
-    DomainSpec spec = getDomainSpec();
-    if (spec.getConfiguration() == null) {
-      spec.setConfiguration(new Configuration());
-    }
-    return spec.getConfiguration();
-  }
-
-  private Istio getOrCreateIstio() {
-    Configuration configuration = getOrCreateConfiguration();
-    if (configuration.getIstio() == null) {
-      configuration.withIstio(new Istio());
-    }
-    return configuration.getIstio();
-  }
-
   /**
    * Sets the WebLogic configuration overrides config map name for the domain.
    *
@@ -148,13 +124,19 @@ public class DomainCommonConfigurator extends DomainConfigurator {
    */
   @Override
   public DomainConfigurator withConfigOverrides(String configMapName) {
-    getDomainSpec().setConfigOverrides(configMapName);
+    getOrCreateConfiguration().setOverridesConfigMap(configMapName);
     return this;
   }
 
   @Override
   public DomainConfigurator withConfigOverrideSecrets(String... secretNames) {
-    getDomainSpec().setConfigOverrideSecrets(Arrays.asList(secretNames));
+    getOrCreateConfiguration().setSecrets(Arrays.asList(secretNames));
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withConfigOverrideDistributionStrategy(OverrideDistributionStrategy strategy) {
+    getOrCreateConfiguration().setOverrideDistributionStrategy(strategy);
     return this;
   }
 
@@ -232,6 +214,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withIntrospectVersion(String introspectVersion) {
+    getDomainSpec().setIntrospectVersion(introspectVersion);
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withWebLogicCredentialsSecret(String secretName, String namespace) {
     getDomainSpec().setWebLogicCredentialsSecret(new V1SecretReference().name(secretName).namespace(namespace));
     return this;
@@ -304,6 +292,80 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   public DomainConfigurator withToleration(V1Toleration toleration) {
     getDomainSpec().addToleration(toleration);
     return this;
+  }
+
+  @Override
+  public DomainConfigurator withIntrospectorJobActiveDeadlineSeconds(long deadline) {
+    getOrCreateConfiguration().setIntrospectorJobActiveDeadlineSeconds(deadline);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withModelConfigMap(String configmap) {
+    getOrCreateModel().withConfigMap(configmap);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withRuntimeEncryptionSecret(String secret) {
+    getOrCreateModel().withRuntimeEncryptionSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withOpssWalletPasswordSecret(String secret) {
+    getOrCreateOpss().withWalletPasswordSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withOpssWalletFileSecret(String secret) {
+    getOrCreateOpss().withWalletFileSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withIstio() {
+    getOrCreateIstio();
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withDomainType(String type) {
+    getOrCreateModel().withDomainType(type);
+    return this;
+  }
+
+  private Configuration getOrCreateConfiguration() {
+    DomainSpec spec = getDomainSpec();
+    if (spec.getConfiguration() == null) {
+      spec.setConfiguration(new Configuration());
+    } 
+    return spec.getConfiguration();
+  }
+
+  private Model getOrCreateModel() {
+    Configuration configuration = getOrCreateConfiguration();
+    if (configuration.getModel() == null) {
+      configuration.setModel(new Model());
+    }
+    return configuration.getModel();   
+  }
+
+  private Opss getOrCreateOpss() {
+    Configuration configuration = getOrCreateConfiguration();
+    if (configuration.getOpss() == null) {
+      configuration.setOpss(new Opss());
+    }
+    return configuration.getOpss();   
+  }
+
+  private Istio getOrCreateIstio() {
+    Configuration configuration = getOrCreateConfiguration();
+    if (configuration.getIstio() == null) {
+      configuration.withIstio(new Istio());
+    }
+    return configuration.getIstio();
   }
 
   @Override
@@ -660,6 +722,18 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withNodeName(String nodeName) {
       cluster.setNodeName(nodeName);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withAllowReplicasBelowDynClusterSize(boolean allowReplicasBelowDynClusterSize) {
+      cluster.setAllowReplicasBelowMinDynClusterSize(allowReplicasBelowDynClusterSize);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withMaxConcurrentStartup(Integer maxConcurrentStartup) {
+      cluster.setMaxConcurrentStartup(maxConcurrentStartup);
       return this;
     }
 

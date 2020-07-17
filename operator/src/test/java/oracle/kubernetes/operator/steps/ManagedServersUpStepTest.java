@@ -551,6 +551,19 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
+  public void whenReplicasLessThanMinDynClusterSize_setReplicaCountToMinClusterSize() {
+    startNoServers();
+    setCluster1Replicas(0);
+    setCluster1AllowReplicasBelowMinDynClusterSize(false);
+
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(2, equalTo(domain.getReplicaCount("cluster1")));
+  }
+
+  @Test
   public void whenReplicasLessThanMinDynClusterSize_allowBelowMin_doNotChangeReplicaCount() {
     startNoServers();
     setCluster1Replicas(0);
@@ -560,6 +573,19 @@ public class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(0, equalTo(domain.getReplicaCount("cluster1")));
+  }
+
+  @Test
+  public void whenReplicasMoreThanMinDynClusterSize_doNotChangeReplicaCount() {
+    startNoServers();
+    setCluster1Replicas(3);
+    setCluster1AllowReplicasBelowMinDynClusterSize(false);
+
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(3, equalTo(domain.getReplicaCount("cluster1")));
   }
 
   @Test
@@ -598,6 +624,10 @@ public class ManagedServersUpStepTest {
 
   private void setCluster1Replicas(int replicas) {
     configurator.configureCluster("cluster1").withReplicas(replicas);
+  }
+
+  private void setCluster1AllowReplicasBelowMinDynClusterSize(boolean allowReplicasBelowMinDynClusterSize) {
+    configurator.configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(allowReplicasBelowMinDynClusterSize);
   }
 
   private void configureServers(String... serverNames) {

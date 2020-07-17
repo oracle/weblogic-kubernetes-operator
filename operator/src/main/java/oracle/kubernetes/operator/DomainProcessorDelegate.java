@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.Step;
 
@@ -44,6 +45,13 @@ public interface DomainProcessorDelegate {
    * @return an object that represents the Kubernetes version
    */
   KubernetesVersion getVersion();
+
+  /**
+   * Returns the version of the operator.
+   *
+   * @return an object that represents the semantic version
+   */
+  SemanticVersion getProductVersion();
 
   /**
    * Creates a new FiberGate.

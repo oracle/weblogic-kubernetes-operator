@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 public interface TestConstants {
 
   // domain constants
-  public static final String DOMAIN_VERSION = "v7";
+  public static final String DOMAIN_VERSION = "v8";
   public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
   public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
@@ -77,6 +77,21 @@ public interface TestConstants {
   public static final String STABLE_REPO_NAME = "stable";
   public static final String NGINX_CHART_NAME = "nginx-ingress";
 
+  // Voyager constants
+  public static final String APPSCODE_REPO_URL = "https://charts.appscode.com/stable/";
+  public static final String VOYAGER_RELEASE_NAME = "voyager-release" + BUILD_ID;
+  public static final String APPSCODE_REPO_NAME = "appscode";
+  public static final String VOYAGER_CHART_NAME = "voyager";
+  public static final String VOYAGER_CHART_VERSION = "12.0.0";
+
+  // MII image constants
+  public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";
+  public static final String MII_BASIC_IMAGE_NAME = REPO_NAME + "mii-basic-image";
+  public static final String MII_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
+  public static final String MII_BASIC_IMAGE_DOMAINTYPE = "mii";
+  public static final String MII_BASIC_APP_NAME = "sample-app";
+  public static final String MII_TWO_APP_WDT_MODEL_FILE = "model-singlecluster-two-sampleapp-wls.yaml";
+
   // application constants
   public static final String MII_APP_RESPONSE_V1 = "Hello World, you have reached server managed-server";
   public static final String MII_APP_RESPONSE_V2 = "Hello World AGAIN, you have reached server managed-server";
@@ -84,11 +99,13 @@ public interface TestConstants {
   public static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
   // WDT domain-in-image constants
+
   public static final String WDT_BASIC_MODEL_FILE = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
   public static final String WDT_BASIC_IMAGE_NAME = REPO_NAME + "wdt-basic-image";
   public static final String WDT_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String WDT_BASIC_IMAGE_DOMAINHOME = "/u01/oracle/user_projects/domains/domain1";
+  public static final String WDT_IMAGE_DOMAINHOME_BASE_DIR = "/u01/oracle/user_projects/domains";
   public static final String WDT_BASIC_IMAGE_DOMAINTYPE = "wdt";
   public static final String WDT_BASIC_APP_NAME = "sample-app";
 
@@ -117,5 +134,11 @@ public interface TestConstants {
   public static final String JRF_BASE_IMAGE_TAG = "12.2.1.4";
   public static final String DB_IMAGE_NAME = OCR_REGISTRY + "/database/enterprise";
   public static final String DB_IMAGE_TAG = "12.2.0.1-slim";
+
+  // istio constants
+  public static final String ISTIO_VERSION = "1.5.4";
+
+  //MySQL database constants
+  public static final String MYSQL_VERSION = "5.6";
 
 }

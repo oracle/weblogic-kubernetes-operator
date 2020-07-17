@@ -20,8 +20,8 @@ class KubernetesResource {
    * @since 2.0
    */
   @Description(
-      "The labels to be attached to generated resources. The label names must "
-          + "not start with 'weblogic.'.")
+      "The labels to be added to generated resources. The label names must "
+          + "not start with \"weblogic.\".")
   private final Map<String, String> labels = new HashMap<>();
 
   /**
@@ -29,7 +29,7 @@ class KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("The annotations to be attached to generated resources.")
+  @Description("The annotations to be added to generated resources.")
   private final Map<String, String> annotations = new HashMap<>();
 
   void fillInFrom(KubernetesResource kubernetesResource1) {

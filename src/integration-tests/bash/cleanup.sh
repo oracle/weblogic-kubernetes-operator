@@ -462,8 +462,8 @@ function deleteByTypeAndLabel {
 #                               for no more than 60 seconds total.
 #
 #            -forceDelete:      Try delete objects using "--force=true" and
-#                               "--grace-period=0" for no more than 60 seconds total.
-#                               Note that this is incompatible with "FAST_DELETE" so
+#                               "--grace-period=0" for no more than 60 seconds total. 
+#                               Note that this is incompatible with "FAST_DELETE" so 
 #                               FAST_DELETE is overridden in this path.
 #
 function genericDelete {
@@ -758,5 +758,5 @@ if [ ! "$LEASE_ID" = "" ] && [ ! "$SUCCESS" = "0" ]; then
   rm -f /tmp/release_lease.out
 fi
 
-echo @@ `timestamp` Info: Exiting after $SECONDS seconds with status $SUCCESS
+echo @@ `timestamp` Info: Exiting after $SECONDS seconds with status $SUCCESS 
 exit $SUCCESS

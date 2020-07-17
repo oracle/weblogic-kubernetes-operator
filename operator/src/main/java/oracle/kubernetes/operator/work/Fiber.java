@@ -268,6 +268,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry, A
         // Race condition where child is created after parent is cancelled or done
         child.status.set(CANCELLED);
       }
+
       return child;
     }
   }

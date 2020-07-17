@@ -83,10 +83,12 @@ checkEnv -q \
          NODEMGR_HOME \
          WL_HOME \
          MW_HOME \
+         OPERATOR_ENVVAR_NAMES \
          || exit 1
 
 for script_file in "${SCRIPTPATH}/wlst.sh" \
                    "${SCRIPTPATH}/startNodeManager.sh"  \
+                   "${SCRIPTPATH}/modelInImage.sh"  \
                    "${SCRIPTPATH}/introspectDomain.py"; do
   [ ! -f "$script_file" ] && trace SEVERE "Missing file '${script_file}'." && exit 1 
 done 
@@ -102,6 +104,50 @@ if [ ! -z "${DATA_HOME}" ] && [ ! -d "${DATA_HOME}" ]; then
   trace "Creating data home directory: '${DATA_HOME}'"
   createFolder ${DATA_HOME}
 fi
+
+
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN START"
+
+source ${SCRIPTPATH}/modelInImage.sh
+if [ $? -ne 0 ]; then
+      trace SEVERE "Error sourcing modelInImage.sh" && exit 1
+fi
+
+# Add another env/attribute in domain yaml for model in image
+# log error if dir exists and attribute set
+DOMAIN_CREATED=0
+if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
+    trace "Beginning Model In Image"
+    command -v gzip
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "DomainSourceType is 'FromModel', 'gzip' is missing in the image. Please use an image with 'gzip' installed" && exit 1
+    fi
+    command -v tar
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "DomainSourceType is 'FromModel', 'tar' is missing in the image. Please use an image with 'tar' installed" && exit 1
+    fi
+    command -v unzip
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "DomainSourceType is 'FromModel', 'unzip' is missing in the image. Please use an image with 'unzip' installed" && exit 1
+    fi
+    mkdir -p ${DOMAIN_HOME}
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "DomainSourceType is 'FromModel', cannot create domain home directory '${DOMAIN_HOME}'" && exit 1
+    fi
+    touch ${DOMAIN_HOME}/testaccess.tmp
+    if [ $? -ne 0 ]; then
+      trace SEVERE "DomainSourceType is 'FromModel', cannot write to domain home directory '${DOMAIN_HOME}'" && exit 1
+    fi
+    rm -f ${DOMAIN_HOME}/testaccess.tmp
+    createWLDomain || exit 1
+    created_domain=$DOMAIN_CREATED
+    trace "Create domain return code = " ${created_domain}
+else
+    created_domain=1
+fi
+
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN END" 
+
 
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed
 
@@ -119,28 +165,35 @@ checkWebLogicVersion || exit 1
 
 # start node manager
 # run instrospector wlst script
-traceTiming "INTROSPECTOR '${DOMAIN_UID}' NM START"
+if [ ${created_domain} -ne 0 ]; then
 
-# start node manager -why ??
-trace "Starting node manager"
-${SCRIPTPATH}/startNodeManager.sh || exit 1
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM START" 
 
-traceTiming "INTROSPECTOR '${DOMAIN_UID}' NM END"
+    # start node manager -why ??
+    trace "Starting node manager"
+    ${SCRIPTPATH}/startNodeManager.sh || exit 1
 
-traceTiming "INTROSPECTOR '${DOMAIN_UID}' MD5 START"
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM END" 
 
-# put domain secret's md5 cksum in file '/tmp/DomainSecret.md5'
-# the introspector wlst script and WL server pods will use this value
-generateDomainSecretMD5File '/tmp/DomainSecret.md5' || exit 1
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 START"
 
-traceTiming "INTROSPECTOR '${DOMAIN_UID}' MD5 END"
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM END" 
 
-traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT START"
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 START"
 
-trace "Running introspector WLST script ${SCRIPTPATH}/introspectDomain.py"
-${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
+    # put domain secret's md5 cksum in file '/tmp/DomainSecret.md5'
+    # the introspector wlst script and WL server pods will use this value
+    generateDomainSecretMD5File '/tmp/DomainSecret.md5' || exit 1
 
-traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT END"
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 END"
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT START"
+
+    trace "Running introspector WLST script ${SCRIPTPATH}/introspectDomain.py"
+    ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT END"
+fi
 trace "Domain introspection complete"
 
 exit 0

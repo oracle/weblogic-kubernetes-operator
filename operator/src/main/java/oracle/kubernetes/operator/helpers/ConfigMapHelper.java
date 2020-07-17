@@ -6,17 +6,23 @@ package oracle.kubernetes.operator.helpers;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import javax.json.Json;
+import javax.json.JsonPatchBuilder;
+import javax.json.JsonValue;
+import javax.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -31,17 +37,26 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.joda.time.DateTime;
 
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAINZIP_HASH;
+import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH;
+import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION;
+import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SECRETS_MD_5;
+import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SIT_CONFIG_FILE_PREFIX;
+import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
 
 public class ConfigMapHelper {
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String SCRIPT_LOCATION = "/scripts";
-  private static ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
+  private static final ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
 
   private static final FileGroupReader scriptReader = new FileGroupReader(SCRIPT_LOCATION);
 
@@ -63,40 +78,18 @@ public class ConfigMapHelper {
     return scriptReader;
   }
 
-  /**
-   * Factory for {@link Step} that creates config map containing sit config.
-   *
-   * @param next Next step
-   * @return Step for creating config map containing sit config
-   */
-  public static Step createSitConfigMapStep(Step next) {
-    return new SitConfigMapStep(next);
-  }
-
-  /**
-   * Factory for {@link Step} that deletes introspector config map.
-   *
-   * @param domainUid The unique identifier assigned to the WebLogic domain when it was registered
-   * @param namespace Namespace
-   * @param next Next processing step
-   * @return Step for deleting introspector config map
-   */
-  public static Step deleteDomainIntrospectorConfigMapStep(
-      String domainUid, String namespace, Step next) {
-    return new DeleteIntrospectorConfigMapStep(domainUid, namespace, next);
-  }
-
-  public static Step readExistingSituConfigMap(String ns, String domainUid) {
-    String situConfigMapName = ConfigMapHelper.SitConfigMapContext.getConfigMapName(domainUid);
-    return new CallBuilder().readConfigMapAsync(situConfigMapName, ns, new ReadSituConfigMapStep());
-  }
-
   static Map<String, String> parseIntrospectorResult(String text, String domainUid) {
     Map<String, String> map = new HashMap<>();
+    String token = ">>>  updatedomainResult=";
 
     try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
       String line = reader.readLine();
       while (line != null) {
+        if (line.contains(token)) {
+          int index = line.indexOf(token);
+          int beg = index + 1 + token.length();
+          map.put("UPDATEDOMAINRESULT", line.substring(beg - 1));
+        }
         if (line.startsWith(">>>") && !line.endsWith("EOF")) {
           String filename = extractFilename(line);
           readFile(reader, filename, map, domainUid);
@@ -117,7 +110,7 @@ public class ConfigMapHelper {
       String line = reader.readLine();
       while (line != null) {
         if (line.startsWith(">>>") && line.endsWith("EOF")) {
-          map.put(fileName, stringBuilder.toString());
+          map.put(fileName, stringBuilder.toString().trim());
           return;
         } else {
           // add line to StringBuilder
@@ -133,36 +126,40 @@ public class ConfigMapHelper {
 
   static String extractFilename(String line) {
     int lastSlash = line.lastIndexOf('/');
-    String fname = line.substring(lastSlash + 1, line.length());
-    return fname;
+    return line.substring(lastSlash + 1);
   }
 
   /**
-   * parse domain topology yaml.
-   * @param topologyYaml topology yaml.
-   * @return parsed object hierarchy
+   * getModelInImageSpecHash returns the hash for the fields that should be compared for changes.
+   *
+   * @param imageName image name
+   * @return int hash value of the fields
    */
-  public static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-
-    try {
-      DomainTopology domainTopology = mapper.readValue(topologyYaml, DomainTopology.class);
-
-      LOGGER.fine(
-          ReflectionToStringBuilder.toString(domainTopology, ToStringStyle.MULTI_LINE_STYLE));
-
-      return domainTopology;
-
-    } catch (Exception e) {
-      LOGGER.warning(MessageKeys.CANNOT_PARSE_TOPOLOGY, e);
-    }
-
-    return null;
+  public static int getModelInImageSpecHash(String imageName) {
+    return new HashCodeBuilder(17, 37)
+        .append(imageName)
+        .toHashCode();
   }
 
-  interface ConfigMapComparator {
-    /** Returns true if the actual map contains all of the entries from the expected map. */
-    boolean containsAll(V1ConfigMap actual, V1ConfigMap expected);
+  /**
+   * Returns the standard name for the generated domain config map.
+   * @param domainUid the unique ID of the domain
+   * @return map name
+   */
+  public static String getIntrospectorConfigMapName(String domainUid) {
+    return domainUid + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+  }
+
+  abstract static class ConfigMapComparator {
+    boolean containsAll(V1ConfigMap actual, V1ConfigMap expected) {
+      return containsAllData(getData(actual), getData(expected));
+    }
+
+    private Map<String,String> getData(V1ConfigMap map) {
+      return Optional.ofNullable(map).map(V1ConfigMap::getData).orElse(Collections.emptyMap());
+    }
+
+    abstract boolean containsAllData(Map<String, String> actual, Map<String, String> expected);
   }
 
   static class ScriptConfigMapStep extends Step {
@@ -179,54 +176,120 @@ public class ConfigMapHelper {
   }
 
   static class ScriptConfigMapContext extends ConfigMapContext {
-    private final Map<String, String> classpathScripts = loadScriptsFromClasspath();
 
     ScriptConfigMapContext(Step conflictStep, String operatorNamespace, String domainNamespace) {
-      super(conflictStep, operatorNamespace, domainNamespace);
+      super(conflictStep, SCRIPT_CONFIG_MAP_NAME, domainNamespace, loadScriptsFromClasspath(domainNamespace), null);
 
-      this.model = createModel(classpathScripts);
+      addLabel(LabelConstants.OPERATORNAME_LABEL, operatorNamespace);
     }
 
-    private V1ConfigMap createModel(Map<String, String> data) {
-      return new V1ConfigMap().metadata(createMetadata()).data(data);
-    }
-
-    private V1ObjectMeta createMetadata() {
-      return super.createMetadata(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
-          .putLabelsItem(LabelConstants.OPERATORNAME_LABEL, operatorNamespace);
-    }
-
-    private synchronized Map<String, String> loadScriptsFromClasspath() {
+    private static synchronized Map<String, String> loadScriptsFromClasspath(String domainNamespace) {
       Map<String, String> scripts = scriptReader.loadFilesFromClasspath();
-      LOGGER.fine(MessageKeys.SCRIPT_LOADED, this.domainNamespace);
+      LOGGER.fine(MessageKeys.SCRIPT_LOADED, domainNamespace);
       return scripts;
     }
 
-    ResponseStep<V1ConfigMap> createReadResponseStep(Step next) {
-      return new ReadResponseStep(next);
+    @Override
+    void recordCurrentMap(Packet packet, V1ConfigMap configMap) {
+      packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, configMap);
     }
 
-    ResponseStep<V1ConfigMap> createCreateResponseStep(Step next) {
-      return new CreateResponseStep(next);
+
+  }
+
+  abstract static class ConfigMapContext extends StepContextBase {
+    private final Map<String, String> contents;
+    private final Step conflictStep;
+    private final String name;
+    private final String namespace;
+    private V1ConfigMap model;
+    private final Map<String, String> labels = new HashMap<>();
+
+    ConfigMapContext(Step conflictStep, String name, String namespace, Map<String, String> contents,
+                     DomainPresenceInfo info) {
+      super(info);
+      this.conflictStep = conflictStep;
+      this.name = name;
+      this.namespace = namespace;
+      this.contents = contents;
+
+      addLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     }
 
-    ResponseStep<V1ConfigMap> createReplaceResponseStep(Step next) {
-      return new ReplaceResponseStep(next);
+    /**
+     * This method is invoked after all config map processing is done. Subclasses may override
+     * it to record the config map in a packet.
+     * @param packet the packet
+     * @param configMap the final config map
+     */
+    void recordCurrentMap(Packet packet, V1ConfigMap configMap) {
     }
 
-    Step updateConfigMap(Step next, V1ConfigMap existingConfigMap) {
+    protected String getName() {
+      return name;
+    }
+
+    protected V1ConfigMap getModel() {
+      if (model == null) {
+        model = createModel(contents);
+      }
+      return model;
+    }
+
+    protected final V1ConfigMap createModel(Map<String, String> data) {
+      return new V1ConfigMap().kind("ConfigMap").apiVersion("v1").metadata(createMetadata()).data(data);
+    }
+
+    private V1ObjectMeta createMetadata() {
+      return updateForOwnerReference(
+          new V1ObjectMeta()
+          .name(name)
+          .namespace(namespace)
+          .labels(labels));
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    void addLabel(String name, String value) {
+      labels.put(name, value);
+      model = null;
+    }
+
+    private Map<String,String> getLabels() {
+      return Collections.unmodifiableMap(labels);
+    }
+
+    /**
+     * Creates the step which begins verifying or updating the config map.
+     * @param next the step to run after the config map processing is done
+     * @return the new step to run
+     */
+    Step verifyConfigMap(Step next) {
+      return new CallBuilder().readConfigMapAsync(getName(), namespace, new ReadResponseStep(next));
+    }
+
+    Step createConfigMap(Step next) {
       return new CallBuilder()
-          .replaceConfigMapAsync(
-              model.getMetadata().getName(),
-              domainNamespace,
-              createModel(getCombinedData(existingConfigMap)),
-              createReplaceResponseStep(next));
+          .createConfigMapAsync(namespace, getModel(), createCreateResponseStep(next));
     }
 
-    Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
-      Map<String, String> updated = existingConfigMap.getData();
-      updated.putAll(this.classpathScripts);
-      return updated;
+    boolean isIncompatibleMap(V1ConfigMap existingMap) {
+      return !COMPARATOR.containsAll(existingMap, getModel());
+    }
+
+    V1ConfigMap withoutTransientData(V1ConfigMap originalMap) {
+      if (originalMap != null && originalMap.getData() != null) {
+        originalMap.setData(withoutTransientEntries(originalMap.getData()));
+      }
+      return originalMap;
+    }
+
+    private Map<String, String> withoutTransientEntries(Map<String, String> data) {
+      data.entrySet().removeIf(this::shouldRemove);
+      return data;
+    }
+
+    boolean shouldRemove(Map.Entry<String, String> entry) {
+      return false;
     }
 
     class ReadResponseStep extends DefaultResponseStep<V1ConfigMap> {
@@ -236,17 +299,73 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        V1ConfigMap existingMap = callResponse.getResult();
+        DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).map(Domain::getIntrospectVersion)
+              .ifPresent(value -> addLabel(INTROSPECTION_STATE_LABEL, value));
+        V1ConfigMap existingMap = withoutTransientData(callResponse.getResult());
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
-        } else if (isCompatibleMap(existingMap)) {
-          logConfigMapExists();
-          packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, existingMap);
-          return doNext(packet);
-        } else {
+        } else if (isIncompatibleMap(existingMap)) {
           return doNext(updateConfigMap(getNext(), existingMap), packet);
+        } else if (mustPatchCurrentMap(existingMap)) {
+          return doNext(patchCurrentMap(existingMap, getNext()), packet);
+        } else {
+          logConfigMapExists();
+          recordCurrentMap(packet, existingMap);
+          return doNext(packet);
         }
       }
+
+      private Step createConfigMap(Step next) {
+        return new CallBuilder()
+            .createConfigMapAsync(namespace, getModel(), createCreateResponseStep(next));
+      }
+
+      private void logConfigMapExists() {
+        LOGGER.fine(MessageKeys.CM_EXISTS, getName(), namespace);
+      }
+
+      private Step updateConfigMap(Step next, V1ConfigMap existingConfigMap) {
+        return new CallBuilder().replaceConfigMapAsync(name, namespace,
+                                        createModel(getCombinedData(existingConfigMap)),
+                                        createReplaceResponseStep(next));
+      }
+
+      private boolean mustPatchCurrentMap(V1ConfigMap currentMap) {
+        return KubernetesUtils.isMissingValues(getMapLabels(currentMap), getLabels());
+      }
+
+      private Map<String, String> getMapLabels(@NotNull V1ConfigMap map) {
+        return Optional.ofNullable(map.getMetadata()).map(V1ObjectMeta::getLabels).orElseGet(Collections::emptyMap);
+      }
+
+      private Step patchCurrentMap(V1ConfigMap currentMap, Step next) {
+        JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+
+        if (labelsNotDefined(currentMap)) {
+          patchBuilder.add("/metadata/labels", JsonValue.EMPTY_JSON_OBJECT);
+        }
+        
+        KubernetesUtils.addPatches(
+            patchBuilder, "/metadata/labels/", getMapLabels(currentMap), getLabels());
+
+        return new CallBuilder()
+            .patchConfigMapAsync(name, namespace,
+                new V1Patch(patchBuilder.build().toString()), createPatchResponseStep(next));
+      }
+
+      private boolean labelsNotDefined(V1ConfigMap currentMap) {
+        return Objects.requireNonNull(currentMap.getMetadata()).getLabels() == null;
+      }
+    }
+
+    private Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
+      Map<String, String> updated = Objects.requireNonNull(existingConfigMap.getData());
+      updated.putAll(contents);
+      return updated;
+    }
+
+    private ResponseStep<V1ConfigMap> createCreateResponseStep(Step next) {
+      return new CreateResponseStep(next);
     }
 
     private class CreateResponseStep extends ResponseStep<V1ConfigMap> {
@@ -261,11 +380,14 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_CREATED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME,
-            domainNamespace);
-        packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, callResponse.getResult());
+        LOGGER.info(MessageKeys.CM_CREATED, getName(), namespace);
+        recordCurrentMap(packet, callResponse.getResult());
         return doNext(packet);
       }
+    }
+
+    private ResponseStep<V1ConfigMap> createReplaceResponseStep(Step next) {
+      return new ReplaceResponseStep(next);
     }
 
     private class ReplaceResponseStep extends ResponseStep<V1ConfigMap> {
@@ -280,130 +402,173 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_REPLACED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME,
-            domainNamespace);
-        packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, callResponse.getResult());
+        LOGGER.info(MessageKeys.CM_REPLACED, getName(), namespace);
+        recordCurrentMap(packet, callResponse.getResult());
         return doNext(packet);
       }
     }
-  }
 
-  abstract static class ConfigMapContext {
-    protected final Step conflictStep;
-    protected final String operatorNamespace;
-    protected final String domainNamespace;
-    protected V1ConfigMap model;
 
-    ConfigMapContext(Step conflictStep, String operatorNamespace, String domainNamespace) {
-      this.conflictStep = conflictStep;
-      this.operatorNamespace = operatorNamespace;
-      this.domainNamespace = domainNamespace;
+    private ResponseStep<V1ConfigMap> createPatchResponseStep(Step next) {
+      return new PatchResponseStep(next);
     }
 
-    protected V1ObjectMeta createMetadata(String configMapName) {
-      return new V1ObjectMeta()
-          .name(configMapName)
-          .namespace(this.domainNamespace)
-          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
-          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-    }
+    private class PatchResponseStep extends ResponseStep<V1ConfigMap> {
 
-    Step verifyConfigMap(Step next) {
-      return new CallBuilder()
-          .readConfigMapAsync(
-              model.getMetadata().getName(), domainNamespace, createReadResponseStep(next));
-    }
-
-    abstract ResponseStep<V1ConfigMap> createReadResponseStep(Step next);
-
-    Step createConfigMap(Step next) {
-      return new CallBuilder()
-          .createConfigMapAsync(domainNamespace, model, createCreateResponseStep(next));
-    }
-
-    abstract ResponseStep<V1ConfigMap> createCreateResponseStep(Step next);
-
-    protected boolean isCompatibleMap(V1ConfigMap existingMap) {
-      return VersionHelper.matchesResourceVersion(existingMap.getMetadata(), DEFAULT_DOMAIN_VERSION)
-          && COMPARATOR.containsAll(existingMap, this.model);
-    }
-
-    void logConfigMapExists() {
-      LOGGER.fine(MessageKeys.CM_EXISTS, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME, 
-          domainNamespace);
-    }
-  }
-
-  static class ConfigMapComparatorImpl implements ConfigMapComparator {
-    @Override
-    public boolean containsAll(V1ConfigMap actual, V1ConfigMap expected) {
-      return actual.getData().entrySet().containsAll(expected.getData().entrySet());
-    }
-  }
-
-  static class SitConfigMapStep extends Step {
-
-    SitConfigMapStep(Step next) {
-      super(next);
-    }
-
-    private static String getOperatorNamespace() {
-      String namespace = System.getenv("OPERATOR_NAMESPACE");
-      if (namespace == null) {
-        namespace = "default";
+      PatchResponseStep(Step next) {
+        super(next);
       }
-      return namespace;
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+        LOGGER.info(MessageKeys.CM_PATCHED, getName(), namespace);
+        return doNext(packet);
+      }
+    }
+
+  }
+
+  /** Returns true if the actual map contains all of the entries from the expected map. */
+  static class ConfigMapComparatorImpl extends ConfigMapComparator {
+
+    @Override
+    boolean containsAllData(Map<String, String> actual, Map<String, String> expected) {
+      return actual.entrySet().containsAll(expected.entrySet());
+    }
+  }
+
+  /**
+   * Factory for a step that creates or updates the generated domain config map from introspection results.
+   * Reads the following packet fields:
+   *   DOMAIN_INTROSPECTOR_LOG_RESULT     the introspection result
+   * and updates:
+   *   DOMAIN_TOPOLOGY                    the parsed topology
+   *   DOMAIN_HASH                        a hash of the topology
+   *   SECRETS_HASH                       a hash of the override secrets
+   *   DOMAIN_RESTART_VERSION             a field from the domain to force rolling when changed
+   *   DOMAIN_INPUTS_HASH                 a hash of the image used in the domain
+   *
+   * @param next Next step
+   * @return Step for creating config map containing introspection results
+   */
+  public static Step createIntrospectorConfigMapStep(Step next) {
+    return new IntrospectionConfigMapStep(next);
+  }
+
+  /**
+   * The first in a chain of steps to create the introspector config map from introspection results.
+   */
+  static class IntrospectionConfigMapStep extends Step {
+
+    IntrospectionConfigMapStep(Step next) {
+      super(next);
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      IntrospectionLoader loader = new IntrospectionLoader(packet, this);
+      if (loader.isTopologyNotValid()) {
+        return doNext(reportTopologyErrorsAndStop(), packet);
+      } else if (loader.getDomainConfig() == null)  {
+        return doNext(loader.createIntrospectionVersionUpdateStep(), packet);
+      } else {
+        LOGGER.fine(MessageKeys.WLS_CONFIGURATION_READ, timeSinceJobStart(packet), loader.getDomainConfig());
+        loader.updatePacket();
+        return doNext(loader.createValidationStep(), packet);
+      }
+    }
 
+    private long timeSinceJobStart(Packet packet) {
+      return System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME));
+    }
+
+  }
+
+  static class IntrospectionLoader {
+    private final Packet packet;
+    private final Step conflictStep;
+    private final DomainPresenceInfo info;
+    private Map<String, String> data;
+    private WlsDomainConfig wlsDomainConfig;
+
+    IntrospectionLoader(Packet packet, Step conflictStep) {
+      this.packet = packet;
+      this.info = packet.getSpi(DomainPresenceInfo.class);
+      this.conflictStep = conflictStep;
+      parseIntrospectorResult();
+    }
+
+    private void parseIntrospectorResult() {
       String result = (String) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT);
-      // Parse results into separate data files
-      Map<String, String> data = parseIntrospectorResult(result, info.getDomainUid());
+      data = ConfigMapHelper.parseIntrospectorResult(result, info.getDomainUid());
+
       LOGGER.fine("================");
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
-      String topologyYaml = data.get("topology.yaml");
-      if (topologyYaml != null) {
-        LOGGER.fine("topology.yaml: " + topologyYaml);
-        DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
-        if (domainTopology == null || !domainTopology.getDomainValid()) {
-          // If introspector determines Domain is invalid then log errors and terminate the fiber
-          if (domainTopology != null) {
-            logValidationErrors(domainTopology.getValidationErrors());
-          }
-          return doNext(null, packet);
-        }
-        WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
-        ScanCache.INSTANCE.registerScan(
-            info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, new DateTime()));
-        packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
-        String domainRestartVersion = info.getDomain().getRestartVersion();
-        if (domainRestartVersion != null) {
-          packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
-          data.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
-        }
-        LOGGER.fine(
-            MessageKeys.WLS_CONFIGURATION_READ,
-            (System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME))),
-            wlsDomainConfig);
-        SitConfigMapContext context =
-            new SitConfigMapContext(
-                this, info.getDomainUid(), getOperatorNamespace(), info.getNamespace(), data);
 
-        return doNext(
-            DomainValidationSteps.createValidateDomainTopologyStep(context.verifyConfigMap(getNext())),
-            packet
-        );
-      }
-
-      // TODO: How do we handle no topology?
-      return doNext(getNext(), packet);
+      wlsDomainConfig = Optional.ofNullable(data.get(IntrospectorConfigMapKeys.TOPOLOGY_YAML))
+            .map(this::getDomainTopology)
+            .map(DomainTopology::getDomain)
+            .orElse(null);
     }
 
-    private void logValidationErrors(List<String> validationErrors) {
+    boolean isTopologyNotValid() {
+      return packet.containsKey(DOMAIN_VALIDATION_ERRORS);
+    }
+
+    private void updatePacket() {
+      ScanCache.INSTANCE.registerScan(
+            info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, new DateTime()));
+      packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
+
+      copyFileToPacketIfPresent(DOMAINZIP_HASH, DOMAINZIP_HASH);
+      copyFileToPacketIfPresent(SECRETS_MD_5, SECRETS_MD_5);
+      copyToPacketAndFileIfPresent(DOMAIN_RESTART_VERSION, info.getDomain().getRestartVersion());
+      copyToPacketAndFileIfPresent(DOMAIN_INPUTS_HASH, getModelInImageSpecHash());
+    }
+
+    private Step createIntrospectionVersionUpdateStep() {
+      return DomainValidationSteps.createValidateDomainTopologyStep(
+            createIntrospectorConfigMapContext(conflictStep).patchOnly().verifyConfigMap(conflictStep.getNext()));
+    }
+
+    private Step createValidationStep() {
+      return DomainValidationSteps.createValidateDomainTopologyStep(
+            createIntrospectorConfigMapContext(conflictStep).verifyConfigMap(conflictStep.getNext()));
+    }
+
+    private IntrospectorConfigMapContext createIntrospectorConfigMapContext(Step conflictStep) {
+      return new IntrospectorConfigMapContext(conflictStep, info.getDomain(), data, info);
+    }
+
+    private String getModelInImageSpecHash() {
+      return String.valueOf(ConfigMapHelper.getModelInImageSpecHash(info.getDomain().getSpec().getImage()));
+    }
+
+    private void copyFileToPacketIfPresent(String fileName, String packetKey) {
+      Optional.ofNullable(data.get(fileName)).ifPresent(value -> packet.put(packetKey, value));
+    }
+
+    private void copyToPacketAndFileIfPresent(String packetKey, String stringValue) {
+      Optional.ofNullable(stringValue).ifPresent(value -> populatePacketAndFile(packetKey, value));
+    }
+
+    private void populatePacketAndFile(String packetKey, String value) {
+      packet.put(packetKey, value);
+      data.put(packetKey, value);
+    }
+
+    private WlsDomainConfig getDomainConfig() {
+      return wlsDomainConfig;
+    }
+
+    private DomainTopology getDomainTopology(String topologyYaml) {
+      LOGGER.fine("topology.yaml: " + topologyYaml);
+      return DomainTopology.parseDomainTopologyYaml(topologyYaml, this::reportValidationErrors);
+    }
+
+    private void reportValidationErrors(List<String> validationErrors) {
+      packet.put(ProcessingConstants.DOMAIN_VALIDATION_ERRORS, validationErrors);
       if (!validationErrors.isEmpty()) {
         for (String err : validationErrors) {
           LOGGER.severe(err);
@@ -412,125 +577,81 @@ public class ConfigMapHelper {
     }
   }
 
-  public static class SitConfigMapContext extends ConfigMapContext {
-    final Map<String, String> data;
+  public static Step reportTopologyErrorsAndStop() {
+    return new TopologyErrorsReportStep();
+  }
+
+  private static class TopologyErrorsReportStep extends Step {
+
+    @Override
+    public NextAction apply(Packet packet) {
+      List<String> errors = getErrors(packet);
+      Step step = DomainStatusUpdater.createFailedStep(DomainStatusUpdater.BAD_TOPOLOGY, perLine(errors), null);
+      return doNext(step, packet);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> getErrors(Packet packet) {
+      return (List<String>) packet.get(DOMAIN_VALIDATION_ERRORS);
+    }
+
+    @NotNull
+    private String perLine(List<String> errors) {
+      return String.join(lineSeparator(), errors);
+    }
+  }
+
+  public static class IntrospectorConfigMapContext extends ConfigMapContext {
     final String domainUid;
-    final String cmName;
+    private boolean patchOnly;
 
-    SitConfigMapContext(
-        Step conflictStep,
-        String domainUid,
-        String operatorNamespace,
-        String domainNamespace,
-        Map<String, String> data) {
-      super(conflictStep, operatorNamespace, domainNamespace);
+    IntrospectorConfigMapContext(
+          Step conflictStep,
+          Domain domain,
+          Map<String, String> data,
+          DomainPresenceInfo info) {
+      super(conflictStep, getIntrospectorConfigMapName(domain.getDomainUid()), domain.getNamespace(), data, info);
 
-      this.domainUid = domainUid;
-      this.cmName = getConfigMapName(domainUid);
-      this.data = data;
-      this.model = createModel(data);
+      this.domainUid = domain.getDomainUid();
+      addLabel(LabelConstants.DOMAINUID_LABEL, domainUid);
     }
 
-    public static String getConfigMapName(String domainUid) {
-      return domainUid + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+    IntrospectorConfigMapContext patchOnly() {
+      patchOnly = true;
+      return this;
     }
 
-    private V1ConfigMap createModel(Map<String, String> data) {
-      return new V1ConfigMap()
-          .apiVersion("v1")
-          .kind("ConfigMap")
-          .metadata(createMetadata())
-          .data(data);
+    @Override
+    Step createConfigMap(Step next) {
+      return patchOnly ? null : super.createConfigMap(next);
     }
 
-    ResponseStep<V1ConfigMap> createReadResponseStep(Step next) {
-      return new ReadResponseStep(next);
+    @Override
+    boolean isIncompatibleMap(V1ConfigMap existingMap) {
+      return !patchOnly && super.isIncompatibleMap(existingMap);
     }
 
-    private V1ObjectMeta createMetadata() {
-      return super.createMetadata(cmName).putLabelsItem(LabelConstants.DOMAINUID_LABEL, domainUid);
+    @Override
+    boolean shouldRemove(Map.Entry<String, String> entry) {
+      return !patchOnly && isRemovableKey(entry.getKey());
     }
 
-    ResponseStep<V1ConfigMap> createCreateResponseStep(Step next) {
-      return new CreateResponseStep(next);
+    private boolean isRemovableKey(String key) {
+      return key.startsWith(SIT_CONFIG_FILE_PREFIX);
     }
 
-    ResponseStep<V1ConfigMap> createReplaceResponseStep(Step next) {
-      return new ReplaceResponseStep(next);
-    }
+  }
 
-    Step updateConfigMap(Step next, V1ConfigMap existingConfigMap) {
-      return new CallBuilder()
-          .replaceConfigMapAsync(
-              model.getMetadata().getName(),
-              domainNamespace,
-              createModel(getCombinedData(existingConfigMap)),
-              createReplaceResponseStep(next));
-    }
-
-    Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
-      Map<String, String> updated = existingConfigMap.getData();
-      updated.putAll(this.data);
-      return updated;
-    }
-
-    class ReadResponseStep extends DefaultResponseStep<V1ConfigMap> {
-      ReadResponseStep(Step next) {
-        super(next);
-      }
-
-      @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        V1ConfigMap existingMap = callResponse.getResult();
-        if (existingMap == null) {
-          return doNext(createConfigMap(getNext()), packet);
-        } else if (isCompatibleMap(existingMap)) {
-          logConfigMapExists();
-          packet.put(ProcessingConstants.SIT_CONFIG_MAP, existingMap);
-          return doNext(packet);
-        } else {
-          return doNext(updateConfigMap(getNext(), existingMap), packet);
-        }
-      }
-    }
-
-    private class CreateResponseStep extends ResponseStep<V1ConfigMap> {
-      CreateResponseStep(Step next) {
-        super(next);
-      }
-
-      @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        return super.onFailure(conflictStep, packet, callResponse);
-      }
-
-      @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_CREATED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME, 
-            domainNamespace);
-        packet.put(ProcessingConstants.SIT_CONFIG_MAP, callResponse.getResult());
-        return doNext(packet);
-      }
-    }
-
-    private class ReplaceResponseStep extends ResponseStep<V1ConfigMap> {
-      ReplaceResponseStep(Step next) {
-        super(next);
-      }
-
-      @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        return super.onFailure(conflictStep, packet, callResponse);
-      }
-
-      @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_REPLACED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME,
-            domainNamespace);
-        packet.put(ProcessingConstants.SIT_CONFIG_MAP, callResponse.getResult());
-        return doNext(packet);
-      }
-    }
+  /**
+   * Factory for a step that deletes the generated introspector config map.
+   *
+   * @param domainUid The unique identifier assigned to the WebLogic domain when it was registered
+   * @param namespace the domain namespace
+   * @param next the next step to run after the map is deleted
+   * @return the created step
+   */
+  public static Step deleteIntrospectorConfigMapStep(String domainUid, String namespace, Step next) {
+    return new DeleteIntrospectorConfigMapStep(domainUid, namespace, next);
   }
 
   private static class DeleteIntrospectorConfigMapStep extends Step {
@@ -545,147 +666,123 @@ public class ConfigMapHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      return doNext(deleteSitConfigMap(getNext()), packet);
+      return doNext(deleteIntrospectorConfigMap(getNext()), packet);
     }
 
     String getConfigMapDeletedMessageKey() {
-      return "Domain Introspector config map "
-          + SitConfigMapContext.getConfigMapName(this.domainUid)
-          + " deleted";
+      return String.format("Introspector config map %s deleted", getIntrospectorConfigMapName(this.domainUid));
     }
 
     protected void logConfigMapDeleted() {
       LOGGER.fine(getConfigMapDeletedMessageKey());
     }
 
-    private Step deleteSitConfigMap(Step next) {
+    private Step deleteIntrospectorConfigMap(Step next) {
       logConfigMapDeleted();
-      String configMapName = SitConfigMapContext.getConfigMapName(this.domainUid);
-      Step step =
-          new CallBuilder()
-              .deleteConfigMapAsync(
-                  configMapName,
-                  this.namespace,
-                  new V1DeleteOptions(),
-                  new DefaultResponseStep<>(next));
-      return step;
-    }
-  }
-
-  private static class ReadSituConfigMapStep extends ResponseStep<V1ConfigMap> {
-
-    ReadSituConfigMapStep() {
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-
-      V1ConfigMap result = callResponse.getResult();
-      if (result != null) {
-        Map<String, String> data = result.getData();
-        final String topologyYaml = data.get("topology.yaml");
-        final String domainRestartVersion = data.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-
-        LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version (from ino spec) "
-            + info.getDomain().getRestartVersion());
-        LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version from cm result "
-            + domainRestartVersion);
-
-        if (topologyYaml != null) {
-
-          if (domainRestartVersion != null) {
-            packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
-          }
-
-          ConfigMapHelper.DomainTopology domainTopology =
-              ConfigMapHelper.parseDomainTopologyYaml(topologyYaml);
-          if (domainTopology != null) {
-            WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
-            ScanCache.INSTANCE.registerScan(
-                info.getNamespace(),
-                info.getDomainUid(),
-                new Scan(wlsDomainConfig, new DateTime()));
-            packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
-            return doNext(DomainValidationSteps.createValidateDomainTopologyStep(getNext()), packet);
-          }
-        }
-
-      }
-      return doNext(packet);
+      String configMapName = getIntrospectorConfigMapName(this.domainUid);
+      return new CallBuilder()
+          .deleteConfigMapAsync(configMapName, namespace, new V1DeleteOptions(), new DefaultResponseStep<>(next));
     }
   }
 
   /**
-   * Domain topology.
+   * Reads the introspector config map for the specified domain, populating the following packet entries:
+   *   DOMAIN_TOPOLOGY                    the parsed topology
+   *   DOMAIN_HASH                        a hash of the topology
+   *   SECRETS_HASH                       a hash of the override secrets
+   *   DOMAIN_RESTART_VERSION             a field from the domain to force rolling when changed
+   *   DOMAIN_INPUTS_HASH                 a hash of the image used in the domain.
+   *
+   * @param ns the namespace of the domain
+   * @param domainUid the unique domain ID
+   * @return a step to do the processing.
    */
-  public static class DomainTopology {
-    private boolean domainValid;
-    private WlsDomainConfig domain;
-    private List<String> validationErrors;
+  public static Step readExistingIntrospectorConfigMap(String ns, String domainUid) {
+    String configMapName = getIntrospectorConfigMapName(domainUid);
+    return new CallBuilder().readConfigMapAsync(configMapName, ns, new ReadIntrospectorConfigMapStep());
+  }
 
-    /**
-     * check if domain is valid.
-     * @return true, if valid
-     */
-    public boolean getDomainValid() {
-      // domainValid = true AND no validation errors exist
-      return domainValid && getValidationErrors().isEmpty();
+  private static class ReadIntrospectorConfigMapStep extends DefaultResponseStep<V1ConfigMap> {
+
+    ReadIntrospectorConfigMapStep() {
     }
 
-    public void setDomainValid(boolean domainValid) {
-      this.domainValid = domainValid;
-    }
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      V1ConfigMap result = callResponse.getResult();
+      copyMapEntryToPacket(result, packet, SECRETS_MD_5);
+      copyMapEntryToPacket(result, packet, DOMAINZIP_HASH);
+      copyMapEntryToPacket(result, packet, DOMAIN_RESTART_VERSION);
+      copyMapEntryToPacket(result, packet, DOMAIN_INPUTS_HASH);
 
-    public WlsDomainConfig getDomain() {
-      this.domain.processDynamicClusters();
-      return this.domain;
-    }
+      DomainTopology domainTopology =
+            Optional.ofNullable(result)
+                  .map(V1ConfigMap::getData)
+                  .map(this::getTopologyYaml)
+                  .map(DomainTopology::parseDomainTopologyYaml)
+                  .orElse(null);
 
-    public void setDomain(WlsDomainConfig domain) {
-      this.domain = domain;
-    }
-
-    /**
-     * Retrieve validation errors.
-     * @return validation errors
-     */
-    public List<String> getValidationErrors() {
-      if (validationErrors == null) {
-        validationErrors = Collections.emptyList();
+      if (domainTopology != null) {
+        recordTopology(packet, packet.getSpi(DomainPresenceInfo.class), domainTopology);
+        return doNext(DomainValidationSteps.createValidateDomainTopologyStep(getNext()), packet);
+      } else {
+        return doNext(packet);
       }
-
-      if (!domainValid && validationErrors.isEmpty()) {
-        // add a log message that domain was marked invalid since we have no validation
-        // errors from introspector.
-        validationErrors = new ArrayList<>();
-        validationErrors.add(
-            "Error, domain is invalid although there are no validation errors from introspector job.");
-      }
-
-      return validationErrors;
     }
 
-    public void setValidationErrors(List<String> validationErrors) {
-      this.validationErrors = validationErrors;
+    private String getTopologyYaml(Map<String, String> data) {
+      return data.get(IntrospectorConfigMapKeys.TOPOLOGY_YAML);
     }
 
-    /**
-     * to string.
-     * @return string
-     */
-    public String toString() {
-      if (domainValid) {
-        return "domain: " + domain;
-      }
-      return "domainValid: " + domainValid + ", validationErrors: " + validationErrors;
+    private void recordTopology(Packet packet, DomainPresenceInfo info, DomainTopology domainTopology) {
+      ScanCache.INSTANCE.registerScan(
+          info.getNamespace(),
+          info.getDomainUid(),
+          new Scan(domainTopology.getDomain(), new DateTime()));
+
+      packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, domainTopology.getDomain());
+    }
+
+    private void copyMapEntryToPacket(V1ConfigMap result, Packet packet, String mapKey) {
+      Optional.ofNullable(result)
+            .map(V1ConfigMap::getData)
+            .map(m -> m.get(mapKey))
+            .ifPresent(v -> addToPacket(packet, mapKey, v));
+    }
+
+    private void addToPacket(Packet packet, String key, String value) {
+      LOGGER.finest("Read " + key + " value " + value + " from domain config map");
+      packet.put(key, value);
     }
   }
+
+  /**
+   * Reads the introspector config map for the specified domain, populating the following packet entries.
+   *   INTROSPECTION_STATE_LABEL          the value of the domain's 'introspectVersion' when this map was created
+   *
+   * @param ns the namespace of the domain
+   * @param domainUid the unique domain ID
+   * @return a step to do the processing.
+   */
+  public static Step readIntrospectionVersionStep(String ns, String domainUid) {
+    String configMapName = getIntrospectorConfigMapName(domainUid);
+    return new CallBuilder().readConfigMapAsync(configMapName, ns, new ReadIntrospectionVersionStep());
+  }
+
+  private static class ReadIntrospectionVersionStep extends DefaultResponseStep<V1ConfigMap> {
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      Optional.ofNullable(callResponse.getResult())
+            .map(V1ConfigMap::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .map(l -> l.get(INTROSPECTION_STATE_LABEL))
+            .ifPresentOrElse(
+                version -> packet.put(INTROSPECTION_STATE_LABEL, version),
+                () -> packet.remove(INTROSPECTION_STATE_LABEL));
+
+      return doNext(packet);
+    }
+  }
+
 }

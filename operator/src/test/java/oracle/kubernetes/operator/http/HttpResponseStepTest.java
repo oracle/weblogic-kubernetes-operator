@@ -44,15 +44,15 @@ public class HttpResponseStepTest {
   @Test
   public void classHasOnSuccessMethod() throws NoSuchMethodException {
     assertThat(
-        HttpResponseStep.class.getDeclaredMethod("onSuccess", Packet.class, HttpResponse.class),
-        notNullValue());
+          HttpResponseStep.class.getDeclaredMethod("onSuccess", Packet.class, HttpResponse.class),
+          notNullValue());
   }
 
   @Test
   public void classHasOnFailureMethod() throws NoSuchMethodException {
     assertThat(
-        HttpResponseStep.class.getDeclaredMethod("onFailure", Packet.class, HttpResponse.class),
-        notNullValue());
+          HttpResponseStep.class.getDeclaredMethod("onFailure", Packet.class, HttpResponse.class),
+          notNullValue());
   }
 
   @Test

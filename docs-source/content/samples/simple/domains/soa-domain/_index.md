@@ -3,7 +3,7 @@ title: "SOA domain"
 date: 2019-04-18T07:32:31-05:00
 weight: 6
 description: "Sample for creating a SOA Suite domain home on an existing PV or
-PVC, and the domain resource YAML file for deploying the generated SOA domain."
+PVC, and the Domain YAML file for deploying the generated SOA domain."
 ---
 
 {{% notice warning %}}
@@ -94,7 +94,7 @@ The following parameters can be provided in the inputs file.
 | `createDomainScriptName` | Script that the create domain script uses to create a WebLogic domain. The `create-domain.sh` script creates a Kubernetes Job to run this script to create a domain home. The script is located in the in-pod directory that is specified in the `createDomainScriptsMountPath` property. If you need to provide your own scripts to create the domain home, instead of using the built-it scripts, you must use this property to set the name of the script that you want the create domain job to run. | `create-domain-job.sh` |
 | `domainHome` | Home directory of the SOA domain. If not specified, the value is derived from the `domainUID` as `/shared/domains/<domainUID>`. | `/u01/oracle/user_projects/domains/soainfra` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. | `/u01/oracle/user_projects` |
-| `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes Service name. | `soainfra` |
+| `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes Domain. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes Service name. | `soainfra` |
 | `domainType` | Type of the domain. Mandatory input for SOA Suite domains. You must provide one of the supported domain type values: `soa` (deploys a SOA domain),`osb` (deploys an OSB (Oracle Service Bus) domain),`soaess` (deploys a SOA domain with Enterprise Scheduler (ESS)),`soaosb` (deploys a domain with SOA and OSB), and `soaessosb` (deploys a domain with SOA, OSB, and ESS). | `soa`
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
@@ -194,15 +194,12 @@ $ cat output/weblogic-domains/soainfra/domain.yaml
 #
 # This is an example of how to define a Domain resource.
 #
-# If you are using 3.0.0-rc1, then the version on the following line
-# should be `v8` not `v7`.
-apiVersion: "weblogic.oracle/v7"
+apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
   name: soainfra
   namespace: soans
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: soainfra
 spec:
   # The WebLogic Domain Home
@@ -315,15 +312,14 @@ $ kubectl describe domain soainfra -n soans
 Name:         soainfra
 Namespace:    soans
 Labels:       weblogic.domainUID=soainfra
-              weblogic.resourceVersion=domain-v2
 Annotations:  <none>
-API Version:  weblogic.oracle/v7
+API Version:  weblogic.oracle/v8
 Kind:         Domain
 Metadata:
   Creation Timestamp:  2020-01-27T10:04:11Z
   Generation:          6
   Resource Version:    18537800
-  Self Link:           /apis/weblogic.oracle/v7/namespaces/soans/domains/soainfra
+  Self Link:           /apis/weblogic.oracle/v8/namespaces/soans/domains/soainfra
   UID:                 5dcb76e4-40ec-11ea-b332-020017041cc2
 Spec:
   Admin Server:

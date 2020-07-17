@@ -65,6 +65,9 @@ import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.V1TokenReview;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
+import okhttp3.internal.http2.ErrorCode;
+import okhttp3.internal.http2.StreamResetException;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -90,6 +93,7 @@ import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONE
 
 @SuppressWarnings("WeakerAccess")
 public class KubernetesTestSupport extends FiberTestSupport {
+  public static final String BETA_CRD = "BetaCRD";
   public static final String CONFIG_MAP = "ConfigMap";
   public static final String CUSTOM_RESOURCE_DEFINITION = "CRD";
   public static final String DOMAIN = "Domain";
@@ -122,6 +126,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
    * @return a memento which can be used to restore the production factory
    */
   public Memento install() {
+    support(BETA_CRD, V1beta1CustomResourceDefinition.class);
     support(CUSTOM_RESOURCE_DEFINITION, V1CustomResourceDefinition.class);
     support(SELF_SUBJECT_ACCESS_REVIEW, V1SelfSubjectAccessReview.class);
     support(SELF_SUBJECT_RULES_REVIEW, V1SubjectRulesReviewStatus.class);
@@ -297,6 +302,33 @@ public class KubernetesTestSupport extends FiberTestSupport {
   }
 
   /**
+   * Specifies that a replace operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnReplace(String resourceType, String name, String namespace, int httpStatus) {
+    failure = new Failure(Operation.replace, resourceType, name, namespace, httpStatus);
+  }
+
+  /**
+   * Specifies that a replace operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   */
+  public void failOnReplaceWithStreamResetException(String resourceType, String name, String namespace) {
+    ApiException ae = new ApiException("StreamResetException: stream was reset: NO_ERROR",
+            new StreamResetException(ErrorCode.NO_ERROR), 0, null, null);
+    failure = new Failure(Operation.replace, resourceType, name, namespace, ae);
+  }
+
+  /**
    * Specifies that a delete operation should fail if it matches the specified conditions. Applies to
    * namespaced resources.
    *
@@ -430,6 +462,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     Failure(Operation operation, String resourceType, String name, String namespace, int httpStatus) {
       this(resourceType, name, namespace, httpStatus);
+      this.operation = operation;
+    }
+
+    Failure(Operation operation, String resourceType, String name, String namespace, ApiException apiException) {
+      this(resourceType, name, namespace, apiException);
       this.operation = operation;
     }
 

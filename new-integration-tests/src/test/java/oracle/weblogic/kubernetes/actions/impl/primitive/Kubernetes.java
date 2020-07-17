@@ -33,10 +33,10 @@ import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
-import io.kubernetes.client.openapi.apis.ExtensionsV1beta1Api;
+import io.kubernetes.client.openapi.apis.NetworkingV1beta1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressList;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
@@ -77,27 +77,29 @@ import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 // TODO ryan - in here we want to implement all of the kubernetes
 // primitives that we need, using the API, not spawning a process
 // to run kubectl.
-public class Kubernetes implements LoggedTest {
+public class Kubernetes {
 
   private static String PRETTY = "true";
   private static Boolean ALLOW_WATCH_BOOKMARKS = false;
   private static String RESOURCE_VERSION = "";
   private static Integer TIMEOUT_SECONDS = 5;
   private static String DOMAIN_GROUP = "weblogic.oracle";
-  private static String DOMAIN_VERSION = "v7";
+  private static String DOMAIN_VERSION = "v8";
   private static String DOMAIN_PLURAL = "domains";
   private static String FOREGROUND = "Foreground";
   private static String BACKGROUND = "Background";
@@ -131,6 +133,10 @@ public class Kubernetes implements LoggedTest {
     try {
       Configuration.setDefaultApiClient(ClientBuilder.defaultClient());
       apiClient = Configuration.getDefaultApiClient();
+      // disable connection and read write timeout to force the internal HTTP client
+      // to keep a long running connection with the server to fix SSL connection closed issue
+      apiClient.setConnectTimeout(0);
+      apiClient.setReadTimeout(0);
       coreV1Api = new CoreV1Api();
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
@@ -308,7 +314,7 @@ public class Kubernetes implements LoggedTest {
         status = true;
       }
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
     return status;
@@ -338,7 +344,7 @@ public class Kubernetes implements LoggedTest {
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return deployments;
@@ -366,7 +372,7 @@ public class Kubernetes implements LoggedTest {
           null // V1DeleteOptions.
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return true;
@@ -411,7 +417,7 @@ public class Kubernetes implements LoggedTest {
           null // Boolean, add timestamp at the beginning of every line of log output
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
     return log;
@@ -430,7 +436,7 @@ public class Kubernetes implements LoggedTest {
     try {
       pod = coreV1Api.createNamespacedPod(namespace, podBody, null, null, null);
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
     return pod;
@@ -448,13 +454,13 @@ public class Kubernetes implements LoggedTest {
     KubernetesApiResponse<V1Pod> response = podClient.delete(namespace, name);
 
     if (!response.isSuccess()) {
-      logger.warning("Failed to delete pod '" + name + "' from namespace: "
+      getLogger().warning("Failed to delete pod '" + name + "' from namespace: "
           + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
-      logger.info(
+      getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
               + "pod in background!");
     }
@@ -482,6 +488,20 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
+   * Returns the IP address allocated to the pod with following parameters.
+   *
+   * @param namespace in which to check for the pod existence
+   * @param labelSelectors in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod to return
+   * @return IP address allocated to the pod
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getPodIP(String namespace, String labelSelectors, String podName) throws ApiException {
+    V1Pod pod = getPod(namespace, labelSelectors, podName);
+    return pod.getStatus().getPodIP();
+  }
+
+  /**
    * Get the creationTimestamp for a given pod with following parameters.
    *
    * @param namespace in which to check for the pod existence
@@ -497,7 +517,7 @@ public class Kubernetes implements LoggedTest {
     if (pod != null && pod.getMetadata() != null) {
       return pod.getMetadata().getCreationTimestamp();
     } else {
-      logger.info("Pod doesn't exist or pod metadata is null");
+      getLogger().info("Pod doesn't exist or pod metadata is null");
       return null;
     }
   }
@@ -527,15 +547,16 @@ public class Kubernetes implements LoggedTest {
             return containerStatus.getRestartCount();
           }
         }
-        logger.severe("Container {0} status doesn't exist or pod's container statuses is empty in namespace {1}",
+        getLogger().severe("Container {0} status doesn't exist or pod's container statuses is empty in namespace {1}",
             containerName, namespace);
       }
     } else {
-      logger.severe("Pod {0} doesn't exist or pod status is null in namespace {1}",
+      getLogger().severe("Pod {0} doesn't exist or pod status is null in namespace {1}",
           podName, namespace);
     }
     return 0;
   }
+
 
   /**
    * Get the weblogic.domainRestartVersion label from a given pod.
@@ -553,7 +574,7 @@ public class Kubernetes implements LoggedTest {
       // return the value of the weblogic.domainRestartVersion label
       return pod.getMetadata().getLabels().get("weblogic.domainRestartVersion");
     } else {
-      logger.info("getPodRestartVersion(): Pod doesn't exist");
+      getLogger().info("getPodRestartVersion(): Pod doesn't exist");
       return null;
     }
   }
@@ -583,7 +604,7 @@ public class Kubernetes implements LoggedTest {
               Boolean.FALSE // Watch for changes to the described resources.
           );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
     return v1PodList;
@@ -616,7 +637,7 @@ public class Kubernetes implements LoggedTest {
   public static void copyFileToPod(
       String namespace, String pod, String container, Path srcPath, Path destPath)
       throws IOException, ApiException {
-    Copy copy = new Copy();
+    Copy copy = new Copy(apiClient);
     copy.copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
 
@@ -640,7 +661,7 @@ public class Kubernetes implements LoggedTest {
           null // name associated with the actor or entity that is making these changes
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -669,7 +690,7 @@ public class Kubernetes implements LoggedTest {
           null // name associated with the actor or entity that is making these changes
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -693,7 +714,7 @@ public class Kubernetes implements LoggedTest {
           null // field manager
       );
     } catch (ApiException ex) {
-      logger.severe(ex.getResponseBody());
+      getLogger().severe(ex.getResponseBody());
       throw ex;
     }
   }
@@ -719,7 +740,7 @@ public class Kubernetes implements LoggedTest {
           false // Watch for changes to the described resources
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -750,7 +771,7 @@ public class Kubernetes implements LoggedTest {
           false // Watch for changes to the described resources
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -772,10 +793,10 @@ public class Kubernetes implements LoggedTest {
       // status 409 means contents in the namespace being removed,
       // once done namespace will be purged
       if (response.getHttpStatusCode() == 409) {
-        logger.warning(response.getStatus().getMessage());
+        getLogger().warning(response.getStatus().getMessage());
         return false;
       } else {
-        logger.warning("Failed to delete namespace: "
+        getLogger().warning("Failed to delete namespace: "
             + name + " with HTTP status code: " + response.getHttpStatusCode());
         return false;
       }
@@ -783,7 +804,7 @@ public class Kubernetes implements LoggedTest {
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for namespace {0} to be deleted "
+            condition -> getLogger().info("Waiting for namespace {0} to be deleted "
                     + "(elapsed time {1}ms, remaining time {2}ms)",
                 name,
                 condition.getElapsedTimeInMS(),
@@ -836,7 +857,7 @@ public class Kubernetes implements LoggedTest {
       events.sort(Comparator.comparing(e -> e.getMetadata().getCreationTimestamp()));
       Collections.reverse(events);
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return events;
@@ -883,7 +904,7 @@ public class Kubernetes implements LoggedTest {
           null // field manager
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -913,14 +934,14 @@ public class Kubernetes implements LoggedTest {
     KubernetesApiResponse<Domain> response = crdClient.delete(namespace, domainUid, deleteOptions);
 
     if (!response.isSuccess()) {
-      logger.warning(
+      getLogger().warning(
           "Failed to delete Domain Custom Resource '" + domainUid + "' from namespace: "
           + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
-      logger.info(
+      getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
           + "domain custom resource in background!");
     }
@@ -948,7 +969,7 @@ public class Kubernetes implements LoggedTest {
           domainUid // custom object's name
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -956,7 +977,7 @@ public class Kubernetes implements LoggedTest {
       return handleResponse(domain, Domain.class);
     }
 
-    logger.warning("Domain Custom Resource '" + domainUid + "' not found in namespace " + namespace);
+    getLogger().warning("Domain Custom Resource '" + domainUid + "' not found in namespace " + namespace);
     return null;
   }
 
@@ -1030,7 +1051,7 @@ public class Kubernetes implements LoggedTest {
     );
 
     if (!response.isSuccess()) {
-      logger.warning(
+      getLogger().warning(
           "Failed to patch " + domainUid + " in namespace " + namespace + " using patch format: "
               + patchFormat);
       return false;
@@ -1063,7 +1084,7 @@ public class Kubernetes implements LoggedTest {
     try {
       response = crdClient.list(namespace);
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
       throw ex;
     }
     return response != null ? response.getObject() : new DomainList();
@@ -1105,6 +1126,52 @@ public class Kubernetes implements LoggedTest {
           null // name associated with the actor or entity that is making these changes
       );
     } catch (ApiException apex) {
+      getLogger().severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
+   * Replace a Kubernetes Config Map.
+   * The following command updates a complete configMap.
+   *
+   * @param configMap V1ConfigMap object containing config map configuration data
+   * @return true if successful
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean replaceConfigMap(V1ConfigMap configMap) throws ApiException {
+    LoggingFacade logger = getLogger();
+    if (configMap == null) {
+      throw new IllegalArgumentException(
+              "Parameter 'configMap' cannot be null when calling patchConfigMap()");
+    }
+
+    if (configMap.getMetadata() == null) {
+      throw new IllegalArgumentException(
+              "'metadata' field of the parameter 'configMap' cannot be null when calling patchConfigMap()");
+    }
+
+    if (configMap.getMetadata().getNamespace() == null) {
+      throw new IllegalArgumentException(
+              "'namespace' field in the metadata cannot be null when calling patchConfigMap()");
+    }
+
+    String namespace = configMap.getMetadata().getNamespace();
+
+    V1ConfigMap cm;
+    try {
+      cm = coreV1Api.replaceNamespacedConfigMap(
+              configMap.getMetadata().getName(),
+              namespace,
+              configMap, // config map configuration data
+              PRETTY, // pretty print output
+              null, // indicates that modifications should not be persisted
+              null // name associated with the actor or entity that is making these changes
+      );
+      assertNotNull(cm, "cm replace failed ");
+    } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
       throw apex;
     }
@@ -1136,7 +1203,7 @@ public class Kubernetes implements LoggedTest {
           false // Watch for changes to the described resources
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -1153,15 +1220,14 @@ public class Kubernetes implements LoggedTest {
   public static boolean deleteConfigMap(String name, String namespace) {
 
     KubernetesApiResponse<V1ConfigMap> response = configMapClient.delete(namespace, name, deleteOptions);
-
     if (!response.isSuccess()) {
-      logger.warning("Failed to delete config map '" + name + "' from namespace: "
+      getLogger().warning("Failed to delete config map '" + name + "' from namespace: "
           + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
-      logger.info(
+      getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
           + "config map in background!");
     }
@@ -1205,7 +1271,7 @@ public class Kubernetes implements LoggedTest {
           null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -1224,13 +1290,13 @@ public class Kubernetes implements LoggedTest {
     KubernetesApiResponse<V1Secret> response = secretClient.delete(namespace, name);
 
     if (!response.isSuccess()) {
-      logger.warning("Failed to delete secret '" + name + "' from namespace: "
+      getLogger().warning("Failed to delete secret '" + name + "' from namespace: "
           + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
-      logger.info(
+      getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
           + "secret in background!");
     }
@@ -1248,7 +1314,7 @@ public class Kubernetes implements LoggedTest {
     if (list.isSuccess()) {
       return list.getObject();
     } else {
-      logger.warning("Failed to list secrets, status code {0}", list.getHttpStatusCode());
+      getLogger().warning("Failed to list secrets, status code {0}", list.getHttpStatusCode());
       return null;
     }
   }
@@ -1276,7 +1342,7 @@ public class Kubernetes implements LoggedTest {
           null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -1319,7 +1385,7 @@ public class Kubernetes implements LoggedTest {
           null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -1337,13 +1403,13 @@ public class Kubernetes implements LoggedTest {
     KubernetesApiResponse<V1PersistentVolume> response = pvClient.delete(name, deleteOptions);
 
     if (!response.isSuccess()) {
-      logger.warning("Failed to delete persistent volume '" + name + "' "
+      getLogger().warning("Failed to delete persistent volume '" + name + "' "
           + "with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
-      logger.info(
+      getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
           + "persistent volume in background!");
     }
@@ -1363,14 +1429,14 @@ public class Kubernetes implements LoggedTest {
     KubernetesApiResponse<V1PersistentVolumeClaim> response = pvcClient.delete(namespace, name, deleteOptions);
 
     if (!response.isSuccess()) {
-      logger.warning(
+      getLogger().warning(
           "Failed to delete persistent volume claim '" + name + "' from namespace: "
           + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
-      logger.info(
+      getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
           + "persistent volume claim in background!");
     }
@@ -1387,7 +1453,7 @@ public class Kubernetes implements LoggedTest {
     if (list.isSuccess()) {
       return list.getObject();
     } else {
-      logger.warning("Failed to list Persistent Volumes,"
+      getLogger().warning("Failed to list Persistent Volumes,"
           + " status code {0}", list.getHttpStatusCode());
       return null;
     }
@@ -1414,7 +1480,7 @@ public class Kubernetes implements LoggedTest {
           false // Watch for changes to the described resources
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
     return listPersistentVolume;
@@ -1430,7 +1496,7 @@ public class Kubernetes implements LoggedTest {
     if (list.isSuccess()) {
       return list.getObject();
     } else {
-      logger.warning("Failed to list Persistent Volumes claims,"
+      getLogger().warning("Failed to list Persistent Volumes claims,"
           + " status code {0}", list.getHttpStatusCode());
       return null;
     }
@@ -1472,7 +1538,7 @@ public class Kubernetes implements LoggedTest {
           null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -1491,17 +1557,17 @@ public class Kubernetes implements LoggedTest {
     KubernetesApiResponse<V1ServiceAccount> response = serviceAccountClient.delete(namespace, name, deleteOptions);
 
     if (!response.isSuccess()) {
-      logger.warning("Failed to delete Service Account '" + name + "' from namespace: "
+      getLogger().warning("Failed to delete Service Account '" + name + "' from namespace: "
           + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
-      logger.info(
+      getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
           + "service account in background!");
       V1ServiceAccount serviceAccount = (V1ServiceAccount) response.getObject();
-      logger.info(
+      getLogger().info(
           "Deleting Service Account " + serviceAccount.getMetadata().getName() + " in background.");
     }
 
@@ -1519,7 +1585,7 @@ public class Kubernetes implements LoggedTest {
     if (list.isSuccess()) {
       return list.getObject();
     } else {
-      logger.warning("Failed to list service accounts, status code {0}", list.getHttpStatusCode());
+      getLogger().warning("Failed to list service accounts, status code {0}", list.getHttpStatusCode());
       return null;
     }
   }
@@ -1560,7 +1626,7 @@ public class Kubernetes implements LoggedTest {
           null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -1579,13 +1645,13 @@ public class Kubernetes implements LoggedTest {
     KubernetesApiResponse<V1Service> response = serviceClient.delete(namespace, name, deleteOptions);
 
     if (!response.isSuccess()) {
-      logger.warning("Failed to delete Service '" + name + "' from namespace: "
+      getLogger().warning("Failed to delete Service '" + name + "' from namespace: "
           + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
-      logger.info(
+      getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
           + "service in background!");
     }
@@ -1666,7 +1732,7 @@ public class Kubernetes implements LoggedTest {
     if (list.isSuccess()) {
       return list.getObject();
     } else {
-      logger.warning("Failed to list services in namespace {0}, status code {1}",
+      getLogger().warning("Failed to list services in namespace {0}, status code {1}",
           namespace, list.getHttpStatusCode());
       return null;
     }
@@ -1695,7 +1761,7 @@ public class Kubernetes implements LoggedTest {
         name = createdJob.getMetadata().getName();
       }
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
     return name;
@@ -1723,7 +1789,7 @@ public class Kubernetes implements LoggedTest {
           null // V1DeleteOptions.
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return true;
@@ -1753,7 +1819,7 @@ public class Kubernetes implements LoggedTest {
           Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return list;
@@ -1804,7 +1870,7 @@ public class Kubernetes implements LoggedTest {
           null // V1DeleteOptions.
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return true;
@@ -1834,12 +1900,34 @@ public class Kubernetes implements LoggedTest {
       );
       return list;
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
   }
 
   // --------------------------- Role-based access control (RBAC)   ---------------------------
+
+  /**
+   * Create a cluster role.
+   * @param clusterRole V1ClusterRole object containing cluster role configuration data
+   * @return true if creation is successful, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createClusterRole(V1ClusterRole clusterRole) throws ApiException {
+    try {
+      V1ClusterRole cr = rbacAuthApi.createClusterRole(
+          clusterRole, // cluster role configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      getLogger().severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
 
   /**
    * Create a Cluster Role Binding.
@@ -1858,7 +1946,32 @@ public class Kubernetes implements LoggedTest {
           null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
+   * Create a role binding in the specified namespace.
+   *
+   * @param namespace the namespace in which the role binding to be created
+   * @param roleBinding V1RoleBinding object containing role binding configuration data
+   * @return true if the creation succeeds, false otherwise
+   * @throws ApiException if Kubernetes client call fails
+   */
+  public static boolean createNamespacedRoleBinding(String namespace, V1RoleBinding roleBinding) throws ApiException {
+    try {
+      V1RoleBinding crb = rbacAuthApi.createNamespacedRoleBinding(
+          namespace, // namespace where this role binding is created
+          roleBinding, // role binding configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -1875,14 +1988,14 @@ public class Kubernetes implements LoggedTest {
     KubernetesApiResponse<V1ClusterRoleBinding> response = roleBindingClient.delete(name, deleteOptions);
 
     if (!response.isSuccess()) {
-      logger.warning(
+      getLogger().warning(
           "Failed to delete Cluster Role Binding '" + name + " with HTTP status code: " + response
               .getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
-      logger.info(
+      getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
               + "Cluster Role Binding " + name + " in background!");
     }
@@ -1891,13 +2004,13 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List cluster role bindings.
+   * List role bindings in all namespaces.
    *
    * @param labelSelector labels to narrow the list
    * @return V1RoleBindingList list of {@link V1RoleBinding} objects
    * @throws ApiException when listing fails
    */
-  public static V1RoleBindingList listClusterRoleBindings(String labelSelector) throws ApiException {
+  public static V1RoleBindingList listRoleBindingForAllNamespaces(String labelSelector) throws ApiException {
     V1RoleBindingList roleBindings;
     try {
       roleBindings = rbacAuthApi.listRoleBindingForAllNamespaces(
@@ -1912,10 +2025,38 @@ public class Kubernetes implements LoggedTest {
           Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return roleBindings;
+  }
+
+  /**
+   * List cluster role bindings.
+   *
+   * @param labelSelector labels to narrow the list
+   * @return V1ClusterRoleBindingList list of {@link V1CLusterRoleBinding} objects
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static V1ClusterRoleBindingList listClusterRoleBindings(String labelSelector) throws ApiException {
+    V1ClusterRoleBindingList clusterRoleBindingList;
+    try {
+      clusterRoleBindingList = rbacAuthApi.listClusterRoleBinding(
+          PRETTY, // String | If true, then the output is pretty printed.
+          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+          null, // String | The continue option should be set when retrieving more results from the server.
+          null, // String | A selector to restrict the list of returned objects by their fields.
+          labelSelector, // String | A selector to restrict the list of returned objects by their labels.
+          null, // Integer | limit is a maximum number of responses to return for a list call.
+          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
+          Boolean.FALSE // Boolean | Watch for changes to the described resources
+      );
+    } catch (ApiException apex) {
+      getLogger().warning(apex.getResponseBody());
+      throw apex;
+    }
+    return clusterRoleBindingList;
   }
 
   /**
@@ -1940,7 +2081,7 @@ public class Kubernetes implements LoggedTest {
           null // V1DeleteOptions.
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return true;
@@ -1970,7 +2111,7 @@ public class Kubernetes implements LoggedTest {
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return roleBindings;
@@ -1996,7 +2137,7 @@ public class Kubernetes implements LoggedTest {
           null // V1DeleteOptions.
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return true;
@@ -2025,7 +2166,7 @@ public class Kubernetes implements LoggedTest {
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return roles;
@@ -2052,7 +2193,7 @@ public class Kubernetes implements LoggedTest {
           null // V1DeleteOptions.
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return true;
@@ -2081,7 +2222,7 @@ public class Kubernetes implements LoggedTest {
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return roles;
@@ -2091,13 +2232,13 @@ public class Kubernetes implements LoggedTest {
    * List Ingresses in the given namespace.
    *
    * @param namespace name of the namespace
-   * @return ExtensionsV1beta1IngressList list of {@link ExtensionsV1beta1Ingress} objects
+   * @return NetworkingV1beta1IngressList list of {@link NetworkingV1beta1Ingress} objects
    * @throws ApiException when listing fails
    */
-  public static ExtensionsV1beta1IngressList listNamespacedIngresses(String namespace) throws ApiException {
-    ExtensionsV1beta1IngressList ingressList;
+  public static NetworkingV1beta1IngressList listNamespacedIngresses(String namespace) throws ApiException {
+    NetworkingV1beta1IngressList ingressList;
     try {
-      ExtensionsV1beta1Api apiInstance = new ExtensionsV1beta1Api(apiClient);
+      NetworkingV1beta1Api apiInstance = new NetworkingV1beta1Api(apiClient);
       ingressList = apiInstance.listNamespacedIngress(
           namespace, // namespace
           PRETTY, // String | If 'true', then the output is pretty printed.
@@ -2111,7 +2252,7 @@ public class Kubernetes implements LoggedTest {
           ALLOW_WATCH_BOOKMARKS // Boolean | Watch for changes to the described resources.
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return ingressList;
@@ -2122,20 +2263,20 @@ public class Kubernetes implements LoggedTest {
    *
    * @param namespace name of the namespace
    * @param name name of the Ingress object
-   * @return ExtensionsV1beta1Ingress Ingress object when found, otherwise null
+   * @return NetworkingV1beta1Ingress Ingress object when found, otherwise null
    * @throws ApiException when get fails
    */
-  public static ExtensionsV1beta1Ingress getNamespacedIngress(String namespace, String name)
+  public static NetworkingV1beta1Ingress getNamespacedIngress(String namespace, String name)
       throws ApiException {
     try {
-      for (ExtensionsV1beta1Ingress item
+      for (NetworkingV1beta1Ingress item
           : listNamespacedIngresses(namespace).getItems()) {
         if (name.equals(item.getMetadata().getName())) {
           return item;
         }
       }
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return null;
@@ -2178,7 +2319,7 @@ public class Kubernetes implements LoggedTest {
                 } catch (IOException ex) {
                   // "Pipe broken" is expected when process is finished so don't log
                   if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
-                    logger.warning("Exception reading from input stream.", ex);
+                    getLogger().warning("Exception reading from input stream.", ex);
                   }
                 }
               });
@@ -2223,32 +2364,31 @@ public class Kubernetes implements LoggedTest {
         .apiClient(apiClient) // the Kubernetes api client to dispatch the "exec" command
         .pod(pod) // The pod where the command is to be run
         .containerName(containerName) // the container in which the command is to be run
-        .passStdinAsStream() // pass a stdin stream into the container
-        .stdinIsTty(); // stdin is a TTY (only applies if stdin is true)
+        .passStdinAsStream(); // pass a stdin stream into the container
   }
 
   /**
    * Create an Ingress in the specified namespace.
    *
    * @param namespace the namespace in which the ingress will be created
-   * @param ingressBody ExtensionsV1beta1Ingress object, representing the ingress details
+   * @param ingressBody NetworkingV1beta1Ingress object, representing the ingress details
    * @return the ingress created
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static ExtensionsV1beta1Ingress createIngress(String namespace, ExtensionsV1beta1Ingress ingressBody)
+  public static NetworkingV1beta1Ingress createIngress(String namespace, NetworkingV1beta1Ingress ingressBody)
       throws ApiException {
-    ExtensionsV1beta1Ingress ingress;
+    NetworkingV1beta1Ingress ingress;
     try {
-      ExtensionsV1beta1Api apiInstance = new ExtensionsV1beta1Api(apiClient);
+      NetworkingV1beta1Api apiInstance = new NetworkingV1beta1Api(apiClient);
       ingress = apiInstance.createNamespacedIngress(
           namespace, //namespace
-          ingressBody, // ExtensionsV1beta1Ingress object, representing the ingress details
+          ingressBody, // NetworkingV1beta1Ingress object, representing the ingress details
           PRETTY, // pretty print output
           null, // when present, indicates that modifications should not be persisted
           null // a name associated with the actor or entity that is making these changes
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
 
@@ -2266,9 +2406,28 @@ public class Kubernetes implements LoggedTest {
         sb.append((char) c);
       }
     } catch (IOException e) {
-      logger.warning("Exception thrown " + e);
+      getLogger().warning("Exception thrown " + e);
     }
     return sb.toString().trim();
+  }
+
+  /**
+   * Get the name of the operator pod.
+   *
+   * @param release release name of the operator
+   * @param namespace Kubernetes namespace that the operator is running in
+   * @return name of the operator pod
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getOperatorPodName(String release, String namespace) throws ApiException {
+    String labelSelector = String.format("app in (%s)", release);
+    V1PodList pods = listPods(namespace, labelSelector);
+    for (var pod : pods.getItems()) {
+      if (pod.getMetadata().getName().contains(release)) {
+        return pod.getMetadata().getName();
+      }
+    }
+    return null;
   }
 
   /**

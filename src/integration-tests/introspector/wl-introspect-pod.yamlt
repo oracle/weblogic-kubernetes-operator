@@ -7,7 +7,6 @@ metadata:
   labels:
     weblogic.createdByOperator: "true"
     weblogic.domainUID: ${DOMAIN_UID}
-    weblogic.resourceVersion: domain-v2
   name: ${JOB_NAME}
   namespace: ${NAMESPACE}
 spec:
@@ -35,10 +34,14 @@ spec:
       value: "${ALLOW_DYNAMIC_CLUSTER_IN_FMW}"
     - name: DOMAIN_SOURCE_TYPE
       value: "${DOMAIN_SOURCE_TYPE}"
+    - name: WDT_DOMAIN_TYPE
+      value: "${WDT_DOMAIN_TYPE:-WLS}"
     - name: ISTIO_ENABLED
       value: "${ISTIO_ENABLED:-false}"
     - name: ISTIO_READINESS_PORT
       value: "${ISTIO_READINESS_PORT:-8888}"
+    - name: OPERATOR_ENVVAR_NAMES
+      value: "JAVA_OPTIONS,NAMESPACE,DOMAIN_UID,DOMAIN_HOME,NODEMGR_HOME,LOG_HOME,DATA_HOME,CREDENTIALS_SECRET_NAME,ALLOW_DYNAMIC_CLUSTER_IN_FMW,DOMAIN_SOURCE_TYPE,WDT_DOMAIN_TYPE,ISTIO_ENABLED,ISTIO_READINESS_PORT"
     image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
     imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
     name: weblogic-server
@@ -59,7 +62,7 @@ spec:
     - name: my-secret-volume
       mountPath: /weblogic-operator/config-overrides-secrets/my-secret
       readOnly: true
-    - name: weblogic-domain-cm-volume
+    - name: weblogic-script-cm-volume
       mountPath: /weblogic-operator/scripts
       readOnly: true
     - name: ${DOMAIN_UID}-mycustom-overrides-cm-volume
@@ -70,6 +73,10 @@ spec:
       readOnly: true
     - name: weblogic-domain-storage-volume
       mountPath: /shared
+    - name: weblogic-runtime-encryption-volume
+      mountPath: /weblogic-operator/model-runtime-secret
+    - name: weblogic-wdt-config-map-volume
+      mountPath: /weblogic-operator/wdt-config-map
   volumes:
   - name: weblogic-credentials-volume
     secret:
@@ -83,10 +90,20 @@ spec:
     secret:
       defaultMode: 420
       secretName:  my-secret
-  - name: weblogic-domain-cm-volume
+  - name: weblogic-runtime-encryption-volume
+    secret:
+      defaultMode: 420
+      secretName: ${DOMAIN_UID}-runtime-encryption-secret
+      optional: ${MII_WDT_ENCRYPT_SECRET}
+  - name: weblogic-script-cm-volume
     configMap:
       defaultMode: 365
-      name: weblogic-domain-cm
+      name: weblogic-script-cm
+  - name: weblogic-wdt-config-map-volume
+    configMap:
+      defaultMode: 365
+      name: ${DOMAIN_UID}-wdt-config-map
+      optional: ${MII_WDT_CONFIGMAP}
   - name: ${DOMAIN_UID}-mycustom-overrides-cm-volume
     configMap:
       defaultMode: 365

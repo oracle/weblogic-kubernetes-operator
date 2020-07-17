@@ -13,7 +13,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -25,13 +24,14 @@ import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 
 /**
  * Setup for tests that will involve running the main domain processor functionality. Such tests
- * should run this in their setup, before trying to invoke {@link
- * DomainProcessorImpl#makeRightDomainPresence(DomainPresenceInfo, boolean, boolean, boolean)}
+ * should run this in their setup, before trying to create and execute 
+ * a {@link DomainProcessorImpl.MakeRightDomainOperationImpl}.
  */
 public class DomainProcessorTestSetup {
   public static final String UID = "test-domain";
   public static final String NS = "namespace";
   public static final String SECRET_NAME = "secret-name";
+  public static final String KUBERNETES_UID = "12345";
 
   private static final String INTROSPECTION_JOB = LegalNames.toJobIntrospectorName(UID);
   private static final String INTROSPECT_RESULT =
@@ -58,7 +58,7 @@ public class DomainProcessorTestSetup {
           + "%s\n"
           + ">>> EOF";
 
-  private KubernetesTestSupport testSupport;
+  private final KubernetesTestSupport testSupport;
 
   public DomainProcessorTestSetup(KubernetesTestSupport testSupport) {
     this.testSupport = testSupport;
@@ -89,7 +89,9 @@ public class DomainProcessorTestSetup {
    */
   public static Domain createTestDomain() {
     return new Domain()
-        .withMetadata(withTimestamps(new V1ObjectMeta().name(UID).namespace(NS)))
+        .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
+        .withKind(KubernetesConstants.DOMAIN)
+        .withMetadata(withTimestamps(new V1ObjectMeta().name(UID).namespace(NS).uid(KUBERNETES_UID)))
         .withSpec(
             new DomainSpec()
                 .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME).namespace(NS)));
@@ -136,7 +138,12 @@ public class DomainProcessorTestSetup {
     return String.format(INTROSPECT_RESULT, createTopologyYaml(domainConfig));
   }
 
-  private String createTopologyYaml(WlsDomainConfig domainConfig) throws JsonProcessingException {
+  /**
+   * Create a topologyYaml similar to that produced by the introspector.
+   * @param domainConfig the domain configuration used as a basis for the produced YAML..
+   * @throws JsonProcessingException if unable to convert the configuration to YAML.
+   */
+  public static String createTopologyYaml(WlsDomainConfig domainConfig) throws JsonProcessingException {
     ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
     return yamlMapper
         .writerWithDefaultPrettyPrinter()
