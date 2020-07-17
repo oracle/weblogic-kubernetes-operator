@@ -428,8 +428,10 @@ class ItMonitoringExporter {
   @DisplayName("Test Monitoring Exporter access to metrics via https.")
   public void testAccessExporterViaHttps() throws Exception {
     String miiImage1 = null;
+
     try {
       logger.info("create and verify WebLogic domain image using model in image with model files for norestport");
+
       miiImage1 = createAndVerifyMiiImage(monitoringExporterAppDir + "/norestport");
 
       // create and verify one cluster mii domain
@@ -437,6 +439,11 @@ class ItMonitoringExporter {
       createAndVerifyDomain(miiImage1, domain3Uid, domain3Namespace, "FromModel", 1);
       //verify access to Monitoring Exporter
       logger.info("checking access to wls metrics via http connection");
+      assertFalse(verifyMonExpAppAccess("wls-exporter",
+          "restPort",
+          domain3Uid,
+          domain3Namespace,
+          false));
       assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
           "wls_servlet_invocation_total_count",
           domain3Uid,
@@ -1166,9 +1173,12 @@ class ItMonitoringExporter {
     Path monitoringTemp = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringTemp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringTemp));
-    Path monitoringApp = Paths.get(RESULTS_ROOT, "monitoringexp", "apps", "norestport");
+    Path monitoringApp = Paths.get(RESULTS_ROOT, "monitoringexp", "apps");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringApp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringApp));
+    Path monitoringAppNoRestPort = Paths.get(RESULTS_ROOT, "monitoringexp", "apps", "norestport");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringAppNoRestPort.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
     String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
         .orElse("master");
 
@@ -1193,7 +1203,8 @@ class ItMonitoringExporter {
     boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase("1.1.2")
         || !monitoringExporterBranch.equalsIgnoreCase(("master")));
     logger.info("create a monitoring exporter version {0} ",monitoringExporterVersion);
-    monitoringExporterAppDir = monitoringApp.toString() + "/../";
+    monitoringExporterAppDir = monitoringApp.toString();
+    String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
     toBuildMonitoringExporter = true;
     if (!toBuildMonitoringExporter) {
       String monitoringExporterBuildFile = String.format(
@@ -1224,7 +1235,7 @@ class ItMonitoringExporter {
               .command(command))
           .execute(), "Failed to build monitoring exporter webapp");
       command = String.format("cd %s && %s  %s/exporter/exporter-config-norestport.yaml",
-          monitoringExporterAppDir + "/norestport",
+          monitoringExporterAppNoRestPortDir,
           monitoringExporterBuildFile,
           RESOURCE_DIR);
       assertTrue(new Command()
@@ -1239,7 +1250,7 @@ class ItMonitoringExporter {
               .command(command))
           .execute(), "Failed to build monitoring exporter");
       buildMonitoringExporterApp("exporter-config.yaml", monitoringExporterAppDir);
-      buildMonitoringExporterApp("exporter-config-noresport.yaml", monitoringExporterAppDir + "/norestport");
+      buildMonitoringExporterApp("exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
     }
     logger.info("Finished to build Monitoring Exporter webapp.");
   }
@@ -1250,12 +1261,15 @@ class ItMonitoringExporter {
         monitoringExporterSrcDir,
         RESOURCE_DIR,
         configFile);
+    logger.info("Executing command " + command);
+    java.nio.file.Path srcFile = java.nio.file.Paths.get(monitoringExporterSrcDir,
+        "webapp","target", "wls-exporter.war");
+    
     assertTrue(new oracle.weblogic.kubernetes.actions.impl.primitive.Command()
         .withParams(new oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams()
             .command(command))
         .execute(), "Failed to build monitoring exporter webapp");
-    java.nio.file.Path srcFile = java.nio.file.Paths.get(monitoringExporterSrcDir,
-        "webapp","target", "wls-exporter.war");
+
     java.nio.file.Path targetFile = java.nio.file.Paths.get(appDir, "wls-exporter.war");
     assertDoesNotThrow(() ->
         java.nio.file.Files.copy(srcFile, targetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING));
