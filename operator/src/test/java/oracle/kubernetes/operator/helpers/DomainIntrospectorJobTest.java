@@ -29,9 +29,11 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.Model;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -256,8 +258,21 @@ public class DomainIntrospectorJobTest {
             hasEnvVar("LOG_HOME", LOG_HOME),
             hasEnvVar("INTROSPECT_HOME", getDomainHome()),
             hasEnvVar("SERVER_OUT_IN_POD_LOG", "true"),
-            hasEnvVar("MII_MODLE_HOME", MII_MODEL_HOME),
             hasEnvVar("CREDENTIALS_SECRET_NAME", CREDENTIALS_SECRET_NAME)));
+  }
+
+  @Test
+  public void whenJobCreatedWithModelHomeDefined_hasModelHomeEnvVariable() {
+    getDomain().getSpec()
+        .setConfiguration(new Configuration().withModel(new Model().withModelHome("/u01/wdt/my-models")));
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    List<V1Job> jobs = testSupport.getResources(KubernetesTestSupport.JOB);
+    List<V1Container> podTemplateContainers = getPodTemplateContainers(jobs.get(0));
+    assertThat(
+        podTemplateContainers.get(0).getEnv(),
+        hasEnvVar("WDT_MODEL_HOME", "/u01/wdt/my-models"));
   }
 
   @Test
