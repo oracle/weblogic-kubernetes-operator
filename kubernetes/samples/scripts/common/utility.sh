@@ -346,8 +346,6 @@ function createFiles {
     weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
   fi
 
-  wdtVersion="${WDT_VERSION}"
-
   if [ "${domainHomeInImage}" == "true" ]; then
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
     domainHome="/u01/oracle/user_projects/domains/${domainName}"
@@ -389,6 +387,9 @@ function createFiles {
       sed -i -e "s|%IMAGE_NAME%|${image}|g" ${domainPropertiesOutput}
     fi
   else
+    # we're in the domain in PV case
+
+    wdtVersion="${WDT_VERSION:-${wdtVersion}}"
 
     createJobOutput="${domainOutputDir}/create-domain-job.yaml"
     deleteJobOutput="${domainOutputDir}/delete-domain-job.yaml"
