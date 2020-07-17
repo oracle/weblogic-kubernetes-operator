@@ -25,7 +25,7 @@ import io.kubernetes.client.openapi.models.V1ServicePort;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
-import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
+import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -329,7 +329,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   @Test
   public void whenServiceCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnprocessableEntityBuilder()
+    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());
@@ -343,7 +343,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   @Test
   public void whenServiceCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnprocessableEntityBuilder()
+    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());
