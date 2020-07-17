@@ -213,6 +213,9 @@ function createDomainHome {
   cp -f ${scriptDir}/common/createFMWDomain.py \
         ${dockerDir}/container-scripts/createFMWDomain.py
 
+  # Set WDT_VERSION in case dockerDir references a WDT sample
+  # (wdtVersion comes from the inputs file)
+  export WDT_VERSION="${WDT_VERSION:-${wdtVersion:-1.9.1}}"
   bash ${dockerDir}/build.sh
 
   if [ "$?" != "0" ]; then

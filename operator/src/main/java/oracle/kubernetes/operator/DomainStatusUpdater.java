@@ -229,7 +229,9 @@ public class DomainStatusUpdater {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
-      packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
+      if (callResponse.getResult() != null) {
+        packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
+      }
       return doNext(packet);
     }
 

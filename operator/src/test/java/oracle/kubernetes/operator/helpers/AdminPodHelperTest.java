@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
@@ -186,7 +187,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     Step initialStep = stepFactory.createStepList(terminalStep);
     testSupport.runSteps(initialStep);
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    assertThat(getDomain(), hasStatus("ServerError",
+            "testcall in namespace junit, for testName: failure reported in test"));
   }
 
   @Test
