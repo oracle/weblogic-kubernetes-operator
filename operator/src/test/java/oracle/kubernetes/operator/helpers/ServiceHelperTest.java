@@ -19,11 +19,13 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
-import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
+import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -72,6 +74,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REP
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
@@ -202,6 +205,19 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
+  public void whenCreated_createWithOwnerReference() {
+    V1OwnerReference expectedReference = new V1OwnerReference()
+        .apiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
+        .kind(KubernetesConstants.DOMAIN)
+        .name(DOMAIN_NAME)
+        .uid(KUBERNETES_UID)
+        .controller(true);
+
+    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
+    assertThat(model.getMetadata().getOwnerReferences(), contains(expectedReference));
+  }
+
+  @Test
   public void whenCreated_modelHasServiceType() {
     V1Service model = testFacade.createServiceModel(testSupport.getPacket());
 
@@ -313,7 +329,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   @Test
   public void whenServiceCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnprocessableEntityBuilder()
+    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());
@@ -327,7 +343,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   @Test
   public void whenServiceCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnprocessableEntityBuilder()
+    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());

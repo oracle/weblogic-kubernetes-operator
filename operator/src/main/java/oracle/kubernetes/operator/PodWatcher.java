@@ -15,8 +15,13 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
+import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
@@ -30,12 +35,13 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.helpers.LegalNames.DOMAIN_INTROSPECTOR_JOB_SUFFIX;
+
 /**
  * Watches for changes to pods.
  */
 public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, PodAwaiterStepFactory {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private final String namespace;
   private final WatchListener<V1Pod> listener;
 
@@ -122,6 +128,11 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
         .createPodWatch(namespace);
   }
 
+  @Override
+  public String getNamespace() {
+    return namespace;
+  }
+
   /**
    * Receive response.
    * @param item item
@@ -136,6 +147,12 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     switch (item.type) {
       case "ADDED":
       case "MODIFIED":
+        if (podName.contains(DOMAIN_INTROSPECTOR_JOB_SUFFIX) && isFailed(pod)) {
+          LOGGER.info(MessageKeys.INTROSPECTOR_POD_FAILED,
+              pod.getMetadata().getName(),
+              pod.getMetadata().getNamespace(),
+              pod.getStatus().toString());
+        }
         copyOf(getOnModifiedCallbacks(podName)).forEach(c -> c.accept(pod));
         break;
       case "DELETED":
@@ -146,6 +163,52 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     }
 
     LOGGER.exiting();
+  }
+
+  /**
+   * Test if pod is failed.
+   * @param pod pob
+   * @return true, if failed
+   */
+  private static boolean isFailed(V1Pod pod) {
+    if (pod == null) {
+      return false;
+    }
+
+    V1PodStatus status = pod.getStatus();
+    LOGGER.fine(
+        "PodWatcher.isFailed status of pod " + pod.getMetadata().getName() + ": " + status);
+    if (status != null) {
+      java.util.List<V1ContainerStatus> conStatuses = status.getContainerStatuses();
+      if (conStatuses != null) {
+        for (V1ContainerStatus conStatus : conStatuses) {
+          if (!isReady(conStatus)
+              && (getContainerStateWaitingMessage(conStatus) != null
+              || getContainerStateTerminatedReason(conStatus).contains("Error"))) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  private static boolean isReady(V1ContainerStatus conStatus) {
+    return Optional.ofNullable(conStatus).map(V1ContainerStatus::getReady).orElse(false);
+  }
+
+  private static String getContainerStateTerminatedReason(V1ContainerStatus conStatus) {
+    return Optional.of(conStatus)
+        .map(V1ContainerStatus::getState)
+        .map(V1ContainerState::getTerminated)
+        .map(V1ContainerStateTerminated::getReason).orElse("");
+  }
+
+  private static String getContainerStateWaitingMessage(V1ContainerStatus conStatus) {
+    return Optional.of(conStatus)
+        .map(V1ContainerStatus::getState)
+        .map(V1ContainerState::getWaiting)
+        .map(V1ContainerStateWaiting::getMessage).orElse(null);
   }
 
   // make a copy to avoid concurrent modification

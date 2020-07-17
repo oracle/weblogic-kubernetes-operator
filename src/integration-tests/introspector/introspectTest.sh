@@ -27,11 +27,17 @@
 #   calls in the implementation below for the complete list.
 #
 # Usage:
+#     For non Model In Image test
 #
 #         introspectTest.sh
 #
+#     For Model In Image test
+#
+#         export DOMAIN_SOURCE_TYPE=FromModel
+#         introspectTest.sh
+#
 #     To check for ISTIO
-#         export ISTIO_ENABELD=true
+#         export ISTIO_ENABELD=true - this only test for Non Model in Image
 #
 #############################################################################
 #
@@ -110,6 +116,17 @@ export EXPECT_INVALID_DOMAIN=${EXPECT_INVALID_DOMAIN:-false}
 
 DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE:-PersistentVolume}
 export DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE}
+WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
+export WDT_DOMAIN_TYPE
+if [ "${DOMAIN_SOURCE_TYPE}" == "FromModel" ] ; then
+  # Make sure the configmap and secrets are not optional
+  export MII_WDT_CONFIGMAP="false"
+  export MII_WDT_ENCRYPT_SECRET="false"
+else
+  # Make sure the configmap and secrets are optional
+  export MII_WDT_CONFIGMAP="true"
+  export MII_WDT_ENCRYPT_SECRET="true"
+fi
 
 #############################################################################
 #
@@ -223,7 +240,6 @@ createConfigMapFromDir() {
   kubectl -n $NAMESPACE label cm ${cm_name} \
     weblogic.createdByOperator=true \
     weblogic.operatorName=look-ma-no-hands \
-    weblogic.resourceVersion=domain-v2 \
     weblogic.domainUID=$DOMAIN_UID \
     2>&1 | tracePipe "Info: kubectl output: " || exit 1
 }
@@ -251,13 +267,13 @@ function toDNS1123Legal {
 #
 
 function deployDomainConfigMap() {
-  trace "Info: Deploying 'weblogic-domain-cm'."
+  trace "Info: Deploying 'weblogic-script-cm'."
 
-  kubectl -n $NAMESPACE delete cm weblogic-domain-cm \
+  kubectl -n $NAMESPACE delete cm weblogic-script-cm \
     --ignore-not-found  \
     2>&1 | tracePipe "Info: kubectl output: "
 
-  createConfigMapFromDir weblogic-domain-cm ${SOURCEPATH}/operator/src/main/resources/scripts
+  createConfigMapFromDir weblogic-script-cm ${SOURCEPATH}/operator/src/main/resources/scripts
 }
 
 #############################################################################
@@ -316,6 +332,11 @@ function deployCustomOverridesConfigMap() {
      #cp ${filname} ${cmdir}/${bfilname} || exit 1
      ${SCRIPTPATH}/util_subst.sh -g ${filname} ${cmdir}/${bfilname}  || exit 1
   done
+
+  # We don't use overrides for MII
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
+    rm ${cmdir}/jdbc* ${cmdir}/diagnostics* ${cmdir}/config*
+  fi
 
   kubectl -n $NAMESPACE delete cm $cmname \
     --ignore-not-found  \
@@ -410,6 +431,70 @@ function deployCreateDomainJobPod() {
   # Wait for pod to come up successfully
 
   waitForPod $pod_name
+}
+
+#
+# Create the model in image docker image
+#
+function createMII_Image() {
+  trace "Info: Create MII Image"
+
+  (
+  mkdir -p ${test_home}/mii/workdir/models || exit 1
+  cp ${SCRIPTPATH}/mii/models/*  ${test_home}/mii/workdir/models || exit 1
+  cd ${test_home}/mii/workdir  || exit 1
+  echo "place holder" > dummy.txt || exit 1
+  zip ${test_home}/mii/workdir/models/archive.zip dummy.txt > /dev/null 2>&1 || exit 1
+
+  export WORKDIR=${test_home}/mii/workdir  || exit 1
+  export MODEL_IMAGE_TAG=it || exit 1
+  export MODEL_IMAGE_NAME=model-in-image || exit 1
+  export MODEL_IMAGE_BUILD="when-missing"
+
+  docker rmi ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG} --force > /dev/null 2>&1
+
+  tracen "Info: Downloading WDT and WIT"
+  printdots_start
+  ${SCRIPTPATH}/util_download_mii_tools.sh > ${test_home}/miibuild_download.out 2>&1
+  local rc=$?
+  printdots_end
+  if [ $rc -ne 0 ] ; then
+    trace "Error: createMII_Image: download tools failed"
+    cat ${test_home}/miibuild_download.out
+    exit 1
+  fi
+
+  tracen "Info: Launching WIT to build the image"
+  printdots_start
+
+  ${SCRIPTPATH}/util_build_mii_image.sh > ${test_home}/miibuild_image.out  2>&1
+  local rc=$?
+  printdots_end
+
+  if [ $rc -ne 0 ] ; then
+    trace "Error: createMII_Image: build image failed"
+    cat ${test_home}/miibuild_image.out
+    exit 1
+  fi
+  ) || exit 1
+
+  export WEBLOGIC_IMAGE_NAME=model-in-image || exit 1
+  export WEBLOGIC_IMAGE_TAG=it || exit 1
+
+  kubectl -n $NAMESPACE delete configmap ${DOMAIN_UID}-wdt-config-map --ignore-not-found || exit 1
+  kubectl -n $NAMESPACE create configmap  ${DOMAIN_UID}-wdt-config-map \
+        --from-file=${SCRIPTPATH}/mii/wdtconfigmap | tracePipe "Info: kubectl output: "
+
+  kubectl -n $NAMESPACE label  configmap ${DOMAIN_UID}-wdt-config-map  weblogic.domainUID=$DOMAIN_UID \
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1
+
+  kubectl -n $NAMESPACE delete secret ${DOMAIN_UID}-runtime-encryption-secret --ignore-not-found || exit 1
+  kubectl -n $NAMESPACE create secret generic  ${DOMAIN_UID}-runtime-encryption-secret \
+        --from-literal=password=welcome1 | tracePipe "Info: kubectl output: "
+
+  kubectl -n $NAMESPACE label secret ${DOMAIN_UID}-runtime-encryption-secret weblogic.domainUID=$DOMAIN_UID \
+   2>&1 | tracePipe "Info: kubectl output: " || exit 1
+
 }
 
 #############################################################################
@@ -600,7 +685,7 @@ function deploySinglePodService() {
 
 #############################################################################
 #
-# Check if automatic overrides and custom overrides took effect on the admin pod
+# Check if automatic overrides and custom overrides took effect on the admin pod for non MII
 #
 
 function checkOverrides() {
@@ -613,6 +698,9 @@ function checkOverrides() {
   linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'BEA.*situational'`"
   logstatus=0
   local target_linecount=5
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
+    target_linecount=1
+  fi
   if [ "$linecount" != "${target_linecount}" ]; then
     trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 5 lines that match ' grep 'BEA.*situational' ', this probably means that it's reporting situational config problems."
     logstatus=1
@@ -625,7 +713,9 @@ function checkOverrides() {
 
   trace "Info: Checking beans to see if sit-cfg took effect.  Input file '$test_home/checkBeans.input', output file '$test_home/checkBeans.out'."
   local src_input_file=checkBeans.inputt
-  if [ "${ISTIO_ENABLED}" == "true" ]; then
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
+    src_input_file=checkMIIBeans.inputt
+  elif [ "${ISTIO_ENABLED}" == "true" ]; then
     src_input_file=checkBeansIstio.inputt
   fi
 
@@ -780,7 +870,7 @@ function checkFileStores() {
 
 function checkNodeManagerMemArg() {
 
-  trace "Verifying node manager memory arguments"
+  trace "Info: Verifying node manager memory arguments"
 
   # Verify that default NODEMGR_MEM_ARGS environment value (-Xms64m -Xmx100m) was applied to the Node Manager
   # command line when NODEMGR_MEM_ARGS was not defined.
@@ -853,7 +943,7 @@ function checkNodeManagerMemArg() {
 #
 function checkManagedServer1MemArg() {
 
-  trace "Verifying managed server memory arguments"
+  trace "Info: Verifying managed server memory arguments"
 
   # Verify that USER_MEM_ARGS environment value was applied to the Managed Server 1 command line
   maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
@@ -894,7 +984,7 @@ function checkManagedServer1MemArg() {
 
 function checkNodeManagerJavaOptions() {
 
-  trace "Verifying node manager java options"
+  trace "Info: Verifying node manager java options"
 
   # Verify that NODEMGR_JAVA_OPTIONS environment value was applied to the Node Manager command line
   nodeMgrlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
@@ -959,7 +1049,11 @@ if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
   createTestRootPVDir
   deployMySQL
   deployWebLogic_PV_PVC_and_Secret
-  deployCreateDomainJobPod
+  if [ "${DOMAIN_SOURCE_TYPE}" == "FromModel" ] ; then
+    createMII_Image
+  else
+    deployCreateDomainJobPod
+  fi
 fi
 
 deployIntrospectJobPod

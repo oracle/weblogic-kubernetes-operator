@@ -10,13 +10,17 @@ import java.lang.annotation.Target;
 
 import oracle.weblogic.kubernetes.extensions.ImageBuilders;
 import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
+import oracle.weblogic.kubernetes.extensions.LoggingExtension;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Tag("integration")
+@ExtendWith(LoggingExtension.class)
 @ExtendWith(ImageBuilders.class)
 @ExtendWith(IntegrationTestWatcher.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public @interface IntegrationTest {
 }

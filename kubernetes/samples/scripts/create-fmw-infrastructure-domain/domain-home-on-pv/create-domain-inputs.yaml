@@ -38,12 +38,12 @@ managedServerNameBase: managed-server
 managedServerPort: 8001
 
 # WebLogic Server Docker image.
-# The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied.
-# The existing WebLogic Docker image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, was updated on May 25, 2019,
-# and has all the necessary patches applied; a `docker pull` is required if you already have this image.
+# The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied or 12.2.1.4.0.
+# The existing WebLogic Docker image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`,
+# has all the necessary patches applied; a `docker pull` is required if you already have this image.
 # Refer to https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/fmw-infra/
 # for details on how to obtain or create the image.
-image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
+image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
 
 # Image pull policy
 # Legal values are "IfNotPresent", "Always", or "Never"
@@ -65,9 +65,16 @@ weblogicCredentialsSecretName: domain1-weblogic-credentials
 # The default is true.
 includeServerOutInPodLog: true
 
-# The in-pod location for domain log, server logs, server out, and node manager log files
-# If not specified, the value is derived from the domainUID as /shared/logs/<domainUID>
+# The in-pod location for domain log, server logs, server out, Node Manager log, and
+# HTTP access log files. If not specified, the value is derived from the domainUID as
+# /shared/logs/<domainUID>.
 logHome: /shared/logs/domain1
+
+# Set this value to 'false' to have HTTP access log files written to the directory 
+# configured in the WebLogic domain home.
+# The default is 'true', which means HTTP access log files will be written to
+# the logHome directory.
+httpAccessLogInLogHome: true
 
 # Port for the T3Channel of the NetworkAccessPoint
 t3ChannelPort: 30012
@@ -135,16 +142,20 @@ createDomainScriptName: create-domain-job.sh
 # so that the Kubernetes pod can use the scripts and supporting files to create a domain home.
 createDomainFilesDir: wlst
 
-# Uncomment and edit value(s) below to specify the maximum amount of
-# compute resources allowed, and minimum amount of compute resources
-# required for each server pod.
-# These are optional.
+# Resource request for each server pod (Memory and CPU). This is minimum amount of compute
+# resources required for each server pod. Edit value(s) below as per pod sizing requirements.
+# These are optional. 
 # Please refer to the kubernetes documentation on Managing Compute
 # Resources for Containers for details.
-#
-# serverPodMemoryRequest: "64Mi"
-# serverPodCpuRequest: "250m"
-# serverPodMemoryLimit: "1Gi"
+serverPodMemoryRequest: "1280Mi"
+serverPodCpuRequest: "500m"
+
+# Uncomment and edit value(s) below to specify the maximum amount of compute resources allowed 
+# for each server pod.
+# These are optional. 
+# Please refer to the kubernetes documentation on Managing Compute
+# Resources for Containers for details.
+# serverPodMemoryLimit: "2Gi"
 # serverPodCpuLimit: "1000m"
 
 #

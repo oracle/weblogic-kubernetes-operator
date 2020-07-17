@@ -10,7 +10,7 @@ description: "Important considerations for WebLogic domains in Kubernetes."
 * [Important considerations for WebLogic domains in Kubernetes](#important-considerations-for-weblogic-domains-in-kubernetes)
 * [Creating and managing WebLogic domains](#creating-and-managing-weblogic-domains)
 * [Modifying domain configurations](#modifying-domain-configurations)
-* [About the domain resource](#about-the-domain-resource)
+* [About the Domain resource](#about-the-domain-resource)
 * [Managing life cycle operations](#managing-life-cycle-operations)
 * [Scaling clusters](#scaling-clusters)
 
@@ -18,12 +18,10 @@ description: "Important considerations for WebLogic domains in Kubernetes."
 
 Be aware of the following important considerations for WebLogic domains running in Kubernetes:
 
-* _Domain Home Location:_ The WebLogic domain home location is determined by the domain resource `domainHome` and `domainHomeInImage` fields.
-  If you are using 3.0.0-rc1, these same fields are used, if specified; otherwise, a default location is determined by the `domainHomeSourceType` setting.
-  The `domainHomeSourceType` field is *not* available in releases before 3.0.0-rc1.
-  - If the domain resource `domainHome` field is not specified and `domainHomeSourceType` is `Image` (the default), then the operator will assume that the domain home is a directory under `/u01/oracle/user_projects/domains/`, and report an error if no domain is found or more than one domain is found.  
-  - If the domain resource `domainHome` field is not specified and `domainHomeSourceType` is `PersistentVolume`, then the operator will assume that the domain home is `/shared/domains/DOMAIN_UID`.
-  - Finally, if the domain resource `domainHome` field is not specified and the `domainHomeSourceType` is `FromModel`, then the operator will assume that the domain home is `/u01/domains/DOMAIN_UID`.
+* _Domain Home Location:_ The WebLogic domain home location is determined by the Domain YAML file `domainHome`, if specified; otherwise, a default location is determined by the `domainHomeSourceType` setting.
+  - If the Domain `domainHome` field is not specified and `domainHomeSourceType` is `Image` (the default), then the operator will assume that the domain home is a directory under `/u01/oracle/user_projects/domains/`, and report an error if no domain is found or more than one domain is found.  
+  - If the Domain `domainHome` field is not specified and `domainHomeSourceType` is `PersistentVolume`, then the operator will assume that the domain home is `/shared/domains/DOMAIN_UID`.
+  - Finally, if the Domain `domainHome` field is not specified and the `domainHomeSourceType` is `FromModel`, then the operator will assume that the domain home is `/u01/domains/DOMAIN_UID`.
 
   {{% notice warning %}}
   Oracle strongly recommends storing an image containing a WebLogic domain home (`domainHomeSourceType` is `Image`)
@@ -35,7 +33,7 @@ Be aware of the following important considerations for WebLogic domains running 
   {{% /notice %}}
 
 * _Log File Locations:_ The operator can automatically override WebLogic domain and server log locations using
-  configuration overrides.  This occurs if the domain resource `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
+  configuration overrides.  This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
   and `domainHomeSourceType` is set to `PersistentVolume`.  When overriding, the log location will be the location specified by the `logHome` setting.
 
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
@@ -63,7 +61,7 @@ Be aware of the following important considerations for WebLogic domains running 
 * _Host Path Persistent Volumes:_ If using a `hostPath` persistent volume, then it must be available on all worker nodes in the cluster and have read/write/many permissions for all container/pods in the WebLogic Server deployment.  Be aware
   that many cloud provider's volume providers may not support volumes across availability zones.  You may want to use NFS or a clustered file system to work around this limitation.
 
-* _Security Note:_ The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
+* _Security Note:_ The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
 
 * _JVM Memory and Java Option Arguments:_ The following environment variables can be used to customize the JVM memory and Java options for both the WebLogic Server Managed Servers and Node Manager instances:
 
@@ -99,7 +97,7 @@ sample]({{< relref "/samples/simple/domains/manually-create-domain/_index.md" >}
 
 ### Modifying domain configurations
 
-You can modify the WebLogic domain configuration for Domain in PV, Domain in Image, and Model in Image before deploying a domain resource:
+You can modify the WebLogic domain configuration for Domain in PV, Domain in Image, and Model in Image before deploying a Domain YAML file:
 
 When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.
 
@@ -109,9 +107,15 @@ Configuration overrides allow changing a configuration without modifying its ori
 parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,
 and URLs that are stored in a secret.
 
+For Domain in Image and Domain in PV you can use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
+
+Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and supports
+parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,
+and URLs that are stored in a secret.
+
 For Model in Image you use [Runtime Updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
-### About the domain resource
+### About the Domain resource
 
 For more information, see [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}).
 
@@ -124,7 +128,7 @@ See [Starting and stopping]({{< relref "/userguide/managing-domains/domain-lifec
 
 The operator let's you initiate scaling of clusters in various ways:
 
-* [Using kubectl to edit the domain resource]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#on-demand-updating-the-domain-resource-directly" >}})
+* [Using kubectl to edit the Domain resource]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#on-demand-updating-the-domain-resource-directly" >}})
 * [Using the operator's REST APIs]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#calling-the-operators-rest-scale-api" >}})
 * [Using WLDF policies]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api" >}})
 * [Using a Prometheus action]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api" >}})

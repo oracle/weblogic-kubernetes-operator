@@ -2,7 +2,8 @@
 title: "Providing access to a ConfigMap"
 date: 2020-01-07T15:02:28-05:00
 draft: false
-weight: 70
+weight: 10
+description: "I need to provide an instance with access to a ConfigMap."
 ---
 > I need to provide an instance with access to a ConfigMap.
 
@@ -15,7 +16,7 @@ In each case, the access is configured within the `serverPod` element of the des
 For example, given
 a ConfigMap named `my-map` with entries `key-1` and `key-2`, you can provide access to both values as separate files
 in the same directory within the `cluster-1` cluster with the following
-in your [domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md):
+in your [Domain](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md):
 
 
 ```

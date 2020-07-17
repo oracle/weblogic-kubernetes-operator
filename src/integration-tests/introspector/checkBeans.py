@@ -95,6 +95,7 @@ def checkNAPInDomainConfig(path):
   """
   Check to see if there is a network access points defined in the domainConfig tree
   Avoid getting cd exception by navigating the tree using ls()
+
   :param path:
   :return:  domainConfig nap path, true if the test path is istio network access points
   """

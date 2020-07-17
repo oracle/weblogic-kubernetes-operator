@@ -6,30 +6,38 @@ package oracle.kubernetes.operator;
 /** Constants used in asynchronous processing. */
 public interface ProcessingConstants {
 
-  public static final String MAIN_COMPONENT_NAME = "main";
-  public static final String DOMAIN_COMPONENT_NAME = "domain";
-  public static final String FIBER_COMPONENT_NAME = "fiber";
-  public static final String PODWATCHER_COMPONENT_NAME = "podWatcher";
+  String MAIN_COMPONENT_NAME = "main";
+  String DOMAIN_COMPONENT_NAME = "domain";
+  String FIBER_COMPONENT_NAME = "fiber";
+  String PODWATCHER_COMPONENT_NAME = "podWatcher";
 
-  public static final String SERVER_SCAN = "serverScan";
-  public static final String ENVVARS = "envVars";
+  /** key to an object of type WlsServerConfig. */
+  String SERVER_SCAN = "serverScan";
+  String ENVVARS = "envVars";
 
-  public static final String SERVER_NAME = "serverName";
-  public static final String CLUSTER_NAME = "clusterName";
+  String SERVER_NAME = "serverName";
+  String CLUSTER_NAME = "clusterName";
 
-  public static final String SERVERS_TO_ROLL = "roll";
+  String SERVERS_TO_ROLL = "roll";
 
-  public static final String SCRIPT_CONFIG_MAP = "scriptConfigMap";
-  public static final String SERVER_STATE_MAP = "serverStateMap";
-  public static final String SERVER_HEALTH_MAP = "serverHealthMap";
+  String SCRIPT_CONFIG_MAP = "scriptConfigMap";
+  String SERVER_STATE_MAP = "serverStateMap";
+  String SERVER_HEALTH_MAP = "serverHealthMap";
 
-  public static final String DOMAIN_TOPOLOGY = "domainTopology";
-  public static final String JOB_POD_NAME = "jobPodName";
-  public static final String DOMAIN_INTROSPECTOR_JOB = "domainIntrospectorJob";
-  public static final String DOMAIN_INTROSPECTOR_LOG_RESULT = "domainIntrospectorLogResult";
-  public static final String SIT_CONFIG_MAP = "sitConfigMap";
-  public static final String DOMAIN_RESTART_VERSION = "weblogic.domainRestartVersion";
-  public static final String REMAINING_SERVERS_HEALTH_TO_READ = "serverHealthRead";
+  String DOMAIN_TOPOLOGY = "domainTopology";
+  String JOB_POD_NAME = "jobPodName";
+  String DOMAIN_INTROSPECTOR_JOB = "domainIntrospectorJob";
+  String DOMAIN_INTROSPECTOR_LOG_RESULT = "domainIntrospectorLogResult";
+  String DOMAIN_INTROSPECT_REQUESTED = "domainIntrospectRequested";
+  String REMAINING_SERVERS_HEALTH_TO_READ = "serverHealthRead";
 
-  public static final String ENCODED_CREDENTIALS = "encodedCredentials";
+  String ENCODED_CREDENTIALS = "encodedCredentials";
+  String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
+
+  String INTROSPECTOR_JOB_FAILURE_LOGGED = "introspectorJobfailureLogged";
+
+  String WAIT_FOR_POD_READY = "waitForPodReady";
+
+  /** Key to an object of type MakeRightDomainOperation. */
+  String MAKE_RIGHT_DOMAIN_OPERATION = "makeRightOp";
 }

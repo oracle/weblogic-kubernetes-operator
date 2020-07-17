@@ -9,7 +9,6 @@ spec:
   template:
     metadata:
       labels:
-        weblogic.resourceVersion: domain-v2
         weblogic.domainUID: %DOMAIN_UID%
         weblogic.domainName: %DOMAIN_NAME%
         app: %DOMAIN_UID%-create-fmw-infra-sample-domain-job

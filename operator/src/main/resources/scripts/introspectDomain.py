@@ -123,8 +123,24 @@ class OfflineWlstEnv(object):
     self.BOOT_FILE                = self.INTROSPECT_HOME + '/boot.properties'
     self.USERCONFIG_FILE          = self.INTROSPECT_HOME + '/userConfigNodeManager.secure'
     self.USERKEY_FILE             = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
-    self.DOMAIN_SECRET_MD5_FILE   = '/tmp/DomainSecret.md5'
 
+    # Model in image attributes
+
+    self.DOMAIN_SECRET_MD5_FILE   = '/tmp/DomainSecret.md5'
+    self.DOMAIN_ZIP               = self.INTROSPECT_HOME + '/domainzip.secure'
+    self.PRIMORDIAL_DOMAIN_ZIP    = self.INTROSPECT_HOME + '/primordial_domainzip.secure'
+
+    self.INVENTORY_IMAGE_MD5      = self.INTROSPECT_HOME + '/inventory_image.md5'
+    self.INVENTORY_CM_MD5         = self.INTROSPECT_HOME + '/inventory_cm.md5'
+    self.INVENTORY_PASSPHRASE_MD5 = self.INTROSPECT_HOME + '/inventory_passphrase.md5'
+    self.MERGED_MODEL_FILE        = self.INTROSPECT_HOME + '/merged_model.json'
+    self.EWALLET                  = self.INTROSPECT_HOME + '/ewallet.p12'
+    self.WLS_VERSION              = self.INTROSPECT_HOME + "/wls.version"
+    self.JDK_PATH                 = self.INTROSPECT_HOME + "/jdk.path"
+    self.SECRETS_AND_ENV_MD5      = self.INTROSPECT_HOME + "/secrets_and_env.md5"
+    self.DOMAINZIP_HASH           = self.INTROSPECT_HOME + "/domainzip_hash"
+    self.WDT_CONFIGMAP_PATH      = self.getEnvOrDef('WDT_CONFIGMAP_PATH',
+                                                    '/weblogic-operator/wdt-config-map')
     self.DOMAIN_SOURCE_TYPE      = self.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
@@ -149,7 +165,7 @@ class OfflineWlstEnv(object):
 
     self.generatedFiles     = []
 
-    # create tmp directory (mkpath == 'mkdir -p')
+    # create tmp directory (mkpath == 'mkdir -p') 
 
     distutils.dir_util.mkpath(self.INTROSPECT_HOME)
 
@@ -165,6 +181,35 @@ class OfflineWlstEnv(object):
     readDomain(self.getDomainHome())
     self.domain = cmo
     self.DOMAIN_NAME = self.getDomain().getName()
+
+    # this should only be done for model in image case
+    if self.DOMAIN_SOURCE_TYPE == "FromModel":
+      self.handle_ModelInImageDomain()
+
+  def handle_ModelInImageDomain(self):
+    self.WDT_DOMAIN_TYPE = self.getEnvOrDef('WDT_DOMAIN_TYPE', 'WLS')
+
+    try:
+      # find the em ear source path
+      cd('Application/em')
+      em_attrs = ls(returnMap='true', returnType='a')
+      self.empath = em_attrs['SourcePath']
+    except:
+      self.empath = None
+      pass
+
+    if self.WDT_DOMAIN_TYPE == 'JRF':
+      try:
+        # Only export if it is not there already (i.e. have not been copied from the secrets
+        if not os.path.exists('/tmp/opsswallet/ewallet.p12'):
+          opss_passphrase = self.getEnv('OPSS_PASSPHRASE')
+          os.mkdir('/tmp/opsswallet')
+          exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml', \
+                              keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)
+      except:
+        trace("SEVERE","Error in exporting OPSS key ")
+        dumpStack()
+        sys.exit(1)
 
   def getEmPath(self):
     return self.empath
@@ -412,13 +457,13 @@ class TopologyGenerator(Generator):
     if ssl is not None:
       sslListenPortEnabled = ssl.isEnabled()
     return {
-      LISTEN_PORT: server.getListenPort(),
-      LISTEN_PORT_ENABLED: server.isListenPortEnabled(),
-      SSL_LISTEN_PORT: sslListenPort,
-      SSL_LISTEN_PORT_ENABLED: sslListenPortEnabled,
-      ADMIN_LISTEN_PORT: server.getAdministrationPort(),
-      ADMIN_LISTEN_PORT_ENABLED: server.isAdministrationPortEnabled()
-    }[clusterListenPortProperty]
+             LISTEN_PORT: server.getListenPort(),
+             LISTEN_PORT_ENABLED: server.isListenPortEnabled(),
+             SSL_LISTEN_PORT: sslListenPort,
+             SSL_LISTEN_PORT_ENABLED: sslListenPortEnabled,
+             ADMIN_LISTEN_PORT: server.getAdministrationPort(),
+             ADMIN_LISTEN_PORT_ENABLED: server.isAdministrationPortEnabled()
+     }[clusterListenPortProperty]
 
   def validateNonDynamicClusterServersHaveSameListenPort(self, cluster):
     firstServer = None
@@ -436,8 +481,8 @@ class TopologyGenerator(Generator):
         sslListenPort = None
         sslListenPortEnabled = None
         if ssl is not None:
-          sslListenPort = ssl.getListenPort()
-          sslListenPortEnabled = ssl.isEnabled()
+              sslListenPort = ssl.getListenPort()
+              sslListenPortEnabled = ssl.isEnabled()
         adminPort = server.getAdministrationPort()
         adminPortEnabled = server.isAdministrationPortEnabled()
         if firstServer is None:
@@ -454,7 +499,7 @@ class TopologyGenerator(Generator):
           if listenPortEnabled != firstListenPortEnabled:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has listen port enabled: " + self.booleanToString(firstListenPortEnabled) + " but its server " + self.name(server) + "'s listen port enabled: " + self.booleanToString(listenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
           if sslListenPort != firstSslListenPort:
-            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstSslListenPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(sslListenPort) + ".  All ports for the same channel in a cluster must be the same.")
+             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstSslListenPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(sslListenPort) + ".  All ports for the same channel in a cluster must be the same.")
           if sslListenPortEnabled != firstSslListenPortEnabled:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstSslListenPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(sslListenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
           if adminPort != firstAdminPort:
@@ -477,28 +522,28 @@ class TopologyGenerator(Generator):
             return
 
   def validateNonDynamicClusterServerHaveSameCustomChannels(self, cluster):
-    firstServer = None
-    serverNap = {}
-    for server in self.env.getDomain().getServers():
-      if cluster is self.env.getClusterOrNone(server):
-        if firstServer is None:
-          for nap in server.getNetworkAccessPoints():
-            serverNap[nap.getName()] = nap.getProtocol() + "~" + str(nap.getListenPort());
-          firstServer = server
-        else:
-          naps = server.getNetworkAccessPoints()
-          if len(naps) != len(serverNap):
-            self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched number of network access points in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
-            return
-          else:
-            for nap in naps:
-              if nap.getName() in serverNap:
-                if serverNap[nap.getName()] != nap.getProtocol() + "~" + str(nap.getListenPort()):
-                  self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
-                  return
-              else:
-                self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
-                return
+     firstServer = None
+     serverNap = {}
+     for server in self.env.getDomain().getServers():
+       if cluster is self.env.getClusterOrNone(server):
+         if firstServer is None:
+           for nap in server.getNetworkAccessPoints():
+             serverNap[nap.getName()] = nap.getProtocol() + "~" + str(nap.getListenPort());
+           firstServer = server
+         else:
+           naps = server.getNetworkAccessPoints()
+           if len(naps) != len(serverNap):
+             self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched number of network access points in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+             return
+           else:
+             for nap in naps:
+               if nap.getName() in serverNap:
+                 if serverNap[nap.getName()] != nap.getProtocol() + "~" + str(nap.getListenPort()):
+                   self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+                   return
+               else:
+                 self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+                 return
 
 
   def validateDynamicCluster(self, cluster):
@@ -571,7 +616,7 @@ class TopologyGenerator(Generator):
     for cluster in clusters:
       self.addConfiguredCluster(cluster)
     self.undent()
-
+  
   def getConfiguredClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
@@ -662,7 +707,7 @@ class TopologyGenerator(Generator):
     for cluster in clusters:
       self.addDynamicCluster(cluster)
     self.undent()
-
+  
   def getDynamicClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
@@ -830,7 +875,7 @@ class UserConfigAndKeyGenerator(Generator):
     username = self.readCredentialsSecret("username")
     password = self.readCredentialsSecret("password")
     nm_host = 'localhost'
-    nm_port = '5556'
+    nm_port = '5556' 
     domain_name = self.env.getDomain().getName()
     domain_home = self.env.getDomainHome()
     isNodeManager = "true"
@@ -854,6 +899,120 @@ class UserConfigAndKeyGenerator(Generator):
       self.writeln(b64)
     finally:
       nmDisconnect()
+
+class MII_DomainConfigGenerator(Generator):
+
+  def __init__(self, env):
+    Generator.__init__(self, env, env.DOMAIN_ZIP)
+    self.env = env
+    self.domain_home = self.env.getDomainHome()
+  def generate(self):
+    self.open()
+    try:
+      self.addDomainConfig()
+      self.close()
+      self.addGeneratedFile()
+    finally:
+      self.close()
+
+  def addDomainConfig(self):
+    em_ear_path = self.env.getEmPath()
+    empath = ''
+    if em_ear_path is not None and os.path.exists(em_ear_path):
+      empath = em_ear_path
+    # Note: only config type is needed fmwconfig, security is excluded because it's in the primordial and contain
+    # all the many policies files
+    packcmd = "tar -pczf /tmp/domain.tar.gz %s/config/config.xml %s/config/jdbc/ %s/config/jms %s/config/coherence " \
+              "%s/config/diagnostics %s/config/startup %s/config/configCache %s/config/nodemanager " \
+              "%s/config/security %s" % (
+              self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home,
+              self.domain_home, self.domain_home, self.domain_home, self.domain_home, empath)
+    os.system(packcmd)
+    domain_data = self.env.readBinaryFile("/tmp/domain.tar.gz")
+    b64 = ""
+    for s in base64.encodestring(domain_data).splitlines():
+      b64 = b64 + s
+    self.writeln(b64)
+    domainzip_hash = md5.new(domain_data).hexdigest()
+    fh = open("/tmp/domainzip_hash", "w")
+    fh.write(domainzip_hash)
+    fh.close()
+    trace('done zipping up domain ')
+
+
+class MII_OpssWalletFileGenerator(Generator):
+
+  def __init__(self, env):
+    Generator.__init__(self, env, env.EWALLET)
+    self.env = env
+    self.domain_home = self.env.getDomainHome()
+  def generate(self):
+    self.open()
+    try:
+      self.addWallet()
+      self.close()
+      self.addGeneratedFile()
+    finally:
+      self.close()
+
+  def addWallet(self):
+    wallet_data = self.env.readBinaryFile("/tmp/opsswallet/ewallet.p12")
+    b64 = ""
+    for s in base64.encodestring(wallet_data).splitlines():
+      b64 = b64 + s
+    self.writeln(b64)
+    trace("done writing opss key")
+
+
+class MII_PrimordialDomainGenerator(Generator):
+
+  def __init__(self, env):
+    Generator.__init__(self, env, env.PRIMORDIAL_DOMAIN_ZIP)
+    self.env = env
+    self.domain_home = self.env.getDomainHome()
+  def generate(self):
+    self.open()
+    try:
+      self.addPrimordialDomain()
+      self.close()
+      self.addGeneratedFile()
+    finally:
+      self.close()
+
+  def addPrimordialDomain(self):
+    primordial_domain_data = self.env.readBinaryFile("/tmp/prim_domain.tar.gz")
+    b64 = ""
+    for s in base64.encodestring(primordial_domain_data).splitlines():
+      b64 = b64 + s
+    self.writeln(b64)
+    trace("done writing primordial domain")
+
+
+class MII_IntrospectCMFileGenerator(Generator):
+
+  def __init__(self, env, inventory, fromfile):
+    Generator.__init__(self, env, inventory)
+    self.env = env
+    self.fromfile = fromfile
+
+  def generate(self):
+    self.open()
+    try:
+      rc = self.addFile()
+      self.close()
+      if rc is not None:
+        self.addGeneratedFile()
+    finally:
+      self.close()
+
+  def addFile(self):
+    if os.path.exists(self.fromfile):
+      file_str = self.env.readFile(self.fromfile)
+      self.writeln(file_str)
+      return "hasfile"
+    else:
+      return None
+
 
 class SitConfigGenerator(Generator):
 
@@ -954,7 +1113,7 @@ class SitConfigGenerator(Generator):
 
   def customizeNetworkAccessPoint(self, nap, listen_address):
     # Don't bother 'add' a nap listen-address, only do a 'replace'.
-    # If we try 'add' this appears to mess up an attempt to
+    # If we try 'add' this appears to mess up an attempt to 
     #   'add' PublicAddress/Port via custom sit-cfg.
     # FWIW there's theoretically no need to 'add' or 'replace' when empty
     #   since the runtime default is the server listen-address.
@@ -962,19 +1121,17 @@ class SitConfigGenerator(Generator):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
 
     nap_name=nap.getName()
-    if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0 and not (nap_name.startswith('istio-')):
-      self.writeln("<d:network-access-point>")
-      self.indent()
-      self.writeln("<d:name>" + nap_name + "</d:name>")
-      if istio_enabled == 'true':
-        self.writeListenAddress("force a replace", '127.0.0.1')
-        replace_action = 'f:combine-mode="replace"'
-        self.writeln('<d:public-address %s>%s</d:public-address>' % (replace_action, listen_address))
-      else:
-        self.writeListenAddress("force a replace",listen_address)
+    if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0:
+        self.writeln("<d:network-access-point>")
+        self.indent()
+        self.writeln("<d:name>" + nap_name + "</d:name>")
+        if istio_enabled == 'true':
+          self.writeListenAddress("force a replace", '127.0.0.1')
+        else:
+          self.writeListenAddress("force a replace",listen_address)
 
-      self.undent()
-      self.writeln("</d:network-access-point>")
+        self.undent()
+        self.writeln("</d:network-access-point>")
 
   def _getNapConfigOverrideAction(self, svr, testname):
     replace_action = 'f:combine-mode="replace"'
@@ -1010,7 +1167,8 @@ class SitConfigGenerator(Generator):
 
     self.writeln('<d:protocol %s>%s</d:protocol>' % (action, protocol))
     self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
-    self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
+    self.writeln('<d:public-address %s>%s.%s</d:public-address>' % (action, listen_address,
+                                                          self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
     self.writeln('<d:http-enabled-for-this-protocol %s>%s</d:http-enabled-for-this-protocol>' %
                  (action, http_enabled))
@@ -1057,7 +1215,7 @@ class SitConfigGenerator(Generator):
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = ssl.getListenPort()
       self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='https', http_enabled="true")
+                        listen_port=ssl_listen_port, protocol='https', http_enabled="true")
 
       self._writeIstioNAP(name='tls-ldaps', server=server, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='ldaps')
@@ -1242,7 +1400,7 @@ class CustomSitConfigIntrospector(SecretManager):
         secret_path = os.path.join(self.env.CUSTOM_SECRET_ROOT, secret_name)
         self.addSecretsFromDirectory(secret_path, secret_name)
 
-    self.addSecretsFromDirectory(self.env.CREDENTIALS_SECRET_PATH,
+    self.addSecretsFromDirectory(self.env.CREDENTIALS_SECRET_PATH, 
                                  self.env.CREDENTIALS_SECRET_NAME)
 
     self.macroMap['env:DOMAIN_UID']  = self.env.DOMAIN_UID
@@ -1263,19 +1421,19 @@ class CustomSitConfigIntrospector(SecretManager):
     # Populate module maps with known module files and names, log them
 
     self.jdbcModuleStr = self.buildModuleTable(
-      'jdbc',
-      self.env.getDomain().getJDBCSystemResources(),
-      self.env.CUSTOM_PREFIX_JDBC)
+                           'jdbc', 
+                           self.env.getDomain().getJDBCSystemResources(),
+                           self.env.CUSTOM_PREFIX_JDBC)
 
     self.jmsModuleStr = self.buildModuleTable(
-      'jms',
-      self.env.getDomain().getJMSSystemResources(),
-      self.env.CUSTOM_PREFIX_JMS)
+                           'jms', 
+                           self.env.getDomain().getJMSSystemResources(),
+                           self.env.CUSTOM_PREFIX_JMS)
 
     self.wldfModuleStr = self.buildModuleTable(
-      'diagnostics',
-      self.env.getDomain().getWLDFSystemResources(),
-      self.env.CUSTOM_PREFIX_WLDF)
+                           'diagnostics', 
+                           self.env.getDomain().getWLDFSystemResources(),
+                           self.env.CUSTOM_PREFIX_WLDF)
 
     trace('Available modules: ' + self.moduleStr)
 
@@ -1284,7 +1442,7 @@ class CustomSitConfigIntrospector(SecretManager):
     if not os.path.isdir(secret_path):
       # The operator pod somehow put a file where we
       # only expected to find a directory mount.
-      self.env.addError("Internal Error:  Secret path'"
+      self.env.addError("Internal Error:  Secret path'" 
                         + secret_path + "'" +
                         + " is not a directory.")
       return
@@ -1320,14 +1478,14 @@ class CustomSitConfigIntrospector(SecretManager):
           "Error, the operator expects module files of type '" + moduleTypeStr + "'"
           + " to be located in directory '" + moduleTypeStr + "/'"
           + ", but the " + moduleTypeStr + " system resource module '" + mname + "'"
-          + " is configured with DescriptorFileName='" + mfile + "'.")
+          + " is configured with DescriptorFileName='" + mfile + "'.")      
 
       if mfile.count(".xml") != 1 or mfile.find(".xml") + 4 != len(mfile):
         self.env.addError(
           "Error, the operator expects system resource module files"
           + " to end in '.xml'"
           + ", but the " + moduleTypeStr + " system resource module '" + mname + "'"
-          + " is configured with DescriptorFileName='" + mfile + "'.")
+          + " is configured with DescriptorFileName='" + mfile + "'.")      
 
       if not firstModule:
         self.moduleStr += ", "
@@ -1342,7 +1500,7 @@ class CustomSitConfigIntrospector(SecretManager):
 
     # end of for loop
 
-    self.moduleStr += ')'
+    self.moduleStr += ')' 
 
 
   def validateUnresolvedMacros(self, file, filestr):
@@ -1363,7 +1521,7 @@ class CustomSitConfigIntrospector(SecretManager):
         errstr += ","
       errstr += unknown_macro
     if errstr:
-      self.env.addError("Error, unresolvable macro(s) '" + errstr + "'"
+      self.env.addError("Error, unresolvable macro(s) '" + errstr + "'" 
                         + " in custom sit config file '" + file + "'."
                         + " Known macros are '" + self.macroStr + "'.")
 
@@ -1384,20 +1542,20 @@ class CustomSitConfigIntrospector(SecretManager):
     #
     versionPath=os.path.join(self.env.CUSTOM_SITCFG_PATH,"version.txt")
     if not os.path.exists(versionPath):
-      self.env.addError("Error, Required file, '"+versionPath+"', does not exist")
+        self.env.addError("Error, Required file, '"+versionPath+"', does not exist")
     else:
-      version=self.env.readFile(versionPath).strip()
-      if not version == "2.0":
-        # truncate and ellipsify at 75 characters
-        version = version[:75] + (version[75:] and '...')
-        self.env.addError("Error, "+versionPath+" does not have the value of"
-                          + " '2.0'. The current content: '" + version
-                          + "' is not valid.")
+        version=self.env.readFile(versionPath).strip()
+        if not version == "2.0":
+            # truncate and ellipsify at 75 characters
+            version = version[:75] + (version[75:] and '...')
+            self.env.addError("Error, "+versionPath+" does not have the value of"
+                              + " '2.0'. The current content: '" + version 
+                              + "' is not valid.")
 
     for the_file in os.listdir(self.env.CUSTOM_SITCFG_PATH):
 
       if the_file == "version.txt":
-        continue
+        continue  
 
       the_file_path = os.path.join(self.env.CUSTOM_SITCFG_PATH, the_file)
 
@@ -1409,11 +1567,11 @@ class CustomSitConfigIntrospector(SecretManager):
       # check if file name corresponds with config.xml or a module
 
       if not self.moduleMap.has_key(the_file) and the_file != "config.xml":
-        self.env.addError("Error, custom sit config override file '" + the_file + "'"
-                          + " is not named 'config.xml' or has no matching system resource"
-                          + " module. Custom sit config files must be named 'config.xml'"
-                          + " to override config.xml or 'moduletype-modulename.xml' to override"
-                          + " a module. Known module names for each type: " + self.moduleStr + ".")
+        self.env.addError("Error, custom sit config override file '" + the_file + "'" 
+          + " is not named 'config.xml' or has no matching system resource"
+          + " module. Custom sit config files must be named 'config.xml'"
+          + " to override config.xml or 'moduletype-modulename.xml' to override"
+          + " a module. Known module names for each type: " + self.moduleStr + ".")
         continue
 
       # substitute macros and validate unresolved macros
@@ -1432,7 +1590,7 @@ class CustomSitConfigIntrospector(SecretManager):
       genfile = self.env.INTROSPECT_HOME + '/';
 
       if the_file == 'config.xml':
-        genfile += self.env.CUSTOM_PREFIX_CFG + 'custom-situational-config.xml'
+        genfile += self.env.CUSTOM_PREFIX_CFG + 'custom-situational-config.xml' 
       else:
         genfile += self.moduleMap[the_file]
 
@@ -1457,12 +1615,39 @@ class DomainIntrospector(SecretManager):
       UserConfigAndKeyGenerator(self.env).generate()
       DOMAIN_SOURCE_TYPE      = self.env.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
 
+      if DOMAIN_SOURCE_TYPE == "FromModel":
+        trace("cfgmap write primordial_domain")
+        MII_PrimordialDomainGenerator(self.env).generate()
+        trace("cfgmap write domain zip")
+        MII_DomainConfigGenerator(self.env).generate()
+        trace("cfgmap write merged model")
+        MII_IntrospectCMFileGenerator(self.env, self.env.MERGED_MODEL_FILE,
+                                      self.env.DOMAIN_HOME +"/wlsdeploy/domain_model.json").generate()
+        trace("cfgmap write md5 image")
+        MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
+        trace("cfgmap write md5 cm")
+        MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()
+        trace("cfgmap write wls version")
+        MII_IntrospectCMFileGenerator(self.env, self.env.WLS_VERSION, '/tmp/wls_version').generate()
+        trace("cfgmap write jdk_path")
+        MII_IntrospectCMFileGenerator(self.env, self.env.JDK_PATH, '/tmp/jdk_path').generate()
+        trace("cfgmap write md5 secrets")
+        MII_IntrospectCMFileGenerator(self.env, self.env.SECRETS_AND_ENV_MD5, '/tmp/secrets_and_env.md5').generate()
+        trace("cfgmap write model hash")
+        # Must be called after MII_PrimordialDomainGenerator
+        MII_IntrospectCMFileGenerator(self.env, self.env.DOMAINZIP_HASH, '/tmp/domainzip_hash').generate()
+
+        if self.env.WDT_DOMAIN_TYPE == 'JRF':
+          trace("cfgmap write JRF wallet")
+          MII_OpssWalletFileGenerator(self.env).generate()
+
+
     CustomSitConfigIntrospector(self.env).generateAndValidate()
 
     # If the topology is invalid, the generated topology
     # file contains a list of one or more validation errors
     # instead of a topology.
-
+  
     tg.generate()
 
 # Work-around bugs in off-line WLST when accessing an SSL mbean

@@ -49,11 +49,11 @@ public class ItJrfPvWlst extends BaseTest {
     namespaceList = new StringBuffer();
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
-
-    LoggerHelper.getLocal().log(Level.INFO, "setting up properties, directories for: {0}",
+    
+    LoggerHelper.getLocal().log(Level.INFO, "setting up properties, directories for: {0}", 
         testClassName);
     assertDoesNotThrow(() -> initialize(APP_PROPS_FILE, testClassName),
-        "Failed: initial setup");
+        "Failed: initial setup");   
   }
 
   /**
@@ -65,38 +65,38 @@ public class ItJrfPvWlst extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Creating result/pv root directories");
     assertDoesNotThrow(() -> createResultAndPvDirs(testClassName),
         "Failed: createResultAndPvDirs");
-
+    
     LoggerHelper.getLocal().log(Level.INFO, "Copying sample dir to the result dir");
     assertDoesNotThrow(() -> TestUtils.execOrAbortProcess(
-        "cp -rf "
-            + BaseTest.getProjectRoot()
-            + "/kubernetes/samples/scripts "
-            + getResultDir(),
-        true),
-        "Failed: Copy sample dir to the result dir");
-
+        "cp -rf " 
+         + BaseTest.getProjectRoot() 
+         + "/kubernetes/samples/scripts " 
+         + getResultDir(),
+         true),
+         "Failed: Copy sample dir to the result dir");
+    
     //start DB and create RCU
     dbrcuNamespace = "dbrcu" + String.valueOf(getNewSuffixCount());
     dbPort = 30011 + getNewSuffixCount();
     dbUrl = "oracle-db." + dbrcuNamespace + ".svc.cluster.local:1521/devpdb.k8s";
-    assertDoesNotThrow(() -> DbUtils.setupRcuDatabase(getResultDir(), dbPort, dbUrl,
+    assertDoesNotThrow(() -> DbUtils.setupRcuDatabase(getResultDir(), dbPort, dbUrl, 
         rcuSchemaPrefix, dbrcuNamespace));
-
+        
     // create operator
     if (operator == null) {
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
           true, testClassName);
-      operator = assertDoesNotThrow(() -> TestUtils.createOperator(operatorMap,
+      operator = assertDoesNotThrow(() -> TestUtils.createOperator(operatorMap, 
           Operator.RestCertType.SELF_SIGNED));
       assertNotNull(operator);
       LoggerHelper.getLocal().log(Level.INFO, "Operator is created for {0}", testClassName);
-
+      
       domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       namespaceList.append((String)operatorMap.get("namespace"));
       namespaceList.append(" ").append(domainNS);
     }
   }
-
+   
   /**
    * This method will run once after every test method is finished. It delete both RCU and DB pods.
    */
@@ -108,7 +108,7 @@ public class ItJrfPvWlst extends BaseTest {
     assertDoesNotThrow(() -> DbUtils.deleteDbPod(getResultDir()),
         "Failed: stop DB");
   }
-
+  
   /**
    * Releases k8s cluster lease, archives result, pv directories.
    */
@@ -116,7 +116,7 @@ public class ItJrfPvWlst extends BaseTest {
   public static void staticUnPrepare() {
     assertDoesNotThrow(() -> tearDown(new Object() {
         }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString()),
-        "tearDown failed");
+         "tearDown failed");
   }
 
   /**
@@ -130,7 +130,7 @@ public class ItJrfPvWlst extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO,
           "+++++++++++++++++++++++++++++++++---------------------------------+");
       LoggerHelper.getLocal().log(Level.INFO, "BEGIN " + testMethodName);
-
+      
       boolean testCompletedSuccessfully = false;
 
       try {
@@ -142,25 +142,25 @@ public class ItJrfPvWlst extends BaseTest {
         domainMap.put("managedServerNameBase", "infraserver");
         domainMap.put("domainHomeSourceType", "PersistentVolume");
         domainMap.put("rcuSchemaPrefix", "jrfdomain");
-        LoggerHelper.getLocal().log(Level.INFO, "DEBUG " + testClassName + "domain: dbUrl: "
+        LoggerHelper.getLocal().log(Level.INFO, "DEBUG " + testClassName + "domain: dbUrl: " 
             + dbUrl);
         domainMap.put("rcuDatabaseURL", dbUrl);
         domainUid = (String) domainMap.get("domainUID");
         LoggerHelper.getLocal().log(Level.INFO,
             "Creating and verifying the domain creation with domainUid: " + domainUid);
 
-        jrfdomain = assertDoesNotThrow(() -> new JrfDomain(domainMap),
+        jrfdomain = assertDoesNotThrow(() -> new JrfDomain(domainMap), 
             "Failed: JRF domain creation");
-        LoggerHelper.getLocal().log(Level.INFO, "JRF domain is created for {0}",
+        LoggerHelper.getLocal().log(Level.INFO, "JRF domain is created for {0}", 
             testClassName);
-        assertDoesNotThrow(() -> jrfdomain.verifyDomainCreated(),
+        assertDoesNotThrow(() -> jrfdomain.verifyDomainCreated(), 
             "Failed: domain verification");
-        LoggerHelper.getLocal().log(Level.INFO, "JRF domain verification succeeded for {0}",
+        LoggerHelper.getLocal().log(Level.INFO, "JRF domain verification succeeded for {0}", 
             testClassName);
-
+        
         // basic test cases
         assertDoesNotThrow(() -> testBasicUseCases(jrfdomain, false));
-        LoggerHelper.getLocal().log(Level.INFO, "JRF domain BasicUseCases succeeded for {0}",
+        LoggerHelper.getLocal().log(Level.INFO, "JRF domain BasicUseCases succeeded for {0}", 
             testClassName);
 
         testCompletedSuccessfully = true;

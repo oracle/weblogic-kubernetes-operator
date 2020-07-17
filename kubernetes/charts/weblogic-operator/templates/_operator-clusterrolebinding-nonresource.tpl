@@ -8,7 +8,6 @@ kind: "ClusterRoleBinding"
 metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
-    weblogic.resourceVersion: "operator-v2"
   name: {{ list .Release.Namespace "weblogic-operator-clusterrolebinding-nonresource" | join "-" | quote }}
 roleRef:
   apiGroup: "rbac.authorization.k8s.io"

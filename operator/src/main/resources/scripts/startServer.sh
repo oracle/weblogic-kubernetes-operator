@@ -16,6 +16,12 @@ traceTiming "POD '${SERVICE_NAME}' MAIN START"
 
 trace "Starting WebLogic Server '${SERVER_NAME}'."
 
+source ${SCRIPTPATH}/modelInImage.sh
+
+if [ $? -ne 0 ]; then
+      trace SEVERE "Error sourcing modelInImage.sh" && exit 1
+fi
+
 exportInstallHomes
 
 #
@@ -65,7 +71,7 @@ function startWLS() {
   traceTiming "POD '${SERVICE_NAME}' MD5 END"
 
   #
-  # We "tail" the future WL Server .out file to stdout in background _before_ starting
+  # We "tail" the future WL Server .out file to stdout in background _before_ starting 
   # the WLS Server because we use WLST 'nmStart()' to start the server and nmStart doesn't return
   # control until WLS reaches the RUNNING state.
   #
@@ -111,8 +117,20 @@ function mockWLS() {
 #   Copied $tgt_dir files are stripped of their $fil_prefix
 #   Any .xml files in $tgt_dir that are not in $src_dir/$fil_prefix+FILE are deleted
 #
+# This method is called during boot, see 'copySitCfgWhileRunning' in 'livenessProbe.sh'
+# for the similar method that is periodically called while the server is running.
 
-function copySitCfg() {
+function copySitCfgWhileBooting() {
+  # Helper fn to copy sit cfg xml files to the WL server's domain home.
+  #   - params $1/$2/$3 == 'src_dir tgt_dir fil_prefix'
+  #   - $src_dir files are assumed to start with $fil_prefix and end with .xml
+  #   - copied $tgt_dir files are stripped of their $fil_prefix
+  #   - any .xml files in $tgt_dir that are not in $src_dir/$fil_prefix+FILE are deleted
+  #
+  # This method is called before the server boots, see
+  # 'copySitCfgWhileRunning' in 'livenessProbe.sh' for a similar method that
+  # is called periodically while the server is running. 
+
   src_dir=${1?}
   tgt_dir=${2?}
   fil_prefix=${3?}
@@ -142,10 +160,102 @@ function copySitCfg() {
   fi
 }
 
+# prepare mii server
+
+function prepareMIIServer() {
+
+  trace "Model-in-Image: Creating domain home."
+
+  # primordial domain contain the basic structures, security and other fmwconfig templated info
+  # domainzip only contains the domain configuration (config.xml jdbc/ jms/)
+  # Both are needed for the complete domain reconstruction
+
+  if [ ! -f /weblogic-operator/introspector/primordial_domainzip.secure ] ; then
+    trace SEVERE "Domain Source Type is FromModel, the primordial model archive is missing, cannot start server"
+    return 1
+  fi
+
+  if [ ! -f /weblogic-operator/introspector/domainzip.secure ] ; then
+    trace SEVERE  "Domain type is FromModel, the domain configuration archive is missing, cannot start server"
+    return 1
+  fi
+
+  trace "Model-in-Image: Restoring primordial domain"
+  cd / || return 1
+  base64 -d /weblogic-operator/introspector/primordial_domainzip.secure > /tmp/domain.tar.gz || return 1
+  tar -xzf /tmp/domain.tar.gz || return 1
+
+  trace "Model-in-Image: Restore domain secret"
+  # decrypt the SerializedSystemIni first
+  if [ -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
+    MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+  else
+    trace SEVERE "Domain Source Type is 'FromModel' which requires specifying a runtimeEncryptionSecret " \
+    "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
+    return 1
+  fi
+  encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
+
+  # restore the config zip
+  #
+  trace "Model-in-Image: Restore domain config"
+  cd / || return 1
+  base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz || return 1
+  tar -xzf /tmp/domain.tar.gz || return 1
+  chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh  || return 1
+
+  # restore the archive apps and libraries
+  #
+  trace "Model-in-Image: Restoring apps and libraries"
+
+  mkdir -p ${DOMAIN_HOME}/lib
+  if [ $? -ne 0 ] ; then
+    trace  SEVERE "Domain Source Type is FromModel, cannot create ${DOMAIN_HOME}/lib "
+    return 1
+  fi
+
+  for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
+    do
+        # expand the archive domain libraries to the domain lib
+        cd ${DOMAIN_HOME}/lib || return 1
+        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
+
+        if [ $? -ne 0 ] ; then
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domain libs ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          return 1
+        fi
+
+        # expand the archive apps and shared lib to the wlsdeploy/* directories
+        # the config.xml is referencing them from that path
+
+        cd ${DOMAIN_HOME} || return 1
+        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
+
+        if [ $? -ne 0 ] ; then
+          trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          return 1
+        fi
+    done
+  return 0
+}
+
 # trace env vars and dirs before export.*Home calls
 
 traceEnv before
 traceDirs before
+
+traceTiming "POD '${SERVICE_NAME}' MII UNZIP START"
+
+if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
+  prepareMIIServer
+  if [ $? -ne 0 ] ; then
+    trace SEVERE  "Domain Source Type is FromModel, unable to start the server, check other error messages in the log"
+    exitOrLoop
+  fi
+
+fi
+
+traceTiming "POD '${SERVICE_NAME}' MII UNZIP COMPLETE"
 
 #
 # Configure startup mode
@@ -243,10 +353,10 @@ createFolder ${DOMAIN_HOME}/servers/${SERVER_NAME}/security
 copyIfChanged /weblogic-operator/introspector/boot.properties \
               ${DOMAIN_HOME}/servers/${SERVER_NAME}/security/boot.properties
 
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
+copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
+copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
+copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
+copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
 
 #
 # Start WLS

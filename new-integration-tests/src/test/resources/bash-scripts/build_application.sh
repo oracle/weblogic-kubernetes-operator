@@ -14,11 +14,11 @@ function usage {
 MW_HOME=/u01/oracle
 WL_HOME=${MW_HOME}/wlserver
 
-if [ -z ${targets+x} ]; then
+if [ -z ${targets+x} ]; then 
 targets=""
 fi
 
-if [ -z ${sysprops+x} ]; then
+if [ -z ${sysprops+x} ]; then 
 sysprops=""
 fi
 
@@ -26,8 +26,15 @@ fi
 echo "Setting up build environment"
 source ${WL_HOME}/server/bin/setWLSEnv.sh
 
-# call ant all to build
-cd /application
+# create /u01/application
+mkdir /u01/application
+cd /u01/application
+#unzip the source application archive
+unzip /u01/$ZIP_FILE
+
+# call ant to build
+pwd
+ls
+echo "ant ${sysprops} ${targets}"
 ant ${sysprops} ${targets}
 
-chmod -R 777 *

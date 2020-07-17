@@ -9,5 +9,8 @@ package oracle.kubernetes.operator.helpers;
 public enum SecretType {
   WebLogicCredentials, 
   ImagePull, 
-  ConfigOverride
+  ConfigOverride, 
+  RuntimeEncryption,
+  OpssWalletPassword, 
+  OpssWalletFile
 }
