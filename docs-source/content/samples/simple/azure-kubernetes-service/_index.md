@@ -266,7 +266,7 @@ spec:
   - nobrl
 ```
 
-We have provided another configuration file `pvc.yaml` for the PersistentVolumeClaim.  Both `pv.yaml` and `pvc.yaml` have exactly the same content in the `metadata` and `storageClassName` attributes. This is required. The following content is an example that uses default persistent volume claim name `azurefile` as "storageClassName".
+We have provided another configuration file `pvc.yaml` for the PersistentVolumeClaim.  Both `pv.yaml` and `pvc.yaml` have exactly the same content in the `metadata` and `storageClassName` attributes. This is required. The following content is an example that uses the default persistent volume claim name `azurefile` for "storageClassName".
 
 ```yaml
 apiVersion: v1
