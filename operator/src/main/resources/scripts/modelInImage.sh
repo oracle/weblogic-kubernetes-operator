@@ -676,9 +676,12 @@ function wdtCreatePrimordialDomain() {
 
   if [ "JRF" == "$WDT_DOMAIN_TYPE" ] ; then
     if [ -z "${OPSS_FLAGS}" ] ; then
-      trace "Creating JRF Primordial Domain"
+      trace INFO "An OPSS wallet was not supplied for Model in the Image JRF domain " \
+        "'spec.configuration.opss.walletFileSecret' attribute; therefore, it's assumed that this is the first time " \
+        "the OPSS RCU database is being accessed by the domain, so a schema and a wallet file will be created. " \
+        "Consult the Model in Image documentation for preserving the OPSS wallet file."
     else
-      trace "Creating JRF Primordial Domain with OPSS Wallet and Password"
+      trace "Creating JRF Primordial Domain"
     fi
   fi
   ${WDT_BINDIR}/createDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
