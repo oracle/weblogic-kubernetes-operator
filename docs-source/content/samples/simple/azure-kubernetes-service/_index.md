@@ -28,7 +28,7 @@ This sample assumes the following prerequisites.
 
 ##### Environment for setup
 
-This sample assumes the following two execution environments:
+This sample assumes one of the following two execution environments:
 
 1. Run the commands on your local computer. This allows for the greatest flexibility while requiring some setup effort.
 1. Run the commands in the Azure Cloud Shell. Cloud Shell is a browser based utility and runs on the Azure portal. This option may be best for users already familiar with the utility and Azure. It is also suitable for users wanting to avoid installing additional software on their local computer.
@@ -87,7 +87,6 @@ Insufficient privileges to complete the operation.
 
 The problem may be a pre-existing service principal with the same name.  Either delete the other Service Principal or pick a different name.
 
-
 Grant your service principal with a contributor role to create AKS resources.
 
 ```bash
@@ -97,11 +96,11 @@ az role assignment create --assignee <appId> --role Contributor
 
 ##### Docker Hub
 
-You will need a Docker Hub account. If you don't have an existing account, please sign up for a new account at [DockerHub](https://hub.docker.com/). Note down your user name, password and  email for Docker Hub. Because this sample uses a Docker image for a specific version of WLS, and WLS requires accepting license terms, do a Docker Hub "checkout" of [Oracle WebLogic Server](https://hub.docker.com/_/oracle-weblogic-server-12c).  This sample was written with 12.2.1.3, but other versions may work as well.
+You will need a Docker Hub account. If you don't have an existing account, please sign up for a new account at [DockerHub](https://hub.docker.com/). Note down your user name, password and  email for Docker Hub. Because this sample uses a Docker image for a specific version of WLS, and WLS requires accepting license terms, do a Docker Hub "checkout" of [Oracle WebLogic Server](https://hub.docker.com/_/oracle-weblogic-server-12c). This sample was written with 12.2.1.3, but other versions may work as well.
 
 ##### Clone WebLogic Operator repository
 
-Please clone this repository to your machine. We will use several scripts in this repository to create domain.
+Please clone this repository to your machine. We will use several scripts in this repository to create a WebLogic domain.
 
 ```bash
 git clone https://github.com/oracle/weblogic-kubernetes-operator.git
