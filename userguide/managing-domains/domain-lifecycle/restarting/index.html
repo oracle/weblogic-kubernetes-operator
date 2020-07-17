@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.68.3" />
-    <meta name="description" content="This document describes when to restart servers in the Oracle WebLogic Server in Kubernetes environment.">
+    <meta name="description" content="This document describes when WebLogic Server instances should and will be restarted in the Kubernetes environment.">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
@@ -12,18 +12,18 @@
     <title>Restarting :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1595018782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1595018782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1595018782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1595018782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1595018782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1595018782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1595018782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1595018782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1595018782" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1595019682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1595019682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1595019682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1595019682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1595019682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1595019682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1595019682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1595019682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1595019682" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1595018782"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1595019682"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1595018782"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1595018782"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1595019682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1595019682"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1595018782"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1595019682"></script>
 
     
   </div>
@@ -1079,6 +1079,25 @@
 
             
           
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/" title="Domain introspection" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/">
+        Domain introspection
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
         
         </ul>
               
@@ -1573,6 +1592,130 @@
           
       </a>
       
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/prerequisites/" title="Prerequisites" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/prerequisites/">
+        Prerequisites
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/" title="Initial use case" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/">
+        Initial use case
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update1/" title="Update 1" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update1/">
+        Update 1
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update2/" title="Update 2" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update2/">
+        Update 2
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update3/" title="Update 3" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update3/">
+        Update 3
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/cleanup/" title="Cleanup" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/cleanup/">
+        Cleanup
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
               
     </li>
   
@@ -1635,13 +1778,13 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/" title="Delete domain resources" class="dd-item 
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/" title="Delete resources associated with the domain" class="dd-item 
         
         
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/">
-          Delete domain resources
+          Delete resources associated with the domain
           
       </a>
       
@@ -2425,7 +2568,7 @@
         
         ">
       <a href="/weblogic-kubernetes-operator/faq/">
-          <b>7. </b>Frequently asked questions
+          Frequently asked questions
           
       </a>
       
@@ -2653,9 +2796,28 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/coherence-requirements/" title="Coherence Requirements" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/coherence-requirements/" title="Coherence requirements" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/coherence-requirements/">
-        Coherence Requirements
+        Coherence requirements
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/resource-settings/" title="Pod memory and CPU resources" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/faq/resource-settings/">
+        Pod memory and CPU resources
         
         </a>
     </li>
@@ -2796,20 +2958,19 @@ if (!doNotTrack) {
 <script async src='https://www.google-analytics.com/analytics.js'></script>
 
 
-<p>This document describes <em>when</em> to restart servers in the Oracle WebLogic Server in Kubernetes environment.</p>
+<p>This document describes when WebLogic Server instances should and will be restarted in the Kubernetes environment.</p>
 <h4 id="overview">Overview</h4>
-<p>There are many situations where changes to the Oracle WebLogic Server in Kubernetes environment require that all the servers in
+<p>There are many situations where changes to the WebLogic or Kubernetes environment configuration require that all the servers in
 a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.</p>
-<p>One of the operator&rsquo;s most important jobs is to start and stop WebLogic Servers by creating and deleting their corresponding Kubernetes Pods. Sometimes, you need to make changes that make the pods obsolete, therefore the pods need to be deleted and recreated. Depending on the change, sometimes the pods can be gradually recreated, without taking the entire domain out of service
-(for example, <code>rolling restarts</code>) and sometimes all the pods need to be deleted then recreated, taking the entire domain out of
-service for a while (for example, <code>full restarts</code>).</p>
-<p>The following types of server restarts are supported in Oracle WebLogic Server in Kubernetes:</p>
+<p>One of the operator&rsquo;s most important jobs is to start and stop WebLogic Server instances by creating and deleting their corresponding Kubernetes pods. Sometimes, you need to make changes that make the pods obsolete, therefore the pods need to be deleted and recreated. Depending on the change, often the pods can be gradually recreated, without taking the domain or cluster out of service
+(for example, &ldquo;rolling restarts&rdquo;) and sometimes all the pods need to be deleted and then recreated as part of a downtime (for example, &ldquo;full restarts&rdquo;).</p>
+<p>The following types of server restarts are supported by the operator:</p>
 <ul>
 <li>
 <p>Rolling restarts - a coordinated and controlled shut down of all of the servers in a domain or cluster while ensuring that service to the end user is not interrupted.</p>
 <ul>
 <li>
-<p>Operator initiated - where the WebLogic Server Kubernetes Operator can detect some types of changes and will automatically initiate rolling restarts of server pods in a WebLogic domain.</p>
+<p>Operator initiated - where the WebLogic Server Kubernetes Operator can detect some types of changes and will automatically initiate rolling restarts of pods in a domain or cluster.</p>
 </li>
 <li>
 <p>Manually initiated - required when certain changes in the Oracle WebLogic Server in Kubernetes environment cannot be detected by the operator, so a rolling restart must be manually initiated.</p>
@@ -2820,94 +2981,100 @@ service for a while (for example, <code>full restarts</code>).</p>
 <p>Full domain restarts - the Administration Server and all the Managed Servers in a domain are shutdown, impacting service availability to the end user, and then restarted.  Unlike a rolling restart, the operator cannot detect and initiate a full domain restart; it must always be manually initiated.</p>
 </li>
 </ul>
-<p>For detailed information on how to restart servers in a Oracle WebLogic Server in Kubernetes environment, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/">Starting, stopping, and restarting servers</a>.</p>
+<p>For detailed information on how to restart servers using the operator, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/">Starting, stopping, and restarting servers</a>.</p>
 <h4 id="common-restart-scenarios">Common restart scenarios</h4>
 <p>This document describes what actions you need to take to properly restart your servers for a number of common scenarios:</p>
 <ul>
-<li>Modifying the WebLogic configuration</li>
-<li>Changing the custom domain configuration overrides (also called situational configuration) for Domain in PV and Domain in Image domains</li>
+<li>Modifying the WebLogic domain configuration</li>
+<li>Changing the domain configuration overrides (also called situational configuration) for Domain in PV and Domain in Image domains</li>
 <li>Changing the model files for Model in Image domains</li>
 <li>Changing the WebLogic Server credentials (the user name and password)</li>
-<li>Changing properties on the domain resource that affect server pods (such as <code>image</code>, <code>volumes</code>, and <code>env</code>)</li>
+<li>Changing fields on the Domain that <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">affect WebLogic Server instance Pod generation</a> (such as <code>image</code>, <code>volumes</code>, and <code>env</code>)</li>
 <li>Applying WebLogic Server patches</li>
-<li>Updating deployed applications for domain home in image</li>
+<li>Updating deployed applications for Domain in Image or Model in Image</li>
 </ul>
 <h3 id="use-cases">Use cases</h3>
-<h4 id="modifying-the-weblogic-server-configuration">Modifying the WebLogic Server configuration</h4>
-<p>Changes to the Oracle WebLogic Server configuration may require either a rolling or full domain restart depending on the domain home location and the type of configuration change.</p>
+<h4 id="modifying-the-weblogic-domain-configuration">Modifying the WebLogic domain configuration</h4>
+<p>Changes to the WebLogic domain configuration may require either a rolling or full domain restart depending on the domain home location and the type of configuration change.</p>
+<h5 id="domain-in-image">Domain in Image</h5>
+<p>For Domain in Image, you may only perform a rolling restart if both the WebLogic configuration changes between the present image and a new image are dynamic and you have <a href="/weblogic-kubernetes-operator/userguide/cicd/mutate-the-domain-layer/">followed the CI/CD guidelines</a> to create an image with compatible encryption keys.</p>
+<p>Otherwise, use of a new image that does not have compatible encryption keys or any non-dynamic configuration changes require a full domain restart.</p>
 <ul>
-<li>
-<p><strong>Domain in Image:</strong>
-For a domain home in image, any changes (dynamic or non-dynamic) to the WebLogic configuration requires a full domain restart.</p>
-<ul>
-<li>If you create a new image with a new name, then you must avoid a rolling restart, which can cause unexpected behavior for the running domain due to configuration inconsistencies as seen by the various servers, by following the steps in <a href="#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource">Avoiding a rolling restart when changing image property on a domain resource</a>.</li>
+<li>If you create a new image with a new name, then you must avoid a rolling restart, which can cause unexpected behavior for the running domain due to configuration inconsistencies as seen by the various servers, by following the steps in <a href="#avoiding-a-rolling-restart-when-changing-image-field-on-a-domain">Avoiding a rolling restart when changing image field on a Domain</a>.</li>
 <li>If you create a new image with the same name, then you must manually initiate a full domain restart. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#full-domain-restarts">Full domain restarts</a>.</li>
 </ul>
-</li>
-<li>
-<p><strong>Model in Image:</strong></p>
+<h5 id="model-in-image">Model in Image</h5>
 <ul>
 <li>
-<p>Any image that supplies configuration changes that are incompatible with the current running domain require a full shutdown before changing the domain resource image setting, instead of a rolling restart. For changes that support a rolling restart, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/#supported-and-unsupported-updates">Supported and unsupported updates</a>.</p>
+<p>Any image that supplies configuration changes that are incompatible with the current running domain require a full shut down before changing the Domain <code>image</code> field, instead of a rolling restart. For changes that support a rolling restart, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/#supported-and-unsupported-updates">Supported and unsupported updates</a>.</p>
 </li>
 <li>
-<p>If you create a new image with a new name, and you want to avoid a rolling restart, see <a href="#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource">Avoiding a rolling restart when changing image property on a domain resource</a>.</p>
+<p>If you create a new image with a new name, and you want to avoid a rolling restart, see <a href="#avoiding-a-rolling-restart-when-changing-the-image-field-on-a-domain">Avoiding a rolling restart when changing the image field on a Domain</a>.</p>
 </li>
 <li>
-<p>If you create a new image with the same name, then you must manually initiate either a full domain restart or rolling restart for pods to run with the new image. To initiate a full restart, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#full-domain-restarts">Full domain restarts</a>. To initiate a rolling restart, change the value of your domain resource <code>restartVersion</code> field.  See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers">Restarting servers</a> and <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#rolling-restarts">Rolling restarts</a>.</p>
+<p>If you create a new image with the same name, then you must manually initiate either a full domain restart or rolling restart for pods to run with the new image. To initiate a full restart, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#full-domain-restarts">Full domain restarts</a>. To initiate a rolling restart, change the value of your Domain <code>restartVersion</code> field.  See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers">Restarting servers</a> and <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#rolling-restarts">Rolling restarts</a>.</p>
 </li>
 <li>
-<p>If you are supplying updated models or secrets for a running domain, and you want the configuration updates to take effect using a rolling restart:</p>
+<p>If you are supplying updated models or Secrets for a running domain, and you want the configuration updates to take effect using a rolling restart, then do one of the following:</p>
 <ul>
-<li>You must either supply a new image name in the domain resource or change the domain resource <code>restartVersion</code> in order to force the operator to reload the configuration.</li>
-<li>With either of these two changes, the operator will rerun the domain&rsquo;s introspector job, which will verify and apply the new configuration. If the introspector job&rsquo;s configuration verification succeeds, then it will subsequently roll (restart) the pods; if the job fails, then a roll will not occur.</li>
-<li>If you change other fields that typically cause a restart, such as <code>volumes</code>, <code>env</code>, and such, then the introspector job will not rerun and a rolling restart will proceed without loading the configuration changes.</li>
+<li>Supply a new value for the <code>image</code> field in the Domain or any of the other <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">fields affecting WebLogic Server instance Pod generation</a>.</li>
+<li>Change the Domain <code>restartVersion</code> field. This will cause the operator to restart all running servers and, prior to the restarts, the operator will introspect any new configuration.</li>
+<li>Change the Domain <code>introspectVersion</code> field. This will cause the operator to introspect any new configuration and, if needed, restart servers to use that new configuration.</li>
 </ul>
 </li>
 </ul>
-</li>
-<li>
-<p><strong>Domain in PV:</strong>
-For a domain home on PV, the type of restart needed to apply the changes depends on the nature of the WebLogic configuration change:</p>
+<h5 id="domain-in-pv">Domain in PV</h5>
+<p>For Domain in PV, the type of restart needed depends on the nature of the WebLogic domain configuration change:</p>
 <ul>
-<li>Changes to parts of the WebLogic configuration that the operator introspects, require a full restart, even if the changes are dynamic.
-The following are the types of changes to the WebLogic Server configuration that the operator introspects:
+<li>Domain configuration changes that add new clusters (either configured or dynamic), member servers for these new clusters, or non-clustered servers can now be performed dynamically. This support requires that the new clusters or servers are added to the domain configuration and then that you <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/">initiate the operator&rsquo;s introspection</a> of that new configuration.</li>
+<li>Other changes to parts of the domain configuration that the operator introspects, require a full shutdown and restart, even if the changes are dynamic for WebLogic Server, such as:
 <ul>
-<li>Adding or removing a cluster, server, dynamic server, or network access point</li>
+<li>Adding or removing a network access point</li>
+<li>Adding a server to an existing cluster</li>
 <li>Changing a cluster, server, dynamic server, or network access point name</li>
 <li>Enabling or disabling the listen port, SSL port, or admin port</li>
 <li>Changing any port numbers</li>
 <li>Changing a network access point&rsquo;s public address</li>
 </ul>
 </li>
-<li>Other dynamic WebLogic configuration changes do not require a restart.  For example, a change to a server&rsquo;s connection timeout property
-is dynamic and does not require a restart.</li>
-<li>Other non-dynamic WebLogic configuration changes require either a manually initiated rolling restart or a full domain restart, depending on the nature of the change.
-For example, a rolling restart is applicable when changing a WebLogic Server <code>stuck thread timer interval</code> property. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restart-all-the-servers-in-the-domain">Restart all the servers in the domain</a>.</li>
+<li>Other dynamic WebLogic configuration changes do not require a restart. For example, a change to a server&rsquo;s connection timeout property is dynamic and does not require a restart.</li>
+<li>Other non-dynamic domain configuration changes require either a manually initiated rolling restart or a full domain shut down and restart, depending on the nature of the change.
+<ul>
+<li>For example, a rolling restart is applicable when changing a WebLogic Server <code>stuck thread timer interval</code> property. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restart-all-the-servers-in-the-domain">Restart all the servers in the domain</a>.</li>
 </ul>
 </li>
 </ul>
-<h4 id="changing-the-custom-domain-configuration-overrides">Changing the custom domain configuration overrides</h4>
-<p>Any change to domain configuration overrides requires a full domain restart.  This includes:</p>
+
+<div class="notices note" ><p>The preceding description of the operator&rsquo;s life cycle of responding to WebLogic domain configuration changes applies to version 3.0.0 and later. Prior to operator version 3.0.0, while you could make changes to WebLogic domain configuration using the Administration Console or WLST, the operator would only detect and respond to those changes following a full domain shut down and restart.</p>
+</div>
+
+<h4 id="changing-the-domain-configuration-overrides">Changing the domain configuration overrides</h4>
+<p>Beginning with operator version 3.0.0, many changes to domain configuration overrides can be applied dynamically or as part of a rolling restart. Previously, any changes to the configuration overrides required a full domain shutdown and restart.
+Changes to configuration overrides include:</p>
 <ul>
-<li>Changing the domain resource&rsquo;s <code>configuration.overridesConfigMap</code> to point to a different configuration map</li>
-<li>Changing the domain resource&rsquo;s <code>configuration.secrets</code> to point to a different list of secrets</li>
-<li>Changing the contents of the configuration map referenced by <code>configuration.overridesConfigMap</code></li>
-<li>Changing the contents to any of the secrets referenced by <code>configuration.secrets</code></li>
+<li>Changing the Domain YAML file&rsquo;s <code>configuration.overridesConfigMap</code> to point to a different ConfigMap</li>
+<li>Changing the Domain YAML file&rsquo;s <code>configuration.secrets</code> to point to a different list of Secrets</li>
+<li>Changing the contents of the ConfigMap referenced by <code>configuration.overridesConfigMap</code></li>
+<li>Changing the contents to any of the Secrets referenced by <code>configuration.secrets</code></li>
 </ul>
+<p>The changes to the above fields or contents of related resources are not processed automatically. Instead, these fields are processed only when you <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/">initiate operator introspection</a>. The operator then will apply the new configuration overrides dynamically or only apply the overrides when WebLogic Server instances restart, depending on the strategy that you select.</p>
+
+<div class="notices note" ><p>Changes to configuration overrides distributed to running WebLogic Server instances can only take effect if the corresponding WebLogic configuration MBean attribute is &ldquo;dynamic&rdquo;. For instance, the Data Source &ldquo;passwordEncrypted&rdquo; attribute is dynamic while the &ldquo;Url&rdquo; attribute is non-dynamic.</p>
+</div>
+
 <h4 id="changing-the-weblogic-server-credentials">Changing the WebLogic Server credentials</h4>
 <p>A change to the WebLogic Server credentials (the user name and password), contained in the Kubernetes Secret for the domain, requires a
-<em>full domain restart</em>.  The Kubernetes Secret can be updated directly or a new secret can be created and then referenced by the <code>webLogicCredentialsSecret</code>
-property in the domain resource.</p>
-<h4 id="changing-properties-on-the-domain-resource-that-affect-server-pods">Changing properties on the domain resource that affect server pods</h4>
-<p>The operator will initiate a rolling restart of the domain when you modify any of the domain resource properties that affect the server pods configuration,
-such as <code>image</code>, <code>volumes</code>, and <code>env</code>.  For a complete list, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted">Properties that cause servers to be restarted</a>.</p>
-<p>You can modify these properties using the <code>kubectl</code> command-line tool&rsquo;s <code>edit</code> and <code>patch</code> commands or through the Kubernetes REST API.</p>
-<p>For example, to edit the domain resource directly using the <code>kubectl</code> command-line tool:</p>
+<em>full domain restart</em>.  The Kubernetes Secret can be updated directly or a new Secret can be created and then referenced by the <code>webLogicCredentialsSecret</code>
+field in the Domain YAML file.</p>
+<h4 id="changing-fields-on-the-domain-that-affect-weblogic-server-instance-pods">Changing fields on the Domain that affect WebLogic Server instance Pods</h4>
+<p>The operator will initiate a rolling restart of the domain when you modify any of the Domain YAML file fields that affect the WebLogic Server instance Pod generation,
+such as <code>image</code>, <code>volumes</code>, and <code>env</code>.  For a complete list, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">Fields that cause servers to be restarted</a>.</p>
+<p>You can modify these fields using the <code>kubectl</code> command-line tool&rsquo;s <code>edit</code> and <code>patch</code> commands or through the Kubernetes REST API.</p>
+<p>For example, to edit the Domain YAML file directly using the <code>kubectl</code> command-line tool:</p>
 <pre><code>kubectl edit domain &lt;domain name&gt; -n &lt;domain namespace&gt;
-</code></pre><p>The <code>edit</code> command opens a text editor which lets you edit the domain resource in place.</p>
+</code></pre><p>The <code>edit</code> command opens a text editor which lets you edit the Domain in place.</p>
 
-<div class="notices note" ><p>Typically, it&rsquo;s better to edit the domain resource directly; otherwise, if you scaled the domain, and you edit only the original <code>domain.yaml</code> file and reapply it, you could go back to your old replicas count.</p>
+<div class="notices note" ><p>Typically, it&rsquo;s better to edit the Domain YAML file directly; otherwise, if you scaled the domain, and you edit only the original <code>domain.yaml</code> file and reapply it, you could go back to your old replicas count.</p>
 </div>
 
 <h4 id="applying-weblogic-server-patches">Applying WebLogic Server patches</h4>
@@ -2922,10 +3089,10 @@ Information on whether a patch is rolling-compatible or requires a manual full d
 <p>With patches that are not rolling-compatible:</p>
 <ul>
 <li>If you keep the same image name, then you must manually initiate a full domain restart. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#full-domain-restarts">Full domain restarts</a>.</li>
-<li>If you update the <code>image</code> property with a new image name, then you must avoid the rolling restart by following the steps in <a href="#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource">Avoiding a rolling restart when changing image property on a domain resource</a>.</li>
+<li>If you update the <code>image</code> property with a new image name, then you must avoid the rolling restart by following the steps in <a href="#avoiding-a-rolling-restart-when-changing-the-image-field-on-a-domain">Avoiding a rolling restart when changing the image field on a Domain</a>.</li>
 </ul>
 <h4 id="updating-deployed-applications">Updating deployed applications</h4>
-<p>Frequent updates of deployed applications using a continuous integration/continuous delivery (CI/CD) process is a very common use case.
+<p>Frequent updates of deployed applications using a <a href="/weblogic-kubernetes-operator/userguide/cicd/mutate-the-domain-layer/">continuous integration/continuous delivery</a> (CI/CD) process is a very common use case.
 The process for applying an updated application is different for domain home in image and model in image than it is for domain home on PV.
 A rolling-compatible application update is where some servers are running the old version and some are running the new version
 of the application during the rolling restart process. On the other hand, an application update that is not rolling-compatible requires that all the servers
@@ -2938,31 +3105,31 @@ in the domain be shut down and restarted.</p>
 <p>If the application update is not rolling-compatible:</p>
 <ul>
 <li>If you keep the same image name, then you must manually initiate a full domain restart. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#full-domain-restarts">Full domain restarts</a>.</li>
-<li>If you update the <code>image</code> property with a new image name, then you must avoid the rolling restart by following the steps in <a href="#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource">Avoiding a rolling restart when changing image property on a domain resource</a>.</li>
+<li>If you update the <code>image</code> property with a new image name, then you must avoid the rolling restart by following the steps in <a href="#avoiding-a-rolling-restart-when-changing-the-image-field-on-a-domain">Avoiding a rolling restart when changing the image field on a Domain</a>.</li>
 </ul>
 <h4 id="rolling-out-an-updated-domain-home-in-image-or-model-in-image">Rolling out an updated domain home in image or model in image</h4>
 <p>Follow these steps to create new rolling-compatible image if you only need to patch your WebLogic Server domain or update application deployment files:</p>
 <p>a. Select a different name for the new image.</p>
-<p>b. For domain home in image domains, it is important to keep your original domain home in your new image.</p>
+<p>b. For Domain in Image, it is important to keep your original domain home in your new image.</p>
 <p>Using the same domain home-in-image Docker image as a base, create a new Docker image by copying (<code>COPY</code>
 command in a Dockerfile) the updated application deployment files or WebLogic Server patches into the Docker image during the Docker image build.</p>
 
 <div class="notices note" ><p>The key here is to make sure that you do not re-run WLST or WDT to create a new domain home even though it will
-have the same configuration. Creating a new domain will change the domain secret and you won&rsquo;t be able to do a
+have the same configuration. Creating a new domain will change the domain encryption secret and you won&rsquo;t be able to do a
 rolling restart.</p>
 </div>
 
 <p>c. Deploy the new Docker image to your Docker repository with the new name.</p>
-<p>d. Update the <code>image</code> property of the domain resource, specifying the new image name.</p>
+<p>d. Update the <code>image</code> field of the Domain YAML file, specifying the new image name.</p>
 <p>For example:</p>
 <pre><code> ```
  domain:
    spec:
-     image: oracle/weblogic-updated:2.6.0
+     image: oracle/weblogic-updated:3.0.0
  ```
 </code></pre>
-<p>e. The operator will now initiate a rolling restart, which will apply the updated image, for all the server pods in the domain.</p>
-<h4 id="avoiding-a-rolling-restart-when-changing-the-image-property-on-a-domain-resource">Avoiding a rolling restart when changing the <code>image</code> property on a domain resource</h4>
+<p>e. The operator will now initiate a rolling restart, which will apply the updated image, for all the servers in the domain.</p>
+<h4 id="avoiding-a-rolling-restart-when-changing-the-image-field-on-a-domain">Avoiding a rolling restart when changing the image field on a Domain</h4>
 <p>If you&rsquo;ve created a new image that is not rolling-compatible, and you&rsquo;ve changed the image name, then:</p>
 <ol>
 <li>
@@ -2981,7 +3148,7 @@ rolling restart.</p>
 <p><strong>Consider the order of changes</strong>:</p>
 <p>If you need to make multiple changes to your domain at the same time, you&rsquo;ll want to be careful
 about the order in which you do your changes, so that servers aren&rsquo;t restarted prematurely or restarted needlessly.
-For example, if you want to change the readiness probe&rsquo;s tuning parameters and the Java options (both of which are rolling-compatible), then you should update the domain resource once, changing both values,
+For example, if you want to change the readiness probe&rsquo;s tuning parameters and the Java options (both of which are rolling-compatible), then you should update the Domain YAML file once, changing both values,
 so that the operator rolling restarts the servers once.  Or, if you want to change the readiness probe&rsquo;s tuning parameters (which is rolling-compatible)
 and change the domain customizations (which require a full restart), then you should do a full shutdown first,
 then make the changes, and then restart the servers.</p>
@@ -3000,7 +3167,7 @@ then make the changes, and then restart the servers.</p>
 </li>
 <li>
 <p><strong>Changes that require domain knowledge</strong>.</p>
-<p>Sometimes you need to make changes that require server restarts, yet the changes are not to the WebLogic configuration,
+<p>Sometimes you need to make changes that require server restarts, yet the changes are not to the domain configuration,
 the image, or the Kubernetes resources that register your domain with the operator.  For example, your servers are caching information from an external database and you&rsquo;ve modified the contents of the database.</p>
 <p>In these cases, you must manually initiate a restart.</p>
 </li>
@@ -3771,43 +3938,6 @@ value to a large number, for example, 15 minutes.</p>
             
         
                     
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
                         
             
             
@@ -3827,32 +3957,6 @@ value to a large number, for example, 15 minutes.</p>
             
         
                     
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
             
         
                     
@@ -3866,43 +3970,10 @@ value to a large number, for example, 15 minutes.</p>
 
                     
                     
-                    
-
-                    
-            
-        
-                    
                         
-            
-            
-                
-                    
-                
-                
-
-                    
                     
                     
 
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
                     
                         
             
@@ -3951,105 +4022,6 @@ value to a large number, for example, 15 minutes.</p>
                     
                     
 
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
                     
                         
             
@@ -4166,19 +4138,6 @@ value to a large number, for example, 15 minutes.</p>
             
         
                     
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
             
         
                     
@@ -4207,37 +4166,7 @@ value to a large number, for example, 15 minutes.</p>
 
                     
                     
-                    
-
-                    
-            
-        
-                    
                         
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
                     
                     
 
@@ -4274,18 +4203,6 @@ value to a large number, for example, 15 minutes.</p>
             
         
                     
-            
-        
-                    
-            
-        
-                    
-            
-        
-                    
-            
-        
-                    
                         
             
             
@@ -4295,6 +4212,8 @@ value to a large number, for example, 15 minutes.</p>
                 
 
                     
+                    
+                        
                     
                     
 
@@ -4360,9 +4279,6 @@ value to a large number, for example, 15 minutes.</p>
                     
 
                     
-            
-        
-                    
                         
             
             
@@ -4375,232 +4291,6 @@ value to a large number, for example, 15 minutes.</p>
                     
                     
 
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
                     
             
         
@@ -4700,6 +4390,611 @@ value to a large number, for example, 15 minutes.</p>
                     
                     
 
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -4918,19 +5213,19 @@ value to a large number, for example, 15 minutes.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1595018782"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1595018782"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1595018782"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1595018782"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1595018782"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1595018782"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1595019682"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1595019682"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1595019682"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1595019682"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1595019682"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1595019682"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1595018782"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1595018782"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1595018782"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1595019682"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1595019682"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1595019682"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1595018782" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1595018782"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1595019682" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1595019682"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

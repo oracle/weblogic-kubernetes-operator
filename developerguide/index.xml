@@ -72,7 +72,7 @@ Because we want to balance separating destabilizing work into feature branches a
       
       <guid>/weblogic-kubernetes-operator/developerguide/code-structure/</guid>
       <description>This project has the following directory structure:
- docs: Generated Javadoc and Swagger integration-tests: Integration test suite json-schema: Java model to JSON schema generator json-schema-maven-plugin: Maven plugin for schema generator kubernetes/charts: Helm charts kubernetes/samples: All samples, including for WebLogic domain creation model: Domain resource Java model operator: Operator runtime site: This documentation src/scripts: Scripts operator injects into WebLogic Server instance Pods swagger: Swagger files for the Kubernetes API server and domain resource  Watch package The Watch API in the Kubernetes Java client provides a watch capability across a specific list of resources for a limited amount of time.</description>
+ docs: Helm charts, Javadoc, Operator REST API Swagger, and Domain reference docs-source: This documentation integration-tests: Original, JUnit 4 integration test suite (see also new-integration-tests) json-schema: Java model to JSON schema generator json-schema-maven-plugin: Maven plugin for schema generator kubernetes/charts: Helm charts kubernetes/samples: All samples, including for WebLogic domain creation new-integration-tests: JUnit 5 integration test suite (see also integration-tests) operator: Operator runtime site: Historical documentation src/scripts: Scripts operator injects into WebLogic Server instance Pods swagger: Swagger files for the Kubernetes API server and Domain type  Watch package The Watch API in the Kubernetes Java client provides a watch capability across a specific list of resources for a limited amount of time.</description>
     </item>
     
     <item>
@@ -90,8 +90,8 @@ Because we want to balance separating destabilizing work into feature branches a
       <pubDate>Sat, 23 Feb 2019 17:20:20 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/developerguide/domain-processing/</guid>
-      <description>When the operator starts, it lists all existing Domain resources and processes these domains to create the necessary Kubernetes resources, such as Pods and Services, if they don&amp;rsquo;t already exist. This initialization also includes looking for any stranded resources that, while created by the operator, no longer correlate with a Domain resource.
-After this, the operator starts watches for changes to Domain resources and any changes to other resources created by the operator.</description>
+      <description>When the operator starts, it lists all the existing Domains and then processes these Domains to create the necessary Kubernetes resources, such as Pods and Services, if they don&amp;rsquo;t already exist. This initialization also includes looking for any stranded resources that, while created by the operator, no longer correlate with a Domain.
+After this, the operator starts watches for changes to Domains and any changes to other resources created by the operator.</description>
     </item>
     
     <item>
@@ -112,7 +112,7 @@ git checkout master git pull origin master git checkout -b your-branch   Make yo
       <pubDate>Sat, 23 Feb 2019 17:26:09 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/developerguide/backwards-compatibility/</guid>
-      <description>Starting with the 2.0.1 release, operator releases must be backward compatible with respect to the domain resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We will maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be maintained for one release after a replacement is available.</description>
+      <description>Starting with the 2.0.1 release, operator releases must be backward compatible with respect to the Domain schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We will maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be maintained for one release after a replacement is available.</description>
     </item>
     
   </channel>

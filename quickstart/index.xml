@@ -41,7 +41,7 @@ You should clone this repository to your local machine so that you have access t
       <description>Get these images and put them into your local registry.   If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store, and accept the license agreement for the WebLogic Server image.
   Log in to the Docker store from your Docker client:
 $ docker login   Pull the operator image:
-$ docker pull oracle/weblogic-kubernetes-operator:2.6.0  If you are here because you are following the Model In Image sample, change the image to oracle/weblogic-kubernetes-operator:3.</description>
+$ docker pull oracle/weblogic-kubernetes-operator:3.0.0   Pull the Traefik load balancer image:</description>
     </item>
     
     <item>
@@ -83,9 +83,9 @@ $ helm upgrade traefik-operator stable/traefik \  --namespace traefik \  --reuse
       
       <guid>/weblogic-kubernetes-operator/quickstart/cleanup/</guid>
       <description>Remove the domain.   Remove the domain&amp;rsquo;s ingress by using helm:
-$ helm uninstall sample-domain1-ingress -n sample-domain1-ns   Remove the domain resources by using the sample delete-weblogic-domain-resources script:
-$ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1   Use kubectl to confirm that the server pods and domain resource are gone:
-$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns   Remove the domain namespace.   Configure the Traefik load balancer to stop managing the ingresses in the domain namespace:</description>
+$ helm uninstall sample-domain1-ingress -n sample-domain1-ns   Remove the Kubernetes resources associated with the domain by using the sample delete-weblogic-domain-resources script:
+$ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1   Use kubectl to confirm that the WebLogic Server instance Pods and Domain are gone:
+$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns   Remove the domain namespace.</description>
     </item>
     
   </channel>

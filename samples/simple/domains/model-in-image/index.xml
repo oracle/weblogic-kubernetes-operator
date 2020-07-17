@@ -11,5 +11,69 @@
 	<atom:link href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/index.xml" rel="self" type="application/rss+xml" />
     
     
+    <item>
+      <title>Prerequisites</title>
+      <link>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/prerequisites/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/prerequisites/</guid>
+      <description>Prerequisites for all domain types   Choose the type of domain you&amp;rsquo;re going to use throughout the sample, WLS or JRF.
+ The first time you try this sample, we recommend that you choose WLS even if you&amp;rsquo;re familiar with JRF. This is because WLS is simpler and will more easily familiarize you with Model in Image concepts. We recommend choosing JRF only if you are already familiar with JRF, you have already tried the WLS path through this sample, and you have a definite use case where you need to use JRF.</description>
+    </item>
+    
+    <item>
+      <title>Initial use case</title>
+      <link>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/</guid>
+      <description>Contents  Overview Image creation  Image creation - Introduction Understanding your first archive Staging a ZIP file of the archive Staging model files Creating the image with WIT   Deploy resources  Deploy resources - Introduction Secrets Domain resource    Overview In this use case, you set up an initial WebLogic domain. This involves:
+ A WDT archive ZIP file that contains your applications. A WDT model that describes your WebLogic configuration.</description>
+    </item>
+    
+    <item>
+      <title>Update 1</title>
+      <link>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update1/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update1/</guid>
+      <description>This use case demonstrates dynamically adding a data source to your running domain. It demonstrates several features of WDT and Model in Image:
+ The syntax used for updating a model is the same syntax you use for creating the original model. A domain&amp;rsquo;s model can be updated dynamically by supplying a model update in a file in a Kubernetes ConfigMap. Model updates can be as simple as changing the value of a single attribute, or more complex, such as adding a JMS Server.</description>
+    </item>
+    
+    <item>
+      <title>Update 2</title>
+      <link>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update2/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update2/</guid>
+      <description>This use case demonstrates concurrently deploying a domain that is similar to the Update 1 use case domain to the same sample-domain1-ns namespace, but with a different domain UID, a different WebLogic domain name, and a different WebLogic domain encryption key. It does this by:
+ Using the same image, image model YAML file, and application archive as the Initial and Update 1 use cases. Using the same model update ConfigMap source file as the Update 1 use case (a data source).</description>
+    </item>
+    
+    <item>
+      <title>Update 3</title>
+      <link>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update3/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update3/</guid>
+      <description>The Update 3 use case demonstrates deploying an updated WebLogic application to the running Update 1 use case domain using an updated Docker image.
+In the use case, you will:
+ Create an image model-in-image:WLS-v2 that is similar to the currently active model-in-image:WLS-v1 image, but with the following updates:  An updated web application v2 at the myapp-v2 directory path within the WDT application archive instead of myapp-v1. An updated model YAML file within the image that points to the new web application path.</description>
+    </item>
+    
+    <item>
+      <title>Cleanup</title>
+      <link>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/cleanup/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/cleanup/</guid>
+      <description>To remove the resources you have created in these samples:
+  Delete the resources associated with the domain.
+$ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1 $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2 This deletes the domain and any related resources that are labeled with the domain UID sample-domain1 and sample-domain2.
+It leaves the namespace intact, the operator running, the load balancer running (if installed), and the database running (if installed).
+ Note: When you delete a domain, the operator will detect your domain deletion and shut down its pods.</description>
+    </item>
+    
   </channel>
 </rss>

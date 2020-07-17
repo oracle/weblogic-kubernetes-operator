@@ -29,7 +29,7 @@ This FAQ describes some considerations to be aware of when you manage the namesp
       <guid>/weblogic-kubernetes-operator/faq/cannot-pull-image/</guid>
       <description>My domain will not start and I see errors like ImagePullBackoff or Cannot pull image
  When you see these kinds of errors, it means that Kubernetes cannot find your Docker image. The most common causes are:
- The image value in your domain resource is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission in order to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
+ The image value in your Domain is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission in order to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
     </item>
     
     <item>
@@ -48,7 +48,7 @@ This FAQ describes some considerations to be aware of when you manage the namesp
       <pubDate>Mon, 02 Mar 2020 08:08:19 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/domain-secret-mismatch/</guid>
-      <description>One or more WebLogic Server instances in my domain will not start and the domain resource status or the pod log reports errors like this:
+      <description>One or more WebLogic Server instances in my domain will not start and the Domain status or the pod log reports errors like this:
 Domain secret mismatch. The domain secret in DOMAIN_HOME/security/SerializedSystemIni.dat where DOMAIN_HOME=$DOMAIN_HOME does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic Servers in the same domain share the same domain secret.
  When you see these kinds of errors, it means that the WebLogic domain directory&amp;rsquo;s security configuration files have changed in an incompatible way between when the operator scanned the domain directory, which occurs during the &amp;ldquo;introspection&amp;rdquo; phase, and when the server instance attempted to start.</description>
     </item>
@@ -78,7 +78,7 @@ When connecting to a database that does not have GRID, the only type of WebLogic
       <pubDate>Wed, 12 Feb 2020 12:12:12 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/oci-fss-pv/</guid>
-      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), and you use OCI File Storage (FSS) for persistent volumes to store the WebLogic domain home, then the file system handling demonstrated in the operator persistent volume sample will require an update to properly initialize the file ownership on the persistent volume when the domain is initially created.
+      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), and you use OCI File Storage (FSS) for persistent volumes to store the WebLogic domain home, then the file system handling, as demonstrated in the operator persistent volume sample, will require an update to properly initialize the file ownership on the persistent volume when the domain is initially created.
 File permission handling on persistent volumes can differ between cloud providers and even with the underlying storage handling on Linux based systems.</description>
     </item>
     
@@ -88,7 +88,7 @@ File permission handling on persistent volumes can differ between cloud provider
       <pubDate>Wed, 25 Sep 2019 12:41:38 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/oci-lb/</guid>
-      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), you can have OCI automatically provision load balancers for you by creating a Service of type LoadBalancer instead of (or in addition to) installing an ingress controller like Traefik or Voyager.
+      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), then you can have OCI automatically provision load balancers for you by creating a Service of type LoadBalancer instead of (or in addition to) installing an ingress controller like Traefik or Voyager.
 OKE Kubernetes worker nodes typically do not have public IP addresses. This means that the NodePort services created by the operator are not usable, because they would expose ports on the worker node&amp;rsquo;s private IP addresses only, which are not reachable from outside the cluster.</description>
     </item>
     
@@ -123,7 +123,7 @@ This FAQ is for remote EJB and JMS clients - not JTA clients. The operator does 
     </item>
     
     <item>
-      <title>Coherence Requirements</title>
+      <title>Coherence requirements</title>
       <link>/weblogic-kubernetes-operator/faq/coherence-requirements/</link>
       <pubDate>Mon, 12 Aug 2019 12:41:38 -0400</pubDate>
       
@@ -131,6 +131,15 @@ This FAQ is for remote EJB and JMS clients - not JTA clients. The operator does 
       <description>If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.
 Note that some Fusion Middleware products, like SOA Suite, use Coherence and so these requirements apply to them.
 Unicast and Well Known Address When the first Coherence process starts, it will form a cluster. The next Coherence process to start (for example, in a different pod), will use UDP to try to contact the senior member.</description>
+    </item>
+    
+    <item>
+      <title>Pod memory and CPU resources</title>
+      <link>/weblogic-kubernetes-operator/faq/resource-settings/</link>
+      <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/resource-settings/</guid>
+      <description>Contents  Introduction Setting resource requests and limits in a Domain YAML file Determining Pod Quality Of Service Java heap size and memory resource considerations  Importance of setting heap size and memory resources Default heap sizes Configuring heap size   CPU resource considerations Operator sample heap and resource configuration Configuring CPU affinity Measuring JVM heap, Pod CPU, and Pod memory References  Introduction The operator creates a container in its own Pod for each WebLogic Server instance.</description>
     </item>
     
   </channel>

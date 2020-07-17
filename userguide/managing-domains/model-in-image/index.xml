@@ -17,9 +17,8 @@
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/overview/</guid>
-      <description>This feature is supported only in 3.0.0-rc1.
- Content  Introduction Runtime behavior overview Runtime updates overview Continuous integration and delivery (CI/CD) References  Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain in PV domain types. See Choose a domain home source type for a comparison of operator domain types.
-Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource.</description>
+      <description>Content  Introduction WebLogic Deploy Tool models Runtime behavior Runtime updates Continuous integration and delivery (CI/CD) References  Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain in PV domain types. See Choose a domain home source type for a comparison of operator domain types.
+Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.</description>
     </item>
     
     <item>
@@ -28,9 +27,8 @@ Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to p
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/</guid>
-      <description>This feature is supported only in 3.0.0-rc1.
- This document describes what&amp;rsquo;s needed to create and deploy a typical Model in Image domain.
-Contents  WebLogic Server Kubernetes Operator WebLogic Server image Optional WDT model ConfigMap Required runtime encryption secret Secrets for model macros Domain resource attributes Prerequisites for JRF domain types  WebLogic Server Kubernetes Operator Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain.</description>
+      <description>This document describes what&amp;rsquo;s needed to create and deploy a typical Model in Image domain.
+Contents  WebLogic Server Kubernetes Operator WebLogic Server image Optional WDT model ConfigMap Required runtime encryption secret Secrets for model macros Domain fields Always use external state Requirements for JRF domain types  WebLogic Server Kubernetes Operator Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See Manage operators and Quick Start.</description>
     </item>
     
     <item>
@@ -39,8 +37,8 @@ Contents  WebLogic Server Kubernetes Operator WebLogic Server image Optional WDT
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/model-files/</guid>
-      <description>This feature is supported only in 3.0.0-rc1.
- Contents  Introduction Sample model file Important notes about Model in Image model files Model file naming and loading order Model file macros  Using secrets in model files Using environment variables in model files Combining secrets and environment variables in model files    Introduction This document describes basic Model in Image model file syntax, naming, and macros. For additional information, see the WebLogic Deploy Tool documentation.</description>
+      <description>Contents  Introduction Sample model file Important notes about Model in Image model files Model file naming and loading order Model file macros  Using secrets in model files Using environment variables in model files Combining secrets and environment variables in model files    Introduction This document describes basic Model in Image model file syntax, naming, and macros. For additional information, see the WebLogic Deploy Tool documentation.
+The WDT Discover Domain Tool is particularly useful for generating model files from an existing domain home.</description>
     </item>
     
     <item>
@@ -49,8 +47,7 @@ Contents  WebLogic Server Kubernetes Operator WebLogic Server image Optional WDT
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/</guid>
-      <description>This feature is supported only in 3.0.0-rc1.
- Contents  Overview Important notes Frequently asked questions Supported and unsupported updates Changing a domain resource restartVersion Using the WDT Discover Domain Tool Example of adding a data source  Overview If you want to make a configuration change to a running Model in Image domain, and you want the change to survive WebLogic pod restarts, then you can modify your existing model using one of the following approaches:</description>
+      <description>Contents  Overview Important notes Frequently asked questions Supported and unsupported updates Changing a Domain restartVersion Using the WDT Discover and Compare Model Tools Example of adding a data source  Overview If you want to make a configuration change to a running Model in Image domain, and you want the change to survive WebLogic Server pod restarts, then you can modify your existing model using one of the following approaches:</description>
     </item>
     
     <item>
@@ -59,9 +56,8 @@ Contents  WebLogic Server Kubernetes Operator WebLogic Server image Optional WDT
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/</guid>
-      <description>This feature is supported only in 3.0.0-rc1.
- Here are some suggestions for debugging problems with Model in Image after your domain resource is deployed.
-Contents  Check the domain resource status Check the introspector job Check the WebLogic Server pods Check an operator log  Check the domain resource status To check the domain resource status: kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID.
+      <description>Here are some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed.
+Contents  Check the Domain status Check the introspector job Check the WebLogic Server pods Check the operator log Check the FAQ  Check the Domain status To check the Domain status: kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID.
 Check the introspector job If your introspector job failed, then examine the kubectl describe of the job and its pod, and also examine its log, if one exists.</description>
     </item>
     
