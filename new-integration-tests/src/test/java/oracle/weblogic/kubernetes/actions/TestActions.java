@@ -10,6 +10,7 @@ import java.util.Map;
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -17,19 +18,23 @@ import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
+import oracle.weblogic.kubernetes.actions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
+import oracle.weblogic.kubernetes.actions.impl.Ingress;
 import oracle.weblogic.kubernetes.actions.impl.Job;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Nginx;
@@ -44,6 +49,8 @@ import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
+import oracle.weblogic.kubernetes.actions.impl.Voyager;
+import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -51,11 +58,12 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.extensions.ImageBuilders;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.joda.time.DateTime;
 
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -170,8 +178,8 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean restartDomain(String domainUid, String namespace) {
-    return Domain.restart(domainUid, namespace);
+  public static boolean startDomain(String domainUid, String namespace) {
+    return Domain.start(domainUid, namespace);
   }
 
   /**
@@ -198,6 +206,43 @@ public class TestActions {
   public static boolean patchDomainCustomResource(String domainUid, String namespace, V1Patch patch,
                                                   String patchFormat) {
     return Domain.patchDomainCustomResource(domainUid, namespace, patch, patchFormat);
+  }
+
+  /**
+   * Patch a running domain with introspectVersion.
+   * If the introspectVersion doesn't exist it will add the value as 2,
+   * otherwise the value is updated by 1.
+   *
+   * @param domainUid UID of the domain to patch with introspectVersion
+   * @param namespace namespace in which the domain resource exists
+   * @return true if patching is successful, otherwise false
+   * @throws ApiException when patching fails
+   */
+  public static boolean patchDomainResourceWithNewIntrospectVersion(
+      String domainUid, String namespace) throws ApiException {
+    return Domain.patchDomainResourceWithNewIntrospectVersion(domainUid, namespace);
+  }
+
+  /**
+   * Get next introspectVersion for a given domain.
+   *
+   * @param domainUid domain id
+   * @param namespace namespace in which the domain resource exists
+   * @return String containing next introspectVersion
+   * @throws ApiException when getting domain resource fails
+   */
+  public static String getNextIntrospectVersion(String domainUid, String namespace) throws ApiException {
+    LoggingFacade logger = getLogger();
+    oracle.weblogic.domain.Domain domain = Domain.getDomainCustomResource(domainUid, namespace);
+    String introspectVersion = domain.getSpec().getIntrospectVersion();
+    if (null != introspectVersion) {
+      logger.info("current introspectVersion: {0}", introspectVersion);
+      introspectVersion = Integer.toString(Integer.valueOf(introspectVersion) + 1);
+      logger.info("modified introspectVersion: {0}", introspectVersion);
+    } else {
+      introspectVersion = Integer.toString(1);
+    }
+    return introspectVersion;
   }
 
   /**
@@ -236,6 +281,39 @@ public class TestActions {
         externalRestHttpsPort, opNamespace, opServiceAccount);
   }
 
+  /**
+   * Scale the cluster of the domain in the specified namespace with WLDF policy.
+   *
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param domainUid domainUid of the domain to be scaled
+   * @param domainNamespace domain namespace in which the domain exists
+   * @param domainHomeLocation domain home location of the domain
+   * @param scalingAction scaling action, accepted value: scaleUp or scaleDown
+   * @param scalingSize number of servers to be scaled up or down
+   * @param opNamespace namespace of WebLogic operator
+   * @param opServiceAccount service account of operator
+   * @param myWebAppName web app name deployed to the domain used in the WLDF policy expression
+   * @param curlCommand curl command to call the web app used in the WLDF policy expression
+   * @return true if scaling the cluster succeeds, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   * @throws IOException if an I/O error occurs
+   * @throws InterruptedException if any thread has interrupted the current thread
+   */
+  public static boolean scaleClusterWithWLDF(String clusterName,
+                                             String domainUid,
+                                             String domainNamespace,
+                                             String domainHomeLocation,
+                                             String scalingAction,
+                                             int scalingSize,
+                                             String opNamespace,
+                                             String opServiceAccount,
+                                             String myWebAppName,
+                                             String curlCommand)
+      throws ApiException, IOException, InterruptedException {
+    return Domain.scaleClusterWithWLDF(clusterName, domainUid, domainNamespace, domainHomeLocation, scalingAction,
+        scalingSize, opNamespace, opServiceAccount, myWebAppName, curlCommand);
+  }
+
   // ------------------------   Ingress Controller ----------------------
 
   /**
@@ -250,18 +328,14 @@ public class TestActions {
   }
 
   /**
-   * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
-   * The ingress host is set to 'domainUid.clusterName.test'.
+   * Install Voyager ingress controller.
    *
-   * @param ingressName the name of the ingress to be created
-   * @param domainNamespace the WebLogic domain namespace in which to create the ingress
-   * @param domainUid WebLogic domainUid which is backend to the ingress
-   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
-   * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
+   * @param params the parameters to Helm install command, such as release name, namespace, repo url,
+   *               repo name and chart name
+   * @return true on success, false otherwise
    */
-  public static List<String> createIngress(String ingressName, String domainNamespace, String domainUid,
-                                           Map<String, Integer> clusterNameMsPortMap) {
-    return Nginx.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap);
+  public static boolean installVoyager(VoyagerParams params) {
+    return Voyager.install(params);
   }
 
   /**
@@ -275,6 +349,16 @@ public class TestActions {
   }
 
   /**
+   * Upgrade Voyager release.
+   *
+   * @param params the parameters to Helm upgrade command, such as release name and http/https nodeport
+   * @return true on success, false otherwise
+   */
+  public static boolean upgradeVoyager(VoyagerParams params) {
+    return Voyager.upgrade(params);
+  }
+
+  /**
    * Uninstall the NGINX release.
    *
    * @param params the parameters to Helm uninstall command, such as release name and namespace
@@ -285,6 +369,41 @@ public class TestActions {
   }
 
   /**
+   * Uninstall the Voyager release.
+   *
+   * @param params the parameters to Helm uninstall command, such as release name and namespace
+   * @return true on success, false otherwise
+   */
+  public static boolean uninstallVoyager(HelmParams params) {
+    return Voyager.uninstall(params);
+  }
+
+  /**
+   * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
+   * The ingress host is set to 'domainUid.clusterName.test'.
+   *
+   * @param ingressName the name of the ingress to be created
+   * @param domainNamespace the WebLogic domain namespace in which to create the ingress
+   * @param domainUid WebLogic domainUid which is backend to the ingress
+   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
+   * @param annotations annotations to create ingress resource
+   * @param setIngressHost if true set to specific host or all
+   * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
+   */
+  public static List<String> createIngress(String ingressName,
+                                           String domainNamespace,
+                                           String domainUid,
+                                           Map<String, Integer> clusterNameMsPortMap,
+                                           Map<String, String> annotations,
+                                           boolean setIngressHost) {
+    return Ingress.createIngress(ingressName,
+            domainNamespace,
+            domainUid,
+            clusterNameMsPortMap,
+            annotations, setIngressHost);
+  }
+
+  /**
    * Get a list of ingresses in the specified namespace.
    *
    * @param namespace in which to list all the ingresses
@@ -292,7 +411,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static List<String> listIngresses(String namespace) throws ApiException {
-    return Nginx.listIngresses(namespace);
+    return Ingress.listIngresses(namespace);
   }
 
   // -------------------------  namespaces -------------------------------
@@ -367,7 +486,7 @@ public class TestActions {
   /**
    * Create an image using WDT models using WebLogic Image Tool.
    *
-   * @param params - the parameters for creating a Docker image with a model
+   * @param params - the parameters for creating a model-in-image Docker image
    * @return true if the operation succeeds
    */
   public static boolean createImage(WitParams params) {
@@ -497,6 +616,16 @@ public class TestActions {
   }
 
   /**
+   * List services in a namespace.
+   *
+   * @param namespace namespace in which to list services
+   * @return V1ServiceList
+   */
+  public static V1ServiceList listServices(String namespace) {
+    return Service.listServices(namespace);
+  }
+
+  /**
    * Delete Kubernetes Service.
    *
    * @param name name of the Service
@@ -570,26 +699,59 @@ public class TestActions {
   // ----------------------- Role-based access control (RBAC)   ---------------------------
 
   /**
-   * Create a Cluster Role Binding.
+   * Create a cluster role.
    *
-   * @param clusterRoleBinding V1ClusterRoleBinding object containing role binding configuration
-   *     data
-   * @return true if successful
+   * @param clusterRole V1ClusterRole object containing cluster role configuration data
+   * @return true if creation is successful, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createClusterRole(V1ClusterRole clusterRole) throws ApiException {
+    return ClusterRole.createClusterRole(clusterRole);
+  }
+
+  /**
+   * Create a cluster role binding.
+   *
+   * @param clusterRoleBinding V1ClusterRoleBinding object containing cluster role binding configuration data
+   * @return true if creation is successful, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createClusterRoleBinding(V1ClusterRoleBinding clusterRoleBinding)
       throws ApiException {
-    return ClusterRoleBinding.create(clusterRoleBinding);
+    return ClusterRoleBinding.createClusterRoleBinding(clusterRoleBinding);
   }
 
   /**
-   * Delete Cluster Role Binding.
+   * Create a role binding in the specified namespace.
+   *
+   * @param namespace the namespace in which the role binding to be created
+   * @param roleBinding V1RoleBinding object containing role binding configuration data
+   * @return true if the creation succeeds, false otherwise
+   * @throws ApiException if Kubernetes client call fails
+   */
+  public static boolean createRoleBinding(String namespace, V1RoleBinding roleBinding) throws ApiException {
+    return Kubernetes.createNamespacedRoleBinding(namespace, roleBinding);
+  }
+
+  /**
+   * Delete cluster role binding.
    *
    * @param name name of cluster role binding
-   * @return true if successful, false otherwise
+   * @return true if deletion is successful, false otherwise
    */
   public static boolean deleteClusterRoleBinding(String name) {
-    return ClusterRoleBinding.delete(name);
+    return ClusterRoleBinding.deleteClusterRoleBinding(name);
+  }
+
+  /**
+   * Delete a cluster role.
+   *
+   * @param name the name of cluster role to delete
+   * @return true if deletion succeeds, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean deleteClusterRole(String name) throws ApiException {
+    return ClusterRole.deleteClusterRole(name);
   }
 
   // ----------------------- Helm -----------------------------------
@@ -618,9 +780,9 @@ public class TestActions {
 
   /**
    * Create an application archive that can be used by WebLogic Image Tool
-   * to create an image with the application.
+   * to create an image with the application for a model-in-image use case.
    *
-   * @param params the parameters for creating a Docker image
+   * @param params the parameters for creating a model-in-image Docker image
    * @return true if the operation succeeds
    */
   public static boolean buildAppArchive(AppParams params) {
@@ -631,16 +793,30 @@ public class TestActions {
   }
 
   /**
-   * Archive an application from provided ear or war file that can be used by WebLogic Image Tool
-   * to create an image with the application.
+   * Create an application archive that can be used by WebLogic Image Tool
+   * to create an image with coh-proxy-server.gar for testing Coherence use case
    *
-   * @param params the parameters for creating a Docker image
+   * @param params the parameters for creating a model-in-image Docker image
+   * @return true if the operation succeeds
+   */
+  public static boolean buildCoherenceArchive(AppParams params) {
+    return
+      AppBuilder
+        .withParams(params)
+        .buildCoherence();
+  }
+
+  /**
+   * Archive an application from provided ear or war file that can be used by WebLogic Image Tool
+   * to create an image with the application for a model-in-image use case.
+   *
+   * @param params the parameters for creating a model-in-image Docker image
    * @return true if the operation succeeds
    */
   public static boolean archiveApp(AppParams params) {
     return AppBuilder
-            .withParams(params)
-            .archiveApp();
+        .withParams(params)
+        .archiveApp();
   }
 
   // ------------------------ Docker --------------------------------------
@@ -803,6 +979,19 @@ public class TestActions {
   }
 
   /**
+   * Get the IP address allocated to the pod with following parameters.
+   *
+   * @param namespace namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod to return
+   * @return IP address allocated to the pod
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static String getPodIP(String namespace, String labelSelector, String podName) throws ApiException {
+    return Pod.getPodIP(namespace, labelSelector, podName);
+  }
+
+  /**
    * Get a pod's log.
    *
    * @param podName name of the pod
@@ -824,6 +1013,17 @@ public class TestActions {
    */
   public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
     return Pod.listPods(namespace, labelSelectors);
+  }
+
+  /**
+   * Delete a pod in a given namespace.
+   *
+   * @param podName name of the pod to be deleted
+   * @param namespace Kubernetes namespace that the pod is running in
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static void deletePod(String podName, String namespace) throws ApiException {
+    Kubernetes.deletePod(podName, namespace);
   }
 
   /**
@@ -978,6 +1178,7 @@ public class TestActions {
    */
   public static String patchDomainResourceWithNewRestartVersion(
       String domainResourceName, String namespace) {
+    LoggingFacade logger = getLogger();
     String oldVersion = assertDoesNotThrow(
         () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
         String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
@@ -1003,4 +1204,14 @@ public class TestActions {
     return String.valueOf(newVersion);
   }
 
+  /**
+   * Get the name of the operator pod.
+   *
+   * @param release release name of the operator
+   * @param namespace Kubernetes namespace that the operator belongs to
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getOperatorPodName(String release, String namespace) throws ApiException {
+    return Kubernetes.getOperatorPodName(release, namespace);
+  }
 }

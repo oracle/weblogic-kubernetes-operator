@@ -20,29 +20,29 @@ import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPa
 /** ServerStatus describes the current status of a specific WebLogic Server. */
 public class ServerStatus implements Comparable<ServerStatus>, PatchableComponent<ServerStatus> {
 
-  @Description("WebLogic Server name. Required.")
+  @Description("WebLogic Server instance name.")
   @Expose
   @NotNull
   private String serverName;
 
-  @Description("Current state of this WebLogic Server. Required.")
+  @Description("Current state of this WebLogic Server instance.")
   @Expose
   @NotNull
   private String state;
 
-  @Description("Desired state of this WebLogic Server. Values are RUNNING, ADMIN, or SHUTDOWN.")
+  @Description("Desired state of this WebLogic Server instance. Values are RUNNING, ADMIN, or SHUTDOWN.")
   @Expose
   private String desiredState;
 
-  @Description("WebLogic cluster name, if the server is part of a cluster.")
+  @Description("WebLogic cluster name, if the server is a member of a cluster.")
   @Expose
   private String clusterName;
 
-  @Description("Name of node that is hosting the Pod containing this WebLogic Server.")
+  @Description("Name of Node that is hosting the Pod containing this WebLogic Server instance.")
   @Expose
   private String nodeName;
 
-  @Description("Current status and health of a specific WebLogic Server.")
+  @Description("Current status and health of a specific WebLogic Server instance.")
   @Expose
   @Valid
   private ServerHealth health;

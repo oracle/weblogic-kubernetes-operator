@@ -7,7 +7,7 @@
 
   <groupId>oracle.kubernetes</groupId>
   <artifactId>operator-parent</artifactId>
-  <version>2.6.0</version>
+  <version>3.0.0</version>
 
   <modules>
     <module>operator</module>
@@ -25,7 +25,7 @@
     <developerConnection>scm:git:git@github.com:oracle/weblogic-kubernetes-operator.git
     </developerConnection>
     <url>https://github.com/oracle/weblogic-kubernetes-operator</url>
-    <tag>v2.6.0</tag>
+    <tag>v2.5.0</tag>
   </scm>
 
   <description>Oracle WebLogic Server Kubernetes Operator</description>
@@ -285,6 +285,11 @@
       </plugin>
 
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+      </plugin>
+
+      <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
         <version>${spotbugs-maven-plugin-version}</version>
@@ -308,11 +313,6 @@
             <version>${spotbugs-version}</version>
           </dependency>
         </dependencies>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
@@ -464,11 +464,6 @@
         <version>${client-java-version}</version>
       </dependency>
       <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
-        <version>1.7.30</version>
-      </dependency>
-      <dependency>
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest-junit</artifactId>
         <version>2.0.0.0</version>
@@ -511,8 +506,8 @@
       </dependency>
       <dependency>
         <groupId>org.glassfish</groupId>
-        <artifactId>javax.json</artifactId>
-        <version>1.1.4</version>
+        <artifactId>jakarta.json</artifactId>
+        <version>1.1.6</version>
       </dependency>
       <dependency>
         <groupId>org.glassfish.jersey.core</groupId>
@@ -617,14 +612,9 @@
         <version>1.0.38</version>
       </dependency>
       <dependency>
-        <groupId>joda-time</groupId>
-        <artifactId>joda-time</artifactId>
-        <version>${jodatime-version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-lang3</artifactId>
-        <version>3.8.1</version>
+        <version>3.10</version>
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>
@@ -706,8 +696,7 @@
     <exec-maven-plugin-version>1.6.0</exec-maven-plugin-version>
     <spotbugs-maven-plugin-version>3.1.12.2</spotbugs-maven-plugin-version>
     <spotbugs-version>3.1.12</spotbugs-version>
-    <swagger-core-version>1.6.0</swagger-core-version>
-    <jodatime-version>2.10.5</jodatime-version>
+    <swagger-core-version>1.6.2</swagger-core-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
     <assertj.core.version>3.15.0</assertj.core.version>
     <commons.io.version>2.6</commons.io.version>
@@ -718,9 +707,9 @@
     <junit.platform.version>1.6.0</junit.platform.version>
     <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jersey-version>2.30.1</jersey-version>
-    <jackson-version>2.10.3</jackson-version>
-    <jackson-databind-version>2.10.3</jackson-databind-version>
+    <jersey-version>2.31</jersey-version>
+    <jackson-version>2.11.1</jackson-version>
+    <jackson-databind-version>2.11.1</jackson-databind-version>
     <snakeyaml-version>1.26</snakeyaml-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>

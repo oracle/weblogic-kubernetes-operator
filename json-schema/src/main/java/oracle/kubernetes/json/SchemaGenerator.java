@@ -59,6 +59,9 @@ public class SchemaGenerator {
   // if true, generate the top-level schema version reference
   private boolean includeSchemaReference = true;
 
+  // suppress descriptions for any contained packages
+  private Collection<String> suppressDescriptionForPackages = new ArrayList<>();
+
   /**
    * Returns a pretty-printed string corresponding to a generated schema.
    *
@@ -147,6 +150,14 @@ public class SchemaGenerator {
    */
   public void setIncludeSchemaReference(boolean includeSchemaReference) {
     this.includeSchemaReference = includeSchemaReference;
+  }
+
+  /**
+   * Suppress descriptions for fields from these packages.
+   * @param packageName Package name
+   */
+  public void addPackageToSuppressDescriptions(String packageName) {
+    this.suppressDescriptionForPackages.add(packageName);
   }
 
   /**
@@ -246,6 +257,9 @@ public class SchemaGenerator {
   }
 
   private String getDescription(Field field) {
+    if (suppressDescriptionForPackages.contains(field.getDeclaringClass().getPackageName())) {
+      return null;
+    }
     Description description = field.getAnnotation(Description.class);
     if (description != null) {
       return description.value();
@@ -268,6 +282,9 @@ public class SchemaGenerator {
   }
 
   private String getDescription(Class<?> someClass) {
+    if (suppressDescriptionForPackages.contains(someClass.getPackageName())) {
+      return null;
+    }
     Description description = someClass.getAnnotation(Description.class);
     if (description != null) {
       return description.value();

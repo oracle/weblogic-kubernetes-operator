@@ -45,8 +45,8 @@ public class HttpAsyncTestSupport {
 
   RequestHandler getHandler(HttpRequest request) {
     return Optional.ofNullable(cannedResponses.get(request.uri()))
-        .map(l -> getMatchingRequest(l, request))
-        .orElse(NO_SUCH_HANDLER);
+          .map(l -> getMatchingRequest(l, request))
+          .orElse(NO_SUCH_HANDLER);
   }
 
   private RequestHandler getMatchingRequest(List<RequestHandler> handlers, HttpRequest request) {

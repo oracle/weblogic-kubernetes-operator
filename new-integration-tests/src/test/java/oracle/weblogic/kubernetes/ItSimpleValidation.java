@@ -30,7 +30,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -66,13 +67,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // Every test class needs to tagged with this annotation for
 // diagnostic log collection in case of failures and for test cleanup.
 @IntegrationTest
-class ItSimpleValidation implements LoggedTest {
+class ItSimpleValidation {
 
   private String opNamespace = null;
   private String domainNamespace1 = null;
 
   final String domainUid = "domain1";
   String serviceAccountName;
+
+  private static LoggingFacade logger = null;
 
   /**
    * Setup for test suite. Creates service account, persistent volume
@@ -81,7 +84,7 @@ class ItSimpleValidation implements LoggedTest {
    */
   @BeforeAll
   public void setup(@Namespaces(2) List<String> namespaces) {
-
+    logger = getLogger();
     logger.info("Assigning unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);
@@ -115,7 +118,6 @@ class ItSimpleValidation implements LoggedTest {
             .withName(pvName)
             .withNamespace(domainNamespace1)
             .build()
-            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
     boolean success = assertDoesNotThrow(
         () -> TestActions.createPersistentVolume(v1pv),
@@ -135,7 +137,6 @@ class ItSimpleValidation implements LoggedTest {
             .withName(pvcName)
             .withNamespace(domainNamespace1)
             .build()
-            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
 
     success = assertDoesNotThrow(
@@ -249,7 +250,7 @@ class ItSimpleValidation implements LoggedTest {
         .image("store/oracle/weblogic:12.2.1.3")
         .imagePullPolicy("IfNotPresent");
     Domain domain = new Domain()
-        .apiVersion("weblogic.oracle/v7")
+        .apiVersion("weblogic.oracle/v8")
         .kind("Domain")
         .metadata(metadata)
         .spec(domainSpec);
@@ -271,7 +272,7 @@ class ItSimpleValidation implements LoggedTest {
         // and here we can set the maximum time we are prepared to wait
         .await().atMost(5, MINUTES)
         // operatorIsRunning() is one of our custom, reusable assertions
-        .until(domainExists(domainUid, "v7", domainNamespace1));
+        .until(domainExists(domainUid, "v8", domainNamespace1));
   }
 
 }

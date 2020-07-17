@@ -1,0 +1,5 @@
+[final-build-commands]
+USER root
+RUN yum -y install gzip unzip tar 
+USER oracle
+

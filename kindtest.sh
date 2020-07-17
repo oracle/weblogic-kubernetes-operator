@@ -36,7 +36,7 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
 function usage {
-  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-h]"
+  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-h]"
   echo "  -v Kubernetes version (optional) "
   echo "      (default: 1.15.11, supported values: 1.18, 1.18.2, 1.17, 1.17.5, 1.16, 1.16.9, 1.15, 1.15.11, 1.14, 1.14.10) "
   echo "  -n Kind cluster name (optional) "
@@ -45,6 +45,12 @@ function usage {
   echo "      (default: \${WORKSPACE}/logdir/\${BUILD_TAG}, if \${WORKSPACE} defined, else /scratch/\${USER}/kindtest) "
   echo "  -t Test filter (optional) "
   echo "      (default: **/It*) "
+  echo "  -c CNI implementation (optional) "
+  echo "      (default: kindnet, supported values: kindnet, calico) "
+  echo "  -p Run It classes in parallel"
+  echo "      (default: false) "
+  echo "  -x Number of threads to run the classes in parallel"
+  echo "      (default: 2) "
   echo "  -h Help"
   exit $1
 }
@@ -57,8 +63,11 @@ else
   outdir="${WORKSPACE}/logdir/${BUILD_TAG}"
 fi
 test_filter="**/It*"
+cni_implementation="kindnet"
+parallel_run="false"
+threads="2"
 
-while getopts ":h:n:o:t:v:" opt; do
+while getopts ":h:n:o:t:v:c:x:p:" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
@@ -67,6 +76,12 @@ while getopts ":h:n:o:t:v:" opt; do
     o) outdir="${OPTARG}"
     ;;
     t) test_filter="${OPTARG}"
+    ;;
+    c) cni_implementation="${OPTARG}"
+    ;;
+    x) threads="${OPTARG}"
+    ;;
+    p) parallel_run="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -86,6 +101,18 @@ if [ -z "${kind_image}" ]; then
 fi
 
 echo "Using Kubernetes version: ${k8s_version}"
+
+disableDefaultCNI="false"
+if [ "${cni_implementation}" = "calico" ]; then
+  if [ "${k8s_version}" = "1.15" ] || [ "${k8s_version}" = "1.15.11" ] || [ "${k8s_version}" = "1.14" ] || [ "${k8s_version}" = "1.14.10" ]; then
+    echo "Calico CNI is not supported with Kubernetes versions below 1.16."
+    exit 1
+  fi
+  disableDefaultCNI="true"
+elif [ "${cni_implementation}" != "kindnet" ]; then
+  echo "Unsupported CNI implementation: ${cni_implementation}"
+  exit 1
+fi
 
 mkdir -m777 -p "${outdir}"
 export RESULT_ROOT="${outdir}/wl_k8s_test_results"
@@ -137,6 +164,9 @@ echo 'Create a cluster with the local registry enabled in containerd'
 cat <<EOF | kind create cluster --name "${kind_name}" --kubeconfig "${RESULT_ROOT}/kubeconfig" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  disableDefaultCNI: ${disableDefaultCNI}
+  podSubnet: 192.168.0.0/16
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${reg_port}"]
@@ -156,6 +186,13 @@ echo "  export KUBECONFIG=\"${RESULT_ROOT}/kubeconfig\""
 echo "  kubectl cluster-info --context \"kind-${kind_name}\""
 export KUBECONFIG="${RESULT_ROOT}/kubeconfig"
 kubectl cluster-info --context "kind-${kind_name}"
+
+if [ "${cni_implementation}" = "calico" ]; then
+  echo "Install Calico"
+  kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+  kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+fi
+
 kubectl get node -o wide
 
 for node in $(kind get nodes --name "${kind_name}"); do
@@ -184,4 +221,5 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
-time mvn -Dit.test="${test_filter}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+echo "Running mvn -Dit.test=${test_filter} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads} -pl new-integration-tests -P integration-tests verify"
+time mvn -Dit.test="${test_filter}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"

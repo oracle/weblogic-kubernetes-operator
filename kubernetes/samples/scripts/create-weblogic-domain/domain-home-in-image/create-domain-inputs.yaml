@@ -4,8 +4,15 @@
 # The version of this inputs file.  Do not modify.
 version: create-weblogic-sample-domain-inputs-v1
 
+# Enable SSL in the admin and managed server(s).
+# Setting this to true requires updating the javaOptions parameter below.
+sslEnabled: false
+
 # Port number for admin server
 adminPort: 7001
+
+# SSL Port number for admin server
+adminServerSSLPort: 7002
 
 # Name of the Admin Server
 adminServerName: admin-server
@@ -33,6 +40,9 @@ managedServerNameBase: managed-server
 
 # Port number for each managed server
 managedServerPort: 8001
+
+# SSL Port number for each managed server
+managedServerSSLPort: 8002
 
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true
@@ -79,11 +89,18 @@ includeServerOutInPodLog: true
 # The default is false.
 logHomeOnPV: false
 
-# The in-pod location for domain log, server logs, server out, and node manager log files
-# If not specified, the value is derived from the domainUID as /shared/logs/<domainUID>
+# The in-pod location for domain log, server logs, server out, Node Manager log, and
+# HTTP access log files. If not specified, the value is derived from the domainUID as
+# /shared/logs/<domainUID>.
 # This parameter is required if 'logHomeOnPV' is true.
 # Otherwise, it is ignored.
 logHome: /shared/logs/domain1
+
+# Set this value to 'false' to have HTTP access log files written to the directory 
+# configured in the WebLogic domain home.
+# The default is 'true', which means HTTP access log files will be written to
+# the logHome directory when logHomeOnPV is enabled. 
+httpAccessLogInLogHome: true
 
 # An (optional) in-pod location for data storage of default and custom file stores.
 # If not specified or the value is either not set or empty (e.g. dataHome: "") then the
@@ -112,6 +129,8 @@ exposeAdminNodePort: false
 namespace: default
 
 # Java Option for WebLogic Server
+# Add -Dweblogic.security.SSL.ignoreHostnameVerification=true if sslEnabled is true.
+# The reason is the WebLogic generated Demo certificate's host name is different from that of the runtime container.
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Name of the persistent volume claim
@@ -126,12 +145,12 @@ persistentVolumeClaimName: domain1-weblogic-sample-pvc
 domainPVMountPath: /shared
 
 # Base WebLogic binary image used to build the WebLogic domain image
-# The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied.
+# The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied or 12.2.1.4.0.
 # The WebLogic Docker image, `weblogic:12.2.1.3`, has all the necessary patches applied.
 # Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how
 # to obtain or create the image.
 # See README.md for more help.
-domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:12.2.1.3
+domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:12.2.1.4
 
 # Location of the WebLogic "domain home in image" Docker image sample in the
 # `https://github.com/oracle/docker-images.git` project.
@@ -140,15 +159,24 @@ domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:12.2.1.3
 # which uses WDT, instead of WLST, to generate the domain configuration.
 domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image
 
-# Uncomment and edit value(s) below to specify the maximum amount of 
-# compute resources allowed, and minimum amount of compute resources 
-# required for each server pod.
-# These are optional.                
+# Uncomment to customize the WebLogic Deploy Tool (WDT) version used by the WDT
+# "domain home in image" Docker image sample in the Docker images project. See
+# "domainHomeImageBuildPath". Set to "LATEST" to use the latest version.
+# wdtVersion: LATEST
+
+# Resource request for each server pod (Memory and CPU). This is minimum amount of compute
+# resources required for each server pod. Edit value(s) below as per pod sizing requirements.
+# These are optional. 
 # Please refer to the kubernetes documentation on Managing Compute
 # Resources for Containers for details.
-#
-# serverPodMemoryRequest: "64Mi"
-# serverPodCpuRequest: "250m"
+serverPodMemoryRequest: "768Mi"
+serverPodCpuRequest: "250m"
+
+# Uncomment and edit value(s) below to specify the maximum amount of compute resources allowed 
+# for each server pod.
+# These are optional. 
+# Please refer to the kubernetes documentation on Managing Compute
+# Resources for Containers for details.
 # serverPodMemoryLimit: "1Gi"
 # serverPodCpuLimit: "1000m"
 

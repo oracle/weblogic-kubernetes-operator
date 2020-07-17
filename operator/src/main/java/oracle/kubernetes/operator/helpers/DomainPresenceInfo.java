@@ -16,6 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -23,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -101,6 +104,10 @@ public class DomainPresenceInfo {
 
   public V1Service removeServerService(String serverName) {
     return getSko(serverName).getService().getAndSet(null);
+  }
+
+  public static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
+    return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class));
   }
 
   V1Service[] getServiceServices() {
@@ -526,9 +533,9 @@ public class DomainPresenceInfo {
      * @param isServiceOnly true, if only the server service should be created
      */
     public ServerStartupInfo(
-        WlsServerConfig serverConfig,
-        String clusterName,
-        ServerSpec serverSpec,
+        @Nonnull WlsServerConfig serverConfig,
+        @Nullable String clusterName,
+        @Nonnull ServerSpec serverSpec,
         boolean isServiceOnly) {
       this.serverConfig = serverConfig;
       this.clusterName = clusterName;
@@ -536,8 +543,12 @@ public class DomainPresenceInfo {
       this.isServiceOnly = isServiceOnly;
     }
 
+    public String getName() {
+      return this.serverConfig.getName();
+    }
+
     public String getServerName() {
-      return Optional.ofNullable(serverConfig).map(WlsServerConfig::getName).orElse(null);
+      return serverConfig.getName();
     }
 
     public String getClusterName() {

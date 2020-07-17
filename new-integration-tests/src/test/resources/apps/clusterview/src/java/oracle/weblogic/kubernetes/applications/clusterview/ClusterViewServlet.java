@@ -5,11 +5,18 @@ package oracle.weblogic.kubernetes.applications.clusterview;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.management.InstanceNotFoundException;
+import javax.management.IntrospectionException;
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
+import javax.management.ObjectInstance;
 import javax.management.ObjectName;
+import javax.management.ReflectionException;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
@@ -19,8 +26,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import weblogic.health.HealthState;
 
 import weblogic.management.jmx.MBeanServerInvocationHandler;
+import weblogic.management.mbeanservers.domainruntime.DomainRuntimeServiceMBean;
 import weblogic.management.mbeanservers.runtime.RuntimeServiceMBean;
 import weblogic.management.runtime.ClusterRuntimeMBean;
 import weblogic.management.runtime.ServerRuntimeMBean;
@@ -33,23 +42,44 @@ public class ClusterViewServlet extends HttpServlet {
   Context ctx = null;
   MBeanServer localMBeanServer;
   ServerRuntimeMBean serverRuntime;
+  RuntimeServiceMBean runtimeService;
+  MBeanServer domainMBeanServer;
+  DomainRuntimeServiceMBean domainRuntimeServiceMbean;
 
   @Override
   public void init(ServletConfig config) throws ServletException {
     try {
       ctx = new InitialContext();
+      System.out.println("ITTESTS:>>>>Looking up server runtime mbean server");
       localMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/runtime");
       // get ServerRuntimeMBean
       ObjectName runtimeserviceObjectName = new ObjectName(RuntimeServiceMBean.OBJECT_NAME);
-      RuntimeServiceMBean runtimeService = (RuntimeServiceMBean) MBeanServerInvocationHandler
+      runtimeService = (RuntimeServiceMBean) MBeanServerInvocationHandler
           .newProxyInstance(localMBeanServer, runtimeserviceObjectName);
       serverRuntime = runtimeService.getServerRuntime();
+      System.out.println("ITTESTS:>>>>Found server runtime mbean server for server: " + serverRuntime.getName());
+
       try {
+        System.out.println("ITTESTS:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName());
+        domainMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/domainRuntime");
+        ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
+        domainRuntimeServiceMbean = (DomainRuntimeServiceMBean) MBeanServerInvocationHandler
+            .newProxyInstance(domainMBeanServer, domainServiceObjectName);
+        System.out.println("ITTESTS:>>>>Found domain runtime mbean in server : " + serverRuntime.getName());
+      } catch (MalformedObjectNameException | NamingException ex) {
+        System.out.println("ITTESTS:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName() + " threw exception");
+        Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
+      }
+
+      try {
+        System.out.println("ITTESTS:>>>>Looking up server : " + serverRuntime.getName() +" in JNDI tree");
         ctx.lookup(serverRuntime.getName());
       } catch (NameNotFoundException nnfe) {
+        System.out.println("ITESTS:>>>>>>Server not found in JNDI tree, Binding " + serverRuntime.getName() + " in JNDI tree");
         ctx.bind(serverRuntime.getName(), serverRuntime.getName());
+        System.out.println("ITESTS:>>>>>>Bound " + serverRuntime.getName() + " in JNDI tree");
       }
-    } catch (NamingException | MalformedObjectNameException ex) {
+    } catch (MalformedObjectNameException | NamingException ex) {
       Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
     }
   }
@@ -57,7 +87,9 @@ public class ClusterViewServlet extends HttpServlet {
   @Override
   public void destroy() {
     try {
+      System.out.println("ITTESTS:>>>>Unbinding server : " + serverRuntime.getName());
       ctx.unbind(serverRuntime.getName());
+      System.out.println("ITTESTS:>>>>Closing context in server : " + serverRuntime.getName());
       ctx.close();
     } catch (NamingException ex) {
       Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
@@ -84,7 +116,22 @@ public class ClusterViewServlet extends HttpServlet {
       out.println("<body>");
       out.println("<pre>");
 
-      out.println("ServerName:" + serverRuntime.getName());
+      String queryServers = request.getParameter("queryServers");
+      if (queryServers != null) {
+        // print all mbeans and its attributes in the server runtime
+        out.println("Querying server: " + localMBeanServer.toString());
+        Set<ObjectInstance> mbeans = localMBeanServer.queryMBeans(null, null);
+        for (ObjectInstance mbeanInstance : mbeans) {
+          out.println("<br>ObjectName: " + mbeanInstance.getObjectName() + "<br>");
+          MBeanInfo mBeanInfo = localMBeanServer.getMBeanInfo(mbeanInstance.getObjectName());
+          MBeanAttributeInfo[] attributes = mBeanInfo.getAttributes();
+          for (MBeanAttributeInfo attribute : attributes) {
+            out.println("<br>Type: " + attribute.getType() + "<br>");
+            out.println("<br>Name: " + attribute.getName() + "<br>");
+          }
+        }
+      }
+
       ClusterRuntimeMBean clusterRuntime = serverRuntime.getClusterRuntime();
       //if the server is part of a cluster get its cluster details
       if (clusterRuntime != null) {
@@ -92,21 +139,54 @@ public class ClusterViewServlet extends HttpServlet {
         out.println("Alive:" + clusterRuntime.getAliveServerCount());
         out.println("Health:" + clusterRuntime.getHealthState().getState());
         out.println("Members:" + String.join(",", serverNames));
+        out.println("ServerName:" + serverRuntime.getName());
+
         // lookup JNDI for other clustered servers bound in tree
         for (String serverName : serverNames) {
           try {
-            if (ctx.lookup(serverName).equals(serverName)) {
+            if (ctx.lookup(serverName) != null) {
               out.println("Bound:" + serverName);
             }
-          } catch (NamingException nex) {
-            out.println(nex.getMessage());
+          } catch (NameNotFoundException nnfex) {
+            out.println(nnfex.getMessage());
           }
         }
       }
 
+      String listServers = request.getParameter("listServers");
+      if (listServers != null) {
+        ServerRuntimeMBean[] serverRuntimes = domainRuntimeServiceMbean.getServerRuntimes();
+        for (ServerRuntimeMBean serverRuntime : serverRuntimes) {
+          out.println(serverRuntime.getName() + ":STATUS<BR>");
+          int state = serverRuntime.getHealthState().getState();
+          switch (state) {
+            case HealthState.HEALTH_OK:
+              out.print(serverRuntime.getName() + ":HEALTH_OK");
+              break;
+            case HealthState.HEALTH_CRITICAL:
+              out.print(serverRuntime.getName() + ":HEALTH_CRITICAL");
+              break;
+            case HealthState.HEALTH_FAILED:
+              out.print(serverRuntime.getName() + ":HEALTH_FAILED");
+              break;
+            case HealthState.HEALTH_OVERLOADED:
+              out.print(serverRuntime.getName() + ":HEALTH_OVERLOADED");
+              break;
+            case HealthState.HEALTH_WARN:
+              out.print(serverRuntime.getName() + ":HEALTH_WARN");
+              break;
+            default:
+              out.print(serverRuntime.getName() + ":HEALTH_WARN");
+          }
+          out.println("<BR>");
+        }
+      }
       out.println("</pre>");
       out.println("</body>");
       out.println("</html>");
+    } catch (NamingException | InstanceNotFoundException
+        | IntrospectionException | ReflectionException ex) {
+      Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
     }
   }
 
@@ -145,7 +225,7 @@ public class ClusterViewServlet extends HttpServlet {
    */
   @Override
   public String getServletInfo() {
-    return "Cluster Voew Servlet";
+    return "Cluster View Servlet";
   }
 
 }

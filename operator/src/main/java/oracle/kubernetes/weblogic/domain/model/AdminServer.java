@@ -12,12 +12,12 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description("AdminServer represents the operator configuration for the Administration Server.")
 public class AdminServer extends Server {
 
   @Description(
-      "Configures which of the Administration Server's WebLogic admin channels should be exposed outside"
-          + " the Kubernetes cluster via a node port service.")
+      "Customization affecting the generation of the Kubernetes Service for the Administration Server. These settings "
+      + "can also specify the creation of a second NodePort Service to expose specific channels or network access "
+      + "points outside the Kubernetes cluster.")
   private AdminService adminService;
 
   /**

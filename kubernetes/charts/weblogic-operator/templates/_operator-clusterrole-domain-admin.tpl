@@ -17,7 +17,6 @@ metadata:
   name: {{ list .Release.Namespace "weblogic-operator-clusterrole-domain-admin" | join "-" | quote }}
   {{- end }}
   labels:
-    weblogic.resourceVersion: "operator-v2"
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 rules:
 - apiGroups: [""]

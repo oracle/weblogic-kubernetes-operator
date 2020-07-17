@@ -22,7 +22,7 @@ done
 # Work around note:
 #
 #   The forever loop and '[ -f $1 ]' check above work around an
-#   unexpected  behavior  from  'tail -F'.  The  '-F'  expected
+#   unexpected  behavior  from  'tail -F'.  The  '-F'  expected 
 #   behavior is meant to handle 'rolling' files by both:
 #
 #     A- Waiting  until the  file appears  instead of exiting
@@ -36,3 +36,4 @@ done
 #   But 'A' is not working on WL pods and thus the work around.
 #   (Strangely and thankfully 'B' works fine.)
 #
+

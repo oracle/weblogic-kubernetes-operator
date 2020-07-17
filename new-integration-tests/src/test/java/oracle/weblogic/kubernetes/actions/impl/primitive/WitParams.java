@@ -6,8 +6,8 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 import java.util.List;
 import java.util.Map;
 
-import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_MODEL_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_MODEL_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
@@ -25,10 +25,10 @@ public class WitParams {
   private String baseImageTag;
   
   // The name of the to be generated Docker image
-  private String imageName;
+  private String modelImageName;
   
   // The name of the to be generated Docker image
-  private String imageTag;
+  private String modelImageTag;
   
   // A comma separated list of the names of the WDT model yaml files
   private List<String> modelFiles;
@@ -67,8 +67,8 @@ public class WitParams {
   public WitParams defaults() {
     this.baseImageName(WLS_BASE_IMAGE_NAME)
         .baseImageTag(WLS_BASE_IMAGE_TAG)
-        .imageName(DEFAULT_IMAGE_NAME)
-        .imageTag(DEFAULT_IMAGE_TAG)
+        .modelImageName(DEFAULT_MODEL_IMAGE_NAME)
+        .modelImageTag(DEFAULT_MODEL_IMAGE_TAG)
         .domainType(WLS);
     return this;
   }
@@ -91,22 +91,22 @@ public class WitParams {
     return baseImageTag;
   }
   
-  public WitParams imageName(String imageName) {
-    this.imageName = imageName;
+  public WitParams modelImageName(String modelImageName) {
+    this.modelImageName = modelImageName;
     return this;
   }
 
-  public String imageName() {
-    return imageName;
+  public String modelImageName() {
+    return modelImageName;
   }
   
-  public WitParams imageTag(String imageTag) {
-    this.imageTag = imageTag;
+  public WitParams modelImageTag(String modelImageTag) {
+    this.modelImageTag = modelImageTag;
     return this;
   }
     
-  public String imageTag() {
-    return imageTag;
+  public String modelImageTag() {
+    return modelImageTag;
   }
      
   public WitParams wdtVersion(String wdtVersion) {
@@ -182,7 +182,7 @@ public class WitParams {
   }
 
   public String generatedImageName() {
-    return imageName + ":" + imageTag;
+    return modelImageName + ":" + modelImageTag;
   }
   
   public WitParams env(Map<String, String> env) {

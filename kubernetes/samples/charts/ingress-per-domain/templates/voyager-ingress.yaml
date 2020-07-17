@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- if eq .Values.type "VOYAGER" }}
@@ -8,8 +8,6 @@ kind: Ingress
 metadata:
   name: {{ .Values.wlsDomain.domainUID }}-voyager
   namespace: {{ .Release.Namespace }}
-  labels:
-    weblogic.resourceVersion: domain-v2
   annotations:
     ingress.appscode.com/type: 'NodePort'
     ingress.appscode.com/stats: 'true'
@@ -30,8 +28,6 @@ kind: Service
 metadata:
   name: {{ .Values.wlsDomain.domainUID }}-voyager-stats
   namespace: {{ .Release.Namespace }}
-  labels:
-    weblogic.resourceVersion: domain-v2
 spec:
   type: NodePort
   ports:

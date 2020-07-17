@@ -9,6 +9,8 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
+import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
+import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Grafana;
@@ -22,6 +24,7 @@ import oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.assertions.impl.Pod;
 import oracle.weblogic.kubernetes.assertions.impl.Prometheus;
 import oracle.weblogic.kubernetes.assertions.impl.Service;
+import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import org.joda.time.DateTime;
 
@@ -58,6 +61,28 @@ public class TestAssertions {
    */
   public static Callable<Boolean> isNginxReady(String namespace) {
     return Nginx.isReady(namespace);
+  }
+
+  /**
+   * Check if Voyager pod is running.
+   *
+   * @param namespace in which to check if Voyager pod is running
+   * @param podName name of Voyager ingress controller pod or ingress resource pod
+   * @return true if Voyager pod is running, false otherwise
+   */
+  public static Callable<Boolean> isVoyagerRunning(String namespace, String podName) {
+    return Voyager.isRunning(namespace, podName);
+  }
+
+  /**
+   * Check if Voyager pods is in the ready state in a given namespace.
+   *
+   * @param namespace in which to check if Voyager pod is in the ready state
+   * @param podName name of Voyager ingress controller pod or ingress resource pod
+   * @return true if Voyager pod is in the ready state, false otherwise
+   */
+  public static Callable<Boolean> isVoyagerReady(String namespace, String podName) {
+    return Voyager.isReady(namespace, podName);
   }
 
   /**
@@ -407,19 +432,33 @@ public class TestAssertions {
    * Check if a pod is restarted based on podCreationTimestamp.
    *
    * @param podName the name of the pod to check for
-   * @param domainUid the label the pod is decorated with
    * @param namespace in which the pod is running
    * @param timestamp the initial podCreationTimestamp
    * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
    */
   public static Callable<Boolean> isPodRestarted(
       String podName,
-      String domainUid,
       String namespace,
       DateTime timestamp
   ) {
     return () -> {
-      return Kubernetes.isPodRestarted(podName,domainUid,namespace,timestamp);
+      return Kubernetes.isPodRestarted(podName, namespace,timestamp);
+    };
+  }
+
+  /**
+   * Check if the oeprator pod in a given namespace is restarted based on podCreationTimestamp.
+   *
+   * @param namespace in which the pod is running
+   * @param timestamp the initial podCreationTimestamp
+   * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
+   */
+  public static Callable<Boolean> isOperatorPodRestarted(
+      String namespace,
+      DateTime timestamp
+  ) {
+    return () -> {
+      return Kubernetes.isOperatorPodRestarted(namespace, timestamp);
     };
   }
 
@@ -491,5 +530,27 @@ public class TestAssertions {
    */
   public static Callable<Boolean> pvcExists(String pvcName, String namespace) {
     return PersistentVolumeClaim.pvcExists(pvcName, namespace);
+  }
+
+  /**
+   * Check whether the cluster role exists.
+   *
+   * @param clusterRoleName name of the cluster role
+   * @return true if cluster role exists, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean clusterRoleExists(String clusterRoleName) throws ApiException {
+    return ClusterRole.clusterRoleExists(clusterRoleName);
+  }
+
+  /**
+   * Check whether the cluster role binding exists.
+   *
+   * @param clusterRoleBindingName name of the cluster role binding
+   * @return true if cluster role binding exists, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean clusterRoleBindingExists(String clusterRoleBindingName) throws ApiException {
+    return ClusterRoleBinding.clusterRoleBindingExists(clusterRoleBindingName);
   }
 }

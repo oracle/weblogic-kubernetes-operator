@@ -301,6 +301,25 @@ function createFiles {
   else
     istioPrefix="${disabledPrefix}"
   fi
+  
+  # The FromModel, MII (model-in-image), and WDT_DOMAIN_TYPE updates in this script
+  # must remain even though they are not referenced by a sample. They're used by the 
+  # Operator integration test code. If you're interested in MII, 
+  # see './kubernetes/samples/scripts/create-weblogic-domain/model-in-image'.
+
+  # MII settings are used for model-in-image integration testing
+  if [ "${domainHomeSourceType}" == "FromModel" ]; then
+    miiPrefix="${enabledPrefix}"
+  else
+    miiPrefix="${disabledPrefix}"
+  fi
+
+  # MII settings are used for model-in-image integration testing
+  if [ -z "${miiConfigMap}" ]; then
+    miiConfigMapPrefix="${disabledPrefix}"
+  else
+    miiConfigMapPrefix="${enabledPrefix}"
+  fi
 
   # For some parameters, use the default value if not defined.
   if [ -z "${domainPVMountPath}" ]; then
@@ -311,6 +330,10 @@ function createFiles {
     logHome="${domainPVMountPath}/logs/${domainUID}"
   fi
 
+  if [ -z "${httpAccessLogInLogHome}" ]; then
+    httpAccessLogInLogHome="true"
+  fi
+  
   if [ -z "${dataHome}" ]; then
     dataHome=""
   fi
@@ -322,8 +345,6 @@ function createFiles {
   if [ -z "${weblogicCredentialsSecretName}" ]; then
     weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
   fi
-
-  wdtVersion="${WDT_VERSION}"
 
   if [ "${domainHomeInImage}" == "true" ]; then
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
@@ -339,11 +360,14 @@ function createFiles {
     cp ${domainPropertiesInput} ${domainPropertiesOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
     sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%ADMIN_SERVER_SSL_PORT%:${adminServerSSLPort}:g" ${domainPropertiesOutput}
     sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${domainPropertiesOutput}
     sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%MANAGED_SERVER_SSL_PORT%:${managedServerSSLPort}:g" ${domainPropertiesOutput}
     sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${domainPropertiesOutput}
     sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${domainPropertiesOutput}
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%SSL_ENABLED%:${sslEnabled}:g" ${domainPropertiesOutput}
     sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${domainPropertiesOutput}
     sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${domainPropertiesOutput}
     sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${domainPropertiesOutput}
@@ -351,6 +375,7 @@ function createFiles {
     sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
     sed -i -e "s:%EXPOSE_T3_CHANNEL%:${exposeAdminT3Channel}:g" ${domainPropertiesOutput}
     sed -i -e "s:%FMW_DOMAIN_TYPE%:${fmwDomainType}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${domainPropertiesOutput}
 
     if [ -z "${image}" ]; then
       # calculate the internal name to tag the generated image
@@ -362,6 +387,9 @@ function createFiles {
       sed -i -e "s|%IMAGE_NAME%|${image}|g" ${domainPropertiesOutput}
     fi
   else
+    # we're in the domain in PV case
+
+    wdtVersion="${WDT_VERSION:-${wdtVersion}}"
 
     createJobOutput="${domainOutputDir}/create-domain-job.yaml"
     deleteJobOutput="${domainOutputDir}/delete-domain-job.yaml"
@@ -395,14 +423,17 @@ function createFiles {
     sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${createJobOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${createJobOutput}
     sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${createJobOutput}
+    sed -i -e "s:%SSL_ENABLED%:${sslEnabled}:g" ${createJobOutput}
     sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${createJobOutput}
     sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${createJobOutput}
     sed -i -e "s:%ADMIN_SERVER_NAME_SVC%:${adminServerNameSVC}:g" ${createJobOutput}
     sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${createJobOutput}
+    sed -i -e "s:%ADMIN_SERVER_SSL_PORT%:${adminServerSSLPort}:g" ${createJobOutput}
     sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${createJobOutput}
     sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${createJobOutput}
     sed -i -e "s:%MANAGED_SERVER_NAME_BASE_SVC%:${managedServerNameBaseSVC}:g" ${createJobOutput}
     sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${createJobOutput}
+    sed -i -e "s:%MANAGED_SERVER_SSL_PORT%:${managedServerSSLPort}:g" ${createJobOutput}
     sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${createJobOutput}
     sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${createJobOutput}
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${createJobOutput}
@@ -439,13 +470,22 @@ function createFiles {
     sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${deleteJobOutput}
   fi
 
-  if [ "${domainHomeInImage}" == "true" ]; then
+  if [ "${domainHomeSourceType}" == "FromModel" ]; then
+    # leave domainHomeSourceType to FromModel
+    if [ "${logHomeOnPV}" == "true" ]; then
+      logHomeOnPVPrefix="${enabledPrefix}"
+    else
+      logHomeOnPVPrefix="${disabledPrefix}"
+    fi
+  elif [ "${domainHomeInImage}" == "true" ]; then
+    domainHomeSourceType="Image"
     if [ "${logHomeOnPV}" == "true" ]; then
       logHomeOnPVPrefix="${enabledPrefix}"
     else
       logHomeOnPVPrefix="${disabledPrefix}"
     fi
   else
+    domainHomeSourceType="PersistentVolume"
     logHomeOnPVPrefix="${enabledPrefix}"
     logHomeOnPV=true
   fi
@@ -457,7 +497,7 @@ function createFiles {
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_HOME_IN_IMAGE%:${domainHomeInImage}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_HOME_SOURCE_TYPE%:${domainHomeSourceType}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
@@ -466,6 +506,7 @@ function createFiles {
   sed -i -e "s:%LOG_HOME_ON_PV_PREFIX%:${logHomeOnPVPrefix}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME_ENABLED%:${logHomeOnPV}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
+  sed -i -e "s:%HTTP_ACCESS_LOG_IN_LOG_HOME%:${httpAccessLogInLogHome}:g" ${dcrOutput}
   sed -i -e "s:%DATA_HOME%:${dataHome}:g" ${dcrOutput}
   sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
@@ -485,6 +526,11 @@ function createFiles {
   sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
+  # MII settings are used for model-in-image integration testing
+  sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%MII_CONFIG_MAP_PREFIX%:${miiConfigMapPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%MII_CONFIG_MAP%:${miiConfigMap}:g" ${dcrOutput}
+  sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${dcrOutput}
 
   buildServerPodResources
   if [ -z "${serverPodResources}" ]; then
@@ -585,7 +631,7 @@ function checkPodDelete(){
   exit -2 
  fi
 
- echo "Checking Status for Pod [$pod] in namesapce [${ns}]"
+ echo "Checking Status for Pod [$pod] in namespace [${ns}]"
  max=10
  count=1
  while [ $count -le $max ] ; do
@@ -646,7 +692,7 @@ function checkPodState(){
  kubectl -n ${ns} get po ${pname}
 }
 
-# Checks if a pod is available in a given namespace
+# Checks if a pod is available in a given namespace 
 function checkPod(){
 
  max=20
@@ -682,7 +728,7 @@ function checkPod(){
  fi
 }
 
-# Checks if a service is available in a given namespace
+# Checks if a service is available in a given namespace 
 function checkService(){
  svc=$1
  ns=$2

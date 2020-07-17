@@ -89,7 +89,6 @@ kind: ConfigMap
 metadata:
   labels:
     weblogic.domainUID: bobs-bookstore
-    weblogic.resourceVersion: domain-v2
   name: fluentd-config
   namespace: bob
 data:
@@ -256,14 +255,11 @@ _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
 The following is a complete example of a domain custom resource with a `fluentd` container configured.
 
 ```yaml
-# If you are using 3.0.0-rc1, then the version on the following line
-# should be `v8` not `v7`.
-apiVersion: weblogic.oracle/v7
+apiVersion: weblogic.oracle/v8
 kind: Domain
 metadata:
   labels:
     weblogic.domainUID: bobs-bookstore
-    weblogic.resourceVersion: domain-v2
   name: bobs-bookstore
   namespace: bob
 spec:
@@ -278,7 +274,7 @@ spec:
   - clusterName: cluster-1
     serverPod:
   domainHome: /u01/oracle/user_projects/domains/bobs-bookstore
-  domainHomeInImage: true
+  domainHomeSourceType: Image
   domainUID: bobs-bookstore
   experimental:
     istio:

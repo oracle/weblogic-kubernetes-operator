@@ -21,7 +21,7 @@ public class HttpAsyncTestSupportTest {
   @Test
   public void whenNoDefinedResponse_returnNotFoundResponse() {
     assertThat(support.getResponse(createGetRequest("http://nowhere")).statusCode(),
-        equalTo(HttpURLConnection.HTTP_NOT_FOUND));
+          equalTo(HttpURLConnection.HTTP_NOT_FOUND));
   }
 
   private HttpRequest createGetRequest(String urlString) {

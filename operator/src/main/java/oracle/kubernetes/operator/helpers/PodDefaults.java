@@ -10,15 +10,15 @@ import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
-import static oracle.kubernetes.operator.KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.ALL_READ_AND_EXECUTE;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_MOUNTS_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.WDT_CONFIG_MAP_VOLUME;
 
 class PodDefaults {
   static final String K8S_SERVICE_ACCOUNT_MOUNT_PATH =
@@ -33,7 +33,7 @@ class PodDefaults {
   }
 
   private static V1Volume createScriptsVolume() {
-    return createVolume(SCRIPTS_VOLUME, DOMAIN_CONFIG_MAP_NAME);
+    return createVolume(SCRIPTS_VOLUME, SCRIPT_CONFIG_MAP_NAME);
   }
 
   private static V1Volume createVolume(String volumeName, String configMapName) {
@@ -50,15 +50,19 @@ class PodDefaults {
   }
 
   private static V1Volume createSitConfigVolume(String domainUid) {
-    return createVolume(getSitConfigMapVolumeName(domainUid), getConfigMapName(domainUid));
+    return createVolume(getSitConfigMapVolumeName(domainUid), ConfigMapHelper.getIntrospectorConfigMapName(domainUid));
   }
 
   private static String getSitConfigMapVolumeName(String domainUid) {
     return SIT_CONFIG_MAP_VOLUME;
   }
 
-  private static String getConfigMapName(String domainUid) {
-    return domainUid + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+  private static V1Volume createWdtConfigMapVolume(String domainUid) {
+    return createVolume(getWdtConfigMapVolumeName(domainUid), ConfigMapHelper.getIntrospectorConfigMapName(domainUid));
+  }
+
+  private static String getWdtConfigMapVolumeName(String domainUid) {
+    return WDT_CONFIG_MAP_VOLUME;
   }
 
   static List<V1VolumeMount> getStandardVolumeMounts(String domainUid) {
@@ -79,6 +83,10 @@ class PodDefaults {
 
   private static V1VolumeMount createSitConfigVolumeMount(String domainUid) {
     return volumeMount(getSitConfigMapVolumeName(domainUid), "/weblogic-operator/introspector");
+  }
+
+  private static V1VolumeMount createWdtConfigVolumeMount(String domainUid) {
+    return volumeMount(getWdtConfigMapVolumeName(domainUid), "/weblogic-operator/introspector");
   }
 
   private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {

@@ -15,12 +15,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Handler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -31,6 +33,11 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYPE;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
@@ -64,9 +71,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
@@ -78,12 +87,15 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   private static final AtomicBoolean started = new AtomicBoolean(false);
   private static final CountDownLatch initializationLatch = new CountDownLatch(1);
   private static String operatorImage;
+  private static String miiBasicImage;
   private static String wdtBasicImage;
 
   private static Collection<String> pushedImages = new ArrayList<>();
 
+
   @Override
   public void beforeAll(ExtensionContext context) {
+    LoggingFacade logger = getLogger();
     /* The pattern is that we have initialization code that we want to run once to completion
      * before any tests are executed. This method will be called before every test method. Therefore, the
      * very first time this method is called we will do the initialization. Since we assume that the tests
@@ -113,6 +125,13 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertTrue(Operator.buildImage(operatorImage));
 
         if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
+          // build MII basic image
+          miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+          assertTrue(createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
+              null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
+              String.format("Failed to create the image %s using WebLogic Image Tool",
+                  miiBasicImage));
+
           // build basic wdt-domain-in-image image
           wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
           assertTrue(createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
@@ -127,6 +146,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
            * as docker images imagename:imagetag is not working and
            * the test fails even though the image exists.
            */
+          assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
+              String.format("Image %s doesn't exist", miiBasicImage));
+
           assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", wdtBasicImage));
 
@@ -135,17 +157,20 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
             assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
           }
         }
-
         // push the image
         if (!REPO_NAME.isEmpty()) {
           logger.info("docker push image {0} to {1}", operatorImage, REPO_NAME);
           assertTrue(dockerPush(operatorImage), String.format("docker push failed for image %s", operatorImage));
 
           if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
+            logger.info("docker push mii basic image {0} to registry", miiBasicImage);
+            assertTrue(dockerPush(miiBasicImage), String.format("docker push failed for image %s", miiBasicImage));
+
             logger.info("docker push wdt basic domain in image {0} to registry", wdtBasicImage);
             assertTrue(dockerPush(wdtBasicImage), String.format("docker push failed for image %s", wdtBasicImage));
           }
         }
+
         // The following code is for pulling WLS images if running tests in Kind cluster
         if (KIND_REPO != null) {
           // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
@@ -164,6 +189,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
           pullImageFromOcrAndPushToKind(images);
         }
+        logger.info("Installing istio before any test suites are run");
+        installIstio();
       } finally {
         // Initialization is done. Release all waiting other threads. The latch is now disabled so
         // other threads
@@ -192,6 +219,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
   @Override
   public void close() {
+    LoggingFacade logger = getLogger();
+    logger.info("Cleanup istio after all test suites are run");
+    uninstallIstio();
+
     logger.info("Cleanup images after all test suites are run");
 
     // delete all the images from local repo
@@ -208,9 +239,14 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         }
       }
     }
+
+    for (Handler handler:logger.getUnderlyingLogger().getHandlers()) {
+      handler.close();
+    }
   }
 
   private String getOcirToken() {
+    LoggingFacade logger = getLogger();
     Path scriptPath = Paths.get(RESOURCE_DIR, "bash-scripts", "ocirtoken.sh");
     String cmd = scriptPath.toFile().getAbsolutePath();
     ExecResult result = null;
@@ -229,6 +265,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   }
 
   private void deleteImageOcir(String token, String imageName) {
+    LoggingFacade logger = getLogger();
     int firstSlashIdx = imageName.indexOf('/');
     String registry = imageName.substring(0, firstSlashIdx);
     int secondSlashIdx = imageName.indexOf('/', firstSlashIdx + 1);
@@ -321,7 +358,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
    */
   private boolean createBasicImage(String imageName, String imageTag, String modelFile, String varFile,
                                    String appName, String domainType) {
-
+    LoggingFacade logger = getLogger();
     final String image = imageName + ":" + imageTag;
 
     // build the model file list
@@ -357,8 +394,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       final List<String> modelVarList = Collections.singletonList(MODEL_DIR + "/" + varFile);
       imageCreation = createImage(
           defaultWitParams()
-              .imageName(imageName)
-              .imageTag(WDT_BASIC_IMAGE_TAG)
+              .modelImageName(imageName)
+              .modelImageTag(WDT_BASIC_IMAGE_TAG)
               .modelFiles(modelList)
               .modelArchiveFiles(archiveList)
               .modelVariableFiles(modelVarList)
@@ -367,6 +404,17 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
               .wdtVersion(WDT_VERSION)
               .env(env)
               .redirect(true));
+    } else if (domainType.equalsIgnoreCase("mii")) {
+      imageCreation = createImage(
+        defaultWitParams()
+            .modelImageName(imageName)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .wdtModelOnly(true)
+            .wdtVersion(WDT_VERSION)
+            .env(env)
+            .redirect(true));
     }
     return imageCreation;
   }

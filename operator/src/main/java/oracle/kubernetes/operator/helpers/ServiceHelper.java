@@ -20,7 +20,6 @@ import io.kubernetes.client.openapi.models.V1Status;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -376,16 +375,15 @@ public class ServiceHelper {
     return true;
   }
 
-  private abstract static class ServiceStepContext {
+  private abstract static class ServiceStepContext extends StepContextBase {
     private final Step conflictStep;
     protected List<V1ServicePort> ports;
-    final DomainPresenceInfo info;
     final WlsDomainConfig domainTopology;
     private final OperatorServiceType serviceType;
 
     ServiceStepContext(Step conflictStep, Packet packet, OperatorServiceType serviceType) {
+      super(packet.getSpi(DomainPresenceInfo.class));
       this.conflictStep = conflictStep;
-      info = packet.getSpi(DomainPresenceInfo.class);
       domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       this.serviceType = serviceType;
     }
@@ -395,7 +393,13 @@ public class ServiceHelper {
     }
 
     V1Service createModel() {
-      return AnnotationHelper.withSha256Hash(createRecipe());
+      return withNonHashedElements(AnnotationHelper.withSha256Hash(createRecipe()));
+    }
+
+    V1Service withNonHashedElements(V1Service service) {
+      V1ObjectMeta metadata = service.getMetadata();
+      updateForOwnerReference(metadata);
+      return service;
     }
 
     V1Service createRecipe() {
@@ -419,6 +423,7 @@ public class ServiceHelper {
         addServicePortIfNeeded("default-secure", serverConfig.getSslListenPort());
         addServicePortIfNeeded("default-admin", serverConfig.getAdminPort());
       }
+
     }
 
     List<NetworkAccessPoint> getNetworkAccessPoints(@Nonnull WlsServerConfig config) {
@@ -456,15 +461,12 @@ public class ServiceHelper {
       getServiceLabels().forEach(metadata::putLabelsItem);
 
       metadata
-          .putLabelsItem(
-              LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
 
       // Add custom annotations
       getServiceAnnotations().forEach(metadata::putAnnotationsItem);
-
       return metadata;
     }
 
@@ -881,7 +883,7 @@ public class ServiceHelper {
           String[] tokens = channelName.split("-");
           if (tokens.length > 0) {
             if ("http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
-                || "tls".equals(tokens[0])) {
+                  || "tls".equals(tokens[0])) {
               int index = channelName.indexOf('-');
               channel = getChannel(channelName.substring(index + 1));
             }

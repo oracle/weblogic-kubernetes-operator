@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -21,7 +22,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 /** This test class verifies the behavior of the ServiceWatcher. */
 public class ServiceWatcherTest extends WatcherTestBase implements WatchListener<V1Service> {
 
-  private static final int INITIAL_RESOURCE_VERSION = 987;
+  private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("987");
 
   @Override
   public void receivedResponse(Watch.Response<V1Service> response) {
@@ -34,7 +35,7 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
 
     assertThat(
         StubWatchFactory.getRequestParameters().get(0),
-        both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
+        both(hasEntry("resourceVersion", INITIAL_RESOURCE_VERSION.toString()))
             .and(hasEntry("labelSelector", asList(DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL))));
   }
 
@@ -49,7 +50,7 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
   }
 
   @Override
-  protected ServiceWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
-    return ServiceWatcher.create(this, ns, Integer.toString(rv), tuning, this, stopping);
+  protected ServiceWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
+    return ServiceWatcher.create(this, ns, rv.toString(), tuning, this, stopping);
   }
 }
