@@ -89,7 +89,8 @@ $ helm install weblogic-operator weblogic-operator/weblogic-operator
 {{% notice note %}}
 Because operator 3.0.0 introduces _non-backward compatible_ changes, you cannot use `helm upgrade` to upgrade
 a 2.6.0 operator to a 3.x operator. Instead, you must delete the 2.6.0 operator and then install the
-3.x operator. 
+3.x operator.
+{{% /notice %}}
 
 The deletion of the 2.6.0 operator will _not affect_ the Domain CustomResourceDefinition (CRD) and will _not stop_ any
 WebLogic Server instances already running.
@@ -104,8 +105,6 @@ $ helm delete weblogic-operator -n weblogic-operator-namespace
 ```
 
 Then install the 3.0.0 operator using the [installation](#install-the-operator-helm-chart) instructions above.
-
-{{% /notice %}}
 
 The following instructions will be applicable to upgrade operators within the 3.x release family
 as additional versions are released.
