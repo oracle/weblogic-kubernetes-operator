@@ -190,8 +190,8 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Upgrades operator to develop branch by using the helm upgrade.
-   *
+   * Upgrades operator to develop branch by uninstalling old release operator
+   * and installing latest operator
    * @throws Exception when upgrade fails or basic usecase testing or scaling fails.
    */
   private void upgradeOperatorFrom2_6_0() throws Exception {
@@ -202,6 +202,7 @@ public class ItOperatorUpgrade extends BaseTest {
     operatorMap.put("releaseName", OP_DEP_NAME);
     operatorMap.put("serviceAccount", OP_SA);
     operatorMap.put("externalRestEnabled", true);
+    operatorMap.put("javaLoggingLevel", "FINE");
     List<String> domNs = new ArrayList<String>();
     domNs.add(DOM_NS);
     operatorMap.put("domainNamespaces", domNs);
@@ -280,6 +281,7 @@ public class ItOperatorUpgrade extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     opUpgradeTmpDir = getResultDir() + "/operatorupgrade";
     TestUtils.execOrAbortProcess("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
+    TestUtils.execOrAbortProcess("kubectl delete crd domains.weblogic.oracle --ignore-not-found");
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, "");
     operatorMap.put("operatorImageName", "oracle/weblogic-kubernetes-operator");
