@@ -86,6 +86,30 @@ $ helm install weblogic-operator weblogic-operator/weblogic-operator
 
 #### Upgrade the operator
 
+{{% notice note %}}
+Because operator 3.0.0 introduces _non-backward compatible_ changes, you cannot use `helm upgrade` to upgrade
+a 2.6.0 operator to a 3.x operator. Instead, you must delete the 2.6.0 operator and then install the
+3.x operator. 
+
+The deletion of the 2.6.0 operator will _not affect_ the Domain CustomResourceDefinition (CRD) and will _not stop_ any
+WebLogic Server instances already running.
+
+When the 3.0.0 operator is installed, it will automatically roll any running WebLogic Server instances created by the 2.6.0 operator.
+This rolling restart will preserve WebLogic cluster availability guarantees (for clustered members only) similarly to any other rolling restart.
+
+To delete the 2.6.0 operator:
+
+```
+$ helm delete weblogic-operator -n weblogic-operator-namespace
+```
+
+Then install the 3.0.0 operator using the [installation](#install-the-operator-helm-chart) instructions above.
+
+{{% /notice %}}
+
+The following instructions will be applicable to upgrade operators within the 3.x release family
+as additional versions are released.
+
 To upgrade the operator, use the `helm upgrade` command. When upgrading the operator,
 the `helm upgrade` command requires that you supply a new Helm chart and image. For example:
 
@@ -104,7 +128,7 @@ $ helm upgrade \
 The `helm delete` command is used to remove an operator release and its associated resources from the Kubernetes cluster.  The release name used with the `helm delete` command is the same release name used with the `helm install` command (see [Install the Helm chart](#install-the-operator-helm-chart)).  For example:
 
 ```
-$ helm uninstall weblogic-operator
+$ helm delete weblogic-operator -n weblogic-operator-namespace
 ```
 
 {{% notice note %}}
