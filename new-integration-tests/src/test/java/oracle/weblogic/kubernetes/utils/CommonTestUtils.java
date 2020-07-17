@@ -961,7 +961,7 @@ public class CommonTestUtils {
     if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
       List<String> archiveAppsList = new ArrayList<>();
       List<String> buildAppDirList = new ArrayList<>(appSrcDirList);
-      boolean buildCoherenceGar = false;
+      boolean buildCoherence = false;
 
       for (String appSrcDir : appSrcDirList) {
         if (appSrcDir.contains(".war") || appSrcDir.contains(".ear")) {
@@ -970,8 +970,8 @@ public class CommonTestUtils {
           archiveAppsList.add(appSrcDir);
         }
 
-        if (appSrcDir.contains("coherence")) {
-          buildCoherenceGar = true;
+        if (appSrcDir.contains("coherence-proxy") || appSrcDir.contains("CoherenceApp")) {
+          buildCoherence = true;
         }
       }
 
@@ -998,7 +998,7 @@ public class CommonTestUtils {
           zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
           // build the archive list
           archiveList.add(zipFile);
-        } else if (buildCoherenceGar) {
+        } else if (buildCoherence) {
           // build the Coherence GAR file
           assertTrue(buildCoherenceArchive(defaultAppParams()
                   .srcDirList(buildAppDirList)),
