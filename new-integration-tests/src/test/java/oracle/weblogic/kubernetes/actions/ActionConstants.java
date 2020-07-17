@@ -43,18 +43,21 @@ public interface ActionConstants {
   public static final String WIT = "WIT";
   public static final String WDT = "WDT";
 
+  public static final String WIT_DOWNLOAD_URL_DEFAULT
+      = "https://github.com/oracle/weblogic-image-tool/releases/latest";
   public static final String WIT_DOWNLOAD_URL
-      = "https://github.com/oracle/weblogic-image-tool";
-  public static final String WIT_VERSION    = System.getProperty("wit.version", "latest");
-  public static final String WIT_FILE_NAME  = "imagetool.zip";
+      = System.getProperty("wit.download.url", WIT_DOWNLOAD_URL_DEFAULT);
+  public static final String WIT_DOWNLOAD_FILENAME_DEFAULT = "imagetool.zip";
 
+  public static final String WDT_DOWNLOAD_URL_DEFAULT
+      = "https://github.com/oracle/weblogic-deploy-tooling/releases/latest";
   public static final String WDT_DOWNLOAD_URL
-      = "https://github.com/oracle/weblogic-deploy-tooling";
+      = System.getProperty("wdt.download.url", WDT_DOWNLOAD_URL_DEFAULT);
   public static final String WDT_VERSION    = System.getProperty("wdt.version", "latest");
-  public static final String WDT_FILE_NAME  = "weblogic-deploy.zip";
+  public static final String WDT_DOWNLOAD_FILENAME_DEFAULT = "weblogic-deploy.zip";
 
   public static final String IMAGE_TOOL = WORK_DIR + "/imagetool/bin/imagetool.sh";
-  public static final String WDT_ZIP_PATH = DOWNLOAD_DIR + "/" + WDT_FILE_NAME;
+  public static final String WDT_ZIP_PATH = DOWNLOAD_DIR + "/" + WDT_DOWNLOAD_FILENAME_DEFAULT;
 
   // ------------ WLDF RBAC constants ------------------------------------------
   public static final String WLDF_CLUSTER_ROLE_NAME = "weblogic-domain-cluster-role";
