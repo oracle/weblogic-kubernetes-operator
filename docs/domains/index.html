@@ -1520,7 +1520,7 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "nodeName": {
-          "description": "NodeName is a request to schedule this Pod onto a specific Node. If it is non-empty, the scheduler simply schedules this pod onto that node, assuming that it fits the resource requirements.",
+          "description": "NodeName is a request to schedule this Pod onto a specific Node. If it is non-empty, the scheduler simply schedules this pod onto that node, assuming that it fits the resource requirements. See `kubectl explain pods.spec.nodeName`.",
           "type": "string"
         },
         "livenessProbe": {
@@ -1535,26 +1535,26 @@ window.onload = function() {
           }
         },
         "serviceAccountName": {
-          "description": "Name of the ServiceAccount to be used to run this Pod. If it is not set, default ServiceAccount will be used. The ServiceAccount has to exist at the time the Pod is created.",
+          "description": "Name of the ServiceAccount to be used to run this Pod. If it is not set, default ServiceAccount will be used. The ServiceAccount has to exist at the time the Pod is created. See `kubectl explain pods.spec.serviceAccountName`.",
           "type": "string"
         },
         "podSecurityContext": {
-          "description": "Pod-level security attributes.",
+          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
         },
         "priorityClassName": {
-          "description": "If specified, indicates the Pod\u0027s priority. \"system-node-critical\" and \"system-cluster-critical\" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be the default or zero, if there is no default.",
+          "description": "If specified, indicates the Pod\u0027s priority. \"system-node-critical\" and \"system-cluster-critical\" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be the default or zero, if there is no default. See `kubectl explain pods.spec.priorityClassName`.",
           "type": "string"
         },
         "volumes": {
-          "description": "Additional volumes to be created in the server Pod.",
+          "description": "Additional volumes to be created in the server Pod. See `kubectl explain pods.spec.volumes`.",
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
           }
         },
         "resources": {
-          "description": "Memory and CPU minimum requirements and limits for the WebLogic Server instance.",
+          "description": "Memory and CPU minimum requirements and limits for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
         "annotations": {
@@ -1562,22 +1562,22 @@ window.onload = function() {
           "$ref": "#/definitions/Map"
         },
         "env": {
-          "description": "A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.",
+          "description": "A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
           }
         },
         "restartPolicy": {
-          "description": "Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.",
+          "description": "Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. See `kubectl explain pods.spec.restartPolicy`.",
           "type": "string"
         },
         "nodeSelector": {
-          "description": "Selector which must match a Node\u0027s labels for the Pod to be scheduled on that Node.",
+          "description": "Selector which must match a Node\u0027s labels for the Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`.",
           "$ref": "#/definitions/Map"
         },
         "volumeMounts": {
-          "description": "Additional volume mounts for the server Pod.",
+          "description": "Additional volume mounts for the container running a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.",
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
@@ -1588,11 +1588,11 @@ window.onload = function() {
           "$ref": "#/definitions/Map"
         },
         "runtimeClassName": {
-          "description": "RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this Pod. If no RuntimeClass resource matches the named class, the Pod will not be run. If unset or empty, the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an alpha feature and may change in the future.",
+          "description": "RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this Pod. If no RuntimeClass resource matches the named class, the Pod will not be run. If unset or empty, the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an alpha feature and may change in the future. See `kubectl explain pods.spec.runtimeClassName`.",
           "type": "string"
         },
         "tolerations": {
-          "description": "If specified, the Pod\u0027s tolerations.",
+          "description": "If specified, the Pod\u0027s tolerations. See `kubectl explain pods.spec.tolerations`.",
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Toleration"
@@ -1603,22 +1603,22 @@ window.onload = function() {
           "$ref": "#/definitions/ProbeTuning"
         },
         "containers": {
-          "description": "Additional containers to be included in the server Pod.",
+          "description": "Additional containers to be included in the server Pod. See `kubectl explain pods.spec.containers`.",
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
           }
         },
         "containerSecurityContext": {
-          "description": "Container-level security attributes. Will override any matching Pod-level attributes.",
+          "description": "Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
         },
         "schedulerName": {
-          "description": "If specified, the Pod will be dispatched by the specified scheduler. If not specified, the Pod will be dispatched by the default scheduler.",
+          "description": "If specified, the Pod will be dispatched by the specified scheduler. If not specified, the Pod will be dispatched by the default scheduler. See `kubectl explain pods.spec.schedulerName`.",
           "type": "string"
         },
         "initContainers": {
-          "description": "Initialization containers to be included in the server Pod.",
+          "description": "Initialization containers to be included in the server Pod. See `kubectl explain pods.spec.initContainers`.",
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
@@ -1629,7 +1629,7 @@ window.onload = function() {
           "$ref": "#/definitions/Shutdown"
         },
         "affinity": {
-          "description": "If specified, the Pod\u0027s scheduling constraints.",
+          "description": "If specified, the Pod\u0027s scheduling constraints. See `kubectl explain pods.spec.affinity`",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity"
         }
       }

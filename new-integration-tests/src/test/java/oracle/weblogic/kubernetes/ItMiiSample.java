@@ -128,6 +128,16 @@ public class ItMiiSample {
       envMap.put("JAVA_HOME", witJavaHome);
     }
 
+    String witInstallerUrl = System.getProperty("wit.download.url");
+    if (witInstallerUrl != null) {
+      envMap.put("WIT_INSTALLER_URL", witInstallerUrl);
+    }
+
+    String wdtInstallerUrl = System.getProperty("wdt.download.url");
+    if (wdtInstallerUrl != null) {
+      envMap.put("WDT_INSTALLER_URL", wdtInstallerUrl);
+    }
+
     logger.info("Env. variables to the script {0}", envMap);
 
     // install traefik using the mii sample script

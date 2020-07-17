@@ -178,16 +178,23 @@ public class ConfigServlet extends HttpServlet {
 
     String dsName = request.getParameter("dsName");
     String serverName = request.getParameter("serverName");
-
-    ServerRuntimeMBean serverRuntime = getServerRuntime(serverName);
-    JDBCDataSourceRuntimeMBean[] jdbcDataSourceRuntimeMBeans = serverRuntime.getJDBCServiceRuntime().getJDBCDataSourceRuntimeMBeans();
-    for (JDBCDataSourceRuntimeMBean jdbcDataSourceRuntimeMBean : jdbcDataSourceRuntimeMBeans) {
-      if (jdbcDataSourceRuntimeMBean.getName().equals(dsName)) {
-        String testPool = jdbcDataSourceRuntimeMBean.testPool();
-        if (testPool == null) {
-          out.println("Connection successful");
+    System.out.println("ITTESTS:>>>>Testing connection pool in datasource : " + dsName + " in server " + serverName);
+    try {
+      ServerRuntimeMBean serverRuntime = getServerRuntime(serverName);
+      JDBCDataSourceRuntimeMBean[] jdbcDataSourceRuntimeMBeans = serverRuntime.getJDBCServiceRuntime().getJDBCDataSourceRuntimeMBeans();
+      System.out.println("ITTESTS:>>>>Getting datasource runtime mbeans");
+      for (JDBCDataSourceRuntimeMBean jdbcDataSourceRuntimeMBean : jdbcDataSourceRuntimeMBeans) {
+        System.out.println("ITTESTS:>>>>Found JDBC datasource runtime mbean: " + jdbcDataSourceRuntimeMBean.getName());
+        if (jdbcDataSourceRuntimeMBean.getName().equals(dsName)) {
+          System.out.println("ITTESTS:>>>>Testing connection pool for JDBC datasource runtime mbean: " + jdbcDataSourceRuntimeMBean.getName());
+          String testPool = jdbcDataSourceRuntimeMBean.testPool();
+          if (testPool == null) {
+            out.println("Connection successful");
+          }
         }
       }
+    } catch (Exception ex) {
+      ex.printStackTrace();
     }
   }
 
@@ -221,11 +228,14 @@ public class ConfigServlet extends HttpServlet {
 
   private ServerRuntimeMBean getServerRuntime(String serverName) {
     ServerRuntimeMBean[] serverRuntimes = domainRuntimeServiceMbean.getServerRuntimes();
+    System.out.println();
     for (ServerRuntimeMBean serverRuntime : serverRuntimes) {
+      System.out.println("ITTESTS:>>>>Found server runtime: " + serverRuntime.getName());
       if (serverRuntime.getName().equals(serverName)) {
         return serverRuntime;
       }
     }
+    System.out.println("ITTESTS:>>>>No server runtime found for name: " + serverName);
     return null;
   }
 
