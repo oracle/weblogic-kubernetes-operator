@@ -6,28 +6,23 @@ kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-  creationTimestamp: null
   name: traefik-pathrouting-1
   namespace: weblogic-domain1
 spec:
-  entryPoints: []
   routes:
   - kind: Rule
     match: PathPrefix(`/domain1`)
     middlewares:
     - name: middleware-domain1
       namespace: weblogic-domain1
-    priority: 0
     services:
     - kind: Service
       name: domain1-cluster-cluster-1
-      namespace: weblogic-domain1
       port: 8001
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
-  creationTimestamp: null
   name: middleware-domain1
   namespace: weblogic-domain1
 spec:
@@ -40,28 +35,23 @@ kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-  creationTimestamp: null
   name: traefik-pathrouting-2
   namespace: weblogic-domain2
 spec:
-  entryPoints: []
   routes:
   - kind: Rule
     match: PathPrefix(`/domain2`)
     middlewares:
     - name: middleware-domain2
       namespace: weblogic-domain2
-    priority: 0
     services:
     - kind: Service
       name: domain2-cluster-cluster-1
-      namespace: weblogic-domain2
       port: 8001
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
-  creationTimestamp: null
   name: middleware-domain2
   namespace: weblogic-domain2
 spec:

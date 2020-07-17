@@ -6,7 +6,6 @@ kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-  creationTimestamp: null
   name: traefik-tls-1
   namespace: weblogic-domain1
 spec:
@@ -15,34 +14,18 @@ spec:
   routes:
   - kind: Rule
     match: Host(`domain1.org`)
-    middlewares:
-    - name: middleware-tls-1
-      namespace: weblogic-domain1
-    priority: 0
     services:
     - kind: Service
       name: domain1-cluster-cluster-1
-      namespace: weblogic-domain1
       port: 8001
   tls:
      secretName: domain1-tls-cert
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  creationTimestamp: null
-  name: middleware-tls-1
-  namespace: weblogic-domain1
-spec:
-  headers:
-    sslRedirect: true
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-  creationTimestamp: null
   name: traefik-tls-2
   namespace: weblogic-domain2
 spec:
@@ -51,24 +34,10 @@ spec:
   routes:
   - kind: Rule
     match: Host(`domain2.org`)
-    middlewares:
-    - name: middleware-tls-2
-      namespace: weblogic-domain2
     priority: 0
     services:
     - kind: Service
       name: domain2-cluster-cluster-1
-      namespace: weblogic-domain2
       port: 8001
   tls:
-     secretName: domain1-tls-cert
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  creationTimestamp: null
-  name: middleware-tls-2
-  namespace: weblogic-domain2
-spec:
-  headers:
-    sslRedirect: true
+     secretName: domain2-tls-cert

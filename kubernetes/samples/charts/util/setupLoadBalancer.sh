@@ -89,7 +89,7 @@ function createTraefik() {
     helm repo add traefik https://containous.github.io/traefik-helm-chart
     helm repo update
   else
-    echo "traefik chart repository is already added."
+    echo "Containous chart repository is already added."
   fi
 
   if [ "$(helm list --namespace $TSPACE | grep $TNAME |  wc -l)" = 0 ]; then

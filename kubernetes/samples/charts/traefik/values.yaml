@@ -9,4 +9,4 @@ ports:
     nodePort: 30443
 
 additionalArguments: 
-  - "--log.level=DEBUG"
+  - "--log.level=INFO"

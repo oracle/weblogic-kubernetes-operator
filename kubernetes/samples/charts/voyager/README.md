@@ -67,7 +67,7 @@ Now we need to prepare some domains for Voyager load balancing.
 Create two WebLogic domains:
 - One domain with name `domain1` under namespace `weblogic-domain1`.
 - One domain with name `domain2` under namespace `weblogic-domain2`.
-- Each domain has a web application installed with the URL context `testwebapp`.
+Each domain has a web application installed with the URL context `testwebapp`.
 
 ### 2. Install the Voyager Ingress
 #### Install a host-routing Ingress
