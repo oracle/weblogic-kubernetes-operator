@@ -361,6 +361,7 @@ public class CrdHelper {
       generator.setIncludeAdditionalProperties(false);
       generator.setSupportObjectReferences(false);
       generator.setIncludeSchemaReference(false);
+      generator.addPackageToSuppressDescriptions("io.kubernetes.client.openapi.models");
       return generator;
     }
 
@@ -439,26 +440,33 @@ public class CrdHelper {
     }
 
     Step updateExistingCrd(Step next, V1CustomResourceDefinition existingCrd) {
-      existingCrd
-          .getSpec()
-          .addVersionsItem(
-              new V1CustomResourceDefinitionVersion()
-                  .name(KubernetesConstants.DOMAIN_VERSION)
-                  .schema(createSchemaValidation())
-                  .subresources(createSubresources())
-                  .served(true));
+      List<V1CustomResourceDefinitionVersion> versions = existingCrd.getSpec().getVersions();
+      for (V1CustomResourceDefinitionVersion version : versions) {
+        version.setStorage(false);
+      }
+      versions.add(0,
+          new V1CustomResourceDefinitionVersion()
+              .name(KubernetesConstants.DOMAIN_VERSION)
+              .schema(createSchemaValidation())
+              .subresources(createSubresources())
+              .served(true)
+              .storage(true));
 
       return new CallBuilder().replaceCustomResourceDefinitionAsync(
               existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next));
     }
 
     Step updateExistingBetaCrd(Step next, V1beta1CustomResourceDefinition existingCrd) {
-      existingCrd
-          .getSpec()
-          .addVersionsItem(
-              new V1beta1CustomResourceDefinitionVersion()
-                  .name(KubernetesConstants.DOMAIN_VERSION)
-                  .served(true));
+      List<V1beta1CustomResourceDefinitionVersion> versions = existingCrd.getSpec().getVersions();
+      for (V1beta1CustomResourceDefinitionVersion version : versions) {
+        version.setStorage(false);
+      }
+      versions.add(0,
+          new V1beta1CustomResourceDefinitionVersion()
+              .name(KubernetesConstants.DOMAIN_VERSION)
+              .served(true)
+              .storage(true));
+      existingCrd.getSpec().setVersion(KubernetesConstants.DOMAIN_VERSION);
 
       return new CallBuilder().replaceBetaCustomResourceDefinitionAsync(
           existingCrd.getMetadata().getName(), existingCrd, createBetaReplaceResponseStep(next));
@@ -569,13 +577,13 @@ public class CrdHelper {
       @Override
       public NextAction onSuccess(
           Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATING_CRD, callResponse);
+        LOGGER.info(MessageKeys.CREATING_CRD, callResponse.getResult().getMetadata().getName());
         return doNext(packet);
       }
 
       @Override
       protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATE_CRD_FAILED, callResponse);
+        LOGGER.info(MessageKeys.CREATE_CRD_FAILED, callResponse.getE().getResponseBody());
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
@@ -595,13 +603,13 @@ public class CrdHelper {
       @Override
       public NextAction onSuccess(
           Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATING_CRD, callResponse);
+        LOGGER.info(MessageKeys.CREATING_CRD, callResponse.getResult().getMetadata().getName());
         return doNext(packet);
       }
 
       @Override
       protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATE_CRD_FAILED, callResponse);
+        LOGGER.info(MessageKeys.CREATE_CRD_FAILED, callResponse.getE().getResponseBody());
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
@@ -621,13 +629,13 @@ public class CrdHelper {
       @Override
       public NextAction onSuccess(
           Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATING_CRD, callResponse);
+        LOGGER.info(MessageKeys.CREATING_CRD, callResponse.getResult().getMetadata().getName());
         return doNext(packet);
       }
 
       @Override
       protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.REPLACE_CRD_FAILED, callResponse);
+        LOGGER.info(MessageKeys.REPLACE_CRD_FAILED, callResponse.getE().getResponseBody());
         return isNotAuthorizedOrForbidden(callResponse)
            || ((callResponse.getE().getCause() instanceof StreamResetException) 
            && (callResponse.getExceptionString().contains(NO_ERROR)))
@@ -649,13 +657,13 @@ public class CrdHelper {
       @Override
       public NextAction onSuccess(
           Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATING_CRD, callResponse);
+        LOGGER.info(MessageKeys.CREATING_CRD, callResponse.getResult().getMetadata().getName());
         return doNext(packet);
       }
 
       @Override
       protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.REPLACE_CRD_FAILED, callResponse);
+        LOGGER.info(MessageKeys.REPLACE_CRD_FAILED, callResponse.getE().getResponseBody());
         return isNotAuthorizedOrForbidden(callResponse)
            || ((callResponse.getE().getCause() instanceof StreamResetException) 
            && (callResponse.getExceptionString().contains(NO_ERROR)))
