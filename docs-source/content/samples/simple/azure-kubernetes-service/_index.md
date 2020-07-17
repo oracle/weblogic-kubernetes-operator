@@ -97,7 +97,7 @@ az role assignment create --assignee <appId> --role Contributor
 
 ##### Docker Hub
 
-You will need a Docker Hub account. If you don't have an existing account, please sign up for a new account at [DockerHub](https://hub.docker.com/). Note down your user name, password and  email for Docker Hub. Because this guide uses a Docker image for a specific version of WLS, and WLS requires accepting license terms, do a Docker Hub "checkout" of [Oracle WebLogic Server](https://hub.docker.com/_/oracle-weblogic-server-12c).  This guide was written with 12.2.1.3, but other versions may work as well.
+You will need a Docker Hub account. If you don't have an existing account, please sign up for a new account at [DockerHub](https://hub.docker.com/). Note down your user name, password and  email for Docker Hub. Because this sample uses a Docker image for a specific version of WLS, and WLS requires accepting license terms, do a Docker Hub "checkout" of [Oracle WebLogic Server](https://hub.docker.com/_/oracle-weblogic-server-12c).  This sample was written with 12.2.1.3, but other versions may work as well.
 
 ##### Clone WebLogic Operator repository
 
@@ -107,12 +107,12 @@ Please clone this repository to your machine. We will use several scripts in thi
 git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
   
-{{% notice info %}} The following sections of the guide will take you step-by-step through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This allows you to understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
+{{% notice info %}} The following sections of the sample will take you step-by-step through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This allows you to understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
 {{% /notice %}}
 
 #### Create the AKS cluster
 
-This guide requires we disable http-application-routing by default.  If you want to enable  http_application_routing, please follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
+This sample requires we disable http-application-routing by default.  If you want to enable  http_application_routing, please follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
 
 Run the following commands to create the AKS cluster instance.
 
@@ -204,7 +204,7 @@ We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-azur
 
 ##### Generate configuration files
 
-This guide uses Kubernetes Persistent Volume Claims (PVC) and load balancing to bring WLS to AKS.  These features are expressed to Kubernetes using yaml files.  The script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh` generates the required configuration files automatically, given an input file containing the parameters.  A parameters file is provided at `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.yaml`.  Copy and customize this file for your needs.
+This sample uses Kubernetes Persistent Volume Claims (PVC) and load balancing to bring WLS to AKS.  These features are expressed to Kubernetes using yaml files.  The script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh` generates the required configuration files automatically, given an input file containing the parameters.  A parameters file is provided at `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.yaml`.  Copy and customize this file for your needs.
 
 For example, given the service principal created above, the following values must be substituted in your copy of the input file.
 
@@ -432,7 +432,7 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
    weblogic-operator-secrets                 Opaque                                1      2d21h
    ```
 
-   > **Note**: In the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this guide to ensure you correctly followed all of them.  The `default-token-mwdj8` shown above will have a different ending in your output.
+   > **Note**: In the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure you correctly followed all of them.  The `default-token-mwdj8` shown above will have a different ending in your output.
 
 3. We will use `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume we created previously.
 
