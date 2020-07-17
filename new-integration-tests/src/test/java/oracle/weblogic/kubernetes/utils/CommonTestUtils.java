@@ -33,6 +33,7 @@ import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
@@ -45,6 +46,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
@@ -57,6 +59,7 @@ import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
@@ -1808,7 +1811,7 @@ public class CommonTestUtils {
 
   /**
    * Generate a text file in RESULTS_ROOT directory by replacing template value.
-   * @param inputTemplateFile input template file 
+   * @param inputTemplateFile input template file
    * @param outputFile output file to be generated. This file will be copied to RESULTS_ROOT. If outputFile contains
    *                   a directory, then the directory will created if it does not exist.
    *                   example - crossdomxaction/istio-cdt-http-srvice.yaml
@@ -1892,6 +1895,7 @@ public class CommonTestUtils {
     logger.info("creating persistent volume for pvName {0}, domainUid: {1}, className: {2}",
         pvName, domainUid, className);
     Path pvHostPath = null;
+    // when tests are running in local box the PV directories need to exist
     try {
       pvHostPath = Files.createDirectories(Paths.get(
           PV_ROOT, className, pvName));
@@ -2099,6 +2103,35 @@ public class CommonTestUtils {
         }
       }
     }
+  }
+
+  /**
+   * Verify the default secret exists for the default service account.
+   * 
+   */
+  public static void verifyDefaultTokenExists() {
+    final LoggingFacade logger = getLogger();
+
+    ConditionFactory withStandardRetryPolicy
+        = with().pollDelay(0, SECONDS)
+        .and().with().pollInterval(5, SECONDS)
+        .atMost(5, MINUTES).await();
+
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> logger.info("Waiting for the default token to be available in default service account, "
+                + "elapsed time {0}, remaining time {1}",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(() -> {
+          V1ServiceAccountList sas = Kubernetes.listServiceAccounts("default");
+          for (V1ServiceAccount sa : sas.getItems()) {
+            if (sa.getMetadata().getName().equals("default")) {
+              List<V1ObjectReference> secrets = sa.getSecrets();
+              return !secrets.isEmpty();
+            }
+          }
+          return false;
+        });
   }
 
 }

@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -16,13 +15,10 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -43,6 +39,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyDefaultTokenExists;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
@@ -268,32 +265,5 @@ public class BuildApplication {
     }
     logger.info("Using image {0}", image);
   }
-
-  private static void verifyDefaultTokenExists() {
-    final LoggingFacade logger = getLogger();
-
-    ConditionFactory withStandardRetryPolicy
-        = with().pollDelay(0, SECONDS)
-        .and().with().pollInterval(5, SECONDS)
-        .atMost(5, MINUTES).await();
-
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Waiting for the default token to be available in default service account, "
-                + "elapsed time {0}, remaining time {1}",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> {
-          V1ServiceAccountList sas = Kubernetes.listServiceAccounts("default");
-          for (V1ServiceAccount sa : sas.getItems()) {
-            if (sa.getMetadata().getName().equals("default")) {
-              List<V1ObjectReference> secrets = sa.getSecrets();
-              return !secrets.isEmpty();
-            }
-          }
-          return false;
-        });
-  }
-
-
 
 }
