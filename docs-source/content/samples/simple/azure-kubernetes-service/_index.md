@@ -240,7 +240,7 @@ Completed
 
 ##### Apply generated configuration files
 
-In order to mount the file share as a persistent volume, we have provided a configuration file `pv.yaml`. You can find it from your output directory. The following content is an example that uses the default value `weblogic` as "shareName", `azure-secret` as "secretName", and default persistent volume claim name `azurefile`.
+In order to mount the file share as a persistent volume, we have provided a configuration file `pv.yaml`. You can find it in your output directory. The following content is an example that uses the default value `weblogic` as "shareName", `azure-secret` as "secretName", and default persistent volume claim name `azurefile`.
 
 ```yaml
 apiVersion: v1
