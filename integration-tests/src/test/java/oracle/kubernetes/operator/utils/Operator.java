@@ -219,8 +219,8 @@ public class Operator {
    * @throws Exception exception
    */
   public void destroy() throws Exception {
-    String cmd = "helm uninstall " + operatorMap.get("releaseName") + " --namespace " +  operatorMap.get("namespace");
-    
+    String cmd = "helm uninstall " + operatorMap.get("releaseName") + " --namespace " + operatorMap.get("namespace");
+
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
@@ -299,6 +299,7 @@ public class Operator {
 
   /**
    * Call Helm install.
+   *
    * @throws Exception on failure
    */
   public void callHelmInstall() throws Exception {
@@ -318,25 +319,25 @@ public class Operator {
       cmd.append("cd ");
       cmd.append(operatorMap.get("operatorGitVersionDir"))
           .append("/weblogic-kubernetes-operator");
-      
+
       cmd.append(" && helm install ")
-           .append(operatorMap.get("releaseName"))
-            .append(" kubernetes/charts/weblogic-operator");
+          .append(operatorMap.get("releaseName"))
+          .append(" kubernetes/charts/weblogic-operator");
     } else {
       cmd.append("cd ");
       cmd.append(BaseTest.getProjectRoot());
       cmd.append(" && helm install ")
           .append(operatorMap.get("releaseName"))
           .append(" kubernetes/charts/weblogic-operator");
-      cmd.append(" --values ")
-          .append(generatedInputYamlFile)
-          .append(" --namespace ")
-          .append(operatorNS)
-          .append(" --set \"imagePullPolicy=")
-          .append(imagePullPolicy)
-          .append("\" ");
-      cmd.append(" --wait --timeout 3m0s");
     }
+    cmd.append(" --values ")
+        .append(generatedInputYamlFile)
+        .append(" --namespace ")
+        .append(operatorNS)
+        .append(" --set \"imagePullPolicy=")
+        .append(imagePullPolicy)
+        .append("\" ");
+    cmd.append(" --wait --timeout 3m0s");
 
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
@@ -349,6 +350,7 @@ public class Operator {
 
   /**
    * Call Helm upgrade.
+   *
    * @param upgradeSet upgrade properties
    * @throws Exception on failure
    */
@@ -376,6 +378,7 @@ public class Operator {
 
   /**
    * get Helm values.
+   *
    * @return values
    * @throws Exception on failure
    */
@@ -385,7 +388,7 @@ public class Operator {
         .append(" && helm get values ")
         .append(operatorMap.get("releaseName"));
 
-    cmd.append(" --namespace " +  operatorMap.get("namespace"));
+    cmd.append(" --namespace " + operatorMap.get("namespace"));
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -653,6 +656,7 @@ public class Operator {
 
   /**
    * writes operator pod describe and logs to a file.
+   *
    * @param logLocation - location where the logs to be written
    */
   public void writePodLog(String logLocation) throws Exception {
