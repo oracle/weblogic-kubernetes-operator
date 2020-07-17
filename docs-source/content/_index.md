@@ -27,8 +27,7 @@ The [current release of the operator](https://github.com/oracle/weblogic-kuberne
 This release was published on July 17, 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
 
 This release introduces _non-backward compatible_ changes; however, operators using this release can be run in the same
-Kubernetes cluster as operators using the 2.6.0 version allowing for staged migration.  You can replace an operator using 2.6.0 with an operator using a 3.x release without needing to recreate
-any existing domains; however, you must delete the 2.6.0 Helm release and then install this version rather than using a Helm upgrade. When the 3.x operator starts, it will roll any running WebLogic Server instances
+Kubernetes cluster as operators using the 2.6.0 version allowing for staged migration. You can replace a 2.6.0 operator with a 3.x operator without needing to recreate any existing domains; however, you must delete the 2.6.0 Helm release and then install the 3.x version rather than using a Helm upgrade. When the 3.x operator starts, it will roll any running WebLogic Server instances
 started by the 2.6.0 operator. See the operator upgrade guide [here]({{< relref "/userguide/managing-operators/_index#upgrade-the-operator" >}}).
 
 ***
