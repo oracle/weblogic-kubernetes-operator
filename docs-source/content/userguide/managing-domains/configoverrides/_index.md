@@ -54,11 +54,11 @@ For a detailed walk-through of these steps, see the [Step-by-step guide](#step-b
 
 #### How do overrides work during runtime?
 
-* Configuration overrides are processed during the operator's [introspection](({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}})) phase. 
+* Configuration overrides are processed during the operator's [introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}) phase.
 * Introspection automatically occurs when:
   1. The operator is starting a WebLogic Server instance when there are currently no other servers running. This occurs when the operator first starts servers for a domain or when starting servers following a full domain shutdown.
   2. For Model in Image, the operator determines that at least one WebLogic Server instance that is currently running must be shut down and restarted. This could be a rolling of one or more clusters, the shut down and restart of one or more WebLogic Server instances, or a combination.
-* You can [initiate introspection](({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md#initiate-introspection" >}})) by changing the value of the Domain `introspectVersion` field.
+* You can [initiate introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md#initiating-introspection" >}}) by changing the value of the Domain `introspectVersion` field.
 * For configuration overrides and during introspection, the operator will:
   * Resolve any macros in your override templates.
   * Place expanded override templates in the `optconfig` directory located in each WebLogic domain home directory.  
@@ -130,9 +130,9 @@ The behavior when using an unsupported override is undefined.
 
 ### Overrides distribution
 
-The operator generates the final configuration overrides, combining customer-provided configuration overrides and operator-generated overrides, during the operator's introspection phase. These overrides are then used when starting or restarting WebLogic Server instances. Starting with operator version 3.0.0, these [overrides can also be distributed](({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md#distributing-changes-to-configuration-overrides" >}})) and applied to already running WebLogic Server instances.
+The operator generates the final configuration overrides, combining customer-provided configuration overrides and operator-generated overrides, during the operator's introspection phase. These overrides are then used when starting or restarting WebLogic Server instances. Starting with operator version 3.0.0, these [overrides can also be distributed]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md#distributing-changes-to-configuration-overrides" >}}) and applied to already running WebLogic Server instances.
 
-For [Domain in PV](({{< relref "/userguide/managing-domains/domain-lifecycle/restarting.md#domain-in-pv" >}})), the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.
+For [Domain in PV]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting.md#domain-in-pv" >}}), the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.
 
 ---
 ### Override template names and syntax
@@ -333,7 +333,7 @@ Best practices for data source modules and their overrides:
 * Configure the names of each Secret in Domain YAML file.
   * If the Secret contains the WebLogic admin `username` and `password` keys, then set the Domain YAML file `webLogicCredentialsSecret` field.
   * For all other Secrets, add them to the Domain YAML file `configuration.secrets` field. Note: This must be in an array format even if you only add one Secret (see the sample Domain YAML below).
-* Changes to configuration overrides, including the contents of the ConfigMap containing the override templates or the contents of referenced Secrets, do not take effect until the operator runs or repeats its [introspection](({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}})) of the WebLogic domain configuration.
+* Changes to configuration overrides, including the contents of the ConfigMap containing the override templates or the contents of referenced Secrets, do not take effect until the operator runs or repeats its [introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}) of the WebLogic domain configuration.
 * If your configuration overrides modify non-dynamic MBean attributes and you currently have WebLogic Server instances from this domain running:
   * Decide if the changes you are making to non-dynamic MBean attributes can be applied by rolling the affected clusters or Managed Server instances, or if the change requires a full domain shutdown. (See [Overrides distribution](#overrides-distribution))
   * If a full domain shut down is requried, stop all running WebLogic Server instance Pods in your domain and then restart them. (See [Starting and stopping servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
