@@ -28,8 +28,9 @@ public class DomainSpec {
 
   @ApiModelProperty(
       "The folder for the WebLogic Domain. Not required."
-          + " Defaults to /shared/domains/domains/<domainUID> if domainHomeInImage is false."
-          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true.")
+          + " Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume."
+          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image."
+          + " Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel.")
   private String domainHome;
 
   @ApiModelProperty(
@@ -50,7 +51,7 @@ public class DomainSpec {
 
   @ApiModelProperty(
       "Specified whether the log home folder is enabled. Not required. "
-          + "Defaults to true if domainHomeInImage is false; false, otherwise.")
+          + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled;
 
   @ApiModelProperty(
@@ -64,7 +65,7 @@ public class DomainSpec {
   private Boolean includeServerOutInPodLog;
 
   @ApiModelProperty(
-      "The WebLogic Docker image; required when domainHomeInImage is true; "
+      "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; "
           + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
   private String image;
 
@@ -83,21 +84,42 @@ public class DomainSpec {
       allowableValues = "range[0,infinity]")
   private Integer replicas;
 
+  @Deprecated
   @ApiModelProperty(
-      "True indicates that the domain home file system is contained in the Docker image"
+      "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
+          + " True indicates that the domain home file system is contained in the Docker image"
           + " specified by the image field. False indicates that the domain home file system is located"
           + " on a persistent volume.")
   private Boolean domainHomeInImage;
 
-  @ApiModelProperty("Properties affecting the WebLogic domain configuration.")
+  @ApiModelProperty(
+      "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
+          + " Image indicates that the domain home file system is contained in the Docker image"
+          + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
+          + " on a persistent volume.  FromModel indicates that the domain home file system will be created"
+          + " and managed by the operator based on a WDT domain model."
+          + " If this field is specified it overrides the value of domainHomeInImage. If both fields are"
+          + " unspecified then domainHomeSourceType defaults to Image.")
+  private String domainHomeSourceType;
+
+  @ApiModelProperty(
+      "If present, every time this value is updated, the operator will start introspect domain job")
+  private String introspectVersion;
+
+  @ApiModelProperty("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
 
+  @Deprecated
   @ApiModelProperty(
-      "The name of the config map for optional WebLogic configuration overrides.")
+      "Deprecated. Use configuration.overridesConfigMap instead."
+          + " Ignored if configuration.overridesConfigMap is specified."
+          + " The name of the config map for optional WebLogic configuration overrides.")
   private String configOverrides;
 
+  @Deprecated
   @ApiModelProperty(
-      "A list of names of the secrets for optional WebLogic configuration overrides.")
+      "Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
+          + " A list of names of the secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets = new ArrayList<>();
 
   @ApiModelProperty("Configuration for the Administration Server.")
@@ -108,6 +130,9 @@ public class DomainSpec {
 
   @ApiModelProperty("Configuration for the clusters.")
   private List<Cluster> clusters = new ArrayList<>();
+
+  @ApiModelProperty("Experimental feature configurations.")
+  private Experimental experimental;
 
   @ApiModelProperty("Configuration affecting server pods.")
   private ServerPod serverPod;
@@ -360,6 +385,40 @@ public class DomainSpec {
     this.domainHomeInImage = domainHomeInImage;
   }
 
+  public DomainSpec domainHomeSourceType(String domainHomeSourceType) {
+    this.domainHomeSourceType = domainHomeSourceType;
+    return this;
+  }
+
+  public String domainHomeSourceType() {
+    return domainHomeSourceType;
+  }
+
+  public String getDomainHomeSourceType() {
+    return domainHomeSourceType;
+  }
+
+  public void setDomainHomeSourceType(String domainHomeSourceType) {
+    this.domainHomeSourceType = domainHomeSourceType;
+  }
+
+  public DomainSpec introspectVersion(String introspectVersion) {
+    this.introspectVersion = introspectVersion;
+    return this;
+  }
+
+  public String introspectVersion() {
+    return introspectVersion;
+  }
+
+  public String getIntrospectVersion() {
+    return introspectVersion;
+  }
+
+  public void setIntrospectVersion(String introspectVersion) {
+    this.introspectVersion = introspectVersion;
+  }
+
   public DomainSpec configuration(Configuration configuration) {
     this.configuration = configuration;
     return this;
@@ -501,6 +560,23 @@ public class DomainSpec {
     this.clusters = clusters;
   }
 
+  public DomainSpec experimental(Experimental experimental) {
+    this.experimental = experimental;
+    return this;
+  }
+
+  public Experimental experimental() {
+    return experimental;
+  }
+
+  public Experimental getExperimental() {
+    return experimental;
+  }
+
+  public void setExperimental(Experimental experimental) {
+    this.experimental = experimental;
+  }
+
   public DomainSpec serverPod(ServerPod serverPod) {
     this.serverPod = serverPod;
     return this;
@@ -586,12 +662,15 @@ public class DomainSpec {
             .append("imagePullSecrets", imagePullSecrets)
             .append("replicas", replicas)
             .append("domainHomeInImage", domainHomeInImage)
+            .append("domainHomeSourceType", domainHomeSourceType)
+            .append("introspectVersion", introspectVersion)
             .append("configuration", configuration)
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets)
             .append("adminServer", adminServer)
             .append("managedServers", managedServers)
             .append("clusters", clusters)
+            .append("experimental", experimental)
             .append("serverStartState", serverStartState)
             .append("serverPod", serverPod)
             .append("serverService", serverService)
@@ -617,12 +696,15 @@ public class DomainSpec {
             .append(imagePullSecrets)
             .append(replicas)
             .append(domainHomeInImage)
+            .append(domainHomeSourceType)
+            .append(introspectVersion)
             .append(configuration)
             .append(configOverrides)
             .append(configOverrideSecrets)
             .append(adminServer)
             .append(managedServers)
             .append(clusters)
+            .append(experimental)
             .append(serverPod)
             .append(serverService)
             .append(serverStartState)
@@ -656,12 +738,15 @@ public class DomainSpec {
             .append(imagePullSecrets, rhs.imagePullSecrets)
             .append(replicas, rhs.replicas)
             .append(domainHomeInImage, rhs.domainHomeInImage)
+            .append(domainHomeSourceType, rhs.domainHomeSourceType)
+            .append(introspectVersion, rhs.introspectVersion)
             .append(configuration, rhs.configuration)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(adminServer, rhs.adminServer)
             .append(managedServers, rhs.managedServers)
             .append(clusters, rhs.clusters)
+            .append(experimental, rhs.experimental)
             .append(serverPod, rhs.serverPod)
             .append(serverService, rhs.serverService)
             .append(serverStartState, rhs.serverStartState)

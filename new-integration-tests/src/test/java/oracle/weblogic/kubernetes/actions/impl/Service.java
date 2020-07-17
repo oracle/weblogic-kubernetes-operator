@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes.actions.impl;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 
@@ -66,6 +67,16 @@ public class Service {
    */
   public static int getServicePort(String namespace, String serviceName, String channelName) {
     return Kubernetes.getServicePort(namespace, serviceName, channelName);
+  }
+
+  /**
+   * List services in a namespace.
+   *
+   * @param namespace namespace in which to list services
+   * @return V1ServiceList
+   */
+  public static V1ServiceList listServices(String namespace) {
+    return Kubernetes.listServices(namespace);
   }
 
 }

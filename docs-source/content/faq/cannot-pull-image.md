@@ -2,7 +2,8 @@
 title: "Cannot pull image"
 date: 2019-03-23T08:08:19-04:00
 draft: false
-weight: 10
+weight: 2
+description: "My domain will not start and I see errors like `ImagePullBackoff` or `Cannot pull image`."
 ---
 
 > My domain will not start and I see errors like `ImagePullBackoff` or `Cannot pull image`
@@ -10,7 +11,7 @@ weight: 10
 When you see these kinds of errors, it means that Kubernetes cannot find your Docker image.
 The most common causes are:
 
-* The `image` value in your domain resource is set incorrectly, meaning Kubernetes will be
+* The `image` value in your Domain is set incorrectly, meaning Kubernetes will be
   trying to pull the wrong image.
 * The image requires authentication or permission in order to pull it and you have not
   configured Kubernetes with the necessary credentials, for example in an `imagePullSecret`.
@@ -91,17 +92,16 @@ Here is an example of part of a domain custom resource file with the `imagePullS
 specified:
 
 ```
-apiVersion: "weblogic.oracle/v7"
+apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
   name: domain1
   namespace: default
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
 spec:
   domainHome: /u01/oracle/user_projects/domains/domain1
-  domainHomeInImage: true
+  domainHomeSourceType: Image
   image: "some.registry.com/owner/domain1:1.0"
   imagePullPolicy: "IfNotPresent"
   imagePullSecrets:
@@ -122,15 +122,37 @@ kubectl patch serviceaccount default \
 ```
 
 {{% notice note %}}
-You can provide mutliple `imagePullSecrets` if you need to pull Docker images from multiple
+You can provide multiple `imagePullSecrets` if you need to pull Docker images from multiple
 remote Docker registries or if your images require different authentication credentials.
 For more information, see [Docker Image Protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
 {{% /notice %}}
 
+#### Pushing the image to a repository
+
+If you have an image in your local repository that you would like to copy to
+a remote repository, then the Docker steps are:
+
+- Use [docker login](https://docs.docker.com/engine/reference/commandline/login/)
+  to log in to the target repository's registry. For example:
+  ```
+  docker login some.registry.com -u username -p password
+  ```
+- Use [docker tag](https://docs.docker.com/engine/reference/commandline/tag/)
+  to mark the image with the target registry, owner, repository name, and tag.
+  For example:
+  ```
+  docker tag domain1:1.0 some.registry.com/owner/domain1:1.0
+  ```
+- Use [docker push](https://docs.docker.com/engine/reference/commandline/push/)
+  to push the image to the repository. For example:
+  ```
+  docker push some.registry.com/owner/domain1:1.0
+  ```
+
 #### Manually copying the image to your worker nodes
 
 If you are not able to use a remote Docker registry, for example if your Kubernetes cluster is
-in a secure network with no external access, you can manually copy the Docker images to the
+in a secure network with no external access, then you can manually copy the Docker images to the
 cluster instead.
 
 On the machine where you created the image, export it into a TAR file using this command:
@@ -150,4 +172,4 @@ docker load < domain1.tar
 
 After you have ensured that the images are accessible on all worker nodes, you may need to restart
 the pods so that Kubernetes will attempt to pull the images again.   You can do this by
-deleting the pods themselves, or deleting the domain resource and then recreating it.
+deleting the pods themselves, or deleting the Domain and then recreating it.

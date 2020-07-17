@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -16,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -32,6 +34,8 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
+import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
+
 public class PodHelper {
   static final long DEFAULT_ADDITIONAL_DELETE_TIME = 10;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -40,12 +44,31 @@ public class PodHelper {
   }
 
   /**
-   * Creates a managed server pod resource, based on the specified packet.
+   * Creates an admin server pod resource, based on the specified packet.
+   * Expects the packet to contain a domain presence info as well as:
+   *   SCAN                 the topology for the server (WlsServerConfig)
+   *   DOMAIN_TOPOLOGY      the topology for the domain (WlsDomainConfig)
+   *
    *
    * @param packet a packet describing the domain model and topology.
    * @return an appropriate Kubernetes resource
    */
-  static V1Pod createManagedServerPodModel(Packet packet) {
+  public static V1Pod createAdminServerPodModel(Packet packet) {
+    return new AdminPodStepContext(null, packet).createPodModel();
+  }
+
+  /**
+   * Creates a managed server pod resource, based on the specified packet.
+   * Expects the packet to contain a domain presence info as well as:
+   *   CLUSTER_NAME         (optional) the name of the cluster to which the server is assigned
+   *   SCAN                 the topology for the server (WlsServerConfig)
+   *   DOMAIN_TOPOLOGY      the topology for the domain (WlsDomainConfig)
+   *
+   *
+   * @param packet a packet describing the domain model and topology.
+   * @return an appropriate Kubernetes resource
+   */
+  public static V1Pod createManagedServerPodModel(Packet packet) {
     return new ManagedPodStepContext(null, packet).createPodModel();
   }
 
@@ -143,6 +166,7 @@ public class PodHelper {
     return null;
   }
 
+
   /**
    * Factory for {@link Step} that creates admin server pod.
    *
@@ -204,9 +228,11 @@ public class PodHelper {
 
   static class AdminPodStepContext extends PodStepContext {
     static final String INTERNAL_OPERATOR_CERT_ENV = "INTERNAL_OPERATOR_CERT";
+    private final Packet packet;
 
     AdminPodStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
+      this.packet = packet;
 
       init();
     }
@@ -233,7 +259,11 @@ public class PodHelper {
 
     @Override
     Step replaceCurrentPod(Step next) {
-      return createCyclePodStep(next);
+      if (MakeRightDomainOperation.isInspectionRequired(packet)) {
+        return MakeRightDomainOperation.createStepsToRerunWithIntrospection(packet);
+      } else {
+        return createCyclePodStep(next);
+      }
     }
 
     @Override
@@ -361,28 +391,33 @@ public class PodHelper {
     @Override
     // let the pod rolling step update the pod
     Step replaceCurrentPod(Step next) {
+      return deferProcessing(createCyclePodStep(next));
+    }
+
+    private Step deferProcessing(Step deferredStep) {
       synchronized (packet) {
-        @SuppressWarnings("unchecked")
-        Map<String, Step.StepAndPacket> rolling =
-            (Map<String, Step.StepAndPacket>) packet.get(ProcessingConstants.SERVERS_TO_ROLL);
-        if (rolling != null) {
-          rolling.put(
-              getServerName(),
-              new Step.StepAndPacket(
-                  DomainStatusUpdater.createProgressingStep(
-                      DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON,
-                      false,
-                      createCyclePodStep(next)),
-                  packet.clone()));
-        }
+        Optional.ofNullable(getServersToRoll()).ifPresent(r -> r.put(getServerName(), createRollRequest(deferredStep)));
       }
       return null;
     }
 
+    private Step.StepAndPacket createRollRequest(Step deferredStep) {
+      return new Step.StepAndPacket(createProgressingStep(deferredStep), packet.clone());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Step.StepAndPacket> getServersToRoll() {
+      return (Map<String, Step.StepAndPacket>) packet.get(SERVERS_TO_ROLL);
+    }
+
+    private Step createProgressingStep(Step actionStep) {
+      return DomainStatusUpdater.createProgressingStep(
+          DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, actionStep);
+    }
+
     @Override
     Step createNewPod(Step next) {
-      return DomainStatusUpdater.createProgressingStep(
-          DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, createPod(next));
+      return createProgressingStep(createPod(next));
     }
 
     @Override
@@ -429,10 +464,7 @@ public class PodHelper {
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       List<V1EnvVar> envVars = createCopy((List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS));
 
-      List<V1EnvVar> vars = new ArrayList<>();
-      if (envVars != null) {
-        vars.addAll(envVars);
-      }
+      List<V1EnvVar> vars = new ArrayList<>(envVars);
       addStartupEnvVars(vars);
       return vars;
     }

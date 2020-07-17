@@ -23,37 +23,12 @@ using the operator to deploy and run a WebLogic domain container-packaged web ap
 ***
 #### Current production release
 
-The [current production release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.6.0.
-This release was published on June 22, 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
+The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.0.0.
+This release was published on July 17, 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
 
-#### Preview of next major release
-
-The [current preview release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.0.0-rc1 (release candidate).
-This release candidate is suitable for use by early adopters who wish to test 3.0.0 features and provide feedback.
-This release candidate was published on May 8, 2020.  There may be additional release candidates before the final 3.0.0 release.
-
-This release candidate introduces _non-backward compatible_ changes.  This release candidate cannot be run in the same
-cluster as another release of the operator.  You can upgrade from 2.6.0 to 3.0.0-rc1 without needing to restart or recreate
-any existing domains. However, please note that we _do_ plan to support running the final 3.0.0
-release in the same cluster with at least one 2.x release of the operator to allow for staged migration.
-
-The feature changes in 3.0.0-rc1 are:
-
-* Introduction of a new ["Model In Image"]({{% relref "/userguide/managing-domains/model-in-image" %}}) feature which allows you to have a domain
-  created at pod startup time from a WebLogic Deploy Tool model and archive.
-  This supports user-requested use cases like creating multiple domains from
-  the same model and automated updating of the domain based on model changes.
-  The operator automates management of the domain encryption keys to ensure
-  that they are not changed during domain updates.
-  We provide a [sample]({{% relref "/samples/simple/domains/model-in-image" %}}) that
-  demonstrates the key use cases for this feature.
-* Support for running the operator on Kubernetes 1.16.
-* Deprecation and removal of support for running the operator on Kubernetes 1.13
-  and earlier versions.
-* Deprecation and removal of support for Helm 2.x.  Helm 2.x uses the "tiller" pod
-  which needs to run with elevated privileges (`cluster-admin` or very close to that)
-  and which could be a vector for a privilege escalation attack.  Helm 3.x removes
-  Tiller and does not create the same exposure.
+This release introduces _non-backward compatible_ changes; however, operators using this release can be run in the same
+Kubernetes cluster as operators using the 2.6.0 version allowing for staged migration. You can replace a 2.6.0 operator with a 3.x operator without needing to recreate any existing domains; however, you must delete the 2.6.0 Helm release and then install the 3.x version rather than using a Helm upgrade. When the 3.x operator starts, it will roll any running WebLogic Server instances
+started by the 2.6.0 operator. See the operator upgrade guide [here]({{< relref "/userguide/managing-operators/installation/_index.md#upgrade-the-operator" >}}).
 
 ***
 

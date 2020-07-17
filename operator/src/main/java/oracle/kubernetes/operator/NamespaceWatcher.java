@@ -54,4 +54,9 @@ public class NamespaceWatcher extends Watcher<V1Namespace> {
     return watchBuilder
         .createNamespacesWatch();
   }
+
+  @Override
+  public String getNamespace() {
+    return null;
+  }
 }

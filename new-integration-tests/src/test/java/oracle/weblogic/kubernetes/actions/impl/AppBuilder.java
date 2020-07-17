@@ -10,8 +10,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -19,14 +17,13 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultC
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
  *  Implementation of actions that build an application archive file.
  */
 
 public class AppBuilder {
-  private static final LoggingFacade logger = LoggingFactory.getLogger(AppBuilder.class);
-
   private static final String ARCHIVE_SRC_DIR = ARCHIVE_DIR + "/wlsdeploy/applications";
   
   private AppParams params;
@@ -77,7 +74,7 @@ public class AppBuilder {
             ARCHIVE_SRC_DIR);
       }
     } catch (IOException ioe) {    
-      logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
+      getLogger().severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
       return false;
     }
 
@@ -93,6 +90,39 @@ public class AppBuilder {
     // build a zip file that can be passed to WIT
     String zipPath = String.format("%s/%s.zip", ARCHIVE_DIR, params.appName());
     boolean zipBuilt = buildZipArchive(zipPath, ARCHIVE_DIR);
+
+    return jarBuilt && zipBuilt;
+  }
+
+  /**
+   * Build an application archive using a pre-populated AppParams instance.
+   * @return true if the command succeeds
+   */
+  public boolean buildCoherence() {
+    // prepare the archive directory and copy over the app src
+    try {
+      cleanupDirectory(ARCHIVE_SRC_DIR);
+      checkDirectory(ARCHIVE_SRC_DIR);
+      for (String item : params.srcDirList()) {
+        copyFolder(APP_DIR + "/" + item, ARCHIVE_SRC_DIR);
+      }
+    } catch (IOException ioe) {
+      getLogger().info("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
+      return false;
+    }
+
+    // make sure that we always have an app name
+    if (params.appName() == null) {
+      params.appName(params.srcDirList().get(0));
+    }
+
+    // build the app archive
+    String jarPath = String.format("%s.gar", params.appName());
+    boolean jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
+
+    // build a zip file that can be passed to WIT
+    String zipPath = String.format("%s/%s.zip", ARCHIVE_DIR, params.appName());
+    boolean zipBuilt = buildCoherenceZipArchive(zipPath, ARCHIVE_DIR);
 
     return jarBuilt && zipBuilt;
   }
@@ -123,10 +153,15 @@ public class AppBuilder {
    * @param zipPath zip file path for the resulting archive
    * @param srcDir source directory
    */
-  private boolean buildZipArchive(
+  public boolean buildZipArchive(
       String zipPath, 
       String srcDir
   ) {
+
+    // make sure that we always have an app name
+    if (params.appName() == null) {
+      params.appName(params.srcDirList().get(0));
+    }
 
     String cmd = String.format(
         "cd %s ; zip %s wlsdeploy/applications/%s.ear ", 
@@ -142,8 +177,34 @@ public class AppBuilder {
   }
 
   /**
+   * Build a zip archive that includes coh-proxy-server.gar in the srcDir.
+   *
+   * @param zipPath zip file path for the resulting archive
+   * @param srcDir source directory
+   */
+  public boolean buildCoherenceZipArchive(String zipPath, String srcDir) {
+
+    // make sure that we always have an app name
+    if (params.appName() == null) {
+      params.appName(params.srcDirList().get(0));
+    }
+
+    String cmd = String.format(
+        "cd %s ; zip %s wlsdeploy/applications/%s.gar ",
+        srcDir,
+        zipPath,
+        params.appName());
+
+    return Command.withParams(
+        defaultCommandParams()
+            .command(cmd)
+            .redirect(false))
+        .execute();
+  }
+
+  /**
    * Archive an application from provided ear or war file that can be used by WebLogic Image Tool
-   * to create an image with the application.
+   * to create an image with the application for a model-in-image use case.
    *
    * @return true if the operation succeeds
    */
@@ -157,14 +218,14 @@ public class AppBuilder {
       checkDirectory(appDir);
       for (String appSrcFile : srcFiles) {
         if (appSrcFile.length() > 0) {
-          logger.info("copy {0]} to {1} ", appSrcFile, appDir);
+          getLogger().info("copy {0]} to {1} ", appSrcFile, appDir);
           String fileName = appSrcFile.substring(appSrcFile.lastIndexOf("/") + 1);
           Files.copy(Paths.get(appSrcFile), Paths.get(appDir + "/" + fileName),
                   StandardCopyOption.REPLACE_EXISTING);
         }
       }
     } catch (IOException ioe) {
-      logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
+      getLogger().severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
       return false;
     }
 

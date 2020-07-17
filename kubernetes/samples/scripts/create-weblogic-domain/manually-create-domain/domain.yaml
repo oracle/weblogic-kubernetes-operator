@@ -1,10 +1,10 @@
-# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.  Please read through the comments which explain
 # what updates are needed.
 #
-apiVersion: "weblogic.oracle/v7"
+apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
   # Update this with the `domainUID` of your domain:
@@ -12,7 +12,6 @@ metadata:
   # Update this with the namespace your domain will run in:
   namespace: weblogic
   labels:
-    weblogic.resourceVersion: domain-v2
     # Update this with the `domainUID` of your domain:
     weblogic.domainUID: domain1
 
@@ -21,8 +20,8 @@ spec:
   # Note that this might be in the image itself or in a mounted volume or network storage.
   domainHome: /u01/oracle/user_projects/domains/domain1
 
-  # If the domain home is inside the Docker image, set this to `true`, otherwise set `false`:
-  domainHomeInImage: true
+  # Domain home source type.  Legal values are Image, PersistentVolume, or FromModel
+  domainHomeSourceType: Image
 
   # Update this with the name of the Docker image that will be used to run your domain:
   image: "my-domain1-image:1.0"
@@ -66,7 +65,10 @@ spec:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
-      value: "-Xms64m -Xmx256m "
+      value: "-Xms256m -Xmx512m -Djava.security.egd=file:/dev/./urandom "
+    requests:
+      cpu: "250m"
+      memory: "768Mi"
 
     # If you are storing your domain on a persistent volume (as opposed to inside the Docker image),
     # then uncomment this section and provide the PVC details and mount path here (standard images

@@ -16,9 +16,9 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Operator prerequisites
 
-For the current production release 2.6.0:
+For the current production release 3.0.0:
 
-* Kubernetes 1.14.8+, 1.15.7+, 1.1.6.0+, 1.17.0+, and 1.18.0+ (check with `kubectl version`).
+* Kubernetes 1.14.8+, 1.15.7+, 1.16.0+, 1.17.0+, and 1.18.0+ (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`) *or* OpenShift SDN on OpenShift 4.3 systems.
 * Docker 18.9.1 or 19.03.1 (check with `docker version`) *or* CRI-O 1.14.7 (check with `crictl version | grep RuntimeVersion`).
 * Helm 3.0.3+ (check with `helm version --client --short`).
@@ -30,7 +30,6 @@ For the current production release 2.6.0:
 * You must have the `cluster-admin` role to install the operator.  The operator does
   not need the `cluster-admin` role at runtime.
 * We do not currently support running WebLogic in non-Linux containers.
-
 
 ### Cloud providers
 

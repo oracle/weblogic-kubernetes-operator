@@ -140,7 +140,39 @@ public class ItOperatorUpgrade extends BaseTest {
     managed1CreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server1");
     managed2CreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server2");
     adminCreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-admin-server");
-    upgradeOperator();
+    uninstallAndInstallNewVersionOperatorAndVerify();
+    testCompletedSuccessfully = true;
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
+  }
+
+  /**
+   * Test for upgrading Operator from release 2.6.0 to develop branch.
+   *
+   * @throws Exception when upgrade fails
+   */
+  @Test
+  public void testOperatorUpgradeFrom2_6_0() throws Exception {
+    Assumptions.assumeTrue(QUICKTEST);
+    testCompletedSuccessfully = false;
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    OP_NS = "weblogic-operator260";
+    DOM_NS = "weblogic-domain260";
+    namespaceList.append(OP_NS);
+    namespaceList.append(" ").append(DOM_NS);
+    OP_DEP_NAME = "operator-upgrade260";
+    OP_SA = "operator-sa260";
+    DUID = "operatordomain260";
+    setupOperatorAndDomain("release/2.6.0", "2.6.0");
+
+    // Save the CreateTimeStamp for the server pod(s) to compare with
+    // CreateTimeStamp after upgrade to make sure the pod(s) are not re-stated
+    managed1CreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server1");
+    managed2CreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server2");
+    adminCreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-admin-server");
+    uninstallAndInstallNewVersionOperatorAndVerify();
+
     testCompletedSuccessfully = true;
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
   }
@@ -156,6 +188,30 @@ public class ItOperatorUpgrade extends BaseTest {
     checkDomainNotRestarted();
     testClusterScaling(operator, domain, false);
   }
+
+  /**
+   * Upgrades operator to develop branch by uninstalling old release operator
+   * and installing latest operator.
+   * @throws Exception when upgrade fails or basic usecase testing or scaling fails.
+   */
+  private void uninstallAndInstallNewVersionOperatorAndVerify() throws Exception {
+    operator.destroy();
+    Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, "");
+    operatorMap.put("namespace", OP_NS + "-1");
+    operatorMap.put("releaseName", OP_DEP_NAME);
+    operatorMap.put("serviceAccount", OP_SA);
+    operatorMap.put("externalRestEnabled", true);
+    operatorMap.put("javaLoggingLevel", "FINE");
+    namespaceList.append(" ").append(OP_NS + "-1");
+    List<String> domNs = new ArrayList<String>();
+    domNs.add(DOM_NS);
+    operatorMap.put("domainNamespaces", domNs);
+    operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
+
+    checkCrdVersion();
+    testClusterScaling(operator, domain, false);
+  }
+
 
   /**
    * Checks the expected Upgraded Version of CustomResourceDefintion (CRD).
@@ -224,6 +280,7 @@ public class ItOperatorUpgrade extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     opUpgradeTmpDir = getResultDir() + "/operatorupgrade";
     TestUtils.execOrAbortProcess("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
+    TestUtils.execOrAbortProcess("kubectl delete crd domains.weblogic.oracle --ignore-not-found");
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, "");
     operatorMap.put("operatorImageName", "oracle/weblogic-kubernetes-operator");

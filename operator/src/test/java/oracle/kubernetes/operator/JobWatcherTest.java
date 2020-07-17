@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -36,7 +37,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 /** This test class verifies the behavior of the JobWatcher. */
 public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
-  private static final int INITIAL_RESOURCE_VERSION = 234;
+  private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
   private static final String NS = "ns1";
   private static final String VERSION = "123";
   private V1Job cachedJob = createJob();
@@ -78,7 +79,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
 
     assertThat(
         StubWatchFactory.getRequestParameters().get(0),
-        both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
+        both(hasEntry("resourceVersion", INITIAL_RESOURCE_VERSION.toString()))
             .and(hasEntry("labelSelector", asList(DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL))));
   }
 
@@ -93,12 +94,12 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Override
-  protected JobWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
-    return JobWatcher.create(this, ns, Integer.toString(rv), tuning, stopping);
+  protected JobWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
+    return JobWatcher.create(this, ns, rv.toString(), tuning, stopping);
   }
 
   private JobWatcher createWatcher(AtomicBoolean stopping) {
-    return JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), tuning, stopping);
+    return JobWatcher.create(this, "ns", INITIAL_RESOURCE_VERSION.toString(), tuning, stopping);
   }
 
   @Test

@@ -25,10 +25,8 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSource;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
-import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -70,6 +68,10 @@ public class DomainStatusUpdater {
   public static final String MANAGED_SERVERS_STARTING_PROGRESS_REASON = "ManagedServersStarting";
   public static final String SERVERS_READY_REASON = "ServersReady";
   public static final String ALL_STOPPED_AVAILABLE_REASON = "AllServersStopped";
+  public static final String BAD_DOMAIN = "ErrBadDomain";
+  public static final String ERR_INTROSPECTOR = "ErrIntrospector";
+  public static final String BAD_TOPOLOGY = "BadTopology";
+  
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String TRUE = "True";
   private static final String FALSE = "False";
@@ -188,44 +190,19 @@ public class DomainStatusUpdater {
       if (LOGGER.isFinerEnabled()) {
         LOGGER.finer("status change: " + createPatchString(context, newStatus));
       }
-      /* MARKER-2.6.0-ONLY */
-      boolean useDomainStatusEndpoint = Main.useDomainStatusEndpoint.get();
-      /* END-2.6.0-ONLY */
       Domain oldDomain = context.getDomain();
       Domain newDomain = new Domain()
           .withKind(KubernetesConstants.DOMAIN)
-          .withApiVersion(oldDomain.getApiVersion())
+          .withApiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE)
           .withMetadata(oldDomain.getMetadata())
-          /* MARKER-2.6.0-ONLY */
-          // WAS .withSpec(null)
-          .withSpec(useDomainStatusEndpoint ? null : oldDomain.getSpec())
-          /* END-2.6.0-ONLY */
+          .withSpec(null)
           .withStatus(newStatus);
 
-      /* MARKER-2.6.0-ONLY */
-      /* WAS
       return new CallBuilder().replaceDomainStatusAsync(
             context.getDomainName(),
             context.getNamespace(),
             newDomain,
             createResponseStep(context, getNext()));
-       */
-      if (useDomainStatusEndpoint) {
-        return new CallBuilder()
-            .replaceDomainStatusAsync(
-                context.getDomainName(),
-                context.getNamespace(),
-                newDomain,
-                createResponseStep(context, newStatus, useDomainStatusEndpoint, getNext()));
-      } else {
-        return new CallBuilder()
-            .replaceDomainAsync(
-                context.getDomainName(),
-                context.getNamespace(),
-                newDomain,
-                createResponseStep(context, newStatus, useDomainStatusEndpoint, getNext()));
-      }
-      /* END-2.6.0-ONLY */
     }
 
     private String createPatchString(DomainStatusUpdaterContext context, DomainStatus newStatus) {
@@ -234,57 +211,27 @@ public class DomainStatusUpdater {
       return builder.build().toString();
     }
 
-    private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context,
-                                                    /* MARKER-2.6.0-ONLY */
-                                                    DomainStatus newStatus, boolean useDomainStatusEndpoint,
-                                                    /* END-2.6.0-ONLY */
-                                                    Step next) {
-      return new StatusReplaceResponseStep(this,
-          /* MARKER-2.6.0-ONLY */
-          newStatus,
-          useDomainStatusEndpoint,
-          /* END-2.6.0-ONLY */
-          context, next);
+    private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context, Step next) {
+      return new StatusReplaceResponseStep(this, context, next);
     }
   }
 
   static class StatusReplaceResponseStep extends DefaultResponseStep<Domain> {
     private final DomainStatusUpdaterStep updaterStep;
     private final DomainStatusUpdaterContext context;
-    /* MARKER-2.6.0-ONLY */
-    private final DomainStatus newStatus;
-    private final boolean useDomainStatusEndpoint;
-    /* END-2.6.0-ONLY */
 
     public StatusReplaceResponseStep(DomainStatusUpdaterStep updaterStep,
-                                     /* MARKER-2.6.0-ONLY */
-                                     DomainStatus newStatus,
-                                     boolean useDomainStatusEndpoint,
-                                     /* END-2.6.0-ONLY */
                                      DomainStatusUpdaterContext context, Step nextStep) {
       super(nextStep);
       this.updaterStep = updaterStep;
       this.context = context;
-      /* MARKER-2.6.0-ONLY */
-      this.newStatus = newStatus;
-      this.useDomainStatusEndpoint = useDomainStatusEndpoint;
-      /* END-2.6.0-ONLY */
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
-      /* MARKER-2.6.0-ONLY */
-      // If the 3.0.0 operator updated the CRD to use status endpoint while this operator is running
-      // then these domain replace calls will succeed, but the proposed domain status will have been
-      // ignored. Check if the status on the returned domain is expected
-      if (!useDomainStatusEndpoint
-          && (callResponse.getResult() == null || !newStatus.equals(callResponse.getResult().getStatus()))) {
-        LOGGER.info(MessageKeys.DOMAIN_STATUS_IGNORED);
-        return doNext(CrdHelper.createDomainCrdStep(packet.getSpi(KubernetesVersion.class),
-            createRetry(context, getNext())), packet);
+      if (callResponse.getResult() != null) {
+        packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
       }
-      /* END-2.6.0-ONLY */
-      packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
       return doNext(packet);
     }
 
@@ -298,7 +245,7 @@ public class DomainStatusUpdater {
     }
 
     public Step createRetry(DomainStatusUpdaterContext context, Step next) {
-      return Step.chain(createDomainRefreshStep(context), updaterStep, next);
+      return Step.chain(createDomainRefreshStep(context), updaterStep);
     }
 
     private Step createDomainRefreshStep(DomainStatusUpdaterContext context) {
@@ -586,13 +533,17 @@ public class DomainStatusUpdater {
       }
 
       private Integer getClusterMaximumSize(String clusterName) {
-        return getDomainConfig().map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
-            .map(cluster -> cluster.map(WlsClusterConfig::getMaxClusterSize).orElse(0)).get();
+        return getDomainConfig()
+              .map(config -> config.getClusterConfig(clusterName))
+              .map(WlsClusterConfig::getMaxClusterSize)
+              .orElse(0);
       }
 
       private Integer getClusterMinimumSize(String clusterName) {
-        return getDomainConfig().map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
-                .map(cluster -> cluster.map(WlsClusterConfig::getMinClusterSize).orElse(0)).get();
+        return getDomainConfig()
+              .map(config -> config.getClusterConfig(clusterName))
+              .map(WlsClusterConfig::getMinClusterSize)
+              .orElse(0);
       }
 
       private Integer getClusterSizeGoal(String clusterName) {

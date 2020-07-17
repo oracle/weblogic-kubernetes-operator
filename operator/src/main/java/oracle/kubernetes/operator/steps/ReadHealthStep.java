@@ -218,10 +218,10 @@ public class ReadHealthStep extends Step {
 
     private Optional<V1ServicePort> getAdminProtocolPort(V1ServiceSpec spec) {
       return Optional.ofNullable(spec.getPorts())
-          .stream()
-          .flatMap(Collection::stream)
-          .filter(this::isAdminProtocolPort)
-          .findFirst();
+            .stream()
+            .flatMap(Collection::stream)
+            .filter(this::isAdminProtocolPort)
+            .findFirst();
     }
 
     private boolean isAdminProtocolPort(V1ServicePort port) {
@@ -245,8 +245,7 @@ public class ReadHealthStep extends Step {
           portalIP =
               getService().getMetadata().getName()
                   + "."
-                  + getService().getMetadata().getNamespace()
-                  + ".pod.cluster.local";
+                  + getService().getMetadata().getNamespace();
         }
       }
       return portalIP;
@@ -331,7 +330,7 @@ public class ReadHealthStep extends Step {
 
     private HttpAsyncRequestStep createRequestStep(HttpRequest request, RecordHealthStep responseStep) {
       return HttpAsyncRequestStep.create(request, responseStep)
-          .withTimeoutSeconds(HTTP_TIMEOUT_SECONDS);
+            .withTimeoutSeconds(HTTP_TIMEOUT_SECONDS);
     }
 
   }
@@ -400,8 +399,8 @@ public class ReadHealthStep extends Step {
 
       private String getFailedHealth() {
         return isServerOverloaded()
-            ? OVERALL_HEALTH_FOR_SERVER_OVERLOADED
-            : OVERALL_HEALTH_NOT_AVAILABLE;
+              ? OVERALL_HEALTH_FOR_SERVER_OVERLOADED
+              : OVERALL_HEALTH_NOT_AVAILABLE;
       }
 
       void recordStateAndHealth() throws IOException {
@@ -518,8 +517,8 @@ public class ReadHealthStep extends Step {
 
   private static void logReadFailure(Packet packet) {
     LOGGER.info(
-        (LoggingFilter) packet.get(LoggingFilter.LOGGING_FILTER_PACKET_KEY),
-        MessageKeys.WLS_HEALTH_READ_FAILED,
-        packet.get(ProcessingConstants.SERVER_NAME));
+          (LoggingFilter) packet.get(LoggingFilter.LOGGING_FILTER_PACKET_KEY),
+          MessageKeys.WLS_HEALTH_READ_FAILED,
+          packet.get(ProcessingConstants.SERVER_NAME));
   }
 }

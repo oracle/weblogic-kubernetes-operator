@@ -40,6 +40,7 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ClientPool;
@@ -50,7 +51,9 @@ import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -105,23 +108,7 @@ public class Main {
   private static final Engine engine = new Engine(wrappedExecutorService);
   private static String principal;
   private static KubernetesVersion version = null;
-
-  /* MARKER-2.6.0-ONLY */
-  // This is needed only for 2.6.0 -- do not forward port to 3.x
-  // In 3.0.0, we are switching the CRD to enable the domain status endpoint. This means that all updates to the
-  // domain status must be made against that REST endpoint and that (according to the K8s doc) attempts to
-  // update the domain status through the normal endpoint will be ignored.
-  //
-  // However, for Kubernetes versions less than 1.16, the 2.6.0 CRD needs to remain
-  // unchanged for interoperability with 2.5.0. Therefore, 2.6.0 will detect if a 3.x operator has changed the
-  // CRD and modify its behavior. This provides an upgrade path from 2.x to 3.x, which is that all operators
-  // must be updated to 2.6.0 before a 3.0.0 operator is introduced to the cluster, but if this strategy is used
-  // then 2.5.0 is compatible with 2.6.0 and 2.6.0 is compatible with 3.0.0.
-  //
-  // When running on 1.16 and above, 2.6.0 will also create a CRD with the status endpoint enabled since there is
-  // no need to be compatible with 2.5.0.
-  public static AtomicBoolean useDomainStatusEndpoint = new AtomicBoolean(false);
-  /* END-2.6.0-ONLY */
+  private static SemanticVersion productVersion = null;
 
   static {
     try {
@@ -166,6 +153,9 @@ public class Main {
       buildProps.load(stream);
 
       String operatorVersion = buildProps.getProperty("git.build.version");
+      if (operatorVersion != null) {
+        productVersion = new SemanticVersion(operatorVersion);
+      }
       String operatorImpl =
           buildProps.getProperty("git.branch")
               + "."
@@ -213,8 +203,9 @@ public class Main {
       if (!isDedicated()) {
         strategy = Step.chain(strategy, readExistingNamespaces(targetNamespaces));
       } else {
-        strategy = Step.chain(strategy, CrdHelper.createDomainCrdStep(version,
-            new StartNamespacesStep(targetNamespaces, false)));
+        strategy = Step.chain(strategy, CrdHelper.createDomainCrdStep(
+                version, productVersion,
+                new StartNamespacesStep(targetNamespaces, false)));
       }
       runSteps(
           strategy,
@@ -284,13 +275,21 @@ public class Main {
     return namespaceStoppingMap.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
   }
 
+  private static void runSteps(Step firstStep, Packet packet) {
+    runSteps(firstStep, packet, null);
+  }
+
   private static void runSteps(Step firstStep) {
-    runSteps(firstStep, null);
+    runSteps(firstStep, new Packet(), null);
   }
 
   private static void runSteps(Step firstStep, Runnable completionAction) {
+    runSteps(firstStep, new Packet(), completionAction);
+  }
+
+  private static void runSteps(Step firstStep, Packet packet, Runnable completionAction) {
     Fiber f = engine.createFiber();
-    f.start(firstStep, new Packet(), andThenDo(completionAction));
+    f.start(firstStep, packet, andThenDo(completionAction));
   }
 
   private static NullCompletionCallback andThenDo(Runnable completionAction) {
@@ -412,7 +411,7 @@ public class Main {
     return isDedicated()
         ? Collections.singleton(operatorNamespace)
         : getTargetNamespaces(Optional.ofNullable(getHelmVariable.apply("OPERATOR_TARGET_NAMESPACES"))
-        .orElse(tuningAndConfig.get("targetNamespaces")), operatorNamespace);
+            .orElse(tuningAndConfig.get("targetNamespaces")), operatorNamespace);
   }
 
   public static boolean isDedicated() {
@@ -534,9 +533,8 @@ public class Main {
           // will continue to be handled in recheckDomain method, which periodically
           // checks for new domain resources in the target name spaces.
           if (!delegate.isNamespaceRunning(ns)) {
-            runSteps(Step.chain(
-                ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
-                createConfigMapStep(ns)));
+            runSteps(getScriptCreationSteps(ns), createPacketWithLoggingContext(ns));
+
             namespaceStoppingMap.put(ns, new AtomicBoolean(false));
           }
           break;
@@ -554,6 +552,21 @@ public class Main {
         case "ERROR":
         default:
       }
+    }
+  }
+
+  private static Packet createPacketWithLoggingContext(String ns) {
+    Packet packet = new Packet();
+    packet.getComponents().put(
+        LoggingContext.LOGGING_CONTEXT_KEY,
+        Component.createFor(new LoggingContext().namespace(ns)));
+    return packet;
+  }
+
+  private static Step getScriptCreationSteps(String ns) {
+    try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+      return Step.chain(
+          ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns), createConfigMapStep(ns));
     }
   }
 
@@ -589,11 +602,11 @@ public class Main {
       // check for any existing resources and add the watches on them
       // this would happen when the Domain was running BEFORE the Operator starts up
       Collection<StepAndPacket> startDetails = new ArrayList<>();
+
       for (String ns : targetNamespaces) {
-        startDetails.add(
-            new StepAndPacket(
-                action(ns),
-                packet.clone()));
+        try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+          startDetails.add(new StepAndPacket(action(ns), packet.clone()));
+        }
       }
       return doForkJoin(getNext(), packet, startDetails);
     }
@@ -664,6 +677,13 @@ public class Main {
       // the health check helper.
       NamespaceStatus nss = namespaceStatuses.computeIfAbsent(
           ns != null ? ns : operatorNamespace, (key) -> new NamespaceStatus());
+
+      // we don't have the domain presence information yet
+      // we add a logging context to pass the namespace information to the LoggingFormatter
+      packet.getComponents().put(
+          LoggingContext.LOGGING_CONTEXT_KEY,
+          Component.createFor(
+              new LoggingContext().namespace(ns != null ? ns : operatorNamespace)));
       V1SubjectRulesReviewStatus srrs = nss.getRulesReviewStatus().updateAndGet(prev -> {
         if (prev != null) {
           return prev;
@@ -732,17 +752,17 @@ public class Main {
                     return v;
                   });
           info.setPopulated(true);
-          dp.makeRightDomainPresence(info, true, false, false);
+          dp.createMakeRightOperation(info).withExplicitRecheck().execute();
         }
       }
 
       dpis.forEach(
-          (key, value) -> {
-            if (!domainUids.contains(key)) {
+          (uid, info) -> {
+            if (!domainUids.contains(uid)) {
               // This is a stranded DomainPresenceInfo.
-              value.setDeleting(true);
-              value.setPopulated(true);
-              dp.makeRightDomainPresence(value, true, true, false);
+              info.setDeleting(true);
+              info.setPopulated(true);
+              dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
             }
           });
 
@@ -892,8 +912,8 @@ public class Main {
     @Override
     protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1NamespaceList> callResponse) {
       return isNotAuthorizedOrForbidden(callResponse)
-          ? doNext(createDomainCrdAndStartNamespaces(targetNamespaces), packet) :
-          super.onFailureNoRetry(packet, callResponse);
+          ? doNext(createDomainCrdAndStartNamespaces(targetNamespaces), packet) : 
+            super.onFailureNoRetry(packet, callResponse);
     }
 
     @Override
@@ -902,7 +922,7 @@ public class Main {
       // don't bother processing pre-existing events
       String intialResourceVersion = getInitialResourceVersion(result);
       List<String> nsList = getExistingNamespaces(result);
-
+      
       Set<String> namespacesToStart = new TreeSet<>(targetNamespaces);
       for (String ns : targetNamespaces) {
         if (!nsList.contains(ns)) {
@@ -913,23 +933,25 @@ public class Main {
       Step strategy = null;
       if (!namespacesToStart.isEmpty()) {
         strategy = Step.chain(createDomainCrdAndStartNamespaces(namespacesToStart),
-            new CreateNamespaceWatcherStep(intialResourceVersion));
+          new CreateNamespaceWatcherStep(intialResourceVersion));
       } else {
-        strategy = CrdHelper.createDomainCrdStep(version,
+        strategy = CrdHelper.createDomainCrdStep(
+          version, productVersion,
             new CreateNamespaceWatcherStep(intialResourceVersion));
       }
       return doNext(strategy, packet);
     }
-
+    
     private Step createDomainCrdAndStartNamespaces(Collection<String> namespacesToStart) {
-      return CrdHelper.createDomainCrdStep(version,
-          new StartNamespacesStep(namespacesToStart, false));
+      return CrdHelper.createDomainCrdStep(
+          version, productVersion,
+            new StartNamespacesStep(namespacesToStart, false));
     }
 
     private String getInitialResourceVersion(V1NamespaceList result) {
       return result != null ? result.getMetadata().getResourceVersion() : "";
     }
-
+    
     private List<String> getExistingNamespaces(V1NamespaceList result) {
       List<String> namespaces = new ArrayList<>();
       if (result != null) {
@@ -940,7 +962,7 @@ public class Main {
       return namespaces;
     }
   }
-
+  
   private static class CreateNamespaceWatcherStep extends Step {
     private final String initialResourceVersion;
 
@@ -955,7 +977,7 @@ public class Main {
       }
       return doNext(packet);
     }
-  }
+  }  
 
   private static class NullCompletionCallback implements CompletionCallback {
     private final Runnable completionAction;
@@ -973,7 +995,11 @@ public class Main {
 
     @Override
     public void onThrowable(Packet packet, Throwable throwable) {
-      LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+      if (throwable instanceof FailureStatusSourceException) {
+        ((FailureStatusSourceException) throwable).log();
+      } else {
+        LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+      }
     }
   }
 
@@ -1006,6 +1032,11 @@ public class Main {
     @Override
     public KubernetesVersion getVersion() {
       return version;
+    }
+
+    @Override
+    public SemanticVersion getProductVersion() {
+      return productVersion;
     }
 
     @Override

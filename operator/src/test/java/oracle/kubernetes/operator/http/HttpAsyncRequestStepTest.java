@@ -61,9 +61,9 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
   @Before
   public void setUp() throws NoSuchFieldException {
     mementos.add(consoleMemento = TestUtils.silenceOperatorLogger()
-        .collectLogMessages(logRecords, HTTP_METHOD_FAILED, HTTP_REQUEST_TIMED_OUT)
-        .withLogLevel(Level.FINE)
-        .ignoringLoggedExceptions(HttpAsyncRequestStep.HttpTimeoutException.class));
+          .collectLogMessages(logRecords, HTTP_METHOD_FAILED, HTTP_REQUEST_TIMED_OUT)
+          .withLogLevel(Level.FINE)
+          .ignoringLoggedExceptions(HttpAsyncRequestStep.HttpTimeoutException.class));
     mementos.add(StaticStubSupport.install(HttpAsyncRequestStep.class, "factory", futureFactory));
 
     requestStep = createStep();
@@ -216,3 +216,4 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
   }
 
 }
+

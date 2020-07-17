@@ -14,7 +14,6 @@ public class MessageKeys {
   public static final String OPERATOR_SHUTTING_DOWN = "WLSKO-0005";
   public static final String EXCEPTION = "WLSKO-0006";
   public static final String CREATING_CRD = "WLSKO-0012";
-  public static final String DOMAIN_STATUS_IGNORED = "WLSKO-0013";
   public static final String LISTING_DOMAINS = "WLSKO-0014";
   public static final String SECRET_NOT_FOUND = "WLSKO-0018";
   public static final String RETRIEVING_SECRET = "WLSKO-0019";
@@ -128,6 +127,12 @@ public class MessageKeys {
   public static final String JOB_CREATION_TIMESTAMP_MESSAGE = "WLSKO-0169";
   public static final String HTTP_REQUEST_TIMED_OUT = "WLSKO-0170";
   public static final String NAMESPACE_IS_MISSING = "WLSKO-0171";
+  public static final String CM_PATCHED = "WLSKO-0172";
+  public static final String REPLACE_CRD_FAILED = "WLSKO-0173";
+  public static final String CREATE_CRD_FAILED = "WLSKO-0174";
+  public static final String INTROSPECTOR_JOB_FAILED = "WLSKO-0175";
+  public static final String INTROSPECTOR_JOB_FAILED_DETAIL = "WLSKO-0176";
+  public static final String INTROSPECTOR_POD_FAILED = "WLSKO-0177";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
@@ -136,6 +141,10 @@ public class MessageKeys {
   public static final String BAD_VOLUME_MOUNT_PATH = "WLSDO-0004";
   public static final String RESERVED_ENVIRONMENT_VARIABLES = "WLSDO-0005";
   public static final String ILLEGAL_SECRET_NAMESPACE = "WLSDO-0006";
+  public static final String ILLEGAL_SIT_CONFIG_MII = "WLSDO-0007";
+  public static final String MODEL_CONFIGMAP_NOT_FOUND = "WLSDO-0008";
+  public static final String SECRET_NOT_SPECIFIED = "WLSDO-0009";
+  public static final String OPSS_SECRET_NOT_SPECIFIED = "WLSDO-0010";
   public static final String NO_CLUSTER_IN_DOMAIN = "WLSDO-0011";
   public static final String NO_MANAGED_SERVER_IN_DOMAIN = "WLSDO-0012";
   public static final String CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO = "WLSDO-0013";

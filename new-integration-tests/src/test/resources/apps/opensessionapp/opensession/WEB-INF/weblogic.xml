@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+-->
+<weblogic-web-app xmlns="http://www.bea.com/ns/weblogic/90">
+  <description>weblogic.xml for memory replication</description>
+  <session-descriptor>
+    <timeout-secs>10</timeout-secs>
+    <invalidation-interval-secs>10</invalidation-interval-secs>
+  </session-descriptor>
+</weblogic-web-app>
+

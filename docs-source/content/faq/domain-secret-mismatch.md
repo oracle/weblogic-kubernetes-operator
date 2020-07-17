@@ -2,10 +2,11 @@
 title: "Domain secret mismatch"
 date: 2020-03-02T08:08:19-04:00
 draft: false
-weight: 21
+weight: 4
+description: "One or more WebLogic Server instances in my domain will not start and the domain resource `status` or the pod log reports errors like this: Domain secret mismatch."
 ---
 
-> One or more WebLogic Server instances in my domain will not start and the domain resource `status` or the pod log reports errors like this:
+> One or more WebLogic Server instances in my domain will not start and the Domain `status` or the pod log reports errors like this:
 >
 > ***Domain secret mismatch. The domain secret in `DOMAIN_HOME/security/SerializedSystemIni.dat` where DOMAIN_HOME=`$DOMAIN_HOME` does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic Servers in the same domain share the same domain secret.***
 

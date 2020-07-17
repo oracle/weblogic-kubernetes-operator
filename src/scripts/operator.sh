@@ -64,7 +64,7 @@ cp /operator/logstash.conf /logs/logstash.conf
 # assumption is that we have mounted a volume on /logs which is also visible to
 # the logstash container/pod.
 
-# Container memory optimization flags
+# Container memory optimizaton flags
 HEAP="-XshowSettings:vm"
 
 # Start operator

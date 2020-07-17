@@ -8,7 +8,6 @@ metadata:
     weblogic.createdByOperator: "true"
     weblogic.domainName: ${DOMAIN_NAME}
     weblogic.domainUID: ${DOMAIN_UID}
-    weblogic.resourceVersion: domain-v1
     weblogic.serverName: ${SERVER_NAME}
   name: ${SERVICE_NAME}
   namespace: ${NAMESPACE}
@@ -61,6 +60,8 @@ spec:
       value: ""
     - name: DOMAIN_SOURCE_TYPE
       value: "${DOMAIN_SOURCE_TYPE}"
+    - name: WDT_DOMAIN_TYPE
+      value: "${WDT_DOMAIN_TYPE:-WLS}"
     image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
     imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
     lifecycle:
@@ -108,15 +109,23 @@ spec:
   #    name: weblogic-credentials-volume
   #    readOnly: true
     - mountPath: /weblogic-operator/scripts
-      name: weblogic-domain-cm-volume
+      name: weblogic-script-cm-volume
       readOnly: true
     - mountPath: /weblogic-operator/introspector
       name: introspect-domain-cm-volume
       readOnly: true
+    - name: weblogic-runtime-encryption-volume
+      mountPath: /weblogic-operator/model-runtime-secret
   dnsPolicy: ClusterFirst
   hostname: ${SERVICE_NAME}
   restartPolicy: Always
   terminationGracePeriodSeconds: 1
+  volumes:
+  - name: weblogic-runtime-encryption-volume
+    secret:
+      defaultMode: 420
+      secretName: ${DOMAIN_UID}-runtime-encryption-secret
+      optional: ${MII_WDT_ENCRYPT_SECRET}
   # WL Pods shouldn't need secrets if the introspector is working:
   #- name: weblogic-credentials-volume
   #  secret:
@@ -124,8 +133,8 @@ spec:
   #    secretName: ${WEBLOGIC_CREDENTIALS_SECRET_NAME}
   - configMap:
       defaultMode: 365
-      name: weblogic-domain-cm
-    name: weblogic-domain-cm-volume
+      name: weblogic-script-cm
+    name: weblogic-script-cm-volume
   - configMap:
       defaultMode: 365
       name: ${DOMAIN_UID}-weblogic-domain-introspect-cm

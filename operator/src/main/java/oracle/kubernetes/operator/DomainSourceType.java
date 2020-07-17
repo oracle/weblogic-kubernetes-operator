@@ -4,6 +4,35 @@
 package oracle.kubernetes.operator;
 
 public enum DomainSourceType {
-  Image,
-  PersistentVolume
+  Image {
+    @Override
+    public String getDefaultDomainHome(String uid) {
+      return "/u01/oracle/user_projects/domains";
+    }
+  },
+  PersistentVolume {
+    @Override
+    public boolean hasLogHomeByDefault() {
+      return true;
+    }
+
+    @Override
+    public String getDefaultDomainHome(String uid) {
+      return "/shared/domains/" + uid;
+    }
+  },
+  FromModel {
+    @Override
+    public String getDefaultDomainHome(String uid) {
+      return "/u01/domains/" + uid;
+    }
+
+  };
+
+  public boolean hasLogHomeByDefault() {
+    return false;
+  }
+
+  public abstract String getDefaultDomainHome(String uid);
+
 }
