@@ -31,10 +31,11 @@ Create two WebLogic domains:
 - Each domain has a web application installed with the URL context `testwebapp`.
 - Each domain has a WebLogic cluster `cluster-1` where each managed server listens on port `8001`.
 
-### 2. Install the Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute)
-#### Install a host-routing [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute)
+### 2. Web request routing 
+#### Host based routing 
+Install a host-routing [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute)
 ```
-$ kubectl create -f [samples/host-routing.yaml](samples/host-routing.yaml)
+$ kubectl create -f samples/host-routing.yaml
 ingressroute.traefik.containo.us/traefik-hostrouting-1 created
 ingressroute.traefik.containo.us/traefik-hostrouting-2 created
 ```
@@ -46,9 +47,11 @@ $ curl -H 'host: domain1.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 $ curl -H 'host: domain2.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 ```
 
-#### Install a path-routing [IngressRoute] (https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute) and [Middleware](https://docs.traefik.io/middlewares/overview/)
+#### Path based routing  
+Install a path-routing [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute) and [Middleware](https://docs.traefik.io/middlewares/overview/)
+
 ```
-$ kubectl create -f [samples/path-routing.yaml](samples/path-routing.yaml)
+$ kubectl create -f samples/path-routing.yaml
 ingressroute.traefik.containo.us/traefik-pathrouting-1 created
 middleware.traefik.containo.us/middleware-domain1 created
 ingressroute.traefik.containo.us/traefik-pathrouting-2 created
@@ -61,7 +64,8 @@ $ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='
 $ curl http://${HOSTNAME}:${LB_PORT}/domain1/
 $ curl http://${HOSTNAME}:${LB_PORT}/domain2/
 ```
-#### Install a TLS-enabled [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute)
+#### Host based secured routing 
+Install a TLS-enabled [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute)
 This sample demonstrates how to access application on two WebLogic domains using a HTTPS endpoint.
 
 For this sample to work, you need to enable the TLS endpoint in the Traefik operator.
@@ -76,7 +80,7 @@ $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls2.key -out
 $ kubectl -n weblogic-domain2 create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
 
 # Deploy a TLS IngressRoute.
-$ kubectl create -f [samples/tls.yaml](samples/tls.yaml)
+$ kubectl create -f samples/tls.yaml
 ingressroute.traefik.containo.us/traefik-tls-1 created
 ingressroute.traefik.containo.us/traefik-tls-2 created
 ```
