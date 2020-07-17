@@ -1232,7 +1232,7 @@ class ItMonitoringExporter {
               .command(command))
           .execute(), "Failed to build monitoring exporter webapp with no restport");
     } else {
-      String command = String.format("cd %s && mvn install",
+      String command = String.format("cd %s && mvn install -Dmaven.test.skip=true ",
           monitoringExporterSrcDir);
       assertTrue(new oracle.weblogic.kubernetes.actions.impl.primitive.Command()
           .withParams(new oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams()
@@ -1456,6 +1456,7 @@ class ItMonitoringExporter {
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false "
                         + "-Dweblogic.security.SSL.ignoreHostnameVerification=true -Dssl.debug=true "
+                        + "-Djavax.net.debug=ssl:handshake "
                         //+ "-DUseSunHttpHandler=true -Dssl.debug=true "
                         + "-Djavax.net.debug=all -Dweblogic.security.SSL.verbose=true "
                         + "-Dweblogic.StdoutDebugEnabled=true -Djavax.net.debug=all "
@@ -1530,7 +1531,8 @@ class ItMonitoringExporter {
             + ADMIN_USERNAME_DEFAULT
             + ":"
             + ADMIN_PASSWORD_DEFAULT
-            + "@" + domainUid + "-managed-server1:%s/%s", protocol, port, uri);
+            //+ "@" + domainUid + "-managed-server1:%s/%s", protocol, port, uri);
+            + "@" + domainUid + "-cluster-cluster-1:%s/%s", protocol, port, uri);
     logger.info("accessing managed server exporter via " + command);
 
     boolean isFound = false;
