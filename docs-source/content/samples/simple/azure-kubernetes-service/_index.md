@@ -539,7 +539,7 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
    troubleshoot the reason and resolve it before proceeding to the next
    step.
 
-4. You must create `LoadBalancer` service for the Administration Server and the WLS cluster.  This enables WLS to service requests from outside the AKS cluster.
+4. You must create `LoadBalancer` services for the Administration Server and the WLS cluster.  This enables WLS to service requests from outside the AKS cluster.
 
    Use the configuration file in `~/azure/weblogic-on-aks/admin-lb.yaml` to create a load balancer service for the Administration Server. The following content is an example of `admin-lb.yaml`, with default domain uid  `domain1`, server name `admin-server`, and default port `7001`.
 
