@@ -191,7 +191,7 @@ public class ItOperatorUpgrade extends BaseTest {
 
   /**
    * Upgrades operator to develop branch by uninstalling old release operator
-   * and installing latest operator
+   * and installing latest operator.
    * @throws Exception when upgrade fails or basic usecase testing or scaling fails.
    */
   private void upgradeOperatorFrom2_6_0() throws Exception {
