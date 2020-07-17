@@ -1264,7 +1264,7 @@ class ItMonitoringExporter {
     logger.info("Executing command " + command);
     java.nio.file.Path srcFile = java.nio.file.Paths.get(monitoringExporterSrcDir,
         "webapp","target", "wls-exporter.war");
-    
+
     assertTrue(new oracle.weblogic.kubernetes.actions.impl.primitive.Command()
         .withParams(new oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams()
             .command(command))
