@@ -713,7 +713,7 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 | `dockerPassword` | `yourDockerPassword`| Your docker password in clear text, refer to [Docker Hub](#docker-hub) section. |
 | `dockerUserName` | `yourDockerId` |Your docker user name, refer to [Docker Hub](#docker-hub) section. ||
 
-If you don't want to change the other parameters, you can use the default value.  Please make sure no extra whitespaces are added!
+If you don't want to change the other parameters, you can use the default values.  Please make sure no extra whitespaces are added!
 
 ```bash
 # Use ~/azure as output directory, please change it according to your requirement.
