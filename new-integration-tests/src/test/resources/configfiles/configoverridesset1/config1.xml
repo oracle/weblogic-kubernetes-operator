@@ -6,6 +6,6 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
 <d:domain xmlns:d="http://xmlns.oracle.com/weblogic/domain" xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment" xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
     <d:server>
         <d:name>admin-server</d:name>
-        <d:max-message-size f:combine-mode="add">66666666</d:max-message-size>
+        <d:max-message-size f:combine-mode="add">88888888</d:max-message-size>
     </d:server>
 </d:domain>

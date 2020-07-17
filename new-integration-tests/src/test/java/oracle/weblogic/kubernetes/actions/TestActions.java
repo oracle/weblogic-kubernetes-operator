@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
@@ -612,6 +613,16 @@ public class TestActions {
    */
   public static boolean createService(V1Service service) throws ApiException {
     return Service.create(service);
+  }
+
+  /**
+   * List services in a namespace.
+   *
+   * @param namespace namespace in which to list services
+   * @return V1ServiceList
+   */
+  public static V1ServiceList listServices(String namespace) {
+    return Service.listServices(namespace);
   }
 
   /**
