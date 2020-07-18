@@ -12,18 +12,18 @@
     <title>Configuration overrides :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1595021490" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1595021490" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1595021490" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1595021490" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1595021490" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1595021490" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1595021490" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1595021490" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1595021490" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1595100083" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1595100083" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1595100083" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1595100083" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1595100083" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1595100083" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1595100083" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1595100083" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1595100083" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1595021490"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1595100083"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1595021490"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1595021490"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1595100083"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1595100083"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1595021490"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1595100083"></script>
 
     
   </div>
@@ -3013,7 +3013,7 @@
 <li>For Model in Image, the operator determines that at least one WebLogic Server instance that is currently running must be shut down and restarted. This could be a rolling of one or more clusters, the shut down and restart of one or more WebLogic Server instances, or a combination.</li>
 </ol>
 </li>
-<li>You can <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/">initiate introspection</a> by changing the value of the Domain <code>introspectVersion</code> field.</li>
+<li>You can <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/#initiating-introspection">initiate introspection</a> by changing the value of the Domain <code>introspectVersion</code> field.</li>
 <li>For configuration overrides and during introspection, the operator will:
 <ul>
 <li>Resolve any macros in your override templates.</li>
@@ -3103,8 +3103,8 @@ For Model in Image domains (introduced in 3.0.0), use <a href="/weblogic-kuberne
 <p>Note that it&rsquo;s supported, even expected, to override network access point <code>public</code> or <code>external</code> addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the network access point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don&rsquo;t require port matching).</p>
 <p>The behavior when using an unsupported override is undefined.</p>
 <h3 id="overrides-distribution">Overrides distribution</h3>
-<p>The operator generates the final configuration overrides, combining customer-provided configuration overrides and operator-generated overrides, during the operator&rsquo;s introspection phase. These overrides are then used when starting or restarting WebLogic Server instances. Starting with operator version 3.0.0, these <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/">overrides can also be distributed</a> and applied to already running WebLogic Server instances.</p>
-<p>For <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/restarting/">Domain in PV</a>, the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.</p>
+<p>The operator generates the final configuration overrides, combining customer-provided configuration overrides and operator-generated overrides, during the operator&rsquo;s introspection phase. These overrides are then used when starting or restarting WebLogic Server instances. Starting with operator version 3.0.0, these <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/#distributing-changes-to-configuration-overrides">overrides can also be distributed</a> and applied to already running WebLogic Server instances.</p>
+<p>For <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/restarting/#domain-in-pv">Domain in PV</a>, the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.</p>
 <hr>
 <h3 id="override-template-names-and-syntax">Override template names and syntax</h3>
 <p>Overrides leverage a built-in WebLogic feature called &ldquo;Configuration Overriding&rdquo; which is often informally called &ldquo;Situational Configuration.&rdquo; Configuration overriding consists of XML formatted files that closely resemble the structure of WebLogic <code>config.xml</code> and system resource module XML files. In addition, the attribute fields in these files can embed <code>add</code>, <code>replace</code>, and <code>delete</code> verbs to specify the desired override action for the field.</p>
@@ -5562,19 +5562,19 @@ $ wlst.sh
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1595021490"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1595021490"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1595021490"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1595021490"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1595021490"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1595021490"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1595100083"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1595100083"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1595100083"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1595100083"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1595100083"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1595100083"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1595021490"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1595021490"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1595021490"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1595100083"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1595100083"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1595100083"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1595021490" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1595021490"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1595100083" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1595100083"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
