@@ -138,6 +138,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
@@ -1502,8 +1503,20 @@ public class CommonTestUtils {
     GrafanaParams grafanaParams = new GrafanaParams()
         .helmParams(grafanaHelmParams)
         .nodePort(grafanaNodePort);
-    //create grafana secret
-    createSecretWithUsernamePassword("grafana-secret", grafanaNamespace, "admin", "12345678");
+    boolean secretExists = false;
+    io.kubernetes.client.openapi.models.V1SecretList listSecrets = listSecrets(grafanaNamespace);
+    if (null != listSecrets) {
+      for (V1Secret item : listSecrets.getItems()) {
+        if (item.getMetadata().getName().equals("grafana-secret")) {
+          secretExists = true;
+          break;
+        }
+      }
+    }
+    if (!secretExists) {
+      //create grafana secret
+      createSecretWithUsernamePassword("grafana-secret", grafanaNamespace, "admin", "12345678");
+    }
     // install grafana
     logger.info("Installing grafana in namespace {0}", grafanaNamespace);
     assertTrue(installGrafana(grafanaParams),

@@ -1546,7 +1546,7 @@ class ItMonitoringExporter {
             + ":"
             + ADMIN_PASSWORD_DEFAULT
             //+ "@" + domainUid + "-managed-server1:%s/%s", protocol, port, uri);
-            + "@" + domainUid + "-cluster-cluster-1:%s/%s", protocol, port, uri);
+            + "@" + domainUid + "-managed-server1:%s/%s", protocol, port, uri);
     logger.info("accessing managed server exporter via " + command);
 
     boolean isFound = false;
