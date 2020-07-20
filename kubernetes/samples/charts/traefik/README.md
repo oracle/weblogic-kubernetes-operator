@@ -5,16 +5,16 @@ load balancing for WebLogic clusters.
 
 ## Install the Traefik operator with a Helm chart
 This document is based on Traefik version 2.x with the Helm chart at [Traefik Helm Repository](https://github.com/containous/traefik-helm-chart).
-For more information about Traefik, see [Traefik Official Site](https://traefik.io/) 
+For more information about Traefik, see the [Traefik Official Site](https://traefik.io/).
 
-To install the Traefik operator in the `traefik` namespace with default settings:
+To install the Traefik operator in the `traefik` namespace with the default settings:
 ```
 $ helm repo add traefik https://containous.github.io/traefik-helm-chart
 $ helm repo update
 $ kubectl create namespace traefik
 $ helm install traefik-operator traefik/traefik --namespace traefik
 ```
-You can also install the Traefik operator with a custom `values.yaml`. For more detailed information, see [Traefik GitHub Project](https://github.com/containous/traefik-helm-chart/blob/master/traefik/values.yaml).
+You can also install the Traefik operator with a custom `values.yaml`. For more detailed information, see the [Traefik GitHub Project](https://github.com/containous/traefik-helm-chart/blob/master/traefik/values.yaml).
 ```
 $ helm install traefik-operator traefik/traefik --namespace traefik --values values.yaml
 ```
@@ -26,14 +26,14 @@ This section describes how to use Traefik to handle traffic to backend WebLogic 
 First, we need to prepare two domains for Traefik load balancing.
 
 Create two WebLogic domains:
-- One domain with `domain1` as domain uid under namespace `weblogic-domain1`.
-- One domain with `domain2` as domain uid under namespace `weblogic-domain2`.
+- One domain with `domain1` as the domain UID and namespace `weblogic-domain1`.
+- One domain with `domain2` as the domain UID and namespace `weblogic-domain2`.
 - Each domain has a web application installed with the URL context `testwebapp`.
 - Each domain has a WebLogic cluster `cluster-1` where each managed server listens on port `8001`.
 
 ### 2. Web request routing 
 #### Host based routing 
-This sample demonstrates how to access application on two WebLogic domains using host based routing. Install a host-routing Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute)
+This sample demonstrates how to access an application on two WebLogic domains using host based routing. Install a host-routing Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute)
 ```
 $ kubectl create -f samples/host-routing.yaml
 ingressroute.traefik.containo.us/traefik-hostrouting-1 created
@@ -47,8 +47,8 @@ $ curl -H 'host: domain1.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 $ curl -H 'host: domain2.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 ```
 
-#### Path based routing  
-This sample demonstrates how to access application on two WebLogic domains using path based routing. Install a path-routing Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute) and [Middleware](https://docs.traefik.io/middlewares/overview/)
+#### Path-based routing  
+This sample demonstrates how to access an application on two WebLogic domains using path-based routing. Install a path-routing Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute) and [Middleware](https://docs.traefik.io/middlewares/overview/).
 
 ```
 $ kubectl create -f samples/path-routing.yaml
@@ -57,7 +57,7 @@ middleware.traefik.containo.us/middleware-domain1 created
 ingressroute.traefik.containo.us/traefik-pathrouting-2 created
 middleware.traefik.containo.us/middleware-domain2 created
 ```
-Now you can send requests to different WebLogic domains with the unique Traefik entry point of different paths as defined in route section of `path-routing.yaml`.
+Now you can send requests to different WebLogic domains with the unique Traefik entry point of different paths, as defined in route section of `path-routing.yaml`.
 ```
 # Get the ingress controller web port
 $ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
@@ -65,7 +65,7 @@ $ curl http://${HOSTNAME}:${LB_PORT}/domain1/
 $ curl http://${HOSTNAME}:${LB_PORT}/domain2/
 ```
 #### Host based secured routing 
-This sample demonstrates how to access application on two WebLogic domains using a HTTPS endpoint. Install a TLS-enabled Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute)
+This sample demonstrates how to access an application on two WebLogic domains using an HTTPS endpoint. Install a TLS-enabled Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute).
 
 First, you need to create two secrets with TLS certificates, one with the common name `domain1.org`, the other with the common name `domain2.org`. We use `openssl` to generate self-signed certificates for demonstration purposes. Note that the TLS secret needs to be in the same namespace as the WebLogic domain.
 ```
@@ -90,7 +90,7 @@ $ curl -k -H 'host: domain1.org' https://${HOSTNAME}:${TLS_PORT}/testwebapp/
 ```
 
 ## Uninstall the Traefik operator
-After removing all the Ingress resources, uninstall the Traefik operator:
+After removing all the ingress resources, uninstall the Traefik operator:
 ```
 $ helm uninstall traefik-operator --namespace traefik --keep-history
 ```
