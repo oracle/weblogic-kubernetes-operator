@@ -8,13 +8,13 @@ import java.io.File;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_FILE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_FILE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -41,8 +41,6 @@ public class Installer {
     return new InstallParams()
         .defaults()
         .type(WDT)
-        .fileName(WDT_FILE_NAME)
-        .version(WDT_VERSION)
         .location(WDT_DOWNLOAD_URL)
         .verify(true)
         .unzip(false);
@@ -56,8 +54,6 @@ public class Installer {
     return new InstallParams()
         .defaults()
         .type(WIT)
-        .fileName(WIT_FILE_NAME)
-        .version(WIT_VERSION)
         .location(WIT_DOWNLOAD_URL)
         .verify(true)
         .unzip(true);
@@ -87,15 +83,15 @@ public class Installer {
     boolean downloadSucceeded = true;
     boolean unzipSucceeded = true;
     if (params.verify()
-        && new File(DOWNLOAD_DIR, params.fileName()).exists()) {
-      getLogger().fine("File {0} already exists.", params.fileName());
+        && new File(DOWNLOAD_DIR, getInstallerFileName(params.type())).exists()) {
+      getLogger().fine("File {0} already exists.", getInstallerFileName(params.type()));
     } else {
       // check and make sure DOWNLOAD_DIR exists; will create it if it is missing
       checkDirectory(DOWNLOAD_DIR);
       
       // we are about to download the installer. We need to get the real version that is requested
       try {
-        params.version(getActualVersionIfNeeded(params.location(), params.type(), params.version()));      
+        params.location(getActualLocationIfNeeded(params.location(), params.type()));
       } catch (RuntimeException re) {
         // already logged
         return false;
@@ -117,8 +113,12 @@ public class Installer {
   }
 
   private boolean unzip() {
-    String command = 
-        String.format("unzip -o -d %s %s/%s", WORK_DIR, DOWNLOAD_DIR, params.fileName());
+    String command = String.format(
+        "unzip -o -d %s %s/%s", 
+        WORK_DIR,
+        DOWNLOAD_DIR,
+        getInstallerFileName(params.type()));
+
     return Command.withParams(
         defaultCommandParams()  
             .command(command)
@@ -128,12 +128,10 @@ public class Installer {
 
   private String buildDownloadCommand() {
     String command = String.format(
-        "curl -fL %s/releases/download/%s/%s -o %s/%s", 
-        params.location(), 
-        params.version(),
-        params.fileName(),
+        "curl -fL %s -o %s/%s",
+        params.location(),
         DOWNLOAD_DIR,
-        params.fileName());
+        getInstallerFileName(params.type()));
     return command;
   }
 
@@ -145,14 +143,15 @@ public class Installer {
    * @return the version number that is determined
    * @throws RuntimeException if the operation failed for any reason
    */
-  private String getActualVersionIfNeeded(
+  private String getActualLocationIfNeeded(
       String location,
-      String type,
-      String version
+      String type
   ) throws RuntimeException {
-    if (version == null || version.equalsIgnoreCase("latest")) {
+    String actualLocation = location;
+    if (needToGetActualLocation(location, type)) {
+      String version = "";
       String command = String.format(
-          "curl -fL %s/releases/latest -o %s/%s-%s", 
+          "curl -fL %s -o %s/%s-%s",
           location,
           DOWNLOAD_DIR,
           type,
@@ -192,7 +191,7 @@ public class Installer {
       if (Command.withParams(params).execute()
           && params.stdout() != null
           && params.stdout().length() != 0) {
-        return params.stdout();
+        version = params.stdout();
       } else {
         RuntimeException exception =
             new RuntimeException(String.format("Failed to get the version number of the requested %s release.", type));
@@ -204,7 +203,37 @@ public class Installer {
             exception);
         throw exception;
       }
+
+      if (version != null) {
+        actualLocation = location.replace("latest",
+            String.format("download/%s/%s", version, getInstallerFileName(type)));
+      }
     }
-    return version;
+    getLogger().info("The actual download location for {0} is {1}", params.type(), actualLocation);
+    return actualLocation;
+  }
+
+  private boolean needToGetActualLocation(
+      String location,
+      String type
+  ) {
+    if (type == WDT && WDT_DOWNLOAD_URL_DEFAULT.equals(location)
+        || type == WIT && WIT_DOWNLOAD_URL_DEFAULT.equals(location)) {
+      return true;
+    }
+    return false;
+  }
+
+  private String getInstallerFileName(
+      String type
+  ) {
+    switch (type) {
+      case WDT:
+        return WDT_DOWNLOAD_FILENAME_DEFAULT;
+      case WIT:
+        return WIT_DOWNLOAD_FILENAME_DEFAULT;
+      default:
+        return "";
+    }
   }
 }

@@ -142,6 +142,11 @@ domainHomeImageBase: container-registry.oracle.com/middleware/fmw-infrastructure
 # which uses WDT, instead of WLST, to generate the domain configuration.
 domainHomeImageBuildPath: ./docker-images/OracleFMWInfrastructure/samples/12213-domain-home-in-image
 
+# Uncomment to customize the WebLogic Deploy Tool (WDT) version used by the WDT
+# "domain home in image" Docker image sample in the Docker images project. See
+# "domainHomeImageBuildPath". Set to "LATEST" to use the latest version.
+# wdtVersion: LATEST
+
 # Resource request for each server pod (Memory and CPU). This is minimum amount of compute
 # resources required for each server pod. Edit value(s) below as per pod sizing requirements.
 # These are optional. 

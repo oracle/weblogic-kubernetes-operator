@@ -4,12 +4,12 @@
 package oracle.kubernetes.operator.calls;
 
 import io.kubernetes.client.openapi.ApiException;
-import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
+import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 
 public class UnrecoverableErrorBuilder {
 
   /**
-   * Returns true if the specified call response indicates an unprocessable entity response from Kubernetes.
+   * Returns true if the specified call response indicates an unrecoverable response from Kubernetes.
    * @param callResponse the response from a Kubernetes call
    * @param <T> call response type
    * @return true if an unprocessable entity failure has been reported
@@ -19,7 +19,7 @@ public class UnrecoverableErrorBuilder {
   }
 
   private static boolean isUnrecoverable(ApiException e) {
-    return OtherUnrecoverableErrorBuilder.isUnrecoverable(e) || UnprocessableEntityBuilder.isUnprocessableEntity(e);
+    return UnrecoverableErrorBuilderImpl.isUnrecoverable(e);
   }
 
   /**
@@ -28,12 +28,7 @@ public class UnrecoverableErrorBuilder {
    * @return status source object
    */
   public static FailureStatusSource fromFailedCall(CallResponse callResponse) {
-    ApiException apiException = callResponse.getE();
-    if (UnprocessableEntityBuilder.isUnprocessableEntity(apiException)) {
-      return UnprocessableEntityBuilder.fromFailedCall(callResponse);
-    } else {
-      return OtherUnrecoverableErrorBuilder.fromFailedCall(callResponse);
-    }
+    return UnrecoverableErrorBuilderImpl.fromFailedCall(callResponse);
   }
 
   /**
