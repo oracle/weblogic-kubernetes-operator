@@ -255,7 +255,7 @@ case "${INTROSPECTOR_LOG_FILE_MODE:-tee}" in
     exitCode=$?
     # sleep 1 second in case background 'tail' needs time to catch up
     sleep 1
-    kill -9 $!
+    kill -9 $tail_log_pid
     exit $exitCode
     ;;
   *)
