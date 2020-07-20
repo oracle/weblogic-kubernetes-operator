@@ -55,6 +55,7 @@ import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
+import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -95,6 +96,10 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
@@ -131,6 +136,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
+import static oracle.weblogic.kubernetes.actions.TestActions.installTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.installVoyager;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
@@ -147,6 +153,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmRelease
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isTraefikReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
@@ -446,6 +453,63 @@ public class CommonTestUtils {
             "isVoyagerReady failed with ApiException"));
 
     return voyagerHelmParams;
+  }
+
+  /**
+   * Install Traefik and wait up to five minutes until the Traefik pod is ready.
+   *
+   * @param traefikNamespace the namespace in which the Traefik will be installed
+   * @param nodeportshttp the http nodeport of Traefik
+   * @param nodeportshttps the https nodeport of Traefik
+   * @return the Traefik Helm installation parameters
+   */
+  public static HelmParams installAndVerifyTraefik(String traefikNamespace,
+                                                 int nodeportshttp,
+                                                 int nodeportshttps) {
+    LoggingFacade logger = getLogger();
+    // Helm install parameters
+    HelmParams traefikHelmParams = new HelmParams()
+        .releaseName(TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3))
+        .namespace(traefikNamespace)
+        .repoUrl(TRAEFIK_REPO_URL)
+        .repoName(TRAEFIK_REPO_NAME)
+        .chartName(TRAEFIK_CHART_NAME);
+
+    // NGINX chart values to override
+    TraefikParams traefikParams = new TraefikParams()
+        .helmParams(traefikHelmParams);
+
+    if (nodeportshttp != 0 && nodeportshttps != 0) {
+      traefikParams
+          .nodePortsHttp(nodeportshttp)
+          .nodePortsHttps(nodeportshttps);
+    }
+
+    // install NGINX
+    assertThat(installTraefik(traefikParams))
+        .as("Test Traefik installation succeeds")
+        .withFailMessage("Traefik installation is failed")
+        .isTrue();
+
+    // verify that NGINX is installed
+    logger.info("Checking Traefik release {0} status in namespace {1}",
+        TRAEFIK_RELEASE_NAME, traefikNamespace);
+    assertTrue(isHelmReleaseDeployed(TRAEFIK_RELEASE_NAME, traefikNamespace),
+        String.format("NGINX release %s is not in deployed status in namespace %s",
+            TRAEFIK_RELEASE_NAME, traefikNamespace));
+    logger.info("NGINX release {0} status is deployed in namespace {1}",
+        TRAEFIK_RELEASE_NAME, traefikNamespace);
+
+    // wait until the NGINX pod is ready.
+    withStandardRetryPolicy
+        .conditionEvaluationListener(condition -> logger.info("Waiting for Traefik to be ready in "
+            + "namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+                traefikNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isTraefikReady(traefikNamespace), "isNginxReady failed with ApiException"));
+
+    return traefikHelmParams;
   }
 
   /**
@@ -2107,7 +2171,7 @@ public class CommonTestUtils {
 
   /**
    * Verify the default secret exists for the default service account.
-   * 
+   *
    */
   public static void verifyDefaultTokenExists() {
     final LoggingFacade logger = getLogger();

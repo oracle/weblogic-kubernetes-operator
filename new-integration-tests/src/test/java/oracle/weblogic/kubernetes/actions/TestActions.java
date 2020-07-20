@@ -49,6 +49,8 @@ import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
+import oracle.weblogic.kubernetes.actions.impl.Traefik;
+import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.Voyager;
 import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
@@ -337,6 +339,18 @@ public class TestActions {
   public static boolean installVoyager(VoyagerParams params) {
     return Voyager.install(params);
   }
+
+  /**
+   * Install NGINX ingress controller.
+   *
+   * @param params the parameters to Helm install command, such as release name, namespace, repo url,
+   *               repo name and chart name
+   * @return true on success, false otherwise
+   */
+  public static boolean installTraefik(TraefikParams params) {
+    return Traefik.install(params);
+  }
+
 
   /**
    * Upgrade NGINX release.

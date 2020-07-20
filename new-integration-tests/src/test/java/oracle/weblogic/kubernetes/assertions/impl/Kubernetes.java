@@ -339,6 +339,32 @@ public class Kubernetes {
   }
 
   /**
+   * Checks if a Traefik pod is running in the specified namespace. The method assumes that the Traefik pod name
+   * contains "traefik-ingress-controller".
+   *
+   * @param namespace in which to check if the Traefik pod is running
+   * @return true if the pod is running, otherwise false
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isTraefikPodRunning(String namespace) throws ApiException {
+
+    return isPodRunning(namespace, null, "traefik-ingress-controller");
+  }
+
+  /**
+   * Check whether the Traefik pod is ready in the specified namespace. The method assumes that the Traefik pod name
+   * starts with "traefik-ingress-controller".
+   *
+   * @param namespace in which to check if the Traefik pod is ready
+   * @return true if the pod is in the ready state, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isTraefikPodReady(String namespace) throws ApiException {
+    String labelSelector = null;
+    return isPodReady(namespace, labelSelector, "traefik-ingress-controller");
+  }
+
+  /**
    * Returns the V1Pod object given the following parameters.
    * @param namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
