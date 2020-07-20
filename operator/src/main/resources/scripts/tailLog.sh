@@ -14,7 +14,6 @@ echo $$ > $2
 while true ; do
   if [ -f $1 ]; then
     tail -F -s 0.1 -n +0 $1 || sleep 10
-    #tail -F -n +0 $1 || sleep 10
   fi
   sleep 0.1
 done
