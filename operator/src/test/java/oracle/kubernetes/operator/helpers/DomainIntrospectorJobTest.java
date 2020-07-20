@@ -69,7 +69,7 @@ public class DomainIntrospectorJobTest {
   private static final String OVERRIDE_SECRET_2 = "override-secret-2";
   private static final String LOG_HOME = "/shared/logs/" + UID;
   private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
-  private static final String WDT_MODEL_HOME = "/u01/wdt/models";
+  private static final String WDT_MODEL_HOME = "/u01/wdt/my-models";
   private static final String LATEST_IMAGE = "image:latest";
   private static final String ADMIN_NAME = "admin";
   private static final int MAX_SERVERS = 2;
@@ -264,7 +264,7 @@ public class DomainIntrospectorJobTest {
   @Test
   public void whenJobCreatedWithModelHomeDefined_hasModelHomeEnvVariable() {
     getDomain().getSpec()
-        .setConfiguration(new Configuration().withModel(new Model().withModelHome("/u01/wdt/my-models")));
+        .setConfiguration(new Configuration().withModel(new Model().withModelHome(WDT_MODEL_HOME)));
     testSupport.runSteps(getStepFactory(), terminalStep);
     logRecords.clear();
 
@@ -272,7 +272,7 @@ public class DomainIntrospectorJobTest {
     List<V1Container> podTemplateContainers = getPodTemplateContainers(jobs.get(0));
     assertThat(
         podTemplateContainers.get(0).getEnv(),
-        hasEnvVar("WDT_MODEL_HOME", "/u01/wdt/my-models"));
+        hasEnvVar("WDT_MODEL_HOME", WDT_MODEL_HOME));
   }
 
   @Test
