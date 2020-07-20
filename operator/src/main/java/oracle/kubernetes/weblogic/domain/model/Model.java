@@ -22,7 +22,7 @@ public class Model {
   @Description("Name of a ConfigMap containing the WebLogic Deploy Tooling model.")
   private String configMap;
 
-  @Description("Location of the WDT model home.")
+  @Description("Location of the WDT model home. Defaults to /u01/wdt/models")
   private String modelHome;
 
   @Valid
@@ -78,6 +78,7 @@ public class Model {
   void setModelHome(String modelHome) {
     this.modelHome = modelHome;
   }
+
   public Model withModelHome(String modelHome) {
     this.modelHome = modelHome;
     return this;
