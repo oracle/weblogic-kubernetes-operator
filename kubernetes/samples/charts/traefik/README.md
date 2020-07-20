@@ -59,7 +59,7 @@ middleware.traefik.containo.us/middleware-domain1 created
 ingressroute.traefik.containo.us/traefik-pathrouting-2 created
 middleware.traefik.containo.us/middleware-domain2 created
 ```
-Now you can send requests to different WebLogic domains with the unique Traefik entry point of different paths, as defined in route section of the `path-routing.yaml`.
+Now you can send requests to different WebLogic domains with the unique Traefik entry point of different paths, as defined in the route section of the `path-routing.yaml`.
 ```
 # Get the ingress controller web port
 $ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
