@@ -539,9 +539,9 @@ public class Domain {
   }
 
   /**
-   * Returns the domain's model home.
+   * Returns the model home directory of the domain.
    *
-   * @return domain's model home
+   * @return model home directory
    */
   public String getModelHome() {
     return Optional.ofNullable(spec.getConfiguration())
