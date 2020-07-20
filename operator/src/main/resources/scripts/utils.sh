@@ -286,15 +286,17 @@ function traceEnv() {
 }
 
 #
-# traceDirs before|after
-#   Trace contents and owner of DOMAIN_HOME/LOG_HOME/DATA_HOME directories
-#
+# traceDirs before|after DOMAIN_HOME LOG_HOME DATA_HOME ...
+#   Trace contents and owner of directory for the specified env vars...
+
 function traceDirs() {
   trace "id = '`id`'"
+  local keyword="$1"
+  shift
   local indir
-  for indir in DOMAIN_HOME LOG_HOME DATA_HOME; do
+  for indir in $*; do
     [ -z "${!indir}" ] && continue
-    trace "Directory trace for $indir=${!indir} ($1)"
+    trace "Directory trace for $indir=${!indir} ($keyword)"
     local cnt=0
     local odir=""
     local cdir="${!indir}/*"
