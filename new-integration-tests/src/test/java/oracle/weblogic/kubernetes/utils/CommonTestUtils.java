@@ -648,6 +648,61 @@ public class CommonTestUtils {
     return ingressHostList;
   }
 
+
+  /**
+   * Create an ingress for the domain with domainUid in the specified namespace.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param nodeport node port of the ingress controller
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @param setIngressHost if false does not set ingress host
+   * @return list of ingress hosts
+   */
+  public static List<String> createTraefikIngressForDomainAndVerify(String domainUid,
+                                                             String domainNamespace,
+                                                             int nodeport,
+                                                             Map<String, Integer> clusterNameMSPortMap,
+                                                             boolean setIngressHost) {
+
+    LoggingFacade logger = getLogger();
+    // create an ingress in domain namespace
+    final String ingressTraefikClass = "traefik";
+    String ingressName = domainUid + "-" + ingressTraefikClass;
+
+    HashMap<String, String> annotations = new HashMap<>();
+    annotations.put("kubernetes.io/ingress.class", ingressTraefikClass);
+
+    List<String> ingressHostList =
+            createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, setIngressHost);
+
+    assertNotNull(ingressHostList,
+            String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    // check the ingress was found in the domain namespace
+    assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
+            .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
+            .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
+            .contains(ingressName);
+
+    logger.info("ingress {0} for domain {1} was created in namespace {2}",
+            ingressName, domainUid, domainNamespace);
+
+    // check the ingress is ready to route the app to the server pod
+    if (nodeport != 0) {
+      for (String ingressHost : ingressHostList) {
+        String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+            + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
+            + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+
+        logger.info("Executing curl command {0}", curlCmd);
+        assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+      }
+    }
+
+    return ingressHostList;
+  }
+
   /**
    * Create an ingress for the domain with domainUid in a given namespace and verify.
    *

@@ -104,22 +104,23 @@ public class Ingress {
    * @param setIngressHost if false does not set ingress host
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
-  public static List<String> createIngress(String ingressName,
-                                           String domainNamespace,
-                                           String domainUid,
-                                           Map<String, Integer> clusterNameMsPortMap,
-                                           Map<String, String> annotations, boolean setIngressHost) {
+  public static List<String> createIngress(
+      String ingressName,
+      String domainNamespace,
+      String domainUid,
+      Map<String, Integer> clusterNameMsPortMap,
+      Map<String, String> annotations, boolean setIngressHost) {
 
     List<String> ingressHostList = new ArrayList<>();
     ArrayList<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
     clusterNameMsPortMap.forEach((clusterName, managedServerPort) -> {
       // set the http ingress paths
       NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
-              .path(null)
-              .backend(new NetworkingV1beta1IngressBackend()
-                      .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
-                      .servicePort(new IntOrString(managedServerPort))
-              );
+          .path(null)
+          .backend(new NetworkingV1beta1IngressBackend()
+              .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
+              .servicePort(new IntOrString(managedServerPort))
+          );
       ArrayList<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
       httpIngressPaths.add(httpIngressPath);
 
@@ -130,9 +131,9 @@ public class Ingress {
         ingressHostList.add("*");
       }
       NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
-              .host(ingressHost)
-              .http(new NetworkingV1beta1HTTPIngressRuleValue()
-                      .paths(httpIngressPaths));
+          .host(ingressHost)
+          .http(new NetworkingV1beta1HTTPIngressRuleValue()
+              .paths(httpIngressPaths));
 
       ingressRules.add(ingressRule);
       ingressHostList.add(ingressHost);
@@ -140,14 +141,14 @@ public class Ingress {
 
     // set the ingress
     NetworkingV1beta1Ingress ingress = new NetworkingV1beta1Ingress()
-            .apiVersion(INGRESS_API_VERSION)
-            .kind(INGRESS_KIND)
-            .metadata(new V1ObjectMeta()
-                    .name(ingressName)
-                    .namespace(domainNamespace)
-                    .annotations(annotations))
-            .spec(new NetworkingV1beta1IngressSpec()
-                    .rules(ingressRules));
+        .apiVersion(INGRESS_API_VERSION)
+        .kind(INGRESS_KIND)
+        .metadata(new V1ObjectMeta()
+            .name(ingressName)
+            .namespace(domainNamespace)
+            .annotations(annotations))
+        .spec(new NetworkingV1beta1IngressSpec()
+            .rules(ingressRules));
 
     // create the ingress
     try {
