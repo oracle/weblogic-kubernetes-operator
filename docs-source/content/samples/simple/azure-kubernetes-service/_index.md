@@ -203,11 +203,11 @@ We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-azur
 
 ##### Generate configuration files
 
-This sample uses Kubernetes Persistent Volume Claims (PVC) and load balancing to bring WLS to AKS.  These features are expressed to Kubernetes using yaml files.  The script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh` generates the required configuration files automatically, given an input file containing the parameters.  A parameters file is provided at `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.yaml`.  Copy and customize this file for your needs.
+This sample uses Kubernetes Persistent Volume Claims (PVC) and load balancing to bring WLS to AKS.  These features are expressed to Kubernetes using YAML files.  The script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh` generates the required configuration files automatically, given an input file containing the parameters.  A parameters file is provided at `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.yaml`.  Copy and customize this file for your needs.
 
 For example, given the service principal created above, the following values must be substituted in your copy of the input file.
 
-| Name in yaml file | Example value | Notes |
+| Name in YAML file | Example value | Notes |
 |-------------------|---------------|-------|
 | `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | `appId` |
 | `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | `password` |
@@ -443,7 +443,7 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
 
 3. We will use `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume we created previously.
 
-   First, we need to set up domain configuration for the WebLogic domain.  This step uses the configuration generated previously.
+   First, we need to set up the domain configuration for the WebLogic domain.  This step uses the configuration generated previously.
 
    ```bash
    #cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
@@ -712,7 +712,7 @@ If you want to automate all the above steps, please use the `kubernetes/samples/
 
 For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.yaml` directly, or copy the file and edit in your copy. The following values must be specified:
 
-| Name in yaml file | Example value | Notes |
+| Name in YAML file | Example value | Notes |
 |-------------------|---------------|-------|
 | `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | Application id of your service principal, refer to the application id in [Create Service Principal](#create-service-principal-for-aks) section. |
 | `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | A client secret of your service principal, refer to the client secret in [Create Service Principal](#create-service-principal-for-aks) section. |
