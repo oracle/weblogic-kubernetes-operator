@@ -53,6 +53,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
@@ -146,6 +147,17 @@ public class ItTraefikLoadBalancer {
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyTraefik(nginxNamespace, nodeportshttp, nodeportshttps);
+    //determine if the tests are running in Kind cluster. if true use images from Kind registry
+
+    if (KIND_REPO != null) {
+      String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      logger.info("Using image {0}", kindRepoImage);
+      image = kindRepoImage;
+      isUseSecret = false;
+    } else {
+      // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+      createOCRRepoSecret(introDomainNamespace);
+    }
 
   }
 
