@@ -210,7 +210,7 @@ spec:
   includeServerOutInPodLog: true
   # Whether to enable log home
   # logHomeEnabled: false
-  # The in-pod location for domain log, server logs, server out, introspector, and Node Manager log files
+  # The in-pod location for domain log, server logs, server out, introspector out, and Node Manager log files
   # logHome: /shared/logs/domain1
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the operator will start up when it discovers this Domain
