@@ -203,6 +203,9 @@ function createDomainHome {
     sed -i -e "s|\(FROM \).*|\1 ${domainHomeImageBase}|g" ${dockerDir}/Dockerfile
   fi
 
+  # Set WDT_VERSION in case dockerDir references a WDT sample
+  # (wdtVersion comes from the inputs file)
+  export WDT_VERSION="${WDT_VERSION:-${wdtVersion:-1.9.1}}"
   bash ${dockerDir}/build.sh
 
   if [ "$?" != "0" ]; then

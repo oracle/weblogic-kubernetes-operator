@@ -19,8 +19,7 @@ import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
-import oracle.kubernetes.operator.calls.FailureStatusSourceException;
-import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
+import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -222,7 +221,8 @@ public class DomainIntrospectorJobTest {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    assertThat(getDomain(), hasStatus("ServerError",
+            "testcall in namespace junit, for testName: failure reported in test"));
   }
 
   @Test
@@ -260,7 +260,7 @@ public class DomainIntrospectorJobTest {
 
   @Test
   public void whenPodCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
-    testSupport.failOnResource(JOB, getJobName(), NS, new UnprocessableEntityBuilder()
+    testSupport.failOnResource(JOB, getJobName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());
@@ -277,7 +277,7 @@ public class DomainIntrospectorJobTest {
 
   @Test
   public void whenPodCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
-    testSupport.failOnResource(JOB, getJobName(), NS, new UnprocessableEntityBuilder()
+    testSupport.failOnResource(JOB, getJobName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());
