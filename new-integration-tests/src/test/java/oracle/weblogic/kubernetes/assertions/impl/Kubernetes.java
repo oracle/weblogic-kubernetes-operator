@@ -38,6 +38,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.joda.time.DateTime;
 
 import static io.kubernetes.client.util.Yaml.dump;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listDeployments;
@@ -348,7 +349,7 @@ public class Kubernetes {
    */
   public static boolean isTraefikPodRunning(String namespace) throws ApiException {
 
-    return isPodRunning(namespace, null, "traefik-ingress-controller");
+    return isPodRunning(namespace, null, TRAEFIK_RELEASE_NAME + "-" + namespace.substring(3));
   }
 
   /**
@@ -361,7 +362,7 @@ public class Kubernetes {
    */
   public static boolean isTraefikPodReady(String namespace) throws ApiException {
     String labelSelector = null;
-    return isPodReady(namespace, labelSelector, "traefik-ingress-controller");
+    return isPodReady(namespace, labelSelector, TRAEFIK_RELEASE_NAME + "-" + namespace.substring(3));
   }
 
   /**

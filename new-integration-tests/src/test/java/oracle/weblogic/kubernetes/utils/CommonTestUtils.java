@@ -495,9 +495,9 @@ public class CommonTestUtils {
     logger.info("Checking Traefik release {0} status in namespace {1}",
         TRAEFIK_RELEASE_NAME, traefikNamespace);
     assertTrue(isHelmReleaseDeployed(TRAEFIK_RELEASE_NAME, traefikNamespace),
-        String.format("NGINX release %s is not in deployed status in namespace %s",
+        String.format("Traefik release %s is not in deployed status in namespace %s",
             TRAEFIK_RELEASE_NAME, traefikNamespace));
-    logger.info("NGINX release {0} status is deployed in namespace {1}",
+    logger.info("Traefik release {0} status is deployed in namespace {1}",
         TRAEFIK_RELEASE_NAME, traefikNamespace);
 
     // wait until the NGINX pod is ready.
