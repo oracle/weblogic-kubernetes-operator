@@ -84,12 +84,12 @@ function initOutputDir {
   domain1Output="${aksOutputDir}/domain1.yaml"
   grantHelmAdminRole="${aksOutputDir}/cluster-admin-role.yaml"
 
-  removeFileIfExists ${aksOutputDir}/${valuesInputFile}
-  removeFileIfExists ${aksOutputDir}/${pvOutput}
-  removeFileIfExists ${aksOutputDir}/${pvcOutput}
-  removeFileIfExists ${aksOutputDir}/${adminLbOutput}
-  removeFileIfExists ${aksOutputDir}/${clusterLbOutput}
-  removeFileIfExists ${aksOutputDir}/${domain1Output}
+  removeFileIfExists ${pvOutput}
+  removeFileIfExists ${pvcOutput}
+  removeFileIfExists ${adminLbOutput}
+  removeFileIfExists ${clusterLbOutput}
+  removeFileIfExists ${domain1Output}
+  removeFileIfExists ${grantHelmAdminRole}
   removeFileIfExists ${aksOutputDir}/create-domain-on-aks-inputs.yaml
 }
 
@@ -391,7 +391,7 @@ function waitForJobComplete {
     #    to
     #    ${domainUID}-${managedServerNameBase}n, e.g. domain1-managed-servern, n = initialManagedServerReplicas
     runningPodCount=`kubectl get pods | grep "${domainUID}" | grep -c "Running"`
-    if [  $runningPodsCount -le ${initialManagedServerReplicas} ]; then svcState="running"; fi
+    if [[ $runningPodsCount -le ${initialManagedServerReplicas} ]]; then svcState="running"; fi
   done
 
   # If all the services are completed, print service details
@@ -408,7 +408,7 @@ function waitForJobComplete {
 function printSummary {
   if [ "${executeIt}" = true ]; then
     echo ""
-	echo ""
+	  echo ""
     echo "The following Azure Resouces are created: "
     echo "  Resource group: ${azureResourceGroupName}"
     echo "  Kubernetes service cluster name: ${aksClusterName}"
@@ -436,6 +436,7 @@ function printSummary {
   echo "  ${adminLbOutput}"
   echo "  ${clusterLbOutput}"
   echo "  ${domain1Output}"
+  echo "  ${grantHelmAdminRole}"
   echo ""
   
   echo "Completed"
