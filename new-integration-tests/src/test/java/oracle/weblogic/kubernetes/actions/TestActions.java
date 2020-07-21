@@ -383,6 +383,16 @@ public class TestActions {
   }
 
   /**
+   * Uninstall the Traefik release.
+   *
+   * @param params the parameters to Helm uninstall command, such as release name and namespace
+   * @return true on success, false otherwise
+   */
+  public static boolean uninstallTraefik(HelmParams params) {
+    return Traefik.uninstall(params);
+  }
+
+  /**
    * Uninstall the Voyager release.
    *
    * @param params the parameters to Helm uninstall command, such as release name and namespace

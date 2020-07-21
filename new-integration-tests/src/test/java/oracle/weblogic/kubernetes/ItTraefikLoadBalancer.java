@@ -98,11 +98,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class ItTraefikLoadBalancer {
 
   private static String opNamespace = null;
-  private static String introDomainNamespace = null;
+  private static String domainNamespace = null;
 
-  private static String nginxNamespace = null;
+  private static String traefikNamespace = null;
   private static int nodeportshttp;
-  private static HelmParams nginxHelmParams = null;
+  private static HelmParams traefikHelmParams = null;
 
   private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
   private static boolean isUseSecret = true;
@@ -133,20 +133,20 @@ public class ItTraefikLoadBalancer {
     opNamespace = namespaces.get(0);
     logger.info("Assign a unique namespace for Introspect Version WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
-    introDomainNamespace = namespaces.get(1);
+    domainNamespace = namespaces.get(1);
     logger.info("Assign a unique namespace for NGINX");
     assertNotNull(namespaces.get(2), "Namespace is null");
-    nginxNamespace = namespaces.get(2);
+    traefikNamespace = namespaces.get(2);
 
     // install operator and verify its running in ready state
-    installAndVerifyOperator(opNamespace, introDomainNamespace);
+    installAndVerifyOperator(opNamespace, domainNamespace);
 
     // get a free node port for NGINX
     nodeportshttp = getNextFreePort(30305, 30405);
     int nodeportshttps = getNextFreePort(30443, 30543);
 
     // install and verify NGINX
-    nginxHelmParams = installAndVerifyTraefik(nginxNamespace, nodeportshttp, nodeportshttps);
+    traefikHelmParams = installAndVerifyTraefik(traefikNamespace, nodeportshttp, nodeportshttps);
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
 
     if (KIND_REPO != null) {
@@ -156,7 +156,7 @@ public class ItTraefikLoadBalancer {
       isUseSecret = false;
     } else {
       // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-      createOCRRepoSecret(introDomainNamespace);
+      createOCRRepoSecret(domainNamespace);
     }
 
   }
@@ -197,13 +197,13 @@ public class ItTraefikLoadBalancer {
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
     // create WebLogic domain credential secret
-    createSecretWithUsernamePassword(wlSecretName, introDomainNamespace,
+    createSecretWithUsernamePassword(wlSecretName, domainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
     createPV(pvName, domainUid, this.getClass().getSimpleName());
-    createPVC(pvName, pvcName, domainUid, introDomainNamespace);
+    createPVC(pvName, pvcName, domainUid, domainNamespace);
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() ->
@@ -233,7 +233,7 @@ public class ItTraefikLoadBalancer {
 
     // create configmap and domain on persistent volume using the WLST script and property file
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
-        pvName, pvcName, introDomainNamespace);
+        pvName, pvcName, domainNamespace);
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
@@ -242,7 +242,7 @@ public class ItTraefikLoadBalancer {
         .kind("Domain")
         .metadata(new V1ObjectMeta()
             .name(domainUid)
-            .namespace(introDomainNamespace))
+            .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
@@ -255,7 +255,7 @@ public class ItTraefikLoadBalancer {
                 : null)
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
-                .namespace(introDomainNamespace))
+                .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
             .logHome("/shared/logs/" + domainUid)
@@ -290,37 +290,37 @@ public class ItTraefikLoadBalancer {
                 .serverStartState("RUNNING")));
 
     // verify the domain custom resource is created
-    createDomainAndVerify(domain, introDomainNamespace);
+    createDomainAndVerify(domain, domainNamespace);
 
     // verify the admin server service created
-    checkServiceExists(adminServerPodName, introDomainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
 
     // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
     }
 
     // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
     //create ingress controller
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
-    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, introDomainNamespace);
-    createTraefikIngressForDomainAndVerify(domainUid, introDomainNamespace, 0, clusterNameMsPortMap, true);
+    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
+    createTraefikIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap, true);
 
     // deploy application and verify all servers functions normally
     logger.info("Getting node port for T3 channel");
     int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "t3channel"),
         "Getting admin server t3channel node port failed");
     assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
 
@@ -329,11 +329,11 @@ public class ItTraefikLoadBalancer {
     logger.info("Deploying webapp to domain {0}", archivePath);
     deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
-        introDomainNamespace);
+        domainNamespace);
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
 
     //access application from admin server
@@ -349,7 +349,7 @@ public class ItTraefikLoadBalancer {
         clusterViewAppPath, clusterName);
     deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
-        introDomainNamespace);
+        domainNamespace);
 
     logger.info("Getting the list of servers using the listServers");
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/";
@@ -364,7 +364,7 @@ public class ItTraefikLoadBalancer {
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
             + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
-        domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+        domainUid + "." + domainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount + 1; i++) {
       managedServers.add(managedServerNameBase + i);
@@ -441,15 +441,15 @@ public class ItTraefikLoadBalancer {
 
 
   /**
-   * Uninstall Nginx.
-   * The cleanup framework does not uninstall Nginx release.
+   * Uninstall Traefik.
+   * The cleanup framework does not uninstall Traefik release.
    * Do it here for now.
    */
   @AfterAll
   public void tearDownAll() {
-    // uninstall NGINX release
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
+    // uninstall Traefik loadbalancer
+    if (traefikHelmParams != null) {
+      assertThat(uninstallNginx(traefikHelmParams))
           .as("Test uninstallNginx returns true")
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();

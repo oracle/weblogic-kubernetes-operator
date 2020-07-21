@@ -125,8 +125,8 @@ public class IntegrationTestWatcher implements
   public void handleBeforeAllMethodExecutionException​(ExtensionContext context, Throwable throwable)
       throws Throwable {
     printHeader(String.format("BeforeAll failed %s", className), "!");
-    collectLogs(context, "beforeAll");
     getLogger().severe(getStackTraceAsString(throwable));
+    collectLogs(context, "beforeAll");
     throw throwable;
   }
 
@@ -150,8 +150,8 @@ public class IntegrationTestWatcher implements
   public void handleBeforeEachMethodExecutionException(ExtensionContext context, Throwable throwable)
       throws Throwable {
     printHeader(String.format("BeforeEach failed for %s()", methodName), "!");
-    collectLogs(context, "beforeEach");
     getLogger().severe(getStackTraceAsString(throwable));
+    collectLogs(context, "beforeEach");
     throw throwable;
   }
 
@@ -212,8 +212,8 @@ public class IntegrationTestWatcher implements
   public void handleTestExecutionException(ExtensionContext context, Throwable throwable)
       throws Throwable {
     printHeader(String.format("Test failed %s()", methodName), "!");
-    collectLogs(context, "test");
     getLogger().severe(getStackTraceAsString(throwable));
+    collectLogs(context, "test");
     throw throwable;
   }
 
@@ -252,8 +252,8 @@ public class IntegrationTestWatcher implements
   public void handleAfterEachMethodExecutionException(ExtensionContext context, Throwable throwable)
       throws Throwable {
     printHeader(String.format("AfterEach failed for %s()", methodName), "!");
-    collectLogs(context, "afterEach");
     getLogger().severe(getStackTraceAsString(throwable));
+    collectLogs(context, "afterEach");
     throw throwable;
   }
 
