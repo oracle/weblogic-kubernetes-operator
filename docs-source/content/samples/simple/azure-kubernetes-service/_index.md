@@ -235,6 +235,7 @@ The following files were generated:
   /home/username/azure/weblogic-on-aks/admin-lb.yaml
   /home/username/azure/weblogic-on-aks/cluster-lb.yaml
   /home/username/azure/weblogic-on-aks/domain1.yaml
+  /home/username/azure/weblogic-on-aks/cluster-admin-role.yaml
 
 Completed
 ```
@@ -319,10 +320,9 @@ azurefile   Bound    azurefile   5Gi        RWX            azurefile      2d21h
 
 The Oracle WebLogic Server Kubernetes Operator (the operator) is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes pod and stands ready to perform actions related to running WLS on Kubernetes.
 
-Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. You have to grant the Helm service account with the `cluster-admin` role with the following command.
+Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. Use the configuration file in `~/azure/weblogic-on-aks/cluster-admin-role.yaml` to grant Helm service account permission to install WebLogic Operator. The following is the content of `cluster-admin-role.yaml`.
 
-```bash
-cat <<EOF | kubectl apply -f -
+```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -335,7 +335,12 @@ subjects:
 - kind: ServiceAccount
   name: default
   namespace: kube-system
-EOF
+```
+
+Grant the Helm service account with the `cluster-admin` role with the following command:
+
+```bash
+kubectl apply -f ~/azure/weblogic-on-aks/cluster-admin-role.yaml
 ```
 
 You should see this output:
@@ -344,7 +349,7 @@ You should see this output:
 clusterrolebinding.rbac.authorization.k8s.io/helm-user-cluster-admin-role created
 ```
 
-Install the WebLogic Server Operator. The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Please check the Helm version first if you are using the Azure Cloud Shell, and run the corresponding command.
+The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Please check the Helm version first if you are using the Azure Cloud Shell, and run the corresponding command.
 
 ```bash
 # Check the helm version
