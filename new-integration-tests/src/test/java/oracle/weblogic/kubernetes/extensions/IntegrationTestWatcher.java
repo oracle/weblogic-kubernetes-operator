@@ -4,6 +4,8 @@
 package oracle.weblogic.kubernetes.extensions;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -124,6 +126,7 @@ public class IntegrationTestWatcher implements
       throws Throwable {
     printHeader(String.format("BeforeAll failed %s", className), "!");
     collectLogs(context, "beforeAll");
+    getLogger().severe(getStackTraceAsString(throwable));
     throw throwable;
   }
 
@@ -148,6 +151,7 @@ public class IntegrationTestWatcher implements
       throws Throwable {
     printHeader(String.format("BeforeEach failed for %s()", methodName), "!");
     collectLogs(context, "beforeEach");
+    getLogger().severe(getStackTraceAsString(throwable));
     throw throwable;
   }
 
@@ -209,6 +213,7 @@ public class IntegrationTestWatcher implements
       throws Throwable {
     printHeader(String.format("Test failed %s()", methodName), "!");
     collectLogs(context, "test");
+    getLogger().severe(getStackTraceAsString(throwable));
     throw throwable;
   }
 
@@ -248,6 +253,7 @@ public class IntegrationTestWatcher implements
       throws Throwable {
     printHeader(String.format("AfterEach failed for %s()", methodName), "!");
     collectLogs(context, "afterEach");
+    getLogger().severe(getStackTraceAsString(throwable));
     throw throwable;
   }
 
@@ -383,5 +389,15 @@ public class IntegrationTestWatcher implements
    */
   private void printHeader(String message, String rc) {
     getLogger().info("\n" + rc.repeat(message.length()) + "\n" + message + "\n" + rc.repeat(message.length()) + "\n");
+  }
+
+  private static String getStackTraceAsString(Throwable throwable) {
+    try (StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw)) {
+      throwable.printStackTrace(pw);
+      return sw.toString();
+    } catch (IOException ioe) {
+      throw new IllegalStateException(ioe);
+    }
   }
 }
