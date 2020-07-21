@@ -79,16 +79,16 @@ else
   echo "@@ Installing traefik"
 
   # you only need to add the repo once, but we do it every time for simplicity
-  helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+  helm repo add traefik https://containous.github.io/traefik-helm-chart
+  helm repo update
 
   set -x
 
-  helm install ${TRAEFIK_NAME} stable/traefik \
+  helm install ${TRAEFIK_NAME} traefik/traefik \
     --namespace $TRAEFIK_NAMESPACE \
-    --values kubernetes/samples/charts/traefik/values.yaml \
     --set "kubernetes.namespaces={$TRAEFIK_NAMESPACE,$DOMAIN_NAMESPACE}" \
-    --set "service.nodePorts.http=${TRAEFIK_HTTP_NODEPORT}" \
-    --set "service.nodePorts.https=${TRAEFIK_HTTPS_NODEPORT}" \
+    --set "ports.web.nodePorts.http=${TRAEFIK_HTTP_NODEPORT}" \
+    --set "ports.websecure.nodePort=${TRAEFIK_HTTPS_NODEPORT}" \
     --wait
 
   set +x
