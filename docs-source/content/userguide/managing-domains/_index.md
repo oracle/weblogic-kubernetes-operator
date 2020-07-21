@@ -32,8 +32,8 @@ Be aware of the following important considerations for WebLogic domains running 
   [WebLogic domain in Docker image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
   {{% /notice %}}
 
-* _Log File Locations:_ The operator can automatically override WebLogic domain and server log locations using
-  configuration overrides.  This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
+* _Log File Locations:_ The operator can automatically override WebLogic domain, server, and introspector log locations.
+  This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
   and `domainHomeSourceType` is set to `PersistentVolume`.  When overriding, the log location will be the location specified by the `logHome` setting.
 
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
