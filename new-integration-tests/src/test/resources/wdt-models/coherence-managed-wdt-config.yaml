@@ -10,12 +10,6 @@ topology:
     ProductionModeEnabled: true
     Log:
         FileName: domain1.log
-    NMProperties:
-        JavaHome: /usr/java/jdk1.8.0_211
-        LogFile: '@@PROP:DomainHome@@/nodemanager/nodemanager.log'
-        DomainsFile: '@@PROP:DomainHome@@/nodemanager/nodemanager.domains'
-        NodeManagerHome: '@@PROP:DomainHome@@/nodemanager'
-        weblogic.StartScriptName: startWebLogic.sh
     Cluster:
         'cluster-1':
             CoherenceClusterSystemResource: CoherenceCluster
