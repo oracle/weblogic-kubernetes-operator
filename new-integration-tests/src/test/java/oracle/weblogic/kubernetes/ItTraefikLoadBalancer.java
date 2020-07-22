@@ -193,6 +193,10 @@ public class ItTraefikLoadBalancer {
     assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
         String.format("createSecret failed for %s", REPO_SECRET_NAME));
 
+    // create WebLogic domain credential secret
+    createSecretWithUsernamePassword(wlSecretName, domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
