@@ -20,7 +20,7 @@
 # 
 #  If Traefik is unavailable and your admin server pod is running, try 'kubectl exec':
 # 
-#    kubectl exec -n sample-domain2-ns sample-domain2-admin-server -- bash -c \
+#    kubectl exec -n sample-domain1-ns sample-domain2-admin-server -- bash -c \
 #      "curl -s -S -m 10 http://sample-domain2-cluster-cluster-1:8001/myapp_war/index.jsp"
 # 
 
@@ -28,7 +28,7 @@ apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   name: traefik-ingress-sample-domain2-cluster-cluster-1
-  namespace: sample-domain2-ns
+  namespace: sample-domain1-ns
   labels:
     weblogic.domainUID: sample-domain2
   annotations:
