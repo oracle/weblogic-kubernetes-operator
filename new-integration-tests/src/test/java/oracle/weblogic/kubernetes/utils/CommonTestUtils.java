@@ -4,8 +4,6 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -194,8 +192,26 @@ public class CommonTestUtils {
    */
   public static HelmParams installAndVerifyOperator(String opNamespace,
                                                     String... domainNamespace) {
+    HelmParams opHelmParams =
+        new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
+        0, opHelmParams, domainNamespace);
+  }
 
-    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false, 0, domainNamespace);
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opHelmParams the Helm parameters to install operator
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace, HelmParams opHelmParams,
+                                                    String... domainNamespace) {
+    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
+        0, opHelmParams, domainNamespace);
   }
 
   /**
@@ -212,6 +228,32 @@ public class CommonTestUtils {
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
+                                                    String... domainNamespace) {
+    HelmParams opHelmParams =
+        new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
+            .namespace(opNamespace)
+            .chartDir(OPERATOR_CHART_DIR);
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
+        withRestAPI, externalRestHttpsPort, opHelmParams, domainNamespace);
+
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opHelmParams the Helm parameters to install operator
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String opServiceAccount,
+                                                    boolean withRestAPI,
+                                                    int externalRestHttpsPort,
+                                                    HelmParams opHelmParams,
                                                     String... domainNamespace) {
     LoggingFacade logger = getLogger();
     // Create a service account for the unique opNamespace
@@ -235,19 +277,17 @@ public class CommonTestUtils {
     Map<String, Object> secretNameMap = new HashMap<>();
     secretNameMap.put("name", REPO_SECRET_NAME);
 
-    // Helm install parameters
-    HelmParams opHelmParams = new HelmParams()
-        .releaseName(OPERATOR_RELEASE_NAME)
-        .namespace(opNamespace)
-        .chartDir(OPERATOR_CHART_DIR);
-
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()
         .helmParams(opHelmParams)
-        .image(operatorImage)
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
         .serviceAccount(opServiceAccount);
+
+    // use default image when repoUrl is set, otherwise use latest/current branch operator image
+    if (opHelmParams.getRepoUrl() == null) {
+      opParams.image(operatorImage);
+    }
 
     if (withRestAPI) {
       // create externalRestIdentitySecret
@@ -1704,23 +1744,6 @@ public class CommonTestUtils {
   }
 
   /**
-   * A utility method to sed files.
-   *
-   * @throws java.io.IOException when copying files from source location to staging area fails
-   */
-  public static void replaceStringInFile(String filePath, String oldValue, String newValue)
-      throws IOException {
-    LoggingFacade logger = getLogger();
-    Path src = Paths.get(filePath);
-    logger.info("Copying {0}", src.toString());
-    Charset charset = StandardCharsets.UTF_8;
-    String content = new String(Files.readAllBytes(src), charset);
-    content = content.replaceAll(oldValue, newValue);
-    logger.info("to {0}", src.toString());
-    Files.write(src, content.getBytes(charset));
-  }
-
-  /**
    * Read the content of a model file as a String and add it to a map.
    */
   private static void addModelFile(Map<String, String> data, String modelFileName) {
@@ -1839,7 +1862,7 @@ public class CommonTestUtils {
     String out = targetFile.toString();
     for (Map.Entry<String, String> entry : templateMap.entrySet()) {
       logger.info("Replacing String {0} with the value {1}", entry.getKey(), entry.getValue());
-      replaceStringInFile(out, entry.getKey(), entry.getValue());
+      FileUtils.replaceStringInFile(out, entry.getKey(), entry.getValue());
     }
     return targetFile;
   }

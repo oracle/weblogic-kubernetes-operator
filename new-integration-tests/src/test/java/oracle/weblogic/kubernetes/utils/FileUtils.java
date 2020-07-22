@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,6 +23,7 @@ import java.util.zip.ZipOutputStream;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
@@ -242,4 +245,20 @@ public class FileUtils {
     return zipFileName;
   }
 
+  /**
+   * A utility method to sed files.
+   *
+   * @throws IOException when copying files from source location to staging area fails
+   */
+  public static void replaceStringInFile(String filePath, String oldValue, String newValue)
+      throws IOException {
+    LoggingFacade logger = getLogger();
+    Path src = Paths.get(filePath);
+    logger.info("Copying {0}", src.toString());
+    Charset charset = StandardCharsets.UTF_8;
+    String content = new String(Files.readAllBytes(src), charset);
+    content = content.replaceAll(oldValue, newValue);
+    logger.info("to {0}", src.toString());
+    Files.write(src, content.getBytes(charset));
+  }
 }

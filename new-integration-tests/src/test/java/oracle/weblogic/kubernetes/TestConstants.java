@@ -44,6 +44,8 @@ public interface TestConstants {
       .orElse(REPO_DUMMY_VALUE);
   public static final String REPO_EMAIL = Optional.ofNullable(System.getenv("REPO_EMAIL"))
       .orElse(REPO_DUMMY_VALUE);
+  public static final String OPERATOR_GITHUB_CHART_REPO_URL =
+        "https://oracle.github.io/weblogic-kubernetes-operator/charts";
 
   // OCR registry
   public static final String OCR_SECRET_NAME = "ocr-secret";
