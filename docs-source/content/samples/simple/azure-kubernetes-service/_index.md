@@ -14,7 +14,7 @@ AKS is a managed Kubernetes Service that lets you quickly deploy and manage Kube
  - [Prerequisites](#prerequisites)
  - [Create the AKS cluster](#create-the-aks-cluster)
  - [Create storage and set up file share](#create-storage-and-set-up-file-share)
- - [Install WebLogic Operator](#install-weblogic-operator)
+ - [Install WebLogic Server Kubernetes Operator](#install-weblogic-server-kubernetes-operator)
  - [Create WebLogic domain](#create-weblogic-domain)
  - [Automation](#automation)
  - [Deploy sample application](#deploy-sample-application)
@@ -31,7 +31,7 @@ This sample assumes the following prerequisites.
 This sample assumes one of the following two execution environments:
 
 1. Run the commands on your local computer. This allows for the greatest flexibility while requiring some setup effort.
-1. Run the commands in the Azure Cloud Shell. Cloud Shell is a browser based utility and runs on the Azure portal. This option may be best for users already familiar with the utility and Azure. It is also suitable for users wanting to avoid installing additional software on their local computer.
+1. Run the commands in the Azure Cloud Shell. Cloud Shell is a browser-based utility and runs on the Azure portal. This option may be best for users already familiar with the utility and Azure. It is also suitable for users wanting to avoid installing additional software on their local computer.
 
 * Local Environment Setup
 
@@ -39,7 +39,7 @@ This sample assumes one of the following two execution environments:
   * [Git](https://git-scm.com/downloads), use `git --version` to test if `git` works.
   * [Azure CLI](https://docs.microsoft.com/cli/azure), use `az --version` to test if `az` works.
   * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/), use `kubectl version` to test if `kubectl` works.
-  * [helm](https://helm.sh/docs/intro/install/), version 3.1 and above, use `helm version` to check the `helm` version.
+  * [helm](https://helm.sh/docs/intro/install/), version 3.1 and later, use `helm version` to check the `helm` version.
 
 * Azure Cloud Shell
 
@@ -56,29 +56,25 @@ If you run commands in your local environment, please run `az login` first. Skip
 
 ```bash
 # Login
-az login
-
-SUBSCRIPTION_ID=<your-subscription-id>
+$ az login
 
 # Set your working subscription
-az account set -s $SUBSCRIPTION_ID
-
+$ SUBSCRIPTION_ID=<your-subscription-id>
+$ az account set -s $SUBSCRIPTION_ID
 ```
 
 Create the new service principal with the following commands:
 
 ```bash
-SP_NAME=myAKSClusterServicePrincipal
-
 # Create Service Principal
-
-az ad sp create-for-rbac --skip-assignment --name $SP_NAME
+$ SP_NAME=myAKSClusterServicePrincipal
+$ az ad sp create-for-rbac --skip-assignment --name $SP_NAME
 
 # Copy the output to a file, we will use it to
 # Specifically we will need the app ID, client secret and tenant ID later.
 ```
 
-If you see an error similar to the following
+If you see an error similar to the following:
 
 ```bash
 Found an existing application instance of "5ca2f201-ad4d-43a1-a942-c9e9571de3ec". We will patch it
@@ -91,40 +87,40 @@ Grant your service principal with a contributor role to create AKS resources.
 
 ```bash
 # Use the <appId> from the output of the last command
-az role assignment create --assignee <appId> --role Contributor
+$ az role assignment create --assignee <appId> --role Contributor
 ```
 
 ##### Docker Hub
 
-You will need a Docker Hub account. If you don't have an existing account, please sign up for a new account at [DockerHub](https://hub.docker.com/). Note down your user name, password and  email for Docker Hub. Because this sample uses a Docker image for a specific version of WLS, and WLS requires accepting license terms, do a Docker Hub "checkout" of [Oracle WebLogic Server](https://hub.docker.com/_/oracle-weblogic-server-12c). This sample was written with 12.2.1.3, but other versions may work as well.
+You will need a Docker Hub account. If you don't have an existing account, please sign up for a new account at [DockerHub](https://hub.docker.com/). Make note of your Docker Hub user name, password, and  email. Because this sample uses a Docker image for a specific version of WLS, and WLS requires accepting license terms, do a Docker Hub "checkout" of [Oracle WebLogic Server](https://hub.docker.com/_/oracle-weblogic-server-12c). This sample pertains to 12.2.1.3, but other versions may work as well.
 
-##### Clone WebLogic Operator repository
+##### Clone WebLogic Server Kubernetes Operator repository
 
-Please clone this repository to your machine. We will use several scripts in this repository to create a WebLogic domain.
+Clone this repository to your machine. We will use several scripts in this repository to create a WebLogic domain.
 
 ```bash
-git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
   
-{{% notice info %}} The following sections of the sample will take you step-by-step through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This allows you to understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
+{{% notice info %}} The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
 {{% /notice %}}
 
 #### Create the AKS cluster
 
-This sample requires we disable http-application-routing by default.  If you want to enable  http_application_routing, please follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
+This sample requires that you disable http-application-routing by default.  If you want to enable  http_application_routing, please follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
 
 Run the following commands to create the AKS cluster instance.
 
 ```bash
 # Change these parameters as needed for your own environment
-AKS_CLUSTER_NAME=WLSSimpleCluster
-AKS_PERS_RESOURCE_GROUP=wls-simple-cluster
-AKS_PERS_LOCATION=eastus
-SP_APP_ID=<service-principal-app-id>
-SP_CLIENT_SECRET=<service-principal-client-secret>
+$ AKS_CLUSTER_NAME=WLSSimpleCluster
+$ AKS_PERS_RESOURCE_GROUP=wls-simple-cluster
+$ AKS_PERS_LOCATION=eastus
+$ SP_APP_ID=<service-principal-app-id>
+$ SP_CLIENT_SECRET=<service-principal-client-secret>
 
-az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
-az aks create \
+$ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
+$ az aks create \
    --resource-group $AKS_PERS_RESOURCE_GROUP \
    --name $AKS_CLUSTER_NAME \
    --node-count 3 \
@@ -139,18 +135,19 @@ az aks create \
 After the deployment finishes, run the following command to connect to the AKS cluster. This command updates your local `~/.kube/config` so that subsequent `kubectl` commands interact with the named AKS cluster.
 
 ```bash
-az aks get-credentials --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME
+$ az aks get-credentials --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME
 ```
 
 To verify the connection to your cluster, use the `kubectl get` command to return a list of the cluster nodes.
 
 ```bash
-kubectl get nodes
+$ kubectl get nodes
 ```
 
 Example output:
 
 ```bash
+$ kubectl get nodes
 NAME                                STATUS   ROLES   AGE     VERSION
 aks-nodepool1-15992006-vmss000000   Ready    agent   7m49s   v1.15.11
 aks-nodepool1-15992006-vmss000001   Ready    agent   7m32s   v1.15.11
@@ -159,46 +156,46 @@ aks-nodepool1-15992006-vmss000002   Ready    agent   7m52s   v1.15.11
 
 #### Create storage and set up file share
 
-Our usage pattern for the operator involves creating Kubernetes "persistent volumes" to allow the WebLogic Server to persist its configuration and data separately from the Kubernetes pods that run WebLogic Server workloads.
+Our usage pattern for the operator involves creating Kubernetes "persistent volumes" to allow the WebLogic Server to persist its configuration and data separately from the Kubernetes Pods that run WebLogic Server workloads.
 
 We will create an external data volume to access and persist data. There are several options for data sharing as described in [Storage options for applications in Azure Kubernetes Service (AKS)](https://docs.microsoft.com/azure/aks/concepts-storage).
 
 We will use Azure Files as a Kubernetes volume. Consult the [Azure Files Documentation](https://docs.microsoft.com/azure/aks/azure-files-volume) for details about this full featured cloud storage solution.
 
-Create a storage account first, please note that the storage account name can contain only lowercase letters and numbers, between 3 and 24 characters:
+First, create a storage account. Note that the storage account name can contain only lowercase letters and numbers, between 3 and 24 characters:
 
 ```bash
 # Change the value as needed for your own environment
-AKS_PERS_STORAGE_ACCOUNT_NAME=wlssimplestorageacct
+$ AKS_PERS_STORAGE_ACCOUNT_NAME=wlssimplestorageacct
 
-az storage account create \
+$ az storage account create \
    -n $AKS_PERS_STORAGE_ACCOUNT_NAME \
    -g $AKS_PERS_RESOURCE_GROUP \
    -l $AKS_PERS_LOCATION \
    --sku Standard_LRS
 ```
 
-Now we need to create a file share. We need a storage connection string to create the file share. Run the `show-connection-string` command to get connection string, then create the share with `az storage share create`, as shown here.
+Now we need to create a file share. To create the file share, you need a storage connection string. Run the `show-connection-string` command to get connection string, then create the share with `az storage share create`, as shown here.
 
 ```bash
 # Change value as needed for your own environment
-AKS_PERS_SHARE_NAME=weblogic
-
-export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -o tsv)
-
-az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING
+$ AKS_PERS_SHARE_NAME=weblogic
+# Get connection string
+$ export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -o tsv)
+# Create file share
+$ az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING
 ```
 
-The operator uses Kubernetes secrets.  We need a storage key for the secret. These commands query the storage account to obtain the key, and then stores the storage account key as a Kubernetes secret.
+The operator uses Kubernetes Secrets.  We need a storage key for the secret. These commands query the storage account to obtain the key, and then stores the storage account key as a Kubernetes secret.
 
 ```bash
-STORAGE_KEY=$(az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" -o tsv)
+$ STORAGE_KEY=$(az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" -o tsv)
 ```
 
 We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-azure-storage-credentials-secret.sh` script to create the storage account key as a Kubernetes secret, leaving the secret name with the default value `azure-secret`. For example:
 
 ```bash
-./create-azure-storage-credentials-secret.sh -a $AKS_PERS_STORAGE_ACCOUNT_NAME -k $STORAGE_KEY
+$ ./create-azure-storage-credentials-secret.sh -a $AKS_PERS_STORAGE_ACCOUNT_NAME -k $STORAGE_KEY
 ```
 
 ##### Generate configuration files
@@ -220,14 +217,15 @@ Use the following command to generate configuration files, assuming the output d
 
 ```bash
 #cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
-mkdir ~/azure
-cp create-domain-on-aks-inputs.yaml my-create-domain-on-aks-inputs.yaml
-./create-domain-on-aks.sh -i my-create-domain-on-aks-inputs.yaml -o ~/azure
+$ mkdir ~/azure
+$ cp create-domain-on-aks-inputs.yaml my-create-domain-on-aks-inputs.yaml
+$ ./create-domain-on-aks.sh -i my-create-domain-on-aks-inputs.yaml -o ~/azure
 ```
 
 After running the command, all needed configuration files are generated and output to `~/azure/weblogic-on-aks`:
 
 ```bash
+$ ./create-domain-on-aks.sh -i my-create-domain-on-aks-inputs.yaml -o ~/azure
 The following files were generated:
   /home/username/azure/weblogic-on-aks/pv.yaml
   /home/username/azure/weblogic-on-aks/pvc.yaml
@@ -289,26 +287,29 @@ spec:
 Use the `kubectl` command to create the persistent volume and persistent volume claim.
 
 ```bash
-kubectl apply -f ~/azure/weblogic-on-aks/pv.yaml
-kubectl apply -f ~/azure/weblogic-on-aks/pvc.yaml
+$ kubectl apply -f ~/azure/weblogic-on-aks/pv.yaml
+$ kubectl apply -f ~/azure/weblogic-on-aks/pvc.yaml
 ```
 
-You should see the following output after each command, respectively.
+You will see the following output after each command, respectively.
 
 ```bash
+$ kubectl apply -f ~/azure/weblogic-on-aks/pv.yaml
 persistentvolume/azurefile created
+$ kubectl apply -f ~/azure/weblogic-on-aks/pvc.yaml
 persistentvolumeclaim/azurefile created
 ```
 
 Use the following command to verify:
 
 ```bash
-kubectl get pv,pvc
+$ kubectl get pv,pvc
 ```
 
 Example output:
 
 ```bash
+$ kubectl get pv,pvc
 NAME        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM               STORAGECLASS   REASON   AGE
 azurefile   5Gi        RWX            Retain           Bound    default/azurefile   azurefile               2d21h
 
@@ -318,11 +319,11 @@ azurefile   Bound    azurefile   5Gi        RWX            azurefile      2d21h
 
 > **Note**: Carefully inspect the output and verify it matches the above. `ACCESS MODES`, `CLAIM`, and `STORAGECLASS` are vital.
 
-#### Install WebLogic Operator
+#### Install WebLogic Server Kubernetes Operator
 
-The Oracle WebLogic Server Kubernetes Operator (the operator) is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes pod and stands ready to perform actions related to running WLS on Kubernetes.
+The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
-Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. Use the configuration file in `~/azure/weblogic-on-aks/cluster-admin-role.yaml` to grant Helm service account with permission to install the operator. The following is the content of `cluster-admin-role.yaml`.
+Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. Use the configuration file in `~/azure/weblogic-on-aks/cluster-admin-role.yaml` to grant Helm service account with permission to install the operator. The following is the content of `cluster-admin-role.yaml`:
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -342,12 +343,13 @@ subjects:
 Grant the Helm service account with the `cluster-admin` role with the following command:
 
 ```bash
-kubectl apply -f ~/azure/weblogic-on-aks/cluster-admin-role.yaml
+$ kubectl apply -f ~/azure/weblogic-on-aks/cluster-admin-role.yaml
 ```
 
-You should see this output:
+You will see this output:
 
 ```bash
+$ kubectl apply -f ~/azure/weblogic-on-aks/cluster-admin-role.yaml
 clusterrolebinding.rbac.authorization.k8s.io/helm-user-cluster-admin-role created
 ```
 
@@ -355,23 +357,24 @@ The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operat
 
 ```bash
 # Check the helm version
-helm version
+$ helm version
 
-# For Helm 3.x, run the following
-helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
-helm repo update
-helm install weblogic-operator weblogic-operator/weblogic-operator
+# For Helm 3.x, run the following:
+$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
+$ helm repo update
+$ helm install weblogic-operator weblogic-operator/weblogic-operator
 
-# For helm 2.x, run the following
-helm init
-helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
-helm repo update
-helm install weblogic-operator/weblogic-operator --name weblogic-operator
+# For helm 2.x, run the following:
+$ helm init
+$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
+$ helm repo update
+$ helm install weblogic-operator/weblogic-operator --name weblogic-operator
 ```
 
-The output should show something similar to the following.
+The output will show something similar to the following:
 
 ```bash
+$ helm install weblogic-operator/weblogic-operator --name weblogic-operator
 NAME: weblogic-operator
 LAST DEPLOYED: Wed Jul  1 23:47:44 2020
 NAMESPACE: default
@@ -380,15 +383,16 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-Verify the operator with the following command, the status should be running.
+Verify the operator with the following command; the status will be running.
 
 ```bash
-kubectl get pods -w
+$ kubectl get pods -w
 ```
 
 Example output:
 
 ```bash
+$ kubectl get pods -w
 NAME                                              READY   STATUS      RESTARTS   AGE
 weblogic-operator-6655cdc949-x58ts                1/1     Running     0          2d21h
 ```
@@ -398,38 +402,40 @@ weblogic-operator-6655cdc949-x58ts                1/1     Running     0         
 
 #### Create WebLogic domain
 
-Now that we have created the AKS cluster, installed the WLS operator, and verified the operator is ready to go, we can ask the operator to create a WLS domain.
+Now that we have created the AKS cluster, installed the operator, and verified that the operator is ready to go, we can have the operator create a WLS domain.
 
 1. We will use the `kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain credentials as a Kubernetes secret.
 
    ```bash
    #cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-credentials
-   ./create-weblogic-credentials.sh -u weblogic -p welcome1 -d domain1
+   $ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -d domain1
    ```
 
-   The successful output should look similar to the following:
+   The successful output will look similar to the following:
 
    ```bash
+   $ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -d domain1
    secret/domain1-weblogic-credentials created
    secret/domain1-weblogic-credentials labeled
    The secret domain1-weblogic-credentials has been successfully created in the default namespace.
     ```
 
-2. We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh` script to create the docker credentials as a Kubernetes secret.  For example:
+2. We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret.  For example:
 
    ```bash
-   ./create-docker-credentials-secret.sh -e foo@bar.com -p myDockerPassword -u myDockerUserId
+   $ ./create-docker-credentials-secret.sh -e foo@bar.com -p myDockerPassword -u myDockerUserId
    ```
 
    Verify secrets with the following command:
 
    ```bash
-   kubectl get secret
+   $ kubectl get secret
    ```
 
    Example output:
 
-   ```text
+   ```bash
+   $ kubectl get secret
    NAME                                      TYPE                                  DATA   AGE
    azure-secret                              Opaque                                2      2d21h
    default-token-mwdj8                       kubernetes.io/service-account-token   3      2d22h
@@ -439,7 +445,7 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
    weblogic-operator-secrets                 Opaque                                1      2d21h
    ```
 
-   > **Note**: In the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure you correctly followed all of them.  The `default-token-mwdj8` shown above will have a different ending in your output.
+   > **Note**: If the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them.  The `default-token-mwdj8` shown above will have a different ending in your output.
 
 3. We will use `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume we created previously.
 
@@ -447,10 +453,10 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
 
    ```bash
    #cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
-   ./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v
+   $ ./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v
    ```
 
-   You may observe error related output during the creation of the domain.  This is due to timing issues during domain creation.  The script accounts for this with a series of retries.  The error output looks similar to the following.
+   You may observe error-related output during the creation of the domain.  This is due to timing issues during domain creation.  The script accounts for this with a series of retries.  The error output looks similar to the following:
 
    ```text
    Waiting for the job to complete...
@@ -464,6 +470,7 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
    The following example output shows the WebLogic domain was created successfully.
 
    ```bash
+   $ ./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v
    NAME: weblogic-operator
    LAST DEPLOYED: Mon Mar 30 10:29:58 2020
    NAMESPACE: default
@@ -549,7 +556,7 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
 
 4. You must create `LoadBalancer` services for the Administration Server and the WLS cluster.  This enables WLS to service requests from outside the AKS cluster.
 
-   Use the configuration file in `~/azure/weblogic-on-aks/admin-lb.yaml` to create a load balancer service for the Administration Server. The following content is an example of `admin-lb.yaml`, with default domain uid  `domain1`, server name `admin-server`, and default port `7001`.
+   Use the configuration file in `~/azure/weblogic-on-aks/admin-lb.yaml` to create a load balancer service for the Administration Server. The following content is an example of `admin-lb.yaml`, with default domain UID  `domain1`, server name `admin-server`, and default port `7001`.
 
    ```yaml
    apiVersion: v1
@@ -570,19 +577,20 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
      type: LoadBalancer
    ```
 
-   Create the load balancer service using the following command.
+   Create the load balancer service using the following command:
 
    ```bash
-   kubectl apply -f ~/azure/weblogic-on-aks/admin-lb.yaml
+   $ kubectl apply -f ~/azure/weblogic-on-aks/admin-lb.yaml
    ```
 
-   You should see the following output:
+   You will see the following output:
 
-   ```text
+   ```bash
+   $ kubectl apply -f ~/azure/weblogic-on-aks/admin-lb.yaml
    service/domain1-admin-server-external-lb created
    ```
 
-   Use the configuration file in `~/azure/weblogic-on-aks/cluster-lb.yaml` to create a load balancer service for the managed servers. The following content is an example of `cluster-lb.yaml`, with default domain uid `domain1`, cluster name `cluster-1`, and default managed server port `8001`.
+   Use the configuration file in `~/azure/weblogic-on-aks/cluster-lb.yaml` to create a load balancer service for the managed servers. The following content is an example of `cluster-lb.yaml`, with default domain UID `domain1`, cluster name `cluster-1`, and default managed server port `8001`.
 
    ```yaml
    apiVersion: v1
@@ -606,12 +614,13 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
    Create the load balancer service using the following command:
 
    ```bash
-   kubectl  apply -f ~/azure/weblogic-on-aks/cluster-lb.yaml
+   $ kubectl  apply -f ~/azure/weblogic-on-aks/cluster-lb.yaml
    ```
 
-   You should see the following output:
+   You will see the following output:
 
-   ```text
+   ```bash
+   $ kubectl  apply -f ~/azure/weblogic-on-aks/cluster-lb.yaml
    service/domain1-cluster-1-external-lb created
    ```
 
@@ -620,12 +629,13 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
    Use the following command to check server pod status:
 
    ```bash
-   kubectl get pods --watch
+   $ kubectl get pods --watch
    ```
 
    It may take you up to 20 minutes to deploy all pods, please wait and make sure everything is ready. The final example of pod output is as following:
 
    ```bash
+   $ kubectl get pods --watch
    NAME                                              READY   STATUS      RESTARTS   AGE
    domain1-admin-server                              1/1     Running     0          9m42s
    domain1-create-weblogic-sample-domain-job-qqmkn   0/1     Completed   0          11m
@@ -637,12 +647,13 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
    Get the addresses of the Administration Server and Managed Servers (please wait for the external IP addresses to be assigned):
 
    ```bash
-   kubectl get svc --watch
+   $ kubectl get svc --watch
    ```
 
    The final example of servcie output is as following:
 
    ```bash
+   $ kubectl get svc --watch
    NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP      PORT(S)              AGE
    domain1-admin-server               ClusterIP      None          <none>           30012/TCP,7001/TCP   2d20h
    domain1-admin-server-external      NodePort       10.0.182.50   <none>           7001:30701/TCP       2d20h
@@ -657,10 +668,10 @@ Now that we have created the AKS cluster, installed the WLS operator, and verifi
 
    In the example, the URL to access the Administration Server is: `http://52.188.176.103:7001/console`.  The default user name for the Administration Console is `weblogic` and the default password is `welcome1`.  Please change this for production deployments.
 
-   If the Administration Console is still not available, use `kubectl describe domain` to check domain status.
+   If the WLS Administration Console is still not available, use `kubectl describe domain` to check domain status.
 
    ```bash
-   kubectl describe domain domain1
+   $ kubectl describe domain domain1
    ```
 
    Make sure the status of cluster-1 is `ServersReady` and `Available`.
@@ -728,11 +739,11 @@ If you don't want to change the other parameters, you can use the default values
 
 # Use create-domain-on-aks-inputs.yaml as input file
 # cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
-bash create-domain-on-aks.sh -i create-domain-on-aks-inputs.yaml -o ~/azure -e
+$ bash create-domain-on-aks.sh -i create-domain-on-aks-inputs.yaml -o ~/azure -e
 
 # Use your own input file.
 # cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
-bash create-domain-on-aks.sh -i <your-input>.yaml -o ~/azure -e
+$ bash create-domain-on-aks.sh -i <your-input>.yaml -o ~/azure -e
 
 ```
 
@@ -770,8 +781,7 @@ Next you will need to start the application:
 After the successful deployment, go to the application through the domain1-cluster-1-lb external IP.
 
 ```bash
-kubectl  get svc domain1-cluster-1-external-lb
-
+$ kubectl  get svc domain1-cluster-1-external-lb
 NAME                            TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)          AGE
 domain1-cluster-1-external-lb   LoadBalancer   10.0.108.249   52.224.248.40   8001:32695/TCP   30m
 ```
@@ -793,7 +803,7 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
 1. Select domain1.
 1. WebLogic Server logs are listed in the folder.
 
-   ![WebLogic Logs](screenshot-logs.png)
+   ![WebLogic Server Logs](screenshot-logs.png)
 
 #### Troubleshooting
 
@@ -801,7 +811,7 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
 
    You may get the following message while creating the WebLogic domain: "the job status is not Completed!"
 
-   ```bash
+   ```text
    status on iteration 20 of 20
    pod domain1-create-weblogic-sample-domain-job-nj7wl status is Init:0/1
    The create domain job is not showing status completed after waiting 300 seconds.
@@ -813,13 +823,13 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
    You can get further error details by running `kubectl describe pod`, as shown here:
 
    ```bash
-   # replace domain1-create-weblogic-sample-domain-job-nj7wl with your pod name
-   kubectl describe pod domain1-create-weblogic-sample-domain-job-nj7wl
+   $ kubectl describe pod <your-pod-name>
    ```
 
-   Error example:
+   This is an output example:
 
    ```bash
+   $ kubectl describe pod domain1-create-weblogic-sample-domain-job-nj7wl
    Events:
      Type     Reason       Age                  From                                        Message
      ----     ------       ----                 ----                                        -------
@@ -845,6 +855,7 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
    The following output is an example of when the Administration Server has started.
 
    ```bash
+   $ kubectl get svc
    NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)              AGE
    domain1-admin-server               ClusterIP      None          <none>          30012/TCP,7001/TCP   7m3s
    domain1-admin-server-external      NodePort       10.0.78.211   <none>          7001:30701/TCP       7m3s
