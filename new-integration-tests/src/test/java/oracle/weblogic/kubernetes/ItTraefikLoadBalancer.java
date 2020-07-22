@@ -77,7 +77,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapForDomainCreation;
@@ -270,11 +269,6 @@ public class ItTraefikLoadBalancer {
       assertNotNull(result, "Application deployment failed");
       logger.info("Application deployment returned {0}", result.toString());
       assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
-
-      String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/testwebapp/index.jsp";
-      logger.info("Application Access URL {0}", url);
-      boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
-      assertTrue(checkApp, "Failed to access WebLogic application");
 
       //access application in managed servers through NGINX load balancer
       logger.info("Accessing the clusterview app through traefik load balancer");
