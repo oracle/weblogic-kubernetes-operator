@@ -415,7 +415,7 @@ class ItParameterizedPodsRestart {
    * @return oracle.weblogic.domain.Domain object
    */
   private static Domain createAndVerifyDomainInPVUsingWlst(String domainNamespace) {
-    String domainUid = "domaininpv";
+    String domainUid = "domaininpv" + "-" + domainNamespace.substring(3);
     String pvName = domainUid + "-pv";
     String pvcName = domainUid + "-pvc";
 

@@ -426,7 +426,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       # Whether to enable overriding your log file location, see also 'logHome'
       #logHomeEnabled: false
 
-      # The location for domain log, server logs, server out, and Node Manager log files
+      # The location for domain log, server logs, server out, introspector out, and Node Manager log files
       # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
       #logHome: /shared/logs/sample-domain1
 
@@ -548,7 +548,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
     # Whether to enable overriding your log file location, see also 'logHome'
     #logHomeEnabled: false
 
-    # The location for domain log, server logs, server out, and Node Manager log files
+    # The location for domain log, server logs, server out, introspector out, and Node Manager log files
     # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
     #logHome: /shared/logs/sample-domain1
 

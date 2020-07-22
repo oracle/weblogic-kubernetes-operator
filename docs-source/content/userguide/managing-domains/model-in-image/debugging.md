@@ -69,6 +69,11 @@ For example, assuming your domain UID is `sample-domain1` and your domain namesp
   ```
 
 {{% notice tip %}}
+The introspector log is mirrored to the Domain resource `spec.logHome` directory
+when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
+{{% /notice %}}
+
+{{% notice tip %}}
 If a model file error references a model file in your `spec.configuration.model.configMap`, then you can correct the error by redeploying the ConfigMap with a corrected model file and then initiating a domain restart or roll. Similarly, if a model file error references a model file in your model image, then you can correct the error by deploying a corrected image, modifying your Domain YAML file to reference the new image, and then initiating a domain restart or roll.
 {{% /notice %}}
 

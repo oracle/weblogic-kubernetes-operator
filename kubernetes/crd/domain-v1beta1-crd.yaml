@@ -2658,9 +2658,9 @@ spec:
             logHome:
               type: string
               description: The directory in a server's container in which to store
-                the domain, Node Manager, server logs, server *.out, and optionally
-                HTTP access log files if `httpAccessLogInLogHome` is true. Ignored
-                if `logHomeEnabled` is false.
+                the domain, Node Manager, server logs, server *.out, introspector
+                .out, and optionally HTTP access log files if `httpAccessLogInLogHome`
+                is true. Ignored if `logHomeEnabled` is false.
             includeServerOutInPodLog:
               type: boolean
               description: Specifies whether the server .out file will be included

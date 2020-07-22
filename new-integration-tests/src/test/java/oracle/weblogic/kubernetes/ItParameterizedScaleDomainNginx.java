@@ -596,7 +596,7 @@ class ItParameterizedScaleDomainNginx {
    * @return oracle.weblogic.domain.Domain objects
    */
   private static Domain createDomainInPvUsingWdt(String domainNamespace) {
-    final String domainUid = "domaininpv";
+    final String domainUid = "domaininpv" + "-" + domainNamespace.substring(3);
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
