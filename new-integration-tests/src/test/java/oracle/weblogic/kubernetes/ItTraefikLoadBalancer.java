@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -54,8 +55,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
@@ -86,13 +85,13 @@ public class ItTraefikLoadBalancer {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  ;
-
   private static String traefikNamespace = null;
+
   private static int nodeportshttp;
+  
   private static HelmParams traefikHelmParams = null;
 
-  private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
+  private static final String IMAGE = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
   private final String wlSecretName = "weblogic-credentials";
 
@@ -164,7 +163,7 @@ public class ItTraefikLoadBalancer {
 
     int replicaCount = 2;
     String managedServerNameBase = "managed-server";
-    
+
     for (int n = 1; n <= replicaCount; n++) {
 
       String domainUid = "domain" + n;
@@ -178,7 +177,7 @@ public class ItTraefikLoadBalancer {
           REPO_SECRET_NAME,
           encryptionSecretName,
           replicaCount,
-          MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+          IMAGE);
 
       // create model in image domain
       logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
