@@ -103,10 +103,10 @@ fi
 cat<<EOF
 
     HTTP node port:
-      kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="http")].nodePort}'
-      =$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+      kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}'
+      =$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
 
     HTTPS node port:
-      kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="https")].nodePort}'
-      =$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
+      kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}'
+      =$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}')
 EOF
