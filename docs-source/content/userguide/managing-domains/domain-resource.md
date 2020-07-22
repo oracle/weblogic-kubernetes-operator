@@ -108,7 +108,7 @@ Elements related to domain identification, container image, and domain home:
 Elements related to logging:
 
 * `includeServerOutInPodLog`: Specifies whether the server .out file will be included in the Pod's log. Defaults to true.
-* `logHome`: The directory in a server's container in which to store the domain, Node Manager, server logs, server *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if `logHomeEnabled` is false.
+* `logHome`: The directory in a server's container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if `logHomeEnabled` is false.
 * `logHomeEnabled`: Specifies whether the log home folder is enabled. Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.
 * `httpAccessLogInLogHome`: Specifies whether the server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain configuration. Defaults to true.
 

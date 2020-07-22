@@ -11,20 +11,23 @@
 #   - encrypted admin user password passed in via a plain-text secret (for use in sit config)
 #   - md5 checksum of the DOMAIN_HOME/security/SerializedSystemIni.dat domain secret file
 #   - situational config files for overriding the configuration within the DOMAIN_HOME
+#   - Model in Image domain home zips and md5s (when the domain source type is MII)
 # 
 # It works as part of the following flow:
 #
 #   (1) When an operator discovers a new domain, it launches this script via an
 #       introspector k8s job.
 #   (2) This script then:
-#       (2A) Configures and starts a NM via startNodeManager.sh (in NODEMGR_HOME)
-#       (2B) Calls introspectDomain.py, which depends on the NM
-#       (2C) Exits 0 on success, non-zero otherwise.
+#       (2A) Generates MII domain home zips/md5 files if the domain home source type is MII
+#       (2B) Configures and starts a NM via startNodeManager.sh (in NODEMGR_HOME)
+#       (2C) Calls introspectDomain.py, which depends on the NM and puts files in stdout
+#       (2D) Exits 0 on success, non-zero otherwise.
 #   (5) Operator parses the output of introspectDomain.py into files and:
 #       (5A) Uses one of the files to get the domain's name, cluster name, ports, etc.
 #       (5B) Deploys a config map for the domain containing the files.
 #   (6) Operator starts pods for domain's WebLogic servers.
 #   (7) Pod 'startServer.sh' script loads files from the config map, 
+#       generates a domain home from the files for the MII case,
 #       copies/uses encrypted files, and applies sit config files. It
 #       also checks that domain secret md5 cksum matches the cksum
 #       obtained by this script.
@@ -43,16 +46,20 @@
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
+#
 # setup tracing
+#
 
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
 
 traceTiming "INTROSPECTOR '${DOMAIN_UID}' MAIN START"
 
-
+#
 # Local createFolder method which does an 'exit 1' instead of exitOrLoop for
 # immediate failure during introspection
+#
+
 function createFolder {
   mkdir -m 750 -p $1
   if [ ! -d $1 ]; then
@@ -61,21 +68,68 @@ function createFolder {
   fi
 }
 
-trace "Introspecting the domain"
+#
+# setup MII functions in case this is a MII domain
+#
 
-# list potentially interesting env-vars and dirs before they're updated by export.*Homes
+source ${SCRIPTPATH}/modelInImage.sh
+[ $? -ne 0 ] && trace SEVERE "Error sourcing ${SCRIPTPATH}/modelInImage.sh" && exit 1
 
-traceEnv before
-traceDirs before
+#
+# setup introspector log file
+#
 
-# set defaults
-# set ORACLE_HOME/WL_HOME/MW_HOME to defaults if needed
+traceDirs before LOG_HOME
 
-exportInstallHomes
+if [ ! -z "${LOG_HOME}" ] && [ ! -d "${LOG_HOME}" ]; then
+  trace "Creating log home directory: '${LOG_HOME}'"
+  createFolder ${LOG_HOME}
+fi
 
-# check if prereq env-vars, files, and directories exist
+ilog_dir="${LOG_HOME:-/tmp}"
+ilog_timestamp="$(date --utc '+%Y-%m-%d_%H.%M.%S')"
+ilog_prefix="${ilog_dir}/introspector_script"
+ilog_file="${ilog_prefix}_${ilog_timestamp}_.out"
+ilog_max=${MAX_INTROSPECTOR_LOG_FILES:-10}
 
-checkEnv -q \
+if [ ! -d "${ilog_dir}" ]; then
+  trace "Creating introspector log directory: '${ilog_dir}'"
+  createFolder "${ilog_dir}"
+fi
+
+echo "" >> ${ilog_file}
+
+#
+# main introspection function
+#
+
+function doIntrospect() {
+
+  trace "Introspecting domain '${DOMAIN_UID}', log location: '$ilog_file'"
+
+  traceDirs after LOG_HOME
+
+  # keep only 10 total log files by default (delete oldest first)
+  for ilog_cur in \
+    $(ls -1r ${ilog_prefix}* 2>/dev/null | tail -n +$((ilog_max + 1)))
+  do
+    trace "Removing old introspector log file '${ilog_cur}'"
+    rm ${ilog_cur}
+  done
+
+  # list potentially interesting env-vars and dirs before they're updated by export.*Homes
+
+  traceEnv before
+  traceDirs before DOMAIN_HOME DATA_HOME
+
+  # set defaults
+  # set ORACLE_HOME/WL_HOME/MW_HOME to defaults if needed
+
+  exportInstallHomes
+
+  # check if prereq env-vars, files, and directories exist
+
+  checkEnv -q \
          DOMAIN_UID \
          NAMESPACE \
          ORACLE_HOME \
@@ -86,37 +140,30 @@ checkEnv -q \
          OPERATOR_ENVVAR_NAMES \
          || exit 1
 
-for script_file in "${SCRIPTPATH}/wlst.sh" \
-                   "${SCRIPTPATH}/startNodeManager.sh"  \
-                   "${SCRIPTPATH}/modelInImage.sh"  \
-                   "${SCRIPTPATH}/introspectDomain.py"; do
-  [ ! -f "$script_file" ] && trace SEVERE "Missing file '${script_file}'." && exit 1 
-done 
+  for script_file in "${SCRIPTPATH}/wlst.sh" \
+                     "${SCRIPTPATH}/startNodeManager.sh"  \
+                     "${SCRIPTPATH}/introspectDomain.py"; do
+    [ ! -f "$script_file" ] && trace SEVERE "Missing file '${script_file}'." && exit 1 
+  done 
 
-for dir_var in JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
-  [ ! -d "${!dir_var}" ] && trace SEVERE "Missing ${dir_var} directory '${!dir_var}'." && exit 1
-done
+  for dir_var in JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
+    [ ! -d "${!dir_var}" ] && trace SEVERE "Missing ${dir_var} directory '${!dir_var}'." && exit 1
+  done
 
-#
-# DATA_HOME env variable exists implies override directory specified.  Attempt to create directory
-#
-if [ ! -z "${DATA_HOME}" ] && [ ! -d "${DATA_HOME}" ]; then
-  trace "Creating data home directory: '${DATA_HOME}'"
-  createFolder ${DATA_HOME}
-fi
+  #
+  # DATA_HOME env variable exists implies override directory specified.  Attempt to create directory
+  #
+  if [ ! -z "${DATA_HOME}" ] && [ ! -d "${DATA_HOME}" ]; then
+    trace "Creating data home directory: '${DATA_HOME}'"
+    createFolder ${DATA_HOME}
+  fi
 
+  traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN START"
 
-traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN START"
-
-source ${SCRIPTPATH}/modelInImage.sh
-if [ $? -ne 0 ]; then
-      trace SEVERE "Error sourcing modelInImage.sh" && exit 1
-fi
-
-# Add another env/attribute in domain yaml for model in image
-# log error if dir exists and attribute set
-DOMAIN_CREATED=0
-if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
+  # Add another env/attribute in domain yaml for model in image
+  # log error if dir exists and attribute set
+  DOMAIN_CREATED=0
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
     trace "Beginning Model In Image"
     command -v gzip
     if [ $? -ne 0 ] ; then
@@ -142,43 +189,39 @@ if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
     createWLDomain || exit 1
     created_domain=$DOMAIN_CREATED
     trace "Create domain return code = " ${created_domain}
-else
+  else
     created_domain=1
-fi
+  fi
 
-traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN END" 
+  traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN END" 
 
+  # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed
 
-# check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed
+  exportEffectiveDomainHome || exit 1
 
-exportEffectiveDomainHome || exit 1
+  # list potentially interesting env-vars and dirs after they're updated by export.*Homes
 
-# list potentially interesting env-vars and dirs after they're updated by export.*Homes
+  traceEnv after
+  traceDirs after DOMAIN_HOME DATA_HOME
 
-traceEnv after
-traceDirs after
+  # check if we're using a supported WebLogic version
+  # (the check  will log a message if it fails)
 
-# check if we're using a supported WebLogic version
-# (the check  will log a message if it fails)
+  checkWebLogicVersion || exit 1
 
-checkWebLogicVersion || exit 1
-
-# start node manager
-# run instrospector wlst script
-if [ ${created_domain} -ne 0 ]; then
-
+  # start node manager
+  # run instrospector wlst script
+  if [ ${created_domain} -ne 0 ]; then
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM START" 
 
-    # start node manager -why ??
+    # introspectDomain.py uses an NM to setup credentials for the server NMs
+    #  (see 'nmConnect' in introspectDomain.py)
     trace "Starting node manager"
     ${SCRIPTPATH}/startNodeManager.sh || exit 1
 
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM END" 
-
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 START"
-
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM END" 
-
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 START"
 
     # put domain secret's md5 cksum in file '/tmp/DomainSecret.md5'
@@ -186,14 +229,38 @@ if [ ${created_domain} -ne 0 ]; then
     generateDomainSecretMD5File '/tmp/DomainSecret.md5' || exit 1
 
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 END"
-
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT START"
 
     trace "Running introspector WLST script ${SCRIPTPATH}/introspectDomain.py"
     ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
 
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT END"
-fi
-trace "Domain introspection complete"
+  fi
+  trace "Domain introspection complete"
+}
 
-exit 0
+# we have different log file modes in case we need to revert 'tee' mode
+
+case "${INTROSPECTOR_LOG_FILE_MODE:-tee}" in
+  tee)
+    set -o pipefail
+    doIntrospect |& tee $ilog_file
+    exit $?
+    ;;
+  bg_and_tail)
+    ${SCRIPTPATH}/tailLog.sh $ilog_file /tmp/dontcare &
+    tail_log_pid=$!
+    doIntrospect >> $ilog_file 2>&1 &
+    wait $!
+    exitCode=$?
+    # sleep 1 second in case background 'tail' needs time to catch up
+    sleep 1
+    kill -9 $tail_log_pid
+    exit $exitCode
+    ;;
+  *)
+    # no log file - everything simply goes to stdout/stderr (old behavior)
+    doIntrospect
+    exit $?
+    ;;
+esac
