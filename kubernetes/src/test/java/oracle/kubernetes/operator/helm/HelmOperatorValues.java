@@ -86,7 +86,7 @@ class HelmOperatorValues extends OperatorValues {
     if (domainNamespaces != null) {
       String[] namespaces = domainNamespaces.toArray(new String[0]);
       Arrays.sort(namespaces);
-      setTargetNamespaces(String.join(",", namespaces));
+      setDomainNamespaces(String.join(",", namespaces));
     }
   }
 
@@ -134,9 +134,9 @@ class HelmOperatorValues extends OperatorValues {
   }
 
   private void addDomainNamespaces(HashMap<String, Object> map) {
-    String targetNamespaces = getTargetNamespaces();
-    if (targetNamespaces.length() > 0) {
-      map.put("domainNamespaces", Arrays.asList(targetNamespaces.split(",")));
+    String domainNamespaces = getDomainNamespaces();
+    if (domainNamespaces.length() > 0) {
+      map.put("domainNamespaces", Arrays.asList(domainNamespaces.split(",")));
     }
   }
 

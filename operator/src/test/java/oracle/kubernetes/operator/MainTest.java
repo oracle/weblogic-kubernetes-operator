@@ -20,7 +20,7 @@ public class MainTest {
 
   private static final String NS = "default";
   private static final String DOMAIN_UID = "domain-uid-for-testing";
-  private Method getTargetNamespaces;
+  private Method getDomainNamespaces;
 
   @After
   public void tearDown() {
@@ -29,46 +29,46 @@ public class MainTest {
   @Test
   public void getTargetNamespaces_withEmptyValue_should_return_default()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getTargetNamespaces("", NS);
+    Collection<String> namespaces = invoke_getDomainNamespaces("", NS);
     assertTrue(namespaces.contains("default"));
   }
 
   @Test
   public void getTargetNamespaces_withNonEmptyValue_should_not_return_default()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getTargetNamespaces("dev-domain", NS);
+    Collection<String> namespaces = invoke_getDomainNamespaces("dev-domain", NS);
     assertFalse(namespaces.contains("default"));
   }
 
   @Test
-  public void getTargetNamespaces_with_single_target_should_return_it()
+  public void getDomainNamespaces_with_single_target_should_return_it()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getTargetNamespaces("dev-domain", NS);
+    Collection<String> namespaces = invoke_getDomainNamespaces("dev-domain", NS);
     assertTrue(namespaces.contains("dev-domain"));
   }
 
   @Test
-  public void getTargetNamespaces_with_multiple_targets_should_include_all()
+  public void getDomainNamespaces_with_multiple_targets_should_include_all()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     Collection<String> namespaces =
-        invoke_getTargetNamespaces("dev-domain,domain1,test-domain", NS);
+        invoke_getDomainNamespaces("dev-domain,domain1,test-domain", NS);
     assertTrue(namespaces.contains("dev-domain"));
     assertTrue(namespaces.contains("domain1"));
     assertTrue(namespaces.contains("test-domain"));
   }
 
   @Test
-  public void getTargetNamespaces_should_remove_leading_spaces()
+  public void getDomainNamespaces_should_remove_leading_spaces()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getTargetNamespaces(" test-domain, dev-domain", NS);
+    Collection<String> namespaces = invoke_getDomainNamespaces(" test-domain, dev-domain", NS);
     assertTrue(namespaces.contains("dev-domain"));
     assertTrue(namespaces.contains("test-domain"));
   }
 
   @Test
-  public void getTargetNamespaces_should_remove_trailing_spaces()
+  public void getDomainNamespaces_should_remove_trailing_spaces()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getTargetNamespaces("dev-domain ,test-domain ", NS);
+    Collection<String> namespaces = invoke_getDomainNamespaces("dev-domain ,test-domain ", NS);
     assertTrue(namespaces.contains("dev-domain"));
     assertTrue(namespaces.contains("test-domain"));
   }
@@ -114,13 +114,13 @@ public class MainTest {
   }
 
   @SuppressWarnings({"unchecked", "SameParameterValue"})
-  private Collection<String> invoke_getTargetNamespaces(String tnValue, String namespace)
+  private Collection<String> invoke_getDomainNamespaces(String tnValue, String namespace)
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    if (getTargetNamespaces == null) {
-      getTargetNamespaces =
-          Main.class.getDeclaredMethod("getTargetNamespaces", String.class, String.class);
-      getTargetNamespaces.setAccessible(true);
+    if (getDomainNamespaces == null) {
+      getDomainNamespaces =
+          Main.class.getDeclaredMethod("getDomainNamespacesList", String.class, String.class);
+      getDomainNamespaces.setAccessible(true);
     }
-    return (Collection<String>) getTargetNamespaces.invoke(null, tnValue, namespace);
+    return (Collection<String>) getDomainNamespaces.invoke(null, tnValue, namespace);
   }
 }

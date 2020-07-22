@@ -108,8 +108,8 @@ public final class HealthCheckHelper {
    *
    * @param version Kubernetes version
    * @param operatorNamespace operator namespace
-   * @param namespace target namespace
-   * @return self subject rules review for the target namespace
+   * @param namespace domain namespace
+   * @return self subject rules review for the domain namespace
    */
   public static V1SubjectRulesReviewStatus performSecurityChecks(
       KubernetesVersion version, String operatorNamespace, String namespace) {
