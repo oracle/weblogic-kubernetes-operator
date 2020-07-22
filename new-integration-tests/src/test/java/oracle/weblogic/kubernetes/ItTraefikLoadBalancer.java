@@ -30,14 +30,20 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
+import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
+import oracle.weblogic.kubernetes.utils.DeployUtil;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
@@ -55,11 +61,14 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -68,6 +77,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapForDomainCreation;
@@ -102,6 +112,7 @@ public class ItTraefikLoadBalancer {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
+  private static String domainNamespace2 = null;
 
   private static String traefikNamespace = null;
   private static int nodeportshttp;
@@ -115,43 +126,42 @@ public class ItTraefikLoadBalancer {
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(5, MINUTES).await();
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(5, MINUTES).await();
 
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
 
   /**
-   * Assigns unique namespaces for operator and domains.
-   * Pull WebLogic image if running tests in Kind cluster.
-   * Installs operator.
+   * Assigns unique namespaces for operator and domains. Pull WebLogic image if running tests in Kind cluster. Installs
+   * operator.
    *
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
+
     logger.info("Assign a unique namespace for operator");
-    assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);
-    logger.info("Assign a unique namespace for Introspect Version WebLogic domain");
-    assertNotNull(namespaces.get(1), "Namespace is null");
+
+    logger.info("Assign a unique namespace for WebLogic domain domain1");
     domainNamespace = namespaces.get(1);
-    logger.info("Assign a unique namespace for NGINX");
-    assertNotNull(namespaces.get(2), "Namespace is null");
+
+    logger.info("Assign a unique namespace for Traefik");
     traefikNamespace = namespaces.get(2);
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
+    // get a free web and websecure ports for Traefik
+    nodeportshttp = getNextFreePort(30380, 30405);
+    int nodeportshttps = getNextFreePort(31443, 31743);
 
-    // install and verify NGINX
+    // install and verify Traefik
     traefikHelmParams = installAndVerifyTraefik(traefikNamespace, nodeportshttp, nodeportshttps);
-    //determine if the tests are running in Kind cluster. if true use images from Kind registry
 
+    //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
       String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
       logger.info("Using image {0}", kindRepoImage);
@@ -161,7 +171,6 @@ public class ItTraefikLoadBalancer {
       // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
       createOCRRepoSecret(domainNamespace);
     }
-
 
     // build the clusterview application
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
@@ -173,29 +182,176 @@ public class ItTraefikLoadBalancer {
 
   }
 
+  @Test
+  @Order(1)
+  @DisplayName("Create model in image domain")
+  @Slow
+  @MustNotRunInParallel
+  public void testTraefikLoadbalancer() {
+
+    // Create the repo secret to pull the image
+    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        encryptionSecretName,
+        domainNamespace,
+        "weblogicenc",
+        "weblogicenc"),
+        String.format("createSecret failed for %s", encryptionSecretName));
+
+    for (int n = 1; n <= 2; n++) {
+
+      String domainUid = "domain" + n;
+      // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
+      String adminServerPodName = domainUid + "-admin-server";
+      String managedServerPrefix = domainUid + "-managed-server";
+      int replicaCount = 2;
+      String managedServerNameBase = "managed-server";
+
+      // create the domain object
+      Domain domain = createDomainResource(domainUid,
+          domainNamespace,
+          REPO_SECRET_NAME,
+          encryptionSecretName,
+          replicaCount,
+          MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+
+      // create model in image domain
+      logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+          domainUid, domainNamespace, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+      createDomainAndVerify(domain, domainNamespace);
+
+      // check admin server pod is ready
+      logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+          adminServerPodName, domainNamespace);
+      checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+      // check managed server pods are ready
+      for (int i = 1; i <= replicaCount; i++) {
+        logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+            managedServerPrefix + i, domainNamespace);
+        checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+      }
+
+      logger.info("Check admin service {0} is created in namespace {1}",
+          adminServerPodName, domainNamespace);
+      checkServiceExists(adminServerPodName, domainNamespace);
+
+      // check managed server services created
+      for (int i = 1; i <= replicaCount; i++) {
+        logger.info("Check managed server service {0} is created in namespace {1}",
+            managedServerPrefix + i, domainNamespace);
+        checkServiceExists(managedServerPrefix + i, domainNamespace);
+      }
+
+      //create ingress resource - rules for loadbalancing
+      Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+      clusterNameMsPortMap.put("cluster-1", 8001);
+      logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
+      createTraefikIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap, true);
+
+      logger.info("Getting node port for default channel");
+      int serviceNodePort = assertDoesNotThrow(()
+          -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
+          "Getting admin server node port failed");
+
+      ExecResult result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,
+          String.valueOf(serviceNodePort),
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+          "cluster-1", clusterViewAppPath, null, "clusterview");
+      assertNotNull(result, "Application deployment failed");
+      logger.info("Application deployment returned {0}", result.toString());
+      assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
+
+      String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/testwebapp/index.jsp";
+      logger.info("Application Access URL {0}", url);
+      boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
+      assertTrue(checkApp, "Failed to access WebLogic application");
+
+      //access application in managed servers through NGINX load balancer
+      logger.info("Accessing the clusterview app through traefik load balancer");
+      String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+          + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
+          domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+      List<String> managedServers = new ArrayList<>();
+      for (int i = 1; i <= replicaCount; i++) {
+        managedServers.add(managedServerNameBase + i);
+      }
+      assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
+          .as("Verify all managed servers can see each other")
+          .withFailMessage("managed servers cannot see other")
+          .isTrue();
+    }
+  }
+
+  private Domain createDomainResource(String domainUid, String domNamespace,
+      String repoSecretName, String encryptionSecretName, int replicaCount,
+      String miiImage) {
+    // create the domain CR
+    return new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(wlSecretName)
+                .namespace(domNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
+            .addClustersItem(new Cluster()
+                .clusterName("cluster-1")
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(300L)));
+
+  }
 
   /**
-   * Test domain status gets updated when introspectVersion attribute is added under domain.spec.
-   * Test Creates a domain in persistent volume using WLST.
-   * Updates the cluster configuration; cluster size using online WLST.
-   * Patches the domain custom resource with introSpectVersion.
-   * Verifies the introspector runs and the cluster maximum replica is updated
-   * under domain status.
-   * Verifies that the new pod comes up and sample application deployment works.
+   * Test clusters from 2 domains can be load balanced by a single Traefik loadbalancer. Test Creates 2 domains in
+   * persistent volume using WLST. Verifies that the new pod comes up and sample application deployment works when
+   * accessed through the traefik LB
    */
   @Order(1)
   @Test
-  @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
-  public void testDomainIntrospectVersionNotRolling() {
+  @DisplayName("Test loadbalancing of 2 clusters in 2 domains using traefik loadbalancer")
+  public void testTraefikLoadbalancing() {
 
-    final String domainUid = "mydomain";
+    final String domainUid1 = "mydomain";
     final String clusterName = "mycluster";
 
     final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
+    final String adminServerPodName = domainUid1 + "-" + adminServerName;
 
     final String managedServerNameBase = "ms-";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+    String managedServerPodNamePrefix = domainUid1 + "-" + managedServerNameBase;
     final int managedServerPort = 8001;
 
     int replicaCount = 2;
@@ -205,8 +361,8 @@ public class ItTraefikLoadBalancer {
     // starts with 30100
     final int t3ChannelPort = getNextFreePort(30100, 32767);
 
-    final String pvName = domainUid + "-pv"; // name of the persistent volume
-    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+    final String pvName = domainUid1 + "-pv"; // name of the persistent volume
+    final String pvcName = domainUid1 + "-pvc"; // name of the persistent volume claim
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
@@ -214,16 +370,16 @@ public class ItTraefikLoadBalancer {
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
-    createPV(pvName, domainUid, this.getClass().getSimpleName());
-    createPVC(pvName, pvcName, domainUid, domainNamespace);
+    createPV(pvName, domainUid1, this.getClass().getSimpleName());
+    createPVC(pvName, pvcName, domainUid1, domainNamespace);
 
     // create a temporary WebLogic domain property file
-    File domainPropertiesFile = assertDoesNotThrow(() ->
-            File.createTempFile("domain", "properties"),
+    File domainPropertiesFile = assertDoesNotThrow(()
+        -> File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("domain_path", "/shared/domains");
-    p.setProperty("domain_name", domainUid);
+    p.setProperty("domain_name", domainUid1);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", adminServerName);
     p.setProperty("managed_server_port", Integer.toString(managedServerPort));
@@ -236,8 +392,8 @@ public class ItTraefikLoadBalancer {
     p.setProperty("managed_server_name_base", managedServerNameBase);
     p.setProperty("domain_logs", "/shared/logs");
     p.setProperty("production_mode_enabled", "true");
-    assertDoesNotThrow(() ->
-            p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
+    assertDoesNotThrow(()
+        -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
         "Failed to write domain properties file");
 
     // WLST script for creating domain
@@ -253,11 +409,11 @@ public class ItTraefikLoadBalancer {
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
-            .name(domainUid)
+            .name(domainUid1)
             .namespace(domainNamespace))
         .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
+            .domainUid(domainUid1)
+            .domainHome("/shared/domains/" + domainUid1) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(image)
             .imagePullPolicy("IfNotPresent")
@@ -270,7 +426,7 @@ public class ItTraefikLoadBalancer {
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome("/shared/logs/" + domainUid1)
             .dataHome("")
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod() //serverpod
@@ -308,7 +464,7 @@ public class ItTraefikLoadBalancer {
     checkServiceExists(adminServerPodName, domainNamespace);
 
     // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid1, domainNamespace);
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
@@ -321,13 +477,13 @@ public class ItTraefikLoadBalancer {
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid1, domainNamespace);
     }
     //create ingress controller
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
-    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-    createTraefikIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap, true);
+    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid1, domainNamespace);
+    createTraefikIngressForDomainAndVerify(domainUid1, domainNamespace, 0, clusterNameMsPortMap, true);
 
     // deploy application and verify all servers functions normally
     logger.info("Getting node port for T3 channel");
@@ -355,7 +511,6 @@ public class ItTraefikLoadBalancer {
             "Accessing sample application on admin server failed")
             .statusCode(), "Status code not equals to 200");
 
-
     //deploy clusterview application
     logger.info("Deploying clusterview app {0} to cluster {1}",
         clusterViewAppPath, clusterName);
@@ -375,8 +530,8 @@ public class ItTraefikLoadBalancer {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
-        domainUid + "." + domainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
+        domainUid1 + "." + domainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount + 1; i++) {
       managedServers.add(managedServerNameBase + i);
@@ -389,9 +544,8 @@ public class ItTraefikLoadBalancer {
   }
 
   /**
-   * Create a WebLogic domain on a persistent volume by doing the following.
-   * Create a configmap containing WLST script and property file.
-   * Create a Kubernetes job to create domain on persistent volume.
+   * Create a WebLogic domain on a persistent volume by doing the following. Create a configmap containing WLST script
+   * and property file. Create a Kubernetes job to create domain on persistent volume.
    *
    * @param wlstScriptFile python script to create domain
    * @param domainPropertiesFile properties file containing domain configuration
@@ -400,7 +554,7 @@ public class ItTraefikLoadBalancer {
    * @param namespace name of the domain namespace in which the job is created
    */
   private void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
-                                         String pvName, String pvcName, String namespace) {
+      String pvName, String pvcName, String namespace) {
     logger.info("Preparing to run create domain job using WLST");
 
     List<Path> domainScriptFiles = new ArrayList<>();
@@ -451,11 +605,8 @@ public class ItTraefikLoadBalancer {
     }
   }
 
-
   /**
-   * Uninstall Traefik.
-   * The cleanup framework does not uninstall Traefik release.
-   * Do it here for now.
+   * Uninstall Traefik. The cleanup framework does not uninstall Traefik release. Do it here for now.
    */
   @AfterAll
   public void tearDownAll() {
