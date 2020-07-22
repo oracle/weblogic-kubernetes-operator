@@ -202,7 +202,14 @@ public class FileUtils {
     });
   }
 
-  private static void copy(Path source, Path dest) throws IOException {
+  /**
+   * Copy file from source directory to destination directory.
+   *
+   * @param source path of source file
+   * @param dest path of target file
+   * @throws IOException if the operation encounters an issue
+   */
+  public static void copy(Path source, Path dest) throws IOException {
     getLogger().finest("Copying {0} to {1} source.fileName = {2}", source, dest, source.getFileName());
     if (!dest.toFile().isDirectory()) {
       Files.copy(source, dest, REPLACE_EXISTING);
