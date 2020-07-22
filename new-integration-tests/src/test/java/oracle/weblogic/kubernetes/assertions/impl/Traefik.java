@@ -6,25 +6,25 @@ package oracle.weblogic.kubernetes.assertions.impl;
 import java.util.concurrent.Callable;
 
 /**
- * Assertions for Traefik ingress controller.
+ * Assertions for traefik ingress controller.
  */
 public class Traefik {
 
   /**
-   * Check if the Traefik pod is running in the specified namespace.
+   * Check if the traefik pod is running in the specified namespace.
    *
-   * @param namespace in which to check if the Traefik pod is running
-   * @return true if the Traefik pod is running, false otherwise
+   * @param namespace in which to check if the traefik pod is running
+   * @return true if the traefik pod is running, false otherwise
    */
   public static Callable<Boolean> isRunning(String namespace) {
     return () -> Kubernetes.isTraefikPodRunning(namespace);
   }
 
   /**
-   * Check if the Traefik pod is ready in the specified namespace.
+   * Check if the traefik pod is ready in the specified namespace.
    *
-   * @param namespace in which to check the Traefik pod is ready
-   * @return true if the Traefik pod is in the ready state, false otherwise
+   * @param namespace in which to check the traefik pod is ready
+   * @return true if the traefik pod is in the ready state, false otherwise
    */
   public static Callable<Boolean> isReady(String namespace) {
     return () -> Kubernetes.isTraefikPodReady(namespace);

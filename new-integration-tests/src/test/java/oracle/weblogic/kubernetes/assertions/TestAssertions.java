@@ -65,10 +65,10 @@ public class TestAssertions {
   }
 
   /**
-   * Check if there are ready NGINX pods in the specified namespace.
+   * Check if there are ready traefik pods in the specified namespace.
    *
-   * @param namespace in which to check if NGINX pods are in the ready state
-   * @return true if there are ready NGINX pods in the specified namespace , false otherwise
+   * @param namespace in which to check if traefik pods are in the ready state
+   * @return true if there are ready traefik pods in the specified namespace , false otherwise
    */
   public static Callable<Boolean> isTraefikReady(String namespace) {
     return Traefik.isReady(namespace);

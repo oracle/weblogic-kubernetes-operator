@@ -341,7 +341,7 @@ public class TestActions {
   }
 
   /**
-   * Install NGINX ingress controller.
+   * Install traefik ingress controller.
    *
    * @param params the parameters to Helm install command, such as release name, namespace, repo url,
    *               repo name and chart name

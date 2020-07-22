@@ -456,16 +456,16 @@ public class CommonTestUtils {
   }
 
   /**
-   * Install Traefik and wait up to five minutes until the Traefik pod is ready.
+   * Install traefik and wait for up to five minutes for the traefik pod to be ready.
    *
-   * @param traefikNamespace the namespace in which the Traefik will be installed
-   * @param nodeportshttp the http nodeport of Traefik
-   * @param nodeportshttps the https nodeport of Traefik
-   * @return the Traefik Helm installation parameters
+   * @param traefikNamespace the namespace in which the traefik ingress controller is installed
+   * @param nodeportshttp the web nodeport of traefik
+   * @param nodeportshttps the websecure nodeport of traefik
+   * @return the traefik Helm installation parameters
    */
   public static HelmParams installAndVerifyTraefik(String traefikNamespace,
-                                                 int nodeportshttp,
-                                                 int nodeportshttps) {
+      int nodeportshttp,
+      int nodeportshttps) {
     LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams traefikHelmParams = new HelmParams()
@@ -485,14 +485,14 @@ public class CommonTestUtils {
           .nodePortsHttps(nodeportshttps);
     }
 
-    // install NGINX
+    // install traefik
     assertThat(installTraefik(traefikParams))
-        .as("Test Traefik installation succeeds")
-        .withFailMessage("Traefik installation is failed")
+        .as("Test traefik installation succeeds")
+        .withFailMessage("traefik installation is failed")
         .isTrue();
 
-    // verify that NGINX is installed
-    logger.info("Checking Traefik release {0} status in namespace {1}",
+    // verify that traefik is installed
+    logger.info("Checking traefik release {0} status in namespace {1}",
         TRAEFIK_RELEASE_NAME, traefikNamespace);
     assertTrue(isHelmReleaseDeployed(TRAEFIK_RELEASE_NAME, traefikNamespace),
         String.format("Traefik release %s is not in deployed status in namespace %s",
@@ -500,14 +500,14 @@ public class CommonTestUtils {
     logger.info("Traefik release {0} status is deployed in namespace {1}",
         TRAEFIK_RELEASE_NAME, traefikNamespace);
 
-    // wait until the NGINX pod is ready.
+    // wait until the traefik pod is ready.
     withStandardRetryPolicy
-        .conditionEvaluationListener(condition -> logger.info("Waiting for Traefik to be ready in "
-            + "namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                traefikNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isTraefikReady(traefikNamespace), "isNginxReady failed with ApiException"));
+        .conditionEvaluationListener(condition -> logger.info("Waiting for traefik to be ready in "
+        + "namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+        traefikNamespace,
+        condition.getElapsedTimeInMS(),
+        condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isTraefikReady(traefikNamespace), "isTraefikReady failed with ApiException"));
 
     return traefikHelmParams;
   }
