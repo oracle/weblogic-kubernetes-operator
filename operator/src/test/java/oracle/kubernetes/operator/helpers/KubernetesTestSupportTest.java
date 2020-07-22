@@ -6,6 +6,8 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
@@ -38,6 +40,8 @@ import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
@@ -62,7 +66,7 @@ public class KubernetesTestSupportTest {
   private static final String NS = "namespace1";
   private static final String POD_LOG_CONTENTS = "asdfghjkl";
   List<Memento> mementos = new ArrayList<>();
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
   /**
    * Setup test.
@@ -141,7 +145,7 @@ public class KubernetesTestSupportTest {
     testSupport.defineResources(oldCrd);
 
     V1CustomResourceDefinition crd = createCrd("");
-    crd.getMetadata().putLabelsItem("be", "different");
+    Objects.requireNonNull(crd.getMetadata()).putLabelsItem("be", "different");
 
     TestResponseStep<V1CustomResourceDefinition> responseStep = new TestResponseStep<>();
     Step steps = new CallBuilder().replaceCustomResourceDefinitionAsync("mycrd", crd, responseStep);
@@ -191,6 +195,45 @@ public class KubernetesTestSupportTest {
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
     assertThat(getCreationTimestamp(updatedDomain), equalTo(getCreationTimestamp(originalDomain)));
+  }
+
+  @Test
+  public void afterReplaceDomainAsync_statusIsUnchanged() {
+    Domain originalDomain = createDomain(NS, "domain1").withStatus(new DomainStatus().withMessage("leave this"));
+    testSupport.defineResources(originalDomain);
+
+    Domain newDomain = createDomain(NS, "domain1");
+    Step steps = new CallBuilder().replaceDomainAsync("domain1", NS, newDomain, null);
+    testSupport.runSteps(steps);
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
+    assertThat(Optional.ofNullable(updatedDomain.getStatus()).map(DomainStatus::getMessage).orElse(""),
+               equalTo("leave this"));
+  }
+
+  @Test
+  public void afterReplaceDomainStatusAsync_specIsUnchanged() {
+    Domain originalDomain = createDomain(NS, "domain1").withSpec(new DomainSpec().withReplicas(5));
+    testSupport.defineResources(originalDomain);
+
+    Domain newDomain = createDomain(NS, "domain1");
+    Step steps = new CallBuilder().replaceDomainStatusAsync("domain1", NS, newDomain, null);
+    testSupport.runSteps(steps);
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
+    assertThat(updatedDomain.getSpec().getReplicas(), equalTo(5));
+  }
+
+  @Test
+  public void afterReplaceDomainStatusSynchronously_specIsUnchanged() throws ApiException {
+    Domain originalDomain = createDomain(NS, "domain1").withSpec(new DomainSpec().withReplicas(5));
+    testSupport.defineResources(originalDomain);
+
+    Domain newDomain = createDomain(NS, "domain1");
+    new CallBuilder().replaceDomainStatus("domain1", NS, newDomain);
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
+    assertThat(updatedDomain.getSpec().getReplicas(), equalTo(5));
   }
 
   private DateTime getCreationTimestamp(Domain domain) {
@@ -323,7 +366,7 @@ public class KubernetesTestSupportTest {
                 new V1Patch(patchBuilder.build().toString()), responseStep));
 
     V1Pod pod2 = (V1Pod) testSupport.getResources(POD).stream().findFirst().orElse(pod1);
-    assertThat(pod2.getMetadata().getLabels(), hasEntry("k1", "v2"));
+    assertThat(Objects.requireNonNull(pod2.getMetadata()).getLabels(), hasEntry("k1", "v2"));
   }
 
   @Test
@@ -339,7 +382,7 @@ public class KubernetesTestSupportTest {
                 new V1Patch(patchBuilder.build().toString()), responseStep));
 
     V1Pod pod2 = (V1Pod) testSupport.getResources(POD).stream().findFirst().orElse(pod1);
-    assertThat(pod2.getMetadata().getLabels(), hasEntry("k1", "v2"));
+    assertThat(Objects.requireNonNull(pod2.getMetadata()).getLabels(), hasEntry("k1", "v2"));
   }
 
   @Test
