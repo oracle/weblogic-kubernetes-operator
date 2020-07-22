@@ -136,6 +136,7 @@ public class ClusterViewServlet extends HttpServlet {
       //if the server is part of a cluster get its cluster details
       if (clusterRuntime != null) {
         String[] serverNames = clusterRuntime.getServerNames();
+        out.println("JVMID:" + serverRuntime.getJVMID());
         out.println("Alive:" + clusterRuntime.getAliveServerCount());
         out.println("Health:" + clusterRuntime.getHealthState().getState());
         out.println("Members:" + String.join(",", serverNames));
