@@ -215,18 +215,18 @@ public class ItTraefikLoadBalancer {
       logger.info("Application deployment returned {0}", result.toString());
       assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
 
-      //access application in managed servers through NGINX load balancer
+      //access application in managed servers through traefik load balancer
       logger.info("Accessing the clusterview app through traefik load balancer");
       String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-          + "-H 'host: %s' http://%s:%s/%sclusterview/ClusterViewServlet",
-          domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp, domainUid);
+          + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
+          domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp);
       List<String> managedServers = new ArrayList<>();
       for (int i = 1; i <= replicaCount; i++) {
         managedServers.add(managedServerNameBase + i);
       }
       assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-          .as("Verify all managed servers can see each other")
-          .withFailMessage("managed servers cannot see other")
+          .as("Verify applications from cluster can be acessed through the traefik loadbalancer.")
+          .withFailMessage("application not accessible through traefik loadbalancer.")
           .isTrue();
     }
   }
