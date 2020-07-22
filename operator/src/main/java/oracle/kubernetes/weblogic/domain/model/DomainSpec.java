@@ -93,11 +93,12 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * The in-pod name of the directory to store the domain, Node Manager, server logs, server
-   * .out, and HTTP access log files in.
+   * .out, introspector.out, and HTTP access log files in.
    */
   @Description(
       "The directory in a server's container in which to store the domain, Node Manager, server logs, "
-          + "server *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. "
+          + "server *.out, introspector .out, and optionally HTTP access log files "
+          + "if `httpAccessLogInLogHome` is true. "
           + "Ignored if `logHomeEnabled` is false.")
   private String logHome;
 

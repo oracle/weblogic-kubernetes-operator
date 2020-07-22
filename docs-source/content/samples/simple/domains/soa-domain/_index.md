@@ -105,7 +105,7 @@ The following parameters can be provided in the inputs file.
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` in the pod's `stdout`. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to start initially for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration Server and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
-| `logHome` | The in-pod location for the domain log, server logs, server out, Node Manager log, and server HTTP access log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/u01/oracle/user_projects/domains/logs/soainfra` |
+| `logHome` | The in-pod location for the domain log, server logs, server out, Node Manager log, introspector out, and server HTTP access log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/u01/oracle/user_projects/domains/logs/soainfra` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `soa_server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes Namespace in which to create the domain. | `soans` |
@@ -229,7 +229,7 @@ spec:
   # Whether to enable log home
   logHomeEnabled: true
 
-  # The in-pod location for domain log, server logs, server out, and Node Manager log files
+  # The in-pod location for domain log, server logs, server out, introspector out, and Node Manager log files
   logHome: /u01/oracle/user_projects/domains/logs/soainfra
   # An (optional) in-pod location for data storage of default and custom file stores.
   # If not specified or the value is either not set or empty (e.g. dataHome: "") then the
