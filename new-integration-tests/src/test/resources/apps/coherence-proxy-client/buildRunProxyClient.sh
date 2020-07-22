@@ -40,12 +40,22 @@ echo -e "running ant build from ${APP_DIR_INPOD}"
 ant
 
 # Proxy client will return exit code of 0 for success
-echo -e "running proxy client"
-java -Dtangosol.coherence.proxy.address=${PROXY_HOST} -Dtangosol.coherence.proxy.port=${PROXY_PORT} -cp ${ORACLE_HOME}/coherence/lib/coherence.jar:./target/proxy-client-1.0.jar cohapp.Main ${OP}
+#echo -e "running proxy client"
+#java -Dtangosol.coherence.proxy.address=${PROXY_HOST} -Dtangosol.coherence.proxy.port=${PROXY_PORT} -cp ${ORACLE_HOME}/coherence/lib/coherence.jar:./target/proxy-client-1.0.jar cohapp.Main ${OP}
+
+echo "@@ running Coherence proxy client and send SIGKILL to kill the command after one minute"
+echo "@@ timeout --kill-after=5 --signal=SIGKILL 1m java -Dtangosol.coherence.log.level=9 java -Dtangosol.coherence.proxy.address=${PROXY_HOST} -Dtangosol.coherence.proxy.port=${PROXY_PORT} -cp ${ORACLE_HOME}/coherence/lib/coherence.jar:./target/proxy-client-1.0.jar cohapp.Main ${OP}"
+
+timeout --kill-after=5 --signal=SIGKILL 1m java -Dtangosol.coherence.log.level=9 -Dtangosol.coherence.proxy.address=${PROXY_HOST} -Dtangosol.coherence.proxy.port=${PROXY_PORT} -cp ${ORACLE_HOME}/coherence/lib/coherence.jar:./target/proxy-client-1.0.jar cohapp.Main ${OP} 2>&1 | tee error_msg.out
+
 retVal=$?
 if [ $retVal -eq 0 ] ; then
   # echo the marker string that is expected by the integration test
   echo "CACHE-SUCCESS"
+else
+  echo "Failed to run Coherence proxy client. Error is"
+  OUTPUT=$(cat error_msg.out)
+  echo $OUTPUT
 fi
 
 exit $retVal
