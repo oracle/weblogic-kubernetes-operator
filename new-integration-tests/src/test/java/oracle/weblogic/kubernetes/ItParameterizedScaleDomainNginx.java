@@ -55,6 +55,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -121,6 +122,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -244,6 +246,18 @@ class ItParameterizedScaleDomainNginx {
       createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap);
 
       // TODO: debug for domaininpv nginx access in parallel run
+      // use httpclient to access the app first
+      //access application from admin server
+      logger.info("Getting node port for default channel");
+      int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+          domainNamespace,  domainUid + "-" + ADMIN_SERVER_NAME_BASE + "-external", "default"),
+          "Getting admin server node port failed");
+      String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/sample-war/index.jsp";
+      assertEquals(200,
+          assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
+              "Accessing sample application on admin server failed")
+              .statusCode(), "Status code not equals to 200");
+
       String curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
       List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
       assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServersBeforeScale, 50))
@@ -757,7 +771,7 @@ class ItParameterizedScaleDomainNginx {
       Path archivePath = get(ARCHIVE_DIR, "wlsdeploy", "applications", appName + ".ear");
       logger.info("Deploying webapp {0} to domain {1}", archivePath, domainUid);
       deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3ChannelPort),
-          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName, archivePath,
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + ADMIN_SERVER_NAME_BASE, archivePath,
           domainNamespace);
     }
 

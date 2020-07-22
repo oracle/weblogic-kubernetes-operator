@@ -40,7 +40,7 @@ appDeployments:
         myear:
             SourcePath: "wlsdeploy/applications/sample-app.ear"
             ModuleType: ear
-            Target: 'cluster-1,cluster-2'
+            Target: 'cluster-1,cluster-2,admin-server'
 
         opensessionapp:
             SourcePath: "wlsdeploy/applications/opensessionapp.ear"
