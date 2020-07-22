@@ -54,6 +54,11 @@ The introspection will be periodically retried and then will eventually timeout 
 
 Please review the details for diagnosing introspection failures related to [configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md#debugging">}}) or [Model in Image domain home generation]({{<relref "/userguide/managing-domains/model-in-image/debugging.md">}}).
 
+{{% notice tip %}}
+The introspector log is mirrored to the Domain resource `spec.logHome` directory
+when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
+{{% /notice %}}
+
 ### Introspection use cases
 
 #### Adding clusters or Managed Servers to the WebLogic domain configuration
