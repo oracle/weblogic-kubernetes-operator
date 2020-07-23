@@ -246,8 +246,8 @@ public class ItTraefikLoadBalancer {
     //access application in managed servers through traefik load balancer and bind domain in the JNDI tree
     logger.info("Accessing the clusterview app through traefik load balancer");
     String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?domainTest=" + domainUid,
-        domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
+        domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp, domainUid);
 
     // call the webapp and verify the bound domain name to determine
     // the requests are sent to the correct cluster members.
@@ -272,8 +272,8 @@ public class ItTraefikLoadBalancer {
   private void bindDomainName(String domainUid) {
     //access application in managed servers through traefik load balancer and bind domain in the JNDI tree
     String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?bindDomain=" + domainUid,
-        domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?bindDomain=%s",
+        domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp, domainUid);
 
     logger.info("Binding domain name in managed server JNDI tree using curl request {0}", curlCmd);
 
