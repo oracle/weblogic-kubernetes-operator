@@ -56,7 +56,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTraefikIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.TestUtils.verifyClusterMemberCommunication;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -76,8 +75,6 @@ public class ItTraefikLoadBalancer {
   private static String domainNamespace = null;
   private static String traefikNamespace = null;
 
-  private static int nodeportshttp;
-
   private static HelmParams traefikHelmParams = null;
 
   private static final String IMAGE = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
@@ -88,7 +85,7 @@ public class ItTraefikLoadBalancer {
   private static LoggingFacade logger = null;
 
   /**
-   * Assigns unique namespaces for operator and domains. Installs operator.
+   * Assigns unique namespaces for operator, traefik loadbalancer and domains. Installs operator.
    *
    * @param namespaces injected by JUnit
    */
@@ -109,13 +106,9 @@ public class ItTraefikLoadBalancer {
     logger.info("Installing operator");
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    // get a free web and websecure ports for traefik
-    nodeportshttp = getNextFreePort(30380, 30405);
-    int nodeportshttps = getNextFreePort(31443, 31743);
-
     // install and verify traefik
     logger.info("Installing traefik controller using helm");
-    traefikHelmParams = installAndVerifyTraefik(traefikNamespace, nodeportshttp, nodeportshttps);
+    traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
 
     // build the clusterview application
     logger.info("Building clusterview application");
@@ -128,9 +121,18 @@ public class ItTraefikLoadBalancer {
 
   }
 
+  /**
+   * Test verifies multiple WebLogic domains can be loadbalanced by traefik loadbalancer with host based routing rules.
+   * 1. Creates 2 MII domains.
+   * 2. Creates Ingress resource for each domain with Host based routing rules.
+   * 3. Deploys clusterview sample application in cluster target in each domain.
+   * 4. Binds domain name JNDI tree of all managed servers in all domain.
+   * 5. When clusterview application is accessed through traefik loadbalancer with -H host
+   * header, verifies the requests are correctly routed to different clusters in different domains.
+   */
   @Test
   @DisplayName("Create model in image domains domain1 and domain2 and Ingress resources")
-  public void testTraefikLoadbalancer() {
+  public void testTraefikHostRoutingAcrossDomains() {
 
     // Create the repo secret to pull the image
     assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
@@ -174,28 +176,8 @@ public class ItTraefikLoadBalancer {
           domainUid, domainNamespace, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
       createDomainAndVerify(domain, domainNamespace);
 
-      logger.info("Check admin service {0} is created in namespace {1}",
-          adminServerPodName, domainNamespace);
-      checkServiceExists(adminServerPodName, domainNamespace);
-
-      // check admin server pod is ready
-      logger.info("Waiting for admin server pod {0} to be ready in namespace {1}",
-          adminServerPodName, domainNamespace);
-      checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-      // check managed server services created
-      for (int i = 1; i <= replicaCount; i++) {
-        logger.info("Check managed server service {0} is created in namespace {1}",
-            managedServerPrefix + i, domainNamespace);
-        checkServiceExists(managedServerPrefix + i, domainNamespace);
-      }
-
-      // check managed server pods are ready
-      for (int i = 1; i <= replicaCount; i++) {
-        logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-            managedServerPrefix + i, domainNamespace);
-        checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-      }
+      //check all servers/services are ready in the domain
+      verifyDomainIsReady(domainUid, adminServerPodName, managedServerPrefix, replicaCount);
 
       //create ingress resource - rules for loadbalancing
       Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
@@ -203,21 +185,10 @@ public class ItTraefikLoadBalancer {
       logger.info("Creating ingress resource for domain {0} in namespace {1}", domainUid, domainNamespace);
       createTraefikIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap, true);
 
-      logger.info("Getting node port for admin server default channel");
-      int serviceNodePort = assertDoesNotThrow(()
-          -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
-          "Getting admin server node port failed");
+      // deploy clusterview application
+      deployApplication(domainUid, adminServerPodName);
 
-      logger.info("Deploying application {0} in domain {1} cluster target cluster-1",
-          clusterViewAppPath, domainUid);
-      ExecResult result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,
-          String.valueOf(serviceNodePort),
-          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-          "cluster-1", clusterViewAppPath, null, domainUid + "clusterview");
-      assertNotNull(result, "Application deployment failed");
-      logger.info("Application deployment returned {0}", result.toString());
-      assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
-
+      //bind domain name in the managed servers
       bindDomainName(domainUid);
     }
 
@@ -232,7 +203,7 @@ public class ItTraefikLoadBalancer {
     logger.info("Accessing the clusterview app through traefik load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
-        domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+        domainUid + "." + domainNamespace + "." + "cluster-1.test", K8S_NODEPORT_HOST, getTraefikWebNodePort());
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
       managedServers.add(managedServerNameBase + i);
@@ -247,7 +218,8 @@ public class ItTraefikLoadBalancer {
     logger.info("Accessing the clusterview app through traefik load balancer");
     String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
-        domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp, domainUid);
+        domainUid + "." + domainNamespace + "." + "cluster-1.test", K8S_NODEPORT_HOST,
+        getTraefikWebNodePort(), domainUid);
 
     // call the webapp and verify the bound domain name to determine
     // the requests are sent to the correct cluster members.
@@ -273,7 +245,8 @@ public class ItTraefikLoadBalancer {
     //access application in managed servers through traefik load balancer and bind domain in the JNDI tree
     String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?bindDomain=%s",
-        domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp, domainUid);
+        domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST,
+        getTraefikWebNodePort(), domainUid);
 
     logger.info("Binding domain name in managed server JNDI tree using curl request {0}", curlCmd);
 
@@ -291,6 +264,15 @@ public class ItTraefikLoadBalancer {
       }
     }
 
+  }
+
+  private int getTraefikWebNodePort() {
+    String service = TestConstants.TRAEFIK_RELEASE_NAME + "-" + domainNamespace;
+    logger.info("Getting web node port for traefik loadbalancer {0}", service);
+    int webNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, service, "web"),
+        "Getting web node port for traefik loadbalancer failed");
+    return webNodePort;
   }
 
   private Domain createDomainResource(String domainUid, String domNamespace,
@@ -337,6 +319,51 @@ public class ItTraefikLoadBalancer {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
 
+  }
+
+  private void verifyDomainIsReady(String domainUid, String adminServerPodName,
+      String managedServerPrefix, int replicaCount) {
+
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
+
+    // check admin server pod is ready
+    logger.info("Waiting for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    // check managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} is created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
+    }
+
+    // check managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
+  }
+
+  private void deployApplication(String domainUid, String adminServerPodName) {
+    logger.info("Getting node port for admin server default channel");
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Deploying application {0} in domain {1} cluster target cluster-1",
+        clusterViewAppPath, domainUid);
+    ExecResult result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,
+        String.valueOf(serviceNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+        "cluster-1", clusterViewAppPath, null, domainUid + "clusterview");
+    assertNotNull(result, "Application deployment failed");
+    logger.info("Application deployment returned {0}", result.toString());
+    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
   }
 
   /**
