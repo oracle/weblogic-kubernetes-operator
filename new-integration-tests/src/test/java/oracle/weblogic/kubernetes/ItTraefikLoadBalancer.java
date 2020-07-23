@@ -267,10 +267,9 @@ public class ItTraefikLoadBalancer {
   }
 
   private int getTraefikWebNodePort() {
-    String service = TestConstants.TRAEFIK_RELEASE_NAME + "-" + domainNamespace;
-    logger.info("Getting web node port for traefik loadbalancer {0}", service);
+    logger.info("Getting web node port for traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
     int webNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, service, "web"),
+        -> getServiceNodePort(domainNamespace, traefikHelmParams.getReleaseName(), "web"),
         "Getting web node port for traefik loadbalancer failed");
     return webNodePort;
   }
