@@ -25,11 +25,10 @@ weight: 5
 1.  Configure Traefik to manage ingresses created in this namespace:
 
     ```bash
-    $ helm upgrade traefik-operator stable/traefik \
+    $ helm upgrade traefik-operator traefik/traefik \
         --namespace traefik \
         --reuse-values \
-        --set "kubernetes.namespaces={traefik,sample-domain1-ns}" \
-        --wait
+        --set "kubernetes.namespaces={traefik,sample-domain1-ns}" 
     ```
 
 {{% notice note %}}

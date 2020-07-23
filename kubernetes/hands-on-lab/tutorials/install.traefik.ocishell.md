@@ -19,7 +19,7 @@ kubectl create namespace traefik
 Install the Traefik operator in the `traefik` namespace with the provided sample values:
 ```bash
 helm install traefik-operator \
-stable/traefik \
+traefik/traefik \
 --namespace traefik \
 --values kubernetes/samples/charts/traefik/values.yaml  \
 --set "kubernetes.namespaces={traefik}" \
