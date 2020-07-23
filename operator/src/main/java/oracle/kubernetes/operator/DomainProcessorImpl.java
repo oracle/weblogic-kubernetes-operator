@@ -1000,7 +1000,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private void runFailedStep() {
-      Optional<V1ContainerStateWaiting> waiting = Optional.ofNullable(getContainerStatus())
+      Optional<V1ContainerStateWaiting> waiting = Optional.ofNullable(getMatchingContainerStatus())
               .map(V1ContainerStatus::getState)
               .map(V1ContainerState::getWaiting);
       if (waiting.isPresent() && waiting.get().getMessage() != null) {
@@ -1008,7 +1008,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                 DomainStatusUpdater.createFailedStep(
                         info, waiting.get().getReason(), waiting.get().getMessage(), null));
       } else {
-        Optional<V1ContainerStateTerminated> terminated = Optional.ofNullable(getContainerStatus())
+        Optional<V1ContainerStateTerminated> terminated = Optional.ofNullable(getMatchingContainerStatus())
                 .map(V1ContainerStatus::getState)
                 .map(V1ContainerState::getTerminated);
         if (terminated.isPresent() && terminated.get().getReason().contains("Error")) {
@@ -1028,7 +1028,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private void runProgressingStep() {
-      Optional.ofNullable(getContainerStatus())
+      Optional.ofNullable(getMatchingContainerStatus())
               .map(V1ContainerStatus::getState)
               .map(V1ContainerState::getWaiting)
               .ifPresent(waiting ->
@@ -1037,11 +1037,15 @@ public class DomainProcessorImpl implements DomainProcessor {
                                       info, waiting.getReason(), false, null)));
     }
 
-    private V1ContainerStatus getContainerStatus() {
+    private V1ContainerStatus getMatchingContainerStatus() {
       return Optional.ofNullable(pod.getStatus())
               .map(V1PodStatus::getContainerStatuses)
               .flatMap(this::getMatchingContainerStatus)
               .orElse(null);
+    }
+
+    private Optional<V1ContainerStatus> getMatchingContainerStatus(Collection<V1ContainerStatus> statuses) {
+      return statuses.stream().filter(this::hasInstrospectorJobName).findFirst();
     }
 
     private V1PodCondition getMatchingPodCondition() {
@@ -1049,10 +1053,6 @@ public class DomainProcessorImpl implements DomainProcessor {
               .map(V1PodStatus::getConditions)
               .flatMap(this::getPodCondition)
               .orElse(null);
-    }
-
-    private Optional<V1ContainerStatus> getMatchingContainerStatus(Collection<V1ContainerStatus> statuses) {
-      return statuses.stream().filter(this::hasInstrospectorJobName).findFirst();
     }
 
     private Optional<V1PodCondition> getPodCondition(Collection<V1PodCondition> conditions) {
