@@ -383,7 +383,7 @@ public class TestActions {
   }
 
   /**
-   * Uninstall the Traefik release.
+   * Uninstall the traefik release.
    *
    * @param params the parameters to Helm uninstall command, such as release name and namespace
    * @return true on success, false otherwise

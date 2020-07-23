@@ -126,14 +126,14 @@ public class ItTraefikLoadBalancer {
   }
 
   @Test
-  @DisplayName("Create model in image domains domain1 and domain2 with Ingress resources")
+  @DisplayName("Create model in image domains domain1 and domain2 and Ingress resources")
   public void testTraefikLoadbalancer() {
 
     // Create the repo secret to pull the image
     assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
         String.format("createSecret failed for %s", REPO_SECRET_NAME));
 
-    // create WebLogic domain credential secret
+    // create WebLogic domain credentials secret
     logger.info("Creating WebLogic credentials secrets for domain");
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
@@ -156,7 +156,7 @@ public class ItTraefikLoadBalancer {
 
       // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
       String adminServerPodName = domainUid + "-admin-server";
-      String managedServerPrefix = domainUid + "-managed-server";
+      String managedServerPrefix = domainUid + "-" + managedServerNameBase;
 
       // create the domain custom resource object
       Domain domain = createDomainResource(domainUid,
@@ -288,7 +288,7 @@ public class ItTraefikLoadBalancer {
   }
 
   /**
-   * Uninstall traefik. The cleanup framework does not uninstall traefik release. Do it here for now.
+   * Uninstall traefik. The cleanup framework does not uninstall traefik release.
    */
   @AfterAll
   public void tearDownAll() {

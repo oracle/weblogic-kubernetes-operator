@@ -340,23 +340,20 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a Traefik pod is running in the specified namespace. The method assumes that the Traefik pod name
-   * contains "traefik-ingress-controller".
+   * Checks if traefik pod is running in the specified namespace.
    *
-   * @param namespace in which to check if the Traefik pod is running
+   * @param namespace in which to check for the running traefik pod
    * @return true if the pod is running, otherwise false
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean isTraefikPodRunning(String namespace) throws ApiException {
-
     return isPodRunning(namespace, null, TRAEFIK_RELEASE_NAME + "-" + namespace.substring(3));
   }
 
   /**
-   * Check whether the Traefik pod is ready in the specified namespace. The method assumes that the Traefik pod name
-   * starts with "traefik-ingress-controller".
+   * Check whether the traefik pod is ready in the specified namespace.
    *
-   * @param namespace in which to check if the Traefik pod is ready
+   * @param namespace in which to check for the traefik pod readiness
    * @return true if the pod is in the ready state, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
