@@ -63,13 +63,13 @@ weight: 1
          annotations:
            kubernetes.io/ingress.class: traefik
        spec:
-        routes:
+         routes:
          - kind: Rule
-            match: PathPrefix(`/console`)
-            services:
-            - kind: Service
-              name: sample-domain1-admin-server
-              port: 7001
+           match: PathPrefix(`/console`)
+           services:
+           - kind: Service
+             name: sample-domain1-admin-server
+             port: 7001
        ---
        apiVersion: traefik.containo.us/v1alpha1
        kind: IngressRoute
@@ -82,10 +82,10 @@ weight: 1
            kubernetes.io/ingress.class: traefik
        spec:
          routes:
-           - kind: Rule
-             match: Host(`sample-domain1-cluster-cluster-1.mii-sample.org`)
-             services:
-             - kind: Service
+         - kind: Rule
+           match: Host(`sample-domain1-cluster-cluster-1.mii-sample.org`)
+           services:
+           - kind: Service
              name: sample-domain1-cluster-cluster-1
              port: 8001
        ---
@@ -100,10 +100,10 @@ weight: 1
            kubernetes.io/ingress.class: traefik
        spec:
          routes:
-           - kind: Rule
-             match: Host(`sample-domain2-cluster-cluster-1.mii-sample.org`)
-             services:
-             - kind: Service
+         - kind: Rule
+           match: Host(`sample-domain2-cluster-cluster-1.mii-sample.org`)
+           services:
+           - kind: Service
              name: sample-domain2-cluster-cluster-1
              port: 8001
        ```
