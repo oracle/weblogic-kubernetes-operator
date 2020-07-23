@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -270,13 +271,15 @@ public class ItTraefikLoadBalancer {
 
   private void bindDomainName(String domainUid) {
     //access application in managed servers through traefik load balancer and bind domain in the JNDI tree
-    logger.info("Accessing the clusterview app through traefik load balancer");
     String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?bindDomain=" + domainUid,
         domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp);
 
+    logger.info("Binding domain name in managed server JNDI tree using curl request {0}", curlCmd);
+
     // call the webapp and bind the domain name in the JNDI tree of each managed server in the cluster
     for (int i = 0; i < 10; i++) {
+      assertDoesNotThrow(() -> TimeUnit.MILLISECONDS.sleep(100));
       ExecResult result;
       try {
         result = ExecCommand.exec(curlCmd, true);
