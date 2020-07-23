@@ -248,7 +248,8 @@ public class ItTraefikLoadBalancer {
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?domainTest=" + domainUid,
         domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp);
 
-    // call the webapp and bind the domain name in the JNDI tree of each managed server in the cluster
+    // call the webapp and verify the bound domain name to determine
+    // the requests are sent to the correct cluster members.
     for (int i = 0; i < 10; i++) {
       ExecResult result;
       try {
