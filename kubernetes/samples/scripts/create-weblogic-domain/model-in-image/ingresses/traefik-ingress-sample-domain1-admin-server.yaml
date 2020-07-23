@@ -13,7 +13,7 @@ metadata:
 spec:
   routes:
   - kind: Rule
-    match: PathPrefix('/console')
+    match: PathPrefix(`/console`)
     services:
     - kind: Service
       name: sample-domain1-admin-server

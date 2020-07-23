@@ -125,7 +125,7 @@ metadata:
 spec:
   routes:
   - kind: Rule
-    match: Host('$(get_sample_host $service_name)')
+    match: Host(\`$(get_sample_host $service_name)\`)
     services:
     - kind: Service
       name: $(get_service_name $service_name)
@@ -161,7 +161,7 @@ metadata:
 spec:
   routes:
   - kind: Rule
-    match: PathPrefix('/console')
+    match: PathPrefix(\`/console\`)
     services:
     - kind: Service
       name: $(get_service_name $service_name)

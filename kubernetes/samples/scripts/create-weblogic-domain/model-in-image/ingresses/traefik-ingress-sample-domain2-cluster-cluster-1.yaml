@@ -37,7 +37,7 @@ metadata:
 spec:
   routes:
   - kind: Rule
-    match: Host('sample-domain2-cluster-cluster-1.mii-sample.org')
+    match: Host(`sample-domain2-cluster-cluster-1.mii-sample.org`)
     services:
     - kind: Service
       name: sample-domain2-cluster-cluster-1
