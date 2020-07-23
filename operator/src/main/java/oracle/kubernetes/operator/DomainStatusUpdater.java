@@ -164,7 +164,6 @@ public class DomainStatusUpdater {
    * @return Step
    */
   static Step createFailedStep(Throwable throwable, Step next) {
-
     return throwable.getMessage() == null ? createFailedStep("Exception", throwable.toString(), next)
         : createFailedStep("Exception", throwable.getMessage(), next);
   }
