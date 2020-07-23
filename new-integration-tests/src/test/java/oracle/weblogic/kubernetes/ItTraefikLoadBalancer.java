@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -215,7 +217,7 @@ public class ItTraefikLoadBalancer {
       logger.info("Application deployment returned {0}", result.toString());
       assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
 
-      verifyLoadbalancing(domainUid, replicaCount, managedServerNameBase);
+      bindDomainName(domainUid);
     }
 
     // verify load balancing works when 2 domains are running in the same namespace
@@ -238,6 +240,52 @@ public class ItTraefikLoadBalancer {
         .as("Verify applications from cluster can be acessed through the traefik loadbalancer.")
         .withFailMessage("application not accessible through traefik loadbalancer.")
         .isTrue();
+
+    boolean hostRouting = false;
+    //access application in managed servers through traefik load balancer and bind domain in the JNDI tree
+    logger.info("Accessing the clusterview app through traefik load balancer");
+    String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?domainTest=" + domainUid,
+        domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+
+    // call the webapp and bind the domain name in the JNDI tree of each managed server in the cluster
+    for (int i = 0; i < 10; i++) {
+      ExecResult result;
+      try {
+        result = ExecCommand.exec(curlCmd, true);
+        String response = result.stdout().trim();
+        if (response.contains(domainUid)) {
+          hostRouting = true;
+        }
+        logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
+            i, result.exitValue(), response, result.stderr());
+      } catch (IOException | InterruptedException ex) {
+        //
+      }
+    }
+    assertTrue(hostRouting, "Host routing is not working");
+
+  }
+
+  private void bindDomainName(String domainUid) {
+    //access application in managed servers through traefik load balancer and bind domain in the JNDI tree
+    logger.info("Accessing the clusterview app through traefik load balancer");
+    String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?bindDomain=" + domainUid,
+        domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+
+    // call the webapp and bind the domain name in the JNDI tree of each managed server in the cluster
+    for (int i = 0; i < 10; i++) {
+      ExecResult result;
+      try {
+        result = ExecCommand.exec(curlCmd, true);
+        String response = result.stdout().trim();
+        logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
+            i, result.exitValue(), response, result.stderr());
+      } catch (IOException | InterruptedException ex) {
+        //
+      }
+    }
 
   }
 
