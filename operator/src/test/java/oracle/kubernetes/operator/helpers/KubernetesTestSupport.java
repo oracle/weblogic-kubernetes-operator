@@ -779,6 +779,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
       JsonPatch patch = Json.createPatch(fromV1Patch(body));
       JsonStructure result = patch.apply(toJsonStructure(data.get(name)));
       T resource = fromJsonStructure(result);
+      Optional.ofNullable(data.get(name)).ifPresent(old -> optionallyCopyStatusSubresource(old, resource));
       data.put(name, resource);
       onUpdateActions.forEach(a -> a.accept(resource));
       return resource;

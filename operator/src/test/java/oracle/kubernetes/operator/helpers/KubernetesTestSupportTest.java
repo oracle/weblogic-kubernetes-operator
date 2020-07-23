@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
@@ -59,6 +60,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class KubernetesTestSupportTest {
@@ -198,6 +200,39 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
+  public void afterPatchDomainAsynchronously_statusIsUnchanged() throws ApiException {
+    Domain originalDomain = createDomain(NS, "domain").withStatus(new DomainStatus().withMessage("leave this"));
+    testSupport.defineResources(originalDomain);
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.replace("/status/message", "changed it");
+    patchBuilder.add("/status/reason", "added a reason");
+    Step steps = new CallBuilder().patchDomainAsync("domain", NS, getPatchBody(patchBuilder), null);
+    testSupport.runSteps(steps);
+
+    assertThat(getDomainStatus("domain").getMessage(), equalTo("leave this"));
+    assertThat(getDomainStatus("domain").getReason(), nullValue());
+  }
+
+  @Test
+  public void afterPatchDomainSynchronously_statusIsUnchanged() throws ApiException {
+    Domain originalDomain = createDomain(NS, "domain").withStatus(new DomainStatus().withMessage("leave this"));
+    testSupport.defineResources(originalDomain);
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.replace("/status/message", "changed it");
+    patchBuilder.add("/status/reason", "added a reason");
+    new CallBuilder().patchDomain("domain", NS, getPatchBody(patchBuilder));
+
+    assertThat(getDomainStatus("domain").getMessage(), equalTo("leave this"));
+    assertThat(getDomainStatus("domain").getReason(), nullValue());
+  }
+
+  private V1Patch getPatchBody(JsonPatchBuilder patchBuilder) {
+    return new V1Patch(patchBuilder.build().toString());
+  }
+
+  @Test
   public void afterReplaceDomainAsync_statusIsUnchanged() {
     Domain originalDomain = createDomain(NS, "domain1").withStatus(new DomainStatus().withMessage("leave this"));
     testSupport.defineResources(originalDomain);
@@ -206,9 +241,14 @@ public class KubernetesTestSupportTest {
     Step steps = new CallBuilder().replaceDomainAsync("domain1", NS, newDomain, null);
     testSupport.runSteps(steps);
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
-    assertThat(Optional.ofNullable(updatedDomain.getStatus()).map(DomainStatus::getMessage).orElse(""),
-               equalTo("leave this"));
+    assertThat(getDomainStatus("domain1").getMessage(), equalTo("leave this"));
+  }
+
+  private @Nonnull DomainStatus getDomainStatus(String name) {
+    return Optional.ofNullable((Domain) testSupport.getResourceWithName(DOMAIN, name))
+          .map(Domain::getStatus)
+          .orElse(new DomainStatus());
+
   }
 
   @Test
