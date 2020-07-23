@@ -252,7 +252,7 @@ public class ItTraefikLoadBalancer {
 
     // call the webapp and bind the domain name in the JNDI tree of each managed server in the cluster
     for (int i = 0; i < 10; i++) {
-      assertDoesNotThrow(() -> TimeUnit.MILLISECONDS.sleep(100));
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
       ExecResult result;
       try {
         result = ExecCommand.exec(curlCmd, true);
