@@ -1290,16 +1290,16 @@ public class CommonTestUtils {
   public static void createSecretWithTLSCertKey(
       String secretName, String namespace, Path keyFile, Path certFile) throws IOException {
 
-    Map<String, byte[]> data = new HashMap<>();
-    data.put("tls.crt", Base64.getEncoder().encode(Files.readAllBytes(certFile)));
-    data.put("tls.key", Base64.getEncoder().encode(Files.readAllBytes(keyFile)));
+    Map<String, String> data = new HashMap<>();
+    data.put("tls.crt", Base64.getEncoder().encodeToString(Files.readAllBytes(certFile)));
+    data.put("tls.key", Base64.getEncoder().encodeToString(Files.readAllBytes(keyFile)));
 
     V1Secret secret = new V1Secret()
         .metadata(new V1ObjectMeta()
             .name(secretName)
             .namespace(namespace))
         .type("kubernetes.io/tls")
-        .data(data);
+        .stringData(data);
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(secret),
         "Create secret failed with ApiException");
