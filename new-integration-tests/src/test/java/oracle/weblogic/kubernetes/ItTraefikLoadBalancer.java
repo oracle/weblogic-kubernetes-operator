@@ -384,7 +384,7 @@ public class ItTraefikLoadBalancer {
     String cn = domainUid + "." + domainNamespace + ".cluster-1.test";
     assertDoesNotThrow(() -> {
       tlsKeyFile = Files.createTempFile("tls", ".key");
-      tlsCertFile = Files.createTempFile("tls", ".cert");
+      tlsCertFile = Files.createTempFile("tls", ".crt");
       ExecCommand.exec("openssl"
           + " req -x509 "
           + " -nodes "
