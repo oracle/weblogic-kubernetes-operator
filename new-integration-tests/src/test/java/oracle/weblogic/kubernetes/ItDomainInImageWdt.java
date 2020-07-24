@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,7 +20,6 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
@@ -27,24 +27,32 @@ import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
-import org.junit.jupiter.api.AfterAll;
+//import org.junit.jupiter.api.AfterAll;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -54,6 +62,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -62,15 +71,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItDomainInImageWdt {
 
-  private static HelmParams opHelmParams = null;
   private static String opNamespace = null;
-  private static String operatorImage = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static String dockerConfigJson = "";
-  private String domainUid = "domain1";
-  private static Map<String, Object> secretNameMap;
   private static LoggingFacade logger = null;
+
+  private static final String domainUid = "domain1";
+  private static final String clusterName = "cluster-1";
+  private static final int replicaCount = 2;
+  private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+  private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+
 
   /**
    * Install Operator.
@@ -104,6 +115,7 @@ class ItDomainInImageWdt {
    * ready/running and service exists.
    */
   @Test
+  @Order(1)
   @DisplayName("Create domain in image domain using WDT")
   @Slow
   @MustNotRunInParallel
@@ -186,9 +198,82 @@ class ItDomainInImageWdt {
 
   }
 
+  /**
+   * Modify the domain scope property on the domain resource.
+   * Verify all pods are restarted and back to ready state.
+   * The resources tested: includeServerOutInPodLog: true --> includeServerOutInPodLog: false.
+   */
+  @Test
+  @Order(2)
+  @DisplayName("Verify server pods are restarted by IncludeServerOutInPodLog")
+  @Slow
+  @MustNotRunInParallel
+  public void testServerPodsRestartByChangingIncludeServerOutInPodLog() {
+    // get the original domain resource before update
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+
+    // create the map with server pods and their original creation timestamps
+    Map<String, DateTime> podsWithTimeStamps = new LinkedHashMap<>();
+    podsWithTimeStamps.put(adminServerPodName,
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
+        String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+            adminServerPodName, domainNamespace)));
+
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = managedServerPrefix + i;
+      podsWithTimeStamps.put(managedServerPodName,
+          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
+              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+                  managedServerPodName, domainNamespace)));
+    }
+
+    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+
+    //print out the original IncludeServerOutInPodLog
+    Boolean includeServerOutInPodLog = domain1.getSpec().getIncludeServerOutInPodLog();
+    logger.info("Original IncludeServerOutInPodLog is: {0}",  includeServerOutInPodLog);
+
+    //set includeServerOutInPodLog: true --> includeServerOutInPodLog: false
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/includeServerOutInPodLog\",")
+        .append("\"value\": ")
+        .append(false)
+        .append("}]");
+    logger.info("PathchStr for includeServerOutInPodLog: {0}", patchStr.toString());
+
+    boolean cmPatched = patchDomainResource(domainUid, domainNamespace, patchStr);
+    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+
+    logger.info("11111 After changing IncludeServerOutInPodLog is: {0}",
+        domain1.getSpec().getIncludeServerOutInPodLog());
+
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(assertDoesNotThrow(
+        () -> verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+        "More than one pod was restarted at same time"),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    // get the patched domain custom resource
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    includeServerOutInPodLog = domain1.getSpec().getIncludeServerOutInPodLog();
+    logger.info("In the new patched domain IncludeServerOutInPodLog is: {0}",
+        includeServerOutInPodLog);
+    assertFalse(includeServerOutInPodLog, "IncludeServerOutInPodLog was not updated correctly");
+
+  }
+
   // This method is needed in this test class, since the cleanup util
   // won't cleanup the images.
-  @AfterAll
+  //@AfterAll
   void tearDown() {
 
     // Delete domain custom resource
