@@ -377,6 +377,13 @@ public class CallBuilder {
                   requestParams.name,
                   requestParams.namespace,
                   (Domain) requestParams.body);
+  private final SynchronousCallFactory<Domain> replaceDomainStatusCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .replaceNamespacedDomainStatus(
+                  requestParams.name,
+                  requestParams.namespace,
+                  (Domain) requestParams.body);
   private final SynchronousCallFactory<Domain> patchDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -640,7 +647,19 @@ public class CallBuilder {
     return executeSynchronousCall(requestParams, replaceDomainCall);
   }
 
-  /* Jobs */
+  /**
+   * Replace domain status.
+   *
+   * @param uid the domain uid (unique within the k8s cluster)
+   * @param namespace Namespace
+   * @param body Body
+   * @return Replaced domain
+   * @throws ApiException APIException
+   */
+  public Domain replaceDomainStatus(String uid, String namespace, Domain body) throws ApiException {
+    RequestParams requestParams = new RequestParams("replaceDomainStatus", namespace, uid, body);
+    return executeSynchronousCall(requestParams, replaceDomainStatusCall);
+  }
 
   private Call replaceDomainAsync(
       ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
