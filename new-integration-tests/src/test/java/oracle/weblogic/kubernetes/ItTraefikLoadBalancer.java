@@ -189,7 +189,7 @@ public class ItTraefikLoadBalancer {
       logger.info("Creating ingress resource for domain {0} in namespace {1}", domainUid, domainNamespace);
       createCertKeyFiles(domainUid);
       assertDoesNotThrow(() -> createSecretWithTLSCertKey(domainUid + "-lbsecret-tls",
-          traefikNamespace, tlsKeyFile, tlsCertFile));
+          domainNamespace, tlsKeyFile, tlsCertFile));
       createTraefikIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap,
           true, domainUid + "-lbsecret-tls");
 
@@ -201,17 +201,24 @@ public class ItTraefikLoadBalancer {
     }
 
     // verify load balancing works when 2 domains are running in the same namespace
+    logger.info("Verifying http traffic");
     for (String domainUid : domains) {
-      verifyLoadbalancing(domainUid, replicaCount, managedServerNameBase);
+      verifyLoadbalancing(domainUid, replicaCount, managedServerNameBase, false);
+    }
+    logger.info("Verifying https traffic");
+    for (String domainUid : domains) {
+      verifyLoadbalancing(domainUid, replicaCount, managedServerNameBase, true);
     }
   }
 
-  private void verifyLoadbalancing(String domainUid, int replicaCount, String managedServerNameBase) {
+  private void verifyLoadbalancing(String domainUid, int replicaCount, String managedServerNameBase, boolean https) {
+
     //access application in managed servers through Traefik load balancer
     logger.info("Accessing the clusterview app through Traefik load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
-        domainUid + "." + domainNamespace + "." + "cluster-1.test", K8S_NODEPORT_HOST, getTraefikWebNodePort());
+        + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet",
+        domainUid + "." + domainNamespace + "." + "cluster-1.test",
+        https ? "https" : "http", K8S_NODEPORT_HOST, getTraefikWebNodePort(https));
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
       managedServers.add(managedServerNameBase + i);
@@ -225,9 +232,9 @@ public class ItTraefikLoadBalancer {
     //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
     logger.info("Accessing the clusterview app through Traefik load balancer");
     String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
-        domainUid + "." + domainNamespace + "." + "cluster-1.test", K8S_NODEPORT_HOST,
-        getTraefikWebNodePort(), domainUid);
+        + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
+        domainUid + "." + domainNamespace + "." + "cluster-1.test", https ? "https" : "http", K8S_NODEPORT_HOST,
+        getTraefikWebNodePort(https), domainUid);
 
     // call the webapp and verify the bound domain name to determine
     // the requests are sent to the correct cluster members.
@@ -254,7 +261,7 @@ public class ItTraefikLoadBalancer {
     String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?bindDomain=%s",
         domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST,
-        getTraefikWebNodePort(), domainUid);
+        getTraefikWebNodePort(false), domainUid);
 
     logger.info("Binding domain name in managed server JNDI tree using curl request {0}", curlCmd);
 
@@ -274,10 +281,10 @@ public class ItTraefikLoadBalancer {
 
   }
 
-  private int getTraefikWebNodePort() {
+  private int getTraefikWebNodePort(boolean https) {
     logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
     int webNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web"),
+        -> getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), https ? "websecure" : "web"),
         "Getting web node port for Traefik loadbalancer failed");
     return webNodePort;
   }
