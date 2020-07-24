@@ -112,7 +112,8 @@ public class ItTraefikLoadBalancer {
 
     // install and verify Traefik
     logger.info("Installing Traefik controller using helm");
-    traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
+    //traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
+    traefikHelmParams = installAndVerifyTraefik(domainNamespace, 0, 0);
 
     // build the clusterview application
     logger.info("Building clusterview application");
@@ -283,8 +284,13 @@ public class ItTraefikLoadBalancer {
 
   private int getTraefikWebNodePort(boolean https) {
     logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
+    /*
     int webNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), https ? "websecure" : "web"),
+        "Getting web node port for Traefik loadbalancer failed");
+    */
+    int webNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, traefikHelmParams.getReleaseName(), https ? "websecure" : "web"),
         "Getting web node port for Traefik loadbalancer failed");
     return webNodePort;
   }
