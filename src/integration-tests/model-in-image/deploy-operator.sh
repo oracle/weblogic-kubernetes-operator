@@ -36,6 +36,9 @@ mkdir -p $WORKDIR/test-out
 if [ -e $WORKDIR/test-out/operator-values.orig ]; then
   helm get values ${OPER_NAME} -n ${OPER_NAMESPACE} > $WORKDIR/test-out/operator-values.cur 2>&1
   helm list -n ${OPER_NAMESPACE} | awk '{ print $1 }' >> $WORKDIR/test-out/operator-values.cur
+  for evar in DOMAIN_NAMESPACE OPER_NAMESPACE OPER_NAME OPER_IMAGE OPER_SA ; do
+    echo "${evar}=${!evar}" >> $WORKDIR/test-out/operator-values.cur
+  done
   if [ "$(cat $WORKDIR/test-out/operator-values.cur)" = "$(cat $WORKDIR/test-out/operator-values.orig)" ]; then
     echo "@@"
     echo "@@ Operator already running. Skipping."
@@ -69,6 +72,9 @@ kubectl get deployments -n $OPER_NAMESPACE
 
 helm get values ${OPER_NAME} -n ${OPER_NAMESPACE} > $WORKDIR/test-out/operator-values.orig 2>&1
 helm list -n ${OPER_NAMESPACE} | awk '{ print $1 }' >> $WORKDIR/test-out/operator-values.orig
+for evar in DOMAIN_NAMESPACE OPER_NAMESPACE OPER_NAME OPER_IMAGE OPER_SA ; do
+  echo "${evar}=${!evar}" >> $WORKDIR/test-out/operator-values.orig
+done
 
 echo "@@ log command: kubectl logs -n $OPER_NAMESPACE -c weblogic-operator deployments/weblogic-operator"
 
