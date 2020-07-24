@@ -14,6 +14,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Model {
+  static final String DEFAULT_WDT_MODEL_HOME = "/u01/wdt/models";
 
   @EnumClass(value = ModelInImageDomainType.class)
   @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
@@ -22,7 +23,7 @@ public class Model {
   @Description("Name of a ConfigMap containing the WebLogic Deploy Tooling model.")
   private String configMap;
 
-  @Description("Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models")
+  @Description("Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.")
   private String modelHome;
 
   @Valid
@@ -90,6 +91,7 @@ public class Model {
         new ToStringBuilder(this)
             .append("domainType", domainType)
             .append("configMap", configMap)
+            .append("modelHome", modelHome)
             .append("runtimeEncryptionSecret", runtimeEncryptionSecret);
 
     return builder.toString();
@@ -100,6 +102,7 @@ public class Model {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(domainType)
         .append(configMap)
+        .append(modelHome)
         .append(runtimeEncryptionSecret);
 
     return builder.toHashCode();
@@ -119,6 +122,7 @@ public class Model {
         new EqualsBuilder()
             .append(domainType, rhs.domainType)
             .append(configMap,rhs.configMap)
+            .append(modelHome,rhs.modelHome)
             .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret);
 
     return builder.isEquals();

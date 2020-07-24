@@ -544,8 +544,7 @@ public class Domain {
    * @return model home directory
    */
   public String getModelHome() {
-    return Optional.ofNullable(spec.getConfiguration())
-        .map(Configuration::getModel).map(Model::getModelHome).orElse(null);
+    return spec.getModelHome();
   }
 
   @Override

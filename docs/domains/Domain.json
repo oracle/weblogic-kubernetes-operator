@@ -544,7 +544,7 @@
           "type": "string"
         },
         "modelHome": {
-          "description": "Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models",
+          "description": "Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.",
           "type": "string"
         }
       }
