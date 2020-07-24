@@ -215,7 +215,7 @@ public class ItTraefikLoadBalancer {
 
     //access application in managed servers through Traefik load balancer
     logger.info("Accessing the clusterview app through Traefik load balancer");
-    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+    String curlRequest = String.format("curl --silent --show-error -k --noproxy '*' "
         + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + domainNamespace + "." + "cluster-1.test",
         https ? "https" : "http", K8S_NODEPORT_HOST, getTraefikWebNodePort(https));
@@ -231,7 +231,7 @@ public class ItTraefikLoadBalancer {
     boolean hostRouting = false;
     //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
     logger.info("Accessing the clusterview app through Traefik load balancer");
-    String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
+    String curlCmd = String.format("curl --silent --show-error -k --noproxy '*' "
         + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
         domainUid + "." + domainNamespace + "." + "cluster-1.test", https ? "https" : "http", K8S_NODEPORT_HOST,
         getTraefikWebNodePort(https), domainUid);
