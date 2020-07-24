@@ -215,15 +215,10 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
   }
 
   private static boolean isPodFailed(V1ContainerStatus conStatus) {
-    LOGGER.fine("PodWatcher.isReady for container status " + conStatus + " is " + isReady(conStatus) + " and "
-            + " waiting message is " + getContainerStateWaitingMessage(conStatus)
-            + " and terminated reason is " + getContainerStateTerminatedReason(conStatus));
-    boolean res  =
+    return
         !isReady(conStatus)
         && (getContainerStateWaitingMessage(conStatus) != null
         || getContainerStateTerminatedReason(conStatus).contains("Error"));
-    LOGGER.fine("PodWatcher.isPodFailed.. returning " + res);
-    return res;
   }
 
   static boolean isUnschedulable(@Nonnull V1Pod pod) {
