@@ -46,6 +46,9 @@ class HelmOperatorValues extends OperatorValues {
     loadIntegerFromMap(map, this::setInternalDebugHttpPort, "internalDebugHttpPort");
     loadIntegerFromMap(map, this::setElasticSearchPort, "elasticSearchPort");
 
+    loadFromMap(map, this::setDomainNamespaceSelectionStrategy, "domainNamespaceSelectionStrategy");
+    loadFromMap(map, this::setDomainNamespaceLabelSelector, "domainNamespaceLabelSelector");
+    loadFromMap(map, this::setDomainNamespaceRegExp, "domainNamespaceRegExp");
     loadDomainNamespacesFromMap(map);
     loadImagePullSecretsFromMap(map);
   }

@@ -106,6 +106,9 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                     .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
             .putDataItem("dedicated", getInputs().getDedicated())
             .putDataItem("serviceaccount", getInputs().getServiceAccount())
+            .putDataItem("domainNamespaceSelectionStrategy", getInputs().getDomainNamespaceSelectionStrategy())
+            .putDataItem("domainNamespaceLabelSelector", getInputs().getDomainNamespaceLabelSelector())
+            .putDataItem("domainNamespaceRegExp", getInputs().getDomainNamespaceRegExp())
             .putDataItem("domainNamespaces", getInputs().getDomainNamespaces());
     if (expectExternalCredentials()) {
       v1ConfigMap.putDataItem(

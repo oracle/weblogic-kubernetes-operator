@@ -3,20 +3,20 @@
 
 # serviceAccount specifies the name of the ServiceAccount in the operator's namespace that the
 # operator will use to make requests to the Kubernetes API server.
-# The customer is responsible for creating the ServiceAccount.
-# If not specified, the the operator will use the operator namespace's 'default' ServiceAccount.
+# The customer is responsible for creating the ServiceAccount in the same namespace as this Helm release.
+# If not specified, the the operator will use the Helm release namespace's 'default' ServiceAccount.
 serviceAccount: "default"
 
 # domainNamespaceSelectionStrategy specifies how the operator will select the set of namespaces
 # that it will manage. Legal values are: List, LabelSelector, RegExp, and Dedicated. If set to 'List',
-# then the operator will manage the set of namespaces specified by the 'domainNamespaces' value.
+# then the operator will manage the set of namespaces listed by the 'domainNamespaces' value.
 # If set to 'LabelSelector', then the operator will manage the set of namespaces discovered by a list
 # of namespaces using the value specified by 'domainNamespaceLabelSelector' as a label selector.
 # If set to 'RegExp', then the operator will manage the set of namespaces discovered by a list
 # of namespaces using the value specified by 'domainNamespaceRegExp' as a regular expression matched
 # against the namespace names.
 # If set to 'Dedicated', then operator will manage WebLogic Domains only in the same namespace in
-# which the operator itself is deployed.
+# which the operator itself is deployed, which is the namespace of the Helm release.
 domainNamespaceSelectionStrategy: List
 
 # This value is deprecated. Please use 'domainNamespaceSelectionStrategy: Dedicated'.
@@ -25,9 +25,14 @@ domainNamespaceSelectionStrategy: List
 # is ignored.
 # dedicated: false
 
-# domainNamespaces specifies list of WebLogic Domain namespaces that the operator manages. This value
+# domainNamespaces specifies list of WebLogic Domain namespaces that this operator manages. This value
 # is ignored if 'domainNamespaceSelectionStrategy' is not 'List'. The customer is responsible for creating these
 # namespaces. If not specified, then the operator will manage WebLogic Domains in the Kubernetes 'default' namespace.
+#
+# If 'onlyInitializeDomainNamespaces' is 'true', then this Helm release will initialize the role binding and
+# other resources necessary in each namespace included in this list for use by an already deployed operator
+# created by another Helm release in this namespace using this chart. This is useful when the Helm release
+# that deployed the operator used a 'domainNamespaceSelectionStrategy' other than 'List'.
 #
 # Example: In the configuration below, the operator will manage namespace1 and namespace2.
 #
@@ -36,6 +41,14 @@ domainNamespaceSelectionStrategy: List
 # - "namespace2"
 domainNamespaces:
 - "default"
+
+# onlyInitializeDomainNamespaces specifies whether this Helm release will only initialize the role binding and other
+# resources necessary in each domain namespace and not deploy the operator. When the 'domainNamespaceSelectionStrategy'
+# is 'List', the chart will already initialize the necessary role binding and other resources in each namespace listed
+# by 'domainNamespaces'. However, for 'domainNamespaceSelectionStrategy' values other than 'List',
+# setting 'onlyInitializeDomainNamespaces' to 'true' is useful because you can create one or more additional
+# Helm releases using this chart in the same namespace to simplify creating these per-domain namespace resources.
+onlyInitializeDomainNamespaces: false
 
 # domainNamespaceLabelSelector specifies the label selector value that the operator will use when listing
 # namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
