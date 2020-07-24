@@ -159,7 +159,7 @@ public class ItTraefikLoadBalancer {
 
     int replicaCount = 2;
     String managedServerNameBase = "managed-server";
-    String[] domains = {"domain1", "domain2"};
+    String[] domains = {"domain1"};//, "domain2"};
 
     for (String domainUid : domains) {
 
@@ -381,7 +381,8 @@ public class ItTraefikLoadBalancer {
   }
 
   private void createCertKeyFiles(String domainUid) {
-    String cn = domainUid + "." + domainNamespace + ".cluster-1.test";
+    //String cn = domainUid + "." + domainNamespace + ".cluster-1.test";
+    String cn = domainUid + ".org";
     assertDoesNotThrow(() -> {
       tlsKeyFile = Files.createTempFile("tls", ".key");
       tlsCertFile = Files.createTempFile("tls", ".crt");
