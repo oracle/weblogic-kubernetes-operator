@@ -341,7 +341,7 @@ public class TestActions {
   }
 
   /**
-   * Install traefik ingress controller.
+   * Install Traefik ingress controller.
    *
    * @param params the parameters to Helm install command, such as release name, namespace, repo url,
    *               repo name and chart name
@@ -383,7 +383,7 @@ public class TestActions {
   }
 
   /**
-   * Uninstall the traefik release.
+   * Uninstall the Traefik release.
    *
    * @param params the parameters to Helm uninstall command, such as release name and namespace
    * @return true on success, false otherwise
@@ -412,19 +412,22 @@ public class TestActions {
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @param annotations annotations to create ingress resource
    * @param setIngressHost if true set to specific host or all
+   * @param tlsSecret TLS secret name if any
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
-  public static List<String> createIngress(String ingressName,
-                                           String domainNamespace,
-                                           String domainUid,
-                                           Map<String, Integer> clusterNameMsPortMap,
-                                           Map<String, String> annotations,
-                                           boolean setIngressHost) {
+  public static List<String> createIngress(
+      String ingressName,
+      String domainNamespace,
+      String domainUid,
+      Map<String, Integer> clusterNameMsPortMap,
+      Map<String, String> annotations,
+      boolean setIngressHost,
+      String tlsSecret) {
     return Ingress.createIngress(ingressName,
             domainNamespace,
             domainUid,
             clusterNameMsPortMap,
-            annotations, setIngressHost);
+            annotations, setIngressHost, tlsSecret);
   }
 
   /**

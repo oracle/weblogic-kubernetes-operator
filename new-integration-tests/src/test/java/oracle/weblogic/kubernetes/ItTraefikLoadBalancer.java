@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -52,6 +53,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTraefikIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -65,9 +67,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests related to WebLogic domain traffic routed by traefik loadbalancer.
+ * Tests related to WebLogic domain traffic routed by Traefik loadbalancer.
  */
-@DisplayName("Test traefik loadbalancing with multiple WebLogic domains")
+@DisplayName("Test Traefik loadbalancing with multiple WebLogic domains")
 @IntegrationTest
 public class ItTraefikLoadBalancer {
 
@@ -80,12 +82,14 @@ public class ItTraefikLoadBalancer {
   private static final String IMAGE = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
   private final String wlSecretName = "weblogic-credentials";
+  Path tlsCertFile;
+  Path tlsKeyFile;
 
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
 
   /**
-   * Assigns unique namespaces for operator, traefik loadbalancer and domains. Installs operator.
+   * Assigns unique namespaces for operator, Traefik loadbalancer and domains. Installs operator.
    *
    * @param namespaces injected by JUnit
    */
@@ -99,15 +103,15 @@ public class ItTraefikLoadBalancer {
     logger.info("Assign a unique namespace for WebLogic domains");
     domainNamespace = namespaces.get(1);
 
-    logger.info("Assign a unique namespace for traefik");
+    logger.info("Assign a unique namespace for Traefik");
     traefikNamespace = namespaces.get(2);
 
     // install operator and verify its running in ready state
     logger.info("Installing operator");
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    // install and verify traefik
-    logger.info("Installing traefik controller using helm");
+    // install and verify Traefik
+    logger.info("Installing Traefik controller using helm");
     traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
 
     // build the clusterview application
@@ -122,12 +126,12 @@ public class ItTraefikLoadBalancer {
   }
 
   /**
-   * Test verifies multiple WebLogic domains can be loadbalanced by traefik loadbalancer with host based routing rules.
+   * Test verifies multiple WebLogic domains can be loadbalanced by Traefik loadbalancer with host based routing rules.
    * 1. Creates 2 MII domains.
    * 2. Creates Ingress resource for each domain with Host based routing rules.
    * 3. Deploys clusterview sample application in cluster target in each domain.
    * 4. Binds domain name JNDI tree of all managed servers in all domain.
-   * 5. When clusterview application is accessed through traefik loadbalancer with -H host
+   * 5. When clusterview application is accessed through Traefik loadbalancer with -H host
    * header, verifies the requests are correctly routed to different clusters in different domains.
    */
   @Test
@@ -183,7 +187,11 @@ public class ItTraefikLoadBalancer {
       Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
       clusterNameMsPortMap.put("cluster-1", 8001);
       logger.info("Creating ingress resource for domain {0} in namespace {1}", domainUid, domainNamespace);
-      createTraefikIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap, true);
+      createCertKeyFiles(domainUid);
+      assertDoesNotThrow(() -> createSecretWithTLSCertKey(domainUid + "-lbsecret-tls",
+          traefikNamespace, tlsKeyFile, tlsCertFile));
+      createTraefikIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap,
+          true, domainUid + "-lbsecret-tls");
 
       // deploy clusterview application
       deployApplication(domainUid, adminServerPodName);
@@ -199,8 +207,8 @@ public class ItTraefikLoadBalancer {
   }
 
   private void verifyLoadbalancing(String domainUid, int replicaCount, String managedServerNameBase) {
-    //access application in managed servers through traefik load balancer
-    logger.info("Accessing the clusterview app through traefik load balancer");
+    //access application in managed servers through Traefik load balancer
+    logger.info("Accessing the clusterview app through Traefik load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + domainNamespace + "." + "cluster-1.test", K8S_NODEPORT_HOST, getTraefikWebNodePort());
@@ -209,13 +217,13 @@ public class ItTraefikLoadBalancer {
       managedServers.add(managedServerNameBase + i);
     }
     assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-        .as("Verify applications from cluster can be acessed through the traefik loadbalancer.")
-        .withFailMessage("application not accessible through traefik loadbalancer.")
+        .as("Verify applications from cluster can be acessed through the Traefik loadbalancer.")
+        .withFailMessage("application not accessible through Traefik loadbalancer.")
         .isTrue();
 
     boolean hostRouting = false;
-    //access application in managed servers through traefik load balancer and bind domain in the JNDI tree
-    logger.info("Accessing the clusterview app through traefik load balancer");
+    //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
+    logger.info("Accessing the clusterview app through Traefik load balancer");
     String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
         domainUid + "." + domainNamespace + "." + "cluster-1.test", K8S_NODEPORT_HOST,
@@ -242,7 +250,7 @@ public class ItTraefikLoadBalancer {
   }
 
   private void bindDomainName(String domainUid) {
-    //access application in managed servers through traefik load balancer and bind domain in the JNDI tree
+    //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
     String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?bindDomain=%s",
         domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST,
@@ -267,10 +275,10 @@ public class ItTraefikLoadBalancer {
   }
 
   private int getTraefikWebNodePort() {
-    logger.info("Getting web node port for traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
+    logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
     int webNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web"),
-        "Getting web node port for traefik loadbalancer failed");
+        "Getting web node port for Traefik loadbalancer failed");
     return webNodePort;
   }
 
@@ -365,12 +373,29 @@ public class ItTraefikLoadBalancer {
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
   }
 
+  private void createCertKeyFiles(String domainUid) {
+    String cn = domainUid + "." + domainNamespace + ".cluster-1.test";
+    assertDoesNotThrow(() -> {
+      tlsKeyFile = Files.createTempFile("tls", ".key");
+      tlsCertFile = Files.createTempFile("tls", ".cert");
+      ExecCommand.exec("openssl"
+          + " req -x509 "
+          + " -nodes "
+          + " -days 365 "
+          + " -newkey rsa:2048 "
+          + " -keyout " + tlsKeyFile
+          + " -out " + tlsCertFile
+          + " -subj CN=" + cn,
+          true);
+    });
+  }
+
   /**
-   * Uninstall traefik. The cleanup framework does not uninstall traefik release.
+   * Uninstall Traefik. The cleanup framework does not uninstall Traefik release.
    */
   @AfterAll
   public void tearDownAll() {
-    // uninstall traefik loadbalancer
+    // uninstall Traefik loadbalancer
     if (traefikHelmParams != null) {
       assertThat(uninstallTraefik(traefikHelmParams))
           .as("Test uninstallTraefik returns true")

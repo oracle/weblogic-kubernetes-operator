@@ -14,6 +14,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -456,12 +457,12 @@ public class CommonTestUtils {
   }
 
   /**
-   * Install traefik and wait for up to five minutes for the traefik pod to be ready.
+   * Install Traefik and wait for up to five minutes for the Traefik pod to be ready.
    *
-   * @param traefikNamespace the namespace in which the traefik ingress controller is installed
-   * @param nodeportshttp the web nodeport of traefik
-   * @param nodeportshttps the websecure nodeport of traefik
-   * @return the traefik Helm installation parameters
+   * @param traefikNamespace the namespace in which the Traefik ingress controller is installed
+   * @param nodeportshttp the web nodeport of Traefik
+   * @param nodeportshttps the websecure nodeport of Traefik
+   * @return the Traefik Helm installation parameters
    */
   public static HelmParams installAndVerifyTraefik(String traefikNamespace,
       int nodeportshttp,
@@ -475,24 +476,21 @@ public class CommonTestUtils {
         .repoName(TRAEFIK_REPO_NAME)
         .chartName(TRAEFIK_CHART_NAME);
 
-    // NGINX chart values to override
+    // Traefik chart values to override
     TraefikParams traefikParams = new TraefikParams()
         .helmParams(traefikHelmParams);
+    traefikParams
+        .nodePortsHttp(nodeportshttp)
+        .nodePortsHttps(nodeportshttps);
 
-    if (nodeportshttp != 0 && nodeportshttps != 0) {
-      traefikParams
-          .nodePortsHttp(nodeportshttp)
-          .nodePortsHttps(nodeportshttps);
-    }
-
-    // install traefik
+    // install Traefik
     assertThat(installTraefik(traefikParams))
-        .as("Test traefik installation succeeds")
-        .withFailMessage("traefik installation is failed")
+        .as("Test Traefik installation succeeds")
+        .withFailMessage("Traefik installation is failed")
         .isTrue();
 
-    // verify that traefik is installed
-    logger.info("Checking traefik release {0} status in namespace {1}",
+    // verify that Traefik is installed
+    logger.info("Checking Traefik release {0} status in namespace {1}",
         TRAEFIK_RELEASE_NAME, traefikNamespace);
     assertTrue(isHelmReleaseDeployed(TRAEFIK_RELEASE_NAME, traefikNamespace),
         String.format("Traefik release %s is not in deployed status in namespace %s",
@@ -500,9 +498,9 @@ public class CommonTestUtils {
     logger.info("Traefik release {0} status is deployed in namespace {1}",
         TRAEFIK_RELEASE_NAME, traefikNamespace);
 
-    // wait until the traefik pod is ready.
+    // wait until the Traefik pod is ready.
     withStandardRetryPolicy
-        .conditionEvaluationListener(condition -> logger.info("Waiting for traefik to be ready in "
+        .conditionEvaluationListener(condition -> logger.info("Waiting for Traefik to be ready in "
         + "namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
         traefikNamespace,
         condition.getElapsedTimeInMS(),
@@ -619,7 +617,8 @@ public class CommonTestUtils {
     annotations.put("kubernetes.io/ingress.class", ingressNginxClass);
 
     List<String> ingressHostList =
-            createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, setIngressHost);
+            createIngress(ingressName, domainNamespace, domainUid,
+                clusterNameMSPortMap, annotations, setIngressHost, null);
 
     assertNotNull(ingressHostList,
             String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
@@ -657,13 +656,16 @@ public class CommonTestUtils {
    * @param nodeport node port of the ingress controller
    * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
    * @param setIngressHost if false does not set ingress host
+   * @param tlsSecret name of the TLS secret if any
    * @return list of ingress hosts
    */
-  public static List<String> createTraefikIngressForDomainAndVerify(String domainUid,
-                                                             String domainNamespace,
-                                                             int nodeport,
-                                                             Map<String, Integer> clusterNameMSPortMap,
-                                                             boolean setIngressHost) {
+  public static List<String> createTraefikIngressForDomainAndVerify(
+      String domainUid,
+      String domainNamespace,
+      int nodeport,
+      Map<String, Integer> clusterNameMSPortMap,
+      boolean setIngressHost,
+      String tlsSecret) {
 
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
@@ -674,7 +676,8 @@ public class CommonTestUtils {
     annotations.put("kubernetes.io/ingress.class", ingressTraefikClass);
 
     List<String> ingressHostList =
-            createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, setIngressHost);
+            createIngress(ingressName, domainNamespace, domainUid,
+                clusterNameMSPortMap, annotations, setIngressHost, tlsSecret);
 
     assertNotNull(ingressHostList,
             String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
@@ -731,7 +734,7 @@ public class CommonTestUtils {
 
     // create an ingress in domain namespace
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true);
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true, null);
 
     // wait until the Voyager ingress pod is ready.
     withStandardRetryPolicy
@@ -1273,6 +1276,34 @@ public class CommonTestUtils {
       logger.info("docker push image {0} to {1}", dockerImage, REPO_NAME);
       assertTrue(dockerPush(dockerImage), String.format("docker push failed for image %s", dockerImage));
     }
+  }
+
+  /**
+   * Create a secret with TLS certificate and key in the specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param keyFile key file containing key for the secret
+   * @param certFile certificate file containing certificate for secret
+   * @throws java.io.IOException when reading key/cert files fails
+   */
+  public static void createSecretWithTLSCertKey(
+      String secretName, String namespace, Path keyFile, Path certFile) throws IOException {
+
+    Map<String, byte[]> data = new HashMap<>();
+    data.put("tls.crt", Base64.getMimeEncoder().encode(Files.readAllBytes(certFile)));
+    data.put("tls.key", Base64.getMimeEncoder().encode(Files.readAllBytes(certFile)));
+
+    V1Secret secret = new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .type("kubernetes.io/tls")
+        .data(data);
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(secret),
+        "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
   }
 
   /**
