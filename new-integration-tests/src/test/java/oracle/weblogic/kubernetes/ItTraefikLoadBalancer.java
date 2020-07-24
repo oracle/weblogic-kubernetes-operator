@@ -385,7 +385,7 @@ public class ItTraefikLoadBalancer {
           + " -newkey rsa:2048 "
           + " -keyout " + tlsKeyFile
           + " -out " + tlsCertFile
-          + " -subj CN=" + cn,
+          + " -subj /CN=" + cn,
           true);
     });
   }
