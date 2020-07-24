@@ -205,7 +205,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     repositories.put(resourceName, new DataRepository<>(resourceClass, toList));
   }
 
-  @SuppressWarnings("SameParameterValue")
+  @SuppressWarnings({"SameParameterValue", "UnusedReturnValue"})
   private <T> NamespacedDataRepository<Object> supportNamespaced(String resourceName, Class<T> resourceClass) {
     final NamespacedDataRepository<Object> dataRepository = new NamespacedDataRepository<>(resourceClass, null);
     dataTypes.put(resourceClass, resourceName);
@@ -631,10 +631,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
         getMetadata(resource).setCreationTimestamp(SystemClock.now());
       }
       return resource;
-    }
-
-    private void preserveStatusIfSeparate(String name, T resource) {
-
     }
 
     T createResource(String namespace, T resource) {
