@@ -205,11 +205,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     return PodStatus.SUCCESS;
   }
 
-  private static boolean testFailed(V1PodStatus stat) {
-    return ((stat.getPhase() != null) && stat.getPhase().equals("Failed"));
-
-  }
-
   static List<V1ContainerStatus> getContainerStatuses(@Nonnull V1Pod pod) {
     return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getContainerStatuses).orElse(Collections.emptyList());
   }
