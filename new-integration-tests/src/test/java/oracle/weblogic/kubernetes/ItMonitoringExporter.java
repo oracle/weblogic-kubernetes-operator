@@ -93,7 +93,23 @@ import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Paths.get;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.*;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
@@ -134,7 +150,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyClu
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -2037,38 +2052,6 @@ class ItMonitoringExporter {
             "401 Unauthorized for " + exporterUrl,
             ADMIN_USERNAME_DEFAULT,
             "");
-  }
-
-  private boolean changeListenPort1(String domainUid, String domainNS, String setListenPortEnabled) throws Exception {
-
-    logger.info("Changing ListenPortEnabled");
-  try{
-    // create a temporary WebLogic domain property file
-    logger.info("Getting node port for default channel");
-    final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-    int t3AdminChannelPort = assertDoesNotThrow(()
-            -> getServiceNodePort(domainNS, adminServerPodName + "-external", "t3channel"),
-        "Getting admin server node port failed");
-    File testPropertiesFile = File.createTempFile("changeListenPort", "properties");
-    Properties p = new Properties();
-    p.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p.setProperty("admin_port", Integer.toString(t3AdminChannelPort));
-    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-    p.setProperty("setListenPortEnabled", setListenPortEnabled);
-    p.setProperty("server_name", "managed-server1");
-
-    p.store(new FileOutputStream(testPropertiesFile), "test properties file");
-
-    // WLST script for creating jdbc datasource
-    Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "changeListenPort.py");
-    executeWLSTScript(wlstScript, testPropertiesFile.toPath(), domainNS);
-  } catch (IOException ex) {
-    logger.severe(ex.getMessage());
-    return false;
-  }
-    return true;
   }
 
   private boolean changeListenPort(String domainUid, String domainNS, String setListenPortEnabled) throws Exception {
