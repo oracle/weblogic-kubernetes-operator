@@ -18,8 +18,6 @@ import java.util.function.BiConsumer;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ContainerState;
-import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
-import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -351,13 +349,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     switch (watchType) {
       case "ADDED":
       case "MODIFIED":
-        if (PodWatcher.isFailed(pod)) {
-          new DomainStatusUpdate(pod, domainUid, delegate, info).runFailedStep();
-        } else if (PodWatcher.isUnschedulable(pod)) {
-          new DomainStatusUpdate(pod, domainUid, delegate, info).runPendingStep();
-        } else {
-          new DomainStatusUpdate(pod, domainUid, delegate, info).runProgressingStep();
-        }
+        PodWatcher.PodStatus podStatus = PodWatcher.getPodStatus(pod);
+        new DomainStatusUpdate(pod, domainUid, delegate, info, podStatus).invoke();
         break;
       default:
     }
@@ -1013,50 +1006,58 @@ public class DomainProcessorImpl implements DomainProcessor {
     private final String domainUid;
     private DomainProcessorDelegate delegate = null;
     private DomainPresenceInfo info = null;
+    private PodWatcher.PodStatus podStatus;
 
-    DomainStatusUpdate(V1Pod pod, String domainUid, DomainProcessorDelegate delegate, DomainPresenceInfo info) {
+    DomainStatusUpdate(V1Pod pod, String domainUid, DomainProcessorDelegate delegate,
+                       DomainPresenceInfo info, PodWatcher.PodStatus podStatus) {
       this.pod = pod;
       this.domainUid = domainUid;
       this.delegate = delegate;
       this.info = info;
+      this.podStatus = podStatus;
     }
 
-    private void runFailedStep() {
-      Optional<V1ContainerStateWaiting> waiting = Optional.ofNullable(getMatchingContainerStatus())
-              .map(V1ContainerStatus::getState)
-              .map(V1ContainerState::getWaiting);
-      if (waiting.isPresent() && waiting.get().getMessage() != null) {
-        delegate.runSteps(
-                DomainStatusUpdater.createFailedStep(
-                        info, waiting.get().getReason(), waiting.get().getMessage(), null));
-      } else {
-        Optional<V1ContainerStateTerminated> terminated = Optional.ofNullable(getMatchingContainerStatus())
-                .map(V1ContainerStatus::getState)
-                .map(V1ContainerState::getTerminated);
-        if (terminated.isPresent() && terminated.get().getReason().contains("Error")) {
-          delegate.runSteps(
-                  DomainStatusUpdater.createFailedStep(
-                          info, terminated.get().getReason(), terminated.get().getMessage(), null));
-        }
+    private void invoke() {
+      switch (podStatus) {
+        case PHASE_FAILED:
+          DomainStatusUpdater.createFailedStep(
+                  info, pod.getStatus().getReason(), pod.getStatus().getMessage(), null);
+          break;
+        case WAITING_NON_NULL_MESSAGE:
+          Optional.ofNullable(getMatchingContainerStatus())
+                  .map(V1ContainerStatus::getState)
+                  .map(V1ContainerState::getWaiting)
+                  .ifPresent(waiting ->
+                    delegate.runSteps(
+                            DomainStatusUpdater.createFailedStep(
+                                    info, waiting.getReason(), waiting.getMessage(), null)));
+          break;
+        case TERMINATED_ERROR_REASON:
+          Optional.ofNullable(getMatchingContainerStatus())
+                  .map(V1ContainerStatus::getState)
+                  .map(V1ContainerState::getTerminated)
+                  .ifPresent(terminated -> delegate.runSteps(
+                          DomainStatusUpdater.createFailedStep(
+                                  info, terminated.getReason(), terminated.getMessage(), null)));
+          break;
+        case UNSCHEDULABLE:
+          Optional.ofNullable(getMatchingPodCondition())
+                  .ifPresent(condition ->
+                          delegate.runSteps(
+                                  DomainStatusUpdater.createFailedStep(
+                                          info, condition.getReason(), condition.getMessage(), null)));
+          break;
+        case SUCCESS:
+          Optional.ofNullable(getMatchingContainerStatus())
+                  .map(V1ContainerStatus::getState)
+                  .map(V1ContainerState::getWaiting)
+                  .ifPresent(waiting ->
+                          delegate.runSteps(
+                                  DomainStatusUpdater.createProgressingStep(
+                                          info, waiting.getReason(), false, null)));
+          break;
+        default:
       }
-    }
-
-    private void runPendingStep() {
-      Optional.ofNullable(getMatchingPodCondition())
-              .ifPresent(condition ->
-                      delegate.runSteps(
-                              DomainStatusUpdater.createFailedStep(
-                                      info, condition.getReason(), condition.getMessage(), null)));
-    }
-
-    private void runProgressingStep() {
-      Optional.ofNullable(getMatchingContainerStatus())
-              .map(V1ContainerStatus::getState)
-              .map(V1ContainerState::getWaiting)
-              .ifPresent(waiting ->
-                      delegate.runSteps(
-                              DomainStatusUpdater.createProgressingStep(
-                                      info, waiting.getReason(), false, null)));
     }
 
     private V1ContainerStatus getMatchingContainerStatus() {

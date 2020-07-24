@@ -47,6 +47,14 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
   private final String namespace;
   private final WatchListener<V1Pod> listener;
 
+  public enum PodStatus {
+    PHASE_FAILED,
+    WAITING_NON_NULL_MESSAGE,
+    TERMINATED_ERROR_REASON,
+    UNSCHEDULABLE,
+    SUCCESS
+  }
+
   // Map of Pod name to callback. Note that since each pod name can be mapped to multiple callback registrations,
   // a concurrent map will not suffice; we therefore use an ordinary map and synchronous accesses.
   private final Map<String, Collection<Consumer<V1Pod>>> modifiedCallbackRegistrations = new HashMap<>();
@@ -179,14 +187,43 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     return getContainerStatuses(pod).stream().anyMatch(PodWatcher::isPodFailed);
   }
 
+  static PodStatus getPodStatus(@Nonnull V1Pod pod) {
+    V1ContainerStatus conStatus = getContainerStatuses(pod)
+            .stream()
+            .findFirst()
+            .orElse(new V1ContainerStatus());
+    String phase = Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getPhase).orElse("");
+    if (phase.equals("Failed")) {
+      return PodStatus.PHASE_FAILED;
+    } else if (!isReady(conStatus) && getContainerStateWaitingMessage(conStatus) != null) {
+      return PodStatus.WAITING_NON_NULL_MESSAGE;
+    } else if (!isReady(conStatus) && getContainerStateTerminatedReason(conStatus).contains("Error")) {
+      return PodStatus.TERMINATED_ERROR_REASON;
+    } else if (isUnschedulable(pod)) {
+      return PodStatus.UNSCHEDULABLE;
+    }
+    return PodStatus.SUCCESS;
+  }
+
+  private static boolean testFailed(V1PodStatus stat) {
+    return ((stat.getPhase() != null) && stat.getPhase().equals("Failed"));
+
+  }
+
   static List<V1ContainerStatus> getContainerStatuses(@Nonnull V1Pod pod) {
     return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getContainerStatuses).orElse(Collections.emptyList());
   }
 
   private static boolean isPodFailed(V1ContainerStatus conStatus) {
-    return !isReady(conStatus)
+    LOGGER.fine("PodWatcher.isReady for container status " + conStatus + " is " + isReady(conStatus) + " and "
+            + " waiting message is " + getContainerStateWaitingMessage(conStatus)
+            + " and terminated reason is " + getContainerStateTerminatedReason(conStatus));
+    boolean res  =
+        !isReady(conStatus)
         && (getContainerStateWaitingMessage(conStatus) != null
         || getContainerStateTerminatedReason(conStatus).contains("Error"));
+    LOGGER.fine("PodWatcher.isPodFailed.. returning " + res);
+    return res;
   }
 
   static boolean isUnschedulable(@Nonnull V1Pod pod) {
