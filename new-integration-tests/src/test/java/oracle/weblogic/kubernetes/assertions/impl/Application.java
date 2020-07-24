@@ -52,7 +52,7 @@ public class Application {
           namespace,
           podName, 
           "weblogic-server", // container name
-          true, // redirectOutput
+          false, // redirectOutput
           cmd);
       if (execResult.exitValue() == 0
           && execResult.stdout() != null 
