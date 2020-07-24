@@ -93,23 +93,7 @@ import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Paths.get;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.*;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
@@ -150,6 +134,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyClu
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -459,8 +444,6 @@ class ItMonitoringExporter {
           true),
           "monitoring exporter metrics page can't be accessed via https");
     } finally {
-      logger.info("Printing Log from managed server"
-          + Kubernetes.getPodLog(domain3Uid + "-managed-server1", domain3Namespace));
       logger.info("Shutting down domain3");
       shutdownDomain(domain3Uid, domain3Namespace);
       if (miiImage1 != null) {
@@ -1180,7 +1163,8 @@ class ItMonitoringExporter {
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringAppNoRestPort.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
     String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-        .orElse("master");
+        .orElse("repackage");
+
 
 
     CommandParams params = Command.defaultCommandParams()
@@ -1243,12 +1227,6 @@ class ItMonitoringExporter {
               .command(command))
           .execute(), "Failed to build monitoring exporter webapp with no restport");
     } else {
-      String command = String.format("cd %s && mvn install -Dmaven.test.skip=true ",
-          monitoringExporterSrcDir);
-      assertTrue(new oracle.weblogic.kubernetes.actions.impl.primitive.Command()
-          .withParams(new oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams()
-              .command(command))
-          .execute(), "Failed to build monitoring exporter");
       buildMonitoringExporterApp("exporter-config.yaml", monitoringExporterAppDir);
       buildMonitoringExporterApp("exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
     }
@@ -1257,13 +1235,13 @@ class ItMonitoringExporter {
 
   private static void buildMonitoringExporterApp(String configFile, String appDir) {
 
-    String command = String.format("cd %s/webapp && mvn package -Dconfiguration=%s/exporter/%s",
+    String command = String.format("cd %s && mvn install -Dmaven.test.skip=true -Dconfiguration=%s/exporter/%s",
         monitoringExporterSrcDir,
         RESOURCE_DIR,
         configFile);
     logger.info("Executing command " + command);
     java.nio.file.Path srcFile = java.nio.file.Paths.get(monitoringExporterSrcDir,
-        "webapp","target", "wls-exporter.war");
+        "target", "wls-exporter.war");
 
     assertTrue(new oracle.weblogic.kubernetes.actions.impl.primitive.Command()
         .withParams(new oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams()
@@ -1324,7 +1302,7 @@ class ItMonitoringExporter {
     appList.add(app1Path);
     appList.add(app2Path);
 
-    final int t3ChannelPort = getNextFreePort(31000, 32767);  // the port range has to be between 30,000 to 32,767
+    int t3ChannelPort = getNextFreePort(31000, 32767);  // the port range has to be between 31,000 to 32,767
 
     Properties p = new Properties();
     p.setProperty("ADMIN_USER", ADMIN_USERNAME_DEFAULT);
@@ -1447,6 +1425,7 @@ class ItMonitoringExporter {
                                               String namespace,
                                               String domainHomeSource,
                                               int replicaCount) {
+    int t3ChannelPort = getNextFreePort(31500, 32767);
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -1469,13 +1448,7 @@ class ItMonitoringExporter {
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false "
-                        + "-Dweblogic.security.SSL.ignoreHostnameVerification=true -Dssl.debug=true "
-                        + "-Djavax.net.debug=ssl:handshake "
-                        //+ "-DUseSunHttpHandler=true -Dssl.debug=true "
-                        + "-Djavax.net.debug=all -Dweblogic.security.SSL.verbose=true "
-                        + "-Dweblogic.StdoutDebugEnabled=true -Djavax.net.debug=all "
-                        + "-Djava.security.debug=all -Dweblogic.wsee.security.verbose=true "
-                        + "-Dweblogic.wsee.security.debug=true -Dweblogic.webservice.verbose=true"))
+                        + "-Dweblogic.security.SSL.ignoreHostnameVerification=true "))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
@@ -1484,7 +1457,10 @@ class ItMonitoringExporter {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))))
+                        .nodePort(0))
+                    .addChannelsItem(new Channel()
+                    .channelName("T3Channel")
+                    .nodePort(t3ChannelPort))))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
                 .replicas(replicaCount)
@@ -1753,8 +1729,6 @@ class ItMonitoringExporter {
           "submit does not return html page, here is received page "
           + page3.getContent());
     }
-    // wait time to update configuration
-    Thread.sleep(15 * 1000);
     return page2;
   }
 
@@ -1788,7 +1762,8 @@ class ItMonitoringExporter {
             "Page does not contain expected JVMRuntime configuration");
     assertFalse(page.asText().contains("WebAppComponentRuntime"),
             "Page contains unexpected WebAppComponentRuntime configuration");
-    Thread.sleep(20 * 1000);
+    //needs 10 secs to fetch the metrics to prometheus
+    Thread.sleep(10 * 1000);
     // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
     String prometheusSearchKey1 =
             "heap_free_current%7Bname%3D%22managed-server1%22%7D%5B15s%5D";
@@ -1964,7 +1939,8 @@ class ItMonitoringExporter {
         submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/norestport.yaml");
     assertNotNull(page);
     assertFalse(page.asText().contains("restPort"));
-    Thread.sleep(20 * 1000);
+    //needs 10 secs to fetch the metrics to prometheus
+    Thread.sleep(10 * 1000);
     // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
     String prometheusSearchKey1 =
         "heap_free_current%7Bname%3D%22managed-server1%22%7D%5B15s%5D";
@@ -2061,6 +2037,38 @@ class ItMonitoringExporter {
             "401 Unauthorized for " + exporterUrl,
             ADMIN_USERNAME_DEFAULT,
             "");
+  }
+
+  private boolean changeListenPort1(String domainUid, String domainNS, String setListenPortEnabled) throws Exception {
+
+    logger.info("Changing ListenPortEnabled");
+  try{
+    // create a temporary WebLogic domain property file
+    logger.info("Getting node port for default channel");
+    final String adminServerName = "admin-server";
+    final String adminServerPodName = domainUid + "-" + adminServerName;
+    int t3AdminChannelPort = assertDoesNotThrow(()
+            -> getServiceNodePort(domainNS, adminServerPodName + "-external", "t3channel"),
+        "Getting admin server node port failed");
+    File testPropertiesFile = File.createTempFile("changeListenPort", "properties");
+    Properties p = new Properties();
+    p.setProperty("admin_host", K8S_NODEPORT_HOST);
+    p.setProperty("admin_port", Integer.toString(t3AdminChannelPort));
+    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("setListenPortEnabled", setListenPortEnabled);
+    p.setProperty("server_name", "managed-server1");
+
+    p.store(new FileOutputStream(testPropertiesFile), "test properties file");
+
+    // WLST script for creating jdbc datasource
+    Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "changeListenPort.py");
+    executeWLSTScript(wlstScript, testPropertiesFile.toPath(), domainNS);
+  } catch (IOException ex) {
+    logger.severe(ex.getMessage());
+    return false;
+  }
+    return true;
   }
 
   private boolean changeListenPort(String domainUid, String domainNS, String setListenPortEnabled) throws Exception {

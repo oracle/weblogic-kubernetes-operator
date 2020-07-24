@@ -11,14 +11,14 @@ from java.io import File
 
 admin_username=sys.argv[1]
 admin_password=sys.argv[2]
-t3url=sys.argv[3]
+admin_t3_url=sys.argv[3]
 setListenPortEnabled=sys.argv[4]
 server_name=sys.argv[5]
-
+#admin_t3_url = 't3://'+admin_host+':'+admin_port
 script_name = 'changeListenPort.py'
 print 'script_name: ' + script_name
 
-print 'admin_url: ' + t3url
+print 'admin_t3_url: ' + admin_t3_url
 print 'admin_username: ' + admin_username
 print 'admin_password: ' + admin_password
 print 'setListenPortEnabled: ' + setListenPortEnabled
@@ -27,7 +27,7 @@ print 'server_name: ' + server_name
 def change_listenportenabled():
   try:
     print 'connecting to admin server'
-    connect(admin_username, admin_password, t3url)
+    connect(admin_username, admin_password, admin_t3_url)
     print 'Running change_listenportenabled(setListenPortEnabled=' + setListenPortEnabled + ')'
     edit()
     startEdit()
