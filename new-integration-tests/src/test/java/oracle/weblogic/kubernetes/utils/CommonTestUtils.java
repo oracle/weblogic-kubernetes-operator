@@ -1290,6 +1290,10 @@ public class CommonTestUtils {
   public static void createSecretWithTLSCertKey(
       String secretName, String namespace, Path keyFile, Path certFile) throws IOException {
 
+    LoggingFacade logger = getLogger();
+    logger.info("Creating TLS secret {0} in namespace {1} with certfile {2} and keyfile {3}",
+        secretName, namespace, certFile, keyFile);
+
     Map<String, String> data = new HashMap<>();
     data.put("tls.crt", Base64.getEncoder().encodeToString(Files.readAllBytes(certFile)));
     data.put("tls.key", Base64.getEncoder().encodeToString(Files.readAllBytes(keyFile)));

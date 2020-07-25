@@ -136,9 +136,10 @@ public class ItTraefikLoadBalancer {
     // create 2 WebLogic domains domain1 and domain2
     createDomains();
 
+    // create TLS secret for https traffic
     for (String domainUid : domains) {
       createCertKeyFiles(domainUid);
-      assertDoesNotThrow(() -> createSecretWithTLSCertKey(domainUid + "-lbsecret-tls",
+      assertDoesNotThrow(() -> createSecretWithTLSCertKey(domainUid + "-tls-secret",
           domainNamespace, tlsKeyFile, tlsCertFile));
     }
     // create loadbalancing rules for Traefik
@@ -178,10 +179,6 @@ public class ItTraefikLoadBalancer {
     for (String domainUid : domains) {
       verifyClusterLoadbalancing(domainUid, false);
     }
-    logger.info("Verifying https traffic");
-    for (String domainUid : domains) {
-      verifyClusterLoadbalancing(domainUid, true);
-    }
 
   }
 
@@ -208,7 +205,7 @@ public class ItTraefikLoadBalancer {
 
     //access application in managed servers through Traefik load balancer
     logger.info("Accessing the clusterview app through Traefik load balancer");
-    String curlRequest = String.format("curl --silent --show-error -k --noproxy '*' "
+    String curlRequest = String.format("curl --silent --show-error -ks --noproxy '*' "
         + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + domainNamespace + "." + "cluster-1.test",
         https ? "https" : "http", K8S_NODEPORT_HOST, getTraefikLbNodePort(https));
@@ -224,7 +221,7 @@ public class ItTraefikLoadBalancer {
     boolean hostRouting = false;
     //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
     logger.info("Accessing the clusterview app through Traefik load balancer");
-    String curlCmd = String.format("curl --silent --show-error -k --noproxy '*' "
+    String curlCmd = String.format("curl --silent --show-error -ks --noproxy '*' "
         + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
         domainUid + "." + domainNamespace + "." + "cluster-1.test", https ? "https" : "http", K8S_NODEPORT_HOST,
         getTraefikLbNodePort(https), domainUid);
@@ -306,6 +303,7 @@ public class ItTraefikLoadBalancer {
     Path dstFile = Paths.get(TestConstants.RESULTS_ROOT, "traefik/traefik-ingress-rules.yaml");
     assertDoesNotThrow(() -> {
       Files.deleteIfExists(dstFile);
+      Files.createDirectories(dstFile.getParent());
       Files.write(dstFile, Files.readString(srcFile).replaceAll("@NS@", domainNamespace)
           .getBytes(StandardCharsets.UTF_8));
     });
@@ -326,13 +324,8 @@ public class ItTraefikLoadBalancer {
 
   private int getTraefikLbNodePort(boolean isHttps) {
     logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
-    /*
     int webNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), https ? "websecure" : "web"),
-        "Getting web node port for Traefik loadbalancer failed");
-     */
-    int webNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
+        -> getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
         "Getting web node port for Traefik loadbalancer failed");
     return webNodePort;
   }
@@ -476,8 +469,7 @@ public class ItTraefikLoadBalancer {
   }
 
   private static void createCertKeyFiles(String domainUid) {
-    //String cn = domainUid + "." + domainNamespace + ".cluster-1.test";
-    String cn = domainUid + ".org";
+    String cn = domainUid + "." + domainNamespace + ".cluster-1.test";
     assertDoesNotThrow(() -> {
       tlsKeyFile = Files.createTempFile("tls", ".key");
       tlsCertFile = Files.createTempFile("tls", ".crt");
