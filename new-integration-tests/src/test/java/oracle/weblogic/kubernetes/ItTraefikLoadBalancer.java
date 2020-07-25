@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -301,9 +302,15 @@ public class ItTraefikLoadBalancer {
 
   private static void createTraefikIngressRouteRules() {
     logger.info("Creating ingress rules for domain traffic routing");
+    Path srcFile = Paths.get(ActionConstants.RESOURCE_DIR, "traefik/traefik-ingress-rules.yaml");
+    Path dstFile = Paths.get(TestConstants.RESULTS_ROOT, "traefik/traefik-ingress-rules.yaml");
+    assertDoesNotThrow(() -> {
+      Files.deleteIfExists(dstFile);
+      Files.write(dstFile, Files.readString(srcFile).replaceAll("@NS@", domainNamespace)
+          .getBytes(StandardCharsets.UTF_8));
+    });
     String command = "kubectl create"
-        + " -n " + domainNamespace
-        + " -f " + Paths.get(ActionConstants.RESOURCE_DIR, "traefik/traefik-ingress-rules.yaml");
+        + " -f " + dstFile;
     logger.info("Running {0}", command);
     ExecResult result;
     try {
