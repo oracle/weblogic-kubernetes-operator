@@ -1,0 +1,114 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: domain1-http-ingress-rule
+  namespace: @NS@
+spec:
+  entryPoints:
+   - web
+  routes:
+  - kind: Rule
+    match: Host(`domain1.@NS@.cluster-1.test`)
+    services:
+    - kind: Service
+      name: domain1-cluster-cluster-1
+      port: 8001
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: domain1-https-ingress-rule
+  namespace: @NS@
+spec:
+  entryPoints:
+   - websecure
+  routes:
+  - kind: Rule
+    match: Host(`domain1.@NS@.cluster-1.test`)
+    services:
+    - kind: Service
+      name: domain1-cluster-cluster-1
+      port: 8001
+  tls:
+     secretName: domain1-tls-secret
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: domain2-http-ingress-rule
+  namespace: @NS@
+spec:
+  entryPoints:
+   - web
+  routes:
+  - kind: Rule
+    match: Host(`domain2.@NS@.cluster-1.test`)
+    services:
+    - kind: Service
+      name: domain1-cluster-cluster-1
+      port: 8001
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: domain2-https-ingress-rule
+  namespace: @NS@
+spec:
+  entryPoints:
+   - websecure
+  routes:
+  - kind: Rule
+    match: Host(`domain2.@NS@.cluster-1.test`)
+    services:
+    - kind: Service
+      name: domain1-cluster-cluster-1
+      port: 8001
+  tls:
+     secretName: domain2-tls-secret
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: domain1-admin-http-ingress-rule
+  namespace: @NS@
+spec:
+  entryPoints:
+   - web
+  routes:
+  - kind: Rule
+    match: Host(`domain1.@NS@.admin-server.test`)
+    services:
+    - kind: Service
+      name: domain1-admin-server
+      port: 7001
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: domain2-admin-http-ingress-rule
+  namespace: @NS@
+spec:
+  entryPoints:
+   - web
+  routes:
+  - kind: Rule
+    match: Host(`domain2.@NS@.admin-server.test`)
+    services:
+    - kind: Service
+      name: domain2-admin-server
+      port: 7001

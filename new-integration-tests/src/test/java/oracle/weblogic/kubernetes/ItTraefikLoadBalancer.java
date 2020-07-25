@@ -8,9 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -26,6 +24,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.ActionConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -55,7 +54,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegis
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTraefikIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.TestUtils.verifyClusterMemberCommunication;
@@ -81,15 +79,25 @@ public class ItTraefikLoadBalancer {
 
   private static final String IMAGE = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
-  private final String wlSecretName = "weblogic-credentials";
-  Path tlsCertFile;
-  Path tlsKeyFile;
+  private static final String WL_SECRET_NAME = "weblogic-credentials";
+  private static Path tlsCertFile;
+  private static Path tlsKeyFile;
 
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
 
+  private static final String[] domains = {"domain1", "domain2"};
+  private static final int replicaCount = 2;
+  private static final String managedServerNameBase = "managed-server";
+
   /**
-   * Assigns unique namespaces for operator, Traefik loadbalancer and domains. Installs operator.
+   * 1. Assigns unique namespaces for operator, Traefik loadbalancer and domains.
+   * 2. Installs operator.
+   * 3. Creates 2 MII domains.
+   * 4. Creates Ingress resource for each domain with Host based routing rules.
+   * 5. Deploys clusterview sample application in cluster target in each domain.
+   * 6. Creates a TLS Kubernetes for secure access to the clusters.
+   * 7. Create Ingress rules for host based routing to various targets.
    *
    * @param namespaces injected by JUnit
    */
@@ -112,8 +120,8 @@ public class ItTraefikLoadBalancer {
 
     // install and verify Traefik
     logger.info("Installing Traefik controller using helm");
-    //traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
-    traefikHelmParams = installAndVerifyTraefik(domainNamespace, 0, 0);
+    traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
+    //traefikHelmParams = installAndVerifyTraefik(domainNamespace, 0, 0);
 
     // build the clusterview application
     logger.info("Building clusterview application");
@@ -124,102 +132,85 @@ public class ItTraefikLoadBalancer {
         "Application archive is not available");
     clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
 
+    // create 2 WebLogic domains domain1 and domain2
+    createDomains();
+
+    for (String domainUid : domains) {
+      createCertKeyFiles(domainUid);
+      assertDoesNotThrow(() -> createSecretWithTLSCertKey(domainUid + "-lbsecret-tls",
+          domainNamespace, tlsKeyFile, tlsCertFile));
+    }
+    // create loadbalancing rules for Traefik
+    createTraefikIngressRouteRules();
+
+  }
+
+
+  /**
+   * Test verifies admin server access through Traefik loadbalancer. Accesses the admin server for each domain through
+   * Traefik loadbalancer web port and verifies it is a console login page.
+   */
+  @Test
+  @DisplayName("Access admin server console through Traefik loadbalancer")
+  public void testTraefikHostRoutingAdminServer() {
+    logger.info("Verifying admin server access through Traefik");
+    for (String domainUid : domains) {
+      verifyAdminServerAccess(domainUid);
+    }
   }
 
   /**
    * Test verifies multiple WebLogic domains can be loadbalanced by Traefik loadbalancer with host based routing rules.
-   * 1. Creates 2 MII domains.
-   * 2. Creates Ingress resource for each domain with Host based routing rules.
-   * 3. Deploys clusterview sample application in cluster target in each domain.
-   * 4. Binds domain name JNDI tree of all managed servers in all domain.
-   * 5. When clusterview application is accessed through Traefik loadbalancer with -H host
-   * header, verifies the requests are correctly routed to different clusters in different domains.
+   * Accesses the clusterview application deployed in the WebLogic cluster through Traefik loadbalancer web
+   * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
+   *
    */
   @Test
   @DisplayName("Create model in image domains domain1 and domain2 and Ingress resources")
-  public void testTraefikHostRoutingAcrossDomains() {
-
-    // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
-
-    // create WebLogic domain credentials secret
-    logger.info("Creating WebLogic credentials secrets for domain");
-    createSecretWithUsernamePassword(wlSecretName, domainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create model encryption secret
-    logger.info("Creating encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        encryptionSecretName,
-        domainNamespace,
-        "weblogicenc",
-        "weblogicenc"),
-        String.format("createSecret failed for %s", encryptionSecretName));
-
-    int replicaCount = 2;
-    String managedServerNameBase = "managed-server";
-    String[] domains = {"domain1"};//, "domain2"};
-
-    for (String domainUid : domains) {
-
-      // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
-      String adminServerPodName = domainUid + "-admin-server";
-      String managedServerPrefix = domainUid + "-" + managedServerNameBase;
-
-      // create the domain custom resource object
-      Domain domain = createDomainResource(domainUid,
-          domainNamespace,
-          REPO_SECRET_NAME,
-          encryptionSecretName,
-          replicaCount,
-          IMAGE);
-
-      // create model in image domain
-      logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
-          domainUid, domainNamespace, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
-      createDomainAndVerify(domain, domainNamespace);
-
-      //check all servers/services are ready in the domain
-      verifyDomainIsReady(domainUid, adminServerPodName, managedServerPrefix, replicaCount);
-
-      //create ingress resource - rules for loadbalancing
-      Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-      clusterNameMsPortMap.put("cluster-1", 8001);
-      logger.info("Creating ingress resource for domain {0} in namespace {1}", domainUid, domainNamespace);
-      createCertKeyFiles(domainUid);
-      assertDoesNotThrow(() -> createSecretWithTLSCertKey(domainUid + "-lbsecret-tls",
-          domainNamespace, tlsKeyFile, tlsCertFile));
-      createTraefikIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap,
-          true, domainUid + "-lbsecret-tls");
-
-      // deploy clusterview application
-      deployApplication(domainUid, adminServerPodName);
-
-      //bind domain name in the managed servers
-      bindDomainName(domainUid);
+  public void testTraefikHttpHostRoutingAcrossDomains() {
+    // bind domain name in the managed servers
+    for (String domain : domains) {
+      bindDomainName(domain);
     }
-
     // verify load balancing works when 2 domains are running in the same namespace
     logger.info("Verifying http traffic");
     for (String domainUid : domains) {
-      verifyLoadbalancing(domainUid, replicaCount, managedServerNameBase, false);
+      verifyClusterLoadbalancing(domainUid, false);
     }
     logger.info("Verifying https traffic");
     for (String domainUid : domains) {
-      verifyLoadbalancing(domainUid, replicaCount, managedServerNameBase, true);
+      verifyClusterLoadbalancing(domainUid, true);
     }
+
   }
 
-  private void verifyLoadbalancing(String domainUid, int replicaCount, String managedServerNameBase, boolean https) {
+  /**
+   * Test verifies multiple WebLogic domains can be loadbalanced by Traefik loadbalancer with host based routing rules.
+   * Accesses the clusterview application deployed in the WebLogic cluster through Traefik loadbalancer websecure
+   * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
+   */
+  @Test
+  @DisplayName("Loadbalance WebLogic cluster traffic through Traefik loadbalancer websecure channel")
+  public void testTraefikHostHttpsRoutingAcrossDomains() {
+    // bind domain name in the managed servers
+    for (String domain : domains) {
+      bindDomainName(domain);
+    }
+    logger.info("Verifying https traffic");
+    for (String domainUid : domains) {
+      verifyClusterLoadbalancing(domainUid, true);
+    }
+
+  }
+
+  private void verifyClusterLoadbalancing(String domainUid, boolean https) {
 
     //access application in managed servers through Traefik load balancer
     logger.info("Accessing the clusterview app through Traefik load balancer");
     String curlRequest = String.format("curl --silent --show-error -k --noproxy '*' "
         + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + domainNamespace + "." + "cluster-1.test",
-        https ? "https" : "http", K8S_NODEPORT_HOST, getTraefikWebNodePort(https));
+        https ? "https" : "http", K8S_NODEPORT_HOST, getTraefikLbNodePort(https));
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
       managedServers.add(managedServerNameBase + i);
@@ -235,7 +226,7 @@ public class ItTraefikLoadBalancer {
     String curlCmd = String.format("curl --silent --show-error -k --noproxy '*' "
         + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
         domainUid + "." + domainNamespace + "." + "cluster-1.test", https ? "https" : "http", K8S_NODEPORT_HOST,
-        getTraefikWebNodePort(https), domainUid);
+        getTraefikLbNodePort(https), domainUid);
 
     // call the webapp and verify the bound domain name to determine
     // the requests are sent to the correct cluster members.
@@ -257,12 +248,38 @@ public class ItTraefikLoadBalancer {
 
   }
 
+  private void verifyAdminServerAccess(String domainUid) {
+    String consoleUrl = new StringBuffer()
+        .append("http://")
+        .append(K8S_NODEPORT_HOST)
+        .append(":")
+        .append(getTraefikLbNodePort(false))
+        .append("/console/login/LoginForm.jsp").toString();
+
+    //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
+    String curlCmd = String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' %s",
+        domainUid + "." + domainNamespace + "." + "admin-server" + ".test", consoleUrl);
+
+    logger.info("Accessing console using curl request {0}", curlCmd);
+    ExecResult result;
+    try {
+      result = ExecCommand.exec(curlCmd, true);
+      String response = result.stdout().trim();
+      logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          result.exitValue(), response, result.stderr());
+      assertTrue(result.stdout().contains("Login"), "Couldn't access admin server console");
+    } catch (IOException | InterruptedException ex) {
+      logger.severe(ex.getMessage());
+    }
+
+  }
+
   private void bindDomainName(String domainUid) {
     //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
     String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?bindDomain=%s",
         domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST,
-        getTraefikWebNodePort(false), domainUid);
+        getTraefikLbNodePort(false), domainUid);
 
     logger.info("Binding domain name in managed server JNDI tree using curl request {0}", curlCmd);
 
@@ -282,20 +299,85 @@ public class ItTraefikLoadBalancer {
 
   }
 
-  private int getTraefikWebNodePort(boolean https) {
+  private static void createTraefikIngressRouteRules() {
+    logger.info("Creating ingress rules for domain traffic routing");
+    String command = "kubectl create"
+        + " -n " + domainNamespace
+        + " -f " + Paths.get(ActionConstants.RESOURCE_DIR, "traefik/traefik-ingress-rules.yaml");
+    logger.info("Running {0}", command);
+    ExecResult result;
+    try {
+      result = ExecCommand.exec(command, true);
+      String response = result.stdout().trim();
+      logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          result.exitValue(), response, result.stderr());
+      assertEquals(0, result.exitValue(), "Command didn't succeed");
+    } catch (IOException | InterruptedException ex) {
+      logger.severe(ex.getMessage());
+    }
+  }
+
+  private int getTraefikLbNodePort(boolean isHttps) {
     logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
     /*
     int webNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), https ? "websecure" : "web"),
         "Getting web node port for Traefik loadbalancer failed");
-    */
+     */
     int webNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, traefikHelmParams.getReleaseName(), https ? "websecure" : "web"),
+        -> getServiceNodePort(domainNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
         "Getting web node port for Traefik loadbalancer failed");
     return webNodePort;
   }
 
-  private Domain createDomainResource(String domainUid, String domNamespace,
+  private static void createDomains() {
+    // Create the repo secret to pull the image
+    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+
+    // create WebLogic domain credentials secret
+    logger.info("Creating WebLogic credentials secrets for domain");
+    createSecretWithUsernamePassword(WL_SECRET_NAME, domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create model encryption secret
+    logger.info("Creating encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        encryptionSecretName,
+        domainNamespace,
+        "weblogicenc",
+        "weblogicenc"),
+        String.format("createSecret failed for %s", encryptionSecretName));
+
+    for (String domainUid : domains) {
+      // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
+      String adminServerPodName = domainUid + "-admin-server";
+      String managedServerPrefix = domainUid + "-" + managedServerNameBase;
+
+      // create the domain custom resource object
+      Domain domain = createDomainResource(domainUid,
+          domainNamespace,
+          REPO_SECRET_NAME,
+          encryptionSecretName,
+          replicaCount,
+          IMAGE);
+
+      // create model in image domain
+      logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+          domainUid, domainNamespace, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+      createDomainAndVerify(domain, domainNamespace);
+
+      //check all servers/services are ready in the domain
+      verifyDomainIsReady(domainUid, adminServerPodName, managedServerPrefix, replicaCount);
+
+      // deploy clusterview application
+      deployApplication(domainUid, adminServerPodName);
+    }
+
+  }
+
+  private static Domain createDomainResource(String domainUid, String domNamespace,
       String repoSecretName, String encryptionSecretName, int replicaCount,
       String miiImage) {
     // create the domain CR
@@ -312,7 +394,7 @@ public class ItTraefikLoadBalancer {
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1SecretReference()
-                .name(wlSecretName)
+                .name(WL_SECRET_NAME)
                 .namespace(domNamespace))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
@@ -341,7 +423,7 @@ public class ItTraefikLoadBalancer {
 
   }
 
-  private void verifyDomainIsReady(String domainUid, String adminServerPodName,
+  private static void verifyDomainIsReady(String domainUid, String adminServerPodName,
       String managedServerPrefix, int replicaCount) {
 
     logger.info("Check admin service {0} is created in namespace {1}",
@@ -369,7 +451,7 @@ public class ItTraefikLoadBalancer {
 
   }
 
-  private void deployApplication(String domainUid, String adminServerPodName) {
+  private static void deployApplication(String domainUid, String adminServerPodName) {
     logger.info("Getting node port for admin server default channel");
     int serviceNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
@@ -386,7 +468,7 @@ public class ItTraefikLoadBalancer {
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
   }
 
-  private void createCertKeyFiles(String domainUid) {
+  private static void createCertKeyFiles(String domainUid) {
     //String cn = domainUid + "." + domainNamespace + ".cluster-1.test";
     String cn = domainUid + ".org";
     assertDoesNotThrow(() -> {
