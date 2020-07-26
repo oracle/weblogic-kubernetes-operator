@@ -259,17 +259,24 @@ public class ItTraefikLoadBalancer {
         domainUid + "." + domainNamespace + "." + "admin-server" + ".test", consoleUrl);
 
     logger.info("Accessing console using curl request {0}", curlCmd);
-    ExecResult result;
-    try {
-      result = ExecCommand.exec(curlCmd, true);
-      String response = result.stdout().trim();
-      logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
-          result.exitValue(), response, result.stderr());
-      assertTrue(result.stdout().contains("Login"), "Couldn't access admin server console");
-    } catch (IOException | InterruptedException ex) {
-      logger.severe(ex.getMessage());
+    boolean hostRouting = false;
+    for (int i = 0; i < 10; i++) {
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
+      ExecResult result;
+      try {
+        result = ExecCommand.exec(curlCmd, true);
+        String response = result.stdout().trim();
+        logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+            result.exitValue(), response, result.stderr());
+        if (response.contains("login")) {
+          hostRouting = true;
+        }
+        //assertTrue(result.stdout().contains("Login"), "Couldn't access admin server console");
+      } catch (IOException | InterruptedException ex) {
+        logger.severe(ex.getMessage());
+      }
     }
-
+    assertTrue(hostRouting, "Couldn't access admin server console");
   }
 
   private void bindDomainName(String domainUid) {
