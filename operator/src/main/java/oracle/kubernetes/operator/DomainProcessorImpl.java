@@ -211,7 +211,8 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static Step bringManagedServersUp(Step next) {
-    return new ManagedServersUpStep(next);
+    return DomainStatusUpdater.createProgressingStep(MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
+            new ManagedServersUpStep(next));
   }
 
   private FiberGate getMakeRightFiberGate(String ns) {
@@ -786,10 +787,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   Step createDomainUpPlan(DomainPresenceInfo info) {
-    Step managedServerStrategy =
-        Step.chain(
-            DomainStatusUpdater.createProgressingStep(MANAGED_SERVERS_STARTING_PROGRESS_REASON, true, null),
-            bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(new TailStep())));
+    Step managedServerStrategy = bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(new TailStep()));
 
     Step domainUpStrategy =
         Step.chain(
@@ -998,8 +996,9 @@ public class DomainProcessorImpl implements DomainProcessor {
     private void invoke() {
       switch (podStatus) {
         case PHASE_FAILED:
-          DomainStatusUpdater.createFailedStep(
-                  info, pod.getStatus().getReason(), pod.getStatus().getMessage(), null);
+          delegate.runSteps(
+                  DomainStatusUpdater.createFailedStep(
+                          info, pod.getStatus().getReason(), pod.getStatus().getMessage(), null));
           break;
         case WAITING_NON_NULL_MESSAGE:
           Optional.ofNullable(getMatchingContainerStatus())
