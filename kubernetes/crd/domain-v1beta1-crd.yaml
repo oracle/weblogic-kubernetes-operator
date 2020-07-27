@@ -88,6 +88,10 @@ spec:
                       type: string
                       description: Name of a ConfigMap containing the WebLogic Deploy
                         Tooling model.
+                    modelHome:
+                      type: string
+                      description: Location of the WebLogic Deploy Tooling model home.
+                        Defaults to /u01/wdt/models.
                 secrets:
                   type: array
                   description: A list of names of the Secrets for WebLogic configuration
