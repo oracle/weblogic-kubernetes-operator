@@ -542,6 +542,10 @@
         "configMap": {
           "description": "Name of a ConfigMap containing the WebLogic Deploy Tooling model.",
           "type": "string"
+        },
+        "modelHome": {
+          "description": "Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.",
+          "type": "string"
         }
       }
     },

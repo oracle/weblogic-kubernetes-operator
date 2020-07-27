@@ -319,6 +319,10 @@ public class JobHelper {
         addEnvVar(vars, "AS_SERVICE_NAME", getAsServiceName());
       }
 
+      String modelHome = getModelHome();
+      if (modelHome != null && !modelHome.isEmpty()) {
+        addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, modelHome);
+      }
       return vars;
     }
   }
