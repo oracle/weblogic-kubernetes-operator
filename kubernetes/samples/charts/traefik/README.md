@@ -41,7 +41,7 @@ $ kubectl create -f samples/host-routing.yaml
 ingressroute.traefik.containo.us/traefik-hostrouting-1 created
 ingressroute.traefik.containo.us/traefik-hostrouting-2 created
 ```
-Now you can send requests to different WebLogic domains with the unique Traefik entry point of different host names as defined in route section of `host-routing.yaml` file.
+Now you can send requests to different WebLogic domains with the unique Traefik entry point of different host names as defined in route section of the `host-routing.yaml` file.
 ```
 # Get the ingress controller web port
 $ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
@@ -83,7 +83,7 @@ $ kubectl create -f samples/tls.yaml
 ingressroute.traefik.containo.us/traefik-tls-1 created
 ingressroute.traefik.containo.us/traefik-tls-2 created
 ```
-Now you can access the application on the WebLogic domain with the host name in HTTP header.
+Now you can access the application on the WebLogic domain with the host name in the HTTP header.
 The ingress controller secure port can be obtained dynamically from the `traefik-operator` service in the `traefik` namespace.
 ```
 # Get the ingress controller secure web port
