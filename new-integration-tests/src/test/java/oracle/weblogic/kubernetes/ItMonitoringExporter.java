@@ -1474,6 +1474,22 @@ class ItMonitoringExporter {
       grafanaHelmParams = null;
       logger.info("Grafana is uninstalled");
     }
+    //extra cleanup
+    try {
+      Kubernetes.deleteClusterRole("prometheus-kube-state-metrics");
+      Kubernetes.deleteClusterRole("prometheus-server");
+      Kubernetes.deleteClusterRole("prometheus-alertmanager");
+      Kubernetes.deleteClusterRole("grafana-clusterrole");
+      Kubernetes.deleteClusterRoleBinding("grafana-clusterrolebinding");
+      Kubernetes.deleteClusterRoleBinding("prometheus-alertmanager");
+      Kubernetes.deleteClusterRoleBinding("prometheus-kube-state-metrics");
+      Kubernetes.deleteClusterRoleBinding("prometheus-server");
+      String command = "kubectl delete psp grafana grafana-test";
+      ExecCommand.exec(command);
+    } catch (Exception ex) {
+      //ignoring
+      logger.info("getting exception during delete artifacts for grafana and prometheus");
+    }
   }
 
   private void changeConfigNegative(String effect, String configFile, String expectedErrorMsg)
