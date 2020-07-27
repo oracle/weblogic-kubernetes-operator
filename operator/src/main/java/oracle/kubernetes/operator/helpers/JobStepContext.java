@@ -154,6 +154,10 @@ public abstract class JobStepContext extends BasePodStepContext {
     return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
   }
 
+  protected String getModelHome() {
+    return getDomain().getModelHome();
+  }
+
   protected String getWdtDomainType() {
     return getDomain().getWdtDomainType();
   }
