@@ -220,14 +220,14 @@ class ItParameterizedScaleDomainNginx {
 
     // create model in image domain with multiple clusters
     miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
-    // create domain in pv
-    domainInPV = createDomainInPvUsingWdt(domainInPVNamespace);
     // create domain in image
     domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
+    // create domain in pv
+    domainInPV = createDomainInPvUsingWdt(domainInPVNamespace);
 
     domains.add(miiDomain);
-    domains.add(domainInPV);
     domains.add(domainInImage);
+    domains.add(domainInPV);
 
     // create ingress for each domain
     for (Domain domain: domains) {
