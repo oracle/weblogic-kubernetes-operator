@@ -284,7 +284,7 @@ public class CommonTestUtils {
         .domainNamespaces(Arrays.asList(domainNamespace))
         .serviceAccount(opServiceAccount);
 
-    // use default image when repoUrl is set, otherwise use latest/current branch operator image
+    // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
     if (opHelmParams.getRepoUrl() == null) {
       opParams.image(operatorImage);
     }
