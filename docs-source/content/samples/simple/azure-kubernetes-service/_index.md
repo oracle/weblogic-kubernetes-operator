@@ -420,7 +420,7 @@ Now that we have created the AKS cluster, installed the operator, and verified t
    The secret domain1-weblogic-credentials has been successfully created in the default namespace.
     ```
 
-2. We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret.  For example:
+2. We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
 
    ```bash
    $ ./create-docker-credentials-secret.sh -e foo@bar.com -p myDockerPassword -u myDockerUserId
