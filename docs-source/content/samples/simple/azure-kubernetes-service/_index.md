@@ -323,7 +323,7 @@ azurefile   Bound    azurefile   5Gi        RWX            azurefile      2d21h
 
 The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
-Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. Use the configuration file in `~/azure/weblogic-on-aks/cluster-admin-role.yaml` to grant Helm service account with permission to install the operator. The following is the content of `cluster-admin-role.yaml`:
+Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. Use the configuration file in `~/azure/weblogic-on-aks/cluster-admin-role.yaml` to grant the Helm service account with the permission to install the operator. The following are the contents of `cluster-admin-role.yaml`:
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
