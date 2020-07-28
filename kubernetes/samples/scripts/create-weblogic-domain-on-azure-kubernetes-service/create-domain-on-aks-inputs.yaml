@@ -1,15 +1,15 @@
 # Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# The version of this inputs file.  Do not modify.
+# The version of this inputs file. Do not modify.
 version: create-domain-on-aks-inputs-v1
 
 #
-# Parameters that must be changed from these values
+# Parameters that must be changed!
 #
 
-# The service principal is used to login azure and create azure kubernetes.
-# If you don't have a service principal, please follow README.md#create-service-principal-for-aks to create.
+# The service principal is used to login to azure and create an azure kubernetes cluster.
+# If you don't have a service principal, please follow README.md#create-service-principal-for-aks to create one.
 # Application id of the service principal.
 azureServicePrincipalAppId: azure-service-principal-app-id
 
@@ -29,7 +29,7 @@ dockerPassword: docker-password
 dockerUserName: docker-user-name
 
 #
-# Parameters that may be changed from these values
+# Parameters that may optionally be changed
 #
 
 # Name of file share secret.
@@ -48,9 +48,9 @@ azureKubernetesNodepoolName: nodepool1
 azureLocation: eastus
 
 # Specify a prefix to name azure resources, only allow lowercase letters and numbers, between 1 and 7 characters.
-# Resource group is named with ${azureResourceNamePrefix}resourcegroup<timstamp>, e.g. wlsresourcegroup1592469388
-# Kubernetes cluster is named with ${azureResourceNamePrefix}akscluster<timstamp>, e.g. wlsakscluster1592469388
-# Storage account is named with ${azureResourceNamePrefix}storage<timstamp>, e.g. wlsstorage1592469388
+# Resource group is named ${azureResourceNamePrefix}resourcegroup<timstamp>, e.g. wlsresourcegroup1592469388
+# Kubernetes cluster is named ${azureResourceNamePrefix}akscluster<timstamp>, e.g. wlsakscluster1592469388
+# Storage account is named ${azureResourceNamePrefix}storage<timstamp>, e.g. wlsstorage1592469388
 azureResourceNamePrefix: wls
 
 # SKU of azure storage account, used to create storage account.
@@ -72,7 +72,7 @@ imagePullSecretName: regcred
 # Parameter "persistentVolumeClaimName" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
 persistentVolumeClaimName: azurefile
 
-# Password of weblogic account.
+# Password for weblogic account.
 weblogicAccountPassword: welcome1
 
 # WebLogic Server Docker image.
