@@ -77,6 +77,8 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
+import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
@@ -1643,14 +1645,30 @@ class ItMonitoringExporter {
     }
     //extra cleanup
     try {
-      Kubernetes.deleteClusterRole("prometheus-kube-state-metrics");
-      Kubernetes.deleteClusterRole("prometheus-server");
-      Kubernetes.deleteClusterRole("prometheus-alertmanager");
-      Kubernetes.deleteClusterRole("grafana-clusterrole");
-      Kubernetes.deleteClusterRoleBinding("grafana-clusterrolebinding");
-      Kubernetes.deleteClusterRoleBinding("prometheus-alertmanager");
-      Kubernetes.deleteClusterRoleBinding("prometheus-kube-state-metrics");
-      Kubernetes.deleteClusterRoleBinding("prometheus-server");
+      if (ClusterRole.clusterRoleExists("prometheus-kube-state-metrics")) {
+        Kubernetes.deleteClusterRole("prometheus-kube-state-metrics");
+      }
+      if (ClusterRole.clusterRoleExists("prometheus-server")) {
+        Kubernetes.deleteClusterRole("prometheus-server");
+      }
+      if (ClusterRole.clusterRoleExists("prometheus-alertmanager")) {
+        Kubernetes.deleteClusterRole("prometheus-alertmanager");
+      }
+      if (ClusterRole.clusterRoleExists("grafana-clusterrole")) {
+        Kubernetes.deleteClusterRole("grafana-clusterrole");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists("grafana-clusterrolebinding")) {
+        Kubernetes.deleteClusterRoleBinding("grafana-clusterrolebinding");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists("prometheus-alertmanager")) {
+        Kubernetes.deleteClusterRoleBinding("prometheus-alertmanager");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists("prometheus-kube-state-metrics")) {
+        Kubernetes.deleteClusterRoleBinding("prometheus-kube-state-metrics");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists("prometheus-server")) {
+        Kubernetes.deleteClusterRoleBinding("prometheus-server");
+      }
       String command = "kubectl delete psp grafana grafana-test";
       ExecCommand.exec(command);
     } catch (Exception ex) {
