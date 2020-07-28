@@ -55,6 +55,11 @@ public class Configuration {
     this.model = model;
   }
 
+  public Configuration withModel(Model model) {
+    this.model = model;
+    return this;
+  }
+
   public Opss getOpss() {
     return this.opss;
   }
