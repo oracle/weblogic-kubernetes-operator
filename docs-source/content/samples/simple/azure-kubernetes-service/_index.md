@@ -453,7 +453,7 @@ Now that we have created the AKS cluster, installed the operator, and verified t
    First, we need to set up the domain configuration for the WebLogic domain.  This step uses the configuration generated previously.
 
    ```bash
-   #cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
+   #cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
    $ ./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v
    ```
 
