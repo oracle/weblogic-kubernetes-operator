@@ -423,6 +423,7 @@ Now that we have created the AKS cluster, installed the operator, and verified t
 2. We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
 
    ```bash
+   #cd kubernetes/samples/scripts/create-kuberetes-secrets
    $ ./create-docker-credentials-secret.sh -e foo@bar.com -p myDockerPassword -u myDockerUserId
    ```
 
