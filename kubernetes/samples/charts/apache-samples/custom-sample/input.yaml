@@ -2,8 +2,8 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Use this to provide your own Apache webtier configuration as needed; simply define this
-# path and put your own custom_mod_wl_apache.conf file under this path.
-volumePath: <host-config-dir>
+# Persistence Volume which contains your own custom_mod_wl_apache.conf file.
+persistentVolumeClaimName: <pv-claim-name>
 
 # The VirtualHostName of the Apache HTTP server. It is used to enable custom SSL configuration.
 virtualHostName: apache-sample-host

@@ -37,7 +37,7 @@ The following table lists the configurable parameters of the Apache webtier char
 | -----------------------------------| ------------------------------------------------------------- | ----------------------|
 | `image`                            | Apache webtier Docker image                                   | `store/oracle/apache:12.2.1.3` |
 | `imagePullPolicy`                  | Image pull policy for the Apache webtier Docker image         | `IfNotPresent`        |
-| `volumePath`                       | Docker volume path for the Apache webtier                     | ``                    |
+| `persistentVolumeClaimName`                       | Persistence Volume Claim name Apache webtier                     | ``                    |
 | `createRBAC`                       | Boolean indicating if RBAC resources should be created        | `true`                |
 | `httpNodePort`                     | Node port to expose for HTTP access                           | `30305`               |
 | `httpsNodePort`                    | Node port to expose for HTTPS access                          | `30443`               |
@@ -54,7 +54,7 @@ The following table lists the configurable parameters of the Apache webtier char
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
 
 ```console
-$ helm install --name my-release --set volumePath=/scratch/my-config apache-webtier
+$ helm install --name my-release --set persistentVolumeClaimName=webtier-apache-pvc apache-webtier
 ```
 
 Alternatively, a YAML file that specifies the values for the parameters can be provided while

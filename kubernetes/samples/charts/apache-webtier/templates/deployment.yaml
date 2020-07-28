@@ -20,7 +20,7 @@ spec:
     spec:
       serviceAccountName: {{ template "apache.serviceAccountName" . }}
       terminationGracePeriodSeconds: 60
-{{- if or (and (.Values.virtualHostName) (.Values.customCert)) (.Values.volumePath) }}
+{{- if or (and (.Values.virtualHostName) (.Values.customCert)) (.Values.persistentVolumeClaimName) }}
       volumes:
 {{- end }}
 {{- if and (.Values.virtualHostName) (.Values.customCert) }}
@@ -29,30 +29,34 @@ spec:
           defaultMode: 420
           secretName: {{ template "apache.fullname" . }}-cert
 {{- end }}
-{{- if .Values.volumePath }}
+{{- if .Values.persistentVolumeClaimName }}
       - name: {{ template "apache.fullname" . }}
-        hostPath:
-          path: {{ .Values.volumePath | quote }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.persistentVolumeClaimName | quote }}
+{{- end }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+      - name: {{ .Values.imagePullSecrets | quote }}
 {{- end }}
       containers:
       - name: {{ template "apache.fullname" . }}
         image: {{ .Values.image | quote }}
         imagePullPolicy: {{ .Values.imagePullPolicy | quote }}
-{{- if or (and (.Values.virtualHostName) (.Values.customCert)) (.Values.volumePath) }}
+{{- if or (and (.Values.virtualHostName) (.Values.customCert)) (.Values.persistentVolumeClaimName) }}
         volumeMounts:
 {{- end }}
 {{- if and (.Values.virtualHostName) (.Values.customCert) }}
         - name: serving-cert
           mountPath: "/var/serving-cert"
 {{- end }}
-{{- if .Values.volumePath }}
+{{- if .Values.persistentVolumeClaimName }}
         - name: {{ template "apache.fullname" . }}
           mountPath: "/config"
 {{- end }}
-{{- if or (not (.Values.volumePath)) (.Values.virtualHostName) }}
+{{- if or (not (.Values.persistentVolumeClaimName)) (.Values.virtualHostName) }}
         env:
 {{- end }}
-{{- if not (.Values.volumePath) }}
+{{- if not (.Values.persistentVolumeClaimName) }}
           - name: WEBLOGIC_CLUSTER
             value: "{{ .Values.domainUID | replace "_" "-" | lower }}-cluster-{{ .Values.clusterName | replace "_" "-" | lower }}:{{ .Values.managedServerPort }}"
           - name: LOCATION
@@ -74,7 +78,7 @@ spec:
 {{- end }}
         readinessProbe:
           tcpSocket:
-            port: 80
+            port: 8080
           failureThreshold: 1
           initialDelaySeconds: 10
           periodSeconds: 10
@@ -82,7 +86,7 @@ spec:
           timeoutSeconds: 2
         livenessProbe:
           tcpSocket:
-            port: 80
+            port: 8080
           failureThreshold: 3
           initialDelaySeconds: 10
           periodSeconds: 10
