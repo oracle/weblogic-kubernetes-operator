@@ -45,6 +45,7 @@ public class IntrospectionStatusTest {
   private static final String IMAGE_PULL_FAILURE = "ErrImagePull";
   private static final String UNSCHEDULABLE = "Unschedulable";
   private static final String IMAGE_PULL_BACKOFF = "ImagePullBackoff";
+  private static final String DEADLINE_EXCEEDED = "DeadlineExceeded";
   private List<Memento> mementos = new ArrayList<>();
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
@@ -146,6 +147,18 @@ public class IntrospectionStatusTest {
   }
 
   @Test
+  public void whenIntrospectorJobPodPhaseFailed_patchDomain() {
+    processor.dispatchPodWatch(
+            WatchEvent.createModifiedEvent(
+                    createIntrospectorJobPodWithPhase("Failed", DEADLINE_EXCEEDED))
+                    .toWatchResponse());
+
+    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(DEADLINE_EXCEEDED));
+    assertThat(updatedDomain.getStatus().getMessage(), equalTo(MESSAGE));
+  }
+
+  @Test
   public void whenNewIntrospectorJobPodStatusReasonNullAfterImagePullFailure_dontPatchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
@@ -192,6 +205,16 @@ public class IntrospectionStatusTest {
             .status(
                     new V1PodStatusBuilder()
                             .withConditions(condition)
+                            .build());
+  }
+
+  private V1Pod createIntrospectorJobPodWithPhase(String phase, String reason) {
+    return createIntrospectorJobPod(UID)
+            .status(
+                    new V1PodStatusBuilder()
+                            .withPhase(phase)
+                            .withReason(reason)
+                            .withMessage(MESSAGE)
                             .build());
   }
 
