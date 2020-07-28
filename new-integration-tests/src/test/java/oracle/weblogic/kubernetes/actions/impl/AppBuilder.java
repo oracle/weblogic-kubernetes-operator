@@ -10,9 +10,11 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.utils.FileUtils;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
@@ -117,8 +119,25 @@ public class AppBuilder {
     }
 
     // build the app archive
-    String jarPath = String.format("%s.gar", params.appName());
-    boolean jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
+    boolean jarBuilt = false;
+    if (params.appName().contains("coherence-proxy")) {
+      String jarPath = String.format("%s.gar", params.appName());
+      jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
+    } else if (params.appName().contains("CoherenceApp")) {
+      String [] appTypes = {"ear", "gar"};
+      try {
+        for (String appType : appTypes) {
+          String appSrcDir = String.format("%s/%s/u01/application/builddir/%s.%s",
+              WORK_DIR, params.appName(), params.appName(), appType);
+          String archiveSrcDir = String.format("%s/%s.%s", ARCHIVE_SRC_DIR, params.appName(), appType);
+          FileUtils.copy(Paths.get(appSrcDir), Paths.get(archiveSrcDir));
+        }
+        jarBuilt = true;
+      } catch (IOException ex) {
+        getLogger().severe("Failed to copy Coherence app ", ex.getMessage());
+        return false;
+      }
+    }
 
     // build a zip file that can be passed to WIT
     String zipPath = String.format("%s/%s.zip", ARCHIVE_DIR, params.appName());
@@ -195,11 +214,19 @@ public class AppBuilder {
         zipPath,
         params.appName());
 
+    if (params.appName().contains("CoherenceApp")) {
+      cmd = String.format(
+        "cd %s ; zip -r %s.zip wlsdeploy/applications ",
+        ARCHIVE_DIR,
+        params.appName()
+      );
+    }
+
     return Command.withParams(
-        defaultCommandParams()
-            .command(cmd)
-            .redirect(false))
-        .execute();
+      defaultCommandParams()
+        .command(cmd)
+        .redirect(false))
+      .execute();
   }
 
   /**
