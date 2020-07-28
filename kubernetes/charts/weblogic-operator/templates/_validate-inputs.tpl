@@ -31,7 +31,23 @@
 {{-     $ignore := include "utils.verifyInteger" (list $scope "externalDebugHttpPort") -}}
 {{-   end -}}
 {{- end -}}
-{{- $ignore := include "utils.verifyStringList" (list $scope "domainNamespaces") -}}
+{{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "grantPrivilegeAllNamespaces") -}}
+{{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "onlyInitializeDomainNamespaces") -}}
+{{- if and .grantPrivilegeAllNamespaces .onlyInitializeDomainNamespaces }}
+{{-   $errorMsg := "Only one of grantPrivilegeAllNamespaces and onlyInitializeDomainNamespaces may be true" -}}
+{{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
+{{- end -}}
+{{- if and .grantPrivilegeAllNamespaces .dedicated }}
+{{-   $errorMsg := "Only one of grantPrivilegeAllNamespaces and dedicated may be true" -}}
+{{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
+{{- end -}}
+{{- if and .dedicated .onlyInitializeDomainNamespaces }}
+{{-   $errorMsg := "Only one of dedicated and onlyInitializeDomainNamespaces may be true" -}}
+{{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
+{{- end -}}
+{{- if or $scope.onlyInitializeDomainNamespaces (eq $scope.domainNamespaceSelectionStrategy "List") -}}
+{{-     $ignore := include "utils.verifyStringList" (list $scope "domainNamespaces") -}}
+{{- end -}}
 {{- if include "utils.verifyBoolean" (list $scope "elkIntegrationEnabled") -}}
 {{-   if $scope.elkIntegrationEnabled -}}
 {{-     $ignore := include "utils.verifyString" (list $scope "logStashImage") -}}
@@ -40,6 +56,13 @@
 {{-   end -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "dedicated") -}}
+{{- $ignore := include "utils.verifyEnum" (list $scope "domainNamespaceSelectionStrategy" (list "List" "LabelSelector" "RegExp" "Dedicated")) -}}
+{{- if eq $scope.domainNamespaceSelectionStrategy "LabelSelector" -}}
+{{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceLabelSelector") -}}
+{{- end -}}
+{{- if eq $scope.domainNamespaceSelectionStrategy "RegExp" -}}
+{{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceRegExp") -}}
+{{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
 {{- $ignore := include "utils.endValidation" $scope -}}
 {{- end -}}

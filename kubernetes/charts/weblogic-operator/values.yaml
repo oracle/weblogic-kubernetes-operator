@@ -42,12 +42,22 @@ domainNamespaceSelectionStrategy: List
 domainNamespaces:
 - "default"
 
+# grantPrivilegeAllNamespaces specifies whether the roles necessary for the operator to manage domains
+# will be granted using a ClusterRoleBinding rather than using RoleBindings in namespace listed by
+# 'domainNamespaces'. If 'grantPrivilegeAllNamespaces' is 'true', then the pattern discussed in the
+# documentation for 'onlyInitializeDomainNamespaces' is unnecessary since the operator deployed with
+# this Helm release will already have privilege in any namespace later selected.
+grantPrivilegeAllNamespaces: false
+
 # onlyInitializeDomainNamespaces specifies whether this Helm release will only initialize the role binding and other
 # resources necessary in each domain namespace and not deploy the operator. When the 'domainNamespaceSelectionStrategy'
 # is 'List', the chart will already initialize the necessary role binding and other resources in each namespace listed
 # by 'domainNamespaces'. However, for 'domainNamespaceSelectionStrategy' values other than 'List',
 # setting 'onlyInitializeDomainNamespaces' to 'true' is useful because you can create one or more additional
 # Helm releases using this chart in the same namespace to simplify creating these per-domain namespace resources.
+# Alternatively, you may set 'grantPrivilegeAllNamespaces' to 'true' when creating the initial Helm release and then
+# there is no need to set 'onlyInitializeDomainNamespaces' to 'true' in later Helm releases since the operator
+# deployed with the initial Helm release will already have privilege in any namespace selected.
 onlyInitializeDomainNamespaces: false
 
 # domainNamespaceLabelSelector specifies the label selector value that the operator will use when listing
