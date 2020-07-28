@@ -407,7 +407,7 @@ Now that we have created the AKS cluster, installed the operator, and verified t
 1. We will use the `kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain credentials as a Kubernetes secret.
 
    ```bash
-   #cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-credentials
+   #cd kubernetes/samples/scripts/create-weblogic-domain-credentials
    $ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -d domain1
    ```
 
