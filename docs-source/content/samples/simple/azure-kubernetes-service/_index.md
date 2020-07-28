@@ -35,7 +35,7 @@ This sample assumes one of the following two execution environments:
 
 * Local Environment Setup
 
-  * Operating System: Linux, Unix, macOS, [WSL for Windows 10](https://docs.microsoft.com/windows/wsl/install-win10)
+  * Operating System: Linux, Unix, macOS or [WSL for Windows 10](https://docs.microsoft.com/windows/wsl/install-win10).
   * [Git](https://git-scm.com/downloads), use `git --version` to test if `git` works.
   * [Azure CLI](https://docs.microsoft.com/cli/azure), use `az --version` to test if `az` works.
   * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/), use `kubectl version` to test if `kubectl` works.
