@@ -1198,13 +1198,12 @@ class ItMonitoringExporter {
     String monitoringExporterVersion = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_VERSION"))
         .orElse(MONITORING_EXPORTER_VERSION);
 
-    //adding ability to build monitoring exporter if branch is not master or version number does not match latest 1.1.2
-    boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase("1.1.2")
-        || !monitoringExporterBranch.equalsIgnoreCase(("master")));
+    //adding ability to build monitoring exporter if branch is not master
+    boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("master")));
     logger.info("create a monitoring exporter version {0} ",monitoringExporterVersion);
     monitoringExporterAppDir = monitoringApp.toString();
     String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
-    toBuildMonitoringExporter = true;
+
     if (!toBuildMonitoringExporter) {
       String monitoringExporterBuildFile = String.format(
           "%s/get%s.sh", monitoringExporterAppDir, monitoringExporterVersion);
