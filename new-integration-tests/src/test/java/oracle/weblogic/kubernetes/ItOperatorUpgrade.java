@@ -92,7 +92,7 @@ public class ItOperatorUpgrade {
    * and the domain can be managed by scaling the cluster.
    */
   //@ParameterizedTest
-  //@Test
+  @Test
   @DisplayName("Upgrade Operator from 2.5.0/2.6.0/3.0.0 to latest")
   @MustNotRunInParallel
   //@ValueSource(strings = {"2.5.0", "2.6.0", "3.0.0"})
@@ -134,7 +134,8 @@ public class ItOperatorUpgrade {
     String domainNamespace = namespaces.get(2);
 
     HelmParams opHelmParams =
-        new HelmParams().releaseName("weblogic-operator-" + operatorVersion)
+        //new HelmParams().releaseName("weblogic-operator-" + operatorVersion)
+        new HelmParams().releaseName("weblogic-operator")
             .namespace(opNamespace1)
             .repoUrl(OPERATOR_GITHUB_CHART_REPO_URL)
             .repoName("weblogic-operator")
