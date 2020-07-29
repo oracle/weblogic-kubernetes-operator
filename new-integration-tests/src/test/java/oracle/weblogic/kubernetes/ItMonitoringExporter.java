@@ -159,6 +159,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 
 
 /**
@@ -193,7 +194,7 @@ class ItMonitoringExporter {
   private static String webhookNS = null;
   private static ConditionFactory withStandardRetryPolicy = null;
   HelmParams promHelmParams = null;
-  HelmParams grafanaHelmParams = null;
+  GrafanaParams grafanaHelmParams = null;
   private static String monitoringExporterEndToEndDir = null;
   private static String monitoringExporterSrcDir = null;
   private static String monitoringExporterAppDir = null;
@@ -621,14 +622,13 @@ class ItMonitoringExporter {
 
 
     if (grafanaHelmParams == null) {
-      int nodeportgrafana = getNextFreePort(31050, 31200);
-      logger.info("Node Port for Grafana is " + nodeportgrafana);
+      //logger.info("Node Port for Grafana is " + nodeportgrafana);
       grafanaHelmParams = installAndVerifyGrafana("grafana",
               monitoringNS,
               monitoringExporterEndToEndDir + "/grafana/values.yaml",
-              grafanaChartVersion,
-              nodeportgrafana);
-
+              grafanaChartVersion);
+      assertNotNull(grafanaHelmParams, "Grafana failed to install");
+      int nodeportgrafana = grafanaHelmParams.getNodePort();
       //wait until it starts dashboard
       String curlCmd = String.format("curl -v  -H 'Content-Type: application/json' "
                       + " -X GET http://admin:12345678@%s:%s/api/dashboards",
@@ -1442,7 +1442,7 @@ class ItMonitoringExporter {
                                               String namespace,
                                               String domainHomeSource,
                                               int replicaCount) {
-    int t3ChannelPort = getNextFreePort(31500, 32767);
+    int t3ChannelPort = getNextFreePort(31570, 32767);
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -1639,7 +1639,7 @@ class ItMonitoringExporter {
       logger.info("Prometheus is uninstalled");
     }
     if (grafanaHelmParams != null) {
-      Grafana.uninstall(grafanaHelmParams);
+      Grafana.uninstall(grafanaHelmParams.getHelmParams());
       deleteSecret("grafana-secret",monitoringNS);
       grafanaHelmParams = null;
       logger.info("Grafana is uninstalled");

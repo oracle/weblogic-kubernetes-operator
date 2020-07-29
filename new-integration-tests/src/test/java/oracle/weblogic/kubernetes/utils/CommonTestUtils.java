@@ -45,6 +45,7 @@ import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -161,8 +162,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNo
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
-import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
-import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.TestUtils.*;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -1482,11 +1482,10 @@ public class CommonTestUtils {
    * @param grafanaNodePort nodePort value for grafana server
    * @return the grafana Helm installation parameters
    */
-  public static HelmParams installAndVerifyGrafana(String grafanaReleaseName,
+  public static GrafanaParams installAndVerifyGrafana(String grafanaReleaseName,
                                                    String grafanaNamespace,
                                                    String grafanaValueFile,
-                                                   String grafanaVersion,
-                                                   int grafanaNodePort) {
+                                                   String grafanaVersion) {
     LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams grafanaHelmParams = new HelmParams()
@@ -1499,12 +1498,8 @@ public class CommonTestUtils {
       grafanaHelmParams.chartVersion(grafanaVersion);
     }
 
-    // grafana chart values to override
-    GrafanaParams grafanaParams = new GrafanaParams()
-        .helmParams(grafanaHelmParams)
-        .nodePort(grafanaNodePort);
     boolean secretExists = false;
-    io.kubernetes.client.openapi.models.V1SecretList listSecrets = listSecrets(grafanaNamespace);
+    V1SecretList listSecrets = listSecrets(grafanaNamespace);
     if (null != listSecrets) {
       for (V1Secret item : listSecrets.getItems()) {
         if (item.getMetadata().getName().equals("grafana-secret")) {
@@ -1519,6 +1514,11 @@ public class CommonTestUtils {
     }
     // install grafana
     logger.info("Installing grafana in namespace {0}", grafanaNamespace);
+    int grafanaNodePort = getNextFreePort(31050, 31200);
+    // grafana chart values to override
+    GrafanaParams grafanaParams = new GrafanaParams()
+        .helmParams(grafanaHelmParams)
+        .nodePort(grafanaNodePort);
     assertTrue(installGrafana(grafanaParams),
         String.format("Failed to install grafana in namespace %s", grafanaNamespace));
     logger.info("Grafana installed in namespace {0}", grafanaNamespace);
@@ -1544,7 +1544,8 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> isGrafanaReady(grafanaNamespace),
             "grafanaIsReady failed with ApiException"));
 
-    return grafanaHelmParams;
+    //return grafanaHelmParams;
+    return grafanaParams;
   }
 
 

@@ -1,20 +1,11 @@
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-import sys
-import os
-import traceback
-
-from java.util import Base64
-from org.apache.commons.io import FileUtils
-from java.io import File
-
 admin_username=sys.argv[1]
 admin_password=sys.argv[2]
 admin_t3_url=sys.argv[3]
 setListenPortEnabled=sys.argv[4]
 server_name=sys.argv[5]
-#admin_t3_url = 't3://'+admin_host+':'+admin_port
 script_name = 'changeListenPort.py'
 print 'script_name: ' + script_name
 
