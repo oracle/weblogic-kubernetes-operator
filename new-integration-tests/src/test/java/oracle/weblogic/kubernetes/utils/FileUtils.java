@@ -253,18 +253,21 @@ public class FileUtils {
   }
 
   /**
-   * A utility method to sed files.
-   *
-   * @throws IOException when copying files from source location to staging area fails
+   * Replaces each substring in the file that matches the given regular
+   * expression with the given replacement.
+   * @param filePath file in which a string has to be replaced
+   * @param regex the regular expression to which this string is to be matched
+   * @param replacement the string to be substituted for each match
+   * @throws IOException if an IO error occurs while reading from the file
    */
-  public static void replaceStringInFile(String filePath, String oldValue, String newValue)
+  public static void replaceStringInFile(String filePath, String regex, String replacement)
       throws IOException {
     LoggingFacade logger = getLogger();
     Path src = Paths.get(filePath);
     logger.info("Copying {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
     String content = new String(Files.readAllBytes(src), charset);
-    content = content.replaceAll(oldValue, newValue);
+    content = content.replaceAll(regex, replacement);
     logger.info("to {0}", src.toString());
     Files.write(src, content.getBytes(charset));
   }

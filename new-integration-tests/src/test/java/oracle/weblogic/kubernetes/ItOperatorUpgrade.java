@@ -90,7 +90,7 @@ public class ItOperatorUpgrade {
    * Operator upgrade from 2.5.0/2.6.0/3.0.0 to latest.
    * Install old release Operator from GitHub chart repository and create a domain.
    * Delete Operator and install latest Operator and verify CRD version is updated
-   * and the domain can be managed by scaling the domain.
+   * and the domain can be managed by scaling the cluster.
    */
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 2.5.0/2.6.0/3.0.0 to latest")
@@ -167,7 +167,7 @@ public class ItOperatorUpgrade {
   }
 
   /**
-   * Cleanup Kubernetes artifacts in the namespaces used by the test class and
+   * Cleanup Kubernetes artifacts in the namespaces used by the test and
    * delete CRD.
    */
   @AfterEach
