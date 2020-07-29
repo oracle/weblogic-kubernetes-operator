@@ -9,7 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -46,9 +48,11 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
@@ -57,6 +61,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithT
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
 import static oracle.weblogic.kubernetes.utils.TestUtils.verifyClusterMemberCommunication;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,6 +83,7 @@ public class ItTraefikLoadBalancer {
   private static String traefikNamespace = null;
 
   private static HelmParams traefikHelmParams = null;
+  private static HelmParams voyagerHelmParams = null;
 
   private static final String IMAGE = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
@@ -103,7 +110,7 @@ public class ItTraefikLoadBalancer {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
@@ -115,6 +122,11 @@ public class ItTraefikLoadBalancer {
     logger.info("Assign a unique namespace for Traefik");
     traefikNamespace = namespaces.get(2);
 
+    // get a unique Voyager namespace
+    logger.info("Assign a unique namespace for Voyager");
+    String voyagerNamespace = namespaces.get(3);
+
+
     // install operator and verify its running in ready state
     logger.info("Installing operator");
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -122,7 +134,13 @@ public class ItTraefikLoadBalancer {
     // install and verify Traefik
     logger.info("Installing Traefik controller using helm");
     traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
-    //traefikHelmParams = installAndVerifyTraefik(domainNamespace, 0, 0);
+
+    final String cloudProvider = "baremetal";
+    final boolean enableValidatingWebhook = false;
+
+    // install and verify Voyager
+    voyagerHelmParams =
+      installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
 
     // build the clusterview application
     logger.info("Building clusterview application");
@@ -143,7 +161,8 @@ public class ItTraefikLoadBalancer {
           domainNamespace, tlsKeyFile, tlsCertFile));
     }
     // create loadbalancing rules for Traefik
-    createTraefikIngressRouteRules();
+    createTraefikIngressRoutingRules();
+    createVoyagerIngressRoutingRules();
 
   }
 
@@ -177,7 +196,7 @@ public class ItTraefikLoadBalancer {
     // verify load balancing works when 2 domains are running in the same namespace
     logger.info("Verifying http traffic");
     for (String domainUid : domains) {
-      verifyClusterLoadbalancing(domainUid, false);
+      verifyClusterLoadbalancing(domainUid, "http", getTraefikLbNodePort(false));
     }
 
   }
@@ -196,19 +215,35 @@ public class ItTraefikLoadBalancer {
     }
     logger.info("Verifying https traffic");
     for (String domainUid : domains) {
-      verifyClusterLoadbalancing(domainUid, true);
+      verifyClusterLoadbalancing(domainUid, "https", getTraefikLbNodePort(true));
     }
 
   }
 
-  private void verifyClusterLoadbalancing(String domainUid, boolean https) {
+  /**
+   * Test verifies multiple WebLogic domains can be loadbalanced by Voyager loadbalancer with host based routing rules.
+   * Accesses the clusterview application deployed in the WebLogic cluster through Voyager loadbalancer and verifies it
+   * is correctly routed to the specific domain cluster identified by the -H host header.
+   */
+  @Test
+  @DisplayName("Loadbalance WebLogic cluster traffic through Voyager loadbalancer tcp channel")
+  public void testVoyagerHostHttpRoutingAcrossDomains() {
+    // verify load balancing works when 2 domains are running in the same namespace
+    logger.info("Verifying http traffic");
+    for (String domainUid : domains) {
+      String ingressName = domainUid + "-ingress-host-routing";
+      verifyClusterLoadbalancing(domainUid, "http", getVoyagerLbNodePort(ingressName));
+    }
+
+  }
+
+  private void verifyClusterLoadbalancing(String domainUid, String protocol, int lbPort) {
 
     //access application in managed servers through Traefik load balancer
     logger.info("Accessing the clusterview app through Traefik load balancer");
     String curlRequest = String.format("curl --silent --show-error -ks --noproxy '*' "
         + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet",
-        domainUid + "." + domainNamespace + "." + "cluster-1.test",
-        https ? "https" : "http", K8S_NODEPORT_HOST, getTraefikLbNodePort(https));
+        domainUid + "." + domainNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
       managedServers.add(managedServerNameBase + i);
@@ -223,8 +258,7 @@ public class ItTraefikLoadBalancer {
     logger.info("Accessing the clusterview app through Traefik load balancer");
     String curlCmd = String.format("curl --silent --show-error -ks --noproxy '*' "
         + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
-        domainUid + "." + domainNamespace + "." + "cluster-1.test", https ? "https" : "http", K8S_NODEPORT_HOST,
-        getTraefikLbNodePort(https), domainUid);
+        domainUid + "." + domainNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort, domainUid);
 
     // call the webapp and verify the bound domain name to determine
     // the requests are sent to the correct cluster members.
@@ -304,7 +338,7 @@ public class ItTraefikLoadBalancer {
 
   }
 
-  private static void createTraefikIngressRouteRules() {
+  private static void createTraefikIngressRoutingRules() {
     logger.info("Creating ingress rules for domain traffic routing");
     Path srcFile = Paths.get(ActionConstants.RESOURCE_DIR, "traefik/traefik-ingress-rules.yaml");
     Path dstFile = Paths.get(TestConstants.RESULTS_ROOT, "traefik/traefik-ingress-rules.yaml");
@@ -335,6 +369,30 @@ public class ItTraefikLoadBalancer {
         -> getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
         "Getting web node port for Traefik loadbalancer failed");
     return webNodePort;
+  }
+
+  private static void createVoyagerIngressRoutingRules() {
+    for (String domainUid : domains) {
+      String ingressName = domainUid + "-ingress-host-routing";
+
+      // create Voyager ingress resource
+      Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+      clusterNameMsPortMap.put("cluster-1", 8001);
+      List<String> hostNames
+          = installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
+    }
+  }
+
+  private static int getVoyagerLbNodePort(String ingressName) {
+    String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
+    String channelName = "tcp-80";
+
+    // get ingress service Nodeport
+    int ingressServiceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, ingressServiceName, channelName),
+        "Getting voyager loadbalancer service node port failed");
+    logger.info("Node port for {0} is: {1} :", ingressServiceName, ingressServiceNodePort);
+    return ingressServiceNodePort;
   }
 
   private static void createDomains() {
@@ -502,6 +560,13 @@ public class ItTraefikLoadBalancer {
       assertThat(uninstallTraefik(traefikHelmParams))
           .as("Test uninstallTraefik returns true")
           .withFailMessage("uninstallTraefik() did not return true")
+          .isTrue();
+    }
+    // uninstall Voyager
+    if (voyagerHelmParams != null) {
+      assertThat(uninstallVoyager(voyagerHelmParams))
+          .as("Test uninstallVoyager returns true")
+          .withFailMessage("uninstallVoyager() did not return true")
           .isTrue();
     }
   }
