@@ -22,8 +22,7 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.Test;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -92,12 +91,38 @@ public class ItOperatorUpgrade {
    * Delete Operator and install latest Operator and verify CRD version is updated
    * and the domain can be managed by scaling the cluster.
    */
-  @ParameterizedTest
+  //@ParameterizedTest
+  @Test
   @DisplayName("Upgrade Operator from 2.5.0/2.6.0/3.0.0 to latest")
   @MustNotRunInParallel
-  @ValueSource(strings = {"2.5.0", "2.6.0", "3.0.0"})
-  public void testUpgradeOperator(String operatorVersion, @Namespaces(3) List<String> namespaces) {
+  //@ValueSource(strings = {"2.5.0", "2.6.0", "3.0.0"})
+  //public void testUpgradeOperator(String operatorVersion, @Namespaces(3) List<String> namespaces) {
+  public void testUpgradeOperatorFrom2_5_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
+    upgradeOperator("2.5.0");
+  }
+
+  @Test
+  @DisplayName("Upgrade Operator from 2.5.0/2.6.0/3.0.0 to latest")
+  @MustNotRunInParallel
+  //@ValueSource(strings = {"2.5.0", "2.6.0", "3.0.0"})
+  //public void testUpgradeOperator(String operatorVersion, @Namespaces(3) List<String> namespaces) {
+  public void testUpgradeOperatorFrom2_6_0(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    upgradeOperator("2.6.0");
+  }
+
+  @Test
+  @DisplayName("Upgrade Operator from 2.5.0/2.6.0/3.0.0 to latest")
+  @MustNotRunInParallel
+  //@ValueSource(strings = {"2.5.0", "2.6.0", "3.0.0"})
+  //public void testUpgradeOperator(String operatorVersion, @Namespaces(3) List<String> namespaces) {
+  public void testUpgradeOperatorFrom3_0_0(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    upgradeOperator("3.0.0");
+  }
+
+  private void upgradeOperator(String operatorVersion) {
     logger.info("Assign a unique namespace for operator {0}", operatorVersion);
     assertNotNull(namespaces.get(0), "Namespace is null");
     final String opNamespace1 = namespaces.get(0);

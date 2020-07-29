@@ -148,6 +148,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusR
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -325,6 +326,19 @@ public class CommonTestUtils {
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> operatorIsReady(opNamespace),
             "operatorIsReady failed with ApiException"));
+
+    if (withRestAPI) {
+      logger.info("Wait for the operator external service in namespace {0}", opNamespace);
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for operator external service in namespace {0} "
+                      + "(elapsed time {1}ms, remaining time {2}ms)",
+                  opNamespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(assertDoesNotThrow(() -> operatorRestServiceRunning(opNamespace),
+              "operator external service is not running"));
+    }
 
     return opHelmParams;
   }
