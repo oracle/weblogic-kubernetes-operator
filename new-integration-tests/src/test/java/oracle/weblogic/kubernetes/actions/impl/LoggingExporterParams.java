@@ -4,7 +4,7 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 /**
- * All parameters needed to install Voyager ingress controller.
+ * All parameters needed to install ELK Stack and WebLogic logging exporter.
  */
 public class LoggingExporterParams {
 
