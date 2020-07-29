@@ -92,7 +92,7 @@ public class ItOperatorUpgrade {
    * and the domain can be managed by scaling the cluster.
    */
   //@ParameterizedTest
-  @Test
+  //@Test
   @DisplayName("Upgrade Operator from 2.5.0/2.6.0/3.0.0 to latest")
   @MustNotRunInParallel
   //@ValueSource(strings = {"2.5.0", "2.6.0", "3.0.0"})
