@@ -264,7 +264,7 @@ class ItMonitoringExporter {
     assertNotNull(namespaces.get(6), "Namespace list is null");
     domain3Namespace = namespaces.get(6);
 
-    logger.info("Get a unique namespace for domain3");
+    logger.info("Get a unique namespace for domain4");
     assertNotNull(namespaces.get(7), "Namespace list is null");
     domain4Namespace = namespaces.get(7);
 
@@ -621,7 +621,8 @@ class ItMonitoringExporter {
 
 
     if (grafanaHelmParams == null) {
-      int nodeportgrafana = getNextFreePort(31000, 31200);
+      int nodeportgrafana = getNextFreePort(31050, 31200);
+      logger.info("Node Port for Grafana is " + nodeportgrafana);
       grafanaHelmParams = installAndVerifyGrafana("grafana",
               monitoringNS,
               monitoringExporterEndToEndDir + "/grafana/values.yaml",
