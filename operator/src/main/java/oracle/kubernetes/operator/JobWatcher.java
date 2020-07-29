@@ -305,7 +305,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     // be available for reading
     @Override
     boolean shouldTerminateFiber(V1Job job) {
-      return isFailed(job) && "DeadlineExceeded".equals(getFailedReason(job));
+      return isFailed(job) && ("DeadlineExceeded".equals(getFailedReason(job))
+              || "BackoffLimitExceeded".equals(getFailedReason(job)));
     }
 
     // create an exception to terminate the fiber

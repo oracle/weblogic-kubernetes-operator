@@ -59,6 +59,11 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
     return testSupport.scheduleWithFixedDelay(command, initialDelay, delay, unit);
   }
 
+  @Override
+  public void runSteps(Step firstStep) {
+    testSupport.runSteps(firstStep);
+  }
+
   private static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {
     @Override
     public Step waitForReady(V1Pod pod, Step next) {
