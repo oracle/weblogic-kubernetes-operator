@@ -5,8 +5,10 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,7 +57,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.OracleHttpClient;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -94,13 +96,18 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRole;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRoleBinding;
+import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
+import static oracle.weblogic.kubernetes.actions.TestActions.getContainerRestartCount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -117,12 +124,12 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -134,7 +141,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DisplayName("Verify scaling the clusters in the domain with different domain types and "
     + "the sample application can be accessed via NGINX ingress controller")
 @IntegrationTest
-class ItParameterizedScaleDomainNginx {
+class ItParameterizedDomain {
 
   // domain constants
   private static final int NUMBER_OF_CLUSTERS_MIIDOMAIN = 2;
@@ -156,9 +163,6 @@ class ItParameterizedScaleDomainNginx {
   private static boolean isUseSecret = true;
   private static List<Domain> domains = new ArrayList<>();
   private static LoggingFacade logger = null;
-  private static Domain miiDomain = null;
-  private static Domain domainInPV = null;
-  private static Domain domainInImage = null;
 
   private String curlCmd = null;
 
@@ -219,11 +223,11 @@ class ItParameterizedScaleDomainNginx {
     logger.info("NGINX http node port: {0}", nodeportshttp);
 
     // create model in image domain with multiple clusters
-    miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
+    Domain miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
     // create domain in image
-    domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
+    Domain domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
     // create domain in pv
-    domainInPV = createDomainInPvUsingWdt(domainInPVNamespace);
+    Domain domainInPV = createDomainInPvUsingWdt(domainInPVNamespace);
 
     domains.add(miiDomain);
     domains.add(domainInImage);
@@ -244,26 +248,6 @@ class ItParameterizedScaleDomainNginx {
       }
       logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
       createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap);
-
-      // TODO: debug for domaininpv nginx access in parallel run
-      // use httpclient to access the app first
-      //access application from admin server
-      logger.info("Getting node port for default channel");
-      int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-          domainNamespace,  domainUid + "-" + ADMIN_SERVER_NAME_BASE + "-external", "default"),
-          "Getting admin server node port failed");
-      String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/sample-war/index.jsp";
-      assertEquals(200,
-          assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-              "Accessing sample application on admin server failed")
-              .statusCode(), "Status code not equals to 200");
-
-      String curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
-      List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
-      assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServersBeforeScale, 50))
-          .as("Verify NGINX can access the sample app from the original managed servers in the domain")
-          .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
-          .isTrue();
     }
   }
 
@@ -302,6 +286,7 @@ class ItParameterizedScaleDomainNginx {
   /**
    * Scale cluster using WLDF policy for three different type of domains.
    *
+   * @param domain oracle.weblogic.domain.Domain object
    */
   @ParameterizedTest
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
@@ -312,6 +297,148 @@ class ItParameterizedScaleDomainNginx {
     // Verify scale cluster of the domain with WLDF policy
     logger.info("testScaleClustersWithWLDF with domain {0}", domain.getMetadata().getName());
     testScaleClustersWithWLDF(domain);
+  }
+
+  /**
+   * Verify admin console login using admin node port.
+   *
+   * @param domain oracle.weblogic.domain.Domain object
+   */
+  @ParameterizedTest
+  @DisplayName("Test admin console login using admin node port")
+  @MethodSource("domainProvider")
+  public void testAdminConsoleLoginUsingAdminNodePort(Domain domain) {
+    assertDomainNotNull(domain);
+    String domainUid = domain.getSpec().getDomainUid();
+    String domainNamespace = domain.getMetadata().getNamespace();
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        domainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    boolean loginSuccessful = assertDoesNotThrow(() ->
+        adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+        "Access to admin server node port failed");
+    assertTrue(loginSuccessful, "Console login validation failed");
+  }
+
+  /**
+   * Verify admin console login using ingress controller.
+   *
+   * @param domain oracle.weblogic.domain.Domain object
+   */
+  @ParameterizedTest
+  @DisplayName("Test admin console login using ingress controller")
+  @MethodSource("domainProvider")
+  public void testAdminConsoleLoginUsingIngressController(Domain domain) {
+    logger.info("Validating WebLogic admin server access using ingress controller");
+
+    assertDomainNotNull(domain);
+    String domainUid = domain.getSpec().getDomainUid();
+    String domainNamespace = domain.getMetadata().getNamespace();
+
+    String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: "
+        + domainUid + "." + domainNamespace + ".adminserver.test"
+        + "' http://" + K8S_NODEPORT_HOST + ":" + nodeportshttp
+        + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
+
+    logger.info("Executing curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+    logger.info("WebLogic console on domain1 is accessible");
+  }
+
+  /**
+   * Verify liveness probe by killing managed server process 3 times to kick pod container auto-restart.
+   */
+  @ParameterizedTest
+  @DisplayName("Test liveness probe of pod")
+  @MethodSource("domainProvider")
+  public void testLivenessProbe(Domain domain) {
+    assertDomainNotNull(domain);
+    String domainUid = domain.getSpec().getDomainUid();
+    String domainNamespace = domain.getMetadata().getNamespace();
+    int numClusters = domain.getSpec().getClusters().size();
+
+    String serverName;
+    if (numClusters > 1) {
+      serverName = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE + "1";
+    } else {
+      serverName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + "1";
+    }
+
+    // create file to kill server process
+    File killServerScript = assertDoesNotThrow(() -> createScriptToKillServer(),
+        "Failed to create script to kill server");
+    logger.info("File/script created to kill server {0}", killServerScript);
+
+    checkPodReady(serverName, domainUid, domainNamespace);
+
+    // copy script to pod
+    String destLocation = "/u01/killserver.sh";
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace, serverName, "weblogic-server",
+        killServerScript.toPath(), Paths.get(destLocation)),
+        String.format("Failed to copy file %s to pod %s in namespace %s",
+            killServerScript, serverName, domainNamespace));
+    logger.info("File copied to Pod {0} in namespace {1}", serverName, domainNamespace);
+
+    // get the restart count of the container in pod before liveness probe restarts
+    final int beforeRestartCount =
+        assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null, serverName, null),
+            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+                serverName, domainNamespace));
+    logger.info("Restart count before liveness probe {0}", beforeRestartCount);
+
+    // change file permissions
+    ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, serverName, null,
+        true, "/bin/sh", "-c", "chmod +x " + destLocation),
+        String.format("Failed to change permissions for file %s in pod %s", destLocation, serverName));
+    assertTrue(execResult.exitValue() == 0,
+        String.format("Failed to change file %s permissions, stderr %s stdout %s", destLocation,
+            execResult.stderr(), execResult.stdout()));
+    logger.info("File permissions changed inside pod");
+
+    /* First, kill the managed server process in the container three times to cause the node manager to
+     * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which
+     * initiates a container restart.
+     */
+    for (int i = 0; i < 3; i++) {
+      execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, serverName, null,
+          true, "/bin/sh", "-c", destLocation + " " + serverName),
+          String.format("Failed to execute script %s in pod %s namespace %s", destLocation,
+              serverName, domainNamespace));
+      logger.info("Command executed to kill server inside pod, exit value {0}, stdout {1}, stderr {2}",
+          execResult.exitValue(), execResult.stdout(), execResult.stderr());
+
+      try {
+        Thread.sleep(2 * 1000);
+      } catch (InterruptedException ie) {
+        // ignore
+      }
+    }
+
+    // check pod is ready
+    checkPodReady(serverName, domainUid, domainNamespace);
+
+    // get the restart count of the container in pod after liveness probe restarts
+    int afterRestartCount = assertDoesNotThrow(() ->
+            getContainerRestartCount(domainNamespace, null, serverName, null),
+        String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            serverName, domainNamespace));
+    assertTrue(afterRestartCount - beforeRestartCount == 1,
+        String.format("Liveness probe did not start the container in pod %s in namespace %s",
+            serverName, domainNamespace));
+
+    //access application in managed servers through NGINX load balancer
+    logger.info("Accessing the sample app through NGINX load balancer");
+    String curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
+    List<String> managedServers = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
+    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServers, 20))
+        .as("Verify NGINX can access the test web app from all managed servers in the domain")
+        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
+        .isTrue();
   }
 
   /**
@@ -616,7 +743,7 @@ class ItParameterizedScaleDomainNginx {
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
     Path pvHostPath =
-        get(PV_ROOT, ItParameterizedScaleDomainNginx.class.getSimpleName(), pvcName);
+        get(PV_ROOT, ItParameterizedDomain.class.getSimpleName(), pvcName);
 
     logger.info("Creating PV directory {0}", pvHostPath);
     assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
@@ -888,7 +1015,7 @@ class ItParameterizedScaleDomainNginx {
     logger.info("Creating ConfigMap {0}", configMapName);
 
     Path domainScriptsDir = createDirectories(
-        get(TestConstants.LOGS_DIR, ItParameterizedScaleDomainNginx.class.getSimpleName(), namespace));
+        get(TestConstants.LOGS_DIR, ItParameterizedDomain.class.getSimpleName(), namespace));
 
     // add domain creation scripts and properties files to the configmap
     Map<String, String> data = new HashMap<>();
@@ -1134,5 +1261,22 @@ class ItParameterizedScaleDomainNginx {
     }
 
     return managedServerPodNamePrefix;
+  }
+
+  /**
+   * Create a script to kill server.
+   * @return a File object
+   * @throws IOException if can not create a file
+   */
+  private File createScriptToKillServer() throws IOException {
+    File killServerScript = File.createTempFile("killserver", ".sh");
+    //deletes the file when VM terminates
+    killServerScript.deleteOnExit();
+    try (FileWriter fw = new FileWriter(killServerScript)) {
+      fw.write("#!/bin/bash\n");
+      fw.write("kill -9 `jps | grep Server | awk '{print $1}'`");
+    }
+    killServerScript.setExecutable(true, false);
+    return killServerScript;
   }
 }
