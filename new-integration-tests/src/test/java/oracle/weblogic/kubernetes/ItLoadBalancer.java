@@ -257,13 +257,13 @@ public class ItLoadBalancer {
       managedServers.add(managedServerNameBase + i);
     }
     assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-        .as("Verify routing is correctly done by the loadbalancer.")
+        .as("Verify members can see other in cluster.")
         .withFailMessage("application not accessible through loadbalancer.")
         .isTrue();
 
     boolean hostRouting = false;
     //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
-    logger.info("Accessing the clusterview app through load balancer");
+    logger.info("Verifying the requests are routed to correct domain and cluster");
     String curlCmd = String.format("curl --silent --show-error -ks --noproxy '*' "
         + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
         domainUid + "." + domainNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort, domainUid);
@@ -273,14 +273,15 @@ public class ItLoadBalancer {
     for (int i = 0; i < 10; i++) {
       ExecResult result;
       try {
+        logger.info(curlCmd);
         result = ExecCommand.exec(curlCmd, true);
         String response = result.stdout().trim();
+        logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
+            i, result.exitValue(), response, result.stderr());
         if (response.contains(domainUid)) {
           hostRouting = true;
           break;
         }
-        logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
-            i, result.exitValue(), response, result.stderr());
       } catch (IOException | InterruptedException ex) {
         //
       }
@@ -301,12 +302,12 @@ public class ItLoadBalancer {
     String curlCmd = String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' %s",
         domainUid + "." + domainNamespace + "." + "admin-server" + ".test", consoleUrl);
 
-    logger.info("Accessing console using curl request {0}", curlCmd);
     boolean hostRouting = false;
     for (int i = 0; i < 10; i++) {
       assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
       ExecResult result;
       try {
+        logger.info("Accessing console using curl request iteration{0} {1}", i, curlCmd);
         result = ExecCommand.exec(curlCmd, true);
         String response = result.stdout().trim();
         logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
@@ -330,17 +331,20 @@ public class ItLoadBalancer {
         domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST,
         getTraefikLbNodePort(false), domainUid);
 
-    logger.info("Binding domain name in managed server JNDI tree using curl request {0}", curlCmd);
-
     // call the webapp and bind the domain name in the JNDI tree of each managed server in the cluster
     for (int i = 0; i < 10; i++) {
       assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
       ExecResult result;
       try {
+        logger.info("Binding domain name in managed server JNDI tree using curl iteration {0}, request {0}",
+            i, curlCmd);
         result = ExecCommand.exec(curlCmd, true);
         String response = result.stdout().trim();
         logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
             i, result.exitValue(), response, result.stderr());
+        if (result.stdout().contains("Bound:" + domainUid)) {
+          break;
+        }
       } catch (IOException | InterruptedException ex) {
         //
       }
