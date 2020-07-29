@@ -22,6 +22,7 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -103,6 +104,7 @@ public class ItOperatorUpgrade {
   }
 
   @Test
+  @Order(2)
   @DisplayName("Upgrade Operator from 2.5.0/2.6.0/3.0.0 to latest")
   @MustNotRunInParallel
   //@ValueSource(strings = {"2.5.0", "2.6.0", "3.0.0"})
@@ -113,6 +115,7 @@ public class ItOperatorUpgrade {
   }
 
   @Test
+  @Order(1)
   @DisplayName("Upgrade Operator from 2.5.0/2.6.0/3.0.0 to latest")
   @MustNotRunInParallel
   //@ValueSource(strings = {"2.5.0", "2.6.0", "3.0.0"})
@@ -132,6 +135,12 @@ public class ItOperatorUpgrade {
     logger.info("Assign a unique namespace for domain");
     assertNotNull(namespaces.get(2), "Namespace is null");
     String domainNamespace = namespaces.get(2);
+
+    // delete existing CRD
+    new Command()
+        .withParams(new CommandParams()
+            .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+        .execute();
 
     HelmParams opHelmParams =
         //new HelmParams().releaseName("weblogic-operator-" + operatorVersion)
