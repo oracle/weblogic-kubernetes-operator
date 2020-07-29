@@ -195,6 +195,7 @@ $ STORAGE_KEY=$(az storage account keys list --resource-group $AKS_PERS_RESOURCE
 We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-azure-storage-credentials-secret.sh` script to create the storage account key as a Kubernetes secret, leaving the secret name with the default value `azure-secret`. Please run:
 
 ```bash
+#cd kubernetes/samples/scripts/create-kuberetes-secrets
 $ ./create-azure-storage-credentials-secret.sh -a $AKS_PERS_STORAGE_ACCOUNT_NAME -k $STORAGE_KEY
 ```
 
