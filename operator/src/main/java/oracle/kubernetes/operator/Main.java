@@ -369,9 +369,12 @@ public class Main {
   private static Step readExistingNamespaces(DomainNamespaceSelectionStrategy selectionStrategy,
                                              Collection<String> domainNamespaces,
                                              boolean isFullRecheck) {
-    return new CallBuilder()
-            .withLabelSelectors(selectionStrategy.getLabelSelector())
-            .listNamespaceAsync(new NamespaceListStep(selectionStrategy, domainNamespaces, isFullRecheck));
+    CallBuilder builder = new CallBuilder();
+    String selector = selectionStrategy.getLabelSelector();
+    if (selector != null) {
+      builder.withLabelSelectors(selector);
+    }
+    return builder.listNamespaceAsync(new NamespaceListStep(selectionStrategy, domainNamespaces, isFullRecheck));
   }
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
@@ -467,10 +470,13 @@ public class Main {
    * @return Selection strategy
    */
   public static DomainNamespaceSelectionStrategy getDomainNamespaceSelectionStrategy() {
-    return Optional.ofNullable(tuningAndConfig.get("domainNamespaceSelectionStrategy"))
-        .map(DomainNamespaceSelectionStrategy::valueOf)
-            .orElse(isDeprecatedDedicated()
-                ? DomainNamespaceSelectionStrategy.Dedicated : DomainNamespaceSelectionStrategy.List);
+    DomainNamespaceSelectionStrategy strategy =
+        Optional.ofNullable(tuningAndConfig.get("domainNamespaceSelectionStrategy"))
+        .map(DomainNamespaceSelectionStrategy::valueOf).orElse(DomainNamespaceSelectionStrategy.List);
+    if (DomainNamespaceSelectionStrategy.List.equals(strategy) && isDeprecatedDedicated()) {
+      return DomainNamespaceSelectionStrategy.Dedicated;
+    }
+    return strategy;
   }
 
   public static boolean isDedicated() {

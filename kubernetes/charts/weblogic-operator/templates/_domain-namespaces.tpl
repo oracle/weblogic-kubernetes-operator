@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.domainNamespaces" }}
-{{- if and (not .dedicated) (not .grantPrivilegeAllNamespaces) }}
+{{- if and (not (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated"))) (not .grantPrivilegeAllNamespaces) }}
 {{-   if or .onlyInitializeDomainNamespaces (eq .domainNamespaceSelectionStrategy "List") }}
 {{-     $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{-     range $key := $args.domainNamespaces -}}

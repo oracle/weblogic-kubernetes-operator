@@ -37,11 +37,11 @@
 {{-   $errorMsg := "Only one of grantPrivilegeAllNamespaces and onlyInitializeDomainNamespaces may be true" -}}
 {{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
 {{- end -}}
-{{- if and .grantPrivilegeAllNamespaces .dedicated }}
-{{-   $errorMsg := "Only one of grantPrivilegeAllNamespaces and dedicated may be true" -}}
+{{- if and .grantPrivilegeAllNamespaces (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
+{{-   $errorMsg := "The grantPrivilegeAllNamespaces value may not be true when either dedicated is true or domainNamespaceSelectionStrategy is Dedicated" -}}
 {{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
 {{- end -}}
-{{- if and .dedicated .onlyInitializeDomainNamespaces }}
+{{- if and (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) .onlyInitializeDomainNamespaces }}
 {{-   $errorMsg := "Only one of dedicated and onlyInitializeDomainNamespaces may be true" -}}
 {{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
 {{- end -}}

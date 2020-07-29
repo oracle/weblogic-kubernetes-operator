@@ -22,7 +22,8 @@ domainNamespaceSelectionStrategy: List
 # This value is deprecated. Please use 'domainNamespaceSelectionStrategy: Dedicated'.
 # dedicated specifies if this operator will manage WebLogic Domains only in the same namespace in
 # which the operator itself is deployed.  If set to 'true', then the 'domainNamespaces' value below
-# is ignored.
+# is ignored. This value is ignored if 'domainNamespaceSelectionStrategy' is set to a value other
+# than 'List'.
 # dedicated: false
 
 # domainNamespaces specifies list of WebLogic Domain namespaces that this operator manages. This value

@@ -5,7 +5,7 @@
 {{- if not .onlyInitializeDomainNamespaces }}
 {{-   include "operator.operatorClusterRoleGeneral" . }}
 {{-   include "operator.operatorClusterRoleNamespace" . }}
-{{-   if not .dedicated }}
+{{-   if not (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
 {{-     include "operator.operatorClusterRoleNonResource" . }}
 {{-   end }}
 {{-   include "operator.operatorClusterRoleOperatorAdmin" . }}
@@ -13,7 +13,7 @@
 {{-   include "operator.clusterRoleBindingGeneral" . }}
 {{-   include "operator.clusterRoleBindingAuthDelegator" . }}
 {{-   include "operator.clusterRoleBindingDiscovery" . }}
-{{-   if not .dedicated }}
+{{-   if not (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
 {{-     include "operator.clusterRoleBindingNonResource" . }}
 {{-   end }}
 {{-   include "operator.operatorRole" . }}

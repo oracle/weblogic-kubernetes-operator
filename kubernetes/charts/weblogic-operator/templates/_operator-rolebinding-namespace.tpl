@@ -11,7 +11,7 @@ kind: "RoleBinding"
 apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
   {{- if .grantPrivilegeAllNamespaces }}
-  name: "weblogic-operator-clusterrolebinding-namespace"
+  name: {{ list .Release.Namespace "weblogic-operator-clusterrolebinding-namespace" | join "-" | quote }}
   {{- else }}
   name: "weblogic-operator-rolebinding-namespace"
   namespace: {{ .domainNamespace | quote }}
@@ -24,7 +24,7 @@ subjects:
   namespace: {{ .Release.Namespace | quote }}
   apiGroup: ""
 roleRef:
-  {{- if .dedicated }}
+  {{- if (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
   kind: "Role"
   name: "weblogic-operator-role-namespace"
   {{- else }}

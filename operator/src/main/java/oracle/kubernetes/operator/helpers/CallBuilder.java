@@ -490,6 +490,11 @@ public class CallBuilder {
     STEP_FACTORY = DEFAULT_STEP_FACTORY;
   }
 
+  /**
+   * Consumer for label selectors.
+   * @param selectors Label selectors
+   * @return this CallBuilder
+   */
   public CallBuilder withLabelSelectors(String... selectors) {
     this.labelSelector = !ArrayUtils.isEmpty(selectors) ? String.join(",", selectors) : null;
     return this;
