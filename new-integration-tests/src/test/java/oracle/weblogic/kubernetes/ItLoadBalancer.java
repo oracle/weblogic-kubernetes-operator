@@ -76,7 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test Traefik loadbalancing with multiple WebLogic domains")
 @IntegrationTest
-public class ItTraefikLoadBalancer {
+public class ItLoadBalancer {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
