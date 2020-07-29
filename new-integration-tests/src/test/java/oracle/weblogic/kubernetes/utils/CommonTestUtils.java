@@ -759,11 +759,12 @@ public class CommonTestUtils {
    */
   public static void checkPodReadyAndServiceExists(String podName, String domainUid, String namespace) {
     LoggingFacade logger = getLogger();
-    logger.info("Waiting for pod {0} to be ready in namespace {1}", podName, namespace);
-    checkPodReady(podName, domainUid, namespace);
-
+    
     logger.info("Check service {0} exists in namespace {1}", podName, namespace);
     checkServiceExists(podName, namespace);
+
+    logger.info("Waiting for pod {0} to be ready in namespace {1}", podName, namespace);
+    checkPodReady(podName, domainUid, namespace);
   }
 
   /**
