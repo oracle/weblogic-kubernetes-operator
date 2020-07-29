@@ -1320,7 +1320,7 @@ class ItMonitoringExporter {
     appList.add(app1Path);
     appList.add(app2Path);
 
-    int t3ChannelPort = getNextFreePort(31000, 32767);  // the port range has to be between 31,000 to 32,767
+    int t3ChannelPort = getNextFreePort(31600, 32767);  // the port range has to be between 31,000 to 32,767
 
     Properties p = new Properties();
     p.setProperty("ADMIN_USER", ADMIN_USERNAME_DEFAULT);

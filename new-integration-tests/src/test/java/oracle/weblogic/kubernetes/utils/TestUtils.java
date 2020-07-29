@@ -161,7 +161,7 @@ public class TestUtils {
    * @param to range ending point
    * @return the next free port number, if there is no free port between the range, return the ending point
    */
-  public static int getNextFreePort(int from, int to) {
+  public static synchronized int getNextFreePort(int from, int to) {
     LoggingFacade logger = getLogger();
     int port;
     for (port = from; port < to; port++) {
