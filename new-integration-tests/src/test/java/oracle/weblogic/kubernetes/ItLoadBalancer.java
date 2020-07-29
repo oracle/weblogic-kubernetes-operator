@@ -197,7 +197,7 @@ public class ItLoadBalancer {
   public void testTraefikHttpHostRoutingAcrossDomains() {
     // bind domain name in the managed servers
     for (String domain : domains) {
-      bindDomainName(domain);
+      bindDomainName(domain, getTraefikLbNodePort(false));
     }
     // verify load balancing works when 2 domains are running in the same namespace
     logger.info("Verifying http traffic");
@@ -218,7 +218,7 @@ public class ItLoadBalancer {
   public void testTraefikHostHttpsRoutingAcrossDomains() {
     // bind domain name in the managed servers
     for (String domain : domains) {
-      bindDomainName(domain);
+      bindDomainName(domain, getTraefikLbNodePort(false));
     }
     logger.info("Verifying https traffic");
     for (String domainUid : domains) {
@@ -237,6 +237,11 @@ public class ItLoadBalancer {
   @DisplayName("Loadbalance WebLogic cluster traffic through Voyager loadbalancer tcp channel")
   public void testVoyagerHostHttpRoutingAcrossDomains() {
     // verify load balancing works when 2 domains are running in the same namespace
+    // bind domain name in the managed servers
+    for (String domain : domains) {
+      String ingressName = domain + "-ingress-host-routing";
+      bindDomainName(domain, getVoyagerLbNodePort(ingressName));
+    }
     logger.info("Verifying http traffic");
     for (String domainUid : domains) {
       String ingressName = domainUid + "-ingress-host-routing";
@@ -324,12 +329,12 @@ public class ItLoadBalancer {
     assertTrue(hostRouting, "Couldn't access admin server console");
   }
 
-  private void bindDomainName(String domainUid) {
+  private void bindDomainName(String domainUid, int lbPort) {
     //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
     String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?bindDomain=%s",
         domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST,
-        getTraefikLbNodePort(false), domainUid);
+        lbPort, domainUid);
 
     // call the webapp and bind the domain name in the JNDI tree of each managed server in the cluster
     for (int i = 0; i < 10; i++) {
