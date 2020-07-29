@@ -1,0 +1,19 @@
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: %DOMAIN_UID%-%SERVER_NAME%-external-lb
+  namespace: default
+spec:
+  ports:
+  - name: default
+    port: %SERVER_PORT%
+    protocol: TCP
+    targetPort: %SERVER_PORT%
+  selector:
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.%SELECTOR_SERVER_TYPE%: %SERVER_NAME%
+  sessionAffinity: None
+  type: LoadBalancer
