@@ -36,6 +36,8 @@ import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.Ingress;
 import oracle.weblogic.kubernetes.actions.impl.Job;
+import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
+import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Nginx;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
@@ -1027,6 +1029,18 @@ public class TestActions {
   }
 
   /**
+   * Get  Kubernetes pods in a namespace.
+   *
+   * @param namespace name of namespace
+   * @param labelSelectors with which pods are decorated
+   * @return V1PodList list of pods
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getOperatorPadName(String namespace, String labelSelectors) throws ApiException {
+    return Pod.getOperatorPadName(namespace, labelSelectors);
+  }
+
+  /**
    * Get the weblogic.domainRestartVersion label from a given pod.
    *
    * @param namespace in which to check for the pod existence
@@ -1168,6 +1182,63 @@ public class TestActions {
     return Grafana.uninstall(params);
   }
 
+  // --------------------------- ELK Stack ---------------------------------
+  /**
+   * Install Elasticsearch.
+   *
+   * @param params the parameters to install Elasticsearch
+   * @return true if Elasticsearch is successfully installed, false otherwise.
+   */
+  public static boolean installElasticsearch(LoggingExporterParams params) {
+    return LoggingExporter.installElasticsearch(params);
+  }
+
+  /**
+   * Install Kibana.
+   *
+   * @param params the parameters to install Kibana
+   * @return true if Kibana is successfully installed, false otherwise.
+   */
+  public static boolean installKibana(LoggingExporterParams params) {
+    return LoggingExporter.installKibana(params);
+  }
+
+  /**
+   * Uninstall Elasticsearch.
+   *
+   * @param params the parameters to uninstall Elasticsearch
+   * @return true if Elasticsearch is successfully uninstalled, false otherwise.
+   */
+
+  public static boolean uninstallElasticsearch(LoggingExporterParams params) {
+    return LoggingExporter.uninstallElasticsearch(params);
+  }
+
+  /**
+   * Uninstall Kibana.
+   *
+   * @param params the parameters to uninstall Kibana
+   * @return true if Kibana is successfully uninstalled, false otherwise.
+   */
+
+  public static boolean uninstallKibana(LoggingExporterParams params) {
+    return LoggingExporter.uninstallKibana(params);
+  }
+
+  /**
+   * Verify that the logging exporter is ready to use in Operator pod or WebLogic server pod.
+   *
+   * @param namespace namespace of Operator pod (for ELK Stack) or
+   *                  WebLogic server pod (for WebLogic logging exporter)
+   * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
+   * @param index index key word used to search the index status of the logging exporter
+   * @return a map containing key and value pair of logging exporter index
+   */
+  public static Map<String, String> verifyLoggingExporterReady(String namespace,
+                                                               String labelSelector,
+                                                               String index) {
+    return LoggingExporter.verifyLoggingExporterReady(namespace, labelSelector, index);
+  }
 
   /**
    * Patch the domain resource with a new restartVersion.
