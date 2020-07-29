@@ -16,6 +16,7 @@ While these samples may be useful and usable as is, it is intended that you woul
 * [Sample for configuring the Elasticsearch and Kibana](scripts/elasticsearch-and-kibana/README.md) deployments and services for the operator's logs.
 * [Sample for generating a self-signed certificate and private key](scripts/rest/README.md) that can be used for the operator's external REST API.
 * [Sample for creating an OKE cluster using Terraform](scripts/terraform/README.md).
+* [Sample for running a WebLogic Cluster on the Azure Kubernetes Service](scripts/create-weblogic-domain-on-azure-kubernetes-service/README.md), and the YAML file for deploying the Azure resources and generated WebLogic domain.
 
 ## Sample Helm charts
 
