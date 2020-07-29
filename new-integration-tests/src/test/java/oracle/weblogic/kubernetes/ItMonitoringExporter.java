@@ -68,6 +68,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.Grafana;
+import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Prometheus;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -159,7 +160,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
+
 
 
 /**
