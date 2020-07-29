@@ -39,7 +39,10 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -74,6 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests related to WebLogic domain traffic routed by Traefik loadbalancer.
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test Traefik loadbalancing with multiple WebLogic domains")
 @IntegrationTest
 public class ItLoadBalancer {
@@ -171,6 +175,7 @@ public class ItLoadBalancer {
    * Test verifies admin server access through Traefik loadbalancer. Accesses the admin server for each domain through
    * Traefik loadbalancer web port and verifies it is a console login page.
    */
+  @Order(1)
   @Test
   @DisplayName("Access admin server console through Traefik loadbalancer")
   public void testTraefikHostRoutingAdminServer() {
@@ -186,6 +191,7 @@ public class ItLoadBalancer {
    * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
+  @Order(2)
   @Test
   @DisplayName("Create model in image domains domain1 and domain2 and Ingress resources")
   public void testTraefikHttpHostRoutingAcrossDomains() {
@@ -206,6 +212,7 @@ public class ItLoadBalancer {
    * Accesses the clusterview application deployed in the WebLogic cluster through Traefik loadbalancer websecure
    * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    */
+  @Order(3)
   @Test
   @DisplayName("Loadbalance WebLogic cluster traffic through Traefik loadbalancer websecure channel")
   public void testTraefikHostHttpsRoutingAcrossDomains() {
@@ -225,6 +232,7 @@ public class ItLoadBalancer {
    * Accesses the clusterview application deployed in the WebLogic cluster through Voyager loadbalancer and verifies it
    * is correctly routed to the specific domain cluster identified by the -H host header.
    */
+  @Order(4)
   @Test
   @DisplayName("Loadbalance WebLogic cluster traffic through Voyager loadbalancer tcp channel")
   public void testVoyagerHostHttpRoutingAcrossDomains() {
@@ -240,7 +248,7 @@ public class ItLoadBalancer {
   private void verifyClusterLoadbalancing(String domainUid, String protocol, int lbPort) {
 
     //access application in managed servers through Traefik load balancer
-    logger.info("Accessing the clusterview app through Traefik load balancer");
+    logger.info("Accessing the clusterview app through load balancer to verify all servers in cluster");
     String curlRequest = String.format("curl --silent --show-error -ks --noproxy '*' "
         + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + domainNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort);
@@ -249,13 +257,13 @@ public class ItLoadBalancer {
       managedServers.add(managedServerNameBase + i);
     }
     assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-        .as("Verify applications from cluster can be acessed through the Traefik loadbalancer.")
-        .withFailMessage("application not accessible through Traefik loadbalancer.")
+        .as("Verify routing is correctly done by the loadbalancer.")
+        .withFailMessage("application not accessible through loadbalancer.")
         .isTrue();
 
     boolean hostRouting = false;
     //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
-    logger.info("Accessing the clusterview app through Traefik load balancer");
+    logger.info("Accessing the clusterview app through load balancer");
     String curlCmd = String.format("curl --silent --show-error -ks --noproxy '*' "
         + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
         domainUid + "." + domainNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort, domainUid);
@@ -269,6 +277,7 @@ public class ItLoadBalancer {
         String response = result.stdout().trim();
         if (response.contains(domainUid)) {
           hostRouting = true;
+          break;
         }
         logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
             i, result.exitValue(), response, result.stderr());
@@ -304,6 +313,7 @@ public class ItLoadBalancer {
             result.exitValue(), response, result.stderr());
         if (response.contains("login")) {
           hostRouting = true;
+          break;
         }
         //assertTrue(result.stdout().contains("Login"), "Couldn't access admin server console");
       } catch (IOException | InterruptedException ex) {
