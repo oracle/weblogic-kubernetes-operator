@@ -17,7 +17,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -207,11 +206,11 @@ public class ItOperatorUpgrade {
    */
   @AfterEach
   public void tearDown() {
-    CleanupUtil.cleanup(namespaces);
+    /* CleanupUtil.cleanup(namespaces);
     new Command()
         .withParams(new CommandParams()
             .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-        .execute();
+        .execute(); */
   }
 
   private void createDomainHomeInImageAndVerify(String domainNamespace, String operatorVersion) {
