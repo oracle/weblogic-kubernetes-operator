@@ -77,6 +77,12 @@ public interface TestConstants {
   public static final String STABLE_REPO_NAME = "stable";
   public static final String NGINX_CHART_NAME = "nginx-ingress";
 
+  // Traefik constants
+  public static final String TRAEFIK_REPO_URL = "https://containous.github.io/traefik-helm-chart";
+  public static final String TRAEFIK_REPO_NAME = "traefik";
+  public static final String TRAEFIK_RELEASE_NAME = "traefik-release" + BUILD_ID;
+  public static final String TRAEFIK_CHART_NAME = "traefik";
+
   // Voyager constants
   public static final String APPSCODE_REPO_URL = "https://charts.appscode.com/stable/";
   public static final String VOYAGER_RELEASE_NAME = "voyager-release" + BUILD_ID;

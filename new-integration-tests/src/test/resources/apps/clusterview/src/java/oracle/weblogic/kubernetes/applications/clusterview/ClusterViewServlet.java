@@ -72,7 +72,7 @@ public class ClusterViewServlet extends HttpServlet {
       }
 
       try {
-        System.out.println("ITTESTS:>>>>Looking up server : " + serverRuntime.getName() +" in JNDI tree");
+        System.out.println("ITTESTS:>>>>Looking up server : " + serverRuntime.getName() + " in JNDI tree");
         ctx.lookup(serverRuntime.getName());
       } catch (NameNotFoundException nnfe) {
         System.out.println("ITESTS:>>>>>>Server not found in JNDI tree, Binding " + serverRuntime.getName() + " in JNDI tree");
@@ -151,6 +151,28 @@ public class ClusterViewServlet extends HttpServlet {
             out.println(nnfex.getMessage());
           }
         }
+        if (request.getParameter("bindDomain") != null) {
+          String domainName = request.getParameter("bindDomain");
+          try {
+            if (ctx.lookup(domainName) != null) {
+              out.println("Bound:" + domainName);
+            }
+          } catch (NameNotFoundException nnfex) {
+            ctx.bind(domainName, domainName);
+            System.out.println("ITESTS:>>>>>>Bound " + domainName + " in JNDI tree");
+          }
+        }
+        if (request.getParameter("domainTest") != null) {
+          String domainName = request.getParameter("domainTest");
+          try {
+            if (ctx.lookup(domainName) != null) {
+              out.println("Bound:" + domainName);
+            }
+          } catch (NameNotFoundException nnfex) {
+            System.out.println("ITESTS:>>>>>>Not Bound " + domainName + " in JNDI tree");
+          }
+        }
+
       }
 
       String listServers = request.getParameter("listServers");
