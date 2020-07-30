@@ -64,6 +64,7 @@ import oracle.kubernetes.weblogic.domain.model.AdminServer;
 import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
@@ -625,8 +626,17 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private boolean isShouldContinue() {
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
+
+      int currentRetryCount = Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getRetryCount)
+          .orElse(0);
       if (cachedInfo == null || cachedInfo.getDomain() == null) {
         return true;
+      } else if (currentRetryCount > DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
+        LOGGER.severe("DomainProcessorImpl.isShouldContinue: Exceeded retry count");
+        return false;
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {

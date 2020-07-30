@@ -47,6 +47,11 @@ public class DomainStatus {
       "A brief CamelCase message indicating details about why the domain is in this state.")
   private String reason;
 
+  @Description(
+      "Number of retries.")
+  @Range(minimum = 0)
+  private Integer retryCount = new Integer(0);
+
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
   // sorted list of ServerStatus
@@ -87,6 +92,7 @@ public class DomainStatus {
     clusters = that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList());
     startTime = that.startTime;
     replicas = that.replicas;
+    retryCount = that.retryCount;
   }
 
   /**
@@ -273,6 +279,44 @@ public class DomainStatus {
    */
   public DomainStatus withReplicas(Integer replicas) {
     this.replicas = replicas;
+    return this;
+  }
+
+  /**
+   * The number of retries.
+   *
+   * @return retryCount
+   */
+  public Integer getRetryCount() {
+    return this.retryCount;
+  }
+
+  /**
+   * increment the number of retries.
+   *
+   * @return retryCount
+   */
+  public Integer incrementRetryCount() {
+    return this.retryCount = this.retryCount.intValue() + 1;
+  }
+
+
+  /**
+   * Set the number of retries.
+   *
+   * @param retryCount retryCount
+   */
+  public void setRetryCount(Integer retryCount) {
+    this.retryCount = retryCount;
+  }
+
+  /**
+   * The number of retries.
+   * @param retryCount retryCount
+   * @return this
+   */
+  public DomainStatus withRetryCount(Integer retryCount) {
+    this.retryCount = retryCount;
     return this;
   }
 

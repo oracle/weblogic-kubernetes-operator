@@ -275,6 +275,7 @@ public class DomainStatusUpdater {
       modifyStatus(newStatus);
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(info.getValidationWarningsAsString());
+        newStatus.incrementRetryCount();
       }
       return newStatus;
     }

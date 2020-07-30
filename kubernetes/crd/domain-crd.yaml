@@ -10095,6 +10095,10 @@ spec:
                     state:
                       description: Current state of this WebLogic Server instance.
                       type: string
+              retryCount:
+                type: number
+                description: Number of retries.
+                minimum: 0.0
               replicas:
                 type: number
                 description: The number of running cluster member Managed Servers
