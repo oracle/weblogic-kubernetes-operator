@@ -31,14 +31,14 @@
 {{-     $ignore := include "utils.verifyInteger" (list $scope "externalDebugHttpPort") -}}
 {{-   end -}}
 {{- end -}}
-{{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "grantPrivilegeAllNamespaces") -}}
+{{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "enableClusterRoleBinding") -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "onlyInitializeDomainNamespaces") -}}
-{{- if and .grantPrivilegeAllNamespaces .onlyInitializeDomainNamespaces }}
-{{-   $errorMsg := "Only one of grantPrivilegeAllNamespaces and onlyInitializeDomainNamespaces may be true" -}}
+{{- if and .enableClusterRoleBinding .onlyInitializeDomainNamespaces }}
+{{-   $errorMsg := "Only one of enableClusterRoleBinding and onlyInitializeDomainNamespaces may be true" -}}
 {{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
 {{- end -}}
-{{- if and .grantPrivilegeAllNamespaces (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
-{{-   $errorMsg := "The grantPrivilegeAllNamespaces value may not be true when either dedicated is true or domainNamespaceSelectionStrategy is Dedicated" -}}
+{{- if and .enableClusterRoleBinding (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
+{{-   $errorMsg := "The enableClusterRoleBinding value may not be true when either dedicated is true or domainNamespaceSelectionStrategy is Dedicated" -}}
 {{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
 {{- end -}}
 {{- if and (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) .onlyInitializeDomainNamespaces }}

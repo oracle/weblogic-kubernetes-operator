@@ -3,14 +3,14 @@
 
 {{- define "operator.operatorRoleBindingNamespace" }}
 ---
-{{- if .grantPrivilegeAllNamespaces }}
+{{- if .enableClusterRoleBinding }}
 kind: "ClusterRoleBinding"
 {{- else }}
 kind: "RoleBinding"
 {{- end }}
 apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
-  {{- if .grantPrivilegeAllNamespaces }}
+  {{- if .enableClusterRoleBinding }}
   name: {{ list .Release.Namespace "weblogic-operator-clusterrolebinding-namespace" | join "-" | quote }}
   {{- else }}
   name: "weblogic-operator-rolebinding-namespace"
