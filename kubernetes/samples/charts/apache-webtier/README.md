@@ -12,7 +12,7 @@ in order to use this load balancer.
 ## Installing the Chart
 To install the chart with the release name `my-release`:
 ```console
-$ helm install --name my-release apache-webtier
+$ helm install my-release apache-webtier
 ```
 The command deploys the Apache HTTP Server on the Kubernetes cluster with the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
@@ -20,10 +20,10 @@ The command deploys the Apache HTTP Server on the Kubernetes cluster with the de
 
 ## Uninstalling the Chart
 
-To uninstall/delete `my-release`:
+To uninstall `my-release`:
 
 ```console
-$ helm delete --purge my-release
+$ helm uninstall my-release
 ```
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
@@ -37,7 +37,8 @@ The following table lists the configurable parameters of the Apache webtier char
 | -----------------------------------| ------------------------------------------------------------- | ----------------------|
 | `image`                            | Apache webtier Docker image                                   | `store/oracle/apache:12.2.1.3` |
 | `imagePullPolicy`                  | Image pull policy for the Apache webtier Docker image         | `IfNotPresent`        |
-| `persistentVolumeClaimName`                       | Persistence Volume Claim name Apache webtier                     | ``                    |
+| `imagePullSecrets`                 | Image pull Secrets required to access the registry containing the apache webtier Docker image| ``|
+| `persistentVolumeClaimName`        | Persistence Volume Claim name Apache webtier                  | ``                    |
 | `createRBAC`                       | Boolean indicating if RBAC resources should be created        | `true`                |
 | `httpNodePort`                     | Node port to expose for HTTP access                           | `30305`               |
 | `httpsNodePort`                    | Node port to expose for HTTPS access                          | `30443`               |
@@ -54,20 +55,20 @@ The following table lists the configurable parameters of the Apache webtier char
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
 
 ```console
-$ helm install --name my-release --set persistentVolumeClaimName=webtier-apache-pvc apache-webtier
+$ helm install my-release --set persistentVolumeClaimName=webtier-apache-pvc apache-webtier
 ```
 
 Alternatively, a YAML file that specifies the values for the parameters can be provided while
 installing the chart. For example:
 
 ```console
-$ helm install --name my-release --values values.yaml apache-webtier
+$ helm install my-release --values values.yaml apache-webtier
 ```
 
 ## RBAC
 By default, the chart will install the recommended RBAC roles and role bindings.
 
-You need to have the flag `--authorization-mode=RBAC` on the API server. See the following document for how to enable [RBAC](https://kubernetes.io/docs/admin/authorization/rbac/).
+You need to have the flag `--authorization-mode=RBAC` on the API server. See the following document for how to enable [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).
 
 To determine if your cluster supports RBAC, run the following command:
 
@@ -82,5 +83,5 @@ If the output contains "beta", you may install the chart with RBAC enabled.
 To disable the creation of RBAC resources (on clusters with RBAC). Do the following:
 
 ```console
-$ helm install --name my-release apache-webtier --set createRBAC=false
+$ helm install my-release apache-webtier --set createRBAC=false
 ```

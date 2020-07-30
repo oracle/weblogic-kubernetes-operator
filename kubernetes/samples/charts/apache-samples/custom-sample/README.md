@@ -8,7 +8,7 @@ $ kubectl create namespace apache-sample
 ```
 
 ## 2. Create WebLogic domains
-We need to prepare some backend domains for load balancing by the Apache webtier. Refer to the [sample](/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README.md), to create two WebLogic domains under the namespace `apache-sample`.
+We need to prepare some backend domains for load balancing by the Apache webtier. Refer to the [sample](/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv), to create two WebLogic domains under the namespace `apache-sample`.
 
 The first domain uses the following custom configuration parameters:
 - namespace: `apache-sample`
@@ -78,9 +78,9 @@ PathTrim /weblogic2
 </Location>
 ```
 
-* Place the `custom_mod_wl_apache.conf` file in a local directory `<host-config-dir>` on the host machine.
+## 5. Create  PV / PVC (pv-claim-name) that can be used to place the custom_mod_wl_apache.confi.  Refer to the [Sample for creating a PV or PVC](/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/README.md).
 
-## 5. Prepare your own certificate and private key
+## 6. Prepare your own certificate and private key
 In production, Oracle strongly recommends that you provide your own certificates. Run the following commands to generate your own certificate and private key using `openssl`.
 
 ```
@@ -91,7 +91,7 @@ $ export SSL_CERT_KEY_FILE=apache-sample.key
 $ sh certgen.sh
 ```
 
-## 6. Prepare the input values for the Apache webtier Helm chart
+## 7. Prepare the input values for the Apache webtier Helm chart
 Run the following commands to prepare the input value file for the Apache webtier Helm chart.
 
 ```
@@ -123,15 +123,15 @@ customCert: <cert_data>
 customKey: <key_data>
 ```
 
-## 7. Install the Apache webtier Helm chart
+## 8. Install the Apache webtier Helm chart
 The Apache webtier Helm chart is located in the `kubernetes/samples/charts/apache-webtier` directory. Install the Apache webtier Helm chart to the `apache-sample` namespace with the specified input parameters:
 
 ```
 $ cd kubernetes/samples/charts
-$ helm install --name my-release --values apache-samples/custom-sample/input.yaml --namespace apache-sample apache-webtier
+$ helm install my-release --values apache-samples/custom-sample/input.yaml --namespace apache-sample apache-webtier
 ```
 
-## 8. Run the sample application
+## 9. Run the sample application
 Now you can send requests to different WebLogic domains with the unique entry point of Apache with different paths. Alternatively, you can access the URLs in a web browser.
 ```
 $ curl --silent http://${HOSTNAME}:30305/weblogic1/testwebapp/
@@ -143,7 +143,7 @@ $ curl -k --silent https://${HOSTNAME}:30443/weblogic1/testwebapp/
 $ curl -k --silent https://${HOSTNAME}:30443/weblogic2/testwebapp/
 ```
 
-## 9. Uninstall the Apache webtier
+## 10. Uninstall the Apache webtier
 ```
-$ helm delete --purge my-release
+$ helm uninstall my-release --namespace apache-sample
 ```

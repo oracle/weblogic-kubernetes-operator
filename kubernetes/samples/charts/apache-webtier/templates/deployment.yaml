@@ -34,10 +34,10 @@ spec:
         persistentVolumeClaim:
           claimName: {{ .Values.persistentVolumeClaimName | quote }}
 {{- end }}
-{{- if .Values.imagePullSecrets }}
+      {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
-      - name: {{ .Values.imagePullSecrets | quote }}
-{{- end }}
+      {{ .Values.imagePullSecrets | toYaml }}
+      {{- end }}
       containers:
       - name: {{ template "apache.fullname" . }}
         image: {{ .Values.image | quote }}

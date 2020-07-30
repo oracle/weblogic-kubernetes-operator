@@ -13,8 +13,11 @@ imagePullPolicy: "IfNotPresent"
 # 
 # Example : a secret is needed, and has been stored in 'my-apache-webtier-secret'
 #
-# imagePullSecrets: my-apache-webtier-secret
+# imagePullSecrets: 
+# - name: my-apache-webtier-secret
 #
+# imagePullSecrets:
+# - name:
 
 # Docker volume path for Apache webtier. By default, it is empty, which causes the volume
 # mount be disabled and, thereforem the built-in Apache plugin config be used.
