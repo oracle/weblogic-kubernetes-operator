@@ -98,7 +98,7 @@ public class ItOperatorUpgrade {
   @Test
   @DisplayName("Upgrade Operator from 2.5.0/2.6.0 to latest")
   @MustNotRunInParallel
-  public void testUpgradeOperatorFrom2_5_0(@Namespaces(3) List<String> namespaces) {
+  public void testOperatorUpgradeFrom2_5_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
     upgradeOperator("2.5.0", false);
   }
@@ -112,7 +112,7 @@ public class ItOperatorUpgrade {
   @Test
   @DisplayName("Upgrade Operator from 2.6.0 to latest")
   @MustNotRunInParallel
-  public void testUpgradeOperatorFrom2_6_0(@Namespaces(3) List<String> namespaces) {
+  public void testOperatorUpgradeFrom2_6_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
     upgradeOperator("2.6.0", false);
   }
@@ -126,7 +126,7 @@ public class ItOperatorUpgrade {
   @Test
   @DisplayName("Upgrade Operator from 3.0.0 to latest")
   @MustNotRunInParallel
-  public void testUpgradeOperatorFrom3_0_0(@Namespaces(3) List<String> namespaces) {
+  public void testOperatorUpgradeFrom3_0_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
     upgradeOperator("3.0.0", true);
   }
