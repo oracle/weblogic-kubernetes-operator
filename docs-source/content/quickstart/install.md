@@ -29,7 +29,8 @@ EOF
 First, set up Helm:
 
 ```bash
-$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+$ helm repo add traefik https://containous.github.io/traefik-helm-chart/
+$ helm repo update
 ```
 
 #### Create a Traefik (ingress-based) load balancer.
@@ -44,11 +45,10 @@ Use the [values.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob
 
 
 ```bash
-$ helm install traefik-operator stable/traefik \
+$ helm install traefik-operator traefik/traefik \
     --namespace traefik \
     --values kubernetes/samples/charts/traefik/values.yaml \
-    --set "kubernetes.namespaces={traefik}" \
-    --wait
+    --set "kubernetes.namespaces={traefik}" 
 ```
 
 #### Install the operator.
