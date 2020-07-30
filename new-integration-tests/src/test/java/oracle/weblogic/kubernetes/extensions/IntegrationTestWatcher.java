@@ -4,6 +4,8 @@
 package oracle.weblogic.kubernetes.extensions;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -123,6 +125,7 @@ public class IntegrationTestWatcher implements
   public void handleBeforeAllMethodExecutionException​(ExtensionContext context, Throwable throwable)
       throws Throwable {
     printHeader(String.format("BeforeAll failed %s", className), "!");
+    getLogger().severe(getStackTraceAsString(throwable));
     collectLogs(context, "beforeAll");
     throw throwable;
   }
@@ -147,6 +150,7 @@ public class IntegrationTestWatcher implements
   public void handleBeforeEachMethodExecutionException(ExtensionContext context, Throwable throwable)
       throws Throwable {
     printHeader(String.format("BeforeEach failed for %s()", methodName), "!");
+    getLogger().severe(getStackTraceAsString(throwable));
     collectLogs(context, "beforeEach");
     throw throwable;
   }
@@ -208,6 +212,7 @@ public class IntegrationTestWatcher implements
   public void handleTestExecutionException(ExtensionContext context, Throwable throwable)
       throws Throwable {
     printHeader(String.format("Test failed %s()", methodName), "!");
+    getLogger().severe(getStackTraceAsString(throwable));
     collectLogs(context, "test");
     throw throwable;
   }
@@ -247,6 +252,7 @@ public class IntegrationTestWatcher implements
   public void handleAfterEachMethodExecutionException(ExtensionContext context, Throwable throwable)
       throws Throwable {
     printHeader(String.format("AfterEach failed for %s()", methodName), "!");
+    getLogger().severe(getStackTraceAsString(throwable));
     collectLogs(context, "afterEach");
     throw throwable;
   }
@@ -383,5 +389,15 @@ public class IntegrationTestWatcher implements
    */
   private void printHeader(String message, String rc) {
     getLogger().info("\n" + rc.repeat(message.length()) + "\n" + message + "\n" + rc.repeat(message.length()) + "\n");
+  }
+
+  private static String getStackTraceAsString(Throwable throwable) {
+    try (StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw)) {
+      throwable.printStackTrace(pw);
+      return sw.toString();
+    } catch (IOException ioe) {
+      throw new IllegalStateException(ioe);
+    }
   }
 }
