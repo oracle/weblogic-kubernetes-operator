@@ -21,7 +21,7 @@ To remove the resources you have created in these samples:
 2. If you set up the Traefik ingress controller:
 
    ```
-   $ helm delete --purge traefik-operator
+   $ helm uninstall traefik-operator -n traefik
    $ kubectl delete namespace traefik
    ```
 
@@ -32,7 +32,7 @@ To remove the resources you have created in these samples:
 
 4. Delete the operator and its namespace:
    ```
-   $ helm delete --purge sample-weblogic-operator
+   $ helm uninstall sample-weblogic-operator -n sample-weblogic-operator-ns
    $ kubectl delete namespace sample-weblogic-operator-ns
    ```
 
