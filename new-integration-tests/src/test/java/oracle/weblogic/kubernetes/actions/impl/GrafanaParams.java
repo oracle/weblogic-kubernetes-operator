@@ -26,6 +26,9 @@ public class GrafanaParams {
     return this;
   }
 
+  public int getNodePort() {
+    return nodePort;
+  }
 
   public GrafanaParams helmParams(HelmParams helmParams) {
     this.helmParams = helmParams;
