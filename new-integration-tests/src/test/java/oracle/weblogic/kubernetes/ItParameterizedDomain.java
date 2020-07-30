@@ -148,6 +148,7 @@ class ItParameterizedDomain {
   private static final String CLUSTER_NAME_PREFIX = "cluster-";
   private static final String clusterName = "cluster-1";
   private static final int MANAGED_SERVER_PORT = 8001;
+  private static final int ADMIN_SERVER_PORT = 7001;
   private static final int replicaCount = 2;
   private static final String SAMPLE_APP_CONTEXT_ROOT = "sample-war";
   private static final String WLDF_OPENSESSION_APP = "opensessionapp";
@@ -247,7 +248,8 @@ class ItParameterizedDomain {
         clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
       }
       logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-      createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap);
+      createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap, true,
+          true, ADMIN_SERVER_PORT);
     }
   }
 

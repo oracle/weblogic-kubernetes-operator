@@ -38,50 +38,8 @@ public class Ingress {
    * @param domainUid the WebLogic domainUid which is backend to the ingress
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @param annotations annotations to create ingress resource
-   * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
-   */
-  public static List<String> createIngress(String ingressName,
-                                           String domainNamespace,
-                                           String domainUid,
-                                           Map<String, Integer> clusterNameMsPortMap,
-                                           Map<String, String> annotations) {
-    return createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap, annotations, true, 7001);
-  }
-
-  /**
-   * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
-   * The ingress hosts are set to
-   * [domainUid.domainNamespace.adminserver.test, domainUid.domainNamespace.clusterName.test'].
-   *
-   * @param ingressName name of the ingress to be created
-   * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
-   * @param domainUid the WebLogic domainUid which is backend to the ingress
-   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
-   * @param annotations annotations to create ingress resource
    * @param setIngressHost if false does not set ingress host
-   * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
-   */
-  public static List<String> createIngress(String ingressName,
-                                           String domainNamespace,
-                                           String domainUid,
-                                           Map<String, Integer> clusterNameMsPortMap,
-                                           Map<String, String> annotations,
-                                           boolean setIngressHost) {
-    return createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap, annotations,
-        setIngressHost, 7001);
-  }
-
-  /**
-   * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
-   * The ingress hosts are set to
-   * [domainUid.domainNamespace.adminserver.test, domainUid.domainNamespace.clusterName.test'].
-   *
-   * @param ingressName name of the ingress to be created
-   * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
-   * @param domainUid the WebLogic domainUid which is backend to the ingress
-   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
-   * @param annotations annotations to create ingress resource
-   * @param setIngressHost if false does not set ingress host
+   * @param enableAdminServerRouting enable the ingress rule to admin server
    * @param adminServerPort the port number of admin server pod of the domain
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
@@ -91,34 +49,38 @@ public class Ingress {
                                            Map<String, Integer> clusterNameMsPortMap,
                                            Map<String, String> annotations,
                                            boolean setIngressHost,
+                                           boolean enableAdminServerRouting,
                                            int adminServerPort) {
 
     List<String> ingressHostList = new ArrayList<>();
     ArrayList<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
+
     // set the ingress rule for admin server
-    NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
-        .path(null)
-        .backend(new NetworkingV1beta1IngressBackend()
-            .serviceName(domainUid + "-admin-server")
-            .servicePort(new IntOrString(adminServerPort))
-        );
-    ArrayList<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
-    httpIngressPaths.add(httpIngressPath);
+    if (enableAdminServerRouting) {
+      NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
+          .path(null)
+          .backend(new NetworkingV1beta1IngressBackend()
+              .serviceName(domainUid + "-admin-server")
+              .servicePort(new IntOrString(adminServerPort))
+          );
+      ArrayList<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+      httpIngressPaths.add(httpIngressPath);
 
-    // set the ingress rule
-    String ingressHost = domainUid + "." + domainNamespace + ".adminserver.test";
-    if (!setIngressHost) {
-      ingressHost = "";
-      ingressHostList.add("*");
-    } else {
-      ingressHostList.add(ingressHost);
+      // set the ingress rule
+      String ingressHost = domainUid + "." + domainNamespace + ".adminserver.test";
+      if (!setIngressHost) {
+        ingressHost = "";
+        ingressHostList.add("*");
+      } else {
+        ingressHostList.add(ingressHost);
+      }
+      NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
+          .host(ingressHost)
+          .http(new NetworkingV1beta1HTTPIngressRuleValue()
+              .paths(httpIngressPaths));
+
+      ingressRules.add(ingressRule);
     }
-    NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
-        .host(ingressHost)
-        .http(new NetworkingV1beta1HTTPIngressRuleValue()
-            .paths(httpIngressPaths));
-
-    ingressRules.add(ingressRule);
 
     // set the ingress rule for clusters
     clusterNameMsPortMap.forEach((clusterName, managedServerPort) -> {

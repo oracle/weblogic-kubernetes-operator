@@ -492,7 +492,7 @@ public class CommonTestUtils {
   public static List<String> createIngressForDomainAndVerify(String domainUid,
                                                              String domainNamespace,
                                                              Map<String, Integer> clusterNameMSPortMap) {
-    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, true);
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, true, false, 0);
   }
 
   /**
@@ -509,7 +509,8 @@ public class CommonTestUtils {
                                                              Map<String, Integer> clusterNameMSPortMap,
                                                              boolean setIngressHost) {
 
-    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, setIngressHost);
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, setIngressHost,
+        false, 0);
   }
 
   /**
@@ -526,7 +527,8 @@ public class CommonTestUtils {
                                                              int nodeport,
                                                              Map<String, Integer> clusterNameMSPortMap) {
 
-    return createIngressForDomainAndVerify(domainUid, domainNamespace, nodeport, clusterNameMSPortMap, true);
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, nodeport, clusterNameMSPortMap, true,
+        false, 0);
   }
 
   /**
@@ -537,13 +539,17 @@ public class CommonTestUtils {
    * @param nodeport node port of the ingress controller
    * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
    * @param setIngressHost if false does not set ingress host
+   * @param enableAdminServerRouting enable the ingress rule to admin server
+   * @param adminServerPort the port number of admin server pod of the domain
    * @return list of ingress hosts
    */
   public static List<String> createIngressForDomainAndVerify(String domainUid,
                                                              String domainNamespace,
                                                              int nodeport,
                                                              Map<String, Integer> clusterNameMSPortMap,
-                                                             boolean setIngressHost) {
+                                                             boolean setIngressHost,
+                                                             boolean enableAdminServerRouting,
+                                                             int adminServerPort) {
 
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
@@ -554,7 +560,8 @@ public class CommonTestUtils {
     annotations.put("kubernetes.io/ingress.class", ingressNginxClass);
 
     List<String> ingressHostList =
-            createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, setIngressHost);
+            createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, setIngressHost,
+                enableAdminServerRouting, adminServerPort);
 
     assertNotNull(ingressHostList,
             String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
@@ -759,7 +766,7 @@ public class CommonTestUtils {
    */
   public static void checkPodReadyAndServiceExists(String podName, String domainUid, String namespace) {
     LoggingFacade logger = getLogger();
-    
+
     logger.info("Check service {0} exists in namespace {1}", podName, namespace);
     checkServiceExists(podName, namespace);
 
