@@ -49,6 +49,8 @@ import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
+import oracle.weblogic.kubernetes.actions.impl.Traefik;
+import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.Voyager;
 import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
@@ -339,6 +341,18 @@ public class TestActions {
   }
 
   /**
+   * Install Traefik ingress controller.
+   *
+   * @param params the parameters to Helm install command, such as release name, namespace, repo url,
+   *               repo name and chart name
+   * @return true on success, false otherwise
+   */
+  public static boolean installTraefik(TraefikParams params) {
+    return Traefik.install(params);
+  }
+
+
+  /**
    * Upgrade NGINX release.
    *
    * @param params the parameters to Helm upgrade command, such as release name and http/https nodeport
@@ -369,6 +383,16 @@ public class TestActions {
   }
 
   /**
+   * Uninstall the Traefik release.
+   *
+   * @param params the parameters to Helm uninstall command, such as release name and namespace
+   * @return true on success, false otherwise
+   */
+  public static boolean uninstallTraefik(HelmParams params) {
+    return Traefik.uninstall(params);
+  }
+
+  /**
    * Uninstall the Voyager release.
    *
    * @param params the parameters to Helm uninstall command, such as release name and namespace
@@ -388,19 +412,22 @@ public class TestActions {
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @param annotations annotations to create ingress resource
    * @param setIngressHost if true set to specific host or all
+   * @param tlsSecret TLS secret name if any
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
-  public static List<String> createIngress(String ingressName,
-                                           String domainNamespace,
-                                           String domainUid,
-                                           Map<String, Integer> clusterNameMsPortMap,
-                                           Map<String, String> annotations,
-                                           boolean setIngressHost) {
+  public static List<String> createIngress(
+      String ingressName,
+      String domainNamespace,
+      String domainUid,
+      Map<String, Integer> clusterNameMsPortMap,
+      Map<String, String> annotations,
+      boolean setIngressHost,
+      String tlsSecret) {
     return Ingress.createIngress(ingressName,
             domainNamespace,
             domainUid,
             clusterNameMsPortMap,
-            annotations, setIngressHost);
+            annotations, setIngressHost, tlsSecret);
   }
 
   /**
