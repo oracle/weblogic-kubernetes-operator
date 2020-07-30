@@ -7,7 +7,7 @@ AppsCode has provided a Helm chart and instructions to install Voyager. See the 
 Also check the Kubernetes version support matrix based on your Kubernetes installation at:
 - https://github.com/appscode/voyager#supported-versions
 
-As a *demonstration*, the following are steps to install the Voyager operator by using Helm 2 on a Linux OS.
+As a *demonstration*, the following are steps to install the Voyager operator by using Helm 3 on a Linux OS.
 
 ### 1. Add the AppsCode chart repository
 ```
@@ -16,15 +16,10 @@ $ helm repo update
 ```
 Verify that the chart repository has been added.
 
-Using Helm 3:
 ```
 $ helm search repo appscode/voyager
-```
-Using Helm 2:
-```
-$ helm search appscode/voyager
-NAME                    CHART VERSION   APP VERSION     DESCRIPTION
-appscode/voyager        v10.0.0    v10.0.0    Voyager by AppsCode - Secure HAProxy Ingress Controller f...
+NAME               CHART VERSION APP VERSION	DESCRIPTION
+appscode/voyager   v12.0.0       v12.0.0    	Voyager by AppsCode - Secure HAProxy Ingress Co...
 ```
 > **NOTE**: After updating the helm repository, the Voyager version listed maybe newer that the one appearing here, please check with the Voyager site for the lastest supported versions.
 
@@ -32,18 +27,9 @@ appscode/voyager        v10.0.0    v10.0.0    Voyager by AppsCode - Secure HAPro
 
 > **NOTE**: The Voyager version used for the install should match the version found with `helm search`.
 
-Using Helm 3:
 ```
 $ kubectl create ns voyager
 $ helm install voyager-operator appscode/voyager --version 10.0.0 \
-  --namespace voyager \
-  --set cloudProvider=baremetal \
-  --set apiserver.enableValidatingWebhook=false
-```
-Using Helm 2:
-```
-$ kubectl create ns voyager
-$ helm install appscode/voyager --name voyager-operator --version 10.0.0 \
   --namespace voyager \
   --set cloudProvider=baremetal \
   --set apiserver.enableValidatingWebhook=false
@@ -79,10 +65,9 @@ We'll demonstrate how to use Voyager to handle traffic to backend WebLogic domai
 Now we need to prepare some domains for Voyager load balancing.
 
 Create two WebLogic domains:
-- One domain with name `domain1` under namespace `default`.
-- One domain with name `domain2` under namespace `test1`.
-- Each domain has a web application installed with the URL context `testwebapp`.
-
+- One domain with name `domain1` under namespace `weblogic-domain1`.
+- One domain with name `domain2` under namespace `weblogic-domain2`.
+Each domain has a web application installed with the URL context `testwebapp`.
 
 ### 2. Install the Voyager Ingress
 #### Install a host-routing Ingress
@@ -98,7 +83,6 @@ To see the Voyager host-routing stats web page, access the URL `http://${HOSTNAM
 
 > **NOTE**: When using a web browser with a `NodePort` for the Voyager load balancer, the `Host` header is set to the host name including the `NodePort` value.
 > For example, if you type into the address bar `http://app.myhost.com:30305/testwebapp` then the host name in `Ingress` YAML file would be `- host: app.myhost.com:30305`
-
 
 #### Install a path-routing Ingress
 ```
@@ -118,11 +102,11 @@ First, you need to create two secrets with TLS certificates, one with the common
 ```
 # create a TLS secret for domain1
 $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out /tmp/tls1.crt -subj "/CN=domain1.org"
-$ kubectl create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
+$ kubectl -n weblogic-domain1 create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
 
 # create a TLS secret for domain2
 $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls2.key -out /tmp/tls2.crt -subj "/CN=domain2.org"
-$ kubectl -n test1 create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
+$ kubectl -n weblogic-domain1 create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
 ```
 Then deploy the TLS Ingress.
 ```
@@ -137,23 +121,18 @@ $ curl -k -H 'host: domain2.org' https://${HOSTNAME}:30307/testwebapp/
 ## Uninstall the Voyager Operator
 After removing all the Voyager Ingress resources, uninstall the Voyager operator:
 
-Using Helm 3:
 ```
 $ helm uninstall voyager-operator --namespace voyager
 ```
-Using Helm 2:
-```
-$ helm delete --purge voyager-operator
-```
 
-## Install and uninstall the Voyager operator with setup.sh
-Alternatively, you can run the helper script `setup.sh` when using Helm 2, under the `kubernetes/samples/charts/util` folder, to install and uninstall Voyager.
+## Install and uninstall the Voyager operator with setupLoadBalancer.sh
+Alternatively, you can run the helper script ` setupLoadBalancer.sh` under the `kubernetes/samples/charts/util` folder, to install and uninstall Voyager.
 
 To install Voyager:
 ```
-$ ./setup.sh create voyager
+$ ./ setupLoadBalancer.sh create voyager [voyager-version]
 ```
 To uninstall Voyager:
 ```
-$ ./setup.sh delete voyager
+$ ./ setupLoadBalancer.sh delete voyager
 ```
