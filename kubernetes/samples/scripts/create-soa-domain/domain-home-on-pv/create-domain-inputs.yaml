@@ -75,7 +75,7 @@ weblogicCredentialsSecretName: soainfra-domain-credentials
 # The default is true.
 includeServerOutInPodLog: true
 
-# The in-pod location for domain log, server logs, server out, Node Manager log, and
+# The in-pod location for domain log, server logs, server out, Node Manager log, introspector out, and
 # HTTP access log files. If not specified, the value is derived from the domainUID as
 # /shared/logs/<domainUID>.
 logHome: /u01/oracle/user_projects/domains/logs/soainfra

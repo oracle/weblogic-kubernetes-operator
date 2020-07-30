@@ -36,6 +36,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLI
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
 /** DomainSpec is a description of a domain. */
 @Description("The specification of the operation of the WebLogic domain. Required.")
@@ -93,11 +94,12 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * The in-pod name of the directory to store the domain, Node Manager, server logs, server
-   * .out, and HTTP access log files in.
+   * .out, introspector.out, and HTTP access log files in.
    */
   @Description(
       "The directory in a server's container in which to store the domain, Node Manager, server logs, "
-          + "server *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. "
+          + "server *.out, introspector .out, and optionally HTTP access log files "
+          + "if `httpAccessLogInLogHome` is true. "
           + "Ignored if `logHomeEnabled` is false.")
   private String logHome;
 
@@ -778,6 +780,16 @@ public class DomainSpec extends BaseConfiguration {
         .map(Configuration::getModel)
         .map(Model::getConfigMap)
         .orElse(null);
+  }
+
+  /**
+   * Returns the model home directory of the domain.
+   *
+   * @return model home directory
+   */
+  public String getModelHome() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getModel).map(Model::getModelHome).orElse(DEFAULT_WDT_MODEL_HOME);
   }
 
   @Override

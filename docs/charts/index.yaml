@@ -14,7 +14,7 @@ entries:
   - apiVersion: v1
     created: "2020-07-29T15:18:29.204758-04:00"
     description: Helm chart for configuring the WebLogic operator.
-    digest: 303288a48a6075d52538bb4e17dd46f8b1431158ee81bc878d9f1f264d30192e
+    digest: a34e39e2a0ae748cd71c6e59f7065794f350ab3f3bc7bc5a4ab22bf0516107cf
     name: weblogic-operator
     urls:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-3.0.0.tgz
