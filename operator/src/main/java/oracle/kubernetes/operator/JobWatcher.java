@@ -88,6 +88,12 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return namespace;
   }
 
+  @Override
+  public String getDomainUID(Watch.Response<V1Job> item) {
+    return getDomainUID(Optional.ofNullable(item.object)
+        .map(V1Job::getMetadata).orElse(null));
+  }
+
   /**
    * Creates a new JobWatcher and caches it by namespace.
    *

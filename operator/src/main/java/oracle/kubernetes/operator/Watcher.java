@@ -157,7 +157,8 @@ abstract class Watcher<T> {
           continue;
         }
 
-        try (LoggingContext stack = LoggingContext.setThreadContext().namespace(getNamespace())) {
+        try (LoggingContext stack =
+                 LoggingContext.setThreadContext().namespace(getNamespace()).domainUid(getDomainUID(item))) {
           if (isError(item)) {
             handleErrorResponse(item);
           } else {
@@ -194,6 +195,21 @@ abstract class Watcher<T> {
    * @return String object or null if the watcher is not namespaced
    */
   public abstract String getNamespace();
+
+  /**
+   * Gets the domain identifier associated with the watcher.
+   *
+   * @return String object or null if the watcher is not associated with a domain
+   */
+  public abstract String getDomainUID(Watch.Response<T> item);
+
+  protected String getDomainUID(V1ObjectMeta metadata) {
+    String key = "weblogic.domainUID";
+    return Optional.ofNullable(metadata)
+        .map(V1ObjectMeta::getLabels)
+        .map(labels -> labels.get(key))
+        .orElse(null);
+  }
 
   private boolean isError(Watch.Response<T> item) {
     return item.type.equalsIgnoreCase("ERROR");

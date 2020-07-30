@@ -171,7 +171,8 @@ public class ServerStatusReader {
             String state = null;
             ClientPool helper = ClientPool.getInstance();
             ApiClient client = helper.take();
-            try (LoggingContext stack = LoggingContext.setThreadContext().namespace(getNamespace(pod))) {
+            try (LoggingContext stack =
+                     LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUID(pod))) {
               try {
                 KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, CONTAINER_NAME);
                 kubernetesExec.setStdin(stdin);
@@ -214,6 +215,14 @@ public class ServerStatusReader {
 
     private String getNamespace(@Nonnull V1Pod pod) {
       return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getNamespace).orElse(null);
+    }
+
+    public String getDomainUID(V1Pod pod) {
+      String key = "weblogic.domainUID";
+      return Optional.of(pod)
+          .map(V1Pod::getMetadata)
+          .map(V1ObjectMeta::getLabels)
+          .map(labels -> labels.get(key)).orElse(null);
     }
 
     private String chooseStateOrLastKnownServerStatus(

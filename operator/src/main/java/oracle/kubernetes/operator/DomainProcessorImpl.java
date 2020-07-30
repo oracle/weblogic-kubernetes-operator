@@ -606,8 +606,18 @@ public class DomainProcessorImpl implements DomainProcessor {
       if (!delegate.isNamespaceRunning(getNamespace())) {
         return;
       }
+
+      Packet packet = new Packet();
+      packet
+          .getComponents()
+          .put(
+              ProcessingConstants.DOMAIN_COMPONENT_NAME,
+              Component.createFor(liveInfo, delegate.getVersion(),
+                  PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
+                  V1SubjectRulesReviewStatus.class, delegate.getSubjectRulesReviewStatus(getNamespace())));
+
       if (isShouldContinue()) {
-        internalMakeRightDomainPresence();
+        internalMakeRightDomainPresence(packet);
       } else {
         LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
       }
@@ -636,19 +646,10 @@ public class DomainProcessorImpl implements DomainProcessor {
       return false;
     }
 
-    private void internalMakeRightDomainPresence() {
+    private void internalMakeRightDomainPresence(Packet packet) {
       LOGGER.fine(MessageKeys.PROCESSING_DOMAIN, getDomainUid());
 
-      Packet packet = new Packet();
       packet.put(MAKE_RIGHT_DOMAIN_OPERATION, this);
-      packet
-          .getComponents()
-          .put(
-              ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(liveInfo, delegate.getVersion(),
-                  PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
-                  V1SubjectRulesReviewStatus.class, delegate.getSubjectRulesReviewStatus(getNamespace())));
-
       runDomainPlan(
             getDomain(),
             getDomainUid(),
@@ -748,7 +749,8 @@ public class DomainProcessorImpl implements DomainProcessor {
                     () -> {
                       DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
                       if (existing != null) {
-                        try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+                        try (LoggingContext stack =
+                                 LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
                           existing.setPopulated(false);
                           // proceed only if we have not already retried max number of times
                           int retryCount = existing.incrementAndGetFailureCount();

@@ -133,6 +133,12 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     return namespace;
   }
 
+  @Override
+  public String getDomainUID(Watch.Response<V1Pod> item) {
+    return getDomainUID(Optional.ofNullable(item.object)
+        .map(V1Pod::getMetadata).orElse(null));
+  }
+
   /**
    * Receive response.
    * @param item item
