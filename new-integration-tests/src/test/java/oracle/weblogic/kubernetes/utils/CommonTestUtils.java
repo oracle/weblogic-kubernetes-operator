@@ -339,7 +339,6 @@ public class CommonTestUtils {
           .until(assertDoesNotThrow(() -> operatorRestServiceRunning(opNamespace),
               "operator external service is not running"));
     }
-
     return opHelmParams;
   }
 

@@ -23,9 +23,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -49,6 +48,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegis
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -90,27 +90,45 @@ public class ItOperatorUpgrade {
   }
 
   /**
-   * Operator upgrade from 2.5.0/2.6.0 to latest.
-   * Install old release Operator from GitHub chart repository and create a domain.
+   * Operator upgrade from 2.5.0 to latest.
+   * Install 2.5.0 release Operator from GitHub chart repository and create a domain.
    * Delete Operator and install latest Operator and verify CRD version is updated
    * and the domain can be managed by scaling the cluster.
    */
-  @ParameterizedTest
+  @Test
   @DisplayName("Upgrade Operator from 2.5.0/2.6.0 to latest")
   @MustNotRunInParallel
-  @ValueSource(strings = {"2.5.0", "2.6.0"})
-  public void testUpgradeOperatorFrom2_x(String operatorVersion, @Namespaces(3) List<String> namespaces) {
+  public void testUpgradeOperatorFrom2_5_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator(operatorVersion, false);
+    upgradeOperator("2.5.0", false);
   }
 
-  @ParameterizedTest
+  /**
+   * Operator upgrade from 2.6.0 to latest.
+   * Install 2.6.0 Operator from GitHub chart repository and create a domain.
+   * Delete Operator and install latest Operator and verify CRD version is updated
+   * and the domain can be managed by scaling the cluster.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 2.6.0 to latest")
+  @MustNotRunInParallel
+  public void testUpgradeOperatorFrom2_6_0(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    upgradeOperator("2.6.0", false);
+  }
+
+  /**
+   * Operator upgrade from 3.0.0 to latest.
+   * Install 3.0.0 Operator from GitHub chart repository and create a domain.
+   * Delete Operator and install latest Operator and verify CRD version is updated
+   * and the domain can be managed by scaling the cluster.
+   */
+  @Test
   @DisplayName("Upgrade Operator from 3.0.0 to latest")
   @MustNotRunInParallel
-  @ValueSource(strings = {"3.0.0"})
-  public void testUpgradeOperatorFrom3_x(String operatorVersion, @Namespaces(3) List<String> namespaces) {
+  public void testUpgradeOperatorFrom3_0_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator(operatorVersion, true);
+    upgradeOperator("3.0.0", true);
   }
 
 
@@ -141,19 +159,28 @@ public class ItOperatorUpgrade {
             .chartVersion(operatorVersion);
 
     // install operator
-    installAndVerifyOperator(opNamespace1, opHelmParams, domainNamespace);
+    String opNamespace = opNamespace1;
+    String opServiceAccount = opNamespace + "-sa";
+    int externalRestHttpsPort = getNextFreePort(31001, 31201);
+    installAndVerifyOperator(opNamespace, opServiceAccount, true,
+        externalRestHttpsPort, opHelmParams, domainNamespace);
 
     // create domain
     createDomainHomeInImageAndVerify(domainNamespace, operatorVersion);
 
-    // uninstall operator 2.5.0/2.6.0/3.0.0
-    uninstallOperator(opHelmParams);
+    externalRestHttpsPort = getNextFreePort(31001, 31201);
+    if (useHelmUpgrade) {
+      // upgrade to latest operator
+      upgradeAndVerifyOperator(opNamespace, domainNamespace);
+    } else {
+      opNamespace = opNamespace2;
+      opServiceAccount = opNamespace2 + "-sa";
+      // uninstall operator 2.5.0/2.6.0
+      uninstallOperator(opHelmParams);
 
-    // install latest operator
-    String opServiceAccount = opNamespace2 + "-sa";
-    int externalRestHttpsPort = getNextFreePort(31001, 31201);
-    installAndVerifyOperator(opNamespace2, opServiceAccount, true, externalRestHttpsPort, domainNamespace);
-
+      // install latest operator
+      installAndVerifyOperator(opNamespace, opServiceAccount, true, externalRestHttpsPort, domainNamespace);
+    }
     // check CRD version is updated
     logger.info("Checking CRD version ");
     withStandardRetryPolicy
@@ -181,12 +208,12 @@ public class ItOperatorUpgrade {
     // check domain can be managed from the operator by scaling the cluster
     scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
         managedServerPodNamePrefix, replicaCount, 3,
-        true, externalRestHttpsPort, opNamespace2, opServiceAccount,
+        true, externalRestHttpsPort, opNamespace, opServiceAccount,
         false, "", "", 0, "", "", null, null);
 
     scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
         managedServerPodNamePrefix, replicaCount, 1,
-        true, externalRestHttpsPort, opNamespace2, opServiceAccount,
+        true, externalRestHttpsPort, opNamespace, opServiceAccount,
         false, "", "", 0, "", "", null, null);
   }
 
