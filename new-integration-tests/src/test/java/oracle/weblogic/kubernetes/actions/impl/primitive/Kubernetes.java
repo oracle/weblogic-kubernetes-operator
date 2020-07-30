@@ -43,6 +43,7 @@ import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.openapi.models.V1ClusterRoleList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentList;
@@ -480,7 +481,7 @@ public class Kubernetes {
   public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
     V1PodList pods = listPods(namespace, labelSelector);
     for (var pod : pods.getItems()) {
-      if (podName.equals(pod.getMetadata().getName())) {
+      if (pod.getMetadata().getName().contains(podName)) {
         return pod;
       }
     }
@@ -557,6 +558,36 @@ public class Kubernetes {
     return 0;
   }
 
+  /**
+   * Get the container's image in the pod.
+   * @param namespace name of the pod's namespace
+   * @param labelSelector in the format "weblogic.operatorName in (%s)"
+   * @param podName name of the pod
+   * @param containerName name of the container, null if there is only one container
+   * @return image used for the container
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getContainerImage(String namespace, String podName,
+                                         String labelSelector, String containerName) throws ApiException {
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null) {
+      List<V1Container> containerList = pod.getSpec().getContainers();
+      if (containerName == null && containerList.size() >= 1) {
+        return containerList.get(0).getImage();
+      } else {
+        for (V1Container container : containerList) {
+          if (containerName.equals(container.getName())) {
+            return container.getImage();
+          }
+        }
+        getLogger().info("Container {0} doesn't exist in pod {1} namespace {2}",
+            containerName, podName, namespace);
+      }
+    } else {
+      getLogger().severe("Pod " + podName + " doesn't exist in namespace " + namespace);
+    }
+    return null;
+  }
 
   /**
    * Get the weblogic.domainRestartVersion label from a given pod.

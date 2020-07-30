@@ -123,6 +123,17 @@ public class TestActions {
   public static boolean buildOperatorImage(String image) {
     return Operator.buildImage(image);
   }
+
+  /**
+   * Ge the image name used in the Operator container.
+   * @param namespace namespace of the operator
+   * @return image name
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getOperatorContainerImageName(String namespace) throws ApiException {
+    return Operator.getOperatorContainerImage(namespace);
+  }
+
   // ----------------------   domain  -----------------------------------
 
   /**

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -31,11 +32,15 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
@@ -73,7 +78,8 @@ public class ItOperatorUpgrade {
   private String adminServerPodName = domainUid + "-admin-server";
   private String managedServerPodNamePrefix = domainUid + "-managed-server";
   private int replicaCount = 2;
-  List<String> namespaces;
+  private List<String> namespaces;
+  private String latestOperatorImageName;
 
   /**
    * Does some initialization of logger, conditionfactory, etc common
@@ -83,7 +89,7 @@ public class ItOperatorUpgrade {
   public static void init() {
     logger = getLogger();
     // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
+    withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .atMost(5, MINUTES).await();
 
@@ -131,7 +137,6 @@ public class ItOperatorUpgrade {
     upgradeOperator("3.0.0", true);
   }
 
-
   private void upgradeOperator(String operatorVersion, boolean useHelmUpgrade) {
     logger.info("Assign a unique namespace for operator {0}", operatorVersion);
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -142,6 +147,7 @@ public class ItOperatorUpgrade {
     logger.info("Assign a unique namespace for domain");
     assertNotNull(namespaces.get(2), "Namespace is null");
     String domainNamespace = namespaces.get(2);
+    latestOperatorImageName = getOperatorImageName();
 
     // delete existing CRD
     new Command()
@@ -168,17 +174,45 @@ public class ItOperatorUpgrade {
     // create domain
     createDomainHomeInImageAndVerify(domainNamespace, operatorVersion);
 
-    externalRestHttpsPort = getNextFreePort(31001, 31201);
     if (useHelmUpgrade) {
       // upgrade to latest operator
-      upgradeAndVerifyOperator(opNamespace, domainNamespace);
+      HelmParams upgradeHelmParams = new HelmParams()
+          .releaseName(OPERATOR_RELEASE_NAME)
+          .namespace(opNamespace)
+          .chartDir(OPERATOR_CHART_DIR)
+          .repoUrl(null)
+          .chartVersion(null)
+          .chartName(null);
+
+      // operator chart values
+      OperatorParams opParams = new OperatorParams()
+          .helmParams(upgradeHelmParams)
+          .image(latestOperatorImageName)
+          .externalRestEnabled(true);
+
+      upgradeAndVerifyOperator(opNamespace, opParams);
+
+      // check operator image name after upgrade
+      logger.info("Checking image name in operator container ");
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Checking operator image name in namespace {0} after upgrade "
+                      + "(elapsed time {1}ms, remaining time {2}ms)",
+                  opNamespace1,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(assertDoesNotThrow(() -> getOpContainerImageName(opNamespace1),
+              "Exception while getting the operator image name"));
+
     } else {
       opNamespace = opNamespace2;
       opServiceAccount = opNamespace2 + "-sa";
+
       // uninstall operator 2.5.0/2.6.0
       uninstallOperator(opHelmParams);
 
       // install latest operator
+      externalRestHttpsPort = getNextFreePort(31001, 31201);
       installAndVerifyOperator(opNamespace, opServiceAccount, true, externalRestHttpsPort, domainNamespace);
     }
     // check CRD version is updated
@@ -223,11 +257,13 @@ public class ItOperatorUpgrade {
    */
   @AfterEach
   public void tearDown() {
-    CleanupUtil.cleanup(namespaces);
-    new Command()
-        .withParams(new CommandParams()
-            .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-        .execute();
+    if (System.getenv("SKIP_CLEANUP") == null) {
+      CleanupUtil.cleanup(namespaces);
+      new Command()
+          .withParams(new CommandParams()
+              .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+          .execute();
+    }
   }
 
   private void createDomainHomeInImageAndVerify(String domainNamespace, String operatorVersion) {
@@ -327,6 +363,23 @@ public class ItOperatorUpgrade {
           managedServerPodNamePrefix + i, domainNamespace);
       checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
     }
+  }
+
+  private Callable<Boolean> getOpContainerImageName(String namespace) {
+    return () -> {
+      String imageName = getOperatorContainerImageName(namespace);
+      if (imageName != null) {
+        if (!imageName.equals(latestOperatorImageName)) {
+          logger.info("Operator image name {0} doesn't match with latest image {1}",
+              imageName, latestOperatorImageName);
+          return false;
+        } else {
+          logger.info("Operator image name {0}", imageName);
+          return true;
+        }
+      }
+      return false;
+    };
   }
 
 }

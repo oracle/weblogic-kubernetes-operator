@@ -351,7 +351,6 @@ public class CommonTestUtils {
    */
   public static boolean upgradeAndVerifyOperator(String opNamespace,
                                                  String... domainNamespace) {
-    LoggingFacade logger = getLogger();
     // Helm upgrade parameters
     HelmParams opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -362,6 +361,20 @@ public class CommonTestUtils {
     OperatorParams opParams = new OperatorParams()
         .helmParams(opHelmParams)
         .domainNamespaces(Arrays.asList(domainNamespace));
+
+    return upgradeAndVerifyOperator(opNamespace, opParams);
+  }
+
+  /**
+   * Upgrade WebLogic operator with the helm values provided.
+   *
+   * @param opNamespace the operator namespace in which the operator will be upgraded
+   * @param opParams operator parameters to use in the upgrade
+   * @return true if successful
+   */
+  public static boolean upgradeAndVerifyOperator(String opNamespace, OperatorParams opParams) {
+
+    LoggingFacade logger = getLogger();
 
     // upgrade operator
     logger.info("Upgrading operator in namespace {0}", opNamespace);
