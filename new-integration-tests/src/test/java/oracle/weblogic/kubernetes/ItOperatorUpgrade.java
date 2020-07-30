@@ -17,14 +17,15 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -89,45 +90,31 @@ public class ItOperatorUpgrade {
   }
 
   /**
-   * Operator upgrade from 2.5.0/2.6.0/3.0.0 to latest.
+   * Operator upgrade from 2.5.0/2.6.0 to latest.
    * Install old release Operator from GitHub chart repository and create a domain.
    * Delete Operator and install latest Operator and verify CRD version is updated
    * and the domain can be managed by scaling the cluster.
    */
-  //@ParameterizedTest
-  //@Test
-  @DisplayName("Upgrade Operator from 2.5.0/2.6.0/3.0.0 to latest")
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 2.5.0/2.6.0 to latest")
   @MustNotRunInParallel
-  //@ValueSource(strings = {"2.5.0", "2.6.0", "3.0.0"})
-  //public void testUpgradeOperator(String operatorVersion, @Namespaces(3) List<String> namespaces) {
-  public void testUpgradeOperatorFrom2_5_0(@Namespaces(3) List<String> namespaces) {
+  @ValueSource(strings = {"2.5.0", "2.6.0"})
+  public void testUpgradeOperatorFrom2_x(String operatorVersion, @Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("2.5.0");
+    upgradeOperator(operatorVersion, false);
   }
 
-  @Test
-  @Order(2)
-  @DisplayName("Upgrade Operator from 2.5.0/2.6.0/3.0.0 to latest")
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 3.0.0 to latest")
   @MustNotRunInParallel
-  //@ValueSource(strings = {"2.5.0", "2.6.0", "3.0.0"})
-  //public void testUpgradeOperator(String operatorVersion, @Namespaces(3) List<String> namespaces) {
-  public void testUpgradeOperatorFrom2_6_0(@Namespaces(3) List<String> namespaces) {
+  @ValueSource(strings = {"3.0.0"})
+  public void testUpgradeOperatorFrom3_x(String operatorVersion, @Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("2.6.0");
+    upgradeOperator(operatorVersion, true);
   }
 
-  @Test
-  @Order(1)
-  @DisplayName("Upgrade Operator from 2.5.0/2.6.0/3.0.0 to latest")
-  @MustNotRunInParallel
-  //@ValueSource(strings = {"2.5.0", "2.6.0", "3.0.0"})
-  //public void testUpgradeOperator(String operatorVersion, @Namespaces(3) List<String> namespaces) {
-  public void testUpgradeOperatorFrom3_0_0(@Namespaces(3) List<String> namespaces) {
-    this.namespaces = namespaces;
-    upgradeOperator("3.0.0");
-  }
 
-  private void upgradeOperator(String operatorVersion) {
+  private void upgradeOperator(String operatorVersion, boolean useHelmUpgrade) {
     logger.info("Assign a unique namespace for operator {0}", operatorVersion);
     assertNotNull(namespaces.get(0), "Namespace is null");
     final String opNamespace1 = namespaces.get(0);
@@ -209,11 +196,11 @@ public class ItOperatorUpgrade {
    */
   @AfterEach
   public void tearDown() {
-    /* CleanupUtil.cleanup(namespaces);
+    CleanupUtil.cleanup(namespaces);
     new Command()
         .withParams(new CommandParams()
             .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-        .execute(); */
+        .execute();
   }
 
   private void createDomainHomeInImageAndVerify(String domainNamespace, String operatorVersion) {
