@@ -2,7 +2,7 @@
 In this sample, we will configure the Apache webtier as a load balancer for a WebLogic domain using the default configuration. We will demonstrate how to use the Apache webtier to handle traffic to a backend WebLogic domain.
 
 ## 1. Create a WebLogic domain
-We need to prepare a backend domain for load balancing by the Apache webtier. Refer to the [sample](/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README.md), to create a WebLogic domain. Keep the default values for the following configuration parameters:
+We need to prepare a backend domain for load balancing by the Apache webtier. Refer to the [sample](/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/), to create a WebLogic domain. Keep the default values for the following configuration parameters:
 - namespace: `default`
 - domainUID: `domain1`
 - clusterName: `cluster-1`
@@ -20,7 +20,7 @@ The Apache webtier Helm chart [is located here](../../apache-webtier/README.md).
 Install the Apache webtier Helm chart into the default namespace with the default settings:
 ```
 $ cd kubernetes/samples/charts
-$ helm install --name my-release apache-webtier
+$ helm install my-release apache-webtier
 ```
 
 ## 4. Run the sample application
@@ -35,5 +35,5 @@ $ curl -k --silent https://${HOSTNAME}:30443/weblogic/testwebapp/
 
 ## 5. Uninstall the Apache webtier
 ```
-$ helm delete --purge my-release
+$ helm uninstall my-release
 ```
