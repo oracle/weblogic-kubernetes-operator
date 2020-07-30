@@ -10,8 +10,8 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -31,7 +31,7 @@ public class IstioUtils {
          Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh");
     String installScript = istioInstallPath.toString();
     String command =
-        String.format("%s %s %s", installScript, ISTIO_VERSION, WORK_DIR);
+        String.format("%s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT);
     logger.info("Istio installation command {0}", command);
     assertTrue(() -> Command.withParams(
         defaultCommandParams()
@@ -49,7 +49,7 @@ public class IstioUtils {
          Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh");
     String installScript = istioInstallPath.toString();
     String command =
-        String.format("%s %s %s", installScript, ISTIO_VERSION, WORK_DIR);
+        String.format("%s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT);
     logger.info("Istio uninstallation command {0}", command);
     assertTrue(() -> Command.withParams(
         defaultCommandParams()
