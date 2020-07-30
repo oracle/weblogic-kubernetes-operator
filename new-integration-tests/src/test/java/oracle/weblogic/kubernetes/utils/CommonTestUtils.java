@@ -44,6 +44,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
@@ -138,6 +139,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
@@ -162,6 +164,7 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -1478,14 +1481,12 @@ public class CommonTestUtils {
    * @param grafanaNamespace the grafana namespace in which the operator will be installed
    * @param grafanaValueFile the grafana value.yaml file path
    * @param grafanaVersion the version of the grafana helm chart
-   * @param grafanaNodePort nodePort value for grafana server
    * @return the grafana Helm installation parameters
    */
-  public static HelmParams installAndVerifyGrafana(String grafanaReleaseName,
+  public static GrafanaParams installAndVerifyGrafana(String grafanaReleaseName,
                                                    String grafanaNamespace,
                                                    String grafanaValueFile,
-                                                   String grafanaVersion,
-                                                   int grafanaNodePort) {
+                                                   String grafanaVersion) {
     LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams grafanaHelmParams = new HelmParams()
@@ -1498,14 +1499,27 @@ public class CommonTestUtils {
       grafanaHelmParams.chartVersion(grafanaVersion);
     }
 
+    boolean secretExists = false;
+    V1SecretList listSecrets = listSecrets(grafanaNamespace);
+    if (null != listSecrets) {
+      for (V1Secret item : listSecrets.getItems()) {
+        if (item.getMetadata().getName().equals("grafana-secret")) {
+          secretExists = true;
+          break;
+        }
+      }
+    }
+    if (!secretExists) {
+      //create grafana secret
+      createSecretWithUsernamePassword("grafana-secret", grafanaNamespace, "admin", "12345678");
+    }
+    // install grafana
+    logger.info("Installing grafana in namespace {0}", grafanaNamespace);
+    int grafanaNodePort = getNextFreePort(31050, 31200);
     // grafana chart values to override
     GrafanaParams grafanaParams = new GrafanaParams()
         .helmParams(grafanaHelmParams)
         .nodePort(grafanaNodePort);
-    //create grafana secret
-    createSecretWithUsernamePassword("grafana-secret", grafanaNamespace, "admin", "12345678");
-    // install grafana
-    logger.info("Installing grafana in namespace {0}", grafanaNamespace);
     assertTrue(installGrafana(grafanaParams),
         String.format("Failed to install grafana in namespace %s", grafanaNamespace));
     logger.info("Grafana installed in namespace {0}", grafanaNamespace);
@@ -1531,7 +1545,8 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> isGrafanaReady(grafanaNamespace),
             "grafanaIsReady failed with ApiException"));
 
-    return grafanaHelmParams;
+    //return grafanaHelmParams;
+    return grafanaParams;
   }
 
 

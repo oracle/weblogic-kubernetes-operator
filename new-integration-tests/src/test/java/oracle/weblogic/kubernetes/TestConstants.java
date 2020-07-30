@@ -112,7 +112,10 @@ public interface TestConstants {
   //monitoring constants
   public static final String MONITORING_EXPORTER_VERSION = Optional.ofNullable(System.getenv(
       "MONITORING_EXPORTER_VERSION"))
-      .orElse("1.1.2");
+      .orElse("1.2.0");
+  public static final String MONITORING_EXPORTER_BRANCH = Optional.ofNullable(System.getenv(
+      "MONITORING_EXPORTER_BRANCH"))
+      .orElse("master");
   public static final String PROMETHEUS_CHART_VERSION = Optional.ofNullable(System.getenv("PROMETHEUS_CHART_VERSION"))
       .orElse("11.1.5");
   public static final String GRAFANA_CHART_VERSION = Optional.ofNullable(System.getenv("GRAFANA_CHART_VERSION"))
