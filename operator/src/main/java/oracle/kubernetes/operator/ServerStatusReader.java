@@ -220,7 +220,7 @@ public class ServerStatusReader {
 
     public String getDomainUid(V1Pod pod) {
       return KubernetesUtils.getDomainUidLabel(
-          Optional.ofNullable(item.object).map(V1Pod::getMetadata).orElse(null));
+          Optional.ofNullable(pod).map(V1Pod::getMetadata).orElse(null));
     }
 
     private String chooseStateOrLastKnownServerStatus(
