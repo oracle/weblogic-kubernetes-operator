@@ -27,12 +27,12 @@ description: "This FAQ describes approaches for giving external WebLogic clients
 
 #### Overview
 
-There are two supported approaches for giving WebLogic clients and servers that are external to Kubernetes, access to Kubernetes hosted WebLogic cluster EJBs and JMS:
+When WebLogic clients and servers are external to Kubernetes, and you want to give them access to Kubernetes hosted WebLogic cluster EJBs and JMS, there are two supported approaches: 
 
   * [Load balancer tunneling](#load-balancer-tunneling) (preferred)
   * [Kubernetes `NodePorts`](#kubernetes-nodeports)
 
-Conversely, if giving a Kubernetes hosted WebLogic Server access to an external WebLogic Server EJBs, JMS, or JTA, then consider the following:
+Conversely, if giving a Kubernetes hosted WebLogic Server access to external WebLogic Server EJBs, JMS, or JTA, then consider the following:
 
   * You may need to [enable unknown host access](#enabling-unknown-host-access) on the external WebLogic Servers.
   * Plus, if the target server can be accessed only through a load balancer using HTTP:
@@ -178,7 +178,7 @@ In this example:
 
 - Channel configuration for a configured cluster requires configuring the same network access point on each server. The operator currently doesn't test or support network channels that have a different configuration on each server in the cluster.
 
-- Additional steps are required for external clients beyond configuring the custom channel - see [Approaches](#approaches).
+- Additional steps are required for external clients beyond configuring the custom channel - see [Overview](#overview).
 
 #### Setting up a `NodePort`
 
