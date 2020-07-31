@@ -72,7 +72,6 @@ public class EventWatcher extends Watcher<V1Event> {
 
   @Override
   public String getDomainUID(Response<V1Event> item) {
-    return getDomainUID(Optional.ofNullable(item.object)
-        .map(V1Event::getMetadata).orElse(null));
+    return null;
   }
 }

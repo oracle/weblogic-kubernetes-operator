@@ -204,10 +204,9 @@ abstract class Watcher<T> {
   public abstract String getDomainUID(Watch.Response<T> item);
 
   protected String getDomainUID(V1ObjectMeta metadata) {
-    String key = "weblogic.domainUID";
     return Optional.ofNullable(metadata)
         .map(V1ObjectMeta::getLabels)
-        .map(labels -> labels.get(key))
+        .map(labels -> labels.get(LabelConstants.DOMAINUID_LABEL))
         .orElse(null);
   }
 
