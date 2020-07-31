@@ -98,10 +98,10 @@ public class ItOperatorUpgrade {
    * Operator upgrade from 2.5.0 to latest.
    * Install 2.5.0 release Operator from GitHub chart repository and create a domain.
    * Delete Operator and install latest Operator and verify CRD version is updated
-   * and the domain can be managed by scaling the cluster.
+   * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
-  @DisplayName("Upgrade Operator from 2.5.0/2.6.0 to latest")
+  @DisplayName("Upgrade Operator from 2.5.0 to latest")
   @MustNotRunInParallel
   public void testOperatorUpgradeFrom2_5_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
@@ -112,7 +112,7 @@ public class ItOperatorUpgrade {
    * Operator upgrade from 2.6.0 to latest.
    * Install 2.6.0 Operator from GitHub chart repository and create a domain.
    * Delete Operator and install latest Operator and verify CRD version is updated
-   * and the domain can be managed by scaling the cluster.
+   * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
   @DisplayName("Upgrade Operator from 2.6.0 to latest")
@@ -126,7 +126,7 @@ public class ItOperatorUpgrade {
    * Operator upgrade from 3.0.0 to latest.
    * Install 3.0.0 Operator from GitHub chart repository and create a domain.
    * Upgrade operator with latest Operator image and verify CRD version and image are updated
-   * and the domain can be managed by scaling the cluster.
+   * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.0 to latest")
@@ -170,7 +170,6 @@ public class ItOperatorUpgrade {
         .execute();
 
     HelmParams opHelmParams =
-        //new HelmParams().releaseName("weblogic-operator-" + operatorVersion)
         new HelmParams().releaseName("weblogic-operator")
             .namespace(opNamespace1)
             .repoUrl(OPERATOR_GITHUB_CHART_REPO_URL)
@@ -278,6 +277,7 @@ public class ItOperatorUpgrade {
     String adminSecretName = "weblogic-credentials";
     createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
+    // use the checked in domain.yaml to create domain for old releases
     // copy domain.yaml to results dir
     Path srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "domain-260.yaml");
     assertDoesNotThrow(() -> Files.createDirectories(

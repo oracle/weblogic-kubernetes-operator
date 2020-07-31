@@ -336,7 +336,8 @@ public class Domain {
     logger.info("Calling curl to scale the cluster");
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Calling curl command, waiting for success",
+            condition -> logger.info("Calling curl command, waiting for success "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(() -> {
