@@ -1,8 +1,11 @@
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 apiVersion: voyager.appscode.com/v1beta1
 kind: Ingress
 metadata:
   name: voyager-ssl-1
-  namespace: default
+  namespace: weblogic-domain1
   annotations:
     ingress.appscode.com/type: 'NodePort'
     ingress.appscode.com/stats: 'true'
@@ -25,7 +28,7 @@ apiVersion: voyager.appscode.com/v1beta1
 kind: Ingress
 metadata:
   name: voyager-ssl-2
-  namespace: test1
+  namespace: weblogic-domain2
   annotations:
     ingress.appscode.com/type: 'NodePort'
     ingress.appscode.com/stats: 'true'

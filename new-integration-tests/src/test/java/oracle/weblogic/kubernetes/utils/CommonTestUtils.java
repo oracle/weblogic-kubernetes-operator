@@ -12,6 +12,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -42,6 +43,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
@@ -53,6 +55,7 @@ import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
+import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -93,6 +96,10 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
@@ -129,6 +136,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
+import static oracle.weblogic.kubernetes.actions.TestActions.installTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.installVoyager;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
@@ -136,6 +144,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
@@ -145,6 +154,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmRelease
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isTraefikReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
@@ -161,6 +171,7 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -515,6 +526,60 @@ public class CommonTestUtils {
   }
 
   /**
+   * Install Traefik and wait for up to five minutes for the Traefik pod to be ready.
+   *
+   * @param traefikNamespace the namespace in which the Traefik ingress controller is installed
+   * @param nodeportshttp the web nodeport of Traefik
+   * @param nodeportshttps the websecure nodeport of Traefik
+   * @return the Traefik Helm installation parameters
+   */
+  public static HelmParams installAndVerifyTraefik(String traefikNamespace,
+      int nodeportshttp,
+      int nodeportshttps) {
+    LoggingFacade logger = getLogger();
+    // Helm install parameters
+    HelmParams traefikHelmParams = new HelmParams()
+        .releaseName(TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3))
+        .namespace(traefikNamespace)
+        .repoUrl(TRAEFIK_REPO_URL)
+        .repoName(TRAEFIK_REPO_NAME)
+        .chartName(TRAEFIK_CHART_NAME);
+
+    // Traefik chart values to override
+    TraefikParams traefikParams = new TraefikParams()
+        .helmParams(traefikHelmParams);
+    traefikParams
+        .nodePortsHttp(nodeportshttp)
+        .nodePortsHttps(nodeportshttps);
+
+    // install Traefik
+    assertThat(installTraefik(traefikParams))
+        .as("Test Traefik installation succeeds")
+        .withFailMessage("Traefik installation is failed")
+        .isTrue();
+
+    // verify that Traefik is installed
+    logger.info("Checking Traefik release {0} status in namespace {1}",
+        TRAEFIK_RELEASE_NAME, traefikNamespace);
+    assertTrue(isHelmReleaseDeployed(TRAEFIK_RELEASE_NAME, traefikNamespace),
+        String.format("Traefik release %s is not in deployed status in namespace %s",
+            TRAEFIK_RELEASE_NAME, traefikNamespace));
+    logger.info("Traefik release {0} status is deployed in namespace {1}",
+        TRAEFIK_RELEASE_NAME, traefikNamespace);
+
+    // wait until the Traefik pod is ready.
+    withStandardRetryPolicy
+        .conditionEvaluationListener(condition -> logger.info("Waiting for Traefik to be ready in "
+        + "namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+        traefikNamespace,
+        condition.getElapsedTimeInMS(),
+        condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isTraefikReady(traefikNamespace), "isTraefikReady failed with ApiException"));
+
+    return traefikHelmParams;
+  }
+
+  /**
    * Create a domain in the specified namespace and wait up to five minutes until the domain exists.
    *
    * @param domain the oracle.weblogic.domain.Domain object to create domain custom resource
@@ -621,7 +686,67 @@ public class CommonTestUtils {
     annotations.put("kubernetes.io/ingress.class", ingressNginxClass);
 
     List<String> ingressHostList =
-            createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, setIngressHost);
+            createIngress(ingressName, domainNamespace, domainUid,
+                clusterNameMSPortMap, annotations, setIngressHost, null);
+
+    assertNotNull(ingressHostList,
+            String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    // check the ingress was found in the domain namespace
+    assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
+            .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
+            .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
+            .contains(ingressName);
+
+    logger.info("ingress {0} for domain {1} was created in namespace {2}",
+            ingressName, domainUid, domainNamespace);
+
+    // check the ingress is ready to route the app to the server pod
+    if (nodeport != 0) {
+      for (String ingressHost : ingressHostList) {
+        String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+            + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
+            + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+
+        logger.info("Executing curl command {0}", curlCmd);
+        assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+      }
+    }
+
+    return ingressHostList;
+  }
+
+
+  /**
+   * Create an ingress for the domain with domainUid in the specified namespace.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param nodeport node port of the ingress controller
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @param setIngressHost if false does not set ingress host
+   * @param tlsSecret name of the TLS secret if any
+   * @return list of ingress hosts
+   */
+  public static List<String> createTraefikIngressForDomainAndVerify(
+      String domainUid,
+      String domainNamespace,
+      int nodeport,
+      Map<String, Integer> clusterNameMSPortMap,
+      boolean setIngressHost,
+      String tlsSecret) {
+
+    LoggingFacade logger = getLogger();
+    // create an ingress in domain namespace
+    final String ingressTraefikClass = "traefik";
+    String ingressName = domainUid + "-" + ingressTraefikClass;
+
+    HashMap<String, String> annotations = new HashMap<>();
+    annotations.put("kubernetes.io/ingress.class", ingressTraefikClass);
+
+    List<String> ingressHostList =
+            createIngress(ingressName, domainNamespace, domainUid,
+                clusterNameMSPortMap, annotations, setIngressHost, tlsSecret);
 
     assertNotNull(ingressHostList,
             String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
@@ -678,7 +803,7 @@ public class CommonTestUtils {
 
     // create an ingress in domain namespace
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true);
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true, null);
 
     // wait until the Voyager ingress pod is ready.
     withStandardRetryPolicy
@@ -1223,6 +1348,38 @@ public class CommonTestUtils {
   }
 
   /**
+   * Create a secret with TLS certificate and key in the specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param keyFile key file containing key for the secret
+   * @param certFile certificate file containing certificate for secret
+   * @throws java.io.IOException when reading key/cert files fails
+   */
+  public static void createSecretWithTLSCertKey(
+      String secretName, String namespace, Path keyFile, Path certFile) throws IOException {
+
+    LoggingFacade logger = getLogger();
+    logger.info("Creating TLS secret {0} in namespace {1} with certfile {2} and keyfile {3}",
+        secretName, namespace, certFile, keyFile);
+
+    Map<String, String> data = new HashMap<>();
+    data.put("tls.crt", Base64.getEncoder().encodeToString(Files.readAllBytes(certFile)));
+    data.put("tls.key", Base64.getEncoder().encodeToString(Files.readAllBytes(keyFile)));
+
+    V1Secret secret = new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .type("kubernetes.io/tls")
+        .stringData(data);
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(secret),
+        "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
+
+  /**
    * Create a secret with username and password in the specified namespace.
    *
    * @param secretName secret name to create
@@ -1544,14 +1701,12 @@ public class CommonTestUtils {
    * @param grafanaNamespace the grafana namespace in which the operator will be installed
    * @param grafanaValueFile the grafana value.yaml file path
    * @param grafanaVersion the version of the grafana helm chart
-   * @param grafanaNodePort nodePort value for grafana server
    * @return the grafana Helm installation parameters
    */
-  public static HelmParams installAndVerifyGrafana(String grafanaReleaseName,
+  public static GrafanaParams installAndVerifyGrafana(String grafanaReleaseName,
                                                    String grafanaNamespace,
                                                    String grafanaValueFile,
-                                                   String grafanaVersion,
-                                                   int grafanaNodePort) {
+                                                   String grafanaVersion) {
     LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams grafanaHelmParams = new HelmParams()
@@ -1564,14 +1719,27 @@ public class CommonTestUtils {
       grafanaHelmParams.chartVersion(grafanaVersion);
     }
 
+    boolean secretExists = false;
+    V1SecretList listSecrets = listSecrets(grafanaNamespace);
+    if (null != listSecrets) {
+      for (V1Secret item : listSecrets.getItems()) {
+        if (item.getMetadata().getName().equals("grafana-secret")) {
+          secretExists = true;
+          break;
+        }
+      }
+    }
+    if (!secretExists) {
+      //create grafana secret
+      createSecretWithUsernamePassword("grafana-secret", grafanaNamespace, "admin", "12345678");
+    }
+    // install grafana
+    logger.info("Installing grafana in namespace {0}", grafanaNamespace);
+    int grafanaNodePort = getNextFreePort(31050, 31200);
     // grafana chart values to override
     GrafanaParams grafanaParams = new GrafanaParams()
         .helmParams(grafanaHelmParams)
         .nodePort(grafanaNodePort);
-    //create grafana secret
-    createSecretWithUsernamePassword("grafana-secret", grafanaNamespace, "admin", "12345678");
-    // install grafana
-    logger.info("Installing grafana in namespace {0}", grafanaNamespace);
     assertTrue(installGrafana(grafanaParams),
         String.format("Failed to install grafana in namespace %s", grafanaNamespace));
     logger.info("Grafana installed in namespace {0}", grafanaNamespace);
@@ -1597,7 +1765,8 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> isGrafanaReady(grafanaNamespace),
             "grafanaIsReady failed with ApiException"));
 
-    return grafanaHelmParams;
+    //return grafanaHelmParams;
+    return grafanaParams;
   }
 
 
@@ -2156,7 +2325,7 @@ public class CommonTestUtils {
 
   /**
    * Verify the default secret exists for the default service account.
-   * 
+   *
    */
   public static void verifyDefaultTokenExists() {
     final LoggingFacade logger = getLogger();

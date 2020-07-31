@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressList;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressSpec;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -102,24 +104,28 @@ public class Ingress {
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @param annotations annotations to create ingress resource
    * @param setIngressHost if false does not set ingress host
+   * @param tlsSecret name of the TLS secret if any
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
-  public static List<String> createIngress(String ingressName,
-                                           String domainNamespace,
-                                           String domainUid,
-                                           Map<String, Integer> clusterNameMsPortMap,
-                                           Map<String, String> annotations, boolean setIngressHost) {
+  public static List<String> createIngress(
+      String ingressName,
+      String domainNamespace,
+      String domainUid,
+      Map<String, Integer> clusterNameMsPortMap,
+      Map<String, String> annotations,
+      boolean setIngressHost,
+      String tlsSecret) {
 
     List<String> ingressHostList = new ArrayList<>();
     ArrayList<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
     clusterNameMsPortMap.forEach((clusterName, managedServerPort) -> {
       // set the http ingress paths
       NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
-              .path(null)
-              .backend(new NetworkingV1beta1IngressBackend()
-                      .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
-                      .servicePort(new IntOrString(managedServerPort))
-              );
+          .path(null)
+          .backend(new NetworkingV1beta1IngressBackend()
+              .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
+              .servicePort(new IntOrString(managedServerPort))
+          );
       ArrayList<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
       httpIngressPaths.add(httpIngressPath);
 
@@ -130,24 +136,39 @@ public class Ingress {
         ingressHostList.add("*");
       }
       NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
-              .host(ingressHost)
-              .http(new NetworkingV1beta1HTTPIngressRuleValue()
-                      .paths(httpIngressPaths));
+          .host(ingressHost)
+          .http(new NetworkingV1beta1HTTPIngressRuleValue()
+              .paths(httpIngressPaths));
 
       ingressRules.add(ingressRule);
       ingressHostList.add(ingressHost);
     });
 
+    List<NetworkingV1beta1IngressTLS> tlsList = new ArrayList<>();
+    if (tlsSecret != null) {
+      clusterNameMsPortMap.forEach((clusterName, port) -> {
+        tlsList.add(new NetworkingV1beta1IngressTLS()
+            .hosts(Arrays.asList(
+                domainUid + "." + domainNamespace + "." + clusterName + ".test"))
+            .secretName(tlsSecret));
+      });
+    }
+
+
     // set the ingress
     NetworkingV1beta1Ingress ingress = new NetworkingV1beta1Ingress()
-            .apiVersion(INGRESS_API_VERSION)
-            .kind(INGRESS_KIND)
-            .metadata(new V1ObjectMeta()
-                    .name(ingressName)
-                    .namespace(domainNamespace)
-                    .annotations(annotations))
-            .spec(new NetworkingV1beta1IngressSpec()
-                    .rules(ingressRules));
+        .apiVersion(INGRESS_API_VERSION)
+        .kind(INGRESS_KIND)
+        .metadata(new V1ObjectMeta()
+            .name(ingressName)
+            .namespace(domainNamespace)
+            .annotations(annotations))
+        .spec(new NetworkingV1beta1IngressSpec()
+            .rules(ingressRules));
+    if (tlsSecret != null) {
+      NetworkingV1beta1IngressSpec spec = ingress.getSpec().tls(tlsList);
+      ingress.setSpec(spec);
+    }
 
     // create the ingress
     try {
