@@ -12,7 +12,25 @@
 {{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{-   range $index, $namespace := (lookup "v1" "Namespace" "" "").items }}
 {{-     range $lname, $lvalue := $namespace.metadata.labels }}
-{{-       if or (eq $args.domainNamespaceLabelSelector (cat $lname "=" $lvalue)) (eq $args.domainNamespaceLabelSelector (cat $lname "==" $lvalue)) (eq $args.domainNamespaceLabelSelector $lname) }}
+
+# ---
+# apiVersion: v1
+# kind: "ConfigMap"
+# metadata:
+#   name: {{ uuidv4 }}
+#   namespace: {{ $namespace.metadata.name | quote }}
+# data:
+#   # some: problem section
+#   {{ uuidv4 }}: {{ list $lname $lvalue | join "-" | quote }}
+#   {{ uuidv4 }}: {{ (cat $lname "=" $lvalue) | quote }}
+#   {{ uuidv4 }}: {{ $args.domainNamespaceLabelSelector | quote }}
+
+# Label selector patterns
+# Equality-based: =, ==, !=
+# Set-based: x in (a, b), x notin (a, b)
+# Comma separated terms
+
+{{-       if or (eq $args.domainNamespaceLabelSelector (list $lname $lvalue | join "=")) (eq $args.domainNamespaceLabelSelector (list $lname $lvalue | join "==")) (eq $args.domainNamespaceLabelSelector $lname) }}
 {{-         $key := $namespace.metadata.name -}}
 {{-         $ignore := set $args "domainNamespace" $key -}}
 {{-         include "operator.operatorRoleBindingNamespace" $args -}}
