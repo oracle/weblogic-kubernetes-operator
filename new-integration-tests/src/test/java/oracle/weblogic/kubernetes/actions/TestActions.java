@@ -1029,18 +1029,6 @@ public class TestActions {
   }
 
   /**
-   * Get  Kubernetes pods in a namespace.
-   *
-   * @param namespace name of namespace
-   * @param labelSelectors with which pods are decorated
-   * @return V1PodList list of pods
-   * @throws ApiException if Kubernetes client API call fails
-   */
-  public static String getOperatorPadName(String namespace, String labelSelectors) throws ApiException {
-    return Pod.getOperatorPadName(namespace, labelSelectors);
-  }
-
-  /**
    * Get the weblogic.domainRestartVersion label from a given pod.
    *
    * @param namespace in which to check for the pod existence

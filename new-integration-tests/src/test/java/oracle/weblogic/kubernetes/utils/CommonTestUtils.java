@@ -496,7 +496,9 @@ public class CommonTestUtils {
   /**
    * Uninstall Elasticsearch.
    *
-   * @return the Elasticsearch uninstallation parameters
+   * @param params logging exporter parameters to uninstall Elasticsearch
+   *
+   * @return true if the command to uninstall Elasticsearch succeeds, false otherwise
    */
   public static boolean uninstallAndVerifyElasticsearch(LoggingExporterParams params) {
     // uninstall Elasticsearch
@@ -511,7 +513,9 @@ public class CommonTestUtils {
   /**
    * Uninstall Kibana.
    *
-   * @return the Kibana uninstallation parameters
+   * @param params logging exporter parameters to uninstall Kibana
+   *
+   * @return true if the command to uninstall Kibana succeeds, false otherwise
    */
   public static boolean uninstallAndVerifyKibana(LoggingExporterParams params) {
     // uninstall Kibana
@@ -603,7 +607,7 @@ public class CommonTestUtils {
    * @param namespace namespace of Operator pod (for ELK Stack) or
    *                  WebLogic server pod (for WebLogic logging exporter)
    * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
-   * @param index index key word used to search the index status of the logging exporter
+   * @param index key word used to search the index status of the logging exporter
    * @return a map containing key and value pair of logging exporter index
    */
   public static Map<String, String> verifyLoggingExporterReady(String namespace,

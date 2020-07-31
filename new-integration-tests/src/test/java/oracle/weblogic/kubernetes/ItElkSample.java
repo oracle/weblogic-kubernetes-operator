@@ -8,8 +8,6 @@ import java.util.List;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
@@ -76,13 +74,13 @@ class ItElkSample {
     domainNamespace = namespaces.get(1);
 
     // install and verify Elasticsearch
-    logger.info("Instull and verify Elasticsearch");
+    logger.info("install and verify Elasticsearch");
     elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(),
             String.format("Failed to install Elasticsearch"));
     assertTrue(elasticsearchParams != null, "Failed to install Elasticsearch");
 
     // install and verify Kibana
-    logger.info("Instull and verify Kibana");
+    logger.info("install and verify Kibana");
     kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(),
         String.format("Failed to install Kibana"));
     assertTrue(kibanaParams != null, "Failed to install Kibana");
@@ -116,8 +114,6 @@ class ItElkSample {
    */
   @Test
   @DisplayName("Verify that ELK Stack is ready to use")
-  @Slow
-  @MustNotRunInParallel
   public void testLogLevelSearch() throws Exception {
     // Verify that Elastic Stack is ready to use
     verifyLoggingExporterReady(opNamespace, null, LOGSTASH_INDEX_KEY);

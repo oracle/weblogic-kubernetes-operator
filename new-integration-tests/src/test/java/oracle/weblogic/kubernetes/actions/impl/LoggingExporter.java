@@ -33,8 +33,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPadName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -59,8 +60,8 @@ public class LoggingExporter {
   /**
    * Install Elasticsearch.
    *
-   * @param params the parameters to install Elasticsearch
-   * @return true if the Elasticsearch is successfully installed, false otherwise.
+   * @param params parameters to install Elasticsearch
+   * @return true if Elasticsearch is successfully installed, false otherwise.
    */
   public static boolean installElasticsearch(LoggingExporterParams params) {
     String elasticsearchName = params.getElasticsearchName();
@@ -76,10 +77,9 @@ public class LoggingExporter {
     // create Elasticsearch deployment
     logger.info("Create Elasticsearch deployment {0} in namespace {1}", elasticsearchName, namespace);
     boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(elasticsearchDeployment),
-        String.format("Create Elasticsearch deployment failed with ApiException for %s in namespace %s",
-          elasticsearchName, namespace));
+        "createDeployment of Elasticsearch failed with ApiException");
     assertTrue(deploymentCreated,
-        String.format("Create Elasticsearch deployment failed with ApiException for %s in namespace %s",
+        String.format("Failed to create Elasticsearch deployment for %s in namespace %s",
             elasticsearchName, namespace));
     logger.info("Check if Elasticsearch deployment {0} is ready in namespace {1}",
         elasticsearchName, namespace);
@@ -101,10 +101,9 @@ public class LoggingExporter {
     // create Elasticsearch service
     logger.info("Create Elasticsearch service {0} in namespace {1}", elasticsearchName, namespace);
     boolean serviceCreated = assertDoesNotThrow(() -> Kubernetes.createService(elasticsearchService),
-        String.format("Create Elasticsearch service failed with ApiException for %s in namespace %s",
-            elasticsearchName, namespace));
+        "createService of Elasticsearch failed with ApiException");
     assertTrue(serviceCreated, String.format(
-        "Create Elasticsearch service failed with ApiException for %s in namespace %s",
+        "Failed to create Elasticsearch service for %s in namespace %s",
             elasticsearchName, namespace));
 
     // check that Elasticsearch service exists in its namespace
@@ -118,8 +117,8 @@ public class LoggingExporter {
   /**
    * Install Kibana.
    *
-   * @param params the parameters to install Kibana
-   * @return true if the Kibana is successfully installed, false otherwise.
+   * @param params parameters to install Kibana
+   * @return true if Kibana is successfully installed, false otherwise.
    */
   public static boolean installKibana(LoggingExporterParams params) {
     String kibanaName = params.getKibanaName();
@@ -134,17 +133,16 @@ public class LoggingExporter {
     // create Kibana deployment
     logger.info("Create Kibana deployment {0} in namespace {1}", kibanaName, namespace);
     boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(kibanaDeployment),
-        String.format("Create Kibana deployment failed with ApiException for %s in namespace $s",
-            kibanaName, namespace));
+        "createDeployment of Kibana failed with ApiException");
     assertTrue(deploymentCreated,
-        String.format("Create Kibana deployment failed with ApiException for %s in %s namespace",
+        String.format("Failed to create Kibana deployment for %s in %s namespace",
             kibanaName, namespace));
     logger.info("Checking if Kibana deployment is ready {0} completed in namespace {1}",
         kibanaName, namespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for Kibana deployment {0} to be completed in namespace {1}"
-                + "(elapsed time {2}ms, remaining time {3}ms)",
+            condition -> logger.info("Waiting for Kibana deployment {0} to be completed"
+                + " in namespace {1} (elapsed time {2}ms, remaining time {3}ms)",
                 kibanaName,
                 namespace,
                 condition.getElapsedTimeInMS(),
@@ -158,11 +156,9 @@ public class LoggingExporter {
     // create Kibana service
     logger.info("Create Kibana service for {0} in namespace {1}", kibanaName, namespace);
     boolean serviceCreated = assertDoesNotThrow(() -> Kubernetes.createService(kibanaService),
-        String.format("Create Kibana service failed with ApiException for %s in namespace %s",
-            kibanaName, namespace));
+        "createService of Kibana failed with ApiException");
     assertTrue(serviceCreated, String.format(
-        "Create Kibana service failed with ApiException for %s in namespace %s",
-            kibanaName, namespace));
+        "Failed to create Kibana service %s in namespace %s", kibanaName, namespace));
 
     // check that Kibana service exists in its namespace
     logger.info("Checking that Kibana service {0} exists in namespace {1}",
@@ -175,8 +171,8 @@ public class LoggingExporter {
   /**
    * Uninstall Elasticsearch.
    *
-   * @param params the parameters to uninstall Elasticsearch
-   * @return true if the Elasticsearch is successfully uninstalled, false otherwise.
+   * @param params parameters to uninstall Elasticsearch
+   * @return true if Elasticsearch is successfully uninstalled, false otherwise.
    */
   public static boolean uninstallElasticsearch(LoggingExporterParams params) {
     String elasticsearchName = params.getElasticsearchName();
@@ -192,10 +188,9 @@ public class LoggingExporter {
     logger.info("Delete Service {0} in namespace {1}", elasticsearchName, namespace);
     boolean serviceDeleted =
         assertDoesNotThrow(() -> Kubernetes.deleteService(elasticsearchName, namespace),
-            String.format("Delete service failed with ApiException for %s in %s namespace ",
-              elasticsearchName, namespace));
+            "deleteService of Elasticsearch failed with ApiException for %s in %s namespace");
     assertTrue(serviceDeleted, String.format(
-        "Delete service failed with ApiException for %s in %s namespace ", elasticsearchName, namespace));
+        "Failed to delete Elasticsearch service %s in %s namespace ", elasticsearchName, namespace));
 
     return true;
   }
@@ -203,8 +198,8 @@ public class LoggingExporter {
   /**
    * Uninstall Kibana.
    *
-   * @param params the parameters to uninstall Kibana
-   * @return true if the Kibana is successfully uninstalled, false otherwise.
+   * @param params parameters to uninstall Kibana
+   * @return true if Kibana is successfully uninstalled, false otherwise.
    */
   public static boolean uninstallKibana(LoggingExporterParams params) {
     String kibanaName = params.getKibanaName();
@@ -220,10 +215,9 @@ public class LoggingExporter {
     logger.info("Delete Service {0} in namespace {1}", kibanaName, namespace);
     boolean serviceDeleted =
         assertDoesNotThrow(() -> Kubernetes.deleteService(kibanaName, namespace),
-            String.format("Delete service failed with ApiException for %s in %s namespace ",
-              kibanaName, namespace));
+            "deleteService of Kibana failed with ApiException");
     assertTrue(serviceDeleted, String.format(
-        "Delete service failed with ApiException for %s in %s namespace ", kibanaName, namespace));
+        "Failed to delete Kibana service %s in %s namespace ", kibanaName, namespace));
 
     return true;
   }
@@ -246,7 +240,7 @@ public class LoggingExporter {
    * @param namespace namespace of Operator pod (for ELK Stack) or
    *                  WebLogic server pod (for WebLogic logging exporter)
    * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
-   * @param index index key word used to search the index status of the logging exporter
+   * @param index key word used to search the index status of the logging exporter
    * @return a map containing key and value pair of logging exporter index
    */
   public static Map<String, String> verifyLoggingExporterReady(String namespace,
@@ -436,7 +430,7 @@ public class LoggingExporter {
 
     // get Operator pod name
     String operatorPodName = assertDoesNotThrow(
-        () -> getOperatorPadName(namespace, labelSelector));
+        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, namespace));
     assertTrue(operatorPodName != null && !operatorPodName.isEmpty(), "Failed to get Operator pad name");
 
     int i = 0;

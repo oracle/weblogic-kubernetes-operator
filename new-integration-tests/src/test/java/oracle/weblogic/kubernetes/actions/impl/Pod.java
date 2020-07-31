@@ -10,9 +10,7 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import org.joda.time.DateTime;
 
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class Pod {
 
@@ -90,27 +88,6 @@ public class Pod {
    */
   public static String getPodIP(String namespace, String labelSelector, String podName) throws ApiException {
     return Kubernetes.getPodIP(namespace, labelSelector, podName);
-  }
-
-  /**
-   * Get Operator pod name.
-   *
-   * @param namespace namespace of Operator pod
-   * @param labelSelector String containing the labels the Operator is decorated with
-   * @return name of the Operator pod
-   */
-  public static String getOperatorPadName(String namespace, String labelSelector) {
-    // get Operator pod name
-    String operatorPodName = null;
-    V1PodList allPods = assertDoesNotThrow(
-        () -> listPods(namespace, labelSelector));
-    for (var opPod : allPods.getItems()) {
-      if (opPod.getMetadata().getName().contains(OPERATOR_RELEASE_NAME)) {
-        operatorPodName = opPod.getMetadata().getName();
-      }
-    }
-
-    return operatorPodName;
   }
 
   /**
