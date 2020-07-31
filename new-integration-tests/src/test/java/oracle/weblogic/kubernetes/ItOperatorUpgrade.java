@@ -55,7 +55,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -126,7 +125,7 @@ public class ItOperatorUpgrade {
   /**
    * Operator upgrade from 3.0.0 to latest.
    * Install 3.0.0 Operator from GitHub chart repository and create a domain.
-   * Delete Operator and install latest Operator and verify CRD version is updated
+   * Upgrade operator with latest Operator image and verify CRD version and image are updated
    * and the domain can be managed by scaling the cluster.
    */
   @Test
@@ -135,6 +134,21 @@ public class ItOperatorUpgrade {
   public void testOperatorUpgradeFrom3_0_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
     upgradeOperator("3.0.0", true);
+  }
+
+  /**
+   * Cleanup Kubernetes artifacts in the namespaces used by the test and
+   * delete CRD.
+   */
+  @AfterEach
+  public void tearDown() {
+    if (System.getenv("SKIP_CLEANUP") == null) {
+      CleanupUtil.cleanup(namespaces);
+      new Command()
+          .withParams(new CommandParams()
+              .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+          .execute();
+    }
   }
 
   private void upgradeOperator(String operatorVersion, boolean useHelmUpgrade) {
@@ -167,9 +181,8 @@ public class ItOperatorUpgrade {
     // install operator
     String opNamespace = opNamespace1;
     String opServiceAccount = opNamespace + "-sa";
-    int externalRestHttpsPort = getNextFreePort(31001, 31201);
     installAndVerifyOperator(opNamespace, opServiceAccount, true,
-        externalRestHttpsPort, opHelmParams, domainNamespace);
+        0, opHelmParams, domainNamespace);
 
     // create domain
     createDomainHomeInImageAndVerify(domainNamespace, operatorVersion);
@@ -212,8 +225,7 @@ public class ItOperatorUpgrade {
       uninstallOperator(opHelmParams);
 
       // install latest operator
-      externalRestHttpsPort = getNextFreePort(31001, 31201);
-      installAndVerifyOperator(opNamespace, opServiceAccount, true, externalRestHttpsPort, domainNamespace);
+      installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
     }
     // check CRD version is updated
     logger.info("Checking CRD version ");
@@ -239,6 +251,11 @@ public class ItOperatorUpgrade {
       checkDomainStarted(domainUid, domainNamespace);
     }
 
+    int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+    assertTrue(externalRestHttpsPort != -1,
+        "Could not get the Operator external service node port");
+    logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
+
     // check domain can be managed from the operator by scaling the cluster
     scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
         managedServerPodNamePrefix, replicaCount, 3,
@@ -249,21 +266,6 @@ public class ItOperatorUpgrade {
         managedServerPodNamePrefix, replicaCount, 1,
         true, externalRestHttpsPort, opNamespace, opServiceAccount,
         false, "", "", 0, "", "", null, null);
-  }
-
-  /**
-   * Cleanup Kubernetes artifacts in the namespaces used by the test and
-   * delete CRD.
-   */
-  @AfterEach
-  public void tearDown() {
-    if (System.getenv("SKIP_CLEANUP") == null) {
-      CleanupUtil.cleanup(namespaces);
-      new Command()
-          .withParams(new CommandParams()
-              .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-          .execute();
-    }
   }
 
   private void createDomainHomeInImageAndVerify(String domainNamespace, String operatorVersion) {
