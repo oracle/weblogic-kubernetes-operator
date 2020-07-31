@@ -197,9 +197,9 @@ abstract class Watcher<T> {
   public abstract String getNamespace();
 
   /**
-   * Gets the domain identifier associated with the watcher.
+   * Gets the domainUID associated with a watch response.
    *
-   * @return String object or null if the watcher is not associated with a domain
+   * @return String object or null if the watch response is not associated with a domain
    */
   public abstract String getDomainUid(Watch.Response<T> item);
 
