@@ -237,7 +237,7 @@ public class ItOperatorUpgrade {
                 condition.getRemainingTimeInMS()))
         .until(checkCrdVersion());
 
-    // restart domain for 2.5.0 for scaling to work
+    // restart domain for 2.5.0 for scaling to work, see OWLS-83813
     if (operatorVersion.equals("2.5.0")) {
       shutdownDomain(domainUid, domainNamespace);
       logger.info("Checking for admin server pod shutdown");

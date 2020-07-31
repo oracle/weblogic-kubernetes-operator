@@ -209,7 +209,7 @@ public class ItOperatorUpgrade extends BaseTest {
     operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
 
     checkCrdVersion();
-    // 250 domain needs to be restarted for scaling to work
+    // 250 domain needs to be restarted for scaling to work, see OWLS-83813
     if (OP_NS.contains("250")) {
       domain.shutdownUsingServerStartPolicy();
       domain.restartUsingServerStartPolicy();
