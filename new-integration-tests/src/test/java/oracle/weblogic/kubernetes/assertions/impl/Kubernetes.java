@@ -38,6 +38,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.joda.time.DateTime;
 
 import static io.kubernetes.client.util.Yaml.dump;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listDeployments;
@@ -336,6 +337,29 @@ public class Kubernetes {
   public static boolean isNginxPodReady(String namespace) throws ApiException {
     String labelSelector = null;
     return isPodReady(namespace, labelSelector, "nginx-ingress-controller");
+  }
+
+  /**
+   * Checks if traefik pod is running in the specified namespace.
+   *
+   * @param namespace in which to check for the running traefik pod
+   * @return true if the pod is running, otherwise false
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isTraefikPodRunning(String namespace) throws ApiException {
+    return isPodRunning(namespace, null, TRAEFIK_RELEASE_NAME + "-" + namespace.substring(3));
+  }
+
+  /**
+   * Check whether the traefik pod is ready in the specified namespace.
+   *
+   * @param namespace in which to check for the traefik pod readiness
+   * @return true if the pod is in the ready state, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isTraefikPodReady(String namespace) throws ApiException {
+    String labelSelector = null;
+    return isPodReady(namespace, labelSelector, TRAEFIK_RELEASE_NAME + "-" + namespace.substring(3));
   }
 
   /**

@@ -24,6 +24,7 @@ import oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.assertions.impl.Pod;
 import oracle.weblogic.kubernetes.assertions.impl.Prometheus;
 import oracle.weblogic.kubernetes.assertions.impl.Service;
+import oracle.weblogic.kubernetes.assertions.impl.Traefik;
 import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import org.joda.time.DateTime;
@@ -61,6 +62,16 @@ public class TestAssertions {
    */
   public static Callable<Boolean> isNginxReady(String namespace) {
     return Nginx.isReady(namespace);
+  }
+
+  /**
+   * Check traefik controller pod is ready in the specified namespace.
+   *
+   * @param namespace in which to check for traefik pod readiness
+   * @return true if traefik pod is ready, false otherwise
+   */
+  public static Callable<Boolean> isTraefikReady(String namespace) {
+    return Traefik.isReady(namespace);
   }
 
   /**
