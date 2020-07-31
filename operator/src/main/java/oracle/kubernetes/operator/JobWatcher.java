@@ -23,6 +23,7 @@ import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -89,9 +90,9 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   }
 
   @Override
-  public String getDomainUID(Watch.Response<V1Job> item) {
-    return getDomainUID(Optional.ofNullable(item.object)
-        .map(V1Job::getMetadata).orElse(null));
+  public String getDomainUid(Watch.Response<V1Job> item) {
+    return KubernetesUtils.getDomainUidLabel(
+        Optional.ofNullable(item.object).map(V1Job::getMetadata).orElse(null));
   }
 
   /**

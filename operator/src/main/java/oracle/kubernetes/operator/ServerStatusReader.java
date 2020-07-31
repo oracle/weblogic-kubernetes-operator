@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LastKnownStatus;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
@@ -172,7 +173,7 @@ public class ServerStatusReader {
             ClientPool helper = ClientPool.getInstance();
             ApiClient client = helper.take();
             try (LoggingContext stack =
-                     LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUID(pod))) {
+                     LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
               try {
                 KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, CONTAINER_NAME);
                 kubernetesExec.setStdin(stdin);
@@ -217,12 +218,9 @@ public class ServerStatusReader {
       return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getNamespace).orElse(null);
     }
 
-    public String getDomainUID(V1Pod pod) {
-      String key = "weblogic.domainUID";
-      return Optional.of(pod)
-          .map(V1Pod::getMetadata)
-          .map(V1ObjectMeta::getLabels)
-          .map(labels -> labels.get(key)).orElse(null);
+    public String getDomainUid(V1Pod pod) {
+      return KubernetesUtils.getDomainUidLabel(
+          Optional.ofNullable(item.object).map(V1Pod::getMetadata).orElse(null));
     }
 
     private String chooseStateOrLastKnownServerStatus(

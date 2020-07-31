@@ -66,7 +66,7 @@ public class DomainWatcher extends Watcher<Domain> {
   }
 
   @Override
-  public String getDomainUID(Response<Domain> item) {
+  public String getDomainUid(Response<Domain> item) {
     return Optional.ofNullable(item.object).map(Domain::getDomainUid).orElse(null);
   }
 }

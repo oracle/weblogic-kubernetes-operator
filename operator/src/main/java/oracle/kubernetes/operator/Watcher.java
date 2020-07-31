@@ -158,7 +158,7 @@ abstract class Watcher<T> {
         }
 
         try (LoggingContext stack =
-                 LoggingContext.setThreadContext().namespace(getNamespace()).domainUid(getDomainUID(item))) {
+                 LoggingContext.setThreadContext().namespace(getNamespace()).domainUid(getDomainUid(item))) {
           if (isError(item)) {
             handleErrorResponse(item);
           } else {
@@ -201,14 +201,7 @@ abstract class Watcher<T> {
    *
    * @return String object or null if the watcher is not associated with a domain
    */
-  public abstract String getDomainUID(Watch.Response<T> item);
-
-  protected String getDomainUID(V1ObjectMeta metadata) {
-    return Optional.ofNullable(metadata)
-        .map(V1ObjectMeta::getLabels)
-        .map(labels -> labels.get(LabelConstants.DOMAINUID_LABEL))
-        .orElse(null);
-  }
+  public abstract String getDomainUid(Watch.Response<T> item);
 
   private boolean isError(Watch.Response<T> item) {
     return item.type.equalsIgnoreCase("ERROR");

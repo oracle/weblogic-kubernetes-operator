@@ -13,6 +13,7 @@ import io.kubernetes.client.util.Watch.Response;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 /**
@@ -68,8 +69,8 @@ public class ServiceWatcher extends Watcher<V1Service> {
   }
 
   @Override
-  public String getDomainUID(Response<V1Service> item) {
-    return getDomainUID(Optional.ofNullable(item.object)
-        .map(V1Service::getMetadata).orElse(null));
+  public String getDomainUid(Response<V1Service> item) {
+    return KubernetesUtils.getDomainUidLabel(
+        Optional.ofNullable(item.object).map(V1Service::getMetadata).orElse(null));
   }
 }

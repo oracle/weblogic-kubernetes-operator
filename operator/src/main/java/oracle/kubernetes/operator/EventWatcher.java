@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -71,7 +70,7 @@ public class EventWatcher extends Watcher<V1Event> {
   }
 
   @Override
-  public String getDomainUID(Response<V1Event> item) {
+  public String getDomainUid(Response<V1Event> item) {
     return null;
   }
 }

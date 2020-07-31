@@ -62,7 +62,7 @@ public class NamespaceWatcher extends Watcher<V1Namespace> {
   }
 
   @Override
-  public String getDomainUID(Watch.Response<V1Namespace> item) {
+  public String getDomainUid(Watch.Response<V1Namespace> item) {
     return null;
   }
 }

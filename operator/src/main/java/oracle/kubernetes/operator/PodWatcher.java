@@ -27,6 +27,7 @@ import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -134,9 +135,9 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
   }
 
   @Override
-  public String getDomainUID(Watch.Response<V1Pod> item) {
-    return getDomainUID(Optional.ofNullable(item.object)
-        .map(V1Pod::getMetadata).orElse(null));
+  public String getDomainUid(Watch.Response<V1Pod> item) {
+    return KubernetesUtils.getDomainUidLabel(
+        Optional.ofNullable(item.object).map(V1Pod::getMetadata).orElse(null));
   }
 
   /**
