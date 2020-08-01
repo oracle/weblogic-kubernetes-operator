@@ -611,17 +611,8 @@ public class DomainProcessorImpl implements DomainProcessor {
         return;
       }
 
-      Packet packet = new Packet();
-      packet
-          .getComponents()
-          .put(
-              ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(liveInfo, delegate.getVersion(),
-                  PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
-                  V1SubjectRulesReviewStatus.class, delegate.getSubjectRulesReviewStatus(getNamespace())));
-
       if (isShouldContinue()) {
-        internalMakeRightDomainPresence(packet);
+        internalMakeRightDomainPresence();
       } else {
         LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
       }
@@ -650,10 +641,19 @@ public class DomainProcessorImpl implements DomainProcessor {
       return false;
     }
 
-    private void internalMakeRightDomainPresence(Packet packet) {
+    private void internalMakeRightDomainPresence() {
       LOGGER.fine(MessageKeys.PROCESSING_DOMAIN, getDomainUid());
 
+      Packet packet = new Packet();
       packet.put(MAKE_RIGHT_DOMAIN_OPERATION, this);
+      packet
+          .getComponents()
+          .put(
+              ProcessingConstants.DOMAIN_COMPONENT_NAME,
+              Component.createFor(liveInfo, delegate.getVersion(),
+                  PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
+                  V1SubjectRulesReviewStatus.class, delegate.getSubjectRulesReviewStatus(getNamespace())));
+
       runDomainPlan(
             getDomain(),
             getDomainUid(),
