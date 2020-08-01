@@ -27,7 +27,7 @@ WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 RUNTIME_ENCRYPTION_SECRET_PASSWORD="/weblogic-operator/model-runtime-secret/password"
 OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
 OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
-IMG_MODELS_HOME="/u01/wdt/models"
+IMG_MODELS_HOME="${WDT_MODEL_HOME:-/u01/wdt/models}"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
@@ -279,7 +279,7 @@ function createWLDomain() {
     "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
     exitOrLoop
   fi
-  # Check if /u01/wdt/models and /u01/wdt/weblogic-deploy exists
+  # Check if modelHome (default /u01/wdt/models) and /u01/wdt/weblogic-deploy exists
 
   checkDirNotExistsOrEmpty ${IMG_MODELS_HOME}
   checkDirNotExistsOrEmpty ${WDT_BINDIR}

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
@@ -21,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
@@ -44,6 +46,14 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final String namespace;
   private final WatchListener<V1Pod> listener;
+
+  public enum PodStatus {
+    PHASE_FAILED,
+    WAITING_NON_NULL_MESSAGE,
+    TERMINATED_ERROR_REASON,
+    UNSCHEDULABLE,
+    SUCCESS
+  }
 
   // Map of Pod name to callback. Note that since each pod name can be mapped to multiple callback registrations,
   // a concurrent map will not suffice; we therefore use an ordinary map and synchronous accesses.
@@ -170,27 +180,58 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
    * @param pod pob
    * @return true, if failed
    */
-  private static boolean isFailed(V1Pod pod) {
-    if (pod == null) {
-      return false;
-    }
+  static boolean isFailed(@Nonnull V1Pod pod) {
 
-    V1PodStatus status = pod.getStatus();
     LOGGER.fine(
-        "PodWatcher.isFailed status of pod " + pod.getMetadata().getName() + ": " + status);
-    if (status != null) {
-      java.util.List<V1ContainerStatus> conStatuses = status.getContainerStatuses();
-      if (conStatuses != null) {
-        for (V1ContainerStatus conStatus : conStatuses) {
-          if (!isReady(conStatus)
-              && (getContainerStateWaitingMessage(conStatus) != null
-              || getContainerStateTerminatedReason(conStatus).contains("Error"))) {
-            return true;
-          }
-        }
-      }
+        "PodWatcher.isFailed status of pod " + pod.getMetadata().getName() + ": " + pod.getStatus());
+    return getContainerStatuses(pod).stream().anyMatch(PodWatcher::isPodFailed);
+  }
+
+  static PodStatus getPodStatus(@Nonnull V1Pod pod) {
+    V1ContainerStatus conStatus = getContainerStatuses(pod)
+            .stream()
+            .findFirst()
+            .orElse(new V1ContainerStatus());
+    String phase = Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getPhase).orElse("");
+    if (phase.equals("Failed")) {
+      return PodStatus.PHASE_FAILED;
+    } else if (!isReady(conStatus) && getContainerStateWaitingMessage(conStatus) != null) {
+      return PodStatus.WAITING_NON_NULL_MESSAGE;
+    } else if (!isReady(conStatus) && getContainerStateTerminatedReason(conStatus).contains("Error")) {
+      return PodStatus.TERMINATED_ERROR_REASON;
+    } else if (isUnschedulable(pod)) {
+      return PodStatus.UNSCHEDULABLE;
     }
-    return false;
+    return PodStatus.SUCCESS;
+  }
+
+  static List<V1ContainerStatus> getContainerStatuses(@Nonnull V1Pod pod) {
+    return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getContainerStatuses).orElse(Collections.emptyList());
+  }
+
+  private static boolean isPodFailed(V1ContainerStatus conStatus) {
+    return
+        !isReady(conStatus)
+        && (getContainerStateWaitingMessage(conStatus) != null
+        || getContainerStateTerminatedReason(conStatus).contains("Error"));
+  }
+
+  static boolean isUnschedulable(@Nonnull V1Pod pod) {
+
+    LOGGER.fine("PodWatcher.isUnschedulable status of pod " + pod.getMetadata().getName() + ": " + pod.getStatus());
+    return getPodConditions(pod).stream().anyMatch(PodWatcher::isPodUnschedulable);
+  }
+
+  private static List<V1PodCondition> getPodConditions(@Nonnull V1Pod pod) {
+    return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getConditions).orElse(Collections.emptyList());
+  }
+
+  private static boolean isPodUnschedulable(V1PodCondition podCondition) {
+    return getReason(podCondition).contains("Unschedulable");
+  }
+
+  private static String getReason(V1PodCondition podCondition) {
+    return Optional.ofNullable(podCondition).map(V1PodCondition::getReason).orElse("");
   }
 
   private static boolean isReady(V1ContainerStatus conStatus) {

@@ -538,6 +538,14 @@ public class Domain {
         .map(Configuration::getSecrets).orElse(spec.getConfigOverrideSecrets());
   }
 
+  /**
+   * Returns the model home directory of the domain.
+   *
+   * @return model home directory
+   */
+  public String getModelHome() {
+    return spec.getModelHome();
+  }
 
   @Override
   public String toString() {
