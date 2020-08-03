@@ -14,26 +14,25 @@
       Split terms on commas not contained in parentheses. Unfortunately, the regular expression
       support included with Helm tempalates does not include lookarounds.
 */ -}}
-{{-   $terms := list $args.domainNamespaceLabelSelector }}
+{{-   $working := dict "rejected" (list) "terms" (list $args.domainNamespaceLabelSelector) }}
 {{-   if contains "," $args.domainNamespaceLabelSelector }}
-{{-     $st := list }}
 {{-     $cs := regexSplit "," $args.domainNamespaceLabelSelector -1 }}
-{{-     $item := "" }}
+{{-     $ignore := set $working "st" (list) }}
+{{-     $ignore := set $working "item" "" }}
 {{-     range $c := $cs }}
 {{-       if contains "(" $c }}
-{{-         $item := print $item $c }}
-{{-       else if and (not (eq $item "")) (contains ")" $c) }}
-{{-         $st := append $st (print $item $c) }}
-{{-         $item := "" }}
+{{-         $ignore := set $working "item" (print $working.item $c) }}
+{{-       else if and (not (eq $working.item "")) (contains ")" $c) }}
+{{-         $ignore := set $working "st" (append $working.st (print $working.item $c)) }}
+{{-         $ignore := set $working "item" "" }}
 {{-       else }}
-{{-         $st := append $st $c }}
+{{-         $ignore := set $working "st" (append $working.st $c) }}
 {{-       end }}
 {{-     end }}
-{{-     $terms := $st }}
+{{-     $ignore := set $working "terms" $working.st }}
 {{-   end }}
 {{-   $namespaces := (lookup "v1" "Namespace" "" "").items }}
-{{-   $working := dict "rejected" (list) }}
-{{-   range $t := $terms }}
+{{-   range $t := $working.terms }}
 {{-     $term := trim $t }}
 {{-     range $index, $namespace := $namespaces }}
 {{- /*
@@ -43,7 +42,7 @@
         Existence: x, !x
 */ -}}
 {{-       if not $namespace.metadata.labels }}
-{{-         $ignore := set $namespace.metadata "labels" dict }}
+{{-         $ignore := set $namespace.metadata "labels" (dict) }}
 {{-       end }}
 {{-       if hasPrefix "!" $term }}
 {{-         if hasKey $namespace.metadata.labels (trimPrefix "!" $term) }}
@@ -87,13 +86,13 @@
 {{-         else }}
 {{-           $parenContents := regexFind "\\(([^)]+)\\)" $term }}
 {{-           $values := regexSplit "," $parenContents -1 }}
-{{-           $found := false }}
+{{-           $ignore := set $working "found" false }}
 {{-           range $value := $values }}
 {{-             if eq ($value | nospace) (get $namespace.metadata.labels $key) }}
-{{-               $found := true }}
+{{-               $ignore := set $working "found" true }}
 {{-             end }}
 {{-           end }}
-{{-           if not $found }}
+{{-           if not $working.found }}
 {{-             $ignore := set $working "rejected" (append $working.rejected $namespace.metadata.name) }}
 {{-           end }}
 {{-         end }}
