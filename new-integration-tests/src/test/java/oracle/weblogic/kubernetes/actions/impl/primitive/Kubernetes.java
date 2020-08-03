@@ -1700,6 +1700,23 @@ public class Kubernetes {
   }
 
   /**
+   * Get port of a namespaced service.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @return node port if service found otherwise -1
+   */
+  public static Integer getServiceNodePort(String namespace, String serviceName) {
+    List<V1Service> services = listServices(namespace).getItems();
+    for (V1Service service : services) {
+      if (service.getMetadata().getName().startsWith(serviceName)) {
+        return service.getSpec().getPorts().get(0).getNodePort();
+      }
+    }
+    return -1;
+  }
+
+  /**
    * Get port of a namespaced service given the channel name.
    *
    * @param namespace name of the namespace in which to get the service

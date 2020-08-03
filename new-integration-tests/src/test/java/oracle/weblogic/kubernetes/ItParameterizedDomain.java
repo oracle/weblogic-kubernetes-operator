@@ -61,6 +61,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -164,6 +165,7 @@ class ItParameterizedDomain {
   private static boolean isUseSecret = true;
   private static List<Domain> domains = new ArrayList<>();
   private static LoggingFacade logger = null;
+  private static Domain miiDomain = null;
 
   private String curlCmd = null;
 
@@ -202,7 +204,7 @@ class ItParameterizedDomain {
     opServiceAccount = opNamespace + "-sa";
 
     // get a free port for external REST HTTPS port
-    externalRestHttpsPort = getNextFreePort(31001, 31201);
+    //externalRestHttpsPort = getNextFreePort(31001, 31201);
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
@@ -213,8 +215,10 @@ class ItParameterizedDomain {
     }
 
     // install and verify operator with REST API
-    installAndVerifyOperator(opNamespace, opServiceAccount, true, externalRestHttpsPort,
+    installAndVerifyOperator(opNamespace, opServiceAccount, true, 0,
         miiDomainNamespace, domainInPVNamespace, domainInImageNamespace);
+
+    externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
@@ -224,7 +228,7 @@ class ItParameterizedDomain {
     logger.info("NGINX http node port: {0}", nodeportshttp);
 
     // create model in image domain with multiple clusters
-    Domain miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
+    miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
     // create domain in image
     Domain domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
     // create domain in pv
@@ -355,10 +359,10 @@ class ItParameterizedDomain {
   /**
    * Verify liveness probe by killing managed server process 3 times to kick pod container auto-restart.
    */
-  @ParameterizedTest
+  @Test
   @DisplayName("Test liveness probe of pod")
-  @MethodSource("domainProvider")
-  public void testLivenessProbe(Domain domain) {
+  public void testLivenessProbe() {
+    Domain domain = miiDomain;
     assertDomainNotNull(domain);
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
