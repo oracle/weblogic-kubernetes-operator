@@ -67,9 +67,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Operator upgrade tests")
 @IntegrationTest
+@MustNotRunInParallel
 public class ItOperatorUpgrade {
 
-  public static final String LATEST_API_VERSION = "v8";
   private static ConditionFactory withStandardRetryPolicy = null;
   private static Map<String, Object> secretNameMap;
   private static LoggingFacade logger = null;
@@ -326,7 +326,7 @@ public class ItOperatorUpgrade {
           .withParams(new CommandParams()
               .command("kubectl get crd domains.weblogic.oracle -o "
                   + "jsonpath='{.spec.versions[?(@.storage==true)].name}'"))
-          .executeAndVerify(LATEST_API_VERSION);
+          .executeAndVerify(TestConstants.DOMAIN_VERSION);
     };
   }
 
@@ -340,7 +340,7 @@ public class ItOperatorUpgrade {
         apiVersion = "v7";
         break;
       default:
-        apiVersion = LATEST_API_VERSION;
+        apiVersion = TestConstants.DOMAIN_VERSION;
     }
     return apiVersion;
   }

@@ -60,13 +60,6 @@ spec:
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
       value: "-Djava.security.egd=file:/dev/./urandom "
-    # volumes:
-    # - name: weblogic-domain-storage-volume
-    #   persistentVolumeClaim:
-    #     claimName: domain1-weblogic-sample-pvc
-    # volumeMounts:
-    # - mountPath: /shared
-    #   name: weblogic-domain-storage-volume
 
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
@@ -78,7 +71,7 @@ spec:
       channels:
     # The Admin Server's NodePort
        - channelName: default
-         nodePort: 30802
+         nodePort: 0
     # Uncomment to export the T3Channel as a service
        - channelName: T3Channel
 
@@ -103,11 +96,4 @@ spec:
                         - $(CLUSTER_NAME)
                 topologyKey: "kubernetes.io/hostname"
     replicas: 2
-  # The number of managed servers to start for unlisted clusters
-  # replicas: 1
 
-  # Istio
-  # configuration:
-  #   istio:
-  #     enabled: false
-  #     readinessPort: 8888
