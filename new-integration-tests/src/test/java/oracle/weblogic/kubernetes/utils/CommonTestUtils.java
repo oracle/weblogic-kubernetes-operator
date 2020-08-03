@@ -241,7 +241,8 @@ public class CommonTestUtils {
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
                                                     String... domainNamespace) {
-    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false, 0, false, domainNamespace);
+    return installAndVerifyOperator(opNamespace, opServiceAccount, withRestAPI,
+        externalRestHttpsPort, false, domainNamespace);
   }
 
   /**
@@ -505,7 +506,6 @@ public class CommonTestUtils {
   }
 
   /**
-<<<<<<< HEAD
    * Uninstall Elasticsearch.
    *
    * @param params logging exporter parameters to uninstall Elasticsearch
