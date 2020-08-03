@@ -587,46 +587,40 @@ public class Main {
   }
 
   private static void dispatchNamespaceWatch(Watch.Response<V1Namespace> item) {
-    DomainNamespaceSelectionStrategy selectionStrategy = getDomainNamespaceSelectionStrategy();
-    Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredList();
-
     V1Namespace c = item.object;
     if (c != null) {
       String ns = c.getMetadata().getName();
 
-      // For selection strategies with a configured list, we only care about namespaces that are in that list
-      if (configuredDomainNamespaces != null && !configuredDomainNamespaces.contains(ns)) {
-        return;
-      }
-
-      // For regexp strategy, we only care about namespaces that match the pattern
-      String regexp = selectionStrategy.getRegExp();
-      if (regexp != null && !Pattern.compile(regexp).asPredicate().test(ns)) {
-        return;
-      }
-
-      // For label strategy, we will only get watch events for namespaces that match the selector so
-      // no additional check is needed
-
       switch (item.type) {
-        case "ADDED": // FIXME: does this work?
-          // We only create the domain config map when a namespace is added.
-          // The rest of the operations for standing up domains in a namespace
-          // will continue to be handled in recheckDomain method, which periodically
-          // checks for new domain resources in the domain namespaces.
-          if (!delegate.isNamespaceRunning(ns)) {
-            runSteps(getScriptCreationSteps(ns), createPacketWithLoggingContext(ns));
+        case "ADDED":
+          DomainNamespaceSelectionStrategy selectionStrategy = getDomainNamespaceSelectionStrategy();
+          Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredList();
 
-            namespaceStoppingMap.put(ns, new AtomicBoolean(false));
+          // For selection strategies with a configured list, we only care about namespaces that are in that list
+          if (configuredDomainNamespaces != null && !configuredDomainNamespaces.contains(ns)) {
+            return;
           }
+
+          // For regexp strategy, we only care about namespaces that match the pattern
+          String regexp = selectionStrategy.getRegExp();
+          if (regexp != null && !Pattern.compile(regexp).asPredicate().test(ns)) {
+            return;
+          }
+
+          // For label strategy, we will only get watch events for namespaces that match the selector so
+          // no additional check is needed
+
+          Step strategy = new StartNamespacesStep(Collections.singletonList(ns), true);
+          if (!isNamespaceStopping(ns).getAndSet(false)) {
+            strategy = Step.chain(getScriptCreationSteps(ns), strategy);
+          }
+          runSteps(strategy, createPacketWithLoggingContext(ns));
           break;
 
         case "DELETED":
           // Mark the namespace as isStopping, which will cause the namespace be stopped
           // the next time when recheckDomains is triggered
-          if (delegate.isNamespaceRunning(ns)) {
-            namespaceStoppingMap.put(ns, new AtomicBoolean(true));
-          }
+          isNamespaceStopping(ns).set(true);
 
           break;
 
@@ -1152,9 +1146,7 @@ public class Main {
     @Override
     public boolean isNamespaceRunning(String namespace) {
       // make sure the map entry is initialized the value to "false" if absent
-      isNamespaceStopping(namespace);
-
-      return !namespaceStoppingMap.get(namespace).get();
+      return !isNamespaceStopping(namespace).get();
     }
 
     @Override
