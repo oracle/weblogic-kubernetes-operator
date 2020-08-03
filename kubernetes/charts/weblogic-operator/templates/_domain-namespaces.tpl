@@ -13,7 +13,7 @@
 {{- /*
       This regular expression matches any comma not between parentheses
 */ -}}
-{{-   $commaMatch := ",(?![^(]*\)" }}
+{{-   $commaMatch := ",(?![^(]*\\)" }}
 {{-   $terms := regexSplit $commaMatch $args.domainNamespaceLabelSelector -1 }}
 {{-   $namespaces := (lookup "v1" "Namespace" "" "").items }}
 {{-   range $t := $terms }}
@@ -53,7 +53,7 @@
 {{-       else if contains " notin " $term }}
 {{-         $key := regexFind "^.+(? notin )" $term }}
 {{-         if hasKey $namespace.metadata.labels $key }}
-{{-           $parenContents := regexFind "\(([^)]+)\)" $term }}
+{{-           $parenContents := regexFind "\\(([^)]+)\\)" $term }}
 {{-           $values := regexSplit "," $parenContents -1 }}
 {{-           range $value := $values }}
 {{-             if eq ($value | nospace) (get $namespace.metadata.labels $key) }}
@@ -66,7 +66,7 @@
 {{-         if not (hasKey $namespace.metadata.labels $key) }}
 {{-           $namespaces := without $local $namespace }}
 {{-         else }}
-{{-           $parenContents := regexFind "\(([^)]+)\)" $term }}
+{{-           $parenContents := regexFind "\\(([^)]+)\\)" $term }}
 {{-           $values := regexSplit "," $parenContents -1 }}
 {{-           $found := false }}
 {{-           range $value := $values }}
@@ -90,20 +90,6 @@
 {{-     $ignore := set $args "domainNamespace" $key -}}
 {{-     include "operator.operatorRoleBindingNamespace" $args -}}
 {{-   end }}
-
-# ---
-# apiVersion: v1
-# kind: "ConfigMap"
-# metadata:
-#   name: {{ uuidv4 }}
-#   namespace: {{ $namespace.metadata.name | quote }}
-# data:
-#   # some: problem section
-#   {{ uuidv4 }}: {{ list $lname $lvalue | join "-" | quote }}
-#   {{ uuidv4 }}: {{ (cat $lname "=" $lvalue) | quote }}
-#   {{ uuidv4 }}: {{ $args.domainNamespaceLabelSelector | quote }}
-
-
 {{- else if eq .domainNamespaceSelectionStrategy "RegExp" }}
 {{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{-   range $index, $namespace := (lookup "v1" "Namespace" "" "").items }}
