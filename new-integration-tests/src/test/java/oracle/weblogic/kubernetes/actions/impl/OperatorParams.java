@@ -25,6 +25,7 @@ public class OperatorParams {
   private static final String ELK_INTEGRATION_ENABLED = "elkIntegrationEnabled";
   private static final String ELASTICSEARCH_HOST = "elasticSearchHost";
   private static final String ELASTICSEARCH_PORT = "elasticSearchPort";
+  private static final String JAVA_LOGGING_LEVEL = "javaLoggingLevel";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -39,6 +40,7 @@ public class OperatorParams {
   private boolean elkIntegrationEnabled;
   private String elasticSearchHost;
   private int elasticSearchPort;
+  private String javaLoggingLevel;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -100,6 +102,11 @@ public class OperatorParams {
     return this;
   }
 
+  public OperatorParams javaLoggingLevel(String javaLoggingLevel) {
+    this.javaLoggingLevel = javaLoggingLevel;
+    return this;
+  }
+
   public String getServiceAccount() {
     return serviceAccount;
   }
@@ -130,6 +137,9 @@ public class OperatorParams {
     }
     if (elasticSearchPort > 0) {
       values.put(ELASTICSEARCH_PORT, Integer.valueOf(elasticSearchPort));
+    }
+    if (javaLoggingLevel != null) {
+      values.put(JAVA_LOGGING_LEVEL, javaLoggingLevel);
     }
     values.values().removeIf(Objects::isNull);
     return values;

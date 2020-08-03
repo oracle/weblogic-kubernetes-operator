@@ -104,6 +104,7 @@ public interface TestConstants {
   public static final String KIBANA_IMAGE = KIBANA_NAME + ":6.8.0";
   public static final String KIBANA_TYPE = "NodePort";
   public static final int KIBANA_PORT = 5601;
+  public static final String JAVA_LOGGING_LEVEL_VALUE = "INFO";
 
   // MII image constants
   public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";
