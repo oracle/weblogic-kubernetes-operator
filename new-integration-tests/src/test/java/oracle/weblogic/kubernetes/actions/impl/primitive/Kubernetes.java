@@ -1776,8 +1776,11 @@ public class Kubernetes {
    * @throws ApiException when deletion of job fails
    */
   public static boolean deleteJob(String namespace, String name) throws ApiException {
+    LoggingFacade logger = getLogger();
     try {
+      logger.info("in deleteJob method 1");
       BatchV1Api apiInstance = new BatchV1Api(apiClient);
+      logger.info("in deleteJob method 2");
       apiInstance.deleteNamespacedJob(
           name, // String | name of the job.
           namespace, // String | name of the namespace.
@@ -1788,8 +1791,11 @@ public class Kubernetes {
           FOREGROUND, // String | Whether and how garbage collection will be performed.
           null // V1DeleteOptions.
       );
+      logger.info("in deleteJob method 3");
     } catch (ApiException apex) {
-      getLogger().warning(apex.getResponseBody());
+      logger.info("in deleteJob method 4");
+      logger.warning(apex.getResponseBody());
+      logger.info("in deleteJob method 5");
       throw apex;
     }
     return true;

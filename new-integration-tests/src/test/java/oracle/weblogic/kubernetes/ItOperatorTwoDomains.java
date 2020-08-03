@@ -41,10 +41,14 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -52,10 +56,13 @@ import org.junit.jupiter.api.Test;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Paths.get;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -66,10 +73,17 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -88,6 +102,7 @@ import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -101,6 +116,8 @@ public class ItOperatorTwoDomains {
 
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
+  private static final String defaultNamespace = "default";
+  private static final String wlSecretName = "weblogic-credentials";
 
   private static boolean isUseSecret = true;
   private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
@@ -111,6 +128,7 @@ public class ItOperatorTwoDomains {
   private static List<String> opNamespaces = new ArrayList<>();
   private static List<String> domainNamespaces = new ArrayList<>();
   private static List<String> domainUids = new ArrayList<>();
+  private static HelmParams operatorHelmParams = null;
 
   // domain constants
   private final String clusterName = "cluster-1";
@@ -147,9 +165,8 @@ public class ItOperatorTwoDomains {
     }
 
     // install and verify operator
-    for (int i = 0; i < numberOfOperators; i++) {
-      installAndVerifyOperator(opNamespaces.get(i), domainNamespaces.get(i));
-    }
+    operatorHelmParams = installAndVerifyOperator(opNamespaces.get(0), domainNamespaces.get(0), defaultNamespace);
+    installAndVerifyOperator(opNamespaces.get(1), domainNamespaces.get(1));
 
     // initiate domainUid list for two domains
     for (int i = 1; i <= numberOfDomains; i++) {
@@ -187,25 +204,130 @@ public class ItOperatorTwoDomains {
     createTwoDomainsOnPVUsingWlstAndVerify();
 
     // get the domain1 and domain2 pods original creation timestamps
-    getBothDomainsPodsOriginalCreationTimestamp();
+    getBothDomainsPodsOriginalCreationTimestamp(domainUids, domainNamespaces);
 
     // scale cluster in domain1 from 2 to 3 servers and verify no impact on domain2
     replicasAfterScale = 3;
     scaleDomain1AndVerifyNoImpactOnDomain2();
 
     // restart domain1 and verify no impact on domain2
-    restartDomain1AndVerifyNoImpactOnDomain2();
+    restartDomain1AndVerifyNoImpactOnDomain2(replicasAfterScale, domain1Namespace, domain2Namespace);
 
     // shutdown both domains and verify the pods were shutdown
-    shutdownBothDomainsAndVerify();
+    shutdownBothDomainsAndVerify(domainNamespaces);
+  }
+
+  /**
+   * Create one operator if it is not running.
+   * Create domain domain1 and domain2 dynamic cluster in default namespace, managed by operator1.
+   * Both domains share one PV.
+   * Verify scaling for domain2 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1.
+   * Shut domain1 down and back up, plus verify no impact on domain2.
+   * shutdown the domains
+   */
+  @Test
+  public void testTwoDomainsManagedByOneOperatorSharingPV() throws Exception {
+    createTwoDomainsSharingPVUsingWlstAndVerify();
+
+    // get the domain1 and domain2 pods original creation timestamps
+    List<String> domainNamespaces = new ArrayList<>();
+    domainNamespaces.add(defaultNamespace);
+    domainNamespaces.add(defaultNamespace);
+    getBothDomainsPodsOriginalCreationTimestamp(domainUids, domainNamespaces);
+
+    // scale domain2 to 3 servers and back to 2 and verify no impact on domain1
+    scaleDomain2AndVerifyNoImpactOnDomain1();
+
+    // restart domain1 and verify no impact on domain2
+    restartDomain1AndVerifyNoImpactOnDomain2(replicaCount, defaultNamespace, defaultNamespace);
+
+    // shutdown both domains
+    shutdownBothDomainsAndVerify(domainNamespaces);
+  }
+
+  /**
+   * Cleanup all the remaining artifacts in default namespace created by the test.
+   */
+  @AfterAll
+  public void tearDownAll() {
+
+    // uninstall operator which manages default namespace
+    logger.info("uninstalling operator which manages default namespace");
+    if (operatorHelmParams != null) {
+      assertThat(uninstallOperator(operatorHelmParams))
+          .as("Test uninstallOperator returns true")
+          .withFailMessage("uninstallOperator() did not return true")
+          .isTrue();
+    }
+
+    ConditionFactory withStandardRetryPolicy =
+        with().pollDelay(2, SECONDS)
+            .and().with().pollInterval(10, SECONDS)
+            .atMost(5, MINUTES).await();
+
+    for (int i = 1; i <= numberOfDomains; i++) {
+      int index = i;
+      String domainUid = domainUids.get(index - 1);
+      // delete domain
+      logger.info("deleting domain custom resource {0}", domainUid);
+      assertTrue(deleteDomainCustomResource(domainUid, defaultNamespace));
+
+      // wait until domain was deleted
+
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                      + "(elapsed time {2}ms, remaining time {3}ms)",
+                  domainUid,
+                  defaultNamespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(domainDoesNotExist(domainUid, DOMAIN_VERSION, defaultNamespace));
+
+      // delete job in default namespace
+      //logger.info("deleting job {0}", "create-domain" + index + "-onpv-job");
+      //assertTrue(assertDoesNotThrow(() -> deleteJob("create-domain" + index + "-onpv-job", defaultNamespace),
+      //    "deleteJob failed with ApiException"),
+      //    "failed to delete job");
+
+      // delete configMap in default namespace
+      logger.info("deleting configMap {0}", "create-domain" + index + "-scripts-cm");
+      assertTrue(deleteConfigMap("create-domain" + index + "-scripts-cm", defaultNamespace));
+      //logger.info("deleting configMap {0}", "domain" + index + "-weblogic-domain-introspect-cm");
+      //assertTrue(deleteConfigMap("domain" + index + "-weblogic-domain-introspect-cm", defaultNamespace));
+    }
+
+    // delete configMap weblogic-scripts-cm in default namespace
+    logger.info("deleting configMap weblogic-scripts-cm");
+    assertTrue(deleteConfigMap("weblogic-scripts-cm", defaultNamespace));
+
+    // delete secret in default namespace
+    logger.info("deleting secret {0}", OCR_SECRET_NAME);
+    assertTrue(deleteSecret(OCR_SECRET_NAME, defaultNamespace));
+    logger.info("deleting secret {0}", wlSecretName);
+    assertTrue(deleteSecret(wlSecretName, defaultNamespace));
+
+    // Delete jobs
+    try {
+      for (var item : Kubernetes.listJobs(defaultNamespace).getItems()) {
+        Kubernetes.deleteJob(defaultNamespace, item.getMetadata().getName());
+      }
+    } catch (Exception ex) {
+      logger.warning(ex.getMessage());
+      logger.warning("Failed to delete jobs");
+    }
+
+    // delete pv and pvc in default namespace
+    logger.info("deleting pvc default-sharing-pvc");
+    logger.info("deleting pv default-sharing-pv");
+    assertTrue(deletePersistentVolumeClaim("default-sharing-pvc", defaultNamespace));
+    assertTrue(deletePersistentVolume("default-sharing-pv"));
   }
 
   /**
    * Create two domains on PV using WLST.
    */
   private void createTwoDomainsOnPVUsingWlstAndVerify() {
-
-    String wlSecretName = "weblogic-credentials";
 
     for (int i = 0; i < numberOfDomains; i++) {
 
@@ -266,60 +388,13 @@ public class ItOperatorTwoDomains {
       createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace);
 
       // run create a domain on PV job using WLST
-      runCreateDomainOnPVJobUsingWlst(pvName, pvcName, domainUid, domainNamespace);
+      runCreateDomainOnPVJobUsingWlst(pvName, pvcName, domainUid, domainNamespace,
+          "create-domain-scripts-cm", "create-domain-onpv-job");
 
       // create the domain custom resource configuration object
       logger.info("Creating domain custom resource");
-      Domain domain = new Domain()
-          .apiVersion(DOMAIN_API_VERSION)
-          .kind("Domain")
-          .metadata(new V1ObjectMeta()
-              .name(domainUid)
-              .namespace(domainNamespace))
-          .spec(new DomainSpec()
-              .domainUid(domainUid)
-              .domainHome("/shared/domains/" + domainUid)
-              .domainHomeSourceType("PersistentVolume")
-              .image(image)
-              .imagePullSecrets(isUseSecret ? Arrays.asList(
-                  new V1LocalObjectReference()
-                      .name(OCR_SECRET_NAME))
-                  : null)
-              .webLogicCredentialsSecret(new V1SecretReference()
-                  .name(wlSecretName)
-                  .namespace(domainNamespace))
-              .includeServerOutInPodLog(true)
-              .logHomeEnabled(Boolean.TRUE)
-              .logHome("/shared/logs/" + domainUid)
-              .dataHome("")
-              .serverStartPolicy("IF_NEEDED")
-              .serverPod(new ServerPod()
-                  .addEnvItem(new V1EnvVar()
-                      .name("JAVA_OPTIONS")
-                      .value("-Dweblogic.StdoutDebugEnabled=false"))
-                  .addEnvItem(new V1EnvVar()
-                      .name("USER_MEM_ARGS")
-                      .value("-Djava.security.egd=file:/dev/./urandom "))
-                  .addVolumesItem(new V1Volume()
-                      .name(pvName)
-                      .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
-                          .claimName(pvcName)))
-                  .addVolumeMountsItem(new V1VolumeMount()
-                      .mountPath("/shared")
-                      .name(pvName)))
-              .adminServer(new AdminServer()
-                  .serverStartState("RUNNING")
-                  .adminService(new AdminService()
-                      .addChannelsItem(new Channel()
-                          .channelName("default")
-                          .nodePort(0))
-                      .addChannelsItem(new Channel()
-                          .channelName("T3Channel")
-                          .nodePort(t3ChannelPort))))
-              .addClustersItem(new Cluster()
-                  .clusterName(clusterName)
-                  .replicas(replicaCount)
-                  .serverStartState("RUNNING")));
+      Domain domain =
+          createDomainCustomResource(domainUid, domainNamespace, wlSecretName, pvName, pvcName, t3ChannelPort);
 
       logger.info("Creating domain custom resource {0} in namespace {1}", domainUid, domainNamespace);
       createDomainAndVerify(domain, domainNamespace);
@@ -360,7 +435,9 @@ public class ItOperatorTwoDomains {
   private void runCreateDomainOnPVJobUsingWlst(String pvName,
                                                String pvcName,
                                                String domainUid,
-                                               String domainNamespace) {
+                                               String domainNamespace,
+                                               String domainScriptConfigMapName,
+                                               String createDomainInPVJobName) {
 
     logger.info("Creating a staging location for domain creation scripts");
     Path pvTemp = get(RESULTS_ROOT, this.getClass().getSimpleName(), "domainCreateTempPV");
@@ -383,14 +460,15 @@ public class ItOperatorTwoDomains {
     domainScriptFiles.add(domainPropertiesFile);
 
     logger.info("Creating a ConfigMap to hold domain creation scripts");
-    String domainScriptConfigMapName = "create-domain-scripts-cm";
+    //String domainScriptConfigMapName = "create-domain-scripts-cm";
     createConfigMapFromFiles(domainScriptConfigMapName, domainScriptFiles, domainNamespace);
 
     logger.info("Running a Kubernetes job to create the domain");
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                .name("create-domain-onpv-job")
+                //.name("create-domain-onpv-job")
+                .name(createDomainInPVJobName)
                 .namespace(domainNamespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once
@@ -499,13 +577,15 @@ public class ItOperatorTwoDomains {
 
     // verify scaling domain1 has no impact on domain2
     logger.info("Checking that domain2 was not changed after domain1 was scaled up");
-    verifyDomain2NotChanged();
+    verifyDomain2NotChanged(domain2Namespace);
   }
 
   /**
    * Restart domain1 and verify there was no impact on domain2.
    */
-  private void restartDomain1AndVerifyNoImpactOnDomain2() {
+  private void restartDomain1AndVerifyNoImpactOnDomain2(int numServersInDomain1,
+                                                        String domain1Namespace,
+                                                        String domain2Namespace) {
     String domain1AdminServerPodName = domainAdminServerPodNames.get(0);
 
     // shutdown domain1
@@ -518,14 +598,14 @@ public class ItOperatorTwoDomains {
     checkPodDoesNotExist(domain1AdminServerPodName, domain1Uid, domain1Namespace);
 
     logger.info("Checking managed server pods in domain1 were shutdown");
-    for (int i = 1; i <= replicasAfterScale; i++) {
+    for (int i = 1; i <= numServersInDomain1; i++) {
       String domain1ManagedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
       checkPodDoesNotExist(domain1ManagedServerPodName, domain1Uid, domain1Namespace);
     }
 
     // verify domain2 was not changed after domain1 was shut down
     logger.info("Verifying that domain2 was not changed after domain1 was shut down");
-    verifyDomain2NotChanged();
+    verifyDomain2NotChanged(domain2Namespace);
 
     // restart domain1
     logger.info("Starting domain1");
@@ -541,7 +621,7 @@ public class ItOperatorTwoDomains {
 
     // check managed server pods in domain1
     logger.info("Checking managed server pods in domain1 were started");
-    for (int i = 1; i <= replicasAfterScale; i++) {
+    for (int i = 1; i <= numServersInDomain1; i++) {
       String domain1ManagedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
       checkPodReadyAndServiceExists(domain1ManagedServerPodName, domain1Uid, domain1Namespace);
       checkPodRestarted(domain1Uid, domain1Namespace, domain1ManagedServerPodName,
@@ -550,13 +630,13 @@ public class ItOperatorTwoDomains {
 
     // verify domain2 was not changed after domain1 was restarted
     logger.info("Verifying that domain2 was not changed after domain1 was started");
-    verifyDomain2NotChanged();
+    verifyDomain2NotChanged(domain2Namespace);
   }
 
   /**
    * Verify domain2 server pods were not changed.
    */
-  private void verifyDomain2NotChanged() {
+  private void verifyDomain2NotChanged(String domain2Namespace) {
     String domain2AdminServerPodName = domainAdminServerPodNames.get(1);
 
     logger.info("Checking that domain2 admin server pod state was not changed");
@@ -584,7 +664,13 @@ public class ItOperatorTwoDomains {
   /**
    * Get domain1 and domain2 server pods original creation timestamps.
    */
-  private void getBothDomainsPodsOriginalCreationTimestamp() {
+  private void getBothDomainsPodsOriginalCreationTimestamp(List<String> domainUids,
+                                                           List<String> domainNamespaces) {
+    domainAdminServerPodNames.clear();
+    domainAdminPodOriginalTimestamps.clear();
+    domain1ManagedServerPodOriginalTimestampList.clear();
+    domain2ManagedServerPodOriginalTimestampList.clear();
+
     // get the domain1 pods original creation timestamp
     logger.info("Getting admin server pod original creation timestamps for both domains");
     for (int i = 0; i < numberOfDomains; i++) {
@@ -596,20 +682,20 @@ public class ItOperatorTwoDomains {
     // get the managed server pods original creation timestamps
     logger.info("Getting managed server pods original creation timestamps for both domains");
     for (int i = 1; i <= replicaCount; i++) {
-      String managedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
+      String managedServerPodName = domainUids.get(0) + "-" + MANAGED_SERVER_NAME_BASE + i;
       domain1ManagedServerPodOriginalTimestampList.add(
-          getPodCreationTime(domain1Namespace, managedServerPodName));
+          getPodCreationTime(domainNamespaces.get(0), managedServerPodName));
 
-      managedServerPodName = domain2Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
+      managedServerPodName = domainUids.get(1) + "-" + MANAGED_SERVER_NAME_BASE + i;
       domain2ManagedServerPodOriginalTimestampList.add(
-          getPodCreationTime(domain2Namespace, managedServerPodName));
+          getPodCreationTime(domainNamespaces.get(1), managedServerPodName));
     }
   }
 
   /**
    * Shutdown both domains and verify all the server pods were shutdown.
    */
-  private void shutdownBothDomainsAndVerify() {
+  private void shutdownBothDomainsAndVerify(List<String> domainNamespaces) {
 
     // shutdown both domains
     logger.info("Shutting down both domains");
@@ -653,5 +739,227 @@ public class ItOperatorTwoDomains {
     logger.info("Check service {0} exists in namespace {1}", podName, namespace);
     checkServiceExists(podName, namespace);
 
+  }
+
+  /**
+   * Create a domain custom resource object.
+   *
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param wlSecretName WebLogic secret name
+   * @param pvName name of persistence volume
+   * @param pvcName name of persistence volume claim
+   * @param t3ChannelPort t3 channel port for admin server
+   * @return oracle.weblogic.domain.Domain object
+   */
+  private Domain createDomainCustomResource(String domainUid,
+                                            String domainNamespace,
+                                            String wlSecretName,
+                                            String pvName,
+                                            String pvcName,
+                                            int t3ChannelPort) {
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHome("/shared/domains/" + domainUid)
+            .domainHomeSourceType("PersistentVolume")
+            .image(image)
+            .imagePullSecrets(isUseSecret ? Arrays.asList(
+                new V1LocalObjectReference()
+                    .name(OCR_SECRET_NAME))
+                : null)
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(wlSecretName)
+                .namespace(domainNamespace))
+            .includeServerOutInPodLog(true)
+            .logHomeEnabled(Boolean.TRUE)
+            .logHome("/shared/logs/" + domainUid)
+            .dataHome("")
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addVolumesItem(new V1Volume()
+                    .name(pvName)
+                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName)))
+                .addVolumeMountsItem(new V1VolumeMount()
+                    .mountPath("/shared")
+                    .name(pvName)))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))
+                    .addChannelsItem(new Channel()
+                        .channelName("T3Channel")
+                        .nodePort(t3ChannelPort))))
+            .addClustersItem(new Cluster()
+                .clusterName(clusterName)
+                .replicas(replicaCount)
+                .serverStartState("RUNNING")));
+
+    return domain;
+  }
+
+  /**
+   * Create two domains on PV using WLST.
+   */
+  private void createTwoDomainsSharingPVUsingWlstAndVerify() {
+
+    String pvName = "default-sharing-pv";
+    String pvcName = "default-sharing-pvc";
+
+    if (isUseSecret) {
+      // create pull secrets for WebLogic image
+      createOCRRepoSecret(defaultNamespace);
+    }
+
+    // create WebLogic credentials secret
+    createSecretWithUsernamePassword(wlSecretName, defaultNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create persistent volume
+    Path pvHostPath = assertDoesNotThrow(
+        () -> createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), "default-sharing-persistentVolume")),
+        "createDirectories failed with IOException");
+
+    logger.info("Creating PV directory {0}", pvHostPath);
+    assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
+    assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
+
+    V1PersistentVolume v1pv = new V1PersistentVolume()
+        .spec(new V1PersistentVolumeSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName("default-sharing-weblogic-domain-storage-class")
+            .volumeMode("Filesystem")
+            .putCapacityItem("storage", Quantity.fromString("5Gi"))
+            .persistentVolumeReclaimPolicy("Recycle")
+            .accessModes(Arrays.asList("ReadWriteMany"))
+            .hostPath(new V1HostPathVolumeSource()
+                .path(pvHostPath.toString())))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(pvName)
+            .build()
+            .putLabelsItem("sharing-pv", "true"));
+
+    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
+        .spec(new V1PersistentVolumeClaimSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName("default-sharing-weblogic-domain-storage-class")
+            .volumeName(pvName)
+            .resources(new V1ResourceRequirements()
+                .putRequestsItem("storage", Quantity.fromString("5Gi"))))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(pvcName)
+            .withNamespace(defaultNamespace)
+            .build()
+            .putLabelsItem("sharing-pvc", "true"));
+
+    // create pv and pvc
+    String labelSelector = String.format("sharing-pv in (%s)", "true");
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, defaultNamespace);
+
+    for (int i = 1; i <= numberOfDomains; i++) {
+      String domainUid = domainUids.get(i - 1);
+      String domainScriptConfigMapName = "create-domain" + i + "-scripts-cm";
+      String createDomainInPVJobName = "create-domain" + i + "-onpv-job";
+
+      t3ChannelPort = getNextFreePort(32003, 32700);
+      logger.info("t3ChannelPort for domain {0} is {1}", domainUid, t3ChannelPort);
+
+      // run create a domain on PV job using WLST
+      runCreateDomainOnPVJobUsingWlst(pvName, pvcName, domainUid, defaultNamespace, domainScriptConfigMapName,
+          createDomainInPVJobName);
+
+      // create the domain custom resource configuration object
+      logger.info("Creating domain custom resource");
+      Domain domain =
+          createDomainCustomResource(domainUid, defaultNamespace, wlSecretName, pvName, pvcName, t3ChannelPort);
+
+      logger.info("Creating domain custom resource {0} in namespace {1}", domainUid, defaultNamespace);
+      createDomainAndVerify(domain, defaultNamespace);
+
+      String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+      // check admin server pod is ready and service exists in domain namespace
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, defaultNamespace);
+
+      // check for managed server pods are ready and services exist in domain namespace
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, defaultNamespace);
+      }
+
+      logger.info("Getting admin service node port");
+      int serviceNodePort =
+          getServiceNodePort(defaultNamespace, adminServerPodName + "-external", "default");
+
+      logger.info("Validating WebLogic admin server access by login to console");
+      assertTrue(assertDoesNotThrow(
+          () -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+          "Access to admin server node port failed"), "Console login validation failed");
+    }
+  }
+
+  /**
+   * Scale domain2 and verify there is no impact on domain1.
+   */
+  private void scaleDomain2AndVerifyNoImpactOnDomain1() {
+
+    // scale domain2 from 2 servers to 3 servers
+    replicasAfterScale = 3;
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
+        clusterName, domain2Uid, defaultNamespace, replicasAfterScale);
+    scaleAndVerifyCluster(clusterName, domain2Uid, defaultNamespace,
+        domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, replicasAfterScale,
+        null, null);
+
+    // scale domain2 from 3 servers to 2 servers
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
+        clusterName, domain2Uid, defaultNamespace, replicaCount);
+    scaleAndVerifyCluster(clusterName, domain2Uid, defaultNamespace,
+        domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicasAfterScale, replicaCount,
+        null, null);
+
+    // verify scaling domain2 has no impact on domain1
+    logger.info("Checking that domain1 was not changed after domain2 was scaled up");
+    verifyDomain1NotChanged();
+  }
+
+  /**
+   * Verify domain1 server pods were not changed.
+   */
+  private void verifyDomain1NotChanged() {
+    String domain1AdminServerPodName = domainAdminServerPodNames.get(0);
+
+    logger.info("Checking that domain1 admin server pod state was not changed");
+    assertThat(podStateNotChanged(domain1AdminServerPodName, domain1Uid, defaultNamespace,
+        domainAdminPodOriginalTimestamps.get(0)))
+        .as("Test state of pod {0} was not changed in namespace {1}",
+            domain1AdminServerPodName, defaultNamespace)
+        .withFailMessage("State of pod {0} was changed in namespace {1}",
+            domain1AdminServerPodName, defaultNamespace)
+        .isTrue();
+
+    logger.info("Checking that domain1 managed server pods states were not changed");
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
+      assertThat(podStateNotChanged(managedServerPodName, domain1Uid, defaultNamespace,
+          domain1ManagedServerPodOriginalTimestampList.get(i - 1)))
+          .as("Test state of pod {0} was not changed in namespace {1}",
+              managedServerPodName, defaultNamespace)
+          .withFailMessage("State of pod {0} was changed in namespace {1}",
+              managedServerPodName, defaultNamespace)
+          .isTrue();
+    }
   }
 }

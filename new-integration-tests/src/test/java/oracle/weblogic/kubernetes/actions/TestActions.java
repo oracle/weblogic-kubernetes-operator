@@ -976,6 +976,18 @@ public class TestActions {
     return Job.getJob(jobName, namespace);
   }
 
+  /**
+   * Delete a job.
+   *
+   * @param jobName name of the job
+   * @param namespace name of the namespace
+   * @return true if delete was successful
+   * @throws ApiException when deletion of job fails
+   */
+  public static boolean deleteJob(String jobName, String namespace) throws ApiException {
+    return Job.deleteJob(jobName, namespace);
+  }
+
   // ----------------------   pod  ---------------------------------
 
   /**
