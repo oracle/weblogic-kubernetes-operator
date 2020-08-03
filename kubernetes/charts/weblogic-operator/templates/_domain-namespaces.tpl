@@ -11,44 +11,63 @@
 {{- else if eq .domainNamespaceSelectionStrategy "LabelSelector" }}
 {{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{- /*
-      This regular expression matches any comma not between parentheses
+      Split terms on commas not contained in parentheses. Unfortunately, the regular expression
+      support included with Helm tempalates does not include lookarounds.
 */ -}}
-{{-   $commaMatch := ",(?![^(]*\\)" }}
-{{-   $terms := regexSplit $commaMatch $args.domainNamespaceLabelSelector -1 }}
+{{-   $terms := list $args.domainNamespaceLabelSelector }}
+{{-   if contains "," $args.domainNamespaceLabelSelector }}
+{{-     $st := list }}
+{{-     $cs := regexSplit "," $args.domainNamespaceLabelSelector -1 }}
+{{-     $item := "" }}
+{{-     range $c := $cs }}
+{{-       if contains "(" $c }}
+{{-         $item := print $item $c }}
+{{-       else if and (not (eq $item "")) (contains ")" $c) }}
+{{-         $st := append $st (print $item $c) }}
+{{-         $item := "" }}
+{{-       else }}
+{{-         $st := append $st $c }}
+{{-       end }}
+{{-     end }}
+{{-     $terms := $st }}
+{{-   end }}
 {{-   $namespaces := (lookup "v1" "Namespace" "" "").items }}
+{{-   $working := dict "rejected" (list) }}
 {{-   range $t := $terms }}
 {{-     $term := trim $t }}
-{{-     $local := $namespaces }}
-{{-     range $index, $namespace := $local }}
+{{-     range $index, $namespace := $namespaces }}
 {{- /*
         Label selector patterns
         Equality-based: =, ==, !=
         Set-based: x in (a, b), x notin (a, b)
         Existence: x, !x
 */ -}}
+{{-       if not $namespace.metadata.labels }}
+{{-         $ignore := set $namespace.metadata "labels" dict }}
+{{-       end }}
 {{-       if hasPrefix "!" $term }}
 {{-         if hasKey $namespace.metadata.labels (trimPrefix "!" $term) }}
-{{-           $namespaces := without $local $namespace }}
+{{-           $ignore := set $working "rejected" (append $working.rejected $namespace.metadata.name) }}
 {{-         end }}
 {{-       else if contains "!=" $term }}
 {{-         $split := regexSplit "!=" $term 2 }}
 {{-         $key := nospace (first $split) }}
 {{-         if hasKey $namespace.metadata.labels $key }}
 {{-           if eq (last $split | nospace) (get $namespace.metadata.labels $key) }}
-{{-             $namespaces := without $local $namespace }}
+{{-             $ignore := set $working "rejected" (append $working.rejected $namespace.metadata.name) }}
 {{-           end }}
 {{-         end }}
 {{-       else if contains "==" $term }}
 {{-         $split := regexSplit "==" $term 2 }}
 {{-         $key := nospace (first $split) }}
 {{-         if or (not (hasKey $namespace.metadata.labels $key)) (not (eq (last $split | nospace) (get $namespace.metadata.labels $key))) }}
-{{-           $namespaces := without $local $namespace }}
+{{-           $ignore := set $working "rejected" (append $working.rejected $namespace.metadata.name) }}
 {{-         end }}
 {{-       else if contains "=" $term }}
 {{-         $split := regexSplit "=" $term 2 }}
 {{-         $key := nospace (first $split) }}
 {{-         if or (not (hasKey $namespace.metadata.labels $key)) (not (eq (last $split | nospace) (get $namespace.metadata.labels $key))) }}
-{{-           $namespaces := without $local $namespace }}
+{{-           $ignore := set $working "rejected" (append $working.rejected $namespace.metadata.name) }}
 {{-         end }}
 {{-       else if contains " notin " $term }}
 {{-         $key := regexFind "^.+(? notin )" $term }}
@@ -57,14 +76,14 @@
 {{-           $values := regexSplit "," $parenContents -1 }}
 {{-           range $value := $values }}
 {{-             if eq ($value | nospace) (get $namespace.metadata.labels $key) }}
-{{-               $namespaces := without $local $namespace }}
+{{-               $ignore := set $working "rejected" (append $working.rejected $namespace.metadata.name) }}
 {{-             end }}
 {{-           end }}
 {{-         end }}
 {{-       else if contains " in " $term }}
 {{-         $key := regexFind "^.+(? in )" $term }}
 {{-         if not (hasKey $namespace.metadata.labels $key) }}
-{{-           $namespaces := without $local $namespace }}
+{{-           $ignore := set $working "rejected" (append $working.rejected $namespace.metadata.name) }}
 {{-         else }}
 {{-           $parenContents := regexFind "\\(([^)]+)\\)" $term }}
 {{-           $values := regexSplit "," $parenContents -1 }}
@@ -75,20 +94,22 @@
 {{-             end }}
 {{-           end }}
 {{-           if not $found }}
-{{-             $namespaces := without $local $namespace }}
+{{-             $ignore := set $working "rejected" (append $working.rejected $namespace.metadata.name) }}
 {{-           end }}
 {{-         end }}
 {{-       else }}
 {{-         if not (hasKey $namespace.metadata.labels $term) }}
-{{-           $namespaces := without $local $namespace }}
+{{-           $ignore := set $working "rejected" (append $working.rejected $namespace.metadata.name) }}
 {{-         end }}
 {{-       end }}
 {{-     end }}
 {{-   end }}
 {{-   range $index, $namespace := $namespaces }}
 {{-     $key := $namespace.metadata.name -}}
-{{-     $ignore := set $args "domainNamespace" $key -}}
-{{-     include "operator.operatorRoleBindingNamespace" $args -}}
+{{-     if not (has $key $working.rejected) }}
+{{-       $ignore := set $args "domainNamespace" $key -}}
+{{-       include "operator.operatorRoleBindingNamespace" $args -}}
+{{-     end }}
 {{-   end }}
 {{- else if eq .domainNamespaceSelectionStrategy "RegExp" }}
 {{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
