@@ -203,9 +203,6 @@ class ItParameterizedDomain {
     // set the service account name for the operator
     opServiceAccount = opNamespace + "-sa";
 
-    // get a free port for external REST HTTPS port
-    //externalRestHttpsPort = getNextFreePort(31001, 31201);
-
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
       String kindRepoImage = KIND_REPO + wlsBaseImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
