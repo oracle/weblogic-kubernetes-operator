@@ -20,11 +20,13 @@
 {{-     $ignore := set $working "st" (list) }}
 {{-     $ignore := set $working "item" "" }}
 {{-     range $c := $cs }}
-{{-       if contains "(" $c }}
+{{-       if and (contains "(" $c) (not (contains ")" $c)) }}
 {{-         $ignore := set $working "item" (print $working.item $c) }}
-{{-       else if and (not (eq $working.item "")) (contains ")" $c) }}
-{{-         $ignore := set $working "st" (append $working.st (print $working.item $c)) }}
-{{-         $ignore := set $working "item" "" }}
+{{-       else if not (eq $working.item "") }}
+{{-         $ignore := set $working "st" (append $working.st (print $working.item "," $c)) }}
+{{-         if contains ")" $c }}
+{{-           $ignore := set $working "item" "" }}
+{{-         end }}
 {{-       else }}
 {{-         $ignore := set $working "st" (append $working.st $c) }}
 {{-       end }}
@@ -69,9 +71,11 @@
 {{-           $ignore := set $working "rejected" (append $working.rejected $namespace.metadata.name) }}
 {{-         end }}
 {{-       else if contains " notin " $term }}
-{{-         $key := regexFind "^.+(? notin )" $term }}
+{{-         $split := regexSplit " notin " $term 2 }}
+{{-         $key := nospace (first $split) }}
 {{-         if hasKey $namespace.metadata.labels $key }}
-{{-           $parenContents := regexFind "\\(([^)]+)\\)" $term }}
+{{-           $second := nospace (last $split) }}
+{{-           $parenContents := substr 1 (int (sub (len $second) 1)) $second }}
 {{-           $values := regexSplit "," $parenContents -1 }}
 {{-           range $value := $values }}
 {{-             if eq ($value | nospace) (get $namespace.metadata.labels $key) }}
@@ -80,11 +84,13 @@
 {{-           end }}
 {{-         end }}
 {{-       else if contains " in " $term }}
-{{-         $key := regexFind "^.+(? in )" $term }}
+{{-         $split := regexSplit " in " $term 2 }}
+{{-         $key := nospace (first $split) }}
 {{-         if not (hasKey $namespace.metadata.labels $key) }}
 {{-           $ignore := set $working "rejected" (append $working.rejected $namespace.metadata.name) }}
 {{-         else }}
-{{-           $parenContents := regexFind "\\(([^)]+)\\)" $term }}
+{{-           $second := nospace (last $split) }}
+{{-           $parenContents := substr 1 (int (sub (len $second) 1)) $second }}
 {{-           $values := regexSplit "," $parenContents -1 }}
 {{-           $ignore := set $working "found" false }}
 {{-           range $value := $values }}
