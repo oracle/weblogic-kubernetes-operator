@@ -36,6 +36,7 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -57,7 +58,9 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
@@ -567,7 +570,7 @@ public class ItIntrospectVersion {
 
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
-    
+
     // verify the admin server service created
     checkServiceExists(adminServerPodName, introDomainNamespace);
 
@@ -727,6 +730,131 @@ public class ItIntrospectVersion {
       logger.info("Checking {0} health", managedServerNameBase + i);
       assertTrue(response.body().contains(managedServerNameBase + i + ":HEALTH_OK"),
           "Didn't get " + managedServerNameBase + i + ":HEALTH_OK");
+    }
+
+  }
+
+  /**
+   * Test brings up a new cluster and verifies it can successfully start by doing the following.
+   * a. Creates new WebLogic static cluster using WLST.
+   * b. Patch the Domain Resource with cluster
+   * c. Update the introspectVersion version
+   * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
+   * pre-existing WebLogic cluster.
+   */
+  @Order(3)
+  @Test
+  @DisplayName("Test new cluster creation on demand using WLST and introspection")
+  public void testCredentialChange() {
+
+    final String domainUid = "mydomain";
+
+    final String adminServerName = "admin-server";
+    final String adminServerPodName = domainUid + "-" + adminServerName;
+
+    logger.info("Getting node port for default channel");
+    int adminServerT3Port = getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel");
+
+    // create a temporary WebLogic WLST property file
+    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+        "Creating WLST properties file failed");
+    Properties p = new Properties();
+    p.setProperty("admin_host", K8S_NODEPORT_HOST);
+    p.setProperty("admin_port", Integer.toString(adminServerT3Port));
+    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("new_admin_user", ADMIN_USERNAME_PATCH);
+    p.setProperty("new_admin_password", ADMIN_PASSWORD_PATCH);
+    assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
+        "Failed to write the WLST properties to file");
+
+    // changet the admin server port to a different value to force pod restart
+    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
+    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
+
+    // create a new secret for admin credentials
+    logger.info("Create a new secret that contains new WebLogic admin credentials");
+    String newWlSecretName = "weblogic-credentials-new";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        wlSecretName,
+        introDomainNamespace,
+        ADMIN_USERNAME_PATCH,
+        ADMIN_PASSWORD_PATCH),
+        String.format("createSecret failed for %s", newWlSecretName));
+
+    // delete the old secret
+    TestActions.deleteSecret(wlSecretName, introDomainNamespace);
+
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
+    String oldVersion = assertDoesNotThrow(()
+        -> getDomainCustomResource(domainUid, introDomainNamespace).getSpec().getRestartVersion());
+    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
+
+    logger.info("patch the domain resource with new WebLogic secret, restartVersion and introspectVersion");
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/webLogicCredentialsSecret/name\", "
+        + "\"value\": \"" + newWlSecretName + "\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", "
+        + "\"value\": \"" + introspectVersion + "\"},"
+        + "{\"op\": \"replace\", \"path\": \"/spec/restartVersion\", "
+        + "\"value\": \"" + newVersion + "\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    //verify the introspector pod is created and runs
+    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+
+    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+
+    // verify the admin server service created
+    checkServiceExists(adminServerPodName, introDomainNamespace);
+
+    // verify admin server pod is ready
+    checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
+
+    final int replicaCount = 2;
+    final String[] managedServerNameBases = {"ms", "cl2-ms-"};
+
+    for (String managedServerNameBase : managedServerNameBases) {
+      String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+
+      // verify new cluster managed server services created
+      for (int i = 1; i <= replicaCount; i++) {
+        logger.info("Checking managed server service {0} is created in namespace {1}",
+            managedServerPodNamePrefix + i, introDomainNamespace);
+        checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+      }
+
+      // verify new cluster managed server pods are ready
+      for (int i = 1; i <= replicaCount; i++) {
+        logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
+            managedServerPodNamePrefix + i, introDomainNamespace);
+        checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+      }
+    }
+
+    logger.info("Getting the list of servers using the listServers");
+    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + adminServerT3Port + "/clusterview/";
+    String serverListUri = "ClusterViewServlet?listServers=true";
+    HttpResponse<String> response = null;
+    for (int i = 0; i < 5; i++) {
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
+      response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
+      assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    }
+
+    // verify managed server pods are ready
+    for (String managedServerNameBase : managedServerNameBases) {
+      for (int i = 1; i <= replicaCount; i++) {
+        logger.info("Checking {0} health", managedServerNameBase + i);
+        assertTrue(response.body().contains(managedServerNameBase + i + ":HEALTH_OK"),
+            "Didn't get " + managedServerNameBase + i + ":HEALTH_OK");
+      }
     }
 
   }
