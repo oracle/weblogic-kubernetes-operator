@@ -671,13 +671,7 @@ class ItParameterizedDomain {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false "
-                        + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctionMapper=true "
-                        + "-Dweblogic.StdoutDebugEnabled=true -Dweblogic.log.LogSeverity=Debug "
-                        + "-Dweblogic.log.LoggerSeverity=Debug -Dweblogic.debug.DebugDiagnosticsUtils=true "
-                        + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctions=true "
-                        + "-Dweblogic.debug.DebugDiagnosticsExpressionPoller=true "
-                        + "-Dweblogic.debug.DebugDiagnosticWatch=true"))
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
@@ -842,13 +836,7 @@ class ItParameterizedDomain {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false "
-                        + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctionMapper=true "
-                        + "-Dweblogic.StdoutDebugEnabled=true -Dweblogic.log.LogSeverity=Debug "
-                        + "-Dweblogic.log.LoggerSeverity=Debug -Dweblogic.debug.DebugDiagnosticsUtils=true "
-                        + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctions=true "
-                        + "-Dweblogic.debug.DebugDiagnosticsExpressionPoller=true "
-                        + "-Dweblogic.debug.DebugDiagnosticWatch=true"))
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
@@ -1189,13 +1177,7 @@ class ItParameterizedDomain {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false "
-                        + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctionMapper=true "
-                        + "-Dweblogic.StdoutDebugEnabled=true -Dweblogic.log.LogSeverity=Debug "
-                        + "-Dweblogic.log.LoggerSeverity=Debug -Dweblogic.debug.DebugDiagnosticsUtils=true "
-                        + "-Dweblogic.debug.DebugDiagnosticsExpressionFunctions=true "
-                        + "-Dweblogic.debug.DebugDiagnosticsExpressionPoller=true "
-                        + "-Dweblogic.debug.DebugDiagnosticWatch=true"))
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
