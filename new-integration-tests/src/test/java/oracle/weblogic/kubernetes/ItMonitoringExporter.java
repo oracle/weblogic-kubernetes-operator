@@ -1355,16 +1355,14 @@ class ItMonitoringExporter {
 
     wdtImage =
         createImageAndVerify(MONEXP_IMAGE_NAME,
-                modelList,
-                appList,
-                propertyList,
-                WLS_BASE_IMAGE_NAME,
-                WLS_BASE_IMAGE_TAG,
-                WLS,
-                false,
-                domain2Uid, true);
-
-
+            modelList,
+            appList,
+            propertyList,
+            WLS_BASE_IMAGE_NAME,
+            WLS_BASE_IMAGE_TAG,
+            WLS,
+            false,
+            domain2Uid, true);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(wdtImage);

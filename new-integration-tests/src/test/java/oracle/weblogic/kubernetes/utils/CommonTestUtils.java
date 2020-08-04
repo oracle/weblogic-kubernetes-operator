@@ -76,7 +76,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
@@ -624,7 +623,7 @@ public class CommonTestUtils {
   public static List<String> createIngressForDomainAndVerify(String domainUid,
                                                              String domainNamespace,
                                                              Map<String, Integer> clusterNameMSPortMap) {
-    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, true);
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, true, false, 0);
   }
 
   /**
@@ -641,7 +640,8 @@ public class CommonTestUtils {
                                                              Map<String, Integer> clusterNameMSPortMap,
                                                              boolean setIngressHost) {
 
-    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, setIngressHost);
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, setIngressHost,
+        false, 0);
   }
 
   /**
@@ -658,7 +658,8 @@ public class CommonTestUtils {
                                                              int nodeport,
                                                              Map<String, Integer> clusterNameMSPortMap) {
 
-    return createIngressForDomainAndVerify(domainUid, domainNamespace, nodeport, clusterNameMSPortMap, true);
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, nodeport, clusterNameMSPortMap, true,
+        false, 0);
   }
 
   /**
@@ -669,25 +670,29 @@ public class CommonTestUtils {
    * @param nodeport node port of the ingress controller
    * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
    * @param setIngressHost if false does not set ingress host
+   * @param enableAdminServerRouting enable the ingress rule to admin server
+   * @param adminServerPort the port number of admin server pod of the domain
    * @return list of ingress hosts
    */
   public static List<String> createIngressForDomainAndVerify(String domainUid,
                                                              String domainNamespace,
                                                              int nodeport,
                                                              Map<String, Integer> clusterNameMSPortMap,
-                                                             boolean setIngressHost) {
+                                                             boolean setIngressHost,
+                                                             boolean enableAdminServerRouting,
+                                                             int adminServerPort) {
 
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
     final String ingressNginxClass = "nginx";
-    String ingressName = domainUid + "-" + ingressNginxClass;
+    String ingressName = domainUid + "-" + domainNamespace + "-" + ingressNginxClass;
 
     HashMap<String, String> annotations = new HashMap<>();
     annotations.put("kubernetes.io/ingress.class", ingressNginxClass);
 
     List<String> ingressHostList =
-            createIngress(ingressName, domainNamespace, domainUid,
-                clusterNameMSPortMap, annotations, setIngressHost, null);
+            createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, setIngressHost,
+                null, enableAdminServerRouting, adminServerPort);
 
     assertNotNull(ingressHostList,
             String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
@@ -943,6 +948,23 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check pod is ready and service exists in the specified namespace.
+   *
+   * @param podName pod name to check
+   * @param domainUid the label the pod is decorated with
+   * @param namespace the namespace in which the pod exists
+   */
+  public static void checkPodReadyAndServiceExists(String podName, String domainUid, String namespace) {
+    LoggingFacade logger = getLogger();
+
+    logger.info("Check service {0} exists in namespace {1}", podName, namespace);
+    checkServiceExists(podName, namespace);
+
+    logger.info("Waiting for pod {0} to be ready in namespace {1}", podName, namespace);
+    checkPodReady(podName, domainUid, namespace);
+  }
+
+  /**
    * Check pod does not exist in the specified namespace.
    *
    * @param podName pod name to check
@@ -1128,6 +1150,8 @@ public class CommonTestUtils {
    * @param baseImageTag - the WebLogic base image tag to be used while creating mii image
    * @param domainType - the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
    * @param modelType - create a model image only or domain in image. set to true for MII
+   * @param domainHome - the domain home in the image
+   * @param oneArchiveContainsMultiApps - whether one archive contains multiple apps
    * @return image name with tag
    */
   public static String createImageAndVerify(String imageNameBase,
@@ -1592,14 +1616,14 @@ public class CommonTestUtils {
 
         if (expectedServerNames != null) {
           // add the new managed server to the list
-          expectedServerNames.add(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
+          expectedServerNames.add(manageServerPodName.substring(domainUid.length() + 1));
         }
       }
 
       if (curlCmd != null && expectedServerNames != null) {
         // check that NGINX can access the sample apps from new and original managed servers
         logger.info("Checking that NGINX can access the sample app from the new and original managed servers "
-            + "in the domain after the cluster is scaled up.");
+            + "in the domain after the cluster is scaled up. Expected server names: {0}", expectedServerNames);
         assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNames, 50))
             .as("Verify NGINX can access the sample app from all managed servers in the domain")
             .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
@@ -1609,18 +1633,19 @@ public class CommonTestUtils {
       // scale down
       // wait and check the pods are deleted
       for (int i = replicasBeforeScale; i > replicasAfterScale; i--) {
+        String managedServerPodName = manageServerPodNamePrefix + i;
         logger.info("Checking that managed server pod {0} was deleted from namespace {1}",
-            manageServerPodNamePrefix + i, domainNamespace);
-        checkPodDoesNotExist(manageServerPodNamePrefix + i, domainUid, domainNamespace);
+            managedServerPodName, domainNamespace);
+        checkPodDoesNotExist(managedServerPodName, domainUid, domainNamespace);
         if (expectedServerNames != null) {
-          expectedServerNames.remove(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
+          expectedServerNames.remove(managedServerPodName.substring(domainUid.length() + 1));
         }
       }
 
       if (curlCmd != null && expectedServerNames != null) {
         // check that NGINX can access the app from the remaining managed servers in the domain
         logger.info("Checking that NGINX can access the sample app from the remaining managed servers in the domain "
-            + "after the cluster is scaled down.");
+            + "after the cluster is scaled down. Expected server name: {0}", expectedServerNames);
         assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNames, 50))
             .as("Verify NGINX can access the sample app from the remaining managed server in the domain")
             .withFailMessage("NGINX can not access the sample app from the remaining managed server")
@@ -1859,7 +1884,7 @@ public class CommonTestUtils {
    * @param jobBody V1Job object to create in the specified namespace
    * @param namespace the namespace in which the job will be created
    */
-  public static void createJobAndWaitUntilComplete(V1Job jobBody, String namespace) {
+  public static String createJobAndWaitUntilComplete(V1Job jobBody, String namespace) {
     LoggingFacade logger = getLogger();
     String jobName = assertDoesNotThrow(() -> createNamespacedJob(jobBody), "createNamespacedJob failed");
 
@@ -1873,6 +1898,8 @@ public class CommonTestUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(jobCompleted(jobName, null, namespace));
+
+    return jobName;
   }
 
   /**
