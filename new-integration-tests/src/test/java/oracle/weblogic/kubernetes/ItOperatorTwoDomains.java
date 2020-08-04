@@ -75,10 +75,13 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
@@ -222,11 +225,12 @@ public class ItOperatorTwoDomains {
    * Create domain domain1 and domain2 dynamic cluster in default namespace, managed by operator1.
    * Both domains share one PV.
    * Verify scaling for domain2 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1.
-   * Shut domain1 down and back up, plus verify no impact on domain2.
-   * shutdown the domains
+   * Shut down domain1 and back up, plus verify no impact on domain2.
+   * shutdown both domains
    */
   @Test
-  public void testTwoDomainsManagedByOneOperatorSharingPV() throws Exception {
+  public void testTwoDomainsManagedByOneOperatorSharingPV() {
+    // create two domains sharing one PV in default namespace
     createTwoDomainsSharingPVUsingWlstAndVerify();
 
     // get the domain1 and domain2 pods original creation timestamps
@@ -273,7 +277,6 @@ public class ItOperatorTwoDomains {
       assertTrue(deleteDomainCustomResource(domainUid, defaultNamespace));
 
       // wait until domain was deleted
-
       withStandardRetryPolicy
           .conditionEvaluationListener(
               condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
@@ -284,17 +287,9 @@ public class ItOperatorTwoDomains {
                   condition.getRemainingTimeInMS()))
           .until(domainDoesNotExist(domainUid, DOMAIN_VERSION, defaultNamespace));
 
-      // delete job in default namespace
-      //logger.info("deleting job {0}", "create-domain" + index + "-onpv-job");
-      //assertTrue(assertDoesNotThrow(() -> deleteJob("create-domain" + index + "-onpv-job", defaultNamespace),
-      //    "deleteJob failed with ApiException"),
-      //    "failed to delete job");
-
       // delete configMap in default namespace
       logger.info("deleting configMap {0}", "create-domain" + index + "-scripts-cm");
       assertTrue(deleteConfigMap("create-domain" + index + "-scripts-cm", defaultNamespace));
-      //logger.info("deleting configMap {0}", "domain" + index + "-weblogic-domain-introspect-cm");
-      //assertTrue(deleteConfigMap("domain" + index + "-weblogic-domain-introspect-cm", defaultNamespace));
     }
 
     // delete configMap weblogic-scripts-cm in default namespace
@@ -310,11 +305,21 @@ public class ItOperatorTwoDomains {
     // Delete jobs
     try {
       for (var item : Kubernetes.listJobs(defaultNamespace).getItems()) {
-        Kubernetes.deleteJob(defaultNamespace, item.getMetadata().getName());
+        deleteJob(item.getMetadata().getName(), defaultNamespace);
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
       logger.warning("Failed to delete jobs");
+    }
+
+    // delete remaining pods in default namespace
+    try {
+      for (var item : listPods(defaultNamespace, null).getItems()) {
+        deletePod(item.getMetadata().getName(), defaultNamespace);
+      }
+    } catch (Exception ex) {
+      logger.warning(ex.getMessage());
+      logger.warning("Failed to delete pods");
     }
 
     // delete pv and pvc in default namespace
