@@ -82,6 +82,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResource
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
@@ -110,6 +111,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -742,7 +744,7 @@ public class ItIntrospectVersion {
    * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
    * pre-existing WebLogic cluster.
    */
-  @Order(3)
+  @Order(4)
   @Test
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
   public void testCredentialChange() {
@@ -765,6 +767,7 @@ public class ItIntrospectVersion {
     p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p.setProperty("new_admin_user", ADMIN_USERNAME_PATCH);
     p.setProperty("new_admin_password", ADMIN_PASSWORD_PATCH);
+    p.setProperty("test_name", "replace_admin_user");
     assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
         "Failed to write the WLST properties to file");
 
@@ -856,6 +859,23 @@ public class ItIntrospectVersion {
             "Didn't get " + managedServerNameBase + i + ":HEALTH_OK");
       }
     }
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        introDomainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    boolean loginSuccessful = assertDoesNotThrow(() ->
+        adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH),
+        "Access to admin server node port failed");
+    assertTrue(loginSuccessful, "Console login validation failed");
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    assertThrows(Exception.class, ()
+        -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+        "Accessing using old user/password succedded, supposed to fail");
+    assertTrue(loginSuccessful, "Console login validation failed");
 
   }
 
