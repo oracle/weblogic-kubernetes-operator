@@ -73,8 +73,7 @@ wh1.setEnabled(true)
 wh1.setRuleExpression("wls:ClusterGenericMetricRule('" + clusterName + "','com.bea:Type=WebAppComponentRuntime,ApplicationRuntime=" + myAppName + ",*','OpenSessionsCurrentCount','>=',0.01,5,'1 seconds','10 seconds')")
 wh1.getSchedule().setMinute("*");
 wh1.getSchedule().setSecond("*/15");
-wh1.setAlarmType('AutomaticReset');
-wh1.setAlarmResetPeriod(60000)
+wh1.setAlarmType('ManualReset');
 wh1.addNotification(scriptAct)
 
 save()

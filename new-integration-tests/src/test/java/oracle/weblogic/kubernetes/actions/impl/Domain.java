@@ -473,6 +473,7 @@ public class Domain {
         .append(" ")
         .append(myWebAppName).toString();
 
+    logger.info("executing command {0} in admin server pod", command);
     result = exec(adminPod, null, true, "/bin/sh", "-c", command);
     if (result.exitValue() != 0) {
       return false;
@@ -531,14 +532,15 @@ public class Domain {
     }
 
     // create cluster role binding
-    if (!clusterRoleBindingExists(WLDF_CLUSTER_ROLE_BINDING_NAME)) {
-      logger.info("Creating cluster role binding {0}", WLDF_CLUSTER_ROLE_BINDING_NAME);
+    String clusterRoleBindingName = domainNamespace + "-" + WLDF_CLUSTER_ROLE_BINDING_NAME;
+    if (!clusterRoleBindingExists(clusterRoleBindingName)) {
+      logger.info("Creating cluster role binding {0}", clusterRoleBindingName);
 
       V1ClusterRoleBinding v1ClusterRoleBinding = new V1ClusterRoleBinding()
           .kind(RBAC_CLUSTER_ROLE_BINDING)
           .apiVersion(RBAC_API_VERSION)
           .metadata(new V1ObjectMeta()
-              .name(WLDF_CLUSTER_ROLE_BINDING_NAME))
+              .name(clusterRoleBindingName))
           .addSubjectsItem(new V1Subject()
               .kind("ServiceAccount")
               .name("default")
@@ -555,14 +557,15 @@ public class Domain {
     }
 
     // create domain operator role binding
-    if (!roleBindingExists(WLDF_ROLE_BINDING_NAME, opNamespace)) {
-      logger.info("Creating role binding {0} in namespace {1}", WLDF_ROLE_BINDING_NAME, opNamespace);
+    String roleBindingName = domainNamespace + "-" + WLDF_ROLE_BINDING_NAME;
+    if (!roleBindingExists(roleBindingName, opNamespace)) {
+      logger.info("Creating role binding {0} in namespace {1}", roleBindingName, opNamespace);
 
       V1RoleBinding v1RoleBinding = new V1RoleBinding()
           .kind(RBAC_ROLE_BINDING)
           .apiVersion(RBAC_API_VERSION)
           .metadata(new V1ObjectMeta()
-              .name(WLDF_ROLE_BINDING_NAME)
+              .name(roleBindingName)
               .namespace(opNamespace))
           .addSubjectsItem(new V1Subject()
               .kind("ServiceAccount")
