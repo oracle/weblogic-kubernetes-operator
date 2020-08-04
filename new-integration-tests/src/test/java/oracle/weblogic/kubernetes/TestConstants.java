@@ -67,9 +67,9 @@ public interface TestConstants {
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostName()));
   public static final String GOOGLE_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
-  public static final String RESULTS_ROOT = System.getenv().getOrDefault("RESULTS_ROOT",
+  public static final String RESULTS_ROOT = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/ittestsresults";
-  public static final String LOGS_DIR = System.getenv().getOrDefault("RESULTS_ROOT",
+  public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
 
   public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
