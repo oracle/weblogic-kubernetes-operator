@@ -421,6 +421,11 @@
             "$ref": "#/definitions/ServerStatus"
           }
         },
+        "retryCount": {
+          "description": "Number of retries.",
+          "type": "number",
+          "minimum": 0
+        },
         "replicas": {
           "description": "The number of running cluster member Managed Servers in the WebLogic cluster if there is exactly one cluster defined in the domain configuration and where the `replicas` field is set at the `spec` level rather than for the specific cluster under `clusters`. This field is provided to support use of Kubernetes scaling for this limited use case.",
           "type": "number",

@@ -54,6 +54,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `message` | string | A human readable message indicating details about why the domain is in this condition. |
 | `reason` | string | A brief CamelCase message indicating details about why the domain is in this state. |
 | `replicas` | number | The number of running cluster member Managed Servers in the WebLogic cluster if there is exactly one cluster defined in the domain configuration and where the `replicas` field is set at the `spec` level rather than for the specific cluster under `clusters`. This field is provided to support use of Kubernetes scaling for this limited use case. |
+| `retryCount` | number | Number of retries. |
 | `servers` | array of [Server Status](#server-status) | Status of WebLogic Servers in this domain. |
 | `startTime` | DateTime | RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available. |
 
