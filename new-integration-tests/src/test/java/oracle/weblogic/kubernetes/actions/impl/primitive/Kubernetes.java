@@ -189,7 +189,7 @@ public class Kubernetes {
         new GenericKubernetesApi<>(
             V1Job.class,  // the api type class
             V1JobList.class, // the api list type class
-            "", // the api group
+            "batch", // the api group
             "v1", // the api version
             "jobs", // the resource plural
             apiClient //the api client
@@ -1775,29 +1775,22 @@ public class Kubernetes {
    * @return true if delete was successful
    * @throws ApiException when deletion of job fails
    */
-  public static boolean deleteJob(String namespace, String name) throws ApiException {
-    LoggingFacade logger = getLogger();
-    try {
-      logger.info("in deleteJob method 1");
-      BatchV1Api apiInstance = new BatchV1Api(apiClient);
-      logger.info("in deleteJob method 2");
-      apiInstance.deleteNamespacedJob(
-          name, // String | name of the job.
-          namespace, // String | name of the namespace.
-          PRETTY, // String | pretty print output.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
-      );
-      logger.info("in deleteJob method 3");
-    } catch (ApiException apex) {
-      logger.info("in deleteJob method 4");
-      logger.warning(apex.getResponseBody());
-      logger.info("in deleteJob method 5");
-      throw apex;
+  public static boolean deleteJob(String namespace, String name) {
+
+    KubernetesApiResponse<V1Job> response = jobClient.delete(namespace, name);
+
+    if (!response.isSuccess()) {
+      getLogger().warning("Failed to delete job '" + name + "' from namespace: "
+          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+      return false;
     }
+
+    if (response.getObject() != null) {
+      getLogger().info(
+          "Received after-deletion status of the requested object, will be deleting "
+              + "job in background!");
+    }
+
     return true;
   }
 
