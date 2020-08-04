@@ -141,15 +141,15 @@ class ItElasticLogging {
 
     testVarMap = new HashMap<String, String>();
 
-    StringBuffer elasticSearchUrlBuff =
+    StringBuffer elasticsearchUrlBuff =
         new StringBuffer("curl http://")
             .append(ELASTICSEARCH_HOST)
             .append(":")
             .append(ELASTICSEARCH_HTTP_PORT);
-    k8sExecCmdPrefix = elasticSearchUrlBuff.toString();
-    logger.info("elasticSearch URL {0}", k8sExecCmdPrefix);
+    k8sExecCmdPrefix = elasticsearchUrlBuff.toString();
+    logger.info("elasticsearch URL {0}", k8sExecCmdPrefix);
 
-    // Verify that Elastic Stack is ready to use
+    // Verify that ELK Stack is ready to use
     testVarMap = verifyLoggingExporterReady(opNamespace, null, LOGSTASH_INDEX_KEY);
     Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, null, KIBANA_INDEX_KEY);
 
