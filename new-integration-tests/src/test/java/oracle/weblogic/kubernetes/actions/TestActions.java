@@ -125,6 +125,17 @@ public class TestActions {
   public static boolean buildOperatorImage(String image) {
     return Operator.buildImage(image);
   }
+
+  /**
+   * Get the image name used in the Operator container.
+   * @param namespace namespace of the operator
+   * @return image name
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getOperatorContainerImageName(String namespace) throws ApiException {
+    return Operator.getOperatorContainerImage(namespace);
+  }
+
   // ----------------------   domain  -----------------------------------
 
   /**
@@ -673,6 +684,18 @@ public class TestActions {
    */
   public static int getServiceNodePort(String namespace, String serviceName, String channelName) {
     return Service.getServiceNodePort(namespace, serviceName, channelName);
+  }
+
+
+  /**
+   * Get node port of a namespaced service.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @return node port if service is found, otherwise -1
+   */
+  public static Integer getServiceNodePort(String namespace, String serviceName) {
+    return Service.getServiceNodePort(namespace, serviceName);
   }
 
   /**
