@@ -26,7 +26,10 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.awaitility.core.ConditionFactory;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -50,6 +53,7 @@ import static oracle.weblogic.kubernetes.assertions.impl.ClusterRole.clusterRole
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.impl.RoleBinding.roleBindingExists;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 
 public class Domain {
 
@@ -271,6 +275,11 @@ public class Domain {
                                                 String opNamespace,
                                                 String opServiceAccount) {
     LoggingFacade logger = getLogger();
+    final ConditionFactory withStandardRetryPolicy =
+        with().pollDelay(10, SECONDS)
+            .and().with().pollInterval(10, SECONDS)
+            .atMost(2, MINUTES).await();
+
     logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
     String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
     if (secretName.isEmpty()) {
@@ -324,7 +333,17 @@ public class Domain {
         .saveResults(true)
         .redirect(true);
 
-    return Command.withParams(params).execute();
+    logger.info("Calling curl to scale the cluster");
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Calling curl command, waiting for success "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return Command.withParams(params).execute();
+        });
+    return true;
   }
 
   /**
