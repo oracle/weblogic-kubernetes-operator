@@ -186,7 +186,10 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         try {
           cc.cancel();
         } finally {
-          try (LoggingContext stack = LoggingContext.setThreadContext().namespace(requestParams.namespace)) {
+          try (LoggingContext stack =
+                   LoggingContext.setThreadContext()
+                       .namespace(requestParams.namespace)
+                       .domainUid(requestParams.domainUid)) {
             if (LOGGER.isFinerEnabled()) {
               logTimeout();
             }
@@ -223,7 +226,9 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         && packet.getComponents().get(LoggingContext.LOGGING_CONTEXT_KEY) == null) {
       packet.getComponents().put(
           LoggingContext.LOGGING_CONTEXT_KEY,
-          Component.createFor(new LoggingContext().namespace(requestParams.namespace)));
+          Component.createFor(new LoggingContext()
+              .namespace(requestParams.namespace)
+              .domainUid(requestParams.domainUid)));
     }
 
     // clear out earlier results
@@ -443,7 +448,10 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
       // make sure that the domain namespace is added to the thread local so that
       // it can be passed to the LoggingFormatter
-      try (LoggingContext stack = LoggingContext.setThreadContext().namespace(requestParams.namespace)) {
+      try (LoggingContext stack =
+               LoggingContext.setThreadContext()
+                   .namespace(requestParams.namespace)
+                   .domainUid(requestParams.domainUid)) {
         processing.onFailure(fiber, ae, statusCode, responseHeaders);
       }
     }
@@ -453,7 +461,10 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         T result, int statusCode, Map<String, List<String>> responseHeaders) {
       // make sure that the domain namespace is added to the thread local so that
       // it can be passed to the LoggingFormatter
-      try (LoggingContext stack = LoggingContext.setThreadContext().namespace(requestParams.namespace)) {
+      try (LoggingContext stack =
+               LoggingContext.setThreadContext()
+                   .namespace(requestParams.namespace)
+                   .domainUid(requestParams.domainUid)) {
         processing.onSuccess(fiber, result, statusCode, responseHeaders);
       }
     }

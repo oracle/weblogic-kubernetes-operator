@@ -232,6 +232,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
       if (map != null) {
         for (DomainPresenceInfo dpi : map.values()) {
+          stack.domainUid(dpi.getDomainUid());
+
           Domain dom = dpi.getDomain();
           DomainPresenceInfo value =
               (dom != null)
