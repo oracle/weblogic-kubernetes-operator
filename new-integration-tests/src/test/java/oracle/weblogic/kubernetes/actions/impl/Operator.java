@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.Optional;
 
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
@@ -15,6 +16,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BUILD_ID;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_NAME_OPERATOR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_DOCKER_BUILD_SCRIPT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getContainerImage;
 
 /**
  * Action class with implementation methods for Operator.
@@ -100,5 +102,16 @@ public class Operator {
         .withParams(new CommandParams()
             .command(command))
         .execute();
+  }
+
+  /**
+   * Get the container's image in the pod.
+   * @param namespace name of the pod's namespace
+   * @return image used for the container
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getOperatorContainerImage(String namespace) throws ApiException {
+    return getContainerImage(namespace, "weblogic-operator-",
+        String.format("weblogic.operatorName in (%s)", namespace), null);
   }
 }
