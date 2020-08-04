@@ -2348,6 +2348,7 @@ public class Kubernetes {
   public static ExecResult exec(V1Pod pod, String containerName, boolean redirectToStdout,
       String... command)
       throws IOException, ApiException, InterruptedException {
+    LoggingFacade logger = getLogger();
 
     // Execute command using Kubernetes API
     KubernetesExec kubernetesExec = createKubernetesExec(pod, containerName);
@@ -2374,7 +2375,12 @@ public class Kubernetes {
       out.start();
 
       // wait for the process, which represents the executing command, to terminate
-      proc.waitFor();
+      try {
+        proc.waitFor();
+      } catch (InterruptedException ie) {
+        logger.severe("waitFor threw ie: " + ie);
+        ie.printStackTrace(System.out);
+      }
 
       // wait for reading thread to finish any remaining output
       out.join();
