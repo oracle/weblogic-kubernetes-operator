@@ -438,7 +438,35 @@ public class TestActions {
             domainNamespace,
             domainUid,
             clusterNameMsPortMap,
-            annotations, setIngressHost, tlsSecret);
+            annotations, setIngressHost, tlsSecret, false, 0);
+  }
+
+  /**
+   * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
+   * The ingress host is set to 'domainUid.clusterName.test'.
+   *
+   * @param ingressName the name of the ingress to be created
+   * @param domainNamespace the WebLogic domain namespace in which to create the ingress
+   * @param domainUid WebLogic domainUid which is backend to the ingress
+   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
+   * @param annotations annotations to create ingress resource
+   * @param setIngressHost if true set to specific host or all
+   * @param tlsSecret TLS secret name if any
+   * @param enableAdminServerRouting enable the ingress rule to admin server
+   * @param adminServerPort the port number of admin server pod of the domain
+   * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
+   */
+  public static List<String> createIngress(String ingressName,
+                                           String domainNamespace,
+                                           String domainUid,
+                                           Map<String, Integer> clusterNameMsPortMap,
+                                           Map<String, String> annotations,
+                                           boolean setIngressHost,
+                                           String tlsSecret,
+                                           boolean enableAdminServerRouting,
+                                           int adminServerPort) {
+    return Ingress.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap,
+        annotations, setIngressHost, tlsSecret, enableAdminServerRouting, adminServerPort);
   }
 
   /**
@@ -686,6 +714,17 @@ public class TestActions {
     return Service.getServiceNodePort(namespace, serviceName, channelName);
   }
 
+
+  /**
+   * Get node port of a namespaced service.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @return node port if service is found, otherwise -1
+   */
+  public static Integer getServiceNodePort(String namespace, String serviceName) {
+    return Service.getServiceNodePort(namespace, serviceName);
+  }
 
   /**
    * Get node port of a namespaced service.
