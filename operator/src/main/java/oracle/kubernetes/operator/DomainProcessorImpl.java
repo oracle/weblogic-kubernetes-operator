@@ -630,12 +630,17 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private boolean isShouldContinue() {
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
-
       int currentRetryCount = Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
           .map(DomainStatus::getRetryCount)
           .orElse(0);
+
+      String existingError = Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getMessage)
+          .orElse(null);
       if (cachedInfo == null || cachedInfo.getDomain() == null) {
         return true;
       } else if (currentRetryCount > DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
@@ -643,6 +648,11 @@ public class DomainProcessorImpl implements DomainProcessor {
         return false;
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
+      } else if (existingError != null && existingError.startsWith("MII Fatal Error")
+          && !isSpecChanged(liveInfo, cachedInfo)) {
+        LOGGER.fine("DomainProcessorImpl.isShouldContinue: Fatal Error stop introspection retries: "
+            + existingError);
+        return false;
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
         return true;
       }
