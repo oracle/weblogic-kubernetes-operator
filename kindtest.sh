@@ -221,5 +221,10 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
-echo "Running mvn -Dit.test=${test_filter} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads} -pl new-integration-tests -P integration-tests verify"
-time mvn -Dit.test="${test_filter}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+if [ "${test_filter}" = "ItOperatorUpgrade" ]; then
+  echo "Running mvn -Dit.test=${test_filter} -pl new-integration-tests -P integration-tests verify"
+  time mvn -Dit.test="${test_filter}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+else
+  echo "Running mvn -Dit.test=${test_filter} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -Dexclude-failsafe=ItOperatorUpgrade -pl new-integration-tests -P integration-tests verify"
+  time mvn -Dit.test="${test_filter}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -Dexclude-failsafe=ItOperatorUpgrade -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+fi
