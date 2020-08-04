@@ -14,13 +14,13 @@ weight: 7
     $ helm uninstall sample-domain1-ingress -n sample-domain1-ns
     ```
 
-1.	Remove the domain resources by using the sample [`delete-weblogic-domain-resources`](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh) script:
+1.	Remove the Kubernetes resources associated with the domain by using the sample [`delete-weblogic-domain-resources`](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh) script:
 
     ```bash
     $ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
     ```
 
-1.	Use `kubectl` to confirm that the server pods and domain resource are gone:
+1.	Use `kubectl` to confirm that the WebLogic Server instance Pods and Domain are gone:
 
     ```bash
     $ kubectl get pods -n sample-domain1-ns
@@ -31,11 +31,10 @@ weight: 7
 1.	Configure the Traefik load balancer to stop managing the ingresses in the domain namespace:
 
     ```bash
-    $ helm upgrade traefik-operator stable/traefik \
+    $ helm upgrade traefik-operator traefik/traefik \
         --namespace traefik \
         --reuse-values \
-        --set "kubernetes.namespaces={traefik}" \
-        --wait
+        --set "kubernetes.namespaces={traefik}" 
     ```
 
 1.	Configure the operator to stop managing the domain:

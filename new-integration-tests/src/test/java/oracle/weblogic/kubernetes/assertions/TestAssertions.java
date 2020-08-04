@@ -24,6 +24,7 @@ import oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.assertions.impl.Pod;
 import oracle.weblogic.kubernetes.assertions.impl.Prometheus;
 import oracle.weblogic.kubernetes.assertions.impl.Service;
+import oracle.weblogic.kubernetes.assertions.impl.Traefik;
 import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import org.joda.time.DateTime;
@@ -61,6 +62,16 @@ public class TestAssertions {
    */
   public static Callable<Boolean> isNginxReady(String namespace) {
     return Nginx.isReady(namespace);
+  }
+
+  /**
+   * Check traefik controller pod is ready in the specified namespace.
+   *
+   * @param namespace in which to check for traefik pod readiness
+   * @return true if traefik pod is ready, false otherwise
+   */
+  public static Callable<Boolean> isTraefikReady(String namespace) {
+    return Traefik.isReady(namespace);
   }
 
   /**
@@ -387,6 +398,27 @@ public class TestAssertions {
       String expectedResponse
   ) {
     return Application.appAccessibleInPod(namespace, podName, port, appPath, expectedResponse);
+  }
+
+  /**
+   * Check if an application is accessible inside a WebLogic server pod using
+   * "kubectl exec" command.
+   *
+   * @param namespace Kubernetes namespace where the WebLogic server pod is running
+   * @param podName name of the WebLogic server pod
+   * @param port internal port of the managed server running in the pod
+   * @param appPath path to access the application
+   * @param expectedResponse the expected response from the application
+   * @return true if the command succeeds
+   */
+  public static boolean appAccessibleInPodKubectl(
+      String namespace,
+      String podName,
+      String port,
+      String appPath,
+      String expectedResponse
+  ) {
+    return Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**

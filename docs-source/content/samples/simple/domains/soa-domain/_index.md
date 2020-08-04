@@ -3,7 +3,7 @@ title: "SOA domain"
 date: 2019-04-18T07:32:31-05:00
 weight: 6
 description: "Sample for creating a SOA Suite domain home on an existing PV or
-PVC, and the domain resource YAML file for deploying the generated SOA domain."
+PVC, and the Domain YAML file for deploying the generated SOA domain."
 ---
 
 {{% notice warning %}}
@@ -94,7 +94,7 @@ The following parameters can be provided in the inputs file.
 | `createDomainScriptName` | Script that the create domain script uses to create a WebLogic domain. The `create-domain.sh` script creates a Kubernetes Job to run this script to create a domain home. The script is located in the in-pod directory that is specified in the `createDomainScriptsMountPath` property. If you need to provide your own scripts to create the domain home, instead of using the built-it scripts, you must use this property to set the name of the script that you want the create domain job to run. | `create-domain-job.sh` |
 | `domainHome` | Home directory of the SOA domain. If not specified, the value is derived from the `domainUID` as `/shared/domains/<domainUID>`. | `/u01/oracle/user_projects/domains/soainfra` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. | `/u01/oracle/user_projects` |
-| `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes Service name. | `soainfra` |
+| `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes Domain. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes Service name. | `soainfra` |
 | `domainType` | Type of the domain. Mandatory input for SOA Suite domains. You must provide one of the supported domain type values: `soa` (deploys a SOA domain),`osb` (deploys an OSB (Oracle Service Bus) domain),`soaess` (deploys a SOA domain with Enterprise Scheduler (ESS)),`soaosb` (deploys a domain with SOA and OSB), and `soaessosb` (deploys a domain with SOA, OSB, and ESS). | `soa`
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
@@ -105,7 +105,7 @@ The following parameters can be provided in the inputs file.
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` in the pod's `stdout`. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to start initially for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration Server and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
-| `logHome` | The in-pod location for the domain log, server logs, server out, Node Manager log, and server HTTP access log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/u01/oracle/user_projects/domains/logs/soainfra` |
+| `logHome` | The in-pod location for the domain log, server logs, server out, Node Manager log, introspector out, and server HTTP access log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/u01/oracle/user_projects/domains/logs/soainfra` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `soa_server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes Namespace in which to create the domain. | `soans` |
@@ -229,7 +229,7 @@ spec:
   # Whether to enable log home
   logHomeEnabled: true
 
-  # The in-pod location for domain log, server logs, server out, and Node Manager log files
+  # The in-pod location for domain log, server logs, server out, introspector out, and Node Manager log files
   logHome: /u01/oracle/user_projects/domains/logs/soainfra
   # An (optional) in-pod location for data storage of default and custom file stores.
   # If not specified or the value is either not set or empty (e.g. dataHome: "") then the

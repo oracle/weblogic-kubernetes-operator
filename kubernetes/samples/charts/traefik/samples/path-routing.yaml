@@ -1,37 +1,60 @@
-apiVersion: extensions/v1beta1
-kind: Ingress
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
   name: traefik-pathrouting-1
-  namespace: default
-  annotations:
-    kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/rewrite-target: /testwebapp
-    ingress.kubernetes.io/rule-type: PathPrefix
+  namespace: weblogic-domain1
 spec:
-  rules:
-  - host:
-    http:
-      paths:
-      - path: /domain1
-        backend:
-          serviceName: domain1-cluster-cluster-1
-          servicePort: 8001
+  routes:
+  - kind: Rule
+    match: PathPrefix(`/domain1`)
+    middlewares:
+    - name: middleware-domain1
+      namespace: weblogic-domain1
+    services:
+    - kind: Service
+      name: domain1-cluster-cluster-1
+      port: 8001
 ---
-apiVersion: extensions/v1beta1
-kind: Ingress
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
 metadata:
-  name: traefik-pathrouting-2
-  namespace: test1
+  name: middleware-domain1
+  namespace: weblogic-domain1
+spec:
+  replacePathRegex:
+    regex: ^/domain1(.*)
+    replacement: /testwebapp$1
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/rewrite-target: /testwebapp
-    ingress.kubernetes.io/rule-type: PathPrefix
+  name: traefik-pathrouting-2
+  namespace: weblogic-domain2
 spec:
-  rules:
-  - host:
-    http:
-      paths:
-      - path: /domain2
-        backend:
-          serviceName: domain2-cluster-cluster-1
-          servicePort: 8001
+  routes:
+  - kind: Rule
+    match: PathPrefix(`/domain2`)
+    middlewares:
+    - name: middleware-domain2
+      namespace: weblogic-domain2
+    services:
+    - kind: Service
+      name: domain2-cluster-cluster-1
+      port: 8001
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: middleware-domain2
+  namespace: weblogic-domain2
+spec:
+  replacePathRegex:
+    regex: ^/domain2(.*)
+    replacement: /testwebapp$1

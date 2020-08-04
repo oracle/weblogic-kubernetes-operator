@@ -135,7 +135,7 @@ kubectl exec -n $namespace -i rcu -- bash -c 'cat > /u01/oracle/createRepository
 kubectl exec -n $namespace -i rcu -- bash -c 'cat > /u01/oracle/pwd.txt' < pwd.txt 
 rm -rf createRepository.sh pwd.txt
 
-kubectl exec -n $namespace -it rcu /bin/bash /u01/oracle/createRepository.sh ${dburl} ${schemaPrefix} ${rcuType} ${sysPassword}
+kubectl exec -n $namespace -i rcu /bin/bash /u01/oracle/createRepository.sh ${dburl} ${schemaPrefix} ${rcuType} ${sysPassword}
 if [ $? != 0  ]; then
  echo "######################";
  echo "[ERROR] Could not create the RCU Repository";

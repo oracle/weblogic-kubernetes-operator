@@ -34,7 +34,7 @@ spec:
 ```
 
 To provide access to this claim to all Managed Servers in the `cluster-1` cluster, specify the following
-in your [domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md):
+in your [Domain](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md):
 
 ```
   clusters:

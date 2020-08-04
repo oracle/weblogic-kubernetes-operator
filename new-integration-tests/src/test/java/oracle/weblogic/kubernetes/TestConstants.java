@@ -64,9 +64,9 @@ public interface TestConstants {
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostName()));
   public static final String GOOGLE_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
-  public static final String RESULTS_ROOT = System.getenv().getOrDefault("RESULT_ROOT",
+  public static final String RESULTS_ROOT = System.getenv().getOrDefault("RESULTS_ROOT",
       System.getProperty("java.io.tmpdir")) + "/ittestsresults";
-  public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
+  public static final String LOGS_DIR = System.getenv().getOrDefault("RESULTS_ROOT",
       System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
 
   public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
@@ -77,9 +77,15 @@ public interface TestConstants {
   public static final String STABLE_REPO_NAME = "stable";
   public static final String NGINX_CHART_NAME = "nginx-ingress";
 
+  // Traefik constants
+  public static final String TRAEFIK_REPO_URL = "https://containous.github.io/traefik-helm-chart";
+  public static final String TRAEFIK_REPO_NAME = "traefik";
+  public static final String TRAEFIK_RELEASE_NAME = "traefik-release" + BUILD_ID;
+  public static final String TRAEFIK_CHART_NAME = "traefik";
+
   // Voyager constants
   public static final String APPSCODE_REPO_URL = "https://charts.appscode.com/stable/";
-  public static final String VOYAGER_RELEASE_NAME = "voyager-release";
+  public static final String VOYAGER_RELEASE_NAME = "voyager-release" + BUILD_ID;
   public static final String APPSCODE_REPO_NAME = "appscode";
   public static final String VOYAGER_CHART_NAME = "voyager";
   public static final String VOYAGER_CHART_VERSION = "12.0.0";
@@ -112,7 +118,10 @@ public interface TestConstants {
   //monitoring constants
   public static final String MONITORING_EXPORTER_VERSION = Optional.ofNullable(System.getenv(
       "MONITORING_EXPORTER_VERSION"))
-      .orElse("1.1.2");
+      .orElse("1.2.0");
+  public static final String MONITORING_EXPORTER_BRANCH = Optional.ofNullable(System.getenv(
+      "MONITORING_EXPORTER_BRANCH"))
+      .orElse("master");
   public static final String PROMETHEUS_CHART_VERSION = Optional.ofNullable(System.getenv("PROMETHEUS_CHART_VERSION"))
       .orElse("11.1.5");
   public static final String GRAFANA_CHART_VERSION = Optional.ofNullable(System.getenv("GRAFANA_CHART_VERSION"))

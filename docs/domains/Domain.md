@@ -21,17 +21,17 @@ The specification of the operation of the WebLogic domain. Required.
 | `configOverrideSecrets` | array of string | Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified. A list of names of the Secrets for optional WebLogic configuration overrides. |
 | `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration. |
 | `dataHome` | string | An optional directory in a server's container for data storage of default and custom file stores. If `dataHome` is not specified or its value is either not set or empty, then the data storage directories are determined from the WebLogic domain configuration. |
-| `domainHome` | string | The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image. Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel. |
+| `domainHome` | string | The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/domains/<domainUID> if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/<domainUID> if `domainHomeSourceType` is FromModel. |
 | `domainHomeInImage` | Boolean | Deprecated. Use `domainHomeSourceType` instead. Ignored if `domainHomeSourceType` is specified. True indicates that the domain home file system is present in the container image specified by the image field. False indicates that the domain home file system is located on a persistent volume. Defaults to unset. |
 | `domainHomeSourceType` | string | Domain home file system source type: Legal values: Image, PersistentVolume, FromModel. Image indicates that the domain home file system is present in the container image specified by the `image` field. PersistentVolume indicates that the domain home file system is located on a persistent volume. FromModel indicates that the domain home file system will be created and managed by the operator based on a WDT domain model. If this field is specified, it overrides the value of `domainHomeInImage`. If both fields are unspecified, then `domainHomeSourceType` defaults to Image. |
 | `domainUID` | string | Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`. |
 | `httpAccessLogInLogHome` | Boolean | Specifies whether the server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain configuration. Defaults to true. |
 | `image` | string | The WebLogic container image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4. |
-| `imagePullPolicy` | string | The image pull policy for the WebLogic container image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
+| `imagePullPolicy` | string | The image pull policy for the WebLogic container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull Secrets for the WebLogic container image. |
 | `includeServerOutInPodLog` | Boolean | Specifies whether the server .out file will be included in the Pod's log. Defaults to true. |
-| `introspectVersion` | string | Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shutdown. For the FromModel `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. See also `overridesConfigurationStrategy`. |
-| `logHome` | string | The directory in a server's container in which to store the domain, Node Manager, server logs, server *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if `logHomeEnabled` is false. |
+| `introspectVersion` | string | Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the FromModel `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. See also `domains.spec.configuration.overridesConfigurationStrategy`. |
+| `logHome` | string | The directory in a server's container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if `logHomeEnabled` is false. |
 | `logHomeEnabled` | Boolean | Specifies whether the log home folder is enabled. Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise. |
 | `managedServers` | array of [Managed Server](#managed-server) | Lifecycle options for individual Managed Servers, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart a named server instance. The `serverName` field of each entry must match a Managed Server that already exists in the WebLogic domain configuration or that matches a dynamic cluster member based on the server template. |
 | `maxClusterConcurrentStartup` | number | The maximum number of cluster member Managed Server instances that the operator will start in parallel for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the `clusters` field. A value of 0 means there is no configured limit. Defaults to 0. |
@@ -92,9 +92,9 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `istio` | [Istio](#istio) | The Istio service mesh integration settings. |
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Settings for OPSS security. |
-| `overrideDistributionStrategy` | string | Determines how updated configuration overrides are distributed to already running WebLogic Servers following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides are generated during introspection from Secrets, the `overrideConfigMap` field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server's next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also `introspectVersion`. Defaults to DYNAMIC. |
-| `overridesConfigMap` | string | The name of the ConfigMap for WebLogic configuration overrides. If this field is specified, then the value of spec.configOverrides is ignored. |
-| `secrets` | array of string | A list of names of the Secrets for WebLogic configuration overrides or model. If this field is specified, then the value of spec.configOverrideSecrets is ignored. |
+| `overrideDistributionStrategy` | string | Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overrideConfigMap` field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server's next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also `domains.spec.introspectVersion`. Defaults to DYNAMIC. |
+| `overridesConfigMap` | string | The name of the ConfigMap for WebLogic configuration overrides. If this field is specified, then the value of `spec.configOverrides` is ignored. |
+| `secrets` | array of string | A list of names of the Secrets for WebLogic configuration overrides or model. If this field is specified, then the value of `spec.configOverrideSecrets` is ignored. |
 
 ### Managed Server
 
@@ -111,29 +111,29 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `affinity` | [Affinity](k8s1.13.5.md#affinity) | If specified, the Pod's scheduling constraints. |
+| `affinity` | [Affinity](k8s1.13.5.md#affinity) | If specified, the Pod's scheduling constraints. See `kubectl explain pods.spec.affinity` |
 | `annotations` | Map | The annotations to be added to generated resources. |
-| `containers` | array of [Container](k8s1.13.5.md#container) | Additional containers to be included in the server Pod. |
-| `containerSecurityContext` | [Security Context](k8s1.13.5.md#security-context) | Container-level security attributes. Will override any matching Pod-level attributes. |
-| `env` | array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. |
-| `initContainers` | array of [Container](k8s1.13.5.md#container) | Initialization containers to be included in the server Pod. |
+| `containers` | array of [Container](k8s1.13.5.md#container) | Additional containers to be included in the server Pod. See `kubectl explain pods.spec.containers`. |
+| `containerSecurityContext` | [Security Context](k8s1.13.5.md#security-context) | Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. |
+| `env` | array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
+| `initContainers` | array of [Container](k8s1.13.5.md#container) | Initialization containers to be included in the server Pod. See `kubectl explain pods.spec.initContainers`. |
 | `labels` | Map | The labels to be added to generated resources. The label names must not start with "weblogic.". |
 | `livenessProbe` | [Probe Tuning](#probe-tuning) | Settings for the liveness probe associated with a WebLogic Server instance. |
-| `nodeName` | string | NodeName is a request to schedule this Pod onto a specific Node. If it is non-empty, the scheduler simply schedules this pod onto that node, assuming that it fits the resource requirements. |
-| `nodeSelector` | Map | Selector which must match a Node's labels for the Pod to be scheduled on that Node. |
-| `podSecurityContext` | [Pod Security Context](k8s1.13.5.md#pod-security-context) | Pod-level security attributes. |
-| `priorityClassName` | string | If specified, indicates the Pod's priority. "system-node-critical" and "system-cluster-critical" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be the default or zero, if there is no default. |
+| `nodeName` | string | NodeName is a request to schedule this Pod onto a specific Node. If it is non-empty, the scheduler simply schedules this pod onto that node, assuming that it fits the resource requirements. See `kubectl explain pods.spec.nodeName`. |
+| `nodeSelector` | Map | Selector which must match a Node's labels for the Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`. |
+| `podSecurityContext` | [Pod Security Context](k8s1.13.5.md#pod-security-context) | Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. |
+| `priorityClassName` | string | If specified, indicates the Pod's priority. "system-node-critical" and "system-cluster-critical" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be the default or zero, if there is no default. See `kubectl explain pods.spec.priorityClassName`. |
 | `readinessGates` | array of [Pod Readiness Gate](k8s1.13.5.md#pod-readiness-gate) | If specified, all readiness gates will be evaluated for Pod readiness. A Pod is ready when all its containers are ready AND all conditions specified in the readiness gates have a status equal to "True". More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md. |
 | `readinessProbe` | [Probe Tuning](#probe-tuning) | Settings for the readiness probe associated with a WebLogic Server instance. |
-| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the WebLogic Server instance. |
-| `restartPolicy` | string | Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. |
-| `runtimeClassName` | string | RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this Pod. If no RuntimeClass resource matches the named class, the Pod will not be run. If unset or empty, the "legacy" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an alpha feature and may change in the future. |
-| `schedulerName` | string | If specified, the Pod will be dispatched by the specified scheduler. If not specified, the Pod will be dispatched by the default scheduler. |
-| `serviceAccountName` | string | Name of the ServiceAccount to be used to run this Pod. If it is not set, default ServiceAccount will be used. The ServiceAccount has to exist at the time the Pod is created. |
+| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`. |
+| `restartPolicy` | string | Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. See `kubectl explain pods.spec.restartPolicy`. |
+| `runtimeClassName` | string | RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this Pod. If no RuntimeClass resource matches the named class, the Pod will not be run. If unset or empty, the "legacy" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an alpha feature and may change in the future. See `kubectl explain pods.spec.runtimeClassName`. |
+| `schedulerName` | string | If specified, the Pod will be dispatched by the specified scheduler. If not specified, the Pod will be dispatched by the default scheduler. See `kubectl explain pods.spec.schedulerName`. |
+| `serviceAccountName` | string | Name of the ServiceAccount to be used to run this Pod. If it is not set, default ServiceAccount will be used. The ServiceAccount has to exist at the time the Pod is created. See `kubectl explain pods.spec.serviceAccountName`. |
 | `shutdown` | [Shutdown](#shutdown) | Configures how the operator should shut down the server instance. |
-| `tolerations` | array of [Toleration](k8s1.13.5.md#toleration) | If specified, the Pod's tolerations. |
-| `volumeMounts` | array of [Volume Mount](k8s1.13.5.md#volume-mount) | Additional volume mounts for the server Pod. |
-| `volumes` | array of [Volume](k8s1.13.5.md#volume) | Additional volumes to be created in the server Pod. |
+| `tolerations` | array of [Toleration](k8s1.13.5.md#toleration) | If specified, the Pod's tolerations. See `kubectl explain pods.spec.tolerations`. |
+| `volumeMounts` | array of [Volume Mount](k8s1.13.5.md#volume-mount) | Additional volume mounts for the container running a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`. |
+| `volumes` | array of [Volume](k8s1.13.5.md#volume) | Additional volumes to be created in the server Pod. See `kubectl explain pods.spec.volumes`. |
 
 ### Server Service
 
@@ -196,7 +196,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `enabled` | Boolean | True, if this domain is deployed under an Istio service mesh. Defaults to true when the `istio` field is specified. |
-| `readinessPort` | number | The operator will create a WebLogic network access point with this port for use by the readiness probe. Defaults to 8888. |
+| `readinessPort` | number | The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The readiness probe will use this network access point to verify that the server instance is ready for application traffic. Defaults to 8888. |
 
 ### Model
 
@@ -204,14 +204,15 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `configMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
 | `domainType` | string | WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS. |
+| `modelHome` | string | Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models. |
 | `runtimeEncryptionSecret` | string | Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel. |
 
 ### Opss
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `walletFileSecret` | string | Name of a Secret containing the OPSS key wallet file. |
-| `walletPasswordSecret` | string | Name of a Secret containing the OPSS key passphrase. |
+| `walletFileSecret` | string | Name of a Secret containing the OPSS key wallet file, which must be in a field named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time. |
+| `walletPasswordSecret` | string | Name of a Secret containing the OPSS key passphrase, which must be in a field named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain's entries in its RCU database. |
 
 ### Probe Tuning
 
