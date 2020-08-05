@@ -86,6 +86,114 @@ public class PodHelper {
   }
 
   /**
+   * Get list of scheduled pods.
+   * @param info Domain presence info
+   * @return list containing scheduled pods
+   */
+  public static List<String> getScheduledPods(DomainPresenceInfo info) {
+    // These are presently scheduled servers
+    List<String> scheduledServers = new ArrayList<>();
+    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+      V1Pod pod = entry.getValue().getPod().get();
+      if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getScheduledStatus(pod)) {
+        scheduledServers.add(entry.getKey());
+      }
+    }
+    return scheduledServers;
+  }
+
+  /**
+   * Get list of ready pods.
+   * @param info Domain presence info
+   * @return list containing ready pods
+   */
+  public static List<String> getReadyPods(DomainPresenceInfo info) {
+    // These are presently Ready servers
+    List<String> readyServers = new ArrayList<>();
+    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+      V1Pod pod = entry.getValue().getPod().get();
+      if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getReadyStatus(pod)) {
+        readyServers.add(entry.getKey());
+      }
+    }
+    return readyServers;
+  }
+
+  /**
+   * Change pod status to scheduled.
+   * @param info Domain presence info
+   * @param serverName Name of server pod to be changed
+   */
+  public static void schedulePods(DomainPresenceInfo info, String serverName) {
+    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+      V1Pod pod = entry.getValue().getPod().get();
+      if (pod.getMetadata().getName().contains(serverName)) {
+        PodHelper.setScheduledStatus(pod);
+      }
+    }
+  }
+
+  /**
+   * Change pod status to ready.
+   * @param info Domain presence info
+   * @param serverName Name of server pod to be changed
+   */
+  public static void makePodsReady(DomainPresenceInfo info, String serverName) {
+    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+      V1Pod pod = entry.getValue().getPod().get();
+      if (pod.getMetadata().getName().contains(serverName)) {
+        PodHelper.setReadyStatus(pod);
+      }
+    }
+  }
+
+  /**
+   * get if pod is in scheduled state.
+   * @param pod pod
+   * @return true, if pod is scheduled
+   */
+  public static boolean setScheduledStatus(V1Pod pod) {
+    V1PodSpec status = pod.getSpec();
+    if (status != null) {
+      status.setNodeName("Node1");
+    } else {
+      pod.spec(new V1PodSpec().nodeName("Node1"));
+    }
+    return true;
+  }
+
+  /**
+   * get if pod is in scheduled state.
+   * @param pod pod
+   * @return true, if pod is scheduled
+   */
+  public static boolean setReadyStatus(V1Pod pod) {
+    V1PodStatus status = pod.getStatus();
+    if (status != null) {
+      status.phase("RUNNING").addConditionsItem(new V1PodCondition().type("Ready").status("True"));
+    } else {
+      pod.status(new V1PodStatus().phase("Running")
+              .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
+    }
+    return true;
+  }
+
+  /**
+   * get if pod is in scheduled state.
+   * @param pod pod
+   * @return true, if pod is scheduled
+   */
+  public static boolean getScheduledStatus(V1Pod pod) {
+    V1PodSpec status = pod.getSpec();
+    if (status != null) {
+      if (status.getNodeName() != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * get if pod is in ready state.
    * @param pod pod
    * @return true, if pod is ready
