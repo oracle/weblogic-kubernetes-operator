@@ -128,7 +128,7 @@ The Apache webtier Helm chart is located in the `kubernetes/samples/charts/apach
 
 ```
 $ cd kubernetes/samples/charts
-$ helm install --name my-release --values apache-samples/custom-sample/input.yaml --namespace apache-sample apache-webtier
+$ helm install my-release --values apache-samples/custom-sample/input.yaml --namespace apache-sample apache-webtier
 ```
 
 ## 8. Run the sample application
@@ -145,5 +145,5 @@ $ curl -k --silent https://${HOSTNAME}:30443/weblogic2/testwebapp/
 
 ## 9. Uninstall the Apache webtier
 ```
-$ helm delete --purge my-release
+$ helm uninstall my-release --namespace apache-sample
 ```
