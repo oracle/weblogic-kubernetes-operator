@@ -863,9 +863,9 @@ public class ItIntrospectVersion {
 
     // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking {0} health", managedServerPodNamePrefix + i);
-      assertTrue(response.body().contains(managedServerPodNamePrefix + i + ":HEALTH_OK"),
-          "Didn't get " + managedServerPodNamePrefix + i + ":HEALTH_OK");
+      logger.info("Checking {0} health", managedServerNameBase + i);
+      assertTrue(response.body().contains(managedServerNameBase + i + ":HEALTH_OK"),
+          "Didn't get " + managedServerNameBase + i + ":HEALTH_OK");
     }
 
     logger.info("Getting node port for default channel");
