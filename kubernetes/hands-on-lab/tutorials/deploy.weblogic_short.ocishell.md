@@ -20,9 +20,9 @@ Label the domain namespace:
 kubectl label ns sample-domain1-ns weblogic-operator=enabled
 ```
 
-#### Update the Traefik load balancer configuration ####
+#### Update the Traefik ingress controller configuration ####
 
-After you have your domain namespace (the WebLogic domain is not deployed yet), you have to update the load balancer configuration to specify where the domain will be deployed.
+After you have your domain namespace (the WebLogic domain is not deployed yet), you have to update the ingress controller configuration to specify where the domain will be deployed.
 
 To update Traefik, execute the following `helm upgrade` command:
 ```bash

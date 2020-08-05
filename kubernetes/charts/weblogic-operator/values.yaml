@@ -15,8 +15,8 @@ serviceAccount: "default"
 # If set to 'RegExp', then the operator will manage the set of namespaces discovered by a list
 # of namespaces using the value specified by 'domainNamespaceRegExp' as a regular expression matched
 # against the namespace names.
-# If set to 'Dedicated', then operator will manage WebLogic Domains only in the same namespace in
-# which the operator itself is deployed, which is the namespace of the Helm release.
+# If set to 'Dedicated', then operator will manage WebLogic Domains only in the same namespace
+# where the operator itself is deployed, which is the namespace of the Helm release.
 domainNamespaceSelectionStrategy: List
 
 # This value is deprecated. Please use 'domainNamespaceSelectionStrategy: Dedicated'.
@@ -38,10 +38,6 @@ domainNamespaceSelectionStrategy: List
 domainNamespaces:
 - "default"
 
-# enableClusterRoleBinding specifies whether the roles necessary for the operator to manage domains
-# will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
-enableClusterRoleBinding: false
-
 # domainNamespaceLabelSelector specifies the label selector value that the operator will use when listing
 # namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
 # if 'domainNamespaceSelectionStrategy' is not 'LabelSelector'.
@@ -61,6 +57,10 @@ enableClusterRoleBinding: false
 # domainNamespaceRegExp: "^prod"
 #
 # domainNamespaceRegExp:
+
+# enableClusterRoleBinding specifies whether the roles necessary for the operator to manage domains
+# will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
+enableClusterRoleBinding: false
 
 # image specifies the Docker image containing the operator.
 image: "oracle/weblogic-kubernetes-operator:3.1.0"

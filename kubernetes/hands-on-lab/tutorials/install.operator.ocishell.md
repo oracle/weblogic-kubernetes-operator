@@ -80,7 +80,7 @@ helm install sample-weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --set "image=oracle/weblogic-kubernetes-operator:3.1.0" \
   --set "serviceAccount=sample-weblogic-operator-sa" \
-  --set "enableClusterRoleBinding=true \
+  --set "enableClusterRoleBinding=true" \
   --set "domainNamespaceSelectionStrategy=LabelSelector" \
   --set "domainNamespaceLabelSelector=weblogic-operator\=enabled"
 ```
