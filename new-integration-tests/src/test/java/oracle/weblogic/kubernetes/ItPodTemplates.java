@@ -173,7 +173,8 @@ class ItPodTemplates {
           .getMetadata().getAnnotations()
           .get("loghome");
       assertNotNull(loghome, "Can't find label loghome");
-      assertTrue(loghome.equalsIgnoreCase("/shared/logs/" + domain2Uid),
+      //value is not initialized since logHomeEnable = false
+      assertTrue(loghome.equalsIgnoreCase("$(LOG_HOME)"),
           "Can't find expected value for label loghome, real value is " + loghome);
 
       String domainhome = managedServerPod
@@ -240,7 +241,8 @@ class ItPodTemplates {
           .getMetadata().getAnnotations()
           .get("loghome");
       assertNotNull(loghome, "Can't find label loghome");
-      assertTrue(loghome.equalsIgnoreCase("/shared/logs/" + domain1Uid),
+      //value is not initialized since logHomeEnable = false
+      assertTrue(loghome.equalsIgnoreCase("$(LOG_HOME)"),
           "Can't find expected value for label loghome, real value is " + loghome);
 
       String domainhome = managedServerPod
@@ -287,10 +289,10 @@ class ItPodTemplates {
   private static String createAndVerifyDomainInImage() {
     // create image with model files
     logger.info("Create image with model file and verify");
-    String app2Path = String.format("%s/../src/integration-tests/apps/testwebapp.war", ITTESTS_DIR);
+    String appPath = String.format("%s/../src/integration-tests/apps/testwebapp.war", ITTESTS_DIR);
 
     List<String> appList = new ArrayList();
-    appList.add(app2Path);
+    appList.add(appPath);
 
     int t3ChannelPort = getNextFreePort(31600, 32767);  // the port range has to be between 31,000 to 32,767
 
@@ -443,8 +445,6 @@ class ItPodTemplates {
             .domainUid(domainUid)
             .domainHomeSourceType(domainHomeSource)
             .image(miiImage)
-            .logHomeEnabled(true)
-            .logHome("/u01/domains/" + domainUid + "/logs")
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1SecretReference()
