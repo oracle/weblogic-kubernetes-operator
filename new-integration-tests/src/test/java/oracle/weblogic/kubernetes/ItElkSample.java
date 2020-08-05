@@ -109,8 +109,8 @@ class ItElkSample {
   }
 
   /**
-   * Verify that ELK Stack is ready to use.
-   *
+   * Verify that ELK Stack is ready to use by checking the index status of
+   * Kibana and Logstash creaed in the Operator pod successfully.
    */
   @Test
   @DisplayName("Verify that ELK Stack is ready to use")

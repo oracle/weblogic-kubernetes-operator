@@ -104,7 +104,8 @@ public interface TestConstants {
   public static final String WEBLOGIC_INDEX_KEY = "wls";
   public static final String KIBANA_INDEX_KEY = "kibana";
   public static final String KIBANA_NAME = "kibana";
-  public static final String KIBANA_IMAGE = KIBANA_NAME + ":6.8.0";
+  public static final String KIBANA_VERSION = "6.8.0";
+  public static final String KIBANA_IMAGE = KIBANA_NAME + ":" + KIBANA_VERSION;
   public static final String KIBANA_TYPE = "NodePort";
   public static final int KIBANA_PORT = 5601;
 
