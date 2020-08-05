@@ -779,7 +779,7 @@ public class ItIntrospectVersion {
     logger.info("Create a new secret that contains new WebLogic admin credentials");
     String newWlSecretName = "weblogic-credentials-new";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        wlSecretName,
+        newWlSecretName,
         introDomainNamespace,
         ADMIN_USERNAME_PATCH,
         ADMIN_PASSWORD_PATCH),
