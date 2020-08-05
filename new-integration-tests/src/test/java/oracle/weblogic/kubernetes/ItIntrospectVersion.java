@@ -800,7 +800,7 @@ public class ItIntrospectVersion {
         + "\"value\": \"" + newWlSecretName + "\"}"
         + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", "
         + "\"value\": \"" + introspectVersion + "\"},"
-        + "{\"op\": \"replace\", \"path\": \"/spec/restartVersion\", "
+        + "{\"op\": \"add\", \"path\": \"/spec/restartVersion\", "
         + "\"value\": \"" + newVersion + "\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
