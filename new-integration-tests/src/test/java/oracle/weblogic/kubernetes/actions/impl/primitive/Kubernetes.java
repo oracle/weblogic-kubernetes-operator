@@ -2370,6 +2370,7 @@ public class Kubernetes {
                   if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
                     getLogger().warning("Exception reading from input stream.", ex);
                   }
+                  getLogger().info("out thread ex: " + ex);
                 }
               });
       out.start();
@@ -2383,10 +2384,12 @@ public class Kubernetes {
       }
 
       // wait for reading thread to finish any remaining output
-      out.join();
+      out.join(30000);
+      logger.info("finished out.join(30000)");
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());
+      logger.info("stdout: " + stdout);
 
       // Read from process's stderr, if data available
       String stderr = null;
