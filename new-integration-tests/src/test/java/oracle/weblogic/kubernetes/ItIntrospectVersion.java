@@ -54,6 +54,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.opentest4j.AssertionFailedError;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -880,7 +881,7 @@ public class ItIntrospectVersion {
     assertTrue(loginSuccessful, "Console login validation failed");
 
     logger.info("Validating WebLogic admin server access by login to console using old credentials");
-    assertThrows(Exception.class, ()
+    assertThrows(AssertionFailedError.class, ()
         -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         "Accessing using old user/password succedded, supposed to fail");
     assertTrue(loginSuccessful, "Console login validation failed");
