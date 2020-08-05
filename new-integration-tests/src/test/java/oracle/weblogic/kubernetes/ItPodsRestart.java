@@ -128,7 +128,7 @@ class ItPodsRestart {
   @Order(1)
   @DisplayName("Verify server pods are restarted by changing the resources")
   public void testServerPodsRestartByChangingResource() {
-    
+
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
