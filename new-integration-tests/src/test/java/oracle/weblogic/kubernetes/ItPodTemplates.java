@@ -97,8 +97,7 @@ class ItPodTemplates {
   private static LoggingFacade logger = null;
 
   /**
-   * Install operator and NGINX. Create model in image domain with multiple clusters.
-   * Create ingress for the domain.
+   * Install operator.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
@@ -141,7 +140,7 @@ class ItPodTemplates {
    *                   variables
    */
   @Test
-  @DisplayName("Test pod templates using all the variables.")
+  @DisplayName("Test pod templates using all the variables for domain in image.")
   public void testPodTemplateUsingVariablesDomainInImage() throws Exception {
     wdtImage = createAndVerifyDomainInImage();
     try {
