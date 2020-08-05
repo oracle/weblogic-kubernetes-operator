@@ -644,7 +644,7 @@ public class ItIntrospectVersion {
    * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
    * pre-existing WebLogic cluster.
    */
-  @Order(3)
+  @Order(4)
   @Test
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
   public void testCreateNewCluster() {
@@ -669,8 +669,8 @@ public class ItIntrospectVersion {
     Properties p = new Properties();
     p.setProperty("admin_host", K8S_NODEPORT_HOST);
     p.setProperty("admin_port", Integer.toString(adminServerT3Port));
-    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("admin_username", ADMIN_USERNAME_PATCH);
+    p.setProperty("admin_password", ADMIN_PASSWORD_PATCH);
     p.setProperty("test_name", "create_cluster");
     p.setProperty("cluster_name", clusterName);
     p.setProperty("server_prefix", managedServerNameBase);
@@ -737,16 +737,14 @@ public class ItIntrospectVersion {
   }
 
   /**
-   * Test brings up a new cluster and verifies it can successfully start by doing the following.
-   * a. Creates new WebLogic static cluster using WLST.
-   * b. Patch the Domain Resource with cluster
-   * c. Update the introspectVersion version
-   * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
-   * pre-existing WebLogic cluster.
+   * Test changes the WebLogic credentials and verifies the servers can startup and function with changed credentials.
+   * a. Creates new WebLogic credentials secret using WLST.
+   * b. Patch the Domain Resource with new credentials, restartVerion and introspectVersion.
+   * d. Verifies the servers in the domain restarted and accessing the admin server console with new password works.
    */
-  @Order(4)
+  @Order(3)
   @Test
-  @DisplayName("Test new cluster creation on demand using WLST and introspection")
+  @DisplayName("Test change WebLogic admin credentials for domain running in persistent volume")
   public void testCredentialChange() {
 
     final String domainUid = "mydomain";
@@ -754,8 +752,24 @@ public class ItIntrospectVersion {
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
 
+    final String managedServerNameBase = "ms-";
+    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+
+    int replicaCount = 3;
+
     logger.info("Getting node port for default channel");
     int adminServerT3Port = getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel");
+
+    // get the pod creation time stamps
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPodNamePrefix + i,
+          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
+    }
 
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
@@ -814,31 +828,27 @@ public class ItIntrospectVersion {
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
 
+    //verify the pods are restarted
+    verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
+
     // verify the admin server service created
     checkServiceExists(adminServerPodName, introDomainNamespace);
 
     // verify admin server pod is ready
     checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
 
-    final int replicaCount = 2;
-    final String[] managedServerNameBases = {"ms", "cl2-ms-"};
+    // verify new cluster managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, introDomainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+    }
 
-    for (String managedServerNameBase : managedServerNameBases) {
-      String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-
-      // verify new cluster managed server services created
-      for (int i = 1; i <= replicaCount; i++) {
-        logger.info("Checking managed server service {0} is created in namespace {1}",
-            managedServerPodNamePrefix + i, introDomainNamespace);
-        checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
-      }
-
-      // verify new cluster managed server pods are ready
-      for (int i = 1; i <= replicaCount; i++) {
-        logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-            managedServerPodNamePrefix + i, introDomainNamespace);
-        checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
-      }
+    // verify new cluster managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
+          managedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
     logger.info("Getting the list of servers using the listServers");
@@ -846,18 +856,16 @@ public class ItIntrospectVersion {
     String serverListUri = "ClusterViewServlet?listServers=true";
     HttpResponse<String> response = null;
     for (int i = 0; i < 5; i++) {
-      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(10));
       response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
       assertEquals(200, response.statusCode(), "Status code not equals to 200");
     }
 
     // verify managed server pods are ready
-    for (String managedServerNameBase : managedServerNameBases) {
-      for (int i = 1; i <= replicaCount; i++) {
-        logger.info("Checking {0} health", managedServerNameBase + i);
-        assertTrue(response.body().contains(managedServerNameBase + i + ":HEALTH_OK"),
-            "Didn't get " + managedServerNameBase + i + ":HEALTH_OK");
-      }
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking {0} health", managedServerPodNamePrefix + i);
+      assertTrue(response.body().contains(managedServerPodNamePrefix + i + ":HEALTH_OK"),
+          "Didn't get " + managedServerPodNamePrefix + i + ":HEALTH_OK");
     }
 
     logger.info("Getting node port for default channel");
@@ -866,12 +874,12 @@ public class ItIntrospectVersion {
         "Getting admin server node port failed");
 
     logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() ->
-        adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH),
+    boolean loginSuccessful = assertDoesNotThrow(()
+        -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH),
         "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
 
-    logger.info("Validating WebLogic admin server access by login to console");
+    logger.info("Validating WebLogic admin server access by login to console using old credentials");
     assertThrows(Exception.class, ()
         -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         "Accessing using old user/password succedded, supposed to fail");
