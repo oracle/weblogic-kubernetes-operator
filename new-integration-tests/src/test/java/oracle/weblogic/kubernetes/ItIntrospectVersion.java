@@ -36,7 +36,6 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -75,6 +74,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -739,9 +739,11 @@ public class ItIntrospectVersion {
 
   /**
    * Test changes the WebLogic credentials and verifies the servers can startup and function with changed credentials.
-   * a. Creates new WebLogic credentials secret using WLST.
-   * b. Patch the Domain Resource with new credentials, restartVerion and introspectVersion.
+   * a. Creates new WebLogic credentials using WLST.
+   * b. Creates new Kubernetes secret for WebLogic credentials.
+   * c. Patch the Domain Resource with new credentials, restartVerion and introspectVersion.
    * d. Verifies the servers in the domain restarted and accessing the admin server console with new password works.
+   * e. Verifies the the admin server console access with old credentials fail.
    */
   @Order(3)
   @Test
@@ -787,6 +789,8 @@ public class ItIntrospectVersion {
         "Failed to write the WLST properties to file");
 
     // changet the admin server port to a different value to force pod restart
+    logger.info("Creating a new WebLogic user/password {0}/{1} in default security realm",
+        ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
@@ -801,7 +805,8 @@ public class ItIntrospectVersion {
         String.format("createSecret failed for %s", newWlSecretName));
 
     // delete the old secret
-    TestActions.deleteSecret(wlSecretName, introDomainNamespace);
+    logger.info("Deleting the old secret");
+    deleteSecret(wlSecretName, introDomainNamespace);
 
     String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
     String oldVersion = assertDoesNotThrow(()
