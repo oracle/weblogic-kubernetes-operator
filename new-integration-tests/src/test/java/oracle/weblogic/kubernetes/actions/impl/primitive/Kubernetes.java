@@ -2401,7 +2401,9 @@ public class Kubernetes {
         // nothing to read
       }
 
-      return new ExecResult(proc.exitValue(), stdout, stderr);
+      ExecResult result = new ExecResult(proc.exitValue(), stdout, stderr);
+      logger.info("result: " + result);
+      return result;
     } finally {
       if (proc != null) {
         proc.destroy();
