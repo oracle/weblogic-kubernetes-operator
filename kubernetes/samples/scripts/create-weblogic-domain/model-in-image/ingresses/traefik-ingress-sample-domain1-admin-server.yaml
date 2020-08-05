@@ -1,8 +1,8 @@
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
   name: traefik-ingress-sample-domain1-admin-server
   namespace: sample-domain1-ns
@@ -11,11 +11,10 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
 spec:
-  rules:
-  - host:
-    http:
-      paths:
-      - path: /console
-        backend:
-          serviceName: sample-domain1-admin-server
-          servicePort: 7001
+  routes:
+  - kind: Rule
+    match: PathPrefix(`/console`)
+    services:
+    - kind: Service
+      name: sample-domain1-admin-server
+      port: 7001

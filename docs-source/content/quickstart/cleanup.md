@@ -31,11 +31,10 @@ weight: 7
 1.	Configure the Traefik load balancer to stop managing the ingresses in the domain namespace:
 
     ```bash
-    $ helm upgrade traefik-operator stable/traefik \
+    $ helm upgrade traefik-operator traefik/traefik \
         --namespace traefik \
         --reuse-values \
-        --set "kubernetes.namespaces={traefik}" \
-        --wait
+        --set "kubernetes.namespaces={traefik}" 
     ```
 
 1.	Configure the operator to stop managing the domain:

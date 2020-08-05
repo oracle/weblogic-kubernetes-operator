@@ -49,6 +49,8 @@ import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
+import oracle.weblogic.kubernetes.actions.impl.Traefik;
+import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.Voyager;
 import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
@@ -123,6 +125,17 @@ public class TestActions {
   public static boolean buildOperatorImage(String image) {
     return Operator.buildImage(image);
   }
+
+  /**
+   * Get the image name used in the Operator container.
+   * @param namespace namespace of the operator
+   * @return image name
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getOperatorContainerImageName(String namespace) throws ApiException {
+    return Operator.getOperatorContainerImage(namespace);
+  }
+
   // ----------------------   domain  -----------------------------------
 
   /**
@@ -339,6 +352,18 @@ public class TestActions {
   }
 
   /**
+   * Install Traefik ingress controller.
+   *
+   * @param params the parameters to Helm install command, such as release name, namespace, repo url,
+   *               repo name and chart name
+   * @return true on success, false otherwise
+   */
+  public static boolean installTraefik(TraefikParams params) {
+    return Traefik.install(params);
+  }
+
+
+  /**
    * Upgrade NGINX release.
    *
    * @param params the parameters to Helm upgrade command, such as release name and http/https nodeport
@@ -369,6 +394,16 @@ public class TestActions {
   }
 
   /**
+   * Uninstall the Traefik release.
+   *
+   * @param params the parameters to Helm uninstall command, such as release name and namespace
+   * @return true on success, false otherwise
+   */
+  public static boolean uninstallTraefik(HelmParams params) {
+    return Traefik.uninstall(params);
+  }
+
+  /**
    * Uninstall the Voyager release.
    *
    * @param params the parameters to Helm uninstall command, such as release name and namespace
@@ -388,6 +423,37 @@ public class TestActions {
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @param annotations annotations to create ingress resource
    * @param setIngressHost if true set to specific host or all
+   * @param tlsSecret TLS secret name if any
+   * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
+   */
+  public static List<String> createIngress(
+      String ingressName,
+      String domainNamespace,
+      String domainUid,
+      Map<String, Integer> clusterNameMsPortMap,
+      Map<String, String> annotations,
+      boolean setIngressHost,
+      String tlsSecret) {
+    return Ingress.createIngress(ingressName,
+            domainNamespace,
+            domainUid,
+            clusterNameMsPortMap,
+            annotations, setIngressHost, tlsSecret, false, 0);
+  }
+
+  /**
+   * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
+   * The ingress host is set to 'domainUid.clusterName.test'.
+   *
+   * @param ingressName the name of the ingress to be created
+   * @param domainNamespace the WebLogic domain namespace in which to create the ingress
+   * @param domainUid WebLogic domainUid which is backend to the ingress
+   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
+   * @param annotations annotations to create ingress resource
+   * @param setIngressHost if true set to specific host or all
+   * @param tlsSecret TLS secret name if any
+   * @param enableAdminServerRouting enable the ingress rule to admin server
+   * @param adminServerPort the port number of admin server pod of the domain
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
   public static List<String> createIngress(String ingressName,
@@ -395,12 +461,12 @@ public class TestActions {
                                            String domainUid,
                                            Map<String, Integer> clusterNameMsPortMap,
                                            Map<String, String> annotations,
-                                           boolean setIngressHost) {
-    return Ingress.createIngress(ingressName,
-            domainNamespace,
-            domainUid,
-            clusterNameMsPortMap,
-            annotations, setIngressHost);
+                                           boolean setIngressHost,
+                                           String tlsSecret,
+                                           boolean enableAdminServerRouting,
+                                           int adminServerPort) {
+    return Ingress.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap,
+        annotations, setIngressHost, tlsSecret, enableAdminServerRouting, adminServerPort);
   }
 
   /**
@@ -646,6 +712,18 @@ public class TestActions {
    */
   public static int getServiceNodePort(String namespace, String serviceName, String channelName) {
     return Service.getServiceNodePort(namespace, serviceName, channelName);
+  }
+
+
+  /**
+   * Get node port of a namespaced service.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @return node port if service is found, otherwise -1
+   */
+  public static Integer getServiceNodePort(String namespace, String serviceName) {
+    return Service.getServiceNodePort(namespace, serviceName);
   }
 
   /**
