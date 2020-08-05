@@ -148,8 +148,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyG
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyPrometheus;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -1355,16 +1355,14 @@ class ItMonitoringExporter {
 
     wdtImage =
         createImageAndVerify(MONEXP_IMAGE_NAME,
-                modelList,
-                appList,
-                propertyList,
-                WLS_BASE_IMAGE_NAME,
-                WLS_BASE_IMAGE_TAG,
-                WLS,
-                false,
-                domain2Uid, true);
-
-
+            modelList,
+            appList,
+            propertyList,
+            WLS_BASE_IMAGE_NAME,
+            WLS_BASE_IMAGE_TAG,
+            WLS,
+            false,
+            domain2Uid, true);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(wdtImage);

@@ -13,7 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 public interface TestConstants {
 
   // domain constants
-  public static final String DOMAIN_VERSION = "v8";
+  public static final String DOMAIN_VERSION = Optional.ofNullable(System.getenv("DOMAIN_VERSION"))
+      .orElse("v8");
   public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
   public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
@@ -44,6 +45,8 @@ public interface TestConstants {
       .orElse(REPO_DUMMY_VALUE);
   public static final String REPO_EMAIL = Optional.ofNullable(System.getenv("REPO_EMAIL"))
       .orElse(REPO_DUMMY_VALUE);
+  public static final String OPERATOR_GITHUB_CHART_REPO_URL =
+        "https://oracle.github.io/weblogic-kubernetes-operator/charts";
 
   // OCR registry
   public static final String OCR_SECRET_NAME = "ocr-secret";
@@ -64,9 +67,9 @@ public interface TestConstants {
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostName()));
   public static final String GOOGLE_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
-  public static final String RESULTS_ROOT = System.getenv().getOrDefault("RESULTS_ROOT",
+  public static final String RESULTS_ROOT = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/ittestsresults";
-  public static final String LOGS_DIR = System.getenv().getOrDefault("RESULTS_ROOT",
+  public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
 
   public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
