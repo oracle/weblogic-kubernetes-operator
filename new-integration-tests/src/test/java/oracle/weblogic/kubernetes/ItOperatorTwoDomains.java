@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -81,6 +82,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.listJobs;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
@@ -270,8 +272,7 @@ public class ItOperatorTwoDomains {
             .atMost(5, MINUTES).await();
 
     for (int i = 1; i <= numberOfDomains; i++) {
-      int index = i;
-      String domainUid = domainUids.get(index - 1);
+      String domainUid = domainUids.get(i - 1);
       // delete domain
       logger.info("deleting domain custom resource {0}", domainUid);
       assertTrue(deleteDomainCustomResource(domainUid, defaultNamespace));
@@ -288,8 +289,8 @@ public class ItOperatorTwoDomains {
           .until(domainDoesNotExist(domainUid, DOMAIN_VERSION, defaultNamespace));
 
       // delete configMap in default namespace
-      logger.info("deleting configMap {0}", "create-domain" + index + "-scripts-cm");
-      assertTrue(deleteConfigMap("create-domain" + index + "-scripts-cm", defaultNamespace));
+      logger.info("deleting configMap {0}", "create-domain" + i + "-scripts-cm");
+      assertTrue(deleteConfigMap("create-domain" + i + "-scripts-cm", defaultNamespace));
     }
 
     // delete configMap weblogic-scripts-cm in default namespace
@@ -304,22 +305,16 @@ public class ItOperatorTwoDomains {
 
     // Delete jobs
     try {
-      for (var item : Kubernetes.listJobs(defaultNamespace).getItems()) {
+      for (var item :listJobs(defaultNamespace).getItems()) {
         deleteJob(item.getMetadata().getName(), defaultNamespace);
       }
-    } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete jobs");
-    }
 
-    // delete remaining pods in default namespace
-    try {
       for (var item : listPods(defaultNamespace, null).getItems()) {
         deletePod(item.getMetadata().getName(), defaultNamespace);
       }
-    } catch (Exception ex) {
+    } catch (ApiException ex) {
       logger.warning(ex.getMessage());
-      logger.warning("Failed to delete pods");
+      logger.warning("Failed to delete jobs");
     }
 
     // delete pv and pvc in default namespace
@@ -436,6 +431,8 @@ public class ItOperatorTwoDomains {
    * @param pvcName persistence volume claim for the WebLogic domain
    * @param domainUid the Uid of the domain to create
    * @param domainNamespace the namespace in which the domain will be created
+   * @param domainScriptConfigMapName the configMap name for domain script
+   * @param createDomainInPVJobName the job name for creating domain in PV
    */
   private void runCreateDomainOnPVJobUsingWlst(String pvName,
                                                String pvcName,
@@ -465,14 +462,12 @@ public class ItOperatorTwoDomains {
     domainScriptFiles.add(domainPropertiesFile);
 
     logger.info("Creating a ConfigMap to hold domain creation scripts");
-    //String domainScriptConfigMapName = "create-domain-scripts-cm";
     createConfigMapFromFiles(domainScriptConfigMapName, domainScriptFiles, domainNamespace);
 
     logger.info("Running a Kubernetes job to create the domain");
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                //.name("create-domain-onpv-job")
                 .name(createDomainInPVJobName)
                 .namespace(domainNamespace))
         .spec(new V1JobSpec()
@@ -587,6 +582,10 @@ public class ItOperatorTwoDomains {
 
   /**
    * Restart domain1 and verify there was no impact on domain2.
+   *
+   * @param numServersInDomain1 number of servers in domain1
+   * @param domain1Namespace  namespace in which domain1 exists
+   * @param domain2Namespace  namespace in which domain2 exists
    */
   private void restartDomain1AndVerifyNoImpactOnDomain2(int numServersInDomain1,
                                                         String domain1Namespace,
@@ -640,6 +639,8 @@ public class ItOperatorTwoDomains {
 
   /**
    * Verify domain2 server pods were not changed.
+   *
+   * @param domain2Namespace namespace in which domain2 exists
    */
   private void verifyDomain2NotChanged(String domain2Namespace) {
     String domain2AdminServerPodName = domainAdminServerPodNames.get(1);
@@ -668,6 +669,8 @@ public class ItOperatorTwoDomains {
 
   /**
    * Get domain1 and domain2 server pods original creation timestamps.
+   * @param domainUids list of domainUids
+   * @param domainNamespaces list of domain namespaces
    */
   private void getBothDomainsPodsOriginalCreationTimestamp(List<String> domainUids,
                                                            List<String> domainNamespaces) {
@@ -687,18 +690,18 @@ public class ItOperatorTwoDomains {
     // get the managed server pods original creation timestamps
     logger.info("Getting managed server pods original creation timestamps for both domains");
     for (int i = 1; i <= replicaCount; i++) {
-      String managedServerPodName = domainUids.get(0) + "-" + MANAGED_SERVER_NAME_BASE + i;
       domain1ManagedServerPodOriginalTimestampList.add(
-          getPodCreationTime(domainNamespaces.get(0), managedServerPodName));
+          getPodCreationTime(domainNamespaces.get(0), domainUids.get(0) + "-" + MANAGED_SERVER_NAME_BASE + i));
 
-      managedServerPodName = domainUids.get(1) + "-" + MANAGED_SERVER_NAME_BASE + i;
       domain2ManagedServerPodOriginalTimestampList.add(
-          getPodCreationTime(domainNamespaces.get(1), managedServerPodName));
+          getPodCreationTime(domainNamespaces.get(1), domainUids.get(1) + "-" + MANAGED_SERVER_NAME_BASE + i));
     }
   }
 
   /**
    * Shutdown both domains and verify all the server pods were shutdown.
+   *
+   * @param domainNamespaces list of domain namespaces
    */
   private void shutdownBothDomainsAndVerify(List<String> domainNamespaces) {
 

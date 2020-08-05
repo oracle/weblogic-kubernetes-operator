@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.actions.impl;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class Job {
@@ -42,5 +43,16 @@ public class Job {
    */
   public static boolean deleteJob(String jobName, String namespace) throws ApiException {
     return Kubernetes.deleteJob(namespace, jobName);
+  }
+
+  /**
+   * List jobs in the given namespace.
+   *
+   * @param namespace in which to list the jobs
+   * @return V1JobList list of {@link V1Job} from Kubernetes cluster
+   * @throws ApiException when list fails
+   */
+  public static V1JobList listJobs(String namespace) throws ApiException {
+    return Kubernetes.listJobs(namespace);
   }
 }

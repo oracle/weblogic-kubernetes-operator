@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -1036,6 +1037,17 @@ public class TestActions {
    */
   public static boolean deleteJob(String jobName, String namespace) throws ApiException {
     return Job.deleteJob(jobName, namespace);
+  }
+
+  /**
+   * List jobs in the given namespace.
+   *
+   * @param namespace in which to list the jobs
+   * @return V1JobList list of {@link V1Job} from Kubernetes cluster
+   * @throws ApiException when list fails
+   */
+  public static V1JobList listJobs(String namespace) throws ApiException {
+    return Job.listJobs(namespace);
   }
 
   // ----------------------   pod  ---------------------------------
