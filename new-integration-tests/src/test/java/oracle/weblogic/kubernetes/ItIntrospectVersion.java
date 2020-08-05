@@ -797,7 +797,7 @@ public class ItIntrospectVersion {
     String patchStr
         = "["
         + "{\"op\": \"replace\", \"path\": \"/spec/webLogicCredentialsSecret/name\", "
-        + "\"value\": \"" + newWlSecretName + "\"}"
+        + "\"value\": \"" + newWlSecretName + "\"},"
         + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", "
         + "\"value\": \"" + introspectVersion + "\"},"
         + "{\"op\": \"add\", \"path\": \"/spec/restartVersion\", "
