@@ -4,8 +4,6 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -90,7 +88,6 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
-import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
@@ -177,6 +174,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isTraefikRead
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -222,8 +220,26 @@ public class CommonTestUtils {
    */
   public static HelmParams installAndVerifyOperator(String opNamespace,
                                                     String... domainNamespace) {
+    HelmParams opHelmParams =
+        new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
+        0, opHelmParams, domainNamespace);
+  }
 
-    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false, 0, domainNamespace);
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opHelmParams the Helm parameters to install operator
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace, HelmParams opHelmParams,
+                                                    String... domainNamespace) {
+    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
+        0, opHelmParams, domainNamespace);
   }
 
   /**
@@ -241,8 +257,13 @@ public class CommonTestUtils {
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
                                                     String... domainNamespace) {
-    return installAndVerifyOperator(opNamespace, opServiceAccount, withRestAPI,
-        externalRestHttpsPort, false, domainNamespace);
+    HelmParams opHelmParams =
+        new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
+            .namespace(opNamespace)
+            .chartDir(OPERATOR_CHART_DIR);
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
+        withRestAPI, externalRestHttpsPort, opHelmParams, domainNamespace);
+
   }
 
   /**
@@ -259,6 +280,55 @@ public class CommonTestUtils {
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
+                                                    boolean elkIntegrationEnabled,
+                                                    String... domainNamespace) {
+    HelmParams opHelmParams =
+        new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
+            .namespace(opNamespace)
+            .chartDir(OPERATOR_CHART_DIR);
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
+        withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled, domainNamespace);
+
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opHelmParams the Helm parameters to install operator
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String opServiceAccount,
+                                                    boolean withRestAPI,
+                                                    int externalRestHttpsPort,
+                                                    HelmParams opHelmParams,
+                                                    String... domainNamespace) {
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
+        withRestAPI, externalRestHttpsPort, opHelmParams, false, domainNamespace);
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opHelmParams the Helm parameters to install operator
+   * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String opServiceAccount,
+                                                    boolean withRestAPI,
+                                                    int externalRestHttpsPort,
+                                                    HelmParams opHelmParams,
                                                     boolean elkIntegrationEnabled,
                                                     String... domainNamespace) {
     LoggingFacade logger = getLogger();
@@ -283,20 +353,19 @@ public class CommonTestUtils {
     Map<String, Object> secretNameMap = new HashMap<>();
     secretNameMap.put("name", REPO_SECRET_NAME);
 
-    // Helm install parameters
-    HelmParams opHelmParams = new HelmParams()
-        .releaseName(OPERATOR_RELEASE_NAME)
-        .namespace(opNamespace)
-        .chartDir(OPERATOR_CHART_DIR);
-
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()
         .helmParams(opHelmParams)
-        .image(operatorImage)
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
         .serviceAccount(opServiceAccount);
 
+    // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
+    if (opHelmParams.getRepoUrl() == null) {
+      opParams.image(operatorImage);
+    }
+
+    // enable ELK Stack
     if (elkIntegrationEnabled) {
       opParams
           .elkIntegrationEnabled(elkIntegrationEnabled);
@@ -343,6 +412,18 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> operatorIsReady(opNamespace),
             "operatorIsReady failed with ApiException"));
 
+    if (withRestAPI) {
+      logger.info("Wait for the operator external service in namespace {0}", opNamespace);
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for operator external service in namespace {0} "
+                      + "(elapsed time {1}ms, remaining time {2}ms)",
+                  opNamespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(assertDoesNotThrow(() -> operatorRestServiceRunning(opNamespace),
+              "operator external service is not running"));
+    }
     return opHelmParams;
   }
 
@@ -355,7 +436,6 @@ public class CommonTestUtils {
    */
   public static boolean upgradeAndVerifyOperator(String opNamespace,
                                                  String... domainNamespace) {
-    LoggingFacade logger = getLogger();
     // Helm upgrade parameters
     HelmParams opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -366,6 +446,20 @@ public class CommonTestUtils {
     OperatorParams opParams = new OperatorParams()
         .helmParams(opHelmParams)
         .domainNamespaces(Arrays.asList(domainNamespace));
+
+    return upgradeAndVerifyOperator(opNamespace, opParams);
+  }
+
+  /**
+   * Upgrade WebLogic operator with the helm values provided.
+   *
+   * @param opNamespace the operator namespace in which the operator will be upgraded
+   * @param opParams operator parameters to use in the upgrade
+   * @return true if successful
+   */
+  public static boolean upgradeAndVerifyOperator(String opNamespace, OperatorParams opParams) {
+
+    LoggingFacade logger = getLogger();
 
     // upgrade operator
     logger.info("Upgrading operator in namespace {0}", opNamespace);
@@ -726,7 +820,7 @@ public class CommonTestUtils {
   public static List<String> createIngressForDomainAndVerify(String domainUid,
                                                              String domainNamespace,
                                                              Map<String, Integer> clusterNameMSPortMap) {
-    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, true);
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, true, false, 0);
   }
 
   /**
@@ -743,7 +837,8 @@ public class CommonTestUtils {
                                                              Map<String, Integer> clusterNameMSPortMap,
                                                              boolean setIngressHost) {
 
-    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, setIngressHost);
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, setIngressHost,
+        false, 0);
   }
 
   /**
@@ -760,7 +855,8 @@ public class CommonTestUtils {
                                                              int nodeport,
                                                              Map<String, Integer> clusterNameMSPortMap) {
 
-    return createIngressForDomainAndVerify(domainUid, domainNamespace, nodeport, clusterNameMSPortMap, true);
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, nodeport, clusterNameMSPortMap, true,
+        false, 0);
   }
 
   /**
@@ -771,25 +867,29 @@ public class CommonTestUtils {
    * @param nodeport node port of the ingress controller
    * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
    * @param setIngressHost if false does not set ingress host
+   * @param enableAdminServerRouting enable the ingress rule to admin server
+   * @param adminServerPort the port number of admin server pod of the domain
    * @return list of ingress hosts
    */
   public static List<String> createIngressForDomainAndVerify(String domainUid,
                                                              String domainNamespace,
                                                              int nodeport,
                                                              Map<String, Integer> clusterNameMSPortMap,
-                                                             boolean setIngressHost) {
+                                                             boolean setIngressHost,
+                                                             boolean enableAdminServerRouting,
+                                                             int adminServerPort) {
 
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
     final String ingressNginxClass = "nginx";
-    String ingressName = domainUid + "-" + ingressNginxClass;
+    String ingressName = domainUid + "-" + domainNamespace + "-" + ingressNginxClass;
 
     HashMap<String, String> annotations = new HashMap<>();
     annotations.put("kubernetes.io/ingress.class", ingressNginxClass);
 
     List<String> ingressHostList =
-            createIngress(ingressName, domainNamespace, domainUid,
-                clusterNameMSPortMap, annotations, setIngressHost, null);
+            createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, setIngressHost,
+                null, enableAdminServerRouting, adminServerPort);
 
     assertNotNull(ingressHostList,
             String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
@@ -1045,6 +1145,23 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check pod is ready and service exists in the specified namespace.
+   *
+   * @param podName pod name to check
+   * @param domainUid the label the pod is decorated with
+   * @param namespace the namespace in which the pod exists
+   */
+  public static void checkPodReadyAndServiceExists(String podName, String domainUid, String namespace) {
+    LoggingFacade logger = getLogger();
+
+    logger.info("Check service {0} exists in namespace {1}", podName, namespace);
+    checkServiceExists(podName, namespace);
+
+    logger.info("Waiting for pod {0} to be ready in namespace {1}", podName, namespace);
+    checkPodReady(podName, domainUid, namespace);
+  }
+
+  /**
    * Check pod does not exist in the specified namespace.
    *
    * @param podName pod name to check
@@ -1230,6 +1347,8 @@ public class CommonTestUtils {
    * @param baseImageTag - the WebLogic base image tag to be used while creating mii image
    * @param domainType - the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
    * @param modelType - create a model image only or domain in image. set to true for MII
+   * @param domainHome - the domain home in the image
+   * @param oneArchiveContainsMultiApps - whether one archive contains multiple apps
    * @return image name with tag
    */
   public static String createImageAndVerify(String imageNameBase,
@@ -1694,14 +1813,14 @@ public class CommonTestUtils {
 
         if (expectedServerNames != null) {
           // add the new managed server to the list
-          expectedServerNames.add(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
+          expectedServerNames.add(manageServerPodName.substring(domainUid.length() + 1));
         }
       }
 
       if (curlCmd != null && expectedServerNames != null) {
         // check that NGINX can access the sample apps from new and original managed servers
         logger.info("Checking that NGINX can access the sample app from the new and original managed servers "
-            + "in the domain after the cluster is scaled up.");
+            + "in the domain after the cluster is scaled up. Expected server names: {0}", expectedServerNames);
         assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNames, 50))
             .as("Verify NGINX can access the sample app from all managed servers in the domain")
             .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
@@ -1711,18 +1830,19 @@ public class CommonTestUtils {
       // scale down
       // wait and check the pods are deleted
       for (int i = replicasBeforeScale; i > replicasAfterScale; i--) {
+        String managedServerPodName = manageServerPodNamePrefix + i;
         logger.info("Checking that managed server pod {0} was deleted from namespace {1}",
-            manageServerPodNamePrefix + i, domainNamespace);
-        checkPodDoesNotExist(manageServerPodNamePrefix + i, domainUid, domainNamespace);
+            managedServerPodName, domainNamespace);
+        checkPodDoesNotExist(managedServerPodName, domainUid, domainNamespace);
         if (expectedServerNames != null) {
-          expectedServerNames.remove(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
+          expectedServerNames.remove(managedServerPodName.substring(domainUid.length() + 1));
         }
       }
 
       if (curlCmd != null && expectedServerNames != null) {
         // check that NGINX can access the app from the remaining managed servers in the domain
         logger.info("Checking that NGINX can access the sample app from the remaining managed servers in the domain "
-            + "after the cluster is scaled down.");
+            + "after the cluster is scaled down. Expected server name: {0}", expectedServerNames);
         assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNames, 50))
             .as("Verify NGINX can access the sample app from the remaining managed server in the domain")
             .withFailMessage("NGINX can not access the sample app from the remaining managed server")
@@ -1961,7 +2081,7 @@ public class CommonTestUtils {
    * @param jobBody V1Job object to create in the specified namespace
    * @param namespace the namespace in which the job will be created
    */
-  public static void createJobAndWaitUntilComplete(V1Job jobBody, String namespace) {
+  public static String createJobAndWaitUntilComplete(V1Job jobBody, String namespace) {
     LoggingFacade logger = getLogger();
     String jobName = assertDoesNotThrow(() -> createNamespacedJob(jobBody), "createNamespacedJob failed");
 
@@ -1975,6 +2095,8 @@ public class CommonTestUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(jobCompleted(jobName, null, namespace));
+
+    return jobName;
   }
 
   /**
@@ -2038,23 +2160,6 @@ public class CommonTestUtils {
     assertTrue(assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Create ConfigMap %s failed due to Kubernetes client  ApiException", configMapName)),
         String.format("Failed to create ConfigMap %s", configMapName));
-  }
-
-  /**
-   * A utility method to sed files.
-   *
-   * @throws java.io.IOException when copying files from source location to staging area fails
-   */
-  public static void replaceStringInFile(String filePath, String oldValue, String newValue)
-      throws IOException {
-    LoggingFacade logger = getLogger();
-    Path src = Paths.get(filePath);
-    logger.info("Copying {0}", src.toString());
-    Charset charset = StandardCharsets.UTF_8;
-    String content = new String(Files.readAllBytes(src), charset);
-    content = content.replaceAll(oldValue, newValue);
-    logger.info("to {0}", src.toString());
-    Files.write(src, content.getBytes(charset));
   }
 
   /**
@@ -2176,7 +2281,7 @@ public class CommonTestUtils {
     String out = targetFile.toString();
     for (Map.Entry<String, String> entry : templateMap.entrySet()) {
       logger.info("Replacing String {0} with the value {1}", entry.getKey(), entry.getValue());
-      replaceStringInFile(out, entry.getKey(), entry.getValue());
+      FileUtils.replaceStringInFile(out, entry.getKey(), entry.getValue());
     }
     return targetFile;
   }
