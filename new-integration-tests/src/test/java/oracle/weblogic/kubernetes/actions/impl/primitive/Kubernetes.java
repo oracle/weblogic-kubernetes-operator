@@ -2395,6 +2395,7 @@ public class Kubernetes {
       String stderr = null;
       try {
         stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
+        logger.info("stderr: " + stderr);
       } catch (IllegalStateException e) {
         // IllegalStateException thrown when stream is already closed, ignore since there is
         // nothing to read
