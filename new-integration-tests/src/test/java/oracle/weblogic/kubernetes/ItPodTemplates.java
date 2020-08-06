@@ -440,7 +440,6 @@ class ItPodTemplates {
     // add label to cluster serverPod for CLUSTER_NAME
     Map<String, String> clusterLabelKeyValue = new HashMap();
     clusterLabelKeyValue.put("clustername", "$(CLUSTER_NAME)");
-    int t3ChannelPort = getNextFreePort(31570, 32767);
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -474,10 +473,7 @@ class ItPodTemplates {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))
-                    .addChannelsItem(new Channel()
-                        .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
+                        .nodePort(0))))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
                 .replicas(replicaCount)
