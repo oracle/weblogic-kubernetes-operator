@@ -69,8 +69,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Verify that Elasticsearch collects data from WebLogic logs and
- * stores them in its repository correctly.
+ * To test ELK Stack used in Operator env, this Elasticsearch test does
+ * 1. Install Kibana/Elasticsearch 
+ * 2. Install and Start the operator with Elk Enabled
+ * 3. Verify that ELK Stack is ready to use by checking the index status of
+ *    Kibana and Logstash created in the Operator pod successfully
+ * 4. Create and Start the WebLogic domain
+ * 5. Verify that Elasticsearch collects data from WebLogic logs and
+ *    stores them in its repository correctly.
  */
 @DisplayName("Test to use Elasticsearch API to query WebLogic logs")
 @IntegrationTest
