@@ -18,8 +18,8 @@ import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
+//import oracle.weblogic.domain.AdminService;
+//import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
@@ -45,10 +45,10 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
+//import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
+//import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+//import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
@@ -179,14 +179,6 @@ class ItPodsRestart {
         String.format("Failed to add server pod compute resources for domain %s in namespace %s",
             domainUid, domainNamespace));
 
-    // verify the server pods are rolling restarted and back to ready state
-    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
-        domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(
-        () -> verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
-        "More than one pod was restarted at same time"),
-        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
-
     // get the patched domain custom resource
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -226,6 +218,14 @@ class ItPodsRestart {
     assertEquals(requests.get("cpu").getNumber().compareTo(cpuRequest), 0,
         String.format("server pod compute resources requests was not updated correctly, set cpu request to %s, got %s",
             cpuRequest, requests.get("cpu").getNumber()));
+
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(assertDoesNotThrow(
+        () -> verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+        "More than one pod was restarted at same time"),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     previousTestSuccessful = true;
   }
@@ -301,7 +301,7 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by changing serverPod env property")
   @Slow
   public void testServerPodsRestartByChangingEnvProperty() {
-    Assumptions.assumeTrue(previousTestSuccessful);
+    //Assumptions.assumeTrue(previousTestSuccessful);
     previousTestSuccessful = false;
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
@@ -363,10 +363,27 @@ class ItPodsRestart {
 
     previousTestSuccessful = true;
 
+    //TODO
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1.getSpec(), domain1 + " /spec/serverPod is null");
+    assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
+    assertNotNull(domain1.getSpec().getServerPod().getEnv(), domain1 + "/spec/serverPod/env is null");
+
+    //verify the env in the new patched domain
+    envList = domain1.getSpec().getServerPod().getEnv();
+    envValue = envList.get(0).getValue();
+    logger.info("22222 In the new patched domain envValue is: {0}", envValue);
+    assertTrue(envValue.equalsIgnoreCase("-Dweblogic.StdoutDebugEnabled=true"), "JAVA_OPTIONS was not updated"
+        + " in the new patched domain");
+    //end TODO
+
   }
 
   /**
-   * Add domain scope serverPod env property on the domain resource.
+   * Add domain scope serverPod podSecurityContext on the domain resource.
    * Verify all pods are restarted and back to ready state.
    * The tested resource: podSecurityContext: runAsUser: 1000.
    */
@@ -401,7 +418,7 @@ class ItPodsRestart {
 
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"add\",")
+    patchStr.append("\"op\": \"replace\",")
         .append(" \"path\": \"/spec/serverPod/podSecurityContext/runAsUser\",")
         .append("\"value\": ")
         .append(runAsUser)
@@ -411,6 +428,24 @@ class ItPodsRestart {
     boolean cmPatched = patchDomainResource(domainUid, domainNamespace, patchStr);
     assertTrue(cmPatched, "patchDomainCustomResource(podSecurityContext) failed");
 
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+    assertNotNull(domain1.getSpec(), domain1 + " /spec/serverPod is null");
+    assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
+    assertNotNull(domain1.getSpec().getServerPod().getPodSecurityContext(), domain1
+        + "/spec/serverPod/podSecurityContext is null");
+    Long runAsUserNew = domain1.getSpec().getServerPod().getPodSecurityContext().getRunAsUser();
+    assertNotNull(runAsUserNew, domain1 + "/spec/serverPod/podSecurityContext/runAsUser is null");
+
+    //verify the runAsUser in the new patched domain
+    logger.info("In the new patched domain runAsUser is: {0}", runAsUserNew);
+    assertEquals(runAsUserNew.compareTo(runAsUser), 0,
+        String.format("podSecurityContext runAsUser was not updated correctly, set runAsUser to %s, got %s",
+            runAsUser, runAsUserNew));
+
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
@@ -419,23 +454,6 @@ class ItPodsRestart {
         "More than one pod was restarted at same time"),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
-    //TODO
-    /*Long runAsUserNew = domain1.getSpec().getServerPod().getPodSecurityContext().getRunAsUser();
-    assertNotNull(domain1, domain1 + " is null");
-    assertNotNull(domain1.getSpec(), domain1 + " /spec/serverPod is null");
-    assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
-    assertNotNull(domain1.getSpec().getServerPod().getPodSecurityContext(), domain1
-        + "/spec/serverPod/podSecurityContext is null");
-    assertNotNull(runAsUserNew, domain1 + "/spec/serverPod/podSecurityContext/runAsUser is null");
-
-    //verify the runAsUser in the new patched domain
-    logger.info("In the new patched domain podSecurityContext is: {0}",
-        domain1.getSpec().getServerPod().getPodSecurityContext());
-    logger.info("In the new patched domain runAsUser is: {0}", runAsUserNew);
-    assertEquals(runAsUserNew.compareTo(runAsUser), 0,
-        String.format("podSecurityContext runAsUser was not updated correctly, set runAsUser to %s, got %s",
-            runAsUser, runAsUserNew));*/
-    //TODO
     previousTestSuccessful = true;
 
   }
@@ -501,7 +519,7 @@ class ItPodsRestart {
     previousTestSuccessful = true;
   }
 
-  private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
+  /*private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
                                     String repoSecretName, int replicaCount) {
     // create the domain CR
     Domain domain = new Domain()
@@ -552,7 +570,7 @@ class ItPodsRestart {
             domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
         + "for %s in namespace %s", domainUid, domNamespace));
-  }
+  }*/
 
   private Map getPodsWithTimeStamps() {
 
@@ -627,7 +645,8 @@ class ItPodsRestart {
                 .resources(new V1ResourceRequirements()
                     .limits(new HashMap<>())
                     .requests(new HashMap<>()))
-                .podSecurityContext(new V1PodSecurityContext()))
+                .podSecurityContext(new V1PodSecurityContext()
+                    .runAsUser(0L)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING"))
             .addClustersItem(new Cluster()
