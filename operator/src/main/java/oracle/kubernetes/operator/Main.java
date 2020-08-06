@@ -926,7 +926,9 @@ public class Main {
       Set<String> namespacesToStart = new TreeSet<>(targetNamespaces);
       for (String ns : targetNamespaces) {
         if (!nsList.contains(ns)) {
-          LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, ns);
+          try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+            LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, ns);
+          }
           namespacesToStart.remove(ns);
         }
       }
