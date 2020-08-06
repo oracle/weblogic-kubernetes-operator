@@ -256,7 +256,6 @@ class ItPodTemplates {
           .getMetadata().getAnnotations()
           .get("domainhome");
       assertNotNull(domainhome, "Can't find label domainhome");
-      //assertTrue(domainhome.equalsIgnoreCase("/u01/domains/" + domain1Uid),
       assertTrue(domainhome.equalsIgnoreCase(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domain1Uid),
           "Can't find expected value for label domainhome, the retrieved value is :" + domainhome);
 
