@@ -188,8 +188,8 @@ class ItPodTemplates {
           .getMetadata().getAnnotations()
           .get("domainhome");
       assertNotNull(domainhome, "Can't find label domainhome");
-      assertTrue(domainhome.equalsIgnoreCase(WDT_IMAGE_DOMAINHOME_BASE_DIR),
-          "Can't find expected value for label domainhome");
+      assertTrue(domainhome.equalsIgnoreCase(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domain2Uid),
+          "Can't find expected value for label domainhome, retrieved value is :" + domainhome);
 
     } finally {
       logger.info("Shutting down domain2");
@@ -256,8 +256,9 @@ class ItPodTemplates {
           .getMetadata().getAnnotations()
           .get("domainhome");
       assertNotNull(domainhome, "Can't find label domainhome");
-      assertTrue(domainhome.equalsIgnoreCase("/u01/domains/" + domain1Uid),
-          "Can't find expected value for label domainhome");
+      //assertTrue(domainhome.equalsIgnoreCase("/u01/domains/" + domain1Uid),
+      assertTrue(domainhome.equalsIgnoreCase(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domain1Uid),
+          "Can't find expected value for label domainhome, the retrieved value is :" + domainhome);
 
     } finally {
       logger.info("Shutting down domain1");
@@ -449,6 +450,7 @@ class ItPodTemplates {
             .namespace(namespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
+            .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid)
             .domainHomeSourceType(domainHomeSource)
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
