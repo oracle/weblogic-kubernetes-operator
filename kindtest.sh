@@ -235,8 +235,8 @@ if [ "${test_filter}" = "ItOperatorUpgrade" ]; then
   echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl new-integration-tests -P integration-tests verify"
   time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
 else
-  echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -Dexclude-failsafe=ItOperatorUpgrade -pl new-integration-tests -P integration-tests verify"
-  time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -Dexclude-failsafe=ItOperatorUpgrade -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
-  echo "Running -Dit.test=ItOperatorUpgrade -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl new-integration-tests -P integration-tests verify"
-  time mvn -Dit.test=ItOperatorUpgrade -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee -a "${RESULT_ROOT}/kindtest.log"
+  echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -Dexclude-failsafe=ItOperatorUpgrade,ItParameterizedDomain -pl new-integration-tests -P integration-tests verify"
+  time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -Dexclude-failsafe=ItOperatorUpgrade,ItParameterizedDomain -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+  echo "Running -Dit.test=ItParameterizedDomain,ItOperatorUpgrade -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl new-integration-tests -P integration-tests verify"
+  time mvn -Dit.test=ItParameterizedDomain,ItOperatorUpgrade -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee -a "${RESULT_ROOT}/kindtest.log"
 fi
