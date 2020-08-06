@@ -642,16 +642,18 @@ public class DomainProcessorImpl implements DomainProcessor {
           .map(Domain::getStatus)
           .map(DomainStatus::getMessage)
           .orElse(null);
+
       if (cachedInfo == null || cachedInfo.getDomain() == null) {
         return true;
       } else if (currentRetryCount > DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
-        LOGGER.severe("DomainProcessorImpl.isShouldContinue: Exceeded retry count");
+        LOGGER.fine("Stop introspection retry - exceeded configured domainPresenceFailureRetryMaxCount: "
+            + DomainPresence.getDomainPresenceFailureRetryMaxCount());
         return false;
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
       } else if (existingError != null && existingError.startsWith("MII Fatal Error")
           && !isSpecChanged(liveInfo, cachedInfo)) {
-        LOGGER.fine("DomainProcessorImpl.isShouldContinue: Fatal Error stop introspection retries: "
+        LOGGER.fine("Stop introspection retry - MII Fatal Error: "
             + existingError);
         return false;
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
