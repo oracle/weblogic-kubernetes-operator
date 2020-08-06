@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.util.Watch.Response;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
@@ -66,5 +67,10 @@ public class EventWatcher extends Watcher<V1Event> {
   @Override
   public String getNamespace() {
     return ns;
+  }
+
+  @Override
+  public String getDomainUid(Response<V1Event> item) {
+    return null;
   }
 }

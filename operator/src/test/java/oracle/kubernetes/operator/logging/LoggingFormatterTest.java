@@ -88,11 +88,40 @@ public class LoggingFormatterTest {
     assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-uid"));
   }
 
+  @Test
+  public void whenPacketContainsLoggingContext_retrieveDomainUid() {
+    testSupport.addLoggingContext(new LoggingContext().domainUid("test-lc-uid"));
+
+    assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-lc-uid"));
+  }
 
   @Test
   public void whenNotInFiber_retrieveDomainUidFromThread() throws JsonProcessingException {
     try (LoggingContext stack = LoggingContext.setThreadContext().domainUid("test-uid")) {
       assertThat(getFormattedMessage().get("domainUID"), equalTo("test-uid"));
+    }
+  }
+
+  @Test
+  public void whenPacketContainsDomainPresenceAndLoggingContext_retrieveDomainUidFromDomainPresence() {
+    testSupport.addDomainPresenceInfo(new DomainPresenceInfo("test-ns", "test-uid"));
+    testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-ns").domainUid("test-lc-uid"));
+
+    assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-uid"));
+  }
+
+  @Test
+  public void whenPacketContainsLoggingContextAndThreadLocalIsDefined_retrieveDomainUidFromLoggingContext() {
+    testSupport.addLoggingContext(new LoggingContext().domainUid("test-lc-uid1"));
+    try (LoggingContext stack = LoggingContext.setThreadContext().namespace("test-lc-tl-uid")) {
+      assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-lc-uid1"));
+    }
+  }
+
+  @Test
+  public void whenThreadLocalDefinedAndPacketContainsNoDomainPresenceOrLoggingContext_retrieveDomainUidFromThread() {
+    try (LoggingContext stack = LoggingContext.setThreadContext().domainUid("test-lc-tl-uid1")) {
+      assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-lc-tl-uid1"));
     }
   }
 
