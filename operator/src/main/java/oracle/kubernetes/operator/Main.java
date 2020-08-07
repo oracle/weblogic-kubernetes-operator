@@ -680,10 +680,12 @@ public class Main {
 
       // we don't have the domain presence information yet
       // we add a logging context to pass the namespace information to the LoggingFormatter
-      packet.getComponents().put(
-          LoggingContext.LOGGING_CONTEXT_KEY,
-          Component.createFor(
-              new LoggingContext().namespace(ns != null ? ns : operatorNamespace)));
+      if (ns != null) {
+        packet.getComponents().put(
+            LoggingContext.LOGGING_CONTEXT_KEY,
+            Component.createFor(new LoggingContext().namespace(ns)));
+      }
+
       V1SubjectRulesReviewStatus srrs = nss.getRulesReviewStatus().updateAndGet(prev -> {
         if (prev != null) {
           return prev;
@@ -730,6 +732,7 @@ public class Main {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
+      LOGGER.entering();
       @SuppressWarnings("unchecked")
       Map<String, DomainPresenceInfo> dpis = (Map<String, DomainPresenceInfo>) packet.get(DPI_MAP);
 
@@ -774,6 +777,7 @@ public class Main {
         domainWatchers.put(
             ns, createDomainWatcher(ns, getResourceVersion(callResponse.getResult())));
       }
+      LOGGER.exiting();
       return doNext(packet);
     }
 
