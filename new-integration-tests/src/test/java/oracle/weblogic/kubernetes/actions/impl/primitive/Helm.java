@@ -190,15 +190,14 @@ public class Helm {
     for (Map.Entry<String,Object> entry : helmValues.entrySet()) {
       if (entry.getValue() instanceof Map) {
         Map<String, Object> item = (Map<String, Object>) entry.getValue();
-        //int index = 0;
+        int index = 0;
         for (Map.Entry<String,Object> itemEntry : item.entrySet()) {
-          //valuesString.append(" --set \"" + entry.getKey() + "[" + index + "]."
-          valuesString.append(" --set \"" + entry.getKey() + "."
+          valuesString.append(" --set \"" + entry.getKey() + "[" + index + "]."
               + itemEntry.getKey() + "=" + itemEntry.getValue() + "\"");
-          //++index;
+          ++index;
         }
       } else {
-        valuesString.append(String.format(" --set \"%1s=%2s\"",
+        valuesString.append(String.format(" --set \"%s=%s\"",
             entry.getKey(), entry.getValue().toString()
                 .replaceAll("\\[", "{")
                 .replaceAll("\\]", "}").replace(" ","")));
