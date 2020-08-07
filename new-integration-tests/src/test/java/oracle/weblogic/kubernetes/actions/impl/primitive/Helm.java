@@ -186,7 +186,6 @@ public class Helm {
    */
   private static String valuesToString(Map<String, Object> helmValues) {
     StringBuffer valuesString = new StringBuffer("");
-
     // values can be Map or String
     for (Map.Entry<String,Object> entry : helmValues.entrySet()) {
       if (entry.getValue() instanceof Map) {

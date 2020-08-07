@@ -60,7 +60,7 @@ public interface ActionConstants {
   public static final String WDT_ZIP_PATH = DOWNLOAD_DIR + "/" + WDT_DOWNLOAD_FILENAME_DEFAULT;
 
   // ------------ WLDF RBAC constants ------------------------------------------
-  public static final String WLDF_CLUSTER_ROLE_NAME = "weblogic-domain-cluster-role";
+  public static final String WLDF_CLUSTER_ROLE_NAME = "wldf-weblogic-domain-cluster-role";
   public static final String WLDF_CLUSTER_ROLE_BINDING_NAME = "domain-cluster-rolebinding";
   public static final String WLDF_ROLE_BINDING_NAME = "weblogic-domain-operator-rolebinding";
   public static final String RBAC_CLUSTER_ROLE = "ClusterRole";

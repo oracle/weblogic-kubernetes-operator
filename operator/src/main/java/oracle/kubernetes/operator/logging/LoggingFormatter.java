@@ -172,7 +172,7 @@ public class LoggingFormatter extends Formatter {
   }
 
   private String getDomainUidFromThreadContext() {
-    return LoggingContext.optionalContext().map(LoggingContext::domainUid).orElse("");
+    return LoggingContext.OptionalContext().map(LoggingContext::domainUid).orElse("");
   }
 
   private DomainPresenceInfo getDomainPresenceInfo(Packet packet) {

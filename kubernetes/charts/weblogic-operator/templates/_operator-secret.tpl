@@ -9,6 +9,13 @@ data:
   {{- if (and .externalRestEnabled (hasKey . "externalOperatorKey")) }}
   externalOperatorKey: {{ .externalOperatorKey | quote }}
   {{- end }}
+  {{- $secret := (lookup "v1" "Secret" .Release.Namespace "weblogic-operator-secrets") }}
+  {{- if $secret }}
+  {{- $internalOperatorKey := index $secret.data "internalOperatorKey" }}
+  {{- if $internalOperatorKey }}
+  internalOperatorKey: {{ $internalOperatorKey }}
+  {{- end }}
+  {{- end }}
 metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
