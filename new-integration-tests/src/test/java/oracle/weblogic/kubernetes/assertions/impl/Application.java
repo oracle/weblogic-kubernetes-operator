@@ -43,6 +43,8 @@ public class Application {
     String[] cmd = new String[] {
         "/usr/bin/curl",
         "-v",
+        "30",
+        "-v",
         String.format("http://%s:%s/%s",
             podName,
             port,
