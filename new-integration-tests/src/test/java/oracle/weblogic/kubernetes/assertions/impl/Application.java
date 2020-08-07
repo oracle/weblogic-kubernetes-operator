@@ -42,9 +42,9 @@ public class Application {
     // access the application in the given pod
     String[] cmd = new String[] {
         "/usr/bin/curl",
-        "-m",
-        "30",
         "-v",
+        "--trace",
+        "-",
         String.format("http://%s:%s/%s",
             podName,
             port,
@@ -67,16 +67,18 @@ public class Application {
         return true;
       } else {
         getLogger().warning(
-            String.format("Failed to access the app inside pod %s in namespace %s",
+            String.format("Failed to access the app inside pod %s in namespace %s for response '%s'",
                 podName,
-                namespace));
+                namespace,
+                expectedResponse));
         return false;
       }
     } catch (ApiException | IOException | InterruptedException e) {
       getLogger().warning(
-          String.format("Failed to access the app inside pod %s in namespace %s",
+          String.format("Failed to access the app inside pod %s in namespace %s with exception %s",
               podName,
-              namespace),
+              namespace,
+              e.toString()),
           e);
       return false;
     } catch (IllegalArgumentException iae) {
