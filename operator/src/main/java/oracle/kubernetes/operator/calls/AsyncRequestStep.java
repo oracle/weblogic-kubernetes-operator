@@ -214,7 +214,6 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
   @Override
   public NextAction apply(Packet packet) {
-    LOGGER.entering();
     // we don't have the domain presence information and logging context information yet,
     // add a logging context to pass the namespace information to the LoggingFormatter
     if (requestParams.namespace != null 
@@ -247,7 +246,6 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
 
     AsyncRequestStepProcessing processing = new AsyncRequestStepProcessing(packet, retry, cont);
-    LOGGER.exiting();
     return doSuspend(
         (fiber) -> {
           try {

@@ -732,7 +732,6 @@ public class Main {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
-      LOGGER.entering();
       @SuppressWarnings("unchecked")
       Map<String, DomainPresenceInfo> dpis = (Map<String, DomainPresenceInfo>) packet.get(DPI_MAP);
 
@@ -777,7 +776,6 @@ public class Main {
         domainWatchers.put(
             ns, createDomainWatcher(ns, getResourceVersion(callResponse.getResult())));
       }
-      LOGGER.exiting();
       return doNext(packet);
     }
 
