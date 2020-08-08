@@ -950,12 +950,13 @@ class ItMiiDomain {
     conditionFactory
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for application {0} is running on pod {1} in namespace {2} "
-            + "(elapsed time {3}ms, remaining time {4}ms)",
+            + "(elapsed time {3}ms, remaining time {4}ms) with expected response: {5}",
             appPath,
             podName,
             namespace,
             condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
+            condition.getRemainingTimeInMS(),
+            expectedStr))
         .until(() -> appAccessibleInPod(
                 namespace,
                 podName, 

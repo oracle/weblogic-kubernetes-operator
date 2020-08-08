@@ -53,6 +53,10 @@ public class Application {
             appPath)};
 
     try {
+      getLogger().info("About to exec cmd: /usr/bin/curl --max-time 30 -v --trace - " + String.format("http://%s:%s/%s",
+          podName,
+          port,
+          appPath));
       ExecResult execResult = execCommand(
           namespace,
           podName, 
