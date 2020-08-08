@@ -73,6 +73,10 @@ public class Application {
                 podName,
                 namespace,
                 expectedResponse));
+        if (execResult.exitValue() == 7) {
+          getLogger().warning("Connection refused, sleep 10 seconds");
+          Thread.currentThread().sleep(10000);
+        }
         return false;
       }
     } catch (ApiException | IOException | InterruptedException e) {
