@@ -42,6 +42,8 @@ public class Application {
     // access the application in the given pod
     String[] cmd = new String[] {
         "/usr/bin/curl",
+        "--max-time",
+        "30",
         "-v",
         "--trace",
         "-",
