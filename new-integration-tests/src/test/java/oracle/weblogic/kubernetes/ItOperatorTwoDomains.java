@@ -4,12 +4,19 @@
 package oracle.weblogic.kubernetes;
 
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
@@ -31,6 +38,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -42,16 +50,24 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.ActionConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.BuildApplication;
+import oracle.weblogic.kubernetes.utils.DeployUtil;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
@@ -70,22 +86,29 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.listJobs;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
+import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -98,22 +121,29 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOCRRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.TestUtils.verifyClusterMemberCommunication;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test operator manages multiple domains.
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify operator manages multiple domains")
 @IntegrationTest
 public class ItOperatorTwoDomains {
@@ -129,10 +159,19 @@ public class ItOperatorTwoDomains {
   private static String domain2Uid = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
+  private static String traefikNamespace = null;
+  private static String voyagerNamespace = null;
   private static List<String> opNamespaces = new ArrayList<>();
   private static List<String> domainNamespaces = new ArrayList<>();
   private static List<String> domainUids = new ArrayList<>();
   private static HelmParams operatorHelmParams = null;
+  private static HelmParams traefikHelmParams = null;
+  private static HelmParams voyagerHelmParams = null;
+  private static Path tlsCertFile;
+  private static Path tlsKeyFile;
+  private static Path clusterViewAppPath;
+  private static LoggingFacade logger = null;
+  private static Path dstFile = null;
 
   // domain constants
   private final String clusterName = "cluster-1";
@@ -144,7 +183,6 @@ public class ItOperatorTwoDomains {
   private List<DateTime> domainAdminPodOriginalTimestamps = new ArrayList<>();
   private List<DateTime> domain1ManagedServerPodOriginalTimestampList = new ArrayList<>();
   private List<DateTime> domain2ManagedServerPodOriginalTimestampList = new ArrayList<>();
-  private static LoggingFacade logger = null;
 
   /**
    * Get namespaces, install operator and initiate domain UID list.
@@ -152,7 +190,7 @@ public class ItOperatorTwoDomains {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  public static void initAll(@Namespaces(6) List<String> namespaces) {
     logger = getLogger();
     // get unique operator namespaces
     logger.info("Get unique namespaces for operator1 and operator2");
@@ -167,6 +205,13 @@ public class ItOperatorTwoDomains {
       assertNotNull(namespaces.get(i), "Namespace list is null");
       domainNamespaces.add(namespaces.get(i));
     }
+
+    logger.info("Assign a unique namespace for Traefik");
+    traefikNamespace = namespaces.get(4);
+
+    // get a unique Voyager namespace
+    logger.info("Assign a unique namespace for Voyager");
+    voyagerNamespace = namespaces.get(5);
 
     // install and verify operator
     operatorHelmParams = installAndVerifyOperator(opNamespaces.get(0), domainNamespaces.get(0), defaultNamespace);
@@ -200,6 +245,7 @@ public class ItOperatorTwoDomains {
    * restart domain1 and verify no impact on domain2, domain2 continues to run
    * shutdown the domains using serverStartPolicy
    */
+  @Order(1)
   @Test
   @DisplayName("Create domain on PV using WLST script")
   public void testTwoDomainsManagedByTwoOperators() {
@@ -229,6 +275,7 @@ public class ItOperatorTwoDomains {
    * Shut down domain1 and back up, plus verify no impact on domain2.
    * shutdown both domains
    */
+  @Order(2)
   @Test
   public void testTwoDomainsManagedByOneOperatorSharingPV() {
     // create two domains sharing one PV in default namespace
@@ -247,7 +294,125 @@ public class ItOperatorTwoDomains {
     restartDomain1AndVerifyNoImpactOnDomain2(replicaCount, defaultNamespace, defaultNamespace);
 
     // shutdown both domains
-    shutdownBothDomainsAndVerify(domainNamespaces);
+    //shutdownBothDomainsAndVerify(domainNamespaces);
+  }
+
+  @Order(3)
+  @Test
+  public void testDeployAppAndInstallIngressControllers() {
+
+    // install and verify Traefik
+    logger.info("Installing Traefik controller using helm");
+    traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
+
+    final String cloudProvider = "baremetal";
+    final boolean enableValidatingWebhook = false;
+
+    // install and verify Voyager
+    voyagerHelmParams =
+        installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
+
+    // build the clusterview application
+    logger.info("Building clusterview application");
+    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
+        "dist", defaultNamespace);
+    assertTrue(Paths.get(distDir.toString(),
+        "clusterview.war").toFile().exists(),
+        "Application archive is not available");
+    clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
+
+    // deploy clusterview application
+    for (String domainUid : domainUids) {
+      // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
+      String adminServerPodName = domainUid + "-admin-server";
+      deployApplication(domainUid, adminServerPodName);
+    }
+
+    // create TLS secret for https traffic
+    for (String domainUid : domainUids) {
+      createCertKeyFiles(domainUid);
+      assertDoesNotThrow(() -> createSecretWithTLSCertKey(domainUid + "-tls-secret",
+          defaultNamespace, tlsKeyFile, tlsCertFile));
+    }
+    // create loadbalancing rules for Traefik
+    createTraefikIngressRoutingRules();
+    createVoyagerIngressRoutingRules();
+  }
+
+  /**
+   * Test verifies admin server access through Traefik loadbalancer. Accesses the admin server for each domain through
+   * Traefik loadbalancer web port and verifies it is a console login page.
+   */
+  @Order(4)
+  @Test
+  @DisplayName("Access admin server console through Traefik loadbalancer")
+  public void testTraefikHostRoutingAdminServer() {
+    logger.info("Verifying admin server access through Traefik");
+    for (String domainUid : domainUids) {
+      verifyAdminServerAccess(domainUid);
+    }
+  }
+
+  /**
+   * Test verifies multiple WebLogic domains can be loadbalanced by Traefik loadbalancer with host based routing rules.
+   * Accesses the clusterview application deployed in the WebLogic cluster through Traefik loadbalancer web
+   * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
+   *
+   */
+  @Order(5)
+  @Test
+  @DisplayName("Create model in image domains domain1 and domain2 and Ingress resources")
+  public void testTraefikHttpHostRoutingAcrossDomains() {
+    // bind domain name in the managed servers
+    for (String domain : domainUids) {
+      bindDomainName(domain, getTraefikLbNodePort(false));
+    }
+    // verify load balancing works when 2 domains are running in the same namespace
+    logger.info("Verifying http traffic");
+    for (String domainUid : domainUids) {
+      verifyClusterLoadbalancing(domainUid, "http", getTraefikLbNodePort(false));
+    }
+  }
+
+  /**
+   * Test verifies multiple WebLogic domains can be loadbalanced by Traefik loadbalancer with host based routing rules.
+   * Accesses the clusterview application deployed in the WebLogic cluster through Traefik loadbalancer websecure
+   * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
+   */
+  @Order(6)
+  @Test
+  @DisplayName("Loadbalance WebLogic cluster traffic through Traefik loadbalancer websecure channel")
+  public void testTraefikHostHttpsRoutingAcrossDomains() {
+    // bind domain name in the managed servers
+    for (String domain : domainUids) {
+      bindDomainName(domain, getTraefikLbNodePort(false));
+    }
+    logger.info("Verifying https traffic");
+    for (String domainUid : domainUids) {
+      verifyClusterLoadbalancing(domainUid, "https", getTraefikLbNodePort(true));
+    }
+  }
+
+  /**
+   * Test verifies multiple WebLogic domains can be loadbalanced by Voyager loadbalancer with host based routing rules.
+   * Accesses the clusterview application deployed in the WebLogic cluster through Voyager loadbalancer and verifies it
+   * is correctly routed to the specific domain cluster identified by the -H host header.
+   */
+  @Order(7)
+  @Test
+  @DisplayName("Loadbalance WebLogic cluster traffic through Voyager loadbalancer tcp channel")
+  public void testVoyagerHostHttpRoutingAcrossDomains() {
+    // verify load balancing works when 2 domains are running in the same namespace
+    // bind domain name in the managed servers
+    for (String domain : domainUids) {
+      String ingressName = domain + "-ingress-host-routing";
+      bindDomainName(domain, getVoyagerLbNodePort(ingressName));
+    }
+    logger.info("Verifying http traffic");
+    for (String domainUid : domainUids) {
+      String ingressName = domainUid + "-ingress-host-routing";
+      verifyClusterLoadbalancing(domainUid, "http", getVoyagerLbNodePort(ingressName));
+    }
   }
 
   /**
@@ -255,6 +420,21 @@ public class ItOperatorTwoDomains {
    */
   @AfterAll
   public void tearDownAll() {
+    // uninstall Traefik loadbalancer
+    if (traefikHelmParams != null) {
+      assertThat(uninstallTraefik(traefikHelmParams))
+          .as("Test uninstallTraefik returns true")
+          .withFailMessage("uninstallTraefik() did not return true")
+          .isTrue();
+    }
+
+    // uninstall Voyager
+    if (voyagerHelmParams != null) {
+      assertThat(uninstallVoyager(voyagerHelmParams))
+          .as("Test uninstallVoyager returns true")
+          .withFailMessage("uninstallVoyager() did not return true")
+          .isTrue();
+    }
 
     // uninstall operator which manages default namespace
     logger.info("uninstalling operator which manages default namespace");
@@ -296,12 +476,6 @@ public class ItOperatorTwoDomains {
     logger.info("deleting configMap weblogic-scripts-cm");
     assertTrue(deleteConfigMap("weblogic-scripts-cm", defaultNamespace));
 
-    // delete secret in default namespace
-    logger.info("deleting secret {0}", OCR_SECRET_NAME);
-    assertTrue(deleteSecret(OCR_SECRET_NAME, defaultNamespace));
-    logger.info("deleting secret {0}", wlSecretName);
-    assertTrue(deleteSecret(wlSecretName, defaultNamespace));
-
     // Delete jobs
     try {
       for (var item :listJobs(defaultNamespace).getItems()) {
@@ -321,6 +495,41 @@ public class ItOperatorTwoDomains {
     logger.info("deleting pv default-sharing-pv");
     assertTrue(deletePersistentVolumeClaim("default-sharing-pvc", defaultNamespace));
     assertTrue(deletePersistentVolume("default-sharing-pv"));
+
+    // delete ingressroute in namespace
+    if (dstFile != null) {
+      String command = "kubectl delete" + " -f " + dstFile;
+
+      logger.info("Running {0}", command);
+      try {
+        ExecResult result = ExecCommand.exec(command, true);
+        String response = result.stdout().trim();
+        logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+            result.exitValue(), response, result.stderr());
+        assertEquals(0, result.exitValue(), "Command didn't succeed");
+      } catch (IOException | InterruptedException ex) {
+        logger.severe(ex.getMessage());
+      }
+    }
+
+    // delete ingress in default namespace
+    try {
+      for (String ingressname : listIngresses(defaultNamespace)) {
+        logger.info("deleting ingress {0}", ingressname);
+        deleteIngress(ingressname, defaultNamespace);
+      }
+    } catch (ApiException apiEx) {
+      logger.severe(apiEx.getResponseBody());
+    }
+
+    // delete secret in default namespace
+    for (V1Secret secret : listSecrets(defaultNamespace).getItems()) {
+      String secretName = secret.getMetadata().getName();
+      if (!secretName.startsWith("default")) {
+        logger.info("deleting secret {0}", secretName);
+        assertTrue(deleteSecret(secretName, defaultNamespace));
+      }
+    }
   }
 
   /**
@@ -968,5 +1177,200 @@ public class ItOperatorTwoDomains {
               managedServerPodName, defaultNamespace)
           .isTrue();
     }
+  }
+
+  private static void createCertKeyFiles(String domainUid) {
+    String cn = domainUid + "." + defaultNamespace + ".cluster-1.test";
+    assertDoesNotThrow(() -> {
+      tlsKeyFile = Files.createTempFile("tls", ".key");
+      tlsCertFile = Files.createTempFile("tls", ".crt");
+      ExecCommand.exec("openssl"
+              + " req -x509 "
+              + " -nodes "
+              + " -days 365 "
+              + " -newkey rsa:2048 "
+              + " -keyout " + tlsKeyFile
+              + " -out " + tlsCertFile
+              + " -subj /CN=" + cn,
+          true);
+    });
+  }
+
+  private static void createTraefikIngressRoutingRules() {
+    logger.info("Creating ingress rules for domain traffic routing");
+    Path srcFile = Paths.get(ActionConstants.RESOURCE_DIR, "traefik/traefik-ingress-rules.yaml");
+    dstFile = Paths.get(TestConstants.RESULTS_ROOT, "traefik/traefik-ingress-rules.yaml");
+    assertDoesNotThrow(() -> {
+      Files.deleteIfExists(dstFile);
+      Files.createDirectories(dstFile.getParent());
+      Files.write(dstFile, Files.readString(srcFile).replaceAll("@NS@", defaultNamespace)
+          .getBytes(StandardCharsets.UTF_8));
+    });
+    String command = "kubectl create"
+        + " -f " + dstFile;
+    logger.info("Running {0}", command);
+    ExecResult result;
+    try {
+      result = ExecCommand.exec(command, true);
+      String response = result.stdout().trim();
+      logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          result.exitValue(), response, result.stderr());
+      assertEquals(0, result.exitValue(), "Command didn't succeed");
+    } catch (IOException | InterruptedException ex) {
+      logger.severe(ex.getMessage());
+    }
+  }
+
+  private static void createVoyagerIngressRoutingRules() {
+    for (String domainUid : domainUids) {
+      String ingressName = domainUid + "-ingress-host-routing";
+
+      // create Voyager ingress resource
+      Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+      clusterNameMsPortMap.put("cluster-1", 8001);
+      installVoyagerIngressAndVerify(domainUid, defaultNamespace, ingressName, clusterNameMsPortMap);
+    }
+  }
+
+  private static int getVoyagerLbNodePort(String ingressName) {
+    String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
+    String channelName = "tcp-80";
+
+    // get ingress service Nodeport
+    int ingressServiceNodePort = assertDoesNotThrow(() ->
+            getServiceNodePort(defaultNamespace, ingressServiceName, channelName),
+        "Getting voyager loadbalancer service node port failed");
+    logger.info("Node port for {0} is: {1} :", ingressServiceName, ingressServiceNodePort);
+    return ingressServiceNodePort;
+  }
+
+  private static void deployApplication(String domainUid, String adminServerPodName) {
+    logger.info("Getting node port for admin server default channel");
+    int serviceNodePort = assertDoesNotThrow(() ->
+            getServiceNodePort(defaultNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Deploying application {0} in domain {1} cluster target cluster-1",
+        clusterViewAppPath, domainUid);
+    ExecResult result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,
+        String.valueOf(serviceNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+        "cluster-1", clusterViewAppPath, null, domainUid + "clusterview");
+    assertNotNull(result, "Application deployment failed");
+    logger.info("Application deployment returned {0}", result.toString());
+    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
+  }
+
+  private void verifyAdminServerAccess(String domainUid) {
+    String consoleUrl = new StringBuffer()
+        .append("http://")
+        .append(K8S_NODEPORT_HOST)
+        .append(":")
+        .append(getTraefikLbNodePort(false))
+        .append("/console/login/LoginForm.jsp").toString();
+
+    //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
+    String curlCmd = String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' %s",
+        domainUid + "." + defaultNamespace + "." + "admin-server" + ".test", consoleUrl);
+
+    boolean hostRouting = false;
+    for (int i = 0; i < 10; i++) {
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
+      ExecResult result;
+      try {
+        logger.info("Accessing console using curl request iteration{0} {1}", i, curlCmd);
+        result = ExecCommand.exec(curlCmd, true);
+        String response = result.stdout().trim();
+        logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+            result.exitValue(), response, result.stderr());
+        if (response.contains("login")) {
+          hostRouting = true;
+          break;
+        }
+        //assertTrue(result.stdout().contains("Login"), "Couldn't access admin server console");
+      } catch (IOException | InterruptedException ex) {
+        logger.severe(ex.getMessage());
+      }
+    }
+    assertTrue(hostRouting, "Couldn't access admin server console");
+  }
+
+  private int getTraefikLbNodePort(boolean isHttps) {
+    logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
+    int webNodePort = assertDoesNotThrow(() ->
+            getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
+        "Getting web node port for Traefik loadbalancer failed");
+    return webNodePort;
+  }
+
+  private void bindDomainName(String domainUid, int lbPort) {
+    //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
+    String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
+            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?bindDomain=%s",
+        domainUid + "." + defaultNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST,
+        lbPort, domainUid);
+
+    // call the webapp and bind the domain name in the JNDI tree of each managed server in the cluster
+    for (int i = 0; i < 10; i++) {
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
+      ExecResult result;
+      try {
+        logger.info("Binding domain name in managed server JNDI tree using curl iteration {0}, request {0}",
+            i, curlCmd);
+        result = ExecCommand.exec(curlCmd, true);
+        String response = result.stdout().trim();
+        logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
+            i, result.exitValue(), response, result.stderr());
+        if (result.stdout().contains("Bound:" + domainUid)) {
+          break;
+        }
+      } catch (IOException | InterruptedException ex) {
+        // ignore
+      }
+    }
+  }
+
+  private void verifyClusterLoadbalancing(String domainUid, String protocol, int lbPort) {
+
+    //access application in managed servers through Traefik load balancer
+    logger.info("Accessing the clusterview app through load balancer to verify all servers in cluster");
+    String curlRequest = String.format("curl --silent --show-error -ks --noproxy '*' "
+            + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet",
+        domainUid + "." + defaultNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort);
+    List<String> managedServers = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServers.add(MANAGED_SERVER_NAME_BASE + i);
+    }
+    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
+        .as("Verify members can see other in cluster.")
+        .withFailMessage("application not accessible through loadbalancer.")
+        .isTrue();
+
+    boolean hostRouting = false;
+    //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
+    logger.info("Verifying the requests are routed to correct domain and cluster");
+    String curlCmd = String.format("curl --silent --show-error -ks --noproxy '*' "
+            + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
+        domainUid + "." + defaultNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort, domainUid);
+
+    // call the webapp and verify the bound domain name to determine
+    // the requests are sent to the correct cluster members.
+    for (int i = 0; i < 10; i++) {
+      ExecResult result;
+      try {
+        logger.info(curlCmd);
+        result = ExecCommand.exec(curlCmd, true);
+        String response = result.stdout().trim();
+        logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
+            i, result.exitValue(), response, result.stderr());
+        if (response.contains(domainUid)) {
+          hostRouting = true;
+          break;
+        }
+      } catch (IOException | InterruptedException ex) {
+        // ignore
+      }
+    }
+    assertTrue(hostRouting, "Host routing is not working");
   }
 }

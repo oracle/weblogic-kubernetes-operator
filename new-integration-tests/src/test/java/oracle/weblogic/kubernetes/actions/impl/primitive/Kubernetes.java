@@ -2306,6 +2306,35 @@ public class Kubernetes {
   }
 
   /**
+   * Delete an ingress in the specified namespace.
+   *
+   * @param name  ingress name to be deleted
+   * @param namespace namespace in which the specified ingress exists
+   * @return true if deleting ingress succeed, false otherwise
+   * @throws ApiException if Kubernetes API client call fails
+   */
+  public static boolean deleteIngress(String name, String namespace) throws ApiException {
+    try {
+      NetworkingV1beta1Api apiInstance = new NetworkingV1beta1Api(apiClient);
+      apiInstance.deleteNamespacedIngress(
+          name, // ingress name
+          namespace, // namespace
+          PRETTY, // String | If 'true', then the output is pretty printed.
+          null, // String | dry run or permanent change
+          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null, // Boolean | Deprecated: use the PropagationPolicy.
+          BACKGROUND, // String | Whether and how garbage collection will be performed.
+          null // V1DeleteOptions.
+      );
+    } catch (ApiException apex) {
+      getLogger().warning(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
    * Get Ingress in the given namespace by name.
    *
    * @param namespace name of the namespace
