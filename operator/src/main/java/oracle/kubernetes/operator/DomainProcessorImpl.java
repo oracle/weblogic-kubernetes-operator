@@ -610,6 +610,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       if (!delegate.isNamespaceRunning(getNamespace())) {
         return;
       }
+
       if (isShouldContinue()) {
         internalMakeRightDomainPresence();
       } else {
@@ -752,7 +753,8 @@ public class DomainProcessorImpl implements DomainProcessor {
                     () -> {
                       DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
                       if (existing != null) {
-                        try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+                        try (LoggingContext stack =
+                                 LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
                           existing.setPopulated(false);
                           // proceed only if we have not already retried max number of times
                           int retryCount = existing.incrementAndGetFailureCount();
