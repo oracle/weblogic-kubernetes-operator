@@ -2385,7 +2385,7 @@ public class Kubernetes {
 
       // wait for reading thread to finish any remaining output
       out.join(30000);
-      logger.info(Thread.currentThread().getName() + " finished out.join(30000)");
+      logger.info(Thread.currentThread() + " finished out.join(30000)");
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());
@@ -2402,7 +2402,7 @@ public class Kubernetes {
       }
 
       ExecResult result = new ExecResult(proc.exitValue(), stdout, stderr);
-      logger.info(Thread.currentThread().getName() + " result: " + result);
+      logger.info(Thread.currentThread() + " result: " + result);
       return result;
     } finally {
       if (proc != null) {
