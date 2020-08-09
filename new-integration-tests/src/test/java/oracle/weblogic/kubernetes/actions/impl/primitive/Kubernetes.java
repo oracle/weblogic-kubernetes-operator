@@ -2385,24 +2385,24 @@ public class Kubernetes {
 
       // wait for reading thread to finish any remaining output
       out.join(30000);
-      logger.info("finished out.join(30000)");
+      logger.info(Thread.currentThread().getName() + " finished out.join(30000)");
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());
-      logger.info("stdout: " + stdout);
+      //logger.info("stdout: " + stdout);
 
       // Read from process's stderr, if data available
       String stderr = null;
       try {
         stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
-        logger.info("stderr: " + stderr);
+        //logger.info("stderr: " + stderr);
       } catch (IllegalStateException e) {
         // IllegalStateException thrown when stream is already closed, ignore since there is
         // nothing to read
       }
 
       ExecResult result = new ExecResult(proc.exitValue(), stdout, stderr);
-      logger.info("result: " + result);
+      logger.info(Thread.currentThread().getName() + " result: " + result);
       return result;
     } finally {
       if (proc != null) {
