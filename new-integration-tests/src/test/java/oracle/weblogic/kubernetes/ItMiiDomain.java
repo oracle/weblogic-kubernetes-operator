@@ -949,8 +949,9 @@ class ItMiiDomain {
     // check if the application is accessible inside of a server pod
     conditionFactory
         .conditionEvaluationListener(
-            condition -> logger.info(Thread.currentThread().getName() + " Waiting for application {0} is running on pod {1} in namespace {2} "
-            + "(elapsed time {3}ms, remaining time {4}ms) with expected response: {5}",
+            condition -> logger.info(Thread.currentThread().getName()
+                    + " Waiting for application {0} is running on pod {1} in namespace {2} "
+                    + "(elapsed time {3}ms, remaining time {4}ms) with expected response: {5}",
             appPath,
             podName,
             namespace,
