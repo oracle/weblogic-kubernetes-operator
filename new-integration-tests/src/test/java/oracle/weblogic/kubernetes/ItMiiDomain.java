@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -958,13 +959,28 @@ class ItMiiDomain {
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS(),
             expectedStr))
-        .until(() -> appAccessibleInPod(
-                namespace,
-                podName, 
-                internalPort, 
-                appPath, 
-                expectedStr));
+        .until(appAccessInPod(namespace, podName, internalPort, appPath, expectedStr));
+    //.until(() -> appAccessibleInPod(
+    //       namespace,
+    //        podName,
+    //        internalPort,
+    //        appPath,
+    //        expectedStr));
 
+  }
+
+  private Callable<Boolean> appAccessInPod(String namespace,
+      String podName,
+      String port,
+      String appPath,
+      String expectedResponse) {
+    return new Callable<Boolean>() {
+      public Boolean call() {
+        boolean result = appAccessibleInPod(namespace, podName, port, appPath, expectedResponse);
+        getLogger().info(Thread.currentThread() + "ItMiiDomain.appAccessInPod result: " + result);
+        return result;
+      }
+    };
   }
   
   private void quickCheckAppNotRunning(
