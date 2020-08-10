@@ -4,8 +4,8 @@
 package oracle.kubernetes.operator.steps;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,9 +43,6 @@ public class ManagedServerUpIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final Collection<ServerStartupInfo> startupInfos;
-
-  private static NextStepFactory NEXT_STEP_FACTORY =
-      (next, packet, servers) -> StartClusteredServersStep.createStartClusteredServersStep(next, packet, servers);
 
   public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> startupInfos, Step next) {
     super(next);
@@ -90,19 +87,19 @@ public class ManagedServerUpIteratorStep extends Step {
             .filter(ssi -> !isServerInCluster(ssi))
             .map(ssi -> createManagedServerUpDetails(packet, ssi)).collect(Collectors.toList());
 
-    Map<String, StartClusteredServersStepFactory> stepFactories =
-            getStartClusteredServersStepFactories(startupInfos, packet);
     Collection<StepAndPacket> work = new ArrayList<>();
     if (!startDetails.isEmpty()) {
       work.add(
               new StepAndPacket(
                       new StartManagedServersStep(null, startDetails, null), packet));
     }
-    for (Map.Entry<String, StartClusteredServersStepFactory> entry : stepFactories.entrySet()) {
+
+    for (Map.Entry<String, StartClusteredServersStepFactory> entry
+            : getStartClusteredServersStepFactories(startupInfos, packet).entrySet()) {
       work.add(
               new StepAndPacket(
                       new StartManagedServersStep(entry.getKey(), entry.getValue().getServerStartsStepAndPackets(),
-                              null), packet));
+                              null), packet.clone()));
     }
 
     if (!work.isEmpty()) {
@@ -157,7 +154,7 @@ public class ManagedServerUpIteratorStep extends Step {
 
   static class StartManagedServersStep extends Step {
     final Collection<StepAndPacket> startDetails;
-    final Queue<StepAndPacket> startDetailsQueue = new ConcurrentLinkedQueue<StepAndPacket>();
+    final Queue<StepAndPacket> startDetailsQueue = new ConcurrentLinkedQueue<>();
     final String clusterName;
     int countScheduled = 0;
     int maxConcurrency = 1;
@@ -166,7 +163,7 @@ public class ManagedServerUpIteratorStep extends Step {
       super(next);
       this.clusterName = clusterName;
       this.startDetails = startDetails;
-      startDetails.forEach(sp -> add(sp));
+      startDetails.forEach(this::add);
     }
 
     void add(StepAndPacket serverToStart) {
@@ -175,26 +172,24 @@ public class ManagedServerUpIteratorStep extends Step {
               (Integer) serverToStart.packet.get(ProcessingConstants.MAX_CONCURRENCY)).orElse(0);
     }
 
-    String getClusterName() {
-      return clusterName;
-    }
-
-    Collection<StepAndPacket> getStartDetails() {
-      return startDetailsQueue;
-    }
-
-    Collection<StepAndPacket> getServersToStart() {
-      return startDetailsQueue;
-    }
-
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      if (this.countScheduled < PodHelper.getScheduledPods(info).size()) {
-        if (canScheduleConcurrently(PodHelper.getReadyPods(info).size())) {
-          Collection<StepAndPacket> servers = Arrays.asList(startDetailsQueue.poll());
+
+      StepAndPacket stepAndPacket = startDetailsQueue.peek();
+      if ((stepAndPacket != null) && (stepAndPacket.step != null)
+              && (stepAndPacket.step.getNext() instanceof ServerDownStep)) {
+        Collection<StepAndPacket> servers = Collections.singletonList(startDetailsQueue.poll());
+        return doForkJoin(this, packet, servers);
+      } else if (startDetailsQueue.size() == 0) {
+        return doNext(new ManagedServerUpAfterStep(getNext()), packet);
+      }
+
+      if (this.countScheduled < PodHelper.getScheduledPods(info, clusterName).size()) {
+        if (canScheduleConcurrently(PodHelper.getReadyPods(info, clusterName).size())) {
+          Collection<StepAndPacket> servers = Collections.singletonList(startDetailsQueue.poll());
           this.countScheduled++;
-          return doNext(NEXT_STEP_FACTORY.startClusteredServersStep(this, packet, servers), packet);
+          return doForkJoin(this, packet, servers);
         }
       }
       if (startDetailsQueue.size() > 0) {
@@ -231,35 +226,6 @@ public class ManagedServerUpIteratorStep extends Step {
     Collection<StepAndPacket> getServerStartsStepAndPackets() {
       return serversToStart;
     }
-  }
-
-  static class StartClusteredServersStep extends Step {
-
-    private final Collection<StepAndPacket> serversToStart;
-    private final Step step;
-    private final Packet packet;
-
-    static Step createStartClusteredServersStep(Step step, Packet packet, Collection<StepAndPacket> serversToStart) {
-      return new StartClusteredServersStep(step, packet, serversToStart);
-    }
-
-    StartClusteredServersStep(Step step, Packet packet, Collection<StepAndPacket> serversToStart) {
-      super(null);
-      this.packet = packet;
-      this.step = step;
-      this.serversToStart = serversToStart;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      return doForkJoin(step, packet, serversToStart);
-    }
-  }
-
-
-  // an interface to provide a hook for unit testing.
-  interface NextStepFactory {
-    Step startClusteredServersStep(Step next, Packet packet, Collection<StepAndPacket> servers);
   }
 
 }
