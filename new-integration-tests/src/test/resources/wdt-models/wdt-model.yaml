@@ -20,61 +20,12 @@ topology:
   Server:
     '@@PROP:ADMIN_NAME@@':
       ListenPort: '@@PROP:ADMIN_PORT@@'
-      NetworkAccessPoint:
-        T3Channel:
-          ListenAddress: None
-          ListenPort: '@@PROP:T3_CHANNEL_PORT@@'
-          PublicAddress: '@@PROP:T3_PUBLIC_ADDRESS@@'
-          PublicPort: '@@PROP:T3_CHANNEL_PORT@@'
+
   ServerTemplate:
     template1:
       Cluster: '@@PROP:CLUSTER_NAME@@'
       ListenPort: '@@PROP:MANAGED_SERVER_PORT@@'
-resources:
-  JDBCSystemResource:
-    Generic1:
-      Target: '@@PROP:CLUSTER_NAME@@'
-      JdbcResource:
-        JDBCDataSourceParams:
-          JNDIName: dc1
-          GlobalTransactionsProtocol: OnePhaseCommit
-        JDBCDriverParams:
-          DriverName: org.gjt.mm.mysql.Driver
-          URL: 'jdbc:mysql://mysql.default.svc.cluster.local:3306/@@PROP:DOMAIN_NAME@@'
-          PasswordEncrypted: '@@PROP:MYSQL_PWD@@'
-          Properties:
-            user:
-              Value: '@@PROP:MYSQL_USER@@'
-        JDBCConnectionPoolParams:
-          InitialCapacity: 3
-          MaxCapacity: 15
-          TestTableName: SQL SELECT 1
-          TestConnectionsOnReserve: true
 
-  JDBCStore:
-    JDBCStore1:
-      Notes: JDBC store notes
-      Target: '@@PROP:CLUSTER_NAME@@'
-      DataSource: Generic1
-  JMSServer:
-    JMSServer1:
-      Target: '@@PROP:CLUSTER_NAME@@'
-      PersistentStore: JDBCStore1
-  JMSSystemResource:
-    MyJmsModule:
-      Target: '@@PROP:CLUSTER_NAME@@'
-      JmsResource:
-        ConnectionFactory:
-          WebAppConnectionFactory:
-            DefaultTargetingEnabled: true
-            JNDIName: cf1
-            TransactionParams:
-              XAConnectionFactoryEnabled: true
-        UniformDistributedQueue:
-          MyUniformDistributedQueue:
-            DefaultTargetingEnabled: true
-            JNDIName: dq1
-            ResetDeliveryCountOnForward: true
 appDeployments:
   Application:
     'test-webapp':

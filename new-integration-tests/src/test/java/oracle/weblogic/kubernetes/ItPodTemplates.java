@@ -31,7 +31,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,7 +40,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -52,9 +50,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -64,7 +60,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVer
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -93,7 +88,6 @@ class ItPodTemplates {
 
   private static String clusterName = "cluster-1";
   private static String miiImage = null;
-  private static String wdtImage = null;
   private static LoggingFacade logger = null;
 
   /**
@@ -142,59 +136,81 @@ class ItPodTemplates {
   @Test
   @DisplayName("Test pod templates using all the variables for domain in image.")
   public void testPodTemplateUsingVariablesDomainInImage() throws Exception {
-    wdtImage = createAndVerifyDomainInImage();
+    String wdtImage = createAndVerifyDomainInImage();
     try {
-      logger.info("Create wdt domain and verify that it's running");
-      createAndVerifyDomain(wdtImage, domain2Uid, domain2Namespace, "Image", replicaCount);
-      String managedServerPodName = domain2Uid + "-" + MANAGED_SERVER_NAME_BASE + "1";
-      V1Pod managedServerPod = Kubernetes.getPod(domain2Namespace, null, managedServerPodName);
-      assertNotNull(managedServerPod,"The admin pod does not exist in namespace " + domain2Namespace);
-      String serverName = managedServerPod
-          .getMetadata().getLabels()
-          .get("servername");
-      assertNotNull(serverName, "Can't find label servername");
-      assertTrue(serverName.equalsIgnoreCase("managed-server1"),
-          "Can't find or match label servername");
-      String domainName = managedServerPod
-          .getMetadata().getLabels()
-          .get("domainname");
-      assertNotNull(domainName, "Can't find label domainname");
-      assertTrue(domainName.equalsIgnoreCase(domain2Uid),
-          "Can't find expected value for  label domainname");
-      
-      String myclusterName = managedServerPod
-          .getMetadata().getLabels()
-          .get("clustername");
-      assertNotNull(myclusterName, "Can't find label clustername");
-      assertTrue(myclusterName.equalsIgnoreCase(clusterName),
-          "Can't find expected value for label clustername");
-      
-      String domainuid = managedServerPod
-          .getMetadata().getLabels()
-          .get("domainuid");
-      assertNotNull(domainuid, "Can't find label domainuid");
-      assertTrue(domainuid.equalsIgnoreCase(domain2Uid),
-          "Can't find expected value for label domainuid");
-
-      String loghome = managedServerPod
-          .getMetadata().getAnnotations()
-          .get("loghome");
-      assertNotNull(loghome, "Can't find label loghome");
-      //value is not initialized since logHomeEnable = false
-      assertTrue(loghome.equalsIgnoreCase("$(LOG_HOME)"),
-          "Can't find expected value for label loghome, real value is " + loghome);
-
-      String domainhome = managedServerPod
-          .getMetadata().getAnnotations()
-          .get("domainhome");
-      assertNotNull(domainhome, "Can't find label domainhome");
-      assertTrue(domainhome.equalsIgnoreCase(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domain2Uid),
-          "Can't find expected value for label domainhome, retrieved value is :" + domainhome);
+      logger.info("Add annotations to serverPod as $(DOMAIN_HOME) and $(LOG_HOME)");
+      logger.info("Add labels to serverPod as $(DOMAIN_NAME), $(DOMAIN_UID), $(SERVER_NAME)");
+      logger.info("Add label to cluster serverPod for $(CLUSTER_NAME)");
+      logger.info("Create domain in image using pod template and verify that it's running");
+      createAndVerifyPodFromTemplate(wdtImage,
+          domain2Uid,
+          domain2Namespace,
+          "Image",
+          domain2Uid);
 
     } finally {
       logger.info("Shutting down domain2");
       shutdownDomain(domain2Uid, domain2Namespace);
     }
+  }
+
+  private void createAndVerifyPodFromTemplate(String imageName, String domainUid, String domainNS,
+                                              String domainHomeSource,
+                                              String domainname) throws io.kubernetes.client.openapi.ApiException {
+    createAndVerifyDomain(imageName, domainUid, domainNS, domainHomeSource, replicaCount);
+    String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + "1";
+    V1Pod managedServerPod = Kubernetes.getPod(domainNS, null, managedServerPodName);
+
+    //check that managed server pod is up and all applicable variable values are initialized.
+    assertNotNull(managedServerPod,"The managed server pod does not exist in namespace " + domainNS);
+    String serverName = managedServerPod
+        .getMetadata().getLabels()
+        .get("servername");
+
+    logger.info("Checking that variables used in the labels and annotations "
+        + "in the serverPod for servername, domainname, clustername are initialized");
+
+    assertNotNull(serverName, "Can't find label servername");
+
+    assertTrue(serverName.equalsIgnoreCase("managed-server1"),
+        "Can't find or match label servername");
+    String domainName = managedServerPod
+        .getMetadata().getLabels()
+        .get("domainname");
+    assertNotNull(domainName, "Can't find label domainname");
+    assertTrue(domainName.equalsIgnoreCase(domainname),
+        "Can't find expected value for  label domainname");
+
+    String myclusterName = managedServerPod
+        .getMetadata().getLabels()
+        .get("clustername");
+    assertNotNull(myclusterName, "Can't find label clustername");
+    assertTrue(myclusterName.equalsIgnoreCase(clusterName),
+        "Can't find expected value for label clustername");
+
+    String domainuid = managedServerPod
+        .getMetadata().getLabels()
+        .get("domainuid");
+    assertNotNull(domainuid, "Can't find label domainuid");
+    assertTrue(domainuid.equalsIgnoreCase(domainUid),
+        "Can't find expected value for label domainuid");
+
+    logger.info("Checking that applicable variables used "
+        + "in the annotations for domainhome and loghome are initialized");
+    String loghome = managedServerPod
+        .getMetadata().getAnnotations()
+        .get("loghome");
+    assertNotNull(loghome, "Can't find annotation loghome");
+    //value is not initialized since logHomeEnable = false in CRD
+    assertTrue(loghome.equalsIgnoreCase("$(LOG_HOME)"),
+        "Can't find expected value for annotation loghome, real value is " + loghome);
+
+    String domainHome = managedServerPod
+        .getMetadata().getAnnotations()
+        .get("domainhome");
+    assertNotNull(domainHome, "Can't find annotation domainhome");
+    assertTrue(domainHome.equalsIgnoreCase(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid),
+        "Can't find expected value for annotation domainhome, retrieved value is :" + domainHome);
   }
 
   /**
@@ -209,84 +225,21 @@ class ItPodTemplates {
   @Test
   @DisplayName("Test pod templates using all the variables for model in image domain.")
   public void testPodTemplateUsingVariablesModelInImage() throws Exception {
-    wdtImage = createAndVerifyDomainInImage();
     try {
-      logger.info("Create domain and verify that it's running");
-      createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", replicaCount);
-      String managedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + "1";
-      //checking that values from template variables are assigned.
-      V1Pod managedServerPod = Kubernetes.getPod(domain1Namespace, null, managedServerPodName);
-      assertNotNull(managedServerPod, "The managed-server1 pod does not exist in namespace " + domain1Namespace);
-      String serverName = managedServerPod
-          .getMetadata().getLabels()
-          .get("servername");
-      assertNotNull(serverName, "Can't find label servername");
-      assertTrue(serverName.equalsIgnoreCase("managed-server1"),
-          "Can't find or match label servername");
-      String domainName = managedServerPod
-          .getMetadata().getLabels()
-          .get("domainname");
-      assertNotNull(domainName, "Can't find label domainname");
-      assertTrue(domainName.equalsIgnoreCase("wls-domain1"),
-          "Can't find expected value for  label domainname");
-
-      String myclusterName = managedServerPod
-          .getMetadata().getLabels()
-          .get("clustername");
-      assertNotNull(myclusterName, "Can't find label clustername");
-      assertTrue(myclusterName.equalsIgnoreCase(clusterName),
-          "Can't find expected value for label clustername");
-
-      String domainuid = managedServerPod
-          .getMetadata().getLabels()
-          .get("domainuid");
-      assertNotNull(domainuid, "Can't find label domainuid");
-      assertTrue(domainuid.equalsIgnoreCase(domain1Uid),
-          "Can't find expected value for label domainuid");
-
-      String loghome = managedServerPod
-          .getMetadata().getAnnotations()
-          .get("loghome");
-      assertNotNull(loghome, "Can't find label loghome");
-      //value is not initialized since logHomeEnable = false
-      assertTrue(loghome.equalsIgnoreCase("$(LOG_HOME)"),
-          "Can't find expected value for label loghome, real value is " + loghome);
-
-      String domainhome = managedServerPod
-          .getMetadata().getAnnotations()
-          .get("domainhome");
-      assertNotNull(domainhome, "Can't find label domainhome");
-      assertTrue(domainhome.equalsIgnoreCase(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domain1Uid),
-          "Can't find expected value for label domainhome, the retrieved value is :" + domainhome);
+      logger.info("Add annotations to serverPod as $(DOMAIN_HOME) and $(LOG_HOME)");
+      logger.info("Add labels to serverPod as $(DOMAIN_NAME), $(DOMAIN_UID), $(SERVER_NAME)");
+      logger.info("Add label to cluster serverPod as $(CLUSTER_NAME)");
+      logger.info("Create model in image domain using pod template and verify that it's running");
+      createAndVerifyPodFromTemplate(miiImage,
+          domain1Uid,
+          domain1Namespace,
+          "FromModel",
+          "wls-domain1");
 
     } finally {
       logger.info("Shutting down domain1");
       shutdownDomain(domain1Uid, domain1Namespace);
     }
-  }
-
-  @AfterAll
-  public void tearDownAll() {
-
-    // shutdown domain1
-    logger.info("Shutting down domain1");
-    assertTrue(shutdownDomain(domain1Uid, domain1Namespace),
-        String.format("shutdown domain %s in namespace %s failed", domain1Uid, domain1Namespace));
-    if (wdtImage != null) {
-      deleteImage(miiImage);
-    }
-
-    // Delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domain1Namespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domain1Uid, domain1Namespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domain1Uid + " from " + domain1Namespace);
-
-    // Delete wdt domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domain2Namespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domain2Uid, domain2Namespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domain2Uid + " from " + domain2Namespace);
   }
 
   /**
@@ -301,8 +254,6 @@ class ItPodTemplates {
     List<String> appList = new ArrayList();
     appList.add(appPath);
 
-    int t3ChannelPort = getNextFreePort(31600, 32767);  // the port range has to be between 31,000 to 32,767
-
     Properties p = new Properties();
     p.setProperty("ADMIN_USER", ADMIN_USERNAME_DEFAULT);
     p.setProperty("ADMIN_PWD", ADMIN_PASSWORD_DEFAULT);
@@ -314,13 +265,9 @@ class ItPodTemplates {
     p.setProperty("CLUSTER_TYPE", "DYNAMIC");
     p.setProperty("CONFIGURED_MANAGED_SERVER_COUNT", "2");
     p.setProperty("MANAGED_SERVER_NAME_BASE", "managed-server");
-    p.setProperty("T3_CHANNEL_PORT", Integer.toString(t3ChannelPort));
-    p.setProperty("T3_PUBLIC_ADDRESS", K8S_NODEPORT_HOST);
     p.setProperty("MANAGED_SERVER_PORT", "8001");
     p.setProperty("SERVER_START_MODE", "prod");
     p.setProperty("ADMIN_PORT", "7001");
-    p.setProperty("MYSQL_USER", "wluser1");
-    p.setProperty("MYSQL_PWD", "wlpwd123");
     // create a temporary WebLogic domain property file as a input for WDT model file
     File domainPropertiesFile = assertDoesNotThrow(() ->
             File.createTempFile("domain", "properties"),
@@ -335,7 +282,7 @@ class ItPodTemplates {
     final List<String> modelList = Collections.singletonList(RESOURCE_DIR
         + "/wdt-models/wdt-model.yaml");
 
-    wdtImage =
+    String wdtImage =
         createImageAndVerify(PODTEMPLATES_IMAGE_NAME,
             modelList,
             appList,
@@ -355,7 +302,7 @@ class ItPodTemplates {
   }
 
   //create domain from provided image and verify it's start
-  private static void createAndVerifyDomain(String miiImage,
+  private static void createAndVerifyDomain(String imageName,
                                             String domainUid,
                                             String namespace,
                                             String domainHomeSource,
@@ -379,9 +326,9 @@ class ItPodTemplates {
         String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, namespace, miiImage);
-    createDomainCrAndVerify(adminSecretName, REPO_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
+    logger.info("Create domain {0} in namespace {1} using docker image {2}",
+        domainUid, namespace, imageName);
+    createDomainCrAndVerify(adminSecretName, REPO_SECRET_NAME, encryptionSecretName, imageName,domainUid,
         namespace, domainHomeSource, replicaCount);
     String adminServerPodName = domainUid + "-admin-server";
 
@@ -420,26 +367,26 @@ class ItPodTemplates {
   private static void createDomainCrAndVerify(String adminSecretName,
                                               String repoSecretName,
                                               String encryptionSecretName,
-                                              String miiImage,
+                                              String imageName,
                                               String domainUid,
                                               String namespace,
                                               String domainHomeSource,
                                               int replicaCount) {
     // add labels to serverPod
-    Map<String, String> labelKeyValue = new HashMap();
-    labelKeyValue.put("servername", "$(SERVER_NAME)");
-    labelKeyValue.put("domainname", "$(DOMAIN_NAME)");
-    labelKeyValue.put("domainuid", "$(DOMAIN_UID)");
+    Map<String, String> labelKeyValues = new HashMap();
+    labelKeyValues.put("servername", "$(SERVER_NAME)");
+    labelKeyValues.put("domainname", "$(DOMAIN_NAME)");
+    labelKeyValues.put("domainuid", "$(DOMAIN_UID)");
 
     // add annotations to serverPod as DOMAIN_HOME and LOG_HOME contains "/" which is not allowed
     // in labels
-    Map<String, String> envKeyValue = new HashMap();
-    envKeyValue.put("domainhome", "$(DOMAIN_HOME)");
-    envKeyValue.put("loghome", "$(LOG_HOME)");
+    Map<String, String> annotationKeyValues = new HashMap();
+    annotationKeyValues.put("domainhome", "$(DOMAIN_HOME)");
+    annotationKeyValues.put("loghome", "$(LOG_HOME)");
 
     // add label to cluster serverPod for CLUSTER_NAME
-    Map<String, String> clusterLabelKeyValue = new HashMap();
-    clusterLabelKeyValue.put("clustername", "$(CLUSTER_NAME)");
+    Map<String, String> clusterLabelKeyValues = new HashMap();
+    clusterLabelKeyValues.put("clustername", "$(CLUSTER_NAME)");
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -451,7 +398,7 @@ class ItPodTemplates {
             .domainUid(domainUid)
             .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid)
             .domainHomeSourceType(domainHomeSource)
-            .image(miiImage)
+            .image(imageName)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1SecretReference()
@@ -460,8 +407,8 @@ class ItPodTemplates {
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod()
-                .annotations(envKeyValue)
-                .labels(labelKeyValue)
+                .annotations(annotationKeyValues)
+                .labels(labelKeyValues)
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false "
@@ -479,7 +426,7 @@ class ItPodTemplates {
                 .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING")
-                .serverPod(new ServerPod().labels(clusterLabelKeyValue)))
+                .serverPod(new ServerPod().labels(clusterLabelKeyValues)))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
@@ -488,7 +435,7 @@ class ItPodTemplates {
 
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, namespace, miiImage);
+        domainUid, namespace, imageName);
     createDomainAndVerify(domain, namespace);
   }
 
