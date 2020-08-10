@@ -1029,7 +1029,9 @@ public class Main {
         namespacesToStart = new TreeSet<>(configuredDomainNamespaces);
         for (String ns : configuredDomainNamespaces) {
           if (!nsList.contains(ns)) {
-            LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, ns);
+            try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+              LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, ns);
+            }
             namespacesToStart.remove(ns);
           }
         }
