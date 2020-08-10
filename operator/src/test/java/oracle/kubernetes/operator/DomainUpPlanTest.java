@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -90,8 +92,10 @@ public class DomainUpPlanTest {
       testSupport.throwOnCompletionFailure();
     } catch (Throwable t) {
       // TEST
-      System.out.println("HERE");
-      t.printStackTrace();
+      StringWriter stringWriter = new StringWriter();
+      PrintWriter printWriter = new PrintWriter(stringWriter);
+      t.printStackTrace(printWriter);
+      System.out.println("TEST: " + stringWriter.toString());
     }
   }
 
