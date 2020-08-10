@@ -34,6 +34,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 
 public class PodHelper {
@@ -90,13 +91,16 @@ public class PodHelper {
    * @param info Domain presence info
    * @return list containing scheduled pods
    */
-  public static List<String> getScheduledPods(DomainPresenceInfo info) {
+  public static List<String> getScheduledPods(DomainPresenceInfo info, String clusterName) {
     // These are presently scheduled servers
     List<String> scheduledServers = new ArrayList<>();
     for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
       V1Pod pod = entry.getValue().getPod().get();
       if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getScheduledStatus(pod)) {
-        scheduledServers.add(entry.getKey());
+        String wlsClusterName = pod.getMetadata().getLabels().get(CLUSTERNAME_LABEL);
+        if ((wlsClusterName == null) || (wlsClusterName.contains(clusterName))) {
+          scheduledServers.add(entry.getKey());
+        }
       }
     }
     return scheduledServers;
@@ -107,75 +111,19 @@ public class PodHelper {
    * @param info Domain presence info
    * @return list containing ready pods
    */
-  public static List<String> getReadyPods(DomainPresenceInfo info) {
+  public static List<String> getReadyPods(DomainPresenceInfo info, String clusterName) {
     // These are presently Ready servers
     List<String> readyServers = new ArrayList<>();
     for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
       V1Pod pod = entry.getValue().getPod().get();
       if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getReadyStatus(pod)) {
-        readyServers.add(entry.getKey());
+        String wlsClusterName = pod.getMetadata().getLabels().get(CLUSTERNAME_LABEL);
+        if ((wlsClusterName == null) || (wlsClusterName.contains(clusterName))) {
+          readyServers.add(entry.getKey());
+        }
       }
     }
     return readyServers;
-  }
-
-  /**
-   * Change pod status to scheduled.
-   * @param info Domain presence info
-   * @param serverName Name of server pod to be changed
-   */
-  public static void schedulePods(DomainPresenceInfo info, String serverName) {
-    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-      V1Pod pod = entry.getValue().getPod().get();
-      if (pod.getMetadata().getName().contains(serverName)) {
-        PodHelper.setScheduledStatus(pod);
-      }
-    }
-  }
-
-  /**
-   * Change pod status to ready.
-   * @param info Domain presence info
-   * @param serverName Name of server pod to be changed
-   */
-  public static void makePodsReady(DomainPresenceInfo info, String serverName) {
-    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-      V1Pod pod = entry.getValue().getPod().get();
-      if (pod.getMetadata().getName().contains(serverName)) {
-        PodHelper.setReadyStatus(pod);
-      }
-    }
-  }
-
-  /**
-   * get if pod is in scheduled state.
-   * @param pod pod
-   * @return true, if pod is scheduled
-   */
-  public static boolean setScheduledStatus(V1Pod pod) {
-    V1PodSpec status = pod.getSpec();
-    if (status != null) {
-      status.setNodeName("Node1");
-    } else {
-      pod.spec(new V1PodSpec().nodeName("Node1"));
-    }
-    return true;
-  }
-
-  /**
-   * get if pod is in scheduled state.
-   * @param pod pod
-   * @return true, if pod is scheduled
-   */
-  public static boolean setReadyStatus(V1Pod pod) {
-    V1PodStatus status = pod.getStatus();
-    if (status != null) {
-      status.phase("RUNNING").addConditionsItem(new V1PodCondition().type("Ready").status("True"));
-    } else {
-      pod.status(new V1PodStatus().phase("Running")
-              .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
-    }
-    return true;
   }
 
   /**
@@ -186,9 +134,7 @@ public class PodHelper {
   public static boolean getScheduledStatus(V1Pod pod) {
     V1PodSpec status = pod.getSpec();
     if (status != null) {
-      if (status.getNodeName() != null) {
-        return true;
-      }
+      return status.getNodeName() != null;
     }
     return false;
   }
@@ -559,7 +505,7 @@ public class PodHelper {
     protected V1ObjectMeta createMetadata() {
       V1ObjectMeta metadata = super.createMetadata();
       if (getClusterName() != null) {
-        metadata.putLabelsItem(LabelConstants.CLUSTERNAME_LABEL, getClusterName());
+        metadata.putLabelsItem(CLUSTERNAME_LABEL, getClusterName());
       }
       return metadata;
     }
@@ -617,7 +563,7 @@ public class PodHelper {
       if (oldPod != null) {
         Map<String, String> labels = oldPod.getMetadata().getLabels();
         if (labels != null) {
-          clusterName = labels.get(LabelConstants.CLUSTERNAME_LABEL);
+          clusterName = labels.get(CLUSTERNAME_LABEL);
         }
 
         ServerSpec serverSpec = info.getDomain().getServer(serverName, clusterName);
