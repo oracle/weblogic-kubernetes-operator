@@ -858,12 +858,18 @@ public class ItIntrospectVersion {
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        introDomainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+    assertNotEquals(-1, serviceNodePort, "Couldn't get valid node port for default channel");
+
     logger.info("Getting the list of servers using the listServers");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + adminServerT3Port + "/clusterview/";
+    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/";
     String serverListUri = "ClusterViewServlet?listServers=true";
     HttpResponse<String> response = null;
     for (int i = 0; i < 5; i++) {
-      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(10));
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
       response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
       assertEquals(200, response.statusCode(), "Status code not equals to 200");
     }
@@ -874,12 +880,6 @@ public class ItIntrospectVersion {
       assertTrue(response.body().contains(managedServerNameBase + i + ":HEALTH_OK"),
           "Didn't get " + managedServerNameBase + i + ":HEALTH_OK");
     }
-
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        introDomainNamespace, adminServerPodName + "-external", "default"),
-        "Getting admin server node port failed");
-    assertNotEquals(-1, serviceNodePort, "Couldn't get valid node port for default channel");
 
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(()
