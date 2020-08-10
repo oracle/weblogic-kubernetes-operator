@@ -82,11 +82,17 @@ public class DomainUpPlanTest {
    */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    try {
+      for (Memento memento : mementos) {
+        memento.revert();
+      }
 
-    testSupport.throwOnCompletionFailure();
+      testSupport.throwOnCompletionFailure();
+    } catch (Throwable t) {
+      // TEST
+      System.out.println("HERE");
+      t.printStackTrace();
+    }
   }
 
   @Test
