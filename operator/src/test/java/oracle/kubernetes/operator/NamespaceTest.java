@@ -20,13 +20,13 @@ import java.util.stream.Collectors;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
+import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.util.function.Function.identity;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static org.hamcrest.Matchers.aMapWithSize;
@@ -66,7 +66,7 @@ public class NamespaceTest {
     mementos.add(StaticStubSupport.preserve(Main.class, "namespaceStatuses"));
     mementos.add(StaticStubSupport.preserve(Main.class, NAMESPACE_STOPPING_MAP));
     mementos.add(StaticStubSupport.install(Main.class, "getHelmVariable", getTestHelmValue));
-    mementos.add(TuningParametersStub.install(120));
+    mementos.add(TuningParametersStub.install());
     mementos.add(StaticStubSupport.install(Main.class, "processor", dp));
     AtomicBoolean stopping = new AtomicBoolean(true);
     JobWatcher.defineFactory(r -> createDaemonThread(), tuning, ns -> stopping);
@@ -210,30 +210,6 @@ public class NamespaceTest {
       stopNamespace.setAccessible(true);
     }
     stopNamespace.invoke(null, namespace, inDomainNamespaceList);
-  }
-
-  abstract static class TuningParametersStub implements TuningParameters {
-
-    int domainPresenceRecheckIntervalSeconds;
-
-    public static Memento install(int newValue) throws NoSuchFieldException {
-      return StaticStubSupport.install(
-        TuningParametersImpl.class, "INSTANCE", createStrictStub(TuningParametersStub.class, newValue));
-    }
-
-    TuningParametersStub(int domainPresenceRecheckIntervalSeconds) {
-      this.domainPresenceRecheckIntervalSeconds = domainPresenceRecheckIntervalSeconds;
-    }
-
-    @Override
-    public MainTuning getMainTuning() {
-      return new MainTuning(2, 2, domainPresenceRecheckIntervalSeconds, 2, 2, 2, 2L, 2L);
-    }
-
-    @Override
-    public CallBuilderTuning getCallBuilderTuning() {
-      return new CallBuilderTuning(500, 5, 10);
-    }
   }
 
   abstract static class DomainProcessorStub implements DomainProcessor {

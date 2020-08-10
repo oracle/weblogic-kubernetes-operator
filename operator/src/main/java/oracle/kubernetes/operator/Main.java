@@ -88,7 +88,6 @@ public class Main {
   private static final ThreadFactory threadFactory = new WrappedThreadFactory();
   private static final ScheduledExecutorService wrappedExecutorService =
       Engine.wrappedExecutorService("operator", container);
-  private static final TuningParameters tuningAndConfig;
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
   private static Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
   private static Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
@@ -112,6 +111,10 @@ public class Main {
   private static KubernetesVersion version = null;
   private static SemanticVersion productVersion = null;
 
+  private static TuningParameters tuningAndConfig() {
+    return TuningParameters.getInstance();
+  }
+
   static {
     try {
       // suppress System.err since we catch all necessary output with Logger
@@ -122,7 +125,6 @@ public class Main {
       ClientPool.initialize(threadFactory);
 
       TuningParameters.initializeInstance(wrappedExecutorService, "/operator/config");
-      tuningAndConfig = TuningParameters.getInstance();
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       throw new RuntimeException(e);
@@ -138,7 +140,7 @@ public class Main {
                 ScheduledExecutorService.class,
                 wrappedExecutorService,
                 TuningParameters.class,
-                tuningAndConfig,
+                tuningAndConfig(),
                 ThreadFactory.class,
                 threadFactory,
                 callBuilderFactory));
@@ -185,12 +187,12 @@ public class Main {
 
   private static void begin() {
     String serviceAccountName =
-        Optional.ofNullable(tuningAndConfig.get("serviceaccount")).orElse("default");
+        Optional.ofNullable(tuningAndConfig().get("serviceaccount")).orElse("default");
     principal = "system:serviceaccount:" + operatorNamespace + ":" + serviceAccountName;
 
     LOGGER.info(MessageKeys.OP_CONFIG_NAMESPACE, operatorNamespace);
     JobWatcher.defineFactory(
-        threadFactory, tuningAndConfig.getWatchTuning(), Main::isNamespaceStopping);
+        threadFactory, tuningAndConfig().getWatchTuning(), Main::isNamespaceStopping);
 
     DomainNamespaceSelectionStrategy selectionStrategy = getDomainNamespaceSelectionStrategy();
     Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredList();
@@ -226,7 +228,7 @@ public class Main {
       startRestServer(principal, namespaceStoppingMap.keySet());
 
       // start periodic retry and recheck
-      int recheckInterval = tuningAndConfig.getMainTuning().domainNamespaceRecheckIntervalSeconds;
+      int recheckInterval = tuningAndConfig().getMainTuning().domainNamespaceRecheckIntervalSeconds;
       engine
           .getExecutor()
           .scheduleWithFixedDelay(
@@ -307,7 +309,7 @@ public class Main {
       DomainNamespaceSelectionStrategy selectionStrategy = getDomainNamespaceSelectionStrategy();
       Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredList();
 
-      int recheckInterval = tuningAndConfig.getMainTuning().domainPresenceRecheckIntervalSeconds;
+      int recheckInterval = tuningAndConfig().getMainTuning().domainPresenceRecheckIntervalSeconds;
       DateTime now = DateTime.now();
       boolean isFullRecheck = false;
       if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {
@@ -366,7 +368,7 @@ public class Main {
         .listPodAsync(ns, new PodListStep(ns));
   }
 
-  private static Step readExistingNamespaces(DomainNamespaceSelectionStrategy selectionStrategy,
+  static Step readExistingNamespaces(DomainNamespaceSelectionStrategy selectionStrategy,
                                              Collection<String> domainNamespaces,
                                              boolean isFullRecheck) {
     CallBuilder builder = new CallBuilder();
@@ -381,7 +383,7 @@ public class Main {
     return new ConfigMapAfterStep(
         ns,
         configMapWatchers,
-        tuningAndConfig.getWatchTuning(),
+        tuningAndConfig().getWatchTuning(),
         isNamespaceStopping(ns),
         processor::dispatchConfigMapWatch);
   }
@@ -415,8 +417,8 @@ public class Main {
       @Override
       public Collection<String> getConfiguredList() {
         return getDomainNamespacesList(Optional.ofNullable(getHelmVariable.apply("OPERATOR_DOMAIN_NAMESPACES"))
-            .orElse(Optional.ofNullable(tuningAndConfig.get("domainNamespaces"))
-                .orElse(tuningAndConfig.get("targetNamespaces"))), operatorNamespace);
+            .orElse(Optional.ofNullable(tuningAndConfig().get("domainNamespaces"))
+                .orElse(tuningAndConfig().get("targetNamespaces"))), operatorNamespace);
       }
     },
     LabelSelector {
@@ -427,7 +429,7 @@ public class Main {
 
       @Override
       public String getLabelSelector() {
-        return tuningAndConfig.get("domainNamespaceLabelSelector");
+        return tuningAndConfig().get("domainNamespaceLabelSelector");
       }
     },
     RegExp {
@@ -438,7 +440,7 @@ public class Main {
 
       @Override
       public String getRegExp() {
-        return tuningAndConfig.get("domainNamespaceRegExp");
+        return tuningAndConfig().get("domainNamespaceRegExp");
       }
     },
     Dedicated {
@@ -471,7 +473,7 @@ public class Main {
    */
   public static DomainNamespaceSelectionStrategy getDomainNamespaceSelectionStrategy() {
     DomainNamespaceSelectionStrategy strategy =
-        Optional.ofNullable(tuningAndConfig.get("domainNamespaceSelectionStrategy"))
+        Optional.ofNullable(tuningAndConfig().get("domainNamespaceSelectionStrategy"))
         .map(DomainNamespaceSelectionStrategy::valueOf).orElse(DomainNamespaceSelectionStrategy.List);
     if (DomainNamespaceSelectionStrategy.List.equals(strategy) && isDeprecatedDedicated()) {
       return DomainNamespaceSelectionStrategy.Dedicated;
@@ -485,7 +487,7 @@ public class Main {
 
   private static boolean isDeprecatedDedicated() {
     return "true".equalsIgnoreCase(Optional.ofNullable(getHelmVariable.apply("OPERATOR_DEDICATED"))
-        .orElse(Optional.ofNullable(tuningAndConfig.get("dedicated")).orElse("false")));
+        .orElse(Optional.ofNullable(tuningAndConfig().get("dedicated")).orElse("false")));
   }
 
   private static void startRestServer(String principal, Collection<String> domainNamespaces)
@@ -536,7 +538,7 @@ public class Main {
         ns,
         READINESS_PROBE_FAILURE_EVENT_FILTER,
         initialResourceVersion,
-        tuningAndConfig.getWatchTuning(),
+        tuningAndConfig().getWatchTuning(),
         processor::dispatchEventWatch,
         isNamespaceStopping(ns));
   }
@@ -546,7 +548,7 @@ public class Main {
         threadFactory,
         ns,
         initialResourceVersion,
-        tuningAndConfig.getWatchTuning(),
+        tuningAndConfig().getWatchTuning(),
         processor::dispatchPodWatch,
         isNamespaceStopping(ns));
   }
@@ -556,7 +558,7 @@ public class Main {
         threadFactory,
         ns,
         initialResourceVersion,
-        tuningAndConfig.getWatchTuning(),
+        tuningAndConfig().getWatchTuning(),
         processor::dispatchServiceWatch,
         isNamespaceStopping(ns));
   }
@@ -566,7 +568,7 @@ public class Main {
         threadFactory,
         ns,
         initialResourceVersion,
-        tuningAndConfig.getWatchTuning(),
+        tuningAndConfig().getWatchTuning(),
         processor::dispatchDomainWatch,
         isNamespaceStopping(ns));
   }
@@ -577,7 +579,7 @@ public class Main {
         threadFactory,
         initialResourceVersion,
         selectionStrategy.getLabelSelector(),
-        tuningAndConfig.getWatchTuning(),
+        tuningAndConfig().getWatchTuning(),
         Main::dispatchNamespaceWatch,
         new AtomicBoolean(false));
   }

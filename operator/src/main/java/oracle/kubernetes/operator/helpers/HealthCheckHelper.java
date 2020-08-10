@@ -127,19 +127,22 @@ public final class HealthCheckHelper {
     V1SelfSubjectRulesReview review = ap.review(ns);
     if (review != null) {
       V1SubjectRulesReviewStatus status = review.getStatus();
-      List<V1ResourceRule> rules = status.getResourceRules();
 
-      if (namespace != null) {
-        for (Resource r : namespaceAccessChecks.keySet()) {
-          for (Operation op : namespaceAccessChecks.get(r)) {
-            check(rules, r, op, namespace);
+      if (status != null) {
+        List<V1ResourceRule> rules = status.getResourceRules();
+
+        if (namespace != null) {
+          for (Resource r : namespaceAccessChecks.keySet()) {
+            for (Operation op : namespaceAccessChecks.get(r)) {
+              check(rules, r, op, namespace);
+            }
           }
         }
-      }
-      if (!Main.isDedicated() && operatorNamespace.equals(ns)) {
-        for (Resource r : clusterAccessChecks.keySet()) {
-          for (Operation op : clusterAccessChecks.get(r)) {
-            check(rules, r, op, ns);
+        if (!Main.isDedicated() && operatorNamespace.equals(ns)) {
+          for (Resource r : clusterAccessChecks.keySet()) {
+            for (Operation op : clusterAccessChecks.get(r)) {
+              check(rules, r, op, ns);
+            }
           }
         }
       }
