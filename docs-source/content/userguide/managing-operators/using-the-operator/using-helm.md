@@ -137,6 +137,20 @@ regular expressions as the operator will already have privilege in any namespace
 Customers who deploy the operator in Kubernetes clusters that run unrelated workloads will likely
 not want to use enable this option.
 
+If `enableClusterRoleBinding` is `false` and you select namespaces that the operator will
+manage using label selectors or a regular expression, then the Helm release will only include
+RoleBindings in each namespace that match at the time the Helm release is created. If you later
+create namespaces that the operator should manage, the new namespaces will not yet have the necessary
+RoleBinding.
+
+You can correct this by upgrading the Helm release and reusing values:
+```
+$ helm upgrade \
+  --reuse-values \
+  weblogic-operator \
+  kubernetes/charts/weblogic-operator
+```
+
 #### WebLogic domain management
 
 ##### `domainNamespaceSelectionStrategy`
@@ -221,7 +235,14 @@ These RoleBindings give the operator's service account the necessary privileges 
 these RoleBindings in namespaces that match the regular expression at the time the chart is installed. If you later create namespaces
 that match the selector or label existing namespaces that make them now match the selector, the operator will not have
 privilege in these namespaces until you upgrade the Helm release.
-     
+
+{{% notice note %}}
+The regular expression functionality included with Helm is restricted to linear time constructs and,
+in particular, does not support lookarounds. The operator, written in Java, supports these
+complicated expressions. If you need to use a complex regular expression then either set
+`enableClusterRoleBinding` to `true` or create the necessary RoleBindings outside of Helm.
+{{% /notice %}}
+
 ##### `dedicated` ***(Deprecated)***
 Specifies if this operator will manage WebLogic domains only in the same namespace in which the operator itself is deployed. If set to `true`, then the `domainNamespaces` value is ignored.
 
