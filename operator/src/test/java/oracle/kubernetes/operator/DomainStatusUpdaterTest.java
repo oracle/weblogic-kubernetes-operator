@@ -101,11 +101,16 @@ public class DomainStatusUpdaterTest {
    */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    try {
+      for (Memento memento : mementos) {
+        memento.revert();
+      }
 
-    testSupport.throwOnCompletionFailure();
+      testSupport.throwOnCompletionFailure();
+    } catch (Throwable t) {
+      System.out.println("HERE");
+      t.printStackTrace();
+    }
   }
 
   @Test
