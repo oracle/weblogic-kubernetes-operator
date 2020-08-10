@@ -79,6 +79,7 @@ public class DomainStatusUpdaterTest {
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
+    mementos.add(ClientFactoryStub.install());
 
     domain.setStatus(new DomainStatus());
 
