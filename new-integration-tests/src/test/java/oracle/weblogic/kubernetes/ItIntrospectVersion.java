@@ -760,8 +760,9 @@ public class ItIntrospectVersion {
 
     int replicaCount = 3;
 
-    logger.info("Getting node port for default channel");
+    logger.info("Getting node port for T3 channel");
     int adminServerT3Port = getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel");
+    assertNotEquals(-1, adminServerT3Port, "Couldn't get valid port for T3 channel");
 
     // get the pod creation time stamps
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
@@ -788,7 +789,7 @@ public class ItIntrospectVersion {
     assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
         "Failed to write the WLST properties to file");
 
-    // changet the admin server port to a different value to force pod restart
+    // change the admin server port to a different value to force pod restart
     logger.info("Creating a new WebLogic user/password {0}/{1} in default security realm",
         ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
@@ -878,6 +879,7 @@ public class ItIntrospectVersion {
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
         introDomainNamespace, adminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
+    assertNotEquals(-1, serviceNodePort, "Couldn't get valid node port for default channel");
 
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(()
@@ -888,8 +890,7 @@ public class ItIntrospectVersion {
     logger.info("Validating WebLogic admin server access by login to console using old credentials");
     assertThrows(AssertionFailedError.class, ()
         -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-        "Accessing using old user/password succedded, supposed to fail");
-    assertTrue(loginSuccessful, "Console login validation failed");
+        "Accessing using old user/password succeeded, supposed to fail");
 
   }
 
