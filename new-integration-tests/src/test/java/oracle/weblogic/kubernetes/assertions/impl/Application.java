@@ -53,7 +53,7 @@ public class Application {
             appPath)};
 
     try {
-      getLogger().info(Thread.currentThread() + " About to exec cmd: /usr/bin/curl --max-time 30 -v --trace - " + String.format("http://%s:%s/%s",
+      getLogger().info(Thread.currentThread() + " About to exec cmd: /usr/bin/curl -v --trace - " + String.format("http://%s:%s/%s",
           podName,
           port,
           appPath));

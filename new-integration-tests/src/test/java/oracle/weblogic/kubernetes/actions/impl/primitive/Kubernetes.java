@@ -2352,7 +2352,9 @@ public class Kubernetes {
 
     // Execute command using Kubernetes API
     KubernetesExec kubernetesExec = createKubernetesExec(pod, containerName);
+    logger.info(Thread.currentThread() + " Kubernetes.exec kubernetesExec");
     final Process proc = kubernetesExec.exec(command);
+    logger.info(Thread.currentThread() + " proc: " + proc);
 
     final CopyingOutputStream copyOut =
         redirectToStdout ? new CopyingOutputStream(System.out) : new CopyingOutputStream(null);
@@ -2377,6 +2379,7 @@ public class Kubernetes {
 
       // wait for the process, which represents the executing command, to terminate
       try {
+        logger.info(Thread.currentThread() + " about to poc.waitFor()");
         proc.waitFor();
       } catch (InterruptedException ie) {
         logger.severe("waitFor threw ie: " + ie);

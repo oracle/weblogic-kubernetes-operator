@@ -995,6 +995,7 @@ public class TestActions {
     // get the pod given the namespace and name of the pod
     // no label selector is needed (thus null below)
     final V1Pod pod = Kubernetes.getPod(namespace, null, podName);
+    getLogger().info(Thread.currentThread() + " execCommand pod: " + pod.getMetadata().getName());
     if (pod == null) {
       throw new IllegalArgumentException(
           String.format("The pod %s does not exist in namespace %s!", podName, namespace));
