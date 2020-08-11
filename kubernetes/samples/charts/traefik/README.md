@@ -160,9 +160,10 @@ Save the above configuration as 'traefik-tls-console.yaml'.
 ### 4. Access WebLogic console using https port
 Get the SSL port from the kubernates service 
 ```
+# Get the ingress controller secure web port
 SSLPORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}')
 ```
-In a web browser type https://<host-name>:${SSLPORT}/console in address bar to access the console.
+In a web browser type 'https://${HOSTNAME}:${SSLPORT}/console' in the address bar to access the console.
 
 ## Uninstall the Traefik operator
 After removing all the ingress resources, uninstall the Traefik operator:
