@@ -69,7 +69,7 @@ cni_implementation="kindnet"
 parallel_run="false"
 threads="2"
 
-while getopts ":h:n:o:t:v:c:x:p:k:i:" opt; do
+while getopts ":h:n:o:t:v:c:x:p:d:i:" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
@@ -87,7 +87,7 @@ while getopts ":h:n:o:t:v:c:x:p:k:i:" opt; do
     ;;
     h) usage 0
     ;;
-    k) echo "Ignoring -k=${OPTARG}"
+    d) echo "Ignoring -d=${OPTARG}"
     ;;
     i) echo "Ignoring -i=${OPTARG}"
     ;;
