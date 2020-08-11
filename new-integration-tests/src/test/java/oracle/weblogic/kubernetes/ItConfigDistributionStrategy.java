@@ -313,7 +313,7 @@ public class ItConfigDistributionStrategy {
                 + "(elapsed time {0} ms, remaining time {1} ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(configUpdated("99999999"));
+        .until(configUpdated("100000000"));
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -370,7 +370,7 @@ public class ItConfigDistributionStrategy {
                     + "(elapsed time {0} ms, remaining time {1} ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(configUpdated("99999999"));
+        .until(configUpdated("100000000"));
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -422,7 +422,7 @@ public class ItConfigDistributionStrategy {
                     + "(elapsed time {0} ms, remaining time {1} ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(configUpdated("88888888"));
+        .until(configUpdated("99999999"));
 
     verifyResourceJDBC0Override(true);
 
@@ -491,7 +491,7 @@ public class ItConfigDistributionStrategy {
                 + "(elapsed time {0} ms, remaining time {1} ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(configUpdated("99999999"));
+        .until(configUpdated("100000000"));
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -667,7 +667,7 @@ public class ItConfigDistributionStrategy {
     int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/";
 
-    //verify server attribute MaxMessageSize to be equal to 99999999
+    //verify server attribute MaxMessageSize to be equal to 100000000
     String configUri = "ConfigServlet?"
         + "attributeTest=true"
         + "&serverType=adminserver"
@@ -676,9 +676,9 @@ public class ItConfigDistributionStrategy {
 
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
     if (configUpdated) {
-      assertTrue(response.body().contains("MaxMessageSize=99999999"), "Didn't get MaxMessageSize=99999999");
-    } else {
       assertTrue(response.body().contains("MaxMessageSize=100000000"), "Didn't get MaxMessageSize=100000000");
+    } else {
+      assertTrue(response.body().contains("MaxMessageSize=20000000"), "Didn't get MaxMessageSize=20000000");
     }
 
   }
@@ -872,6 +872,9 @@ public class ItConfigDistributionStrategy {
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.ResolveDNSName=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.MaxMessageSize=20000000"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
