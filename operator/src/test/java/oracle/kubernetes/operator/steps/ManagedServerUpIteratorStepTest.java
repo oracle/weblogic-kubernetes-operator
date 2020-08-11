@@ -13,6 +13,7 @@ import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -149,7 +150,7 @@ public class ManagedServerUpIteratorStepTest {
    */
   @Before
   public void setUp() throws NoSuchFieldException {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
 
