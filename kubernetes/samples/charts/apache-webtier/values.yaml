@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  
 # Apache webtier docker image
-image: "store/oracle/apache:12.2.1.3"
+image: "oracle/apache:12.2.1.3"
 
 # imagePullPolicy specifies the image pull policy for the apache webiter docker image
 imagePullPolicy: "IfNotPresent"
