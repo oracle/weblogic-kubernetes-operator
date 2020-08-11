@@ -297,8 +297,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     }
 
     @Override
-    Step createReadAsyncStep(String name, String namespace, ResponseStep<V1Job> responseStep) {
-      return new CallBuilder().readJobAsync(name, namespace, responseStep);
+    Step createReadAsyncStep(String name, String namespace, String domainUid, ResponseStep<V1Job> responseStep) {
+      return new CallBuilder().readJobAsync(name, namespace, domainUid, responseStep);
     }
 
     // When we detect a job as ready, we add it to the packet for downstream processing.
