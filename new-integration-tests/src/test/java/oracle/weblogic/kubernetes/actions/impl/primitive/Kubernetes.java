@@ -2355,9 +2355,9 @@ public class Kubernetes {
 
     // Execute command using Kubernetes API
     KubernetesExec kubernetesExec = createKubernetesExec(pod, containerName);
-    logger.info(Thread.currentThread() + " Kubernetes.exec kubernetesExec");
+    //logger.info(Thread.currentThread() + " Kubernetes.exec kubernetesExec");
     final Process proc = kubernetesExec.exec(command);
-    logger.info(Thread.currentThread() + " proc: " + proc);
+    //logger.info(Thread.currentThread() + " proc: " + proc);
 
     final CopyingOutputStream copyOut =
         redirectToStdout ? new CopyingOutputStream(System.out) : new CopyingOutputStream(null);
@@ -2411,15 +2411,15 @@ public class Kubernetes {
       }
 
       // wait for reading thread to finish any remaining output
-      out.join(10000);
-      logger.info(Thread.currentThread() + " finished out.join(10000)");
+      out.join();
+      logger.info(Thread.currentThread() + " finished out.join()");
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());
 
       // Read from process's stderr, if data available
-      err.join(10000);
-      logger.info(Thread.currentThread() + " finished err.join(10000)");
+      err.join();
+      logger.info(Thread.currentThread() + " finished err.join()");
       String stderr = null;
       try {
         //stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;

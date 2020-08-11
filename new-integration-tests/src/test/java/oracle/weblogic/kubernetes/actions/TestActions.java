@@ -1001,7 +1001,7 @@ public class TestActions {
       throw new IllegalArgumentException(
           String.format("The pod %s does not exist in namespace %s!", podName, namespace));
     }
-    getLogger().info(Thread.currentThread() + " execCommand pod: " + pod.getMetadata().getName());
+    //getLogger().info(Thread.currentThread() + " execCommand pod: " + pod.getMetadata().getName());
     return Exec.exec(pod, containerName, redirectToStdout, command);
   }
 
