@@ -156,7 +156,7 @@ public class ManagedServerUpIteratorStep extends Step {
     final Collection<StepAndPacket> startDetails;
     final Queue<StepAndPacket> startDetailsQueue = new ConcurrentLinkedQueue<>();
     final String clusterName;
-    int countStarted = 0;
+    int numStarted = 0;
     int maxConcurrency = 0;
 
     StartManagedServersStep(String clusterName, Collection<StepAndPacket> startDetails, Step next) {
@@ -175,19 +175,17 @@ public class ManagedServerUpIteratorStep extends Step {
     @Override
     public NextAction apply(Packet packet) {
 
-      if (startDetailsQueue.size() == 0) {
+      if (startDetailsQueue.isEmpty()) {
         return doNext(new ManagedServerUpAfterStep(getNext()), packet);
-      }
-
-      if (isServiceOnlyOrShuttingDown()) {
+      } else if (isServiceOnlyOrShuttingDown()) {
         Collection<StepAndPacket> servers = Collections.singletonList(startDetailsQueue.poll());
         return doForkJoin(this, packet, servers);
       } else if (serverAvailableToStart(packet.getSpi(DomainPresenceInfo.class))) {
-        Collection<StepAndPacket> servers = Collections.singletonList(startDetailsQueue.poll());
-        this.countStarted++;
-        return doForkJoin(this, packet, servers);
+        this.numStarted++;
+        return doForkJoin(this, packet, Collections.singletonList(startDetailsQueue.poll()));
+      } else {
+        return doDelay(this, packet, 100, TimeUnit.MILLISECONDS);
       }
-      return doDelay(this, packet, 100, TimeUnit.MILLISECONDS);
     }
 
     private boolean isServiceOnlyOrShuttingDown() {
@@ -196,13 +194,13 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     private boolean serverAvailableToStart(DomainPresenceInfo info) {
-      return ((this.countStarted < PodHelper.getScheduledPods(info, clusterName).size())
+      return ((this.numStarted < PodHelper.getScheduledPods(info, clusterName).size())
               && (canStartConcurrently(PodHelper.getReadyPods(info, clusterName).size())));
     }
 
-    private boolean canStartConcurrently(int readyManagedPods) {
-      return ((maxConcurrency > 0) && (this.countStarted < (maxConcurrency + readyManagedPods - 1)))
-          || (maxConcurrency == 0);
+    private boolean canStartConcurrently(int numReady) {
+      return ((this.maxConcurrency > 0) && (this.numStarted < (this.maxConcurrency + numReady - 1)))
+          || (this.maxConcurrency == 0);
     }
   }
 
