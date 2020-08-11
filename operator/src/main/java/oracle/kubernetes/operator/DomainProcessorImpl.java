@@ -517,7 +517,11 @@ public class DomainProcessorImpl implements DomainProcessor {
                           }
                         });
               } catch (Throwable t) {
-                LOGGER.severe(MessageKeys.EXCEPTION, t);
+                try (LoggingContext stack
+                         = LoggingContext.setThreadContext()
+                    .namespace(info.getNamespace()).domainUid(info.getDomainUid())) {
+                  LOGGER.severe(MessageKeys.EXCEPTION, t);
+                }
               }
             },
             main.initialShortDelay,

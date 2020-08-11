@@ -202,7 +202,10 @@ public class ServerStatusReader {
             } catch (InterruptedException ignore) {
               Thread.currentThread().interrupt();
             } catch (IOException | ApiException e) {
-              LOGGER.warning(MessageKeys.EXCEPTION, e);
+              try (LoggingContext stack =
+                       LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
+                LOGGER.warning(MessageKeys.EXCEPTION, e);
+              }
             } finally {
               helper.recycle(client);
               if (proc != null) {
