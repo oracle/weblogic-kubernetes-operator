@@ -154,65 +154,6 @@ class ItPodTemplates {
     }
   }
 
-  private void createAndVerifyPodFromTemplate(String imageName, String domainUid, String domainNS,
-                                              String domainHomeSource,
-                                              String domainname) throws io.kubernetes.client.openapi.ApiException {
-    createAndVerifyDomain(imageName, domainUid, domainNS, domainHomeSource, replicaCount);
-    String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + "1";
-    V1Pod managedServerPod = Kubernetes.getPod(domainNS, null, managedServerPodName);
-
-    //check that managed server pod is up and all applicable variable values are initialized.
-    assertNotNull(managedServerPod,"The managed server pod does not exist in namespace " + domainNS);
-    String serverName = managedServerPod
-        .getMetadata().getLabels()
-        .get("servername");
-
-    logger.info("Checking that variables used in the labels and annotations "
-        + "in the serverPod for servername, domainname, clustername are initialized");
-
-    assertNotNull(serverName, "Can't find label servername");
-
-    assertTrue(serverName.equalsIgnoreCase("managed-server1"),
-        "Can't find or match label servername");
-    String domainName = managedServerPod
-        .getMetadata().getLabels()
-        .get("domainname");
-    assertNotNull(domainName, "Can't find label domainname");
-    assertTrue(domainName.equalsIgnoreCase(domainname),
-        "Can't find expected value for  label domainname");
-
-    String myclusterName = managedServerPod
-        .getMetadata().getLabels()
-        .get("clustername");
-    assertNotNull(myclusterName, "Can't find label clustername");
-    assertTrue(myclusterName.equalsIgnoreCase(clusterName),
-        "Can't find expected value for label clustername");
-
-    String domainuid = managedServerPod
-        .getMetadata().getLabels()
-        .get("domainuid");
-    assertNotNull(domainuid, "Can't find label domainuid");
-    assertTrue(domainuid.equalsIgnoreCase(domainUid),
-        "Can't find expected value for label domainuid");
-
-    logger.info("Checking that applicable variables used "
-        + "in the annotations for domainhome and loghome are initialized");
-    String loghome = managedServerPod
-        .getMetadata().getAnnotations()
-        .get("loghome");
-    assertNotNull(loghome, "Can't find annotation loghome");
-    //value is not initialized since logHomeEnable = false in CRD
-    assertTrue(loghome.equalsIgnoreCase("$(LOG_HOME)"),
-        "Can't find expected value for annotation loghome, real value is " + loghome);
-
-    String domainHome = managedServerPod
-        .getMetadata().getAnnotations()
-        .get("domainhome");
-    assertNotNull(domainHome, "Can't find annotation domainhome");
-    assertTrue(domainHome.equalsIgnoreCase(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid),
-        "Can't find expected value for annotation domainhome, retrieved value is :" + domainHome);
-  }
-
   /**
    * Test pod templates using all the variables $(SERVER_NAME), $(DOMAIN_NAME), $(DOMAIN_UID),
    * $(DOMAIN_HOME), $(LOG_HOME) and $(CLUSTER_NAME)
@@ -240,6 +181,76 @@ class ItPodTemplates {
       logger.info("Shutting down domain1");
       shutdownDomain(domain1Uid, domain1Namespace);
     }
+  }
+
+  /**
+   * Create domain CRD with added labels and annotations to the serverPod using variables :
+   * $(SERVER_NAME), $(DOMAIN_NAME), $(DOMAIN_UID),
+   * $(DOMAIN_HOME), $(LOG_HOME) and $(CLUSTER_NAME).
+   * Create and verify domain and check that managed server pod labels and annotations are added
+   * and initialized for $(SERVER_NAME), $(DOMAIN_NAME), $(DOMAIN_UID), $(DOMAIN_HOME), $(CLUSTER_NAME).
+   * and not initialized for $(LOG_HOME) since logHomeEnable option set to false.
+   */
+  private void createAndVerifyPodFromTemplate(String imageName, String domainUid, String domainNS,
+                                              String domainHomeSource,
+                                              String domainname) throws io.kubernetes.client.openapi.ApiException {
+    createAndVerifyDomain(imageName, domainUid, domainNS, domainHomeSource, replicaCount);
+    String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + "1";
+    V1Pod managedServerPod = Kubernetes.getPod(domainNS, null, managedServerPodName);
+
+    //check that managed server pod is up and all applicable variable values are initialized.
+    assertNotNull(managedServerPod,"The managed server pod does not exist in namespace " + domainNS);
+    V1ObjectMeta managedServerMetadata = managedServerPod.getMetadata();
+    String serverName = managedServerMetadata.getLabels()
+        .get("servername");
+
+    logger.info("Checking that variables used in the labels and annotations "
+        + "in the serverPod for servername, domainname, clustername are initialized");
+    //check that label contains servername in the managed server pod
+    assertNotNull(serverName, "Can't find label servername");
+    assertTrue(serverName.equalsIgnoreCase("managed-server1"),
+        "Can't find or match label servername");
+
+    String domainName = managedServerMetadata.getLabels()
+        .get("domainname");
+
+    //check that label contains domainname in the managed server pod
+    assertNotNull(domainName, "Can't find label domainname");
+    assertTrue(domainName.equalsIgnoreCase(domainname),
+        "Can't find expected value for  label domainname");
+
+    String myclusterName = managedServerMetadata.getLabels()
+        .get("clustername");
+
+    //check that label contains clustername in the managed server pod
+    assertNotNull(myclusterName, "Can't find label clustername");
+    assertTrue(myclusterName.equalsIgnoreCase(clusterName),
+        "Can't find expected value for label clustername");
+
+    String domainuid = managedServerMetadata.getLabels()
+        .get("domainuid");
+
+    //check that label contains domainuid in the managed server pod
+    assertNotNull(domainuid, "Can't find label domainuid");
+    assertTrue(domainuid.equalsIgnoreCase(domainUid),
+        "Can't find expected value for label domainuid");
+
+    logger.info("Checking that applicable variables used "
+        + "in the annotations for domainhome and loghome are initialized");
+    String loghome = managedServerMetadata.getAnnotations()
+        .get("loghome");
+    //check that annotation contains loghome in the pod
+    assertNotNull(loghome, "Can't find annotation loghome");
+    //value is not initialized since logHomeEnable = false in CRD
+    assertTrue(loghome.equalsIgnoreCase("$(LOG_HOME)"),
+        "Can't find expected value for annotation loghome, real value is " + loghome);
+
+    String domainHome = managedServerMetadata.getAnnotations()
+        .get("domainhome");
+    //check that annotation contains domainhome in the managed server pod
+    assertNotNull(domainHome, "Can't find annotation domainhome");
+    assertTrue(domainHome.equalsIgnoreCase(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid),
+        "Can't find expected value for annotation domainhome, retrieved value is :" + domainHome);
   }
 
   /**
