@@ -122,6 +122,8 @@ public class TestUtils {
           TimeUnit.MILLISECONDS.sleep(100);
           result = ExecCommand.exec(curlCmd, true);
           String response = result.stdout().trim();
+          logger.info(curlCmd);
+          logger.info(response);
           for (var entry : managedServers.entrySet()) {
             if (response.contains("ServerName:" + entry.getKey())) {
               boolean bound = true;

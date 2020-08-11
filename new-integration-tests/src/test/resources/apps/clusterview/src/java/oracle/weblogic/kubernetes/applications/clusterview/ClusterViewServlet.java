@@ -177,6 +177,9 @@ public class ClusterViewServlet extends HttpServlet {
           }
         }
 
+      } else {
+        out.println(serverRuntime.getName() + ":Cluster runtime NULL <BR>");
+        System.out.println("ITESTS:>>>>>>Cluster runtime is null in server:" + serverRuntime.getName());
       }
 
       String listServers = request.getParameter("listServers");
