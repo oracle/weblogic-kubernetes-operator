@@ -680,10 +680,12 @@ public class Main {
 
       // we don't have the domain presence information yet
       // we add a logging context to pass the namespace information to the LoggingFormatter
-      packet.getComponents().put(
-          LoggingContext.LOGGING_CONTEXT_KEY,
-          Component.createFor(
-              new LoggingContext().namespace(ns != null ? ns : operatorNamespace)));
+      if (ns != null) {
+        packet.getComponents().put(
+            LoggingContext.LOGGING_CONTEXT_KEY,
+            Component.createFor(new LoggingContext().namespace(ns)));
+      }
+
       V1SubjectRulesReviewStatus srrs = nss.getRulesReviewStatus().updateAndGet(prev -> {
         if (prev != null) {
           return prev;
@@ -752,7 +754,9 @@ public class Main {
                     return v;
                   });
           info.setPopulated(true);
-          dp.createMakeRightOperation(info).withExplicitRecheck().execute();
+          try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
+            dp.createMakeRightOperation(info).withExplicitRecheck().execute();
+          }
         }
       }
 
@@ -762,7 +766,9 @@ public class Main {
               // This is a stranded DomainPresenceInfo.
               info.setDeleting(true);
               info.setPopulated(true);
-              dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
+              try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns).domainUid(uid)) {
+                dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
+              }
             }
           });
 
