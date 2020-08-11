@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -29,7 +30,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.calls.CallResponse.createFailure;
 import static oracle.kubernetes.operator.calls.CallResponse.createSuccess;
 import static oracle.kubernetes.operator.logging.MessageKeys.ASYNC_SUCCESS;
@@ -186,12 +186,10 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         try {
           cc.cancel();
         } finally {
-          try (LoggingContext stack = LoggingContext.setThreadContext().namespace(requestParams.namespace)) {
-            if (LOGGER.isFinerEnabled()) {
-              logTimeout();
-            }
-            addResponseComponent(Component.createFor(RetryStrategy.class, retryStrategy));
+          if (LOGGER.isFinerEnabled()) {
+            logTimeout();
           }
+          addResponseComponent(Component.createFor(RetryStrategy.class, retryStrategy));
           fiber.resume(packet);
         }
       }
@@ -218,12 +216,14 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   public NextAction apply(Packet packet) {
     // we don't have the domain presence information and logging context information yet,
     // add a logging context to pass the namespace information to the LoggingFormatter
-    if (requestParams.namespace != null
-        && packet.getComponents().get(DOMAIN_COMPONENT_NAME) == null
-        && packet.getComponents().get(LoggingContext.LOGGING_CONTEXT_KEY) == null) {
+    if (requestParams.namespace != null 
+        && packet.getSpi(DomainPresenceInfo.class) == null
+        && packet.getSpi(LoggingContext.class) == null) {
       packet.getComponents().put(
           LoggingContext.LOGGING_CONTEXT_KEY,
-          Component.createFor(new LoggingContext().namespace(requestParams.namespace)));
+          Component.createFor(new LoggingContext()
+              .namespace(requestParams.namespace)
+              .domainUid(requestParams.domainUid)));
     }
 
     // clear out earlier results
@@ -246,7 +246,6 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
 
     AsyncRequestStepProcessing processing = new AsyncRequestStepProcessing(packet, retry, cont);
-
     return doSuspend(
         (fiber) -> {
           try {
@@ -268,6 +267,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   }
 
   private void logAsyncRequest() {
+    // called from the apply method where we have the necessary information for logging context
     LOGGER.finer(
         MessageKeys.ASYNC_REQUEST,
         identityHash(),
@@ -281,6 +281,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   }
 
   private void logAsyncFailure(Throwable t, String responseBody) {
+    // called from the apply method where we have the necessary information for logging context
     LOGGER.warning(
         MessageKeys.ASYNC_FAILURE,
         t.getMessage(),
@@ -299,47 +300,68 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   }
 
   private void logTimeout() {
-    LOGGER.finer(
-        MessageKeys.ASYNC_TIMEOUT,
-        identityHash(),
-        requestParams.call,
-        requestParams.namespace,
-        requestParams.name,
-        requestParams.body != null
-            ? LoggingFactory.getJson().serialize(requestParams.body)
-            : "",
-        fieldSelector,
-        labelSelector,
-        resourceVersion);
+    // called from a code path where we don't have the necessary information for logging context
+    // so we need to use th ethread context to pass in the logging context
+    try (LoggingContext stack =
+             LoggingContext.setThreadContext()
+                 .namespace(requestParams.namespace)
+                 .domainUid(requestParams.domainUid)) {
+      LOGGER.finer(
+          MessageKeys.ASYNC_TIMEOUT,
+          identityHash(),
+          requestParams.call,
+          requestParams.namespace,
+          requestParams.name,
+          requestParams.body != null
+              ? LoggingFactory.getJson().serialize(requestParams.body)
+              : "",
+          fieldSelector,
+          labelSelector,
+          resourceVersion);
+    }
   }
 
   private void logSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
-    LOGGER.finer(
-        ASYNC_SUCCESS,
-        identityHash(),
-        requestParams.call,
-        result,
-        statusCode,
-        responseHeaders);
+    // called from a code path where we don't have the necessary information for logging context
+    // so we need to use th ethread context to pass in the logging context
+    try (LoggingContext stack =
+             LoggingContext.setThreadContext()
+                 .namespace(requestParams.namespace)
+                 .domainUid(requestParams.domainUid)) {
+      LOGGER.finer(
+          ASYNC_SUCCESS,
+          identityHash(),
+          requestParams.call,
+          result,
+          statusCode,
+          responseHeaders);
+    }
   }
 
   private void logFailure(ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
-    LOGGER.fine(
-        MessageKeys.ASYNC_FAILURE,
-        identityHash(),
-        ae.getMessage(),
-        statusCode,
-        responseHeaders,
-        requestParams.call,
-        requestParams.namespace,
-        requestParams.name,
-        requestParams.body != null
-            ? LoggingFactory.getJson().serialize(requestParams.body)
-            : "",
-        fieldSelector,
-        labelSelector,
-        resourceVersion,
-        ae.getResponseBody());
+    // called from a code path where we don't have the necessary information for logging context
+    // so we need to use th ethread context to pass in the logging context
+    try (LoggingContext stack =
+             LoggingContext.setThreadContext()
+                 .namespace(requestParams.namespace)
+                 .domainUid(requestParams.domainUid)) {
+      LOGGER.fine(
+          MessageKeys.ASYNC_FAILURE,
+          identityHash(),
+          ae.getMessage(),
+          statusCode,
+          responseHeaders,
+          requestParams.call,
+          requestParams.namespace,
+          requestParams.name,
+          requestParams.body != null
+              ? LoggingFactory.getJson().serialize(requestParams.body)
+              : "",
+          fieldSelector,
+          labelSelector,
+          resourceVersion,
+          ae.getResponseBody());
+    }
   }
 
   // creates a unique ID that allows matching requests to responses
@@ -382,7 +404,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         } else if (statusCode == 0) {
           na.invoke(retryStep, packet);
         } else {
-          LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime));
+          LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime),
+              requestParams.call, requestParams.namespace, requestParams.name);
           na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
         }
         return na;
@@ -391,7 +414,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         // exponential back-off
         long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
 
-        LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime));
+        LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime),
+            requestParams.call, requestParams.namespace, requestParams.name);
         NextAction na = new NextAction();
         na.delay(conflictStep, packet, waitTime, TimeUnit.MILLISECONDS);
         return na;
@@ -439,23 +463,13 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
 
     @Override
-    public void onFailure(
-        ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
-      // make sure that the domain namespace is added to the thread local so that
-      // it can be passed to the LoggingFormatter
-      try (LoggingContext stack = LoggingContext.setThreadContext().namespace(requestParams.namespace)) {
-        processing.onFailure(fiber, ae, statusCode, responseHeaders);
-      }
+    public void onFailure(ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
+      processing.onFailure(fiber, ae, statusCode, responseHeaders);
     }
 
     @Override
-    public void onSuccess(
-        T result, int statusCode, Map<String, List<String>> responseHeaders) {
-      // make sure that the domain namespace is added to the thread local so that
-      // it can be passed to the LoggingFormatter
-      try (LoggingContext stack = LoggingContext.setThreadContext().namespace(requestParams.namespace)) {
-        processing.onSuccess(fiber, result, statusCode, responseHeaders);
-      }
+    public void onSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
+      processing.onSuccess(fiber, result, statusCode, responseHeaders);
     }
   }
 }
