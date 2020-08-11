@@ -55,6 +55,8 @@ import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
+import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
+
 /** Simplifies synchronous and asynchronous call patterns to the Kubernetes API Server. */
 @SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
 public class CallBuilder {
@@ -319,6 +321,7 @@ public class CallBuilder {
                   usage,
                   requestParams.name,
                   requestParams.namespace,
+                  requestParams.domainUid,
                   (V1DeleteOptions) requestParams.body,
                   callback));
   private final CallFactory<V1Status> deleteService =
@@ -630,7 +633,7 @@ public class CallBuilder {
    */
   public Step readDomainAsync(String name, String namespace, ResponseStep<Domain> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readDomain", namespace, name, null), readDomain);
+        responseStep, new RequestParams("readDomain", namespace, name, null, name), readDomain);
   }
 
   /**
@@ -643,7 +646,7 @@ public class CallBuilder {
    * @throws ApiException APIException
    */
   public Domain replaceDomain(String uid, String namespace, Domain body) throws ApiException {
-    RequestParams requestParams = new RequestParams("replaceDomain", namespace, uid, body);
+    RequestParams requestParams = new RequestParams("replaceDomain", namespace, uid, body, uid);
     return executeSynchronousCall(requestParams, replaceDomainCall);
   }
 
@@ -657,7 +660,7 @@ public class CallBuilder {
    * @throws ApiException APIException
    */
   public Domain replaceDomainStatus(String uid, String namespace, Domain body) throws ApiException {
-    RequestParams requestParams = new RequestParams("replaceDomainStatus", namespace, uid, body);
+    RequestParams requestParams = new RequestParams("replaceDomainStatus", namespace, uid, body, uid);
     return executeSynchronousCall(requestParams, replaceDomainStatusCall);
   }
 
@@ -680,7 +683,7 @@ public class CallBuilder {
   public Step replaceDomainAsync(
       String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("replaceDomain", namespace, name, body), replaceDomain);
+        responseStep, new RequestParams("replaceDomain", namespace, name, body, name), replaceDomain);
   }
 
   /**
@@ -694,7 +697,7 @@ public class CallBuilder {
    */
   public Domain patchDomain(String uid, String namespace, V1Patch patchBody) throws ApiException {
     RequestParams requestParams =
-        new RequestParams("patchDomain", namespace, uid, patchBody);
+        new RequestParams("patchDomain", namespace, uid, patchBody, uid);
     return executeSynchronousCall(requestParams, patchDomainCall);
   }
 
@@ -718,7 +721,7 @@ public class CallBuilder {
       String name, String namespace, V1Patch patchBody, ResponseStep<Domain> responseStep) {
     return createRequestAsync(
         responseStep,
-        new RequestParams("patchDomain", namespace, name, patchBody),
+        new RequestParams("patchDomain", namespace, name, patchBody, name),
         patchDomain);
   }
 
@@ -742,7 +745,7 @@ public class CallBuilder {
       String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
     return createRequestAsync(
         responseStep,
-        new RequestParams("replaceDomainStatus", namespace, name, body),
+        new RequestParams("replaceDomainStatus", namespace, name, body, name),
         replaceDomainStatus);
   }
 
@@ -930,13 +933,14 @@ public class CallBuilder {
    *
    * @param name Name
    * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the ConfigMap is associated with
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
   public Step readConfigMapAsync(
-      String name, String namespace, ResponseStep<V1ConfigMap> responseStep) {
+      String name, String namespace, String domainUid, ResponseStep<V1ConfigMap> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readConfigMap", namespace, name, null), readConfigmap);
+        responseStep, new RequestParams("readConfigMap", namespace, name, null, domainUid), readConfigmap);
   }
 
   private Call createConfigMapAsync(
@@ -985,6 +989,7 @@ public class CallBuilder {
    *
    * @param name Name
    * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the ConfigMap is associated with
    * @param deleteOptions Delete options
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
@@ -992,11 +997,12 @@ public class CallBuilder {
   public Step deleteConfigMapAsync(
       String name,
       String namespace,
+      String domainUid,
       V1DeleteOptions deleteOptions,
       ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
         responseStep,
-        new RequestParams("deleteConfigMap", namespace, name, deleteOptions),
+        new RequestParams("deleteConfigMap", namespace, name, deleteOptions, domainUid),
         deleteConfigMap);
   }
 
@@ -1024,7 +1030,8 @@ public class CallBuilder {
       String name, String namespace, V1ConfigMap body, ResponseStep<V1ConfigMap> responseStep) {
     return createRequestAsync(
         responseStep,
-        new RequestParams("replaceConfigMap", namespace, name, body),
+        new RequestParams("replaceConfigMap", namespace, name, body,
+            getDomainUidLabel(Optional.ofNullable(body).map(V1ConfigMap::getMetadata).orElse(null))),
         replaceConfigmap);
   }
 
@@ -1040,15 +1047,16 @@ public class CallBuilder {
    *
    * @param name Name
    * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the ConfigMap is associated with
    * @param patchBody instructions on what to patch
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
   public Step patchConfigMapAsync(
-      String name, String namespace, V1Patch patchBody, ResponseStep<V1ConfigMap> responseStep) {
+      String name, String namespace, String domainUid, V1Patch patchBody, ResponseStep<V1ConfigMap> responseStep) {
     return createRequestAsync(
         responseStep,
-        new RequestParams("patchConfigMap", namespace, name, patchBody),
+        new RequestParams("patchConfigMap", namespace, name, patchBody, domainUid),
         patchConfigMap);
   }
 
@@ -1096,12 +1104,13 @@ public class CallBuilder {
    *
    * @param name Name
    * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the pod is associated with
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step readPodAsync(String name, String namespace, ResponseStep<V1Pod> responseStep) {
+  public Step readPodAsync(String name, String namespace, String domainUid, ResponseStep<V1Pod> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readPod", namespace, name, null), readPod);
+        responseStep, new RequestParams("readPod", namespace, name, null, domainUid), readPod);
   }
 
   private Call createPodAsync(
@@ -1121,7 +1130,9 @@ public class CallBuilder {
    */
   public Step createPodAsync(String namespace, V1Pod body, ResponseStep<V1Pod> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("createPod", namespace, null, body), createPod);
+        responseStep,
+        new RequestParams("createPod", namespace, null, body, PodHelper.getPodDomainUid(body)),
+        createPod);
   }
 
   /* Persistent Volumes */
@@ -1151,6 +1162,7 @@ public class CallBuilder {
    *
    * @param name Name
    * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the pod is associated with
    * @param deleteOptions Delete options
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
@@ -1158,10 +1170,11 @@ public class CallBuilder {
   public Step deletePodAsync(
       String name,
       String namespace,
+      String domainUid,
       V1DeleteOptions deleteOptions,
       ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("deletePod", namespace, name, deleteOptions), deletePod);
+        responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid), deletePod);
   }
 
   private Call patchPodAsync(
@@ -1176,15 +1189,16 @@ public class CallBuilder {
    *
    * @param name Name
    * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the pod is associated with
    * @param patchBody instructions on what to patch
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
   public Step patchPodAsync(
-      String name, String namespace, V1Patch patchBody, ResponseStep<V1Pod> responseStep) {
+      String name, String namespace, String domainUid, V1Patch patchBody, ResponseStep<V1Pod> responseStep) {
     return createRequestAsync(
         responseStep,
-        new RequestParams("patchPod", namespace, name, patchBody),
+        new RequestParams("patchPod", namespace, name,  patchBody, domainUid),
         patchPod);
   }
 
@@ -1236,13 +1250,14 @@ public class CallBuilder {
    * Asynchronous step for creating job.
    *
    * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the job is associated with
    * @param body Body
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step createJobAsync(String namespace, V1Job body, ResponseStep<V1Job> responseStep) {
+  public Step createJobAsync(String namespace, String domainUid, V1Job body, ResponseStep<V1Job> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("createJob", namespace, null, body), createJob);
+        responseStep, new RequestParams("createJob", namespace, null, body, domainUid), createJob);
   }
 
   private Call readJobAsync(
@@ -1260,15 +1275,16 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step readJobAsync(String name, String namespace, ResponseStep<V1Job> responseStep) {
+  public Step readJobAsync(String name, String namespace, String domainUid, ResponseStep<V1Job> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readJob", namespace, name, null), readJob);
+        responseStep, new RequestParams("readJob", namespace, name, null, domainUid), readJob);
   }
 
   private Call deleteJobAsync(
       ApiClient client,
       String name,
       String namespace,
+      String domainUid,
       V1DeleteOptions body,
       ApiCallback<V1Status> callback)
       throws ApiException {
@@ -1292,6 +1308,7 @@ public class CallBuilder {
    *
    * @param name Name
    * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the job is associated with
    * @param deleteOptions Delete options
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
@@ -1299,10 +1316,11 @@ public class CallBuilder {
   public Step deleteJobAsync(
       String name,
       String namespace,
+      String domainUid,
       V1DeleteOptions deleteOptions,
       ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("deleteJob", namespace, name, deleteOptions), deleteJob);
+        responseStep, new RequestParams("deleteJob", namespace, name, deleteOptions, domainUid), deleteJob);
   }
 
   /**
@@ -1392,13 +1410,14 @@ public class CallBuilder {
    *
    * @param name Name
    * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the service is associated with
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
   public Step readServiceAsync(
-      String name, String namespace, ResponseStep<V1Service> responseStep) {
+      String name, String namespace, String domainUid, ResponseStep<V1Service> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readService", namespace, name, null), readService);
+        responseStep, new RequestParams("readService", namespace, name, null, domainUid), readService);
   }
 
   private Call createServiceAsync(
@@ -1419,7 +1438,10 @@ public class CallBuilder {
   public Step createServiceAsync(
       String namespace, V1Service body, ResponseStep<V1Service> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("createService", namespace, null, body), createService);
+        responseStep,
+        new RequestParams("createService", namespace, null, body,
+            getDomainUidLabel(Optional.ofNullable(body).map(V1Service::getMetadata).orElse(null))),
+        createService);
   }
 
   /**
@@ -1475,6 +1497,7 @@ public class CallBuilder {
    *
    * @param name Name
    * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the service is associated with
    * @param deleteOptions Delete options
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
@@ -1482,11 +1505,12 @@ public class CallBuilder {
   public Step deleteServiceAsync(
       String name,
       String namespace,
+      String domainUid,
       V1DeleteOptions deleteOptions,
       ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
         responseStep,
-        new RequestParams("deleteService", namespace, name, deleteOptions),
+        new RequestParams("deleteService", namespace, name, deleteOptions, domainUid),
         deleteService);
   }
 
@@ -1765,9 +1789,9 @@ public class CallBuilder {
     return executeSynchronousCall(requestParams, createTokenReviewCall);
   }
 
-  public Step readPodLogAsync(String name, String namespace, ResponseStep<String> responseStep) {
+  public Step readPodLogAsync(String name, String namespace, String domainUid, ResponseStep<String> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readPodLog", namespace, name, null), readPodLog);
+        responseStep, new RequestParams("readPodLog", namespace, name, null, domainUid), readPodLog);
   }
 
   private Call readPodLogAsync(

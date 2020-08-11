@@ -144,12 +144,8 @@ public class PodHelper {
    * @return domain UID
    */
   public static String getPodDomainUid(V1Pod pod) {
-    V1ObjectMeta meta = pod.getMetadata();
-    Map<String, String> labels = meta.getLabels();
-    if (labels != null) {
-      return labels.get(LabelConstants.DOMAINUID_LABEL);
-    }
-    return null;
+    return KubernetesUtils.getDomainUidLabel(
+        Optional.ofNullable(pod).map(V1Pod::getMetadata).orElse(null));
   }
 
   /**
@@ -519,19 +515,22 @@ public class PodHelper {
 
         String name = oldPod.getMetadata().getName();
         info.setServerPodBeingDeleted(serverName, Boolean.TRUE);
-        return doNext(deletePod(name, info.getNamespace(), gracePeriodSeconds, getNext()), packet);
+        return doNext(
+            deletePod(name, info.getNamespace(), getPodDomainUid(oldPod), gracePeriodSeconds, getNext()),
+            packet);
       } else {
         return doNext(packet);
       }
     }
 
-    private Step deletePod(String name, String namespace, long gracePeriodSeconds, Step next) {
+    private Step deletePod(String name, String namespace, String domainUid, long gracePeriodSeconds, Step next) {
 
       Step conflictStep =
           new CallBuilder()
               .readPodAsync(
                   name,
                   namespace,
+                  domainUid,
                   new DefaultResponseStep<>(next) {
                     @Override
                     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
@@ -548,7 +547,7 @@ public class PodHelper {
       V1DeleteOptions deleteOptions = new V1DeleteOptions().gracePeriodSeconds(gracePeriodSeconds);
       return new CallBuilder()
           .deletePodAsync(
-              name, namespace, deleteOptions, new DefaultResponseStep<>(conflictStep, next));
+              name, namespace, domainUid, deleteOptions, new DefaultResponseStep<>(conflictStep, next));
     }
   }
 }

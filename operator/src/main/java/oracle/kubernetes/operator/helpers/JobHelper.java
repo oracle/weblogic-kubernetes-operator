@@ -392,6 +392,7 @@ public class JobHelper {
             .deleteJobAsync(
                   jobName,
                   namespace,
+                  domainUid,
                   new V1DeleteOptions().propagationPolicy("Foreground"),
                   new DefaultResponseStep<>(next));
     }
@@ -414,13 +415,13 @@ public class JobHelper {
 
       String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
 
-      return doNext(readDomainIntrospectorPodLog(jobPodName, namespace, getNext()), packet);
+      return doNext(readDomainIntrospectorPodLog(jobPodName, namespace, info.getDomainUid(), getNext()), packet);
     }
 
-    private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, Step next) {
+    private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, String domainUid, Step next) {
       return new CallBuilder()
             .readPodLogAsync(
-                  jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep(next));
+                  jobPodName, namespace, domainUid, new ReadDomainIntrospectorPodLogResponseStep(next));
     }
   }
 
