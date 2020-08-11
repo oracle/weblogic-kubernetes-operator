@@ -858,10 +858,10 @@ public class ItConfigDistributionStrategy {
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.debug.DebugSituationalConfig=true "
                         + "-Dweblogic.debug.DebugSituationalConfigDumpXml=true "
-                        + "-Dweblogic.kernel.debug=true"
-                        + "-Dweblogic.debug.DebugMessaging=true"
-                        + "-Dweblogic.debug.DebugConnection=true"
-                        + "-Dweblogic.ResolveDNSName=true"
+                        + "-Dweblogic.kernel.debug=true "
+                        + "-Dweblogic.debug.DebugMessaging=true "
+                        + "-Dweblogic.debug.DebugConnection=true "
+                        + "-Dweblogic.ResolveDNSName=true "
                         + "-Dweblogic.MaxMessageSize=20000000"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
