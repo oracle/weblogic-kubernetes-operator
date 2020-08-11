@@ -157,7 +157,8 @@ abstract class Watcher<T> {
           continue;
         }
 
-        try (LoggingContext stack = LoggingContext.setThreadContext().namespace(getNamespace())) {
+        try (LoggingContext stack =
+                 LoggingContext.setThreadContext().namespace(getNamespace()).domainUid(getDomainUid(item))) {
           if (isError(item)) {
             handleErrorResponse(item);
           } else {
@@ -194,6 +195,13 @@ abstract class Watcher<T> {
    * @return String object or null if the watcher is not namespaced
    */
   public abstract String getNamespace();
+
+  /**
+   * Gets the domainUID associated with a watch response.
+   *
+   * @return String object or null if the watch response is not associated with a domain
+   */
+  public abstract String getDomainUid(Watch.Response<T> item);
 
   private boolean isError(Watch.Response<T> item) {
     return item.type.equalsIgnoreCase("ERROR");

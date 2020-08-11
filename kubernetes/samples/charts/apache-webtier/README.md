@@ -12,7 +12,7 @@ in order to use this load balancer.
 ## Installing the Chart
 To install the chart with the release name `my-release`:
 ```console
-$ helm install --name my-release apache-webtier
+$ helm install my-release apache-webtier
 ```
 The command deploys the Apache HTTP Server on the Kubernetes cluster with the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
@@ -23,7 +23,7 @@ The command deploys the Apache HTTP Server on the Kubernetes cluster with the de
 To uninstall/delete `my-release`:
 
 ```console
-$ helm delete --purge my-release
+$ helm uninstall my-release
 ```
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
@@ -54,14 +54,14 @@ The following table lists the configurable parameters of the Apache webtier char
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
 
 ```console
-$ helm install --name my-release --set volumePath=/scratch/my-config apache-webtier
+$ helm install my-release --set volumePath=/scratch/my-config apache-webtier
 ```
 
 Alternatively, a YAML file that specifies the values for the parameters can be provided while
 installing the chart. For example:
 
 ```console
-$ helm install --name my-release --values values.yaml apache-webtier
+$ helm install my-release --values values.yaml apache-webtier
 ```
 
 ## RBAC
@@ -82,5 +82,5 @@ If the output contains "beta", you may install the chart with RBAC enabled.
 To disable the creation of RBAC resources (on clusters with RBAC). Do the following:
 
 ```console
-$ helm install --name my-release apache-webtier --set createRBAC=false
+$ helm install my-release apache-webtier --set createRBAC=false
 ```
