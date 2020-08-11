@@ -2361,6 +2361,8 @@ public class Kubernetes {
 
     final CopyingOutputStream copyOut =
         redirectToStdout ? new CopyingOutputStream(System.out) : new CopyingOutputStream(null);
+    final CopyingOutputStream copyErr =
+        redirectToStdout ? new CopyingOutputStream(System.err) : new CopyingOutputStream(null);
 
     // Start a thread to begin reading the output stream of the command
     Thread out = null;
@@ -2380,6 +2382,23 @@ public class Kubernetes {
               });
       out.start();
 
+      // Start a thread to begin reading the error stream of the command
+      Thread err = null;
+      err =
+          new Thread(
+              () -> {
+                try {
+                  ByteStreams.copy(proc.getErrorStream(), copyErr);
+                } catch (IOException ex) {
+                  // "Pipe broken" is expected when process is finished so don't log
+                  if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
+                    getLogger().warning("Exception reading from input stream.", ex);
+                  }
+                  getLogger().info("err thread ex: " + ex);
+                }
+              });
+      err.start();
+
       // wait for the process, which represents the executing command, to terminate
       try {
         logger.info(Thread.currentThread() + " about to poc.waitFor()");
@@ -2392,18 +2411,19 @@ public class Kubernetes {
       }
 
       // wait for reading thread to finish any remaining output
-      out.join(30000);
-      logger.info(Thread.currentThread() + " finished out.join(30000)");
+      out.join(10000);
+      logger.info(Thread.currentThread() + " finished out.join(10000)");
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());
-      //logger.info("stdout: " + stdout);
 
       // Read from process's stderr, if data available
+      err.join(10000);
+      logger.info(Thread.currentThread() + " finished err.join(10000)");
       String stderr = null;
       try {
-        stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
-        //logger.info("stderr: " + stderr);
+        //stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
+        stderr = readExecCmdData(copyErr.getInputStream());
       } catch (IllegalStateException e) {
         // IllegalStateException thrown when stream is already closed, ignore since there is
         // nothing to read

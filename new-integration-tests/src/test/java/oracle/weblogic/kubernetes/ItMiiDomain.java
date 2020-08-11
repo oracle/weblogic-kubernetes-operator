@@ -965,24 +965,26 @@ class ItMiiDomain {
 
   private ConditionEvaluationListener getConditionEvaluationListener(String namespace,
       String podName, String appPath, String expectedStr) {
-    ConditionEvaluationListener listener = new ConditionEvaluationListener() {
-      @Override
-      public void conditionEvaluated(EvaluatedCondition condition) {
-        logger.info(Thread.currentThread()
-            + " condition.isSatisfied(): " + condition.isSatisfied());
-        logger.info(Thread.currentThread()
-            + " condition.getAlias()" + condition.getAlias());
-        logger.info(Thread.currentThread()
-            + " Waiting for application {0} is running on pod {1} in namespace {2} "
-            + "(elapsed time {3}ms, remaining time {4}ms) with expected response: {5}",
-            appPath,
-            podName,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS(),
-            expectedStr);
-      }
-    };
+    ConditionEvaluationListener listener =
+        new ConditionEvaluationListener() {
+          @Override
+          public void conditionEvaluated(EvaluatedCondition condition) {
+            logger.info(
+                Thread.currentThread() + " condition.isSatisfied(): " + condition.isSatisfied());
+            if (!condition.isSatisfied()) {
+              logger.info(
+                  Thread.currentThread()
+                      + " Waiting for application {0} is running on pod {1} in namespace {2} "
+                      + "(elapsed time {3}ms, remaining time {4}ms) with expected response: {5}",
+                  appPath,
+                  podName,
+                  namespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS(),
+                  expectedStr);
+            }
+          }
+        };
     return listener;
 
     //return condition -> logger.info(Thread.currentThread()
