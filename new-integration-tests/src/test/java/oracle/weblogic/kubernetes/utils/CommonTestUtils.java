@@ -89,6 +89,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
@@ -376,6 +377,8 @@ public class CommonTestUtils {
           .elasticSearchPort(ELASTICSEARCH_HTTP_PORT);
       opParams
           .javaLoggingLevel(JAVA_LOGGING_LEVEL_VALUE);
+      opParams
+          .logStashImage(LOGSTASH_IMAGE);
     }
 
     if (withRestAPI) {

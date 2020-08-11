@@ -26,6 +26,7 @@ public class OperatorParams {
   private static final String ELASTICSEARCH_HOST = "elasticSearchHost";
   private static final String ELASTICSEARCH_PORT = "elasticSearchPort";
   private static final String JAVA_LOGGING_LEVEL = "javaLoggingLevel";
+  private static final String LOGSTASH_IMAGE = "logStashImage";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -41,6 +42,7 @@ public class OperatorParams {
   private String elasticSearchHost;
   private int elasticSearchPort;
   private String javaLoggingLevel;
+  private String logStashImage;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -107,6 +109,11 @@ public class OperatorParams {
     return this;
   }
 
+  public OperatorParams logStashImage(String logStashImage) {
+    this.logStashImage = logStashImage;
+    return this;
+  }
+
   public String getServiceAccount() {
     return serviceAccount;
   }
@@ -140,6 +147,9 @@ public class OperatorParams {
     }
     if (javaLoggingLevel != null) {
       values.put(JAVA_LOGGING_LEVEL, javaLoggingLevel);
+    }
+    if (logStashImage != null) {
+      values.put(LOGSTASH_IMAGE, logStashImage);
     }
     values.values().removeIf(Objects::isNull);
     return values;
