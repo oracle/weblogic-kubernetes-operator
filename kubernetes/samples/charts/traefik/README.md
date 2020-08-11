@@ -94,7 +94,7 @@ $ curl -k -H 'host: domain1.org' https://${HOSTNAME}:${TLS_PORT}/testwebapp/
 ## SSL Termination at Ingress Controller
 This sample demonstrates how to terminate SSL trafik at ingress contoller to access WebLogic console thru SSL port. 
 
-## 1. Enable "WebLogic Plugin Enabled" on WebLogic Domain level
+### 1. Enable "WebLogic Plugin Enabled" on WebLogic Domain level
 
 If you are using wdt to configure WebLogic Domain, you need to add the following resource section at the domain level to model yaml file.
 ```
@@ -113,7 +113,7 @@ set('WeblogicPluginEnabled',true)
 cd('/Clusters/%s' % cluster_name)
 set('WeblogicPluginEnabled',true)
 ```
-## 2. Update the Ingress resource with customRequestHeaders value.
+### 2. Update the Ingress resource with customRequestHeaders value.
 Replace the string 'weblogic-domain' with namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserever' with name of the Admin server in the WebLogic domain.  
 
 ```
@@ -152,12 +152,12 @@ spec:
       Wl-Proxy-Ssl: "true"
     sslRedirect: true
 ```
-# 3. Create Ingress resource.
+### 3. Create Ingress resource.
 Save the above configuration as 'traefik-tls-console.yaml'.
 ```
  kubectl create -f traefik-tls-console.yaml
 ```
-# 4. Access WebLogic console using https port
+### 4. Access WebLogic console using https port
 Get the SSL port from the kubernates service 
 ```
 SSLPORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}')
