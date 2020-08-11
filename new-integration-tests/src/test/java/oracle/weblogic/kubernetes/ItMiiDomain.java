@@ -36,7 +36,9 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
+import org.awaitility.core.EvaluatedCondition;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -139,12 +141,12 @@ class ItMiiDomain {
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
-        .atMost(6, MINUTES).await();
+        .atMost(6, MINUTES).await("standardRetryPolicy");
 
     // create a reusable quick retry policy
     withQuickRetryPolicy = with().pollDelay(0, SECONDS)
         .and().with().pollInterval(4, SECONDS)
-        .atMost(10, SECONDS).await();
+        .atMost(10, SECONDS).await("quickRetryPolicy");
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -950,15 +952,7 @@ class ItMiiDomain {
     // check if the application is accessible inside of a server pod
     conditionFactory
         .conditionEvaluationListener(
-            condition -> logger.info(Thread.currentThread()
-                    + " Waiting for application {0} is running on pod {1} in namespace {2} "
-                    + "(elapsed time {3}ms, remaining time {4}ms) with expected response: {5}",
-            appPath,
-            podName,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS(),
-            expectedStr))
+            getConditionEvaluationListener(namespace, podName, appPath, expectedStr))
         .until(appAccessInPod(namespace, podName, internalPort, appPath, expectedStr));
     //.until(() -> appAccessibleInPod(
     //       namespace,
@@ -967,6 +961,39 @@ class ItMiiDomain {
     //        appPath,
     //        expectedStr));
 
+  }
+
+  private ConditionEvaluationListener getConditionEvaluationListener(String namespace,
+      String podName, String appPath, String expectedStr) {
+    ConditionEvaluationListener listener = new ConditionEvaluationListener() {
+      @Override
+      public void conditionEvaluated(EvaluatedCondition condition) {
+        logger.info(Thread.currentThread()
+            + " condition.isSatisfied(): " + condition.isSatisfied());
+        logger.info(Thread.currentThread()
+            + " condition.getAlias()" + condition.getAlias());
+        logger.info(Thread.currentThread()
+            + " Waiting for application {0} is running on pod {1} in namespace {2} "
+            + "(elapsed time {3}ms, remaining time {4}ms) with expected response: {5}",
+            appPath,
+            podName,
+            namespace,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS(),
+            expectedStr);
+      }
+    };
+    return listener;
+
+    //return condition -> logger.info(Thread.currentThread()
+    //        + " Waiting for application {0} is running on pod {1} in namespace {2} "
+    //        + "(elapsed time {3}ms, remaining time {4}ms) with expected response: {5}",
+    //appPath,
+    //podName,
+    //namespace,
+    //condition.getElapsedTimeInMS(),
+    //condition.getRemainingTimeInMS(),
+    //expectedStr);
   }
 
   private Callable<Boolean> appAccessInPod(String namespace,
