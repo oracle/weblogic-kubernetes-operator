@@ -93,6 +93,22 @@ public interface TestConstants {
   public static final String VOYAGER_CHART_NAME = "voyager";
   public static final String VOYAGER_CHART_VERSION = "12.0.0";
 
+  // ELK Stack and WebLogic logging exporter constants
+  public static final String ELASTICSEARCH_NAME = "elasticsearch";
+  public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_NAME + ":6.8.0";
+  public static final String ELASTICSEARCH_HOST = "elasticsearch.default.svc.cluster.local";
+  public static final int ELASTICSEARCH_HTTP_PORT = 9200;
+  public static final int ELASTICSEARCH_HTTPS_PORT = 9300;
+  public static final String ELKSTACK_NAMESPACE = "default";
+  public static final String LOGSTASH_INDEX_KEY = "logstash";
+  public static final String WEBLOGIC_INDEX_KEY = "wls";
+  public static final String KIBANA_INDEX_KEY = "kibana";
+  public static final String KIBANA_NAME = "kibana";
+  public static final String KIBANA_VERSION = "6.8.0";
+  public static final String KIBANA_IMAGE = KIBANA_NAME + ":" + KIBANA_VERSION;
+  public static final String KIBANA_TYPE = "NodePort";
+  public static final int KIBANA_PORT = 5601;
+
   // MII image constants
   public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";
   public static final String MII_BASIC_IMAGE_NAME = REPO_NAME + "mii-basic-image";
@@ -108,7 +124,6 @@ public interface TestConstants {
   public static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
   // WDT domain-in-image constants
-
   public static final String WDT_BASIC_MODEL_FILE = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
   public static final String WDT_BASIC_IMAGE_NAME = REPO_NAME + "wdt-basic-image";
