@@ -856,25 +856,13 @@ public class ItConfigDistributionStrategy {
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.debug.DebugSituationalConfig=true"))
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.debug.DebugSituationalConfigDumpXml=true"))
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.kernel.debug=true"))
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.debug.DebugMessaging=true"))
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.debug.DebugConnection=true"))
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.ResolveDNSName=true"))
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.MaxMessageSize=20000000"))
+                    .value("-Dweblogic.debug.DebugSituationalConfig=true "
+                        + "-Dweblogic.debug.DebugSituationalConfigDumpXml=true "
+                        + "-Dweblogic.kernel.debug=true"
+                        + "-Dweblogic.debug.DebugMessaging=true"
+                        + "-Dweblogic.debug.DebugConnection=true"
+                        + "-Dweblogic.ResolveDNSName=true"
+                        + "-Dweblogic.MaxMessageSize=20000000"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
