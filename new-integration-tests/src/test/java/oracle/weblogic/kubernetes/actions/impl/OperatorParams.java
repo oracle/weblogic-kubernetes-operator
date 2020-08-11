@@ -22,6 +22,9 @@ public class OperatorParams {
   private static final String EXTERNAL_REST_HTTPS_PORT = "externalRestHttpsPort";
   private static final String IMAGE_PULL_POLICY = "imagePullPolicy";
   private static final String IMAGE_PULL_SECRETS = "imagePullSecrets";
+  private static final String ELK_INTEGRATION_ENABLED = "elkIntegrationEnabled";
+  private static final String ELASTICSEARCH_HOST = "elasticSearchHost";
+  private static final String ELASTICSEARCH_PORT = "elasticSearchPort";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -33,6 +36,9 @@ public class OperatorParams {
   private String imagePullPolicy;
   private Map<String, Object> imagePullSecrets;
   private HelmParams helmParams;
+  private boolean elkIntegrationEnabled;
+  private String elasticSearchHost;
+  private int elasticSearchPort;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -79,6 +85,21 @@ public class OperatorParams {
     return this;
   }
 
+  public OperatorParams elkIntegrationEnabled(boolean elkIntegrationEnabled) {
+    this.elkIntegrationEnabled = elkIntegrationEnabled;
+    return this;
+  }
+
+  public OperatorParams elasticSearchHost(String elasticSearchHost) {
+    this.elasticSearchHost = elasticSearchHost;
+    return this;
+  }
+
+  public OperatorParams elasticSearchPort(int elasticSearchPort) {
+    this.elasticSearchPort = elasticSearchPort;
+    return this;
+  }
+
   public String getServiceAccount() {
     return serviceAccount;
   }
@@ -103,6 +124,13 @@ public class OperatorParams {
     values.put(EXTERNAL_REST_IDENTITY_SECRET, externalRestIdentitySecret);
     values.put(IMAGE_PULL_POLICY, imagePullPolicy);
     values.put(IMAGE_PULL_SECRETS, imagePullSecrets);
+    values.put(ELK_INTEGRATION_ENABLED, Boolean.valueOf(elkIntegrationEnabled));
+    if (elasticSearchHost != null) {
+      values.put(ELASTICSEARCH_HOST, elasticSearchHost);
+    }
+    if (elasticSearchPort > 0) {
+      values.put(ELASTICSEARCH_PORT, Integer.valueOf(elasticSearchPort));
+    }
     values.values().removeIf(Objects::isNull);
     return values;
   }
