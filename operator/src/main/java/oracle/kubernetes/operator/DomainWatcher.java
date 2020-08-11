@@ -3,10 +3,12 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.util.Watch.Response;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
@@ -61,5 +63,10 @@ public class DomainWatcher extends Watcher<Domain> {
   @Override
   public String getNamespace() {
     return ns;
+  }
+
+  @Override
+  public String getDomainUid(Response<Domain> item) {
+    return Optional.ofNullable(item.object).map(Domain::getDomainUid).orElse(null);
   }
 }

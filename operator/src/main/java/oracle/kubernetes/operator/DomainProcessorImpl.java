@@ -232,6 +232,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
       if (map != null) {
         for (DomainPresenceInfo dpi : map.values()) {
+          stack.domainUid(dpi.getDomainUid());
+
           Domain dom = dpi.getDomain();
           DomainPresenceInfo value =
               (dom != null)
@@ -515,7 +517,11 @@ public class DomainProcessorImpl implements DomainProcessor {
                           }
                         });
               } catch (Throwable t) {
-                LOGGER.severe(MessageKeys.EXCEPTION, t);
+                try (LoggingContext stack
+                         = LoggingContext.setThreadContext()
+                    .namespace(info.getNamespace()).domainUid(info.getDomainUid())) {
+                  LOGGER.severe(MessageKeys.EXCEPTION, t);
+                }
               }
             },
             main.initialShortDelay,
@@ -610,6 +616,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       if (!delegate.isNamespaceRunning(getNamespace())) {
         return;
       }
+
       if (isShouldContinue()) {
         internalMakeRightDomainPresence();
       } else {
@@ -752,7 +759,8 @@ public class DomainProcessorImpl implements DomainProcessor {
                     () -> {
                       DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
                       if (existing != null) {
-                        try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+                        try (LoggingContext stack =
+                                 LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
                           existing.setPopulated(false);
                           // proceed only if we have not already retried max number of times
                           int retryCount = existing.incrementAndGetFailureCount();

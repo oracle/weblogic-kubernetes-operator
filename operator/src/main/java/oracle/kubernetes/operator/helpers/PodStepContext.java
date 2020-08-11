@@ -278,7 +278,7 @@ public abstract class PodStepContext extends BasePodStepContext {
    */
   private Step deletePod(Step next) {
     return new CallBuilder()
-          .deletePodAsync(getPodName(), getNamespace(), new V1DeleteOptions(), deleteResponse(next));
+          .deletePodAsync(getPodName(), getNamespace(), getDomainUid(), new V1DeleteOptions(), deleteResponse(next));
   }
 
   /**
@@ -331,7 +331,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
 
     return new CallBuilder()
-        .patchPodAsync(getPodName(), getNamespace(),
+        .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 

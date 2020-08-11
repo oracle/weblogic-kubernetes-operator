@@ -17,6 +17,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
+
 /**
  * This class is the base for steps that must suspend while waiting for a resource to become ready. It is typically
  * implemented as a part of a {@link Watcher} and relies on callbacks from that watcher to proceed.
@@ -87,10 +89,11 @@ abstract class WaitForReadyStep<T> extends Step {
    * Creates a {@link Step} that reads the specified resource asynchronously and then invokes the specified response.
    * @param name the name of the resource
    * @param namespace the namespace containing the resource
+   * @param domainUid the identifier of the domain that the resource is associated with
    * @param responseStep the step which should be invoked once the resource has been read
    * @return the created step
    */
-  abstract Step createReadAsyncStep(String name, String namespace, ResponseStep<T> responseStep);
+  abstract Step createReadAsyncStep(String name, String namespace, String domainUid, ResponseStep<T> responseStep);
 
   /**
    * Updates the packet when the resource is declared ready. The default implementation does nothing.
@@ -162,11 +165,15 @@ abstract class WaitForReadyStep<T> extends Step {
   }
 
   private Step createReadAndIfReadyCheckStep(Callback callback) {
-    return createReadAsyncStep(getName(), getNamespace(), resumeIfReady(callback));
+    return createReadAsyncStep(getName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
   }
 
   private String getNamespace() {
     return getMetadata(initialResource).getNamespace();
+  }
+
+  private String getDomainUid() {
+    return getDomainUidLabel(getMetadata(initialResource));
   }
 
   public String getName() {
