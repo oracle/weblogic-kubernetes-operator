@@ -136,7 +136,7 @@ public abstract class JobStepContext extends BasePodStepContext {
    * @return a step to be scheduled.
    */
   Step createJob(Step next) {
-    return new CallBuilder().createJobAsync(getNamespace(), getJobModel(), createResponse(next));
+    return new CallBuilder().createJobAsync(getNamespace(), getDomainUid(), getJobModel(), createResponse(next));
   }
 
   private void logJobCreated() {
