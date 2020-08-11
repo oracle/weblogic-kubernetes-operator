@@ -121,7 +121,7 @@ $ curl -k -H 'host: domain2.org' https://${HOSTNAME}:30307/testwebapp/
 ## SSL Termination at Ingress Controller
 This sample demonstrates how to terminate SSL trafik at ingress contoller to access WebLogic console thru SSL port. 
 
-## 1. Enable "WebLogic Plugin Enabled" on WebLogic Domain level
+### 1. Enable "WebLogic Plugin Enabled" on WebLogic Domain level
 
 If you are using wdt to configure WebLogic Domain, you need to add the following resource section at the domain level to model yaml file.
 ```
@@ -140,7 +140,7 @@ set('WeblogicPluginEnabled',true)
 cd('/Clusters/%s' % cluster_name)
 set('WeblogicPluginEnabled',true)
 ```
-# 2. Update the frontendRules section Ingress resource.
+### 2. Update the frontendRules section Ingress resource.
 Replace the string 'weblogic-domain' with namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserever' with name of the Admin server in the WebLogic domain.
 ```
 apiVersion: voyager.appscode.com/v1beta1
@@ -170,12 +170,12 @@ spec:
           serviceName: domain1-adminserver
           servicePort: '7001'
 ```
-# 3. Create Ingress resource.
+### 3. Create Ingress resource.
 Save the above configuration as 'voyager-tls-console.yaml'.
 ```
  kubectl create -f voyager-tls-console.yaml
 ```
-# 4. Access WebLogic console using https port
+### 4. Access WebLogic console using https port
 In a web browser type https://<host-name>:30443/console in address bar to access the console. 
 
 ## Uninstall the Voyager Operator
