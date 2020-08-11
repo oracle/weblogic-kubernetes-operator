@@ -17,6 +17,7 @@ import org.joda.time.DateTime;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 
 public class KubernetesUtils {
 
@@ -188,4 +189,16 @@ public class KubernetesUtils {
           .orElse("false");
   }
 
+  /**
+   * Returns the value of the domainUID label in the given Kubernetes resource metadata.
+   *
+   * @param metadata the Kubernetes Metadata object
+   * @return value of the domainUID label
+   */
+  public static String getDomainUidLabel(V1ObjectMeta metadata) {
+    return Optional.ofNullable(metadata)
+          .map(V1ObjectMeta::getLabels)
+          .map(labels -> labels.get(DOMAINUID_LABEL))
+          .orElse(null);
+  }
 }
