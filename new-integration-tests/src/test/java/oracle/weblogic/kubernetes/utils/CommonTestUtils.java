@@ -51,7 +51,9 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
+import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
@@ -73,9 +75,19 @@ import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
+import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
+import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
+import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
@@ -131,7 +143,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageNam
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.installElasticsearch;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
+import static oracle.weblogic.kubernetes.actions.TestActions.installKibana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
@@ -142,12 +156,15 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallElasticsearch;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallKibana;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isElkStackPodReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
@@ -256,6 +273,31 @@ public class CommonTestUtils {
    * @param opServiceAccount the service account name for operator
    * @param withRestAPI whether to use REST API
    * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String opServiceAccount,
+                                                    boolean withRestAPI,
+                                                    int externalRestHttpsPort,
+                                                    boolean elkIntegrationEnabled,
+                                                    String... domainNamespace) {
+    HelmParams opHelmParams =
+        new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
+            .namespace(opNamespace)
+            .chartDir(OPERATOR_CHART_DIR);
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
+        withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled, domainNamespace);
+
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
@@ -265,6 +307,29 @@ public class CommonTestUtils {
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
                                                     HelmParams opHelmParams,
+                                                    String... domainNamespace) {
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
+        withRestAPI, externalRestHttpsPort, opHelmParams, false, domainNamespace);
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opHelmParams the Helm parameters to install operator
+   * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String opServiceAccount,
+                                                    boolean withRestAPI,
+                                                    int externalRestHttpsPort,
+                                                    HelmParams opHelmParams,
+                                                    boolean elkIntegrationEnabled,
                                                     String... domainNamespace) {
     LoggingFacade logger = getLogger();
     // Create a service account for the unique opNamespace
@@ -298,6 +363,16 @@ public class CommonTestUtils {
     // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
     if (opHelmParams.getRepoUrl() == null) {
       opParams.image(operatorImage);
+    }
+
+    // enable ELK Stack
+    if (elkIntegrationEnabled) {
+      opParams
+          .elkIntegrationEnabled(elkIntegrationEnabled);
+      opParams
+          .elasticSearchHost(ELASTICSEARCH_HOST);
+      opParams
+          .elasticSearchPort(ELASTICSEARCH_HTTP_PORT);
     }
 
     if (withRestAPI) {
@@ -525,7 +600,129 @@ public class CommonTestUtils {
   }
 
   /**
-   * Install Traefik and wait for up to five minutes for the Traefik pod to be ready.
+   * Uninstall Elasticsearch.
+   *
+   * @param params logging exporter parameters to uninstall Elasticsearch
+   *
+   * @return true if the command to uninstall Elasticsearch succeeds, false otherwise
+   */
+  public static boolean uninstallAndVerifyElasticsearch(LoggingExporterParams params) {
+    // uninstall Elasticsearch
+    assertThat(uninstallElasticsearch(params))
+        .as("Elasticsearch uninstallation succeeds")
+        .withFailMessage("Elasticsearch uninstallation is failed")
+        .isTrue();
+
+    return true;
+  }
+
+  /**
+   * Uninstall Kibana.
+   *
+   * @param params logging exporter parameters to uninstall Kibana
+   *
+   * @return true if the command to uninstall Kibana succeeds, false otherwise
+   */
+  public static boolean uninstallAndVerifyKibana(LoggingExporterParams params) {
+    // uninstall Kibana
+    assertThat(uninstallKibana(params))
+        .as("Elasticsearch uninstallation succeeds")
+        .withFailMessage("Elasticsearch uninstallation is failed")
+        .isTrue();
+
+    return true;
+  }
+
+  /**
+   * Install Elasticsearch and wait up to five minutes until Elasticsearch pod is ready.
+   *
+   * @return Elasticsearch installation parameters
+   */
+  public static LoggingExporterParams installAndVerifyElasticsearch() {
+    LoggingFacade logger = getLogger();
+    final String elasticsearchPodNamePrefix = ELASTICSEARCH_NAME;
+
+    // parameters to install Elasticsearch
+    LoggingExporterParams elasticsearchParams = new LoggingExporterParams()
+        .elasticsearchName(ELASTICSEARCH_NAME)
+        .elasticsearchImage(ELASTICSEARCH_IMAGE)
+        .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
+        .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
+        .loggingExporterNamespace(ELKSTACK_NAMESPACE);
+
+    // install Elasticsearch
+    assertThat(installElasticsearch(elasticsearchParams))
+        .as("Elasticsearch installation succeeds")
+        .withFailMessage("Elasticsearch installation is failed")
+        .isTrue();
+
+    // wait until the Elasticsearch pod is ready.
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info(
+                "Waiting for Elasticsearch to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+                ELKSTACK_NAMESPACE,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isElkStackPodReady(ELKSTACK_NAMESPACE, elasticsearchPodNamePrefix),
+            "isElkStackPodReady failed with ApiException"));
+
+    return elasticsearchParams;
+  }
+
+  /**
+   * Install Kibana and wait up to five minutes until Kibana pod is ready.
+   *
+   * @return Kibana installation parameters
+   */
+  public static LoggingExporterParams installAndVerifyKibana() {
+    LoggingFacade logger = getLogger();
+    final String kibanaPodNamePrefix = ELASTICSEARCH_NAME;
+
+    // parameters to install Kibana
+    LoggingExporterParams kibanaParams = new LoggingExporterParams()
+        .kibanaName(KIBANA_NAME)
+        .kibanaImage(KIBANA_IMAGE)
+        .kibanaType(KIBANA_TYPE)
+        .loggingExporterNamespace(ELKSTACK_NAMESPACE)
+        .kibanaContainerPort(KIBANA_PORT);
+
+    // install Kibana
+    assertThat(installKibana(kibanaParams))
+        .as("Kibana installation succeeds")
+        .withFailMessage("Kibana installation is failed")
+        .isTrue();
+
+    // wait until the Kibana pod is ready.
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info(
+                "Waiting for Kibana to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+                ELKSTACK_NAMESPACE,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isElkStackPodReady(ELKSTACK_NAMESPACE, kibanaPodNamePrefix),
+            "isElkStackPodReady failed with ApiException"));
+
+    return kibanaParams;
+  }
+
+  /**
+   * Verify that the logging exporter is ready to use in Operator pod or WebLogic server pod.
+   *
+   * @param namespace namespace of Operator pod (for ELK Stack) or
+   *                  WebLogic server pod (for WebLogic logging exporter)
+   * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
+   * @param index key word used to search the index status of the logging exporter
+   * @return a map containing key and value pair of logging exporter index
+   */
+  public static Map<String, String> verifyLoggingExporterReady(String namespace,
+                                                               String labelSelector,
+                                                               String index) {
+    return TestActions.verifyLoggingExporterReady(namespace, labelSelector, index);
+  }
+
+  /** Install Traefik and wait for up to five minutes for the Traefik pod to be ready.
    *
    * @param traefikNamespace the namespace in which the Traefik ingress controller is installed
    * @param nodeportshttp the web nodeport of Traefik
