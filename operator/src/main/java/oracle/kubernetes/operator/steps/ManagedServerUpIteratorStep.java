@@ -156,8 +156,8 @@ public class ManagedServerUpIteratorStep extends Step {
     final Collection<StepAndPacket> startDetails;
     final Queue<StepAndPacket> startDetailsQueue = new ConcurrentLinkedQueue<>();
     final String clusterName;
-    int countScheduled = 0;
-    int maxConcurrency = 1;
+    int countStarted = 0;
+    int maxConcurrency = 0;
 
     StartManagedServersStep(String clusterName, Collection<StepAndPacket> startDetails, Step next) {
       super(next);
@@ -174,33 +174,34 @@ public class ManagedServerUpIteratorStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
 
-      StepAndPacket stepAndPacket = startDetailsQueue.peek();
-      if ((stepAndPacket != null) && (stepAndPacket.step != null)
-              && (stepAndPacket.step.getNext() instanceof ServerDownStep)) {
+      if (startDetailsQueue.size() == 0) {
+        return doNext(new ManagedServerUpAfterStep(getNext()), packet);
+      }
+
+      if (isServiceOnlyOrShuttingDown()) {
         Collection<StepAndPacket> servers = Collections.singletonList(startDetailsQueue.poll());
         return doForkJoin(this, packet, servers);
-      } else if (startDetailsQueue.size() == 0) {
-        return doNext(new ManagedServerUpAfterStep(getNext()), packet);
+      } else if (serverAvailableToStart(packet.getSpi(DomainPresenceInfo.class))) {
+        Collection<StepAndPacket> servers = Collections.singletonList(startDetailsQueue.poll());
+        this.countStarted++;
+        return doForkJoin(this, packet, servers);
       }
-
-      if (this.countScheduled < PodHelper.getScheduledPods(info, clusterName).size()) {
-        if (canScheduleConcurrently(PodHelper.getReadyPods(info, clusterName).size())) {
-          Collection<StepAndPacket> servers = Collections.singletonList(startDetailsQueue.poll());
-          this.countScheduled++;
-          return doForkJoin(this, packet, servers);
-        }
-      }
-      if (startDetailsQueue.size() > 0) {
-        return doDelay(this, packet, 100, TimeUnit.MILLISECONDS);
-      } else {
-        return doNext(new ManagedServerUpAfterStep(getNext()), packet);
-      }
+      return doDelay(this, packet, 100, TimeUnit.MILLISECONDS);
     }
 
-    private boolean canScheduleConcurrently(int readyManagedPods) {
-      return ((maxConcurrency > 0) && (this.countScheduled < (maxConcurrency + readyManagedPods - 1)))
+    private boolean isServiceOnlyOrShuttingDown() {
+      return Optional.ofNullable(startDetailsQueue.peek().step)
+              .map(step -> step.getNext() instanceof ServerDownStep).orElse(false);
+    }
+
+    private boolean serverAvailableToStart(DomainPresenceInfo info) {
+      return ((this.countStarted < PodHelper.getScheduledPods(info, clusterName).size())
+              && (canStartConcurrently(PodHelper.getReadyPods(info, clusterName).size())));
+    }
+
+    private boolean canStartConcurrently(int readyManagedPods) {
+      return ((maxConcurrency > 0) && (this.countStarted < (maxConcurrency + readyManagedPods - 1)))
           || (maxConcurrency == 0);
     }
   }
