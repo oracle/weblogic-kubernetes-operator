@@ -176,7 +176,7 @@ Save the above configuration as 'voyager-tls-console.yaml'.
  kubectl create -f voyager-tls-console.yaml
 ```
 ### 4. Access WebLogic console using https port
-In a web browser type https://${HOSTNAME}:30443/console in address bar to access the console. 
+In a web browser type 'https://${HOSTNAME}:30443/console' in the address bar to access the console. 
 
 ## Uninstall the Voyager Operator
 After removing all the Voyager Ingress resources, uninstall the Voyager operator:
