@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
@@ -94,6 +95,17 @@ public class TestAssertions {
    */
   public static Callable<Boolean> isVoyagerReady(String namespace, String podName) {
     return Voyager.isReady(namespace, podName);
+  }
+
+  /**
+   * Check if ELK Stack pod is ready in a given namespace.
+   *
+   * @param namespace in which to check ELK Stack pod is ready
+   * @param podName name of ELK Stack pod
+   * @return true if ELK Stack pod is in the ready state, false otherwise
+   */
+  public static Callable<Boolean> isElkStackPodReady(String namespace, String podName) {
+    return LoggingExporter.isReady(namespace, podName);
   }
 
   /**
