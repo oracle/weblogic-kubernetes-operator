@@ -630,7 +630,7 @@ public class ItIntrospectVersion {
     for (int i = 1; i <= replicaCount; i++) {
       managedServers.add(managedServerNameBase + i);
     }
-    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
+    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 100))
         .as("Verify all managed servers can see each other")
         .withFailMessage("managed servers cannot see other")
         .isTrue();

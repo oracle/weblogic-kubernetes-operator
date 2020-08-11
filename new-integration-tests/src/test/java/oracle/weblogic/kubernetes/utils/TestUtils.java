@@ -119,7 +119,7 @@ public class TestUtils {
     for (int i = 0; i < maxIterations; i++) {
       if (managedServers.containsValue(false)) {
         try {
-          TimeUnit.MILLISECONDS.sleep(100);
+          TimeUnit.MILLISECONDS.sleep(200);
           result = ExecCommand.exec(curlCmd, true);
           String response = result.stdout().trim();
           logger.info(curlCmd);
