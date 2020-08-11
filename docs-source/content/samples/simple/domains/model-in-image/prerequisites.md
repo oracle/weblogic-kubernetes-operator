@@ -144,7 +144,7 @@ weight: 1
    ```
    $ cd /tmp/mii-sample/model-images
 
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.9.1/weblogic-deploy.zip \
+   $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.3/weblogic-deploy.zip \
      -o /tmp/mii-sample/model-images/weblogic-deploy.zip
 
    $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.9.1/imagetool.zip \
