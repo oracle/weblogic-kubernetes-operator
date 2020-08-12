@@ -51,7 +51,7 @@ function usage {
   echo "      (default: false) "
   echo "  -x Number of threads to run the classes in parallel"
   echo "      (default: 2) "
-  echo "  -k Reserved for future use"
+  echo "  -d Reserved for future use"
   echo "  -i Reserved for future use"
   echo "  -h Help"
   exit $1
