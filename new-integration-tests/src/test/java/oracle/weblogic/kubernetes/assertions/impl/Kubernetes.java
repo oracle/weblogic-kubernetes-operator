@@ -153,18 +153,23 @@ public class Kubernetes {
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null) {
+      if (pod.getStatus() != null
+          && pod.getStatus().getConditions() != null
+          && pod.getStatus().getConditions().stream() != null) {
+        // get the podCondition with the 'Ready' type field
+        V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
+            .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+            .findAny()
+            .orElse(null);
 
-      // get the podCondition with the 'Ready' type field
-      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-              .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
-              .findAny()
-              .orElse(null);
-
-      if (v1PodReadyCondition != null) {
-        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
-        if (status) {
-          logger.info("Pod {0} is READY in namespace {1}", podName, namespace);
+        if (v1PodReadyCondition != null && v1PodReadyCondition.getStatus() != null) {
+          status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
+          if (status) {
+            logger.info("Pod {0} is READY in namespace {1}", podName, namespace);
+          }
         }
+      } else {
+        logger.info("pod {0} status or condition is null in namespace {1}", podName, namespace);
       }
     } else {
       logger.info("Pod {0} does not exist in namespace {1}", podName, namespace);
