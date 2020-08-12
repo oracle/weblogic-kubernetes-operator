@@ -61,7 +61,7 @@ $ kubectl get ns --selector="weblogic-operator=enabled"
 ```
 
 For operators that select namespaces with a regular expression matching the name, you can use a combination of `kubectl`
-and any command line tool that can process the regular expression, such as `grep`:
+and any command-line tool that can process the regular expression, such as `grep`:
 
 ```
 $ kubectl get ns -o go-template='{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}' | grep "^weblogic"

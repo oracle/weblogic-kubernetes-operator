@@ -135,7 +135,7 @@ This option greatly simplifies managing namespaces when the selection is done us
 regular expressions as the operator will already have privilege in any namespace.
 
 Customers who deploy the operator in Kubernetes clusters that run unrelated workloads will likely
-not want to use enable this option.
+not want to use this option.
 
 If `enableClusterRoleBinding` is `false` and you select namespaces that the operator will
 manage using label selectors or a regular expression, then the Helm release will only include
@@ -206,7 +206,7 @@ This value is required if `domainNamespaceSelectionStrategy` is `LabelSelector` 
 If `enableClusterRoleBinding` is `false`, the Helm chart will create RoleBindings in each namespace that matches the selector.
 These RoleBindings give the operator's service account the necessary privileges in the namespace. The Helm chart will only create
 these RoleBindings in namespaces that match the label selector at the time the chart is installed. If you later create namespaces
-that match the selector or label existing namespaces that make them now match the selector, the operator will not have
+that match the selector or label existing namespaces that make them now match the selector, then the operator will not have
 privilege in these namespaces until you upgrade the Helm release.
 
 Example 1: In the configuration below, the operator will manage namespaces that have the label "weblogic-operator"
@@ -242,7 +242,7 @@ privilege in these namespaces until you upgrade the Helm release.
 {{% notice note %}}
 The regular expression functionality included with Helm is restricted to linear time constructs and,
 in particular, does not support lookarounds. The operator, written in Java, supports these
-complicated expressions. If you need to use a complex regular expression then either set
+complicated expressions. If you need to use a complex regular expression, then either set
 `enableClusterRoleBinding` to `true` or create the necessary RoleBindings outside of Helm.
 {{% /notice %}}
 
