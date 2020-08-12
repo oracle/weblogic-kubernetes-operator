@@ -146,7 +146,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify operator manages multiple domains")
 @IntegrationTest
-public class ItOperatorTwoDomains {
+public class ItTwoDomainsLoadBalancers {
 
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
@@ -292,11 +292,11 @@ public class ItOperatorTwoDomains {
 
     // restart domain1 and verify no impact on domain2
     restartDomain1AndVerifyNoImpactOnDomain2(replicaCount, defaultNamespace, defaultNamespace);
-
-    // shutdown both domains
-    //shutdownBothDomainsAndVerify(domainNamespaces);
   }
 
+  /**
+   * Test deploy applications and install ingress controllers Traefik and Voyager.
+   */
   @Order(3)
   @Test
   public void testDeployAppAndInstallIngressControllers() {
@@ -479,11 +479,15 @@ public class ItOperatorTwoDomains {
     // Delete jobs
     try {
       for (var item :listJobs(defaultNamespace).getItems()) {
-        deleteJob(item.getMetadata().getName(), defaultNamespace);
+        if (item.getMetadata() != null) {
+          deleteJob(item.getMetadata().getName(), defaultNamespace);
+        }
       }
 
       for (var item : listPods(defaultNamespace, null).getItems()) {
-        deletePod(item.getMetadata().getName(), defaultNamespace);
+        if (item.getMetadata() != null) {
+          deletePod(item.getMetadata().getName(), defaultNamespace);
+        }
       }
     } catch (ApiException ex) {
       logger.warning(ex.getMessage());
@@ -524,10 +528,12 @@ public class ItOperatorTwoDomains {
 
     // delete secret in default namespace
     for (V1Secret secret : listSecrets(defaultNamespace).getItems()) {
-      String secretName = secret.getMetadata().getName();
-      if (!secretName.startsWith("default")) {
-        logger.info("deleting secret {0}", secretName);
-        assertTrue(deleteSecret(secretName, defaultNamespace));
+      if (secret.getMetadata() != null) {
+        String secretName = secret.getMetadata().getName();
+        if (secretName != null && !secretName.startsWith("default")) {
+          logger.info("deleting secret {0}", secretName);
+          assertTrue(deleteSecret(secretName, defaultNamespace));
+        }
       }
     }
   }
@@ -730,6 +736,7 @@ public class ItOperatorTwoDomains {
                             .name(OCR_SECRET_NAME))
                         : null))));
 
+    assertNotNull(jobBody.getMetadata());
     logger.info("Running a job {0} to create a domain on PV for domain {1} in namespace {2}",
         jobBody.getMetadata().getName(), domainUid, domainNamespace);
     createJobAndWaitUntilComplete(jobBody, domainNamespace);
@@ -974,7 +981,7 @@ public class ItOperatorTwoDomains {
                                             String pvName,
                                             String pvcName,
                                             int t3ChannelPort) {
-    Domain domain = new Domain()
+    return new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -1024,8 +1031,6 @@ public class ItOperatorTwoDomains {
                 .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING")));
-
-    return domain;
   }
 
   /**
