@@ -5,11 +5,13 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParametersImpl;
+import org.jetbrains.annotations.NotNull;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 
@@ -69,5 +71,11 @@ public abstract class TuningParametersStub implements TuningParameters {
   @Override
   public String put(String key, String value) {
     return namedParameters.put(key, value);
+  }
+
+  @NotNull
+  @Override
+  public Set<Entry<String, String>> entrySet() {
+    return namedParameters.entrySet();
   }
 }
