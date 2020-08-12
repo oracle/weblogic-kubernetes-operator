@@ -667,7 +667,7 @@ public class ItConfigDistributionStrategy {
     int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/";
 
-    //verify server attribute MaxMessageSize to be equal to 100000000
+    //verify server attribute MaxMessageSize
     String configUri = "ConfigServlet?"
         + "attributeTest=true"
         + "&serverType=adminserver"
@@ -678,7 +678,7 @@ public class ItConfigDistributionStrategy {
     if (configUpdated) {
       assertTrue(response.body().contains("MaxMessageSize=100000000"), "Didn't get MaxMessageSize=100000000");
     } else {
-      assertTrue(response.body().contains("MaxMessageSize=20000000"), "Didn't get MaxMessageSize=20000000");
+      assertTrue(response.body().contains("MaxMessageSize=10000000"), "Didn't get MaxMessageSize=10000000");
     }
 
   }
@@ -861,8 +861,7 @@ public class ItConfigDistributionStrategy {
                         + "-Dweblogic.kernel.debug=true "
                         + "-Dweblogic.debug.DebugMessaging=true "
                         + "-Dweblogic.debug.DebugConnection=true "
-                        + "-Dweblogic.ResolveDNSName=true "
-                        + "-Dweblogic.MaxMessageSize=20000000"))
+                        + "-Dweblogic.ResolveDNSName=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
