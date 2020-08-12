@@ -4,16 +4,16 @@
 {{- define "operator.operator" -}}
 {{- include "operator.operatorClusterRoleGeneral" . }}
 {{- include "operator.operatorClusterRoleNamespace" . }}
-{{- if not .dedicated }}
-{{- include "operator.operatorClusterRoleNonResource" . }}
+{{- if not (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
+{{-   include "operator.operatorClusterRoleNonResource" . }}
 {{- end }}
 {{- include "operator.operatorClusterRoleOperatorAdmin" . }}
 {{- include "operator.operatorClusterRoleDomainAdmin" . }}
 {{- include "operator.clusterRoleBindingGeneral" . }}
 {{- include "operator.clusterRoleBindingAuthDelegator" . }}
 {{- include "operator.clusterRoleBindingDiscovery" . }}
-{{- if not .dedicated }}
-{{- include "operator.clusterRoleBindingNonResource" . }}
+{{- if not (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
+{{-   include "operator.clusterRoleBindingNonResource" . }}
 {{- end }}
 {{- include "operator.operatorRole" . }}
 {{- include "operator.operatorRoleBinding" . }}
@@ -22,5 +22,7 @@
 {{- include "operator.operatorDeployment" . }}
 {{- include "operator.operatorInternalService" . }}
 {{- include "operator.operatorExternalService" . }}
-{{- include "operator.domainNamespaces" . }}
+{{- if not .enableClusterRoleBinding }}
+{{-   include "operator.domainNamespaces" . }}
+{{- end }}
 {{- end }}
