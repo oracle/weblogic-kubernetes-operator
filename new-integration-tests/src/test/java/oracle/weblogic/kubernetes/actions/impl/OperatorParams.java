@@ -118,7 +118,7 @@ public class OperatorParams {
     values.put(IMAGE, image);
     values.put(SERVICE_ACCOUNT, serviceAccount);
     values.put(EXTERNAL_REST_ENABLED, Boolean.valueOf(externalRestEnabled));
-    if (externalRestHttpsPort > 0) {
+    if (externalRestHttpsPort >= 0) {
       values.put(EXTERNAL_REST_HTTPS_PORT, Integer.valueOf(externalRestHttpsPort));
     }
     values.put(EXTERNAL_REST_IDENTITY_SECRET, externalRestIdentitySecret);
