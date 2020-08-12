@@ -286,8 +286,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   }
 
   /**
-   * Install operator usab-1 with target DomainNameSpace [usab-domainns-1].
-   * Install operator usab-2 with same target DomainNamesapce [usab-domainns-1].
+   * Install operator usab-1 with Domain Namespace [usab-domainns-1].
+   * Install operator usab-2 with same Domain Namespace [usab-domainns-1].
    * Second operator should fail to install with following exception 
    * Error: rendered manifests contain a resource that already exists. 
    * Unable to continue with install: existing resource conflict: 
@@ -297,7 +297,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    * @throws Exception when second operator installation does not fail
    */
   @Test
-  public void testSecondOpSharingSameTargetDomainsNsNegativeInstall() throws Exception {
+  public void testSecondOpSharingSameDomainNamespacesNegativeInstall() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -309,9 +309,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     firstoperator.callHelmInstall();
 
     Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), false, "usab");
-    ArrayList<String> targetDomainsNS =
+    ArrayList<String> domainsNamespace =
         (ArrayList<String>) firstoperator.getOperatorMap().get("domainNamespaces");
-    operatorMap.put("domainNamespaces", targetDomainsNS);
+    operatorMap.put("domainNamespaces", domainsNamespace);
     Operator secondoperator = new Operator(operatorMap, true, true, false, RestCertType.SELF_SIGNED);
     String oprelease = (String)(secondoperator.getOperatorMap()).get("releaseName");
     String opnamespace = (String)(secondoperator.getOperatorMap()).get("namespace");
@@ -337,14 +337,14 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   }
 
   /**
-   * Install an operator with a non-existing target domain namespace.
+   * Install an operator with a non-existing domain namespace.
    * The installation should fail with following exception 
    * Error: namespaces "usab-domainns-1" not found
    *
    * @throws Exception when operator installation does not fail
    */
   @Test
-  public void testTargetNsIsNotPreexistedNegativeInstall() throws Exception {
+  public void testNamespacesIsNotPreexistedNegativeInstall() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -507,7 +507,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    * @throws Exception when operator pod is not ready
    */
   @Test
-  public void testCreateWithMissingTargetDomainInstall() throws Exception {
+  public void testCreateWithMissingDomainNamespaceInstall() throws Exception {
     Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -529,14 +529,14 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   }
 
   /**
-   * Install the operator with empty string as target domains namespaces
+   * Install the operator with empty string as domains namespaces
    * This is equivalent of QuickStart guide does when it installs the operator 
    * with ' --set "domainNamespaces={}" '.
    *
    * @throws Exception when operator pod is not ready
    */
   @Test
-  public void testCreateWithEmptyTargetDomainInstall() throws Exception {
+  public void testCreateWithEmptyDomainNamespaceInstall() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -544,9 +544,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Operator operator = null;
     try {
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, "usab");
-      ArrayList<String> targetDomainsNS = new ArrayList<String>();
-      targetDomainsNS.add("");
-      operatorMap.replace("domainNamespaces", targetDomainsNS);
+      ArrayList<String> domainNamespace = new ArrayList<String>();
+      domainNamespace.add("");
+      operatorMap.replace("domainNamespaces", domainNamespace);
       operator = new Operator(operatorMap, RestCertType.SELF_SIGNED);
       operator.callHelmInstall();
       operator.verifyOperatorReady();
@@ -562,9 +562,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   /**
    * Create operator and verify it is deployed successfully 
    * Create domain1 and verify the domain is started 
-   * Upgrade the operator target domainNamespaces to include namespace for domain2 
+   * Upgrade the operator domainNamespaces to include namespace for domain2
    * Verify both domains are managed by the operator by making a REST API call
-   * Call helm upgrade to remove the first domain from operator target domainNamespaces
+   * Call helm upgrade to remove the first domain from operator domainNamespaces
    * Verify it can't be managed by operator anymore.
    * @throws Exception when an operator fails to manage the domain as expected
    */
@@ -590,25 +590,25 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "kubectl create namespace usab-domainns-" + testNumber2);
       ExecCommand.exec("kubectl create namespace usab-domainns-" + testNumber2);
       domain = createVerifyDomain(testNumber1, operator);
-      ArrayList<String> targetDomainsNS =
+      ArrayList<String> domainNamespace =
           (ArrayList<String>) (operator.getOperatorMap().get("domainNamespaces"));
-      targetDomainsNS.add("usab-domainns-" + testNumber2);
-      upgradeOperatorDomainNamespaces(operator, targetDomainsNS);
+      domainNamespace.add("usab-domainns-" + testNumber2);
+      upgradeOperatorDomainNamespaces(operator, domainNamespace);
       domainnew = createVerifyDomain(testNumber2,operator);
       LoggerHelper.getLocal().log(Level.INFO, "verify that old domain is managed by operator after upgrade");
       verifyOperatorDomainManagement(operator, domain, true);
       LoggerHelper.getLocal().log(Level.INFO, "Upgrade to remove first domain");
       String domainNS1 = domain.getDomainNs();
-      targetDomainsNS.remove(domainNS1);
-      upgradeOperatorDomainNamespaces(operator, targetDomainsNS);
+      domainNamespace.remove(domainNS1);
+      upgradeOperatorDomainNamespaces(operator, domainNamespace);
       LoggerHelper.getLocal().log(Level.INFO, "verify that old domain is not managed by operator");
       verifyOperatorDomainManagement(operator, domain, false);
       verifyOperatorDomainManagement(operator, domainnew, true);
-      LoggerHelper.getLocal().log(Level.INFO, "Upgrade to add first domain namespace in target domains");
-      targetDomainsNS.add(domainNS1);
-      upgradeOperatorDomainNamespaces(operator, targetDomainsNS);
+      LoggerHelper.getLocal().log(Level.INFO, "Upgrade to add first domain namespace");
+      domainNamespace.add(domainNS1);
+      upgradeOperatorDomainNamespaces(operator, domainNamespace);
       verifyOperatorDomainManagement(operator, domain, true);
-      namespaceList.append(" ").append(String.join(" ", targetDomainsNS));
+      namespaceList.append(" ").append(String.join(" ", domainNamespace));
 
       testCompletedSuccessfully = true;
     } finally {
@@ -715,17 +715,17 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   }
 
   private void upgradeOperatorDomainNamespaces(
-      Operator operator, ArrayList<String> targetNamespaces) throws Exception {
-    LoggerHelper.getLocal().log(Level.INFO, "update operator with new target domain");
+      Operator operator, ArrayList<String> domainNamespaces) throws Exception {
+    LoggerHelper.getLocal().log(Level.INFO, "update operator with new domain namespace");
     String upgradeSet =
         "domainNamespaces="
-            + targetNamespaces
+            + domainNamespaces
             .toString()
             .replaceAll("\\[", "{")
             .replaceAll("\\]", "}")
             .replaceAll(" ", "");
-    LoggerHelper.getLocal().log(Level.INFO, "update operator with new target domain " + upgradeSet);
+    LoggerHelper.getLocal().log(Level.INFO, "update operator with new domain namespace " + upgradeSet);
     operator.callHelmUpgrade(upgradeSet);
-    operator.getOperatorMap().replace("domainNamespaces", targetNamespaces);
+    operator.getOperatorMap().replace("domainNamespaces", domainNamespaces);
   }
 }

@@ -51,7 +51,7 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
             (int) readTuningParameter("domainPresenceFailureRetrySeconds", 10),
             (int) readTuningParameter("domainPresenceFailureRetryMaxCount", 5),
             (int) readTuningParameter("domainPresenceRecheckIntervalSeconds", 120),
-            (int) readTuningParameter("targetNamespaceRecheckIntervalSeconds", 3),
+            (int) readTuningParameter("domainNamespaceRecheckIntervalSeconds", 3),
             (int) readTuningParameter("statusUpdateTimeoutSeconds", 10),
             (int) readTuningParameter("statusUpdateUnchangedCountToDelayStatusRecheck", 10),
             readTuningParameter("statusUpdateInitialShortDelay", 5),
