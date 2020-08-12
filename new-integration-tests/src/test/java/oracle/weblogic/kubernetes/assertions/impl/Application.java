@@ -42,21 +42,12 @@ public class Application {
     // access the application in the given pod
     String[] cmd = new String[] {
         "/usr/bin/curl",
-        //"--max-time",
-        //"30",
-        "-v",
-        "--trace",
-        "-",
         String.format("http://%s:%s/%s",
             podName,
             port,
             appPath)};
 
     try {
-      getLogger().info(Thread.currentThread() + " About to exec cmd: /usr/bin/curl -v --trace - " + String.format("http://%s:%s/%s",
-          podName,
-          port,
-          appPath));
       ExecResult execResult = execCommand(
           namespace,
           podName, 
@@ -67,30 +58,22 @@ public class Application {
           && execResult.stdout() != null 
           && execResult.stdout().contains(expectedResponse)) {
         getLogger().info(
-            String.format(Thread.currentThread() + " App is accessible inside pod %s in namespace %s",
+            String.format("App is accessible inside pod %s in namespace %s",
                 podName,
                 namespace));
         return true;
       } else {
         getLogger().warning(
-            String.format(Thread.currentThread()
-                    + " Failed to access the app inside pod %s in namespace %s for response '%s'",
+            String.format("Failed to access the app inside pod %s in namespace %s",
                 podName,
-                namespace,
-                expectedResponse));
-        //if (execResult.exitValue() == 7) {
-        //  getLogger().warning(Thread.currentThread() + " Connection refused, sleep 10 seconds");
-        //  Thread.currentThread().sleep(10000);
-        //}
+                namespace));
         return false;
       }
     } catch (ApiException | IOException | InterruptedException e) {
       getLogger().warning(
-          String.format(Thread.currentThread()
-                  + " Failed to access the app inside pod %s in namespace %s with exception %s",
+          String.format("Failed to access the app inside pod %s in namespace %s",
               podName,
-              namespace,
-              e.toString()),
+              namespace),
           e);
       return false;
     } catch (IllegalArgumentException iae) {

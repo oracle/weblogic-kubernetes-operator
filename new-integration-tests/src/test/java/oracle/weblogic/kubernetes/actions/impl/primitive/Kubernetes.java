@@ -10,9 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -2355,9 +2352,7 @@ public class Kubernetes {
 
     // Execute command using Kubernetes API
     KubernetesExec kubernetesExec = createKubernetesExec(pod, containerName);
-    //logger.info(Thread.currentThread() + " Kubernetes.exec kubernetesExec");
     final Process proc = kubernetesExec.exec(command);
-    //logger.info(Thread.currentThread() + " proc: " + proc);
 
     final CopyingOutputStream copyOut =
         redirectToStdout ? new CopyingOutputStream(System.out) : new CopyingOutputStream(null);
@@ -2400,34 +2395,26 @@ public class Kubernetes {
       err.start();
 
       // wait for the process, which represents the executing command, to terminate
-      try {
-        logger.info(Thread.currentThread() + " about to poc.waitFor()");
-        proc.waitFor();
-      } catch (InterruptedException ie) {
-        logger.severe(Thread.currentThread() + "waitFor threw ie: " + ie);
-        ie.printStackTrace(System.out);
-        String threadDump = threadDump(true, true);
-        logger.warning(threadDump);
-      }
+      proc.waitFor();
 
       // wait for reading thread to finish any remaining output
       out.join();
-      logger.info(Thread.currentThread() + " finished out.join()");
+      //logger.info(Thread.currentThread() + " finished out.join()");
+      err.join();
+      //logger.info(Thread.currentThread() + " finished err.join()");
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());
 
       // Read from process's stderr, if data available
-      err.join();
-      logger.info(Thread.currentThread() + " finished err.join()");
-      String stderr = null;
-      try {
-        //stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
-        stderr = readExecCmdData(copyErr.getInputStream());
-      } catch (IllegalStateException e) {
-        // IllegalStateException thrown when stream is already closed, ignore since there is
-        // nothing to read
-      }
+      String stderr = readExecCmdData(copyErr.getInputStream());;
+      //try {
+      //stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
+      //stderr = readExecCmdData(copyErr.getInputStream());
+      //} catch (IllegalStateException e) {
+      // IllegalStateException thrown when stream is already closed, ignore since there is
+      // nothing to read
+      //}
 
       ExecResult result = new ExecResult(proc.exitValue(), stdout, stderr);
       logger.info(Thread.currentThread() + " result: " + result);
@@ -2542,14 +2529,5 @@ public class Kubernetes {
     public InputStream getInputStream() {
       return new ByteArrayInputStream(copy.toByteArray());
     }
-  }
-
-  private static String threadDump(boolean lockedMonitors, boolean lockedSynchronizers) {
-    StringBuffer threadDump = new StringBuffer(System.lineSeparator());
-    ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-    for (ThreadInfo threadInfo : threadMXBean.dumpAllThreads(lockedMonitors, lockedSynchronizers)) {
-      threadDump.append(threadInfo.toString());
-    }
-    return threadDump.toString();
   }
 }
