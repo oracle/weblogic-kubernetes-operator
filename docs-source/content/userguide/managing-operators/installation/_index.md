@@ -5,9 +5,9 @@ weight: 1
 
 ---
 
-The operator uses Helm to create and deploy the necessary resources and
-then run the operator in a Kubernetes cluster. This document describes how to install, upgrade,
-and remove the operator.
+The operator uses Helm to create the necessary resources and
+then deploy the operator in a Kubernetes cluster. This document describes how to install, upgrade,
+and uninstall the operator.
 
 #### Content
 
@@ -20,14 +20,14 @@ and remove the operator.
 
 Use the `helm install` command to install the operator Helm chart. As part of this, you must specify a "release" name for the operator.
 
-You can override default configuration values in the operator Helm chart by doing one of the following:
+You can override default configuration values in the chart by doing one of the following:
 
 - Creating a custom YAML file containing the values to be overridden, and specifying the `--value` option on the Helm command line.
 - Overriding individual values directly on the Helm command line, using the `--set` option.
 
-You supply the `–namespace` argument from the `helm install` command line to specify the namespace in which the operator should be installed.  If not specified, then it defaults to `default`.  If the namespace does not already exist, then Helm will automatically create it (and create a default service account in the new namespace), but will not remove it when the release is deleted.  If the namespace already exists, then Helm will re-use it.  These are standard Helm behaviors.
+You supply the `–-namespace` argument from the `helm install` command line to specify the namespace in which the operator will be installed. If not specified, then it defaults to `default`.  If the namespace does not already exist, then Helm will automatically create it (and create a default service account in the new namespace), but will not remove it when the release is uninstalled. If the namespace already exists, then Helm will use it. These are standard Helm behaviors.
 
-Similarly, you may override the default `serviceAccount` configuration value to specify which service account in the operator's namespace, the operator should use.  If not specified, then it defaults to `default` (for example, the namespace's default service account).  If you want to use a different service account, then you must create the operator's namespace and the service account before installing the operator Helm chart.
+Similarly, you may override the default `serviceAccount` configuration value to specify a service account in the operator's namespace, the operator will use. If not specified, then it defaults to `default` (for example, the namespace's default service account). If you want to use a different service account, then you must create the operator's namespace and the service account before installing the operator Helm chart.
 
 For example, using Helm 3.x:
 
@@ -95,7 +95,7 @@ a 2.6.0 operator to a 3.x operator. Instead, you must delete the 2.6.0 operator 
 The deletion of the 2.6.0 operator will _not affect_ the Domain CustomResourceDefinition (CRD) and will _not stop_ any
 WebLogic Server instances already running.
 
-When the 3.0.0 operator is installed, it will automatically roll any running WebLogic Server instances created by the 2.6.0 operator.
+When the 3.x operator is installed, it will automatically roll any running WebLogic Server instances created by the 2.6.0 operator.
 This rolling restart will preserve WebLogic cluster availability guarantees (for clustered members only) similarly to any other rolling restart.
 
 To delete the 2.6.0 operator:
@@ -115,27 +115,27 @@ the `helm upgrade` command requires that you supply a new Helm chart and image. 
 ```
 $ helm upgrade \
   --reuse-values \
-  --set image=oracle/weblogic-kubernetes-operator:3.0.0 \
+  --set image=oracle/weblogic-kubernetes-operator:3.1.0 \
   --namespace weblogic-operator-namespace \
   --wait \
   weblogic-operator \
   kubernetes/charts/weblogic-operator
 ```
 
-#### Remove the operator
+#### Uninstall the operator
 
-The `helm delete` command is used to remove an operator release and its associated resources from the Kubernetes cluster.  The release name used with the `helm delete` command is the same release name used with the `helm install` command (see [Install the Helm chart](#install-the-operator-helm-chart)).  For example:
+The `helm uninstall` command is used to remove an operator release and its associated resources from the Kubernetes cluster. The release name used with the `helm uninstall` command is the same release name used with the `helm install` command (see [Install the Helm chart](#install-the-operator-helm-chart)). For example:
 
 ```
-$ helm delete weblogic-operator -n weblogic-operator-namespace
+$ helm uninstall weblogic-operator -n weblogic-operator-namespace
 ```
 
 {{% notice note %}}
-If the operator's namespace did not exist before the Helm chart was installed, then Helm will create it, however, `helm delete` will not remove it.
+If the operator's namespace did not exist before the Helm chart was installed, then Helm will create it, however, `helm uninstall` will not remove it.
 {{% /notice %}}
 
-After removing the operator deployment, you should also remove the domain custom resource definition:
+After removing the operator deployment, you should also remove the Domain custom resource definition (CRD):
 ```
 $ kubectl delete customresourcedefinition domains.weblogic.oracle
 ```
-Note that the domain custom resource definition is shared if there are multiple operators in the same cluster.
+Note that the Domain custom resource definition is shared. Do not delete the CRD if there are other operators in the same cluster.

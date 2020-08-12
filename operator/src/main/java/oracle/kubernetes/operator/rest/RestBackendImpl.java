@@ -71,7 +71,7 @@ public class RestBackendImpl implements RestBackend {
   private final AuthenticationProxy atn = new AuthenticationProxy();
   private final AuthorizationProxy atz = new AuthorizationProxy();
   private final String principal;
-  private final Collection<String> targetNamespaces;
+  private final Collection<String> domainNamespaces;
   private V1UserInfo userInfo;
 
   /**
@@ -81,14 +81,14 @@ public class RestBackendImpl implements RestBackend {
    *     api.
    * @param accessToken is the access token of the Kubernetes service account of the client calling
    *     the WebLogic operator REST api.
-   * @param targetNamespaces a list of Kubernetes namepaces that contain domains that the WebLogic
+   * @param domainNamespaces a list of Kubernetes namepaces that contain domains that the WebLogic
    *     operator manages.
    */
-  RestBackendImpl(String principal, String accessToken, Collection<String> targetNamespaces) {
-    LOGGER.entering(principal, targetNamespaces);
+  RestBackendImpl(String principal, String accessToken, Collection<String> domainNamespaces) {
+    LOGGER.entering(principal, domainNamespaces);
     this.principal = principal;
     userInfo = authenticate(accessToken);
-    this.targetNamespaces = targetNamespaces;
+    this.domainNamespaces = domainNamespaces;
     LOGGER.exiting();
   }
 
@@ -177,7 +177,7 @@ public class RestBackendImpl implements RestBackend {
   private List<Domain> getDomainsList() {
     Collection<List<Domain>> c = new ArrayList<>();
     try {
-      for (String ns : targetNamespaces) {
+      for (String ns : domainNamespaces) {
         DomainList dl = new CallBuilder().listDomain(ns);
 
         if (dl != null) {
@@ -382,7 +382,7 @@ public class RestBackendImpl implements RestBackend {
    *     domain UID. This method returns an empty configuration object if no configuration is found.
    */
   WlsDomainConfig getWlsDomainConfig(String domainUid) {
-    for (String ns : targetNamespaces) {
+    for (String ns : domainNamespaces) {
       WlsDomainConfig config = INSTANCE.getWlsDomainConfig(ns, domainUid);
       if (config != null) {
         return config;

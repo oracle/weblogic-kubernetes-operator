@@ -1,49 +1,84 @@
 # Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# serviceAccount specifies the name of the service account in the operator's namespace that the
+# serviceAccount specifies the name of the ServiceAccount in the operator's namespace that the
 # operator will use to make requests to the Kubernetes API server.
-# The customer is responsible for creating the service account.
-# If not specified, the the operator will use the operator's namespace's 'default' service account.
+# The customer is responsible for creating the ServiceAccount in the same namespace as this Helm release.
+# If not specified, the the operator will use the Helm release namespace's 'default' ServiceAccount.
 serviceAccount: "default"
 
+# domainNamespaceSelectionStrategy specifies how the operator will select the set of namespaces
+# that it will manage. Legal values are: List, LabelSelector, RegExp, and Dedicated. If set to 'List',
+# then the operator will manage the set of namespaces listed by the 'domainNamespaces' value.
+# If set to 'LabelSelector', then the operator will manage the set of namespaces discovered by a list
+# of namespaces using the value specified by 'domainNamespaceLabelSelector' as a label selector.
+# If set to 'RegExp', then the operator will manage the set of namespaces discovered by a list
+# of namespaces using the value specified by 'domainNamespaceRegExp' as a regular expression matched
+# against the namespace names.
+# If set to 'Dedicated', then operator will manage WebLogic Domains only in the same namespace
+# where the operator itself is deployed, which is the namespace of the Helm release.
+domainNamespaceSelectionStrategy: List
+
+# This value is deprecated. Please use 'domainNamespaceSelectionStrategy: Dedicated'.
 # dedicated specifies if this operator will manage WebLogic Domains only in the same namespace in
 # which the operator itself is deployed.  If set to 'true', then the 'domainNamespaces' value below
-# is ignored.
-dedicated: false
+# is ignored. This value is ignored if 'domainNamespaceSelectionStrategy' is set to a value other
+# than 'List'.
+# dedicated: false
 
-# domainNamespaces specifies list of WebLogic Domain namespaces which the operator manages. This value
-# is ignored if 'dedicated' is set to 'true'. The customer is responsible for creating these namespaces.
-# If not specified, then the operator will manage WebLogic domains in the Kubernetes 'default' namespace.
+# domainNamespaces specifies list of WebLogic Domain namespaces that this operator manages. This value
+# is ignored if 'domainNamespaceSelectionStrategy' is not 'List'. The customer is responsible for creating these
+# namespaces. If not specified, then the operator will manage WebLogic Domains in the Kubernetes 'default' namespace.
 #
-# Example : In the configuration below, the helm installation will manage namespace1 and namespace2.
+# Example: In the configuration below, the operator will manage namespace1 and namespace2.
 #
 # domainNamespaces:
-#   - "namespace1"
-#   - "namespace2"
+# - "namespace1"
+# - "namespace2"
 domainNamespaces:
-  - "default"
+- "default"
 
-# image specifies the docker image containing the operator code.
-image: "oracle/weblogic-kubernetes-operator:3.0.0"
-
-# imagePullPolicy specifies the image pull policy for the operator docker image.
-imagePullPolicy: "IfNotPresent"
-
-# imagePullSecrets contains an optional list of Kubernetes secrets, in the operator's namespace,
-# that are needed to access the registry containing the operator Docker image.
-# The customer is responsible for creating the secret.
-# If no secrets are required, then omit this property.
+# domainNamespaceLabelSelector specifies the label selector value that the operator will use when listing
+# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
+# if 'domainNamespaceSelectionStrategy' is not 'LabelSelector'.
 #
-# Example : a secret is needed, and has been stored in 'my-operator-secret'
+# Example: manage any namespace with a label named "weblogic-operator".
+#
+# domainNamespaceLabelSelector: "weblogic-operator"
+#
+# domainNamespaceLabelSelector:
+
+# domainNamespaceRegExp specifies a regular expression that will be matched against namespace names when listing
+# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
+# if 'domainNamespaceSelectionStrategy' is not 'RegExp'.
+#
+# Example: manage any namespace where the namespace name starts with "prod".
+#
+# domainNamespaceRegExp: "^prod"
+#
+# domainNamespaceRegExp:
+
+# enableClusterRoleBinding specifies whether the roles necessary for the operator to manage domains
+# will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
+enableClusterRoleBinding: false
+
+# image specifies the Docker image containing the operator.
+image: "oracle/weblogic-kubernetes-operator:3.1.0"
+
+# imagePullPolicy specifies the image pull policy for the operator's Docker image.
+imagePullPolicy: IfNotPresent
+
+# imagePullSecrets contains an optional list of Kubernetes Secrets, in the operator's namespace,
+# that are needed to access the registry containing the operator's Docker image.
+# The customer is responsible for creating the Secret.
+# If no Secrets are required, then omit this property.
+#
+# Example: a Secret is needed, and has been stored in 'my-operator-secret'
 #
 # imagePullSecrets:
 # - name: "my-operator-secret"
-#
-# imagePullSecrets:
-# - name:
 
-# externalRestEnabled controls whether the the operator's REST interface is exposed
+# externalRestEnabled specifies whether the the operator's REST interface is exposed
 # outside of the Kubernetes cluster on the port specified by the 'externalRestHttpsPort'
 # property.
 #
@@ -52,49 +87,25 @@ imagePullPolicy: "IfNotPresent"
 # 'externalOperatorKey' properties.
 externalRestEnabled: false
 
-# externalRestHttpsPort specifies the node port that should be allocated for the external operator REST https interface.
+# externalRestHttpsPort specifies the node port that should be allocated for the external operator REST HTTPS interface.
 # This parameter is required if 'externalRestEnabled' is true.
 # Otherwise, it is ignored.
 externalRestHttpsPort: 31001
 
-# The name of the secret used to store the certificate and private key to use for the external operator REST https interface.
-# The secret has to be created in the same namespace of the WebLogic operator.
+# The name of the Secret used to store the certificate and private key to use for the external operator REST HTTPS interface.
+# The Secret has to be created in the same namespace of the WebLogic operator.
 # This parameter is required if 'externalRestEnabled' is true. Otherwise, it is ignored.
-# As example, an external rest identity can be created using the following sample script 
+# As example, an external REST identity can be created using the following sample script
 # kubernetes/samples/scripts/rest/generate-external-rest-identity.sh
-#externalRestIdentitySecret: 
+# externalRestIdentitySecret:
 
-# remoteDebugNodePortEnabled specifies whether or not the operator will start a Java remote debug server on the
-# provided port. If the 'suspendOnDebugStartup' property is specified, the operator will suspend execution
-# until a remote debugger has attached.
-# The 'internalDebugHttpPort' property controls the port number inside the Kubernetes
-# cluster and the 'externalDebugHttpPort' property controls the port number outside
-# the Kubernetes cluster.
-remoteDebugNodePortEnabled: false
-
-#suspendOnDebugStartup specifies whether the operator will suspend on startup when a Java remote debug server is started.
-suspendOnDebugStartup: false
-
-# internalDebugHttpPort specifies the port number inside the Kubernetes cluster for the operator's Java
-# remote debug server.
-# This parameter is required if 'remoteDebugNodePortEnabled' is true.
-# Otherwise, it is ignored.
-internalDebugHttpPort: 30999
-
-# externalDebugHttpPort specifies the node port that should be allocated for the Kubernetes cluster for the operator's
-# Java remote debug server.
-# This parameter is required if 'remoteDebugNodePortEnabled' is true.
-# Otherwise, it is ignored.
-externalDebugHttpPort: 30999
-
-# javaLoggingLevel specifies the level of Java logging that should be enabled in the operator.
-# Valid values are: "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
-javaLoggingLevel: "INFO"
+# istioEnabled specifies whether or not the Domain is deployed under an Istio service mesh.
+istioEnabled: false
 
 # elkIntegrationEnabled specifies whether or not ELK integration is enabled.
 elkIntegrationEnabled: false
 
-# logStashImage specifies the docker image containing logstash.
+# logStashImage specifies the Docker image containing logstash.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 logStashImage: "logstash:6.6.0"
 
@@ -106,15 +117,41 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchPort: 9200
 
+# javaLoggingLevel specifies the Java logging level for the operator.
+# Valid values are: "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
+javaLoggingLevel: "INFO"
+
+# Values related to debugging the operator.
+# Customers should not need to use the following properties
+
+# remoteDebugNodePortEnabled specifies whether or not the operator will provide a Java remote debug interface on the
+# provided port. If the 'suspendOnDebugStartup' property is specified, the operator will suspend execution
+# until a remote debugger has attached.
+# The 'internalDebugHttpPort' property controls the port number inside the Kubernetes
+# cluster and the 'externalDebugHttpPort' property controls the port number outside
+# the Kubernetes cluster.
+remoteDebugNodePortEnabled: false
+
+#suspendOnDebugStartup specifies whether the operator will suspend on startup when a Java remote debugging is enabled.
+suspendOnDebugStartup: false
+
+# internalDebugHttpPort specifies the port number inside the Kubernetes cluster for the operator's Java
+# remote debug interface.
+# This parameter is required if 'remoteDebugNodePortEnabled' is true.
+# Otherwise, it is ignored.
+internalDebugHttpPort: 30999
+
+# externalDebugHttpPort specifies the node port that should be allocated for the operator's
+# Java remote debug interface.
+# This parameter is required if 'remoteDebugNodePortEnabled' is true.
+# Otherwise, it is ignored.
+externalDebugHttpPort: 30999
+
 # dns1123Fields overrides the default list of field names that the operator
 # converts to DNS-1123 legal values when replacing variable references in the 
-# domain resource. The default list can be found inside the class LegalNames
+# Domain resource. The default list can be found inside the class LegalNames
 # in the oracle.kubernetes.operator.helpers package.
 # Supply a comma separated list of field names to customize the list of fields
 # such as "name, claimName, volumeName", or leave it commented out to use 
 # the default list of field names.
 # dns1123Fields: ""
-
-# Istio service mesh support is experimental.
-# istioEnabled specifies whether or not the domain is deployed under an Istio service mesh.
-istioEnabled: false
