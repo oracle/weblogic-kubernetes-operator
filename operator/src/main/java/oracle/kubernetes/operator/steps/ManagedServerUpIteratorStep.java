@@ -14,6 +14,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import oracle.kubernetes.operator.DomainStatusUpdater;
@@ -91,15 +92,15 @@ public class ManagedServerUpIteratorStep extends Step {
     if (!startDetails.isEmpty()) {
       work.add(
               new StepAndPacket(
-                      new StartManagedServersStep(null, startDetails, null), packet));
+                      new StartManagedServersStep(null, 0, startDetails, null), packet));
     }
 
     for (Map.Entry<String, StartClusteredServersStepFactory> entry
             : getStartClusteredServersStepFactories(startupInfos, packet).entrySet()) {
       work.add(
               new StepAndPacket(
-                      new StartManagedServersStep(entry.getKey(), entry.getValue().getServerStartsStepAndPackets(),
-                              null), packet.clone()));
+                      new StartManagedServersStep(entry.getKey(), entry.getValue().getMaxConcurrency(),
+                              entry.getValue().getServerStartsStepAndPackets(), null), packet.clone()));
     }
 
     if (!work.isEmpty()) {
@@ -156,20 +157,19 @@ public class ManagedServerUpIteratorStep extends Step {
     final Collection<StepAndPacket> startDetails;
     final Queue<StepAndPacket> startDetailsQueue = new ConcurrentLinkedQueue<>();
     final String clusterName;
-    int numStarted = 0;
-    int maxConcurrency = 0;
+    final int maxConcurrency;
+    final AtomicInteger numStarted = new AtomicInteger(0);
 
-    StartManagedServersStep(String clusterName, Collection<StepAndPacket> startDetails, Step next) {
+    StartManagedServersStep(String clusterName, int maxConcurrency, Collection<StepAndPacket> startDetails, Step next) {
       super(next);
       this.clusterName = clusterName;
       this.startDetails = startDetails;
+      this.maxConcurrency = maxConcurrency;
       startDetails.forEach(this::add);
     }
 
     void add(StepAndPacket serverToStart) {
       startDetailsQueue.add(new StepAndPacket(serverToStart.step, serverToStart.packet));
-      this.maxConcurrency = Optional.ofNullable(
-              (Integer) serverToStart.packet.get(ProcessingConstants.MAX_CONCURRENCY)).orElse(0);
     }
 
     @Override
@@ -181,7 +181,7 @@ public class ManagedServerUpIteratorStep extends Step {
         Collection<StepAndPacket> servers = Collections.singletonList(startDetailsQueue.poll());
         return doForkJoin(this, packet, servers);
       } else if (serverAvailableToStart(packet.getSpi(DomainPresenceInfo.class))) {
-        this.numStarted++;
+        numStarted.getAndIncrement();
         return doForkJoin(this, packet, Collections.singletonList(startDetailsQueue.poll()));
       } else {
         return doDelay(this, packet, 100, TimeUnit.MILLISECONDS);
@@ -194,12 +194,12 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     private boolean serverAvailableToStart(DomainPresenceInfo info) {
-      return ((this.numStarted < PodHelper.getScheduledPods(info, clusterName).size())
+      return ((numStarted.get() < PodHelper.getScheduledPods(info, clusterName).size())
               && (canStartConcurrently(PodHelper.getReadyPods(info, clusterName).size())));
     }
 
     private boolean canStartConcurrently(int numReady) {
-      return ((this.maxConcurrency > 0) && (this.numStarted < (this.maxConcurrency + numReady - 1)))
+      return ((this.maxConcurrency > 0) && (numStarted.get() < (this.maxConcurrency + numReady - 1)))
           || (this.maxConcurrency == 0);
     }
   }
@@ -217,8 +217,11 @@ public class ManagedServerUpIteratorStep extends Step {
       this.maxConcurrency = maxConcurrency;
     }
 
+    public int getMaxConcurrency() {
+      return this.maxConcurrency;
+    }
+
     void add(StepAndPacket serverToStart) {
-      serverToStart.packet.put(ProcessingConstants.MAX_CONCURRENCY, maxConcurrency);
       serversToStart.add(serverToStart);
     }
 
