@@ -350,7 +350,7 @@ public class KubernetesTestSupportTest {
     testSupport.defineResources(pod1, pod2, pod3);
 
     TestResponseStep<V1Status> responseStep = new TestResponseStep<>();
-    testSupport.runSteps(new CallBuilder().deletePodAsync("mycrd", "ns2", null, responseStep));
+    testSupport.runSteps(new CallBuilder().deletePodAsync("mycrd", "ns2", "", null, responseStep));
 
     assertThat(testSupport.getResources(POD), containsInAnyOrder(pod1, pod3));
   }
@@ -360,7 +360,7 @@ public class KubernetesTestSupportTest {
     testSupport.failOnResource(POD, "pod1", "ns2", HTTP_BAD_REQUEST);
 
     TestResponseStep<V1Status> responseStep = new TestResponseStep<>();
-    testSupport.runSteps(new CallBuilder().deletePodAsync("pod1", "ns2", null, responseStep));
+    testSupport.runSteps(new CallBuilder().deletePodAsync("pod1", "ns2", "", null, responseStep));
 
     testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
     assertThat(responseStep.callResponse.getStatusCode(), equalTo(HTTP_BAD_REQUEST));
@@ -371,7 +371,7 @@ public class KubernetesTestSupportTest {
     testSupport.failOnResource(POD, "pod1", "ns2", HTTP_BAD_REQUEST);
 
     TestResponseStep<V1Status> responseStep = new TestResponseStep<>();
-    testSupport.runSteps(new CallBuilder().deletePodAsync("pod2", "ns2", null, responseStep));
+    testSupport.runSteps(new CallBuilder().deletePodAsync("pod2", "ns2", "", null, responseStep));
   }
 
   @Test
@@ -402,8 +402,8 @@ public class KubernetesTestSupportTest {
 
     TestResponseStep<V1Pod> responseStep = new TestResponseStep<>();
     testSupport.runSteps(
-          new CallBuilder().patchPodAsync("pod1", "ns1",
-                new V1Patch(patchBuilder.build().toString()), responseStep));
+          new CallBuilder().patchPodAsync("pod1", "ns1", "",
+              new io.kubernetes.client.custom.V1Patch(patchBuilder.build().toString()), responseStep));
 
     V1Pod pod2 = (V1Pod) testSupport.getResources(POD).stream().findFirst().orElse(pod1);
     assertThat(Objects.requireNonNull(pod2.getMetadata()).getLabels(), hasEntry("k1", "v2"));
@@ -418,8 +418,8 @@ public class KubernetesTestSupportTest {
 
     TestResponseStep<V1Pod> responseStep = new TestResponseStep<>();
     testSupport.runSteps(
-          new CallBuilder().patchPodAsync("pod1", "ns1",
-                new V1Patch(patchBuilder.build().toString()), responseStep));
+          new CallBuilder().patchPodAsync("pod1", "ns1", "",
+              new io.kubernetes.client.custom.V1Patch(patchBuilder.build().toString()), responseStep));
 
     V1Pod pod2 = (V1Pod) testSupport.getResources(POD).stream().findFirst().orElse(pod1);
     assertThat(Objects.requireNonNull(pod2.getMetadata()).getLabels(), hasEntry("k1", "v2"));
@@ -509,7 +509,7 @@ public class KubernetesTestSupportTest {
   @Test
   public void whenConfigMapNotFound_readStatusIsNotFound() {
     TestResponseStep<V1ConfigMap> endStep = new TestResponseStep<>();
-    Packet packet = testSupport.runSteps(new CallBuilder().readConfigMapAsync("", "", endStep));
+    Packet packet = testSupport.runSteps(new CallBuilder().readConfigMapAsync("", "", "", endStep));
 
     assertThat(packet.getSpi(CallResponse.class).getStatusCode(), equalTo(CallBuilder.NOT_FOUND));
     assertThat(packet.getSpi(CallResponse.class).getE(), notNullValue());
@@ -520,7 +520,7 @@ public class KubernetesTestSupportTest {
     TestResponseStep<String> endStep = new TestResponseStep<>();
     testSupport.definePodLog("name", "namespace", POD_LOG_CONTENTS);
 
-    testSupport.runSteps(new CallBuilder().readPodLogAsync("name", "namespace", endStep));
+    testSupport.runSteps(new CallBuilder().readPodLogAsync("name", "namespace", "", endStep));
 
     assertThat(endStep.callResponse.getResult(), equalTo(POD_LOG_CONTENTS));
   }
