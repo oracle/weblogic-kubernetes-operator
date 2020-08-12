@@ -62,7 +62,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test pods are restarted after some properties in server pods are changed.
+ * Test pods are restarted after the following properties in server pods are changed.
+ * Change: The env property tested: "-Dweblogic.StdoutDebugEnabled=false" --> "-Dweblogic.StdoutDebugEnabled=true
+ * Change: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never.
+ * Change: podSecurityContext: runAsUser:0 --> runAsUser: 1000
+ * Add resources: limits: cpu: "1", resources: requests: cpu: "0.5".
+ *
  */
 @DisplayName("Test pods are restarted after some properties in server pods are changed")
 @IntegrationTest
@@ -122,7 +127,7 @@ class ItPodsRestart {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
 
-    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + "/spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getResources(), domain1 + "/spec/serverPod/resources is null");
@@ -172,7 +177,7 @@ class ItPodsRestart {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
 
-    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1, "Got null domain resource after patching");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + "/spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getResources(), domain1 + "/spec/serverPod/resources is null");
@@ -230,7 +235,7 @@ class ItPodsRestart {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
-    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
 
     // get the map with server pods and their original creation timestamps
@@ -256,7 +261,7 @@ class ItPodsRestart {
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
-    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1, "Got null domain resource after patching");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
 
     includeServerOutInPodLog = domain1.getSpec().getIncludeServerOutInPodLog();
@@ -287,7 +292,7 @@ class ItPodsRestart {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
-    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getEnv(), domain1 + "/spec/serverPod/env is null");
@@ -315,13 +320,12 @@ class ItPodsRestart {
         assertTrue(cmPatched, "patchDomainCustomResource(StdoutDebugEnabled=true) failed");
       }
     }
-
     );
 
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
-    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getEnv(), domain1 + "/spec/serverPod/env is null");
@@ -356,8 +360,8 @@ class ItPodsRestart {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
-    assertNotNull(domain1, domain1 + " is null");
-    assertNotNull(domain1.getSpec(), domain1 + " /spec/serverPod is null");
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getPodSecurityContext(), domain1
         + "/spec/serverPod/podSecurityContext is null");
@@ -386,7 +390,7 @@ class ItPodsRestart {
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
-    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1, "Got null domain resource after patching");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getPodSecurityContext(), domain1
@@ -423,7 +427,7 @@ class ItPodsRestart {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
-    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
 
     // get the map with server pods and their original creation timestamps
@@ -449,7 +453,7 @@ class ItPodsRestart {
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
-    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1, "Got null domain resource after patching");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
 
     //print out imagePullPolicy in the new patched domain

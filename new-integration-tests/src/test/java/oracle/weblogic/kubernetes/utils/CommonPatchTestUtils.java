@@ -196,10 +196,6 @@ public class CommonPatchTestUtils {
         domainUid, domainNamespace, patchStr.toString());
 
     V1Patch patch = new V1Patch(new String(patchStr));
-
     return patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
-
-
-
   }
 }
