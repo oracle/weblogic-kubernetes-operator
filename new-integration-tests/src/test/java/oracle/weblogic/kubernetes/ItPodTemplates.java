@@ -31,8 +31,6 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
@@ -64,8 +62,6 @@ class ItPodTemplates {
   private static final int replicaCount = 1;
   private static String domain1Namespace = null;
   private static String domain1Uid = "itpodtemplates-domain-1";
-  private static String domain2Namespace = null;
-  private static String domain2Uid = "itpodtemplates-domain-2";
   private static String clusterName = "cluster-1";
   private static LoggingFacade logger = null;
 
@@ -77,7 +73,7 @@ class ItPodTemplates {
    */
   @BeforeAll
 
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(2) List<String> namespaces) {
 
     logger = getLogger();
     logger.info("Get a unique namespace for operator");
@@ -88,14 +84,8 @@ class ItPodTemplates {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domain1Namespace = namespaces.get(1);
 
-    logger.info("Get a unique namespace for WebLogic domain2");
-    assertNotNull(namespaces.get(2), "Namespace list is null");
-    domain2Namespace = namespaces.get(2);
-
     logger.info("install and verify operator");
-    installAndVerifyOperator(opNamespace, domain1Namespace,domain2Namespace);
-
-    logger.info("create and verify WebLogic domain image using model in image with model files");
+    installAndVerifyOperator(opNamespace, domain1Namespace);
   }
 
   /**
@@ -116,45 +106,14 @@ class ItPodTemplates {
       logger.info("Create domain in image using pod template and verify that it's running");
       String wdtImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
       createAndVerifyPodFromTemplate(wdtImage,
-          domain2Uid,
-          domain2Namespace,
+          domain1Uid,
+          domain1Namespace,
           "Image",
           "domain1",
           WDT_BASIC_IMAGE_DOMAINHOME);
 
     } finally {
-      logger.info("Shutting down domain2");
-      shutdownDomain(domain2Uid, domain2Namespace);
-    }
-  }
-
-  /**
-   * Test pod templates using all the variables $(SERVER_NAME), $(DOMAIN_NAME), $(DOMAIN_UID),
-   * $(DOMAIN_HOME), $(LOG_HOME) and $(CLUSTER_NAME)
-   * in serverPod for Model In Image domain. Make sure the domain comes up
-   * successfully.
-   *
-   * @throws Exception when the domain crd creation fails or when updating the serverPod with
-   *                   variables
-   */
-  @Test
-  @DisplayName("Test pod templates using all the variables for model in image domain.")
-  public void testPodTemplateUsingVariablesModelInImage() throws Exception {
-    try {
-      logger.info("Add annotations to serverPod as $(DOMAIN_HOME) and $(LOG_HOME)");
-      logger.info("Add labels to serverPod as $(DOMAIN_NAME), $(DOMAIN_UID), $(SERVER_NAME)");
-      logger.info("Add label to cluster serverPod as $(CLUSTER_NAME)");
-      logger.info("Create model in image domain using pod template and verify that it's running");
-      String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-      createAndVerifyPodFromTemplate(miiImage,
-          domain1Uid,
-          domain1Namespace,
-          "FromModel",
-          "wls-domain1",
-          WDT_BASIC_IMAGE_DOMAINHOME);
-
-    } finally {
-      logger.info("Shutting down domain1");
+      logger.info("Shutting down domain");
       shutdownDomain(domain1Uid, domain1Namespace);
     }
   }
