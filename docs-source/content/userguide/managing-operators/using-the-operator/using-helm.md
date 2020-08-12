@@ -155,8 +155,11 @@ $ helm upgrade \
 
 ##### `domainNamespaceSelectionStrategy`
 Specifies how the operator will select the set of namespaces that it will manage. 
-Legal values are: `List`, `LabelSelector`, `RegExp`, and `Dedicated`. If set to `List`,
-then the operator will manage the set of namespaces listed by the `domainNamespaces` value.
+Legal values are: `List`, `LabelSelector`, `RegExp`, and `Dedicated`.
+
+Defaults to `List`.
+
+If set to `List`, then the operator will manage the set of namespaces listed by the `domainNamespaces` value.
 If set to `LabelSelector`, then the operator will manage the set of namespaces discovered by a list
 of namespaces using the value specified by `domainNamespaceLabelSelector` as a label selector.
 If set to `RegExp`, then the operator will manage the set of namespaces discovered by a list
