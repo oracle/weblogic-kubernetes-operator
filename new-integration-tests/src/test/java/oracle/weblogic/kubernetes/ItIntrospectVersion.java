@@ -496,10 +496,12 @@ public class ItIntrospectVersion {
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
 
+    List<String> managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount + 1; i++) {
-      // verify each managed server can see other member in the cluster
-      verifyServerCommunication(curlRequest, managedServerNameBase + i);
+      managedServerNames.add(managedServerNameBase + 1);
     }
+    // verify each managed server can see other member in the cluster
+    verifyServerCommunication(curlRequest, managedServerNames);
 
   }
 
@@ -631,10 +633,12 @@ public class ItIntrospectVersion {
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
 
+    List<String> managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount + 1; i++) {
-      // verify each managed server can see other member in the cluster
-      verifyServerCommunication(curlRequest, managedServerNameBase + i);
+      managedServerNames.add(managedServerNameBase + 1);
     }
+    // verify each managed server can see other member in the cluster
+    verifyServerCommunication(curlRequest, managedServerNames);
   }
 
   /**
@@ -958,7 +962,11 @@ public class ItIntrospectVersion {
     }
   }
 
-  private static void verifyServerCommunication(String curlRequest, String managedServer) {
+  private static void verifyServerCommunication(String curlRequest, List<String> managedServerNames) {
+
+    HashMap<String, Boolean> managedServers = new HashMap<>();
+    managedServerNames.forEach(managedServerName -> managedServers.put(managedServerName, false));
+
     //verify the maximum cluster size is updated to expected value
     withStandardRetryPolicy.conditionEvaluationListener(
         condition -> logger.info("Waiting until each managed server can see other cluster members"
@@ -966,20 +974,38 @@ public class ItIntrospectVersion {
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
         .until((Callable<Boolean>) () -> {
-          logger.info(curlRequest);
-          // check the response contains managed server name
-          ExecResult result = null;
-          try {
-            result = ExecCommand.exec(curlRequest, true);
-          } catch (IOException | InterruptedException ex) {
-            logger.severe(ex.getMessage());
+          for (int i = 0; i < managedServerNames.size(); i++) {
+            logger.info(curlRequest);
+            // check the response contains managed server name
+            ExecResult result = null;
+            try {
+              result = ExecCommand.exec(curlRequest, true);
+            } catch (IOException | InterruptedException ex) {
+              logger.severe(ex.getMessage());
+            }
+            String response = result.stdout().trim();
+            logger.info(response);
+            for (var managedServer : managedServers.entrySet()) {
+              boolean seeEachOther = true;
+              if (response.contains("ServerName:" + managedServer.getKey())) {
+                for (String managedServerName : managedServerNames) {
+                  seeEachOther = seeEachOther && response.contains("Bound:" + managedServerName);
+                }
+                if (seeEachOther) {
+                  managedServers.put(managedServer.getKey(), true);
+                }
+              }
+            }
           }
-          String response = result.stdout().trim();
-          logger.info(response);
-          return response.contains("ServerName:" + managedServer)
-              && response.contains("Bound:" + managedServer);
-        }
-        );
+          managedServers.forEach((key, value) -> {
+            if (value) {
+              logger.info("The server {0} can see other cluster members", key);
+            } else {
+              logger.info("The server {0} unable to see other cluster members ", key);
+            }
+          });
+          return !managedServers.containsValue(false);
+        });
   }
 
 
