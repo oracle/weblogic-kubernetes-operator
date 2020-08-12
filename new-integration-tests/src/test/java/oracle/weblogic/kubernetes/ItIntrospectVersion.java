@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,6 +42,8 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
@@ -103,7 +106,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.TestUtils.verifyClusterMemberCommunication;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -491,16 +493,13 @@ public class ItIntrospectVersion {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
-    List<String> managedServers = new ArrayList<>();
+
     for (int i = 1; i <= replicaCount + 1; i++) {
-      managedServers.add(managedServerNameBase + i);
+      // verify each managed server can see other member in the cluster
+      verifyServerCommunication(curlRequest, managedServerNameBase + i);
     }
-    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-        .as("Verify all managed servers can see each other")
-        .withFailMessage("managed servers cannot see other")
-        .isTrue();
 
   }
 
@@ -629,17 +628,13 @@ public class ItIntrospectVersion {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
-    List<String> managedServers = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServers.add(managedServerNameBase + i);
-    }
-    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 100))
-        .as("Verify all managed servers can see each other")
-        .withFailMessage("managed servers cannot see other")
-        .isTrue();
 
+    for (int i = 1; i <= replicaCount + 1; i++) {
+      // verify each managed server can see other member in the cluster
+      verifyServerCommunication(curlRequest, managedServerNameBase + i);
+    }
   }
 
   /**
@@ -961,6 +956,30 @@ public class ItIntrospectVersion {
       createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
           OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
     }
+  }
+
+  private static void verifyServerCommunication(String curlRequest, String managedServer) {
+    //verify the maximum cluster size is updated to expected value
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> logger.info("Waiting until each managed server can see other cluster members"
+            + "(elapsed time {0} ms, remaining time {1} ms)",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until((Callable<Boolean>) () -> {
+          logger.info(curlRequest);
+          // check the response contains managed server name
+          ExecResult result = null;
+          try {
+            result = ExecCommand.exec(curlRequest, true);
+          } catch (IOException | InterruptedException ex) {
+            logger.severe(ex.getMessage());
+          }
+          String response = result.stdout().trim();
+          logger.info(response);
+          return response.contains("ServerName:" + managedServer)
+              && response.contains("Bound:" + managedServer);
+        }
+        );
   }
 
 
