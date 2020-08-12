@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -605,8 +606,15 @@ public class Main {
 
           // For regexp strategy, we only care about namespaces that match the pattern
           String regexp = selectionStrategy.getRegExp();
-          if (regexp != null && !Pattern.compile(regexp).asPredicate().test(ns)) {
-            return;
+          if (regexp != null) {
+            try {
+              if (!Pattern.compile(regexp).asPredicate().test(ns)) {
+                return;
+              }
+            } catch (PatternSyntaxException pse) {
+              LOGGER.severe(MessageKeys.EXCEPTION, pse);
+              return;
+            }
           }
 
           // For label strategy, we will only get watch events for namespaces that match the selector so
@@ -1030,8 +1038,12 @@ public class Main {
         namespacesToStart = new TreeSet<>(nsList);
         String regexp = selectionStrategy.getRegExp();
         if (regexp != null) {
-          namespacesToStart = namespacesToStart.stream().filter(
-                  Pattern.compile(regexp).asPredicate()).collect(Collectors.toSet());
+          try {
+            namespacesToStart = namespacesToStart.stream().filter(
+                    Pattern.compile(regexp).asPredicate()).collect(Collectors.toSet());
+          } catch (PatternSyntaxException pse) {
+            LOGGER.severe(MessageKeys.EXCEPTION, pse);
+          }
         }
       } else {
         namespacesToStart = new TreeSet<>(configuredDomainNamespaces);
