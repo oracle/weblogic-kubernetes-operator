@@ -220,13 +220,12 @@ class ItPodsRestart {
   /**
    * Modify the domain scope property on the domain resource.
    * Verify all pods are restarted and back to ready state.
-   * The resources tested: includeServerOutInPodLog: true --> includeServerOutInPodLog: false.
+   * The resource tested: includeServerOutInPodLog: true --> includeServerOutInPodLog: false.
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing IncludeServerOutInPodLog")
   @Slow
   public void testServerPodsRestartByChangingIncludeServerOutInPodLog() {
-
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -296,7 +295,7 @@ class ItPodsRestart {
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
 
-    //get out the original env
+    //print out the original env
     List<V1EnvVar> envList = domain1.getSpec().getServerPod().getEnv();
     envList.forEach(env -> {
       logger.info("The name is: {0}, value is: {1}", env.getName(), env.getValue());
@@ -342,7 +341,6 @@ class ItPodsRestart {
         "More than one pod was restarted at same time"),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
-
   }
 
   /**
@@ -369,10 +367,8 @@ class ItPodsRestart {
 
     //print out the original podSecurityContext
     logger.info("In the domain1 podSecurityContext is: " + domain1.getSpec().getServerPod().getPodSecurityContext());
-    if (domain1.getSpec().getServerPod().getPodSecurityContext() != null) {
-      logger.info("In the original domain1 runAsUser is: {0}: ",
+    logger.info("In the original domain1 runAsUser is: {0}: ",
           domain1.getSpec().getServerPod().getPodSecurityContext().getRunAsUser());
-    }
 
     Long runAsUser = 1000L;
     StringBuffer patchStr = null;
@@ -577,11 +573,6 @@ class ItPodsRestart {
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
-    // check that admin service exists in the domain namespace
-    /*logger.info("Checking that admin service {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);*/
-
     // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPrefix + i;
@@ -600,11 +591,6 @@ class ItPodsRestart {
       logger.info("Checking that managed server pod {0} is ready in namespace {1}",
           managedServerPodName, domainNamespace);
       checkPodReady(managedServerPodName, domainUid, domainNamespace);
-
-      // check that the managed server service exists in the domain namespace
-      /*logger.info("Checking that managed server service {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkServiceExists(managedServerPodName, domainNamespace);*/
     }
   }
 
