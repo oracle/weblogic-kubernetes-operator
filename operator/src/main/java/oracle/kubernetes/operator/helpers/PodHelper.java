@@ -87,8 +87,9 @@ public class PodHelper {
   }
 
   /**
-   * Get list of scheduled pods.
+   * Get list of scheduled pods for a particular cluster or non-clustered servers.
    * @param info Domain presence info
+   * @param clusterName cluster name of the pod server
    * @return list containing scheduled pods
    */
   public static List<String> getScheduledPods(DomainPresenceInfo info, String clusterName) {
@@ -107,8 +108,9 @@ public class PodHelper {
   }
 
   /**
-   * Get list of ready pods.
+   * Get list of ready pods for a particular cluster or non-clustered servers.
    * @param info Domain presence info
+   * @param clusterName cluster name of the pod server
    * @return list containing ready pods
    */
   public static List<String> getReadyPods(DomainPresenceInfo info, String clusterName) {
@@ -132,9 +134,11 @@ public class PodHelper {
    * @return true, if pod is scheduled
    */
   public static boolean getScheduledStatus(V1Pod pod) {
-    V1PodSpec status = pod.getSpec();
-    if (status != null) {
-      return status.getNodeName() != null;
+    V1PodSpec spec = pod.getSpec();
+    if (spec != null) {
+      if (spec.getNodeName() != null) {
+        return true;
+      }
     }
     return false;
   }
