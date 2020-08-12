@@ -217,7 +217,7 @@ public abstract class BaseConfiguration {
     return serverPod.getServiceAccountName();
   }
 
-  void setNodeName(String nodeName) {
+  public void setNodeName(String nodeName) {
     serverPod.setNodeName(nodeName);
   }
 
