@@ -2348,82 +2348,67 @@ public class Kubernetes {
   public static ExecResult exec(V1Pod pod, String containerName, boolean redirectToStdout,
       String... command)
       throws IOException, ApiException, InterruptedException {
-    LoggingFacade logger = getLogger();
 
     // Execute command using Kubernetes API
     KubernetesExec kubernetesExec = createKubernetesExec(pod, containerName);
     final Process proc = kubernetesExec.exec(command);
 
+    // If redirect enabled, copy stdout and stderr to corresponding Outputstream
     final CopyingOutputStream copyOut =
         redirectToStdout ? new CopyingOutputStream(System.out) : new CopyingOutputStream(null);
     final CopyingOutputStream copyErr =
         redirectToStdout ? new CopyingOutputStream(System.err) : new CopyingOutputStream(null);
 
     // Start a thread to begin reading the output stream of the command
-    Thread out = null;
     try {
-      out =
-          new Thread(
-              () -> {
-                try {
-                  ByteStreams.copy(proc.getInputStream(), copyOut);
-                } catch (IOException ex) {
-                  // "Pipe broken" is expected when process is finished so don't log
-                  if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
-                    getLogger().warning("Exception reading from input stream.", ex);
-                  }
-                  getLogger().info("out thread ex: " + ex);
-                }
-              });
+      Thread out = createStreamReader(proc.getInputStream(), copyOut,
+          "Exception reading from stdout input stream.");
       out.start();
 
       // Start a thread to begin reading the error stream of the command
-      Thread err = null;
-      err =
-          new Thread(
-              () -> {
-                try {
-                  ByteStreams.copy(proc.getErrorStream(), copyErr);
-                } catch (IOException ex) {
-                  // "Pipe broken" is expected when process is finished so don't log
-                  if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
-                    getLogger().warning("Exception reading from input stream.", ex);
-                  }
-                  getLogger().info("err thread ex: " + ex);
-                }
-              });
+      Thread err = createStreamReader(proc.getErrorStream(), copyErr,
+          "Exception reading from stderr input stream.");
       err.start();
 
       // wait for the process, which represents the executing command, to terminate
       proc.waitFor();
 
-      // wait for reading thread to finish any remaining output
+      // wait for stdout reading thread to finish any remaining output
       out.join();
-      //logger.info(Thread.currentThread() + " finished out.join()");
+
+      // wait for stderr reading thread to finish any remaining output
       err.join();
-      //logger.info(Thread.currentThread() + " finished err.join()");
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());
 
       // Read from process's stderr, if data available
       String stderr = readExecCmdData(copyErr.getInputStream());;
-      //try {
-      //stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
-      //stderr = readExecCmdData(copyErr.getInputStream());
-      //} catch (IllegalStateException e) {
-      // IllegalStateException thrown when stream is already closed, ignore since there is
-      // nothing to read
-      //}
 
       ExecResult result = new ExecResult(proc.exitValue(), stdout, stderr);
-      logger.info(Thread.currentThread() + " result: " + result);
+      getLogger().fine("result from exec command: " + result);
       return result;
     } finally {
       if (proc != null) {
         proc.destroy();
       }
     }
+  }
+
+  private static Thread createStreamReader(InputStream inputStream, CopyingOutputStream copyOut,
+      String s) {
+    return
+        new Thread(
+            () -> {
+              try {
+                ByteStreams.copy(inputStream, copyOut);
+              } catch (IOException ex) {
+                // "Pipe broken" is expected when process is finished so don't log
+                if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
+                  getLogger().warning(s, ex);
+                }
+              }
+            });
   }
 
   /**
