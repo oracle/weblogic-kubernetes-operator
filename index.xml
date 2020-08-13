@@ -365,7 +365,7 @@ The Oracle Database Docker images are only supported for non-production use. For
       <description>Get these images and put them into your local registry.   If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store, and accept the license agreement for the WebLogic Server image.
   Log in to the Docker store from your Docker client:
 $ docker login   Pull the operator image:
-$ docker pull oracle/weblogic-kubernetes-operator:3.0.0   Pull the Traefik load balancer image:</description>
+$ docker pull oracle/weblogic-kubernetes-operator:3.0.1   Pull the Traefik load balancer image:</description>
     </item>
     
     <item>
@@ -801,7 +801,7 @@ Check the introspector job If your introspector job failed, then examine the kub
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Recent changes    Date Version Introduces backward incompatibilities Change     July 17, 2020 v3.0.0 yes Adds Model in Image feature and support for applying topology and configuration override changes without downtime. Removal of support for Helm 2.x. Operator performance improvements to manage many domains in the same Kubernetes cluster.   June 22, 2020 v2.6.0 no Kubernetes 1.16, 1.17, and 1.18 support. Removal of support for Kubernetes 1.</description>
+      <description>Recent changes    Date Version Introduces backward incompatibilities Change     August 13, 2020 v3.0.1 no Fixed an issue preventing the REST interface from working after a Helm upgrade. Helm 3.1.3+ now required.   July 17, 2020 v3.0.0 yes Adds Model in Image feature and support for applying topology and configuration override changes without downtime. Removal of support for Helm 2.x. Operator performance improvements to manage many domains in the same Kubernetes cluster.</description>
     </item>
     
   </channel>
