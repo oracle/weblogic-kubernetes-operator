@@ -59,16 +59,18 @@ public class ClusterViewServlet extends HttpServlet {
       serverRuntime = runtimeService.getServerRuntime();
       System.out.println("ITTESTS:>>>>Found server runtime mbean server for server: " + serverRuntime.getName());
 
-      try {
-        System.out.println("ITTESTS:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName());
-        domainMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/domainRuntime");
-        ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
-        domainRuntimeServiceMbean = (DomainRuntimeServiceMBean) MBeanServerInvocationHandler
-            .newProxyInstance(domainMBeanServer, domainServiceObjectName);
-        System.out.println("ITTESTS:>>>>Found domain runtime mbean in server : " + serverRuntime.getName());
-      } catch (MalformedObjectNameException | NamingException ex) {
-        System.out.println("ITTESTS:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName() + " threw exception");
-        Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
+      if (serverRuntime.isAdminServer()) {
+        try {
+          System.out.println("ITTESTS:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName());
+          domainMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/domainRuntime");
+          ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
+          domainRuntimeServiceMbean = (DomainRuntimeServiceMBean) MBeanServerInvocationHandler
+              .newProxyInstance(domainMBeanServer, domainServiceObjectName);
+          System.out.println("ITTESTS:>>>>Found domain runtime mbean in server : " + serverRuntime.getName());
+        } catch (MalformedObjectNameException | NamingException ex) {
+          System.out.println("ITTESTS:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName() + " threw exception");
+          System.out.println("ITTESTS:>>>>" + ex.getMessage());
+        }
       }
 
       try {
@@ -80,7 +82,8 @@ public class ClusterViewServlet extends HttpServlet {
         System.out.println("ITESTS:>>>>>>Bound " + serverRuntime.getName() + " in JNDI tree");
       }
     } catch (MalformedObjectNameException | NamingException ex) {
-      Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
+      System.out.println("ITTESTS:>>>>ClusterViewServlet.init() threw exception");
+      System.out.println("ITTESTS:>>>>" + ex.getMessage());
     }
   }
 
@@ -92,7 +95,8 @@ public class ClusterViewServlet extends HttpServlet {
       System.out.println("ITTESTS:>>>>Closing context in server : " + serverRuntime.getName());
       ctx.close();
     } catch (NamingException ex) {
-      Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
+      System.out.println("ITTESTS:>>>>ClusterViewServlet.destroy() threw exception");
+      System.out.println("ITTESTS:>>>>" + ex.getMessage());
     }
   }
 
@@ -173,6 +177,9 @@ public class ClusterViewServlet extends HttpServlet {
           }
         }
 
+      } else {
+        out.println(serverRuntime.getName() + ":Cluster runtime NULL <BR>");
+        System.out.println("ITESTS:>>>>>>Cluster runtime is null in server:" + serverRuntime.getName());
       }
 
       String listServers = request.getParameter("listServers");
