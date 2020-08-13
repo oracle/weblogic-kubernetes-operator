@@ -30,8 +30,6 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
@@ -184,8 +182,6 @@ public class ItCrossDomainTransaction {
    */
   @Test
   @DisplayName("Check cross domain transaction works")
-  @Slow
-  @MustNotRunInParallel
   public void testCrossDomainTransaction() {
 
     //build application archive
