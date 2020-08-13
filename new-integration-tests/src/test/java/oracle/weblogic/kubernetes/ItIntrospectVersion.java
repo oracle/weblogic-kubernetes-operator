@@ -941,7 +941,7 @@ public class ItIntrospectVersion {
     HashMap<String, Boolean> managedServers = new HashMap<>();
     managedServerNames.forEach(managedServerName -> managedServers.put(managedServerName, false));
 
-    //verify the maximum cluster size is updated to expected value
+    //verify each server in the cluster can see other members
     withStandardRetryPolicy.conditionEvaluationListener(
         condition -> logger.info("Waiting until each managed server can see other cluster members"
             + "(elapsed time {0} ms, remaining time {1} ms)",
