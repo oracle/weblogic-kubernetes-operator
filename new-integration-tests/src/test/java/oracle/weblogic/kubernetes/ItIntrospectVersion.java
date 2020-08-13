@@ -987,11 +987,14 @@ public class ItIntrospectVersion {
             logger.info(response);
             for (var managedServer : managedServers.entrySet()) {
               boolean seeEachOther = true;
+              logger.info("Looking for serverName:" + managedServer.getKey());
               if (response.contains("ServerName:" + managedServer.getKey())) {
                 for (String managedServerName : managedServerNames) {
+                  logger.info("Looking for Bound:" + managedServerName);
                   seeEachOther = seeEachOther && response.contains("Bound:" + managedServerName);
                 }
                 if (seeEachOther) {
+                  logger.info("Server:" + managedServer.getKey() + " can see all cluster members");
                   managedServers.put(managedServer.getKey(), true);
                 }
               }
