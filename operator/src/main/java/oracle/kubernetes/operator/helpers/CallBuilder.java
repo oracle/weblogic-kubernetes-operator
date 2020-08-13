@@ -54,6 +54,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.apache.commons.lang.ArrayUtils;
 
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 
@@ -499,8 +500,13 @@ public class CallBuilder {
     STEP_FACTORY = DEFAULT_STEP_FACTORY;
   }
 
+  /**
+   * Consumer for label selectors.
+   * @param selectors Label selectors
+   * @return this CallBuilder
+   */
   public CallBuilder withLabelSelectors(String... selectors) {
-    this.labelSelector = String.join(",", selectors);
+    this.labelSelector = !ArrayUtils.isEmpty(selectors) ? String.join(",", selectors) : null;
     return this;
   }
 

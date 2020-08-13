@@ -4,7 +4,7 @@
 {{- define "operator.clusterRoleBindingGeneral" }}
 ---
 apiVersion: "rbac.authorization.k8s.io/v1"
-{{- if .dedicated }}
+{{- if (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
 kind: "RoleBinding"
 {{- else }}
 kind: "ClusterRoleBinding"
@@ -12,7 +12,7 @@ kind: "ClusterRoleBinding"
 metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
-  {{- if .dedicated }}
+  {{- if (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
   name: "weblogic-operator-rolebinding-general"
   namespace: {{ .Release.Namespace | quote }}
   {{- else }}
@@ -20,7 +20,7 @@ metadata:
   {{- end }}
 roleRef:
   apiGroup: "rbac.authorization.k8s.io"
-  {{- if .dedicated }}
+  {{- if (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
   kind: "Role"
   name: "weblogic-operator-role-general"
   {{- else }}

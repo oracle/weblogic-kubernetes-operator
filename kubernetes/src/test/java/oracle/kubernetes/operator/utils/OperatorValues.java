@@ -24,7 +24,10 @@ public class OperatorValues {
   private String dedicated = "";
   private String serviceAccount = "";
   private String namespace = "";
-  private String targetNamespaces = "";
+  private String domainNamespaceSelectionStrategy = "";
+  private String domainNamespaces = "";
+  private String domainNamespaceLabelSelector = "";
+  private String domainNamespaceRegExp = "";
   private String weblogicOperatorImage = "";
   private String weblogicOperatorImagePullPolicy = "";
   private String weblogicOperatorImagePullSecretName = "";
@@ -51,7 +54,8 @@ public class OperatorValues {
     return this.namespace("test-operator-namespace")
         .dedicated("false")
         .serviceAccount("test-operator-service-account")
-        .targetNamespaces("test-target-namespace1,test-target-namespace2")
+        .domainNamespaceSelectionStrategy("List")
+        .domainNamespaces("test-domain-namespace1,test-domain-namespace2")
         .weblogicOperatorImage("test-operator-image")
         .weblogicOperatorImagePullPolicy("Never")
         .javaLoggingLevel("FINEST")
@@ -128,16 +132,55 @@ public class OperatorValues {
     return this;
   }
 
-  public String getTargetNamespaces() {
-    return targetNamespaces;
+  public String getDomainNamespaceSelectionStrategy() {
+    return domainNamespaceSelectionStrategy;
   }
 
-  public void setTargetNamespaces(String val) {
-    targetNamespaces = convertNullToEmptyString(val);
+  public void setDomainNamespaceSelectionStrategy(String domainNamespaceSelectionStrategy) {
+    this.domainNamespaceSelectionStrategy = domainNamespaceSelectionStrategy;
   }
 
-  public OperatorValues targetNamespaces(String val) {
-    setTargetNamespaces(val);
+  public OperatorValues domainNamespaceSelectionStrategy(String domainNamespaceSelectionStrategy) {
+    this.domainNamespaceSelectionStrategy = domainNamespaceSelectionStrategy;
+    return this;
+  }
+
+  public String getDomainNamespaces() {
+    return domainNamespaces;
+  }
+
+  public void setDomainNamespaces(String val) {
+    domainNamespaces = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues domainNamespaces(String val) {
+    setDomainNamespaces(val);
+    return this;
+  }
+
+  public String getDomainNamespaceLabelSelector() {
+    return domainNamespaceLabelSelector;
+  }
+
+  public void setDomainNamespaceLabelSelector(String domainNamespaceLabelSelector) {
+    this.domainNamespaceLabelSelector = domainNamespaceLabelSelector;
+  }
+
+  public OperatorValues domainNamespaceLabelSelector(String domainNamespaceLabelSelector) {
+    this.domainNamespaceLabelSelector = domainNamespaceLabelSelector;
+    return this;
+  }
+
+  public String getDomainNamespaceRegExp() {
+    return domainNamespaceRegExp;
+  }
+
+  public void setDomainNamespaceRegExp(String domainNamespaceRegExp) {
+    this.domainNamespaceRegExp = domainNamespaceRegExp;
+  }
+
+  public OperatorValues domainNamespaceRegExp(String domainNamespaceRegExp) {
+    this.domainNamespaceRegExp = domainNamespaceRegExp;
     return this;
   }
 

@@ -40,7 +40,7 @@ import oracle.kubernetes.operator.calls.SynchronousCallFactory;
  *
  * <p>will return the specified custom resource definition.
  */
-class CallTestSupport {
+public class CallTestSupport {
 
   private static RequestParams REQUEST_PARAMS
       = new RequestParams("testcall", "junit", "testName", "body");
@@ -57,7 +57,11 @@ class CallTestSupport {
         .toString();
   }
 
-  Memento installSynchronousCallDispatcher() {
+  /**
+   * Install synchronous call dispatcher memento.
+   * @return synchronous call dispatcher memento
+   */
+  public Memento installSynchronousCallDispatcher() {
     return new Memento() {
       private SynchronousCallDispatcher originalCallDispatcher;
 
