@@ -957,10 +957,10 @@ public class BaseTest {
   public Map<String, Object> createOperatorMap(
       int suffixCount, boolean restEnabled, String prefix) {
     Map<String, Object> operatorMap = new HashMap<String, Object>();
-    ArrayList<String> targetDomainsNS = new ArrayList<String>();
-    targetDomainsNS.add(prefix.toLowerCase() + "-domainns-" + suffixCount);
+    ArrayList<String> domainNamespaces = new ArrayList<String>();
+    domainNamespaces.add(prefix.toLowerCase() + "-domainns-" + suffixCount);
     operatorMap.put("releaseName", prefix.toLowerCase() + "-op-" + suffixCount);
-    operatorMap.put("domainNamespaces", targetDomainsNS);
+    operatorMap.put("domainNamespaces", domainNamespaces);
     operatorMap.put("serviceAccount", prefix.toLowerCase() + "-sa-" + suffixCount);
     operatorMap.put("namespace", prefix.toLowerCase() + "-opns-" + suffixCount);
     operatorMap.put("resultDir", resultDir);
@@ -1004,8 +1004,8 @@ public class BaseTest {
 
   protected Map<String, Object> createDomainMap(int number) {
     Map<String, Object> domainMap = new HashMap<>();
-    ArrayList<String> targetDomainsNS = new ArrayList<String>();
-    targetDomainsNS.add("test" + number);
+    ArrayList<String> domainNamespaces = new ArrayList<String>();
+    domainNamespaces.add("test" + number);
     domainMap.put("domainUID", "test" + number);
     domainMap.put("namespace", "test" + number);
     domainMap.put("configuredManagedServerCount", 4);

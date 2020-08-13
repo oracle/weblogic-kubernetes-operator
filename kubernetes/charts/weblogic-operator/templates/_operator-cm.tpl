@@ -13,8 +13,17 @@ data:
     {{- end }}
   {{- end }}
   serviceaccount: {{ .serviceAccount | quote }}
-  targetNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
+  domainNamespaceSelectionStrategy: {{ .domainNamespaceSelectionStrategy | quote }}
+  domainNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
+  {{- if .dedicated }}
   dedicated: {{ .dedicated | quote }}
+  {{- end }}
+  {{- if .domainNamespaceLabelSelector }}
+  domainNamespaceLabelSelector: {{ .domainNamespaceLabelSelector | quote }}
+  {{- end }}
+  {{- if .domainNamespaceRegExp }}
+  domainNamespaceRegExp: {{ .domainNamespaceRegExp | quote }}
+  {{- end }}
   {{- if .dns1123Fields }}
   dns1123Fields: {{ .dns1123Fields | quote }}
   {{- end }}
