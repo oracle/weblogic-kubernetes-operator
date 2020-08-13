@@ -118,12 +118,24 @@ public class WlsDomainConfigSupport {
    * @param serverNames the names of the servers
    */
   public void addWlsCluster(String clusterName, String... serverNames) {
+    addWlsCluster(clusterName, null, serverNames);
+  }
+
+  /**
+   * Adds a WLS cluster to the configuration, including its member servers.
+   *
+   * @param clusterName the name of the cluster
+   * @param port - the port of the servers
+   * @param serverNames the names of the servers
+   */
+  public void addWlsCluster(String clusterName, Integer port, String... serverNames) {
     ClusterConfigBuilder builder = new ClusterConfigBuilder(clusterName);
     for (String serverName : serverNames) {
-      builder.addServer(serverName);
+      builder.addServer(serverName, port);
     }
     wlsClusters.put(clusterName, builder.build());
   }
+
 
   /**
    * Returns the configuration for the named cluster, if any has been defined.

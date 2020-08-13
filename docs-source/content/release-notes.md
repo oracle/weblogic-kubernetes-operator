@@ -8,6 +8,8 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities | Change |
 | --- | --- | --- | --- |
+| August ?, 2020 | v3.1.0 | no | Enhanced options for specifying managed namespaces. Helm 3.1.3+ now required. |
+| August 13, 2020 | v3.0.1 | no | Fixed an issue preventing the REST interface from working after a Helm upgrade. Helm 3.1.3+ now required. |
 | July 17, 2020 | v3.0.0 | yes | Adds Model in Image feature and support for applying topology and configuration override changes without downtime. Removal of support for Helm 2.x. Operator performance improvements to manage many domains in the same Kubernetes cluster. |
 | June 22, 2020 | v2.6.0 | no | Kubernetes 1.16, 1.17, and 1.18 support. Removal of support for Kubernetes 1.13 and earlier. This release can be run in the same cluster with operators of either 2.5.0 and below, or with 3.x providing an upgrade path. Certified support of Oracle Linux Cloud Native Environment (OLCNE) 1.1 with Kubernetes 1.17.0.
 | February 26, 2020 | v2.5.0 | no | Support for Helm 3.x and OpenShift 4.3.  Operator can be installed in a namespace-dedicated mode where operator requires no cluster-level Kubernetes privileges. This version is not supported on Kubernetes 1.16+; check the [prerequisites]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).

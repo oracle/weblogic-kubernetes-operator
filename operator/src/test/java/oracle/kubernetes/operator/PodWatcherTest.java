@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
+import oracle.kubernetes.operator.helpers.CallTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
@@ -47,6 +48,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   private static final String NAME = "test";
   private static final int RECHECK_SECONDS = 10;
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private CallTestSupport callTestSupport = new CallTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
   private java.util.List<com.meterware.simplestub.Memento> mementos = new java.util.ArrayList<>();
   private java.util.List<java.util.logging.LogRecord> logRecords = new java.util.ArrayList<>();
@@ -56,6 +58,8 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   public void setUp() throws Exception {
     mementos.add(StubWatchFactory.install());
     StubWatchFactory.setListener(this);
+    mementos.add(ClientFactoryStub.install());
+    mementos.add(callTestSupport.installSynchronousCallDispatcher());
     addMemento(testSupport.install());
     mementos.add(
         oracle.kubernetes.utils.TestUtils.silenceOperatorLogger()

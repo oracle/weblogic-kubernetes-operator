@@ -45,7 +45,7 @@ public class NamespaceWatcherTest extends WatcherTestBase
 
   @Override
   protected NamespaceWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
-    return NamespaceWatcher.create((ThreadFactory)this, rv.toString(),
+    return NamespaceWatcher.create((ThreadFactory)this, rv.toString(), null,
         tuning, (WatchListener<V1Namespace>)this, stopping);
   }
 }

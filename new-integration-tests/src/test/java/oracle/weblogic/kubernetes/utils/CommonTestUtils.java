@@ -83,11 +83,13 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
@@ -373,6 +375,10 @@ public class CommonTestUtils {
           .elasticSearchHost(ELASTICSEARCH_HOST);
       opParams
           .elasticSearchPort(ELASTICSEARCH_HTTP_PORT);
+      opParams
+          .javaLoggingLevel(JAVA_LOGGING_LEVEL_VALUE);
+      opParams
+          .logStashImage(LOGSTASH_IMAGE);
     }
 
     if (withRestAPI) {

@@ -168,13 +168,14 @@ public class BuildApplication {
     try {
       //Kubernetes.exec(webLogicPod, new String[]{"/bin/sh", "/u01/" + BUILD_SCRIPT});
       ExecResult exec = Exec.exec(webLogicPod, null, false, "/bin/sh", "/u01/" + BUILD_SCRIPT);
-      assertEquals(0, exec.exitValue());
       if (exec.stdout() != null) {
         logger.info(exec.stdout());
       }
       if (exec.stderr() != null) {
         logger.info(exec.stderr());
       }
+      assertEquals(0, exec.exitValue(), "Exec into " + webLogicPod.getMetadata().getName()
+          + " to build an application failed");
       Kubernetes.copyDirectoryFromPod(webLogicPod,
           Paths.get(APPLICATIONS_PATH, archiveDistDir).toString(), destArchiveBaseDir);
     } catch (ApiException | IOException | InterruptedException ioex) {

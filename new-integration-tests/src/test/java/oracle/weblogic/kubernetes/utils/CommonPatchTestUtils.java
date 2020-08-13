@@ -180,4 +180,22 @@ public class CommonPatchTestUtils {
         String.format("Label weblogic.domainRestartVersion of pod %s in namespace %s has not been updated",
             podName, namespace));
   }
+
+  /**
+   * Patch the domain with the given string.
+   *
+   * @param domainUid unique domain identifier
+   * @param domainNamespace the Kubernetes namespace where the domain is
+   * @param patchStr the string for patching
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchDomainResource(String domainUid, String domainNamespace, StringBuffer patchStr) {
+
+    LoggingFacade logger = getLogger();
+    logger.info("Modify domain resource for domain {0} in namespace {1} using patch string: {2}",
+        domainUid, domainNamespace, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+    return patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
 }
