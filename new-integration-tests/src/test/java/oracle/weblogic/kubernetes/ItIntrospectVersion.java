@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -725,23 +724,6 @@ public class ItIntrospectVersion {
         "Getting admin server node port failed");
     assertNotEquals(-1, serviceNodePort, "Couldn't get valid node port for default channel");
 
-    logger.info("Getting the list of servers using the listServers");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/";
-    String serverListUri = "ClusterViewServlet?listServers=true";
-    HttpResponse<String> response = null;
-    for (int i = 0; i < 5; i++) {
-      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
-      response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
-      assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    }
-
-    // verify managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking {0} health", managedServerNameBase + i);
-      assertTrue(response.body().contains(managedServerNameBase + i + ":HEALTH_OK"),
-          "Didn't get " + managedServerNameBase + i + ":HEALTH_OK");
-    }
-
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(()
         -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH),
@@ -752,6 +734,14 @@ public class ItIntrospectVersion {
     assertThrows(AssertionFailedError.class, ()
         -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         "Accessing using old user/password succeeded, supposed to fail");
+
+    List<String> managedServerNames = new ArrayList<String>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(managedServerNameBase + i);
+    }
+
+    //verify admin server accessibility and the health of cluster members
+    verifyMemberHealth(adminServerPodName, managedServerNames);
 
   }
 
@@ -837,7 +827,7 @@ public class ItIntrospectVersion {
     }
 
     List<String> managedServerNames = new ArrayList<String>();
-    for (int i = 1; i <= replicaCount + 1; i++) {
+    for (int i = 1; i <= replicaCount; i++) {
       managedServerNames.add(managedServerNameBase + i);
     }
 
@@ -931,6 +921,11 @@ public class ItIntrospectVersion {
           boolean health = true;
           for (String managedServer : managedServerNames) {
             health = health && response.body().contains(managedServer + ":HEALTH_OK");
+            if (health) {
+              logger.info(managedServer + " is healthy");
+            } else {
+              logger.info(managedServer + " health is not OK or server not found");
+            }
           }
           return health;
         });
