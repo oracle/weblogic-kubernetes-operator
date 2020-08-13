@@ -95,6 +95,10 @@ while getopts ":h:n:o:t:v:c:x:p:d:i:" opt; do
     ;;
     h) usage 0
     ;;
+    d) echo "Ignoring -d=${OPTARG}"
+    ;;
+    i) echo "Ignoring -i=${OPTARG}"
+    ;;
     *) usage 1
     ;;
   esac

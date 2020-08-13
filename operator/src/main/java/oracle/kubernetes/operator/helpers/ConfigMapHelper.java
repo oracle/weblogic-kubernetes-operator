@@ -50,6 +50,7 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SIT_CONFIG_FI
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
+import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 
 public class ConfigMapHelper {
 
@@ -264,7 +265,7 @@ public class ConfigMapHelper {
      * @return the new step to run
      */
     Step verifyConfigMap(Step next) {
-      return new CallBuilder().readConfigMapAsync(getName(), namespace, new ReadResponseStep(next));
+      return new CallBuilder().readConfigMapAsync(getName(), namespace, null, new ReadResponseStep(next));
     }
 
     Step createConfigMap(Step next) {
@@ -350,6 +351,7 @@ public class ConfigMapHelper {
 
         return new CallBuilder()
             .patchConfigMapAsync(name, namespace,
+                getDomainUidLabel(Optional.ofNullable(currentMap).map(V1ConfigMap::getMetadata).orElse(null)),
                 new V1Patch(patchBuilder.build().toString()), createPatchResponseStep(next));
       }
 
@@ -681,7 +683,8 @@ public class ConfigMapHelper {
       logConfigMapDeleted();
       String configMapName = getIntrospectorConfigMapName(this.domainUid);
       return new CallBuilder()
-          .deleteConfigMapAsync(configMapName, namespace, new V1DeleteOptions(), new DefaultResponseStep<>(next));
+          .deleteConfigMapAsync(configMapName, namespace, this.domainUid,
+              new V1DeleteOptions(), new DefaultResponseStep<>(next));
     }
   }
 
@@ -699,7 +702,7 @@ public class ConfigMapHelper {
    */
   public static Step readExistingIntrospectorConfigMap(String ns, String domainUid) {
     String configMapName = getIntrospectorConfigMapName(domainUid);
-    return new CallBuilder().readConfigMapAsync(configMapName, ns, new ReadIntrospectorConfigMapStep());
+    return new CallBuilder().readConfigMapAsync(configMapName, ns, domainUid, new ReadIntrospectorConfigMapStep());
   }
 
   private static class ReadIntrospectorConfigMapStep extends DefaultResponseStep<V1ConfigMap> {
@@ -766,7 +769,7 @@ public class ConfigMapHelper {
    */
   public static Step readIntrospectionVersionStep(String ns, String domainUid) {
     String configMapName = getIntrospectorConfigMapName(domainUid);
-    return new CallBuilder().readConfigMapAsync(configMapName, ns, new ReadIntrospectionVersionStep());
+    return new CallBuilder().readConfigMapAsync(configMapName, ns, domainUid, new ReadIntrospectionVersionStep());
   }
 
   private static class ReadIntrospectionVersionStep extends DefaultResponseStep<V1ConfigMap> {

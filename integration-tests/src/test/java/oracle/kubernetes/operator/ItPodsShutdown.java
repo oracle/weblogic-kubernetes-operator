@@ -78,18 +78,18 @@ public class ItPodsShutdown extends BaseTest {
       createResultAndPvDirs(testClassName);
       // create operator1
       if (operator1 == null) {
-        ArrayList<String> targetDomainsNS = new ArrayList<String>();
-        targetDomainsNS.add(domainNSShutOpCluster);
-        targetDomainsNS.add(domainNSShutOpDomain);
-        targetDomainsNS.add(domainNSShutOpEnv);
-        targetDomainsNS.add(domainNSShutOpMS);
-        targetDomainsNS.add(domainNSShutOpMSForced);
-        targetDomainsNS.add(domainNSShutOpMSIgnoreSessions);
-        targetDomainsNS.add(domainNSShutOpMSTimeout);
-        targetDomainsNS.add(domainNSShutOpOverrideViaCluster);
-        targetDomainsNS.add(domainNSShutOpOverrideViaEnv);
+        ArrayList<String> domainNamespaces = new ArrayList<String>();
+        domainNamespaces.add(domainNSShutOpCluster);
+        domainNamespaces.add(domainNSShutOpDomain);
+        domainNamespaces.add(domainNSShutOpEnv);
+        domainNamespaces.add(domainNSShutOpMS);
+        domainNamespaces.add(domainNSShutOpMSForced);
+        domainNamespaces.add(domainNSShutOpMSIgnoreSessions);
+        domainNamespaces.add(domainNSShutOpMSTimeout);
+        domainNamespaces.add(domainNSShutOpOverrideViaCluster);
+        domainNamespaces.add(domainNSShutOpOverrideViaEnv);
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
-        operatorMap.put("domainNamespaces",targetDomainsNS);
+        operatorMap.put("domainNamespaces", domainNamespaces);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         namespaceList.append((String)operatorMap.get("namespace"));

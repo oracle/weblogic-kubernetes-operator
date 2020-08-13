@@ -49,6 +49,8 @@ import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1ListMeta;
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
@@ -96,6 +98,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String BETA_CRD = "BetaCRD";
   public static final String CONFIG_MAP = "ConfigMap";
   public static final String CUSTOM_RESOURCE_DEFINITION = "CRD";
+  public static final String NAMESPACE = "Namespace";
   public static final String DOMAIN = "Domain";
   public static final String EVENT = "Event";
   public static final String JOB = "Job";
@@ -139,6 +142,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     support(SUBJECT_ACCESS_REVIEW, V1SubjectAccessReview.class);
     support(TOKEN_REVIEW, V1TokenReview.class);
     support(PV, V1PersistentVolume.class, this::createPvList);
+    support(NAMESPACE, V1Namespace.class, this::createNamespaceList);
 
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
     supportNamespaced(DOMAIN, Domain.class, this::createDomainList).withStatusSubresource();
@@ -171,6 +175,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private V1PersistentVolumeClaimList createPvcList(List<V1PersistentVolumeClaim> items) {
     return new V1PersistentVolumeClaimList().metadata(createListMeta()).items(items);
+  }
+
+  private V1NamespaceList createNamespaceList(List<V1Namespace> items) {
+    return new V1NamespaceList().metadata(createListMeta()).items(items);
   }
 
   private V1PodList createPodList(List<V1Pod> items) {
