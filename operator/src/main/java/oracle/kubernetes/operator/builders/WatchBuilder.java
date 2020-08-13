@@ -34,7 +34,7 @@ public class WatchBuilder {
   /** Ignored for watches. */
   private static final String START_LIST = null;
 
-  private static final Boolean ALLOW_BOOKMARKS = false;
+  private static final Boolean ALLOW_BOOKMARKS = true;
 
   private static WatchFactory FACTORY = new WatchFactoryImpl();
 
