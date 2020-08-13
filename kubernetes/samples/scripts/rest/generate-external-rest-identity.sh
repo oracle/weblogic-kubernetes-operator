@@ -30,7 +30,7 @@
 #   generate-external-rest-identity.sh -a IP:127.0.0.1 -n weblogic-operator > my_values.yaml
 #   echo "externalRestEnabled: true" >> my_values.yaml
 #   ...
-#   helm install kubernetes/charts/weblogic-operator --name my_operator --namespace my_operator-ns --values my_values.yaml --wait
+#   helm install my_operator kubernetes/charts/weblogic-operator --namespace my_operator-ns --values my_values.yaml --wait
 usage(){
 cat <<EOF
 Usage: $0 [options] -a <subject alternative names> -n <namespace>

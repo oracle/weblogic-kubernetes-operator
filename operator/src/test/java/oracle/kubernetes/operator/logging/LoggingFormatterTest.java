@@ -126,6 +126,14 @@ public class LoggingFormatterTest {
   }
 
   @Test
+  public void whenThreadLocalDefinedAndPacketNoDomainPresenceAndLoggingContextNoDUid_retrieveDomainUidFromThread() {
+    testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-namespace"));
+    try (LoggingContext stack = LoggingContext.setThreadContext().domainUid("test-lc-tl-uid1")) {
+      assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-lc-tl-uid1"));
+    }
+  }
+
+  @Test
   public void whenPacketLacksDomainPresence_domainNamespaceIsEmpty() {
     assertThat(getFormattedMessageInFiber().get("namespace"), equalTo(""));
   }

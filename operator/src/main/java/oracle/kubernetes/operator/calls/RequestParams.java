@@ -15,6 +15,7 @@ public final class RequestParams {
   public final String namespace;
   public final String name;
   public final Object body;
+  public String domainUid;
   private CallParams callParams;
 
   /**
@@ -37,14 +38,24 @@ public final class RequestParams {
    * @param namespace namespace
    * @param name name
    * @param body body
+   * @param domainUid domain unique identifier
+   */
+  public RequestParams(String call, String namespace, String name, Object body, String domainUid) {
+    this(call, namespace, name, body);
+    this.domainUid = domainUid;
+  }
+
+  /**
+   * Construct request params.
+   * @param call call
+   * @param namespace namespace
+   * @param name name
+   * @param body body
    * @param callParams call params
    */
   public RequestParams(
       String call, String namespace, String name, Object body, CallParams callParams) {
-    this.call = call;
-    this.namespace = namespace;
-    this.name = name;
-    this.body = body;
+    this(call, namespace, name, body);
     this.callParams = callParams;
   }
 

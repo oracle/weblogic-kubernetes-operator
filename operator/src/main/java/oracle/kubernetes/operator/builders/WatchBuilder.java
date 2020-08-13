@@ -25,6 +25,7 @@ import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.Pool;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import org.apache.commons.lang.ArrayUtils;
 
 public class WatchBuilder {
   /** Always true for watches. */
@@ -171,7 +172,7 @@ public class WatchBuilder {
   }
 
   public WatchBuilder withLabelSelectors(String... labelSelectors) {
-    callParams.setLabelSelector(String.join(",", labelSelectors));
+    callParams.setLabelSelector(!ArrayUtils.isEmpty(labelSelectors) ? String.join(",", labelSelectors) : null);
     return this;
   }
 
