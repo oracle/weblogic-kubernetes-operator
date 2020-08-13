@@ -95,7 +95,7 @@ a 2.6.0 operator to a 3.x operator. Instead, you must delete the 2.6.0 operator 
 The deletion of the 2.6.0 operator will _not affect_ the Domain CustomResourceDefinition (CRD) and will _not stop_ any
 WebLogic Server instances already running.
 
-When the 3.0.0 operator is installed, it will automatically roll any running WebLogic Server instances created by the 2.6.0 operator.
+When the 3.x operator is installed, it will automatically roll any running WebLogic Server instances created by the 2.6.0 operator.
 This rolling restart will preserve WebLogic cluster availability guarantees (for clustered members only) similarly to any other rolling restart.
 
 To delete the 2.6.0 operator:
@@ -104,7 +104,7 @@ To delete the 2.6.0 operator:
 $ helm delete weblogic-operator -n weblogic-operator-namespace
 ```
 
-Then install the 3.0.0 operator using the [installation](#install-the-operator-helm-chart) instructions above.
+Then install the 3.x operator using the [installation](#install-the-operator-helm-chart) instructions above.
 
 The following instructions will be applicable to upgrade operators within the 3.x release family
 as additional versions are released.
@@ -115,7 +115,7 @@ the `helm upgrade` command requires that you supply a new Helm chart and image. 
 ```
 $ helm upgrade \
   --reuse-values \
-  --set image=oracle/weblogic-kubernetes-operator:3.0.0 \
+  --set image=oracle/weblogic-kubernetes-operator:3.0.1 \
   --namespace weblogic-operator-namespace \
   --wait \
   weblogic-operator \
