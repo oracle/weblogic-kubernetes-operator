@@ -141,7 +141,7 @@ public class ItIntrospectVersion {
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
       .and().with().pollInterval(10, SECONDS)
-      .atMost(5, MINUTES).await();
+      .atMost(10, MINUTES).await();
 
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
@@ -498,7 +498,7 @@ public class ItIntrospectVersion {
 
     List<String> managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount + 1; i++) {
-      managedServerNames.add(managedServerNameBase + 1);
+      managedServerNames.add(managedServerNameBase + i);
     }
     // verify each managed server can see other member in the cluster
     verifyServerCommunication(curlRequest, managedServerNames);
@@ -635,7 +635,7 @@ public class ItIntrospectVersion {
 
     List<String> managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(managedServerNameBase + 1);
+      managedServerNames.add(managedServerNameBase + i);
     }
     // verify each managed server can see other member in the cluster
     verifyServerCommunication(curlRequest, managedServerNames);
