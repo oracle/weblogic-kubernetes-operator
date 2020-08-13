@@ -167,9 +167,12 @@ public class LoggingFormatter extends Formatter {
     return Optional.ofNullable(fiber)
         .map(Fiber::getPacket)
         .map(p -> p.getSpi(LoggingContext.class))
-        .or(LoggingContext::optionalContext)
         .map(LoggingContext::domainUid)
-        .orElse("");
+        .orElse(getDomainUidFromThreadContext());
+  }
+
+  private String getDomainUidFromThreadContext() {
+    return LoggingContext.optionalContext().map(LoggingContext::domainUid).orElse("");
   }
 
   private DomainPresenceInfo getDomainPresenceInfo(Packet packet) {

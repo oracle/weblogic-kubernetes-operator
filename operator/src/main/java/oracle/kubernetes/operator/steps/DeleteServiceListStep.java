@@ -11,6 +11,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
+
 /**
  * A step which will delete each entry in the specified collection. It does so by chaining back to
  * itself in the response step, in order to process the next entry in the iterator.
@@ -26,6 +28,7 @@ public class DeleteServiceListStep extends AbstractListStep<V1Service> {
     V1DeleteOptions deleteOptions = new V1DeleteOptions();
     return new CallBuilder()
         .deleteServiceAsync(
-            meta.getName(), meta.getNamespace(), deleteOptions, new DefaultResponseStep<>(this));
+            meta.getName(), meta.getNamespace(), getDomainUidLabel(meta), deleteOptions,
+            new DefaultResponseStep<>(this));
   }
 }

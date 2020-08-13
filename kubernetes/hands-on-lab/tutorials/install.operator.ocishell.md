@@ -51,31 +51,38 @@ Before you execute the operator `helm` install, make sure that you are in the op
 ```bash
 cd ~/weblogic-kubernetes-operator/
 ```
-Use the `helm install` command to install the operator Helm chart. As part of this, you must specify a "release" name for their operator.
+Use the `helm install` command to install the operator Helm chart. As part of this, you must specify a "release" name for the operator.
 
 You can override the default configuration values in the operator Helm chart by doing one of the following:
 
-- Creating a [custom YAML](https://github.com/oracle/weblogic-kubernetes-operator/blob/v2.5.0/kubernetes/charts/weblogic-operator/values.yaml) file containing the values to be overridden, and specifying the `--value` option on the Helm command line.
+- Creating a [custom YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/master/kubernetes/charts/weblogic-operator/values.yaml) file containing the values to be overridden, and specifying the `--value` option on the Helm command line.
 - Overriding individual values directly on the Helm command line, using the `--set` option.
 
 Using the last option, simply define overriding values using the `--set` option.
 
-Note the values:
+Note the arguments and values:
 
-- **name**: The name of the resource.
-- **namespace**: Where the operator is deployed.
-- **image**: The prebuilt operator 2.5.0 image, available on the public Docker hub.
+- The name of the Helm release.
+- The relative path to the Helm chart.
+- **namespace**: The namespace where the operator is to be deployed.
+- **image**: The prebuilt operator 3.1.0 image, available on the public Docker Hub.
 - **serviceAccount**: The service account required to run the operator.
-- **domainNamespaces**: The namespaces where WebLogic domains are deployed in order to control them. Note, the WebLogic domain is not deployed yet, so this value will be updated when namespaces are created for WebLogic deployment.
+- **enableClusterRoleBinding**: Grants the operator privileges in all cluster namespaces.
+- **domainNamespaceSelectionStrategy**: Chooses how the operator will select namespaces it manages.
+- **domainNamespaceLabelSelector**: For label-based namespace selection, specifies the label selector.
+
+**Note**: Earlier versions of the operator's Helm chart only supported selecting namespaces that the operator would manage using a list. Now, namespaces may be chosen using a list, label selector, or regular expression.
 
 Execute the following `helm install`:
 ```bash
 helm install sample-weblogic-operator \
   kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set image=oracle/weblogic-kubernetes-operator:2.5.0 \
-  --set serviceAccount=sample-weblogic-operator-sa \
-  --set "domainNamespaces={}"
+  --set "image=oracle/weblogic-kubernetes-operator:3.1.0" \
+  --set "serviceAccount=sample-weblogic-operator-sa" \
+  --set "enableClusterRoleBinding=true" \
+  --set "domainNamespaceSelectionStrategy=LabelSelector" \
+  --set "domainNamespaceLabelSelector=weblogic-operator\=enabled"
 ```
 The output will be similar to the following:
 ```bash

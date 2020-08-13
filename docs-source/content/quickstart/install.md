@@ -1,30 +1,11 @@
 ---
-title: "Install the operator and load balancer"
+title: "Install the operator and ingress controller"
 date: 2019-02-22T15:44:42-05:00
 draft: false
 weight: 4
 ---
 
-#### Grant the Helm service account the `cluster-admin` role.
-
-```bash
-$ cat <<EOF | kubectl apply -f -
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: helm-user-cluster-admin-role
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: kube-system
-EOF
-```
-
-#### Use Helm to install the operator and [Traefik](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md) load balancer.
+#### Use Helm to install the operator and [Traefik](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md) ingress controller.
 
 First, set up Helm:
 
@@ -33,9 +14,9 @@ $ helm repo add traefik https://containous.github.io/traefik-helm-chart/
 $ helm repo update
 ```
 
-#### Create a Traefik (ingress-based) load balancer.
+#### Create a Traefik ingress controller.
 
-Create a namespace for the load balancer.
+Create a namespace for the ingress controller.
 
 ```bash
 $ kubectl create namespace traefik
@@ -67,15 +48,20 @@ $ helm install traefik-operator traefik/traefik \
 
 3.  Use `helm` to install and start the operator from the directory you just cloned:	 
 
-
     ```bash
     $ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
       --namespace sample-weblogic-operator-ns \
-      --set image=oracle/weblogic-kubernetes-operator:3.0.0 \
+      --set image=oracle/weblogic-kubernetes-operator:3.1.0 \
       --set serviceAccount=sample-weblogic-operator-sa \
-      --set "domainNamespaces={}" \
+      --set "enableClusterRoleBinding=true" \
+      --set "domainNamespaceSelectionStrategy=LabelSelector" \
+      --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
       --wait
     ```
+    
+    This Helm release deploys the operator and configures it to manage Domains in any Kubernetes namespace with the label, "weblogic-operator=enabled". Because of the "enableClusterRoleBinding" option, the operator will have privilege in all Kubernetes namespaces. This simplifies adding and removing managed namespaces as you will only have to adjust labels on those namespaces. If you want to limit the operator's privilege to just the set of namespaces that it will manage, then remove this option, but this will mean that the operator only has privilege in the set of namespaces that match the selection strategy at the time the Helm release was installed or upgraded.
+    
+    **Note:** Prior to version 3.1.0, the operator's Helm chart only supported configuring the namespaces that the operator would manage using a list of namespaces. The chart now supports specifying namespaces using a label selector, regular expression, or list. Review the available [Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values" >}}).
 
 4. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one
 for the operator.
