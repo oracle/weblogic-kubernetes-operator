@@ -104,7 +104,7 @@ To delete the 2.6.0 operator:
 $ helm delete weblogic-operator -n weblogic-operator-namespace
 ```
 
-Then install the 3.0.0 operator using the [installation](#install-the-operator-helm-chart) instructions above.
+Then install the 3.x operator using the [installation](#install-the-operator-helm-chart) instructions above.
 
 The following instructions will be applicable to upgrade operators within the 3.x release family
 as additional versions are released.
