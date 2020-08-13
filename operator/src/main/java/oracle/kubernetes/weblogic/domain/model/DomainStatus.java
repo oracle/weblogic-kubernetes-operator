@@ -48,9 +48,9 @@ public class DomainStatus {
   private String reason;
 
   @Description(
-      "Number of retries.")
+      "Number of retries for introspect job failure.")
   @Range(minimum = 0)
-  private Integer retryCount = new Integer(0);
+  private Integer introspectJobFailureRetryCount = new Integer(0);
 
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
@@ -92,7 +92,7 @@ public class DomainStatus {
     clusters = that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList());
     startTime = that.startTime;
     replicas = that.replicas;
-    retryCount = that.retryCount;
+    introspectJobFailureRetryCount = that.introspectJobFailureRetryCount;
   }
 
   /**
@@ -283,31 +283,30 @@ public class DomainStatus {
   }
 
   /**
-   * The number of retries.
+   * The number of retries for an introspect job that fails.
    *
-   * @return retryCount
+   * @return introspectJobFailureRetryCount
    */
-  public Integer getRetryCount() {
-    return this.retryCount;
+  public Integer getIntrospectJobFailureRetryCount() {
+    return this.introspectJobFailureRetryCount;
   }
 
   /**
-   * increment the number of retries.
+   * increment the number of retries for introspect job failure.
    *
    * @return retryCount
    */
   public Integer incrementRetryCount() {
-    return this.retryCount = this.retryCount.intValue() + 1;
+    return this.introspectJobFailureRetryCount = this.introspectJobFailureRetryCount.intValue() + 1;
   }
 
 
   /**
-   * Set the number of retries.
+   * Set the number of retries for introspect job failure.
    *
-   * @param retryCount retryCount
    */
-  public void setRetryCount(Integer retryCount) {
-    this.retryCount = retryCount;
+  public void resetIntrospectJobFailureRetryCount() {
+    this.introspectJobFailureRetryCount = 0;
   }
 
   /**
@@ -316,7 +315,7 @@ public class DomainStatus {
    * @return this
    */
   public DomainStatus withRetryCount(Integer retryCount) {
-    this.retryCount = retryCount;
+    this.introspectJobFailureRetryCount = retryCount;
     return this;
   }
 

@@ -634,7 +634,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       int currentRetryCount = Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
-          .map(DomainStatus::getRetryCount)
+          .map(DomainStatus::getIntrospectJobFailureRetryCount)
           .orElse(0);
 
       String existingError = Optional.ofNullable(liveInfo)
@@ -645,12 +645,12 @@ public class DomainProcessorImpl implements DomainProcessor {
 
       if (cachedInfo == null || cachedInfo.getDomain() == null) {
         return true;
+      } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
+        return false;  // we have already cached this
       } else if (currentRetryCount > DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
         LOGGER.fine("Stop introspection retry - exceeded configured domainPresenceFailureRetryMaxCount: "
             + DomainPresence.getDomainPresenceFailureRetryMaxCount());
         return false;
-      } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
-        return false;  // we have already cached this
       } else if (existingError != null && existingError.startsWith("MII Fatal Error")
           && !isSpecChanged(liveInfo, cachedInfo)) {
         LOGGER.fine("Stop introspection retry - MII Fatal Error: "

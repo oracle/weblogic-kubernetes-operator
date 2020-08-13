@@ -10095,10 +10095,6 @@ spec:
                     state:
                       description: Current state of this WebLogic Server instance.
                       type: string
-              retryCount:
-                type: number
-                description: Number of retries.
-                minimum: 0.0
               replicas:
                 type: number
                 description: The number of running cluster member Managed Servers
@@ -10153,6 +10149,10 @@ spec:
                 type: string
                 description: A human readable message indicating details about why
                   the domain is in this condition.
+              introspectJobFailureRetryCount:
+                type: number
+                description: Number of retries for introspect job failure.
+                minimum: 0.0
               clusters:
                 type: array
                 description: Status of WebLogic clusters in this domain.
