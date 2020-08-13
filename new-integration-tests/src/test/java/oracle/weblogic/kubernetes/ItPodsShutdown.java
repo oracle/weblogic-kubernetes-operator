@@ -53,9 +53,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * This test is to verify shutdown rules when shutdown options of serverPos is defined.
+ * This test is to verify shutdown rules when shutdown properties are defined at different levels
+ * (domain, cluster, adminServer and managedServer level).
  */
-@DisplayName("Test pods are being shutdowned by some properties change")
+@DisplayName("Verify shutdown rules when shutdown properties are defined at different levels")
 @IntegrationTest
 class ItPodsShutdown {
 
@@ -97,7 +98,7 @@ class ItPodsShutdown {
   }
 
   /**
-   * This test is to verify shutdown rules when shutdown options of serverPos is defined
+   * This test is to verify shutdown rules when shutdown options of serverPos are defined
    * at domain level, adminServer level and cluster and managedServer level.
    * step 1: Create one managed server domain with the following settings
    * domain: SHUTDOWN_TYPE -> Graceful.
@@ -108,8 +109,8 @@ class ItPodsShutdown {
    *          SHUTDOWN_TIMEOUT -> 80.
    * managedServer1: SHUTDOWN_TIMEOUT -> 100.
    * step2: Scale cluster with two managed servers.
-   * step 3: Verify shutdown properties of admin server, managedServer1 and newly scaledup managedServer2.
-   * Domain level "Graceful" shutdown overrides server level setting and is used for all servers.
+   * step 3: Verify shutdown properties of admin server, managedServer1 and newly scaled up managedServer2.
+   * Domain level "Graceful" SHUTDOWN_TYPE overrides server level setting and is used for all servers.
    * So adminServer has "Graceful" SHUTDOWN_TYPE, default "false" SHUTDOWN_IGNORE_SESSIONS and
    * configured "40" SHUTDOWN_TIMEOUT.
    * Managed level setting overrides cluster level setting so managedServer1 has configured "100"
@@ -118,17 +119,10 @@ class ItPodsShutdown {
    * with "Graceful" SHUTDOWN_TYPE, "true" SHUTDOWN_IGNORE_SESSIONS and default "30" SHUTDOWN_TIMEOUT
    */
   @Test
-  @DisplayName("Verify shutdown rules when shutdown properties defined at different levels ")
+  @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
   public void testShutdownProps() {
 
-    // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-
-    assertNotNull(domain1, domain1 + " is null");
-    //assertTrue(verifyServerShutdownProp(adminServerPodName, domainNamespace, "Graceful", "40", "false"));
-
+    //scare the cluster to 2 managed servers
     assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, 2)))
         .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
               clusterName, domainUid, domainNamespace)
