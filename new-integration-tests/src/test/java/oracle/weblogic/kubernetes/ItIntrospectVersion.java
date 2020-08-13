@@ -634,7 +634,7 @@ public class ItIntrospectVersion {
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
 
     List<String> managedServerNames = new ArrayList<String>();
-    for (int i = 1; i <= replicaCount + 1; i++) {
+    for (int i = 1; i <= replicaCount; i++) {
       managedServerNames.add(managedServerNameBase + 1);
     }
     // verify each managed server can see other member in the cluster
