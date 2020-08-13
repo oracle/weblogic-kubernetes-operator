@@ -51,6 +51,8 @@ function usage {
   echo "      (default: false) "
   echo "  -x Number of threads to run the classes in parallel"
   echo "      (default: 2) "
+  echo "  -d Reserved for future use"
+  echo "  -i Reserved for future use"
   echo "  -h Help"
   exit $1
 }
@@ -67,7 +69,7 @@ cni_implementation="kindnet"
 parallel_run="false"
 threads="2"
 
-while getopts ":h:n:o:t:v:c:x:p:" opt; do
+while getopts ":h:n:o:t:v:c:x:p:d:i:" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
@@ -84,6 +86,10 @@ while getopts ":h:n:o:t:v:c:x:p:" opt; do
     p) parallel_run="${OPTARG}"
     ;;
     h) usage 0
+    ;;
+    d) echo "Ignoring -d=${OPTARG}"
+    ;;
+    i) echo "Ignoring -i=${OPTARG}"
     ;;
     *) usage 1
     ;;
