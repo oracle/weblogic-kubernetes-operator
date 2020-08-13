@@ -6,6 +6,7 @@ package oracle.weblogic.domain;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -14,7 +15,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @ApiModel(description = "DomainList is a list of Domains.")
-public class DomainList {
+public class DomainList implements KubernetesListObject {
 
   @ApiModelProperty("The API version for the Domain.")
   private String apiVersion;
