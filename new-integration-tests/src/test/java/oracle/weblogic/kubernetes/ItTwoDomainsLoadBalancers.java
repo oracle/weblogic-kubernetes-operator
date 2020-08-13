@@ -1007,7 +1007,12 @@ public class ItTwoDomainsLoadBalancers {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.kernel.debug=true "
+                        + "-Dweblogic.debug.DebugMessaging=true "
+                        + "-Dweblogic.debug.DebugConnection=true "
+                        + "-Dweblogic.ResolveDNSName=true "
+                        + "-Dweblogic.MaxMessageSize=20000000"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
