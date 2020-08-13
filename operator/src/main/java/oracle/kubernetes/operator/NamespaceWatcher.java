@@ -19,19 +19,23 @@ import oracle.kubernetes.operator.watcher.WatchListener;
  * the operator for processing.
  */
 public class NamespaceWatcher extends Watcher<V1Namespace> {
+  private final String labelSelector;
 
   private NamespaceWatcher(
       String initialResourceVersion,
+      String labelSelector,
       WatchTuning tuning,
       WatchListener<V1Namespace> listener,
       AtomicBoolean isStopping) {
     super(initialResourceVersion, tuning, isStopping, listener);
+    this.labelSelector = labelSelector;
   }
 
   /**
    * Create a namespace watcher.
    * @param factory the ThreadFactory to run the watcher
    * @param initialResourceVersion at which to start returning watch events
+   * @param labelSelector label selector
    * @param tuning any WatchTuning parameters
    * @param listener the WatchListener
    * @param isStopping whether the watcher is stopping
@@ -40,12 +44,13 @@ public class NamespaceWatcher extends Watcher<V1Namespace> {
   public static NamespaceWatcher create(
       ThreadFactory factory,
       String initialResourceVersion,
+      String labelSelector,
       WatchTuning tuning,
       WatchListener<V1Namespace> listener,
       AtomicBoolean isStopping) {
 
     NamespaceWatcher watcher =
-        new NamespaceWatcher(initialResourceVersion, tuning, listener, isStopping);
+        new NamespaceWatcher(initialResourceVersion, labelSelector, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
@@ -53,6 +58,7 @@ public class NamespaceWatcher extends Watcher<V1Namespace> {
   @Override
   public WatchI<V1Namespace> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder
+        .withLabelSelector(labelSelector)
         .createNamespacesWatch();
   }
 
