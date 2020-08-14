@@ -135,7 +135,7 @@ nodeSelector:
 ```
 
 ##### `nodeAffinity`
-`nodeAffinity` is conceptually similar to `nodeSelector`, it allows you to constrain the operator Pod to be scheduled on node with certain labels. The Node affinity provides advanced capabilities to limit the operator pod placement on a specific node. See  [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) in the Kubernetes documentation. This is optional and not required if the operator Pod can run on any Node.
+`nodeAffinity` is conceptually similar to `nodeSelector`, it allows you to constrain the operator Pod to be scheduled on a node with certain labels. Node affinity feature provides advanced capabilities to limit Pod placement on specific nodes. See  [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) in the Kubernetes documentation for more details. This is optional and not required if the operator Pod can run on any Node or when using `nodeSelector`.
 
 Example:
 ```
