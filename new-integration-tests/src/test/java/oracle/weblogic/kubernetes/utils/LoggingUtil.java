@@ -252,7 +252,8 @@ public class LoggingUtil {
                 namespace + ".pod." + podName + ".container." + containerName + ".log", false);
 
           }
-          ExecResult exec = ExecCommand.exec("kubectl exec -it -n " + podName + " -- cat /etc/resolv.conf", false);
+          ExecResult exec = ExecCommand.exec(
+              "kubectl exec -it -n " + namespace + " " + podName + " -- cat /etc/resolv.conf", false);
           String dns = "";
           if (exec.stdout() != null) {
             dns = dns + exec.stdout() + "\n";

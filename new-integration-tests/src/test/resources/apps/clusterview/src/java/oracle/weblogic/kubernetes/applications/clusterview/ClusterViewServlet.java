@@ -146,8 +146,8 @@ public class ClusterViewServlet extends HttpServlet {
         out.println("ServerName:" + serverRuntime.getName());
 
         try {
-          double random = Math.random();
-          String randomString = serverRuntime.getName() + random;
+          int random = (int) (Math.random() * 1000000);
+          String randomString = "ms" + random;
           ctx.bind(randomString, randomString);
         } catch (NameNotFoundException nnfex) {
           out.println(nnfex.getMessage());
