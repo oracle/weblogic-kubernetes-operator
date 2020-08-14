@@ -302,6 +302,11 @@ public class ItIntrospectVersion {
                         + "-Dweblogic.kernel.debug=true "
                         + "-Dweblogic.debug.DebugMessaging=true "
                         + "-Dweblogic.debug.DebugConnection=true "
+                        + "-Dweblogic.debug.DebugUnicastMessaging=true "
+                        + "-Dweblogic.debug.DebugClusterHeartbeats=true "
+                        + "-Dweblogic.debug.DebugJNDI=true "
+                        + "-Dweblogic.debug.DebugJNDIResolution=true "
+                        + "-Dweblogic.debug.DebugCluster=true "
                         + "-Dweblogic.ResolveDNSName=true "
                         + "-Dweblogic.MaxMessageSize=20000000"))
                 .addEnvItem(new V1EnvVar()
