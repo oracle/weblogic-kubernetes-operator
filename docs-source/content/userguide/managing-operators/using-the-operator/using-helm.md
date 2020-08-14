@@ -155,6 +155,40 @@ imagePullSecrets:
 - name: "my-image-pull-secret"
 ```
 
+##### `nodeSelector`
+`nodeSelector` allows you to run the operator Pod on a node whose labels match the specified nodeSelector labels. You can use this optional feature if you want the operator Pod to run on a Node with particular labels. See [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) in the Kubernetes documentation for more details. This is not required if the operator Pod can run on any Node.
+
+Example:
+```
+nodeSelector:
+  disktype: ssd
+```
+
+##### `nodeAffinity`
+`nodeAffinity` is conceptually similar to `nodeSelector`, it allows you to constrain the operator Pod to be scheduled on node with certain labels. The Node affinity provides advanced capabilities to limit the operator pod placement on a specific node. See  [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) in the Kubernetes documentation. This is optional and not required if the operator Pod can run on any Node.
+
+Example:
+```
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodeType
+          operator: In
+          values:
+          - dev
+          - test
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      preference:
+        matchExpressions:
+        - key: another-node-label-key
+          operator: In
+          values:
+          - another-node-label-value
+```
+
 #### WebLogic domain management
 
 ##### `domainNamespaces`
