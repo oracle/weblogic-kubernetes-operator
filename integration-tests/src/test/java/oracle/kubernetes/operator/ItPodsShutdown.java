@@ -89,7 +89,7 @@ public class ItPodsShutdown extends BaseTest {
         domainNamespaces.add(domainNSShutOpOverrideViaCluster);
         domainNamespaces.add(domainNSShutOpOverrideViaEnv);
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
-        operatorMap.put("domainNamespaces",domainNamespaces);
+        operatorMap.put("domainNamespaces", domainNamespaces);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         namespaceList.append((String)operatorMap.get("namespace"));
