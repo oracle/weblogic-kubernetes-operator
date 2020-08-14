@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,9 +114,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePort
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
@@ -130,7 +130,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyV
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.TestUtils.verifyClusterMemberCommunication;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -172,6 +171,12 @@ public class ItTwoDomainsLoadBalancers {
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
   private static Path dstFile = null;
+
+  // create standard, reusable retry/backoff policy
+  private static final ConditionFactory withStandardRetryPolicy
+      = with().pollDelay(2, SECONDS)
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(3, MINUTES).await();
 
   // domain constants
   private final String clusterName = "cluster-1";
@@ -361,7 +366,7 @@ public class ItTwoDomainsLoadBalancers {
    */
   @Order(5)
   @Test
-  @DisplayName("Create model in image domains domain1 and domain2 and Ingress resources")
+  @DisplayName("Create domain1 and domain2 and Ingress resources")
   public void testTraefikHttpHostRoutingAcrossDomains() {
     // bind domain name in the managed servers
     for (String domain : domainUids) {
@@ -562,9 +567,7 @@ public class ItTwoDomainsLoadBalancers {
       createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
       // create persistent volume and persistent volume claims
-      Path pvHostPath = assertDoesNotThrow(
-          () -> createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume")),
-              "createDirectories failed with IOException");
+      Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume");
 
       logger.info("Creating PV directory {0}", pvHostPath);
       assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
@@ -577,7 +580,6 @@ public class ItTwoDomainsLoadBalancers {
               .volumeMode("Filesystem")
               .putCapacityItem("storage", Quantity.fromString("5Gi"))
               .persistentVolumeReclaimPolicy("Recycle")
-              .accessModes(Arrays.asList("ReadWriteMany"))
               .hostPath(new V1HostPathVolumeSource()
                   .path(pvHostPath.toString())))
           .metadata(new V1ObjectMetaBuilder()
@@ -608,7 +610,7 @@ public class ItTwoDomainsLoadBalancers {
       // create the domain custom resource configuration object
       logger.info("Creating domain custom resource");
       Domain domain =
-          createDomainCustomResource(domainUid, domainNamespace, wlSecretName, pvName, pvcName, t3ChannelPort);
+          createDomainCustomResource(domainUid, domainNamespace, pvName, pvcName, t3ChannelPort);
 
       logger.info("Creating domain custom resource {0} in namespace {1}", domainUid, domainNamespace);
       createDomainAndVerify(domain, domainNamespace);
@@ -689,23 +691,23 @@ public class ItTwoDomainsLoadBalancers {
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
-                    .initContainers(Arrays.asList(new V1Container()
+                    .initContainers(Collections.singletonList(new V1Container()
                         .name("fix-pvc-owner")
                         .image(image)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
                         .addArgsItem("chown -R 1000:1000 /shared")
-                        .volumeMounts(Arrays.asList(
+                        .volumeMounts(Collections.singletonList(
                             new V1VolumeMount()
                                 .name(pvName)
                                 .mountPath("/shared")))
                         .securityContext(new V1SecurityContext()
                             .runAsGroup(0L)
                             .runAsUser(0L))))
-                    .containers(Arrays.asList(new V1Container()
+                    .containers(Collections.singletonList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")
                         .image(image)
-                        .ports(Arrays.asList(new V1ContainerPort()
+                        .ports(Collections.singletonList(new V1ContainerPort()
                             .containerPort(7001)))
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
@@ -731,7 +733,7 @@ public class ItTwoDomainsLoadBalancers {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptConfigMapName))))  //ConfigMap containing domain scripts
-                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                    .imagePullSecrets(isUseSecret ? Collections.singletonList(
                         new V1LocalObjectReference()
                             .name(OCR_SECRET_NAME))
                         : null))));
@@ -949,27 +951,10 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Check pod is ready and service exists in the specified namespace.
-   *
-   * @param podName pod name to check
-   * @param domainUid the label the pod is decorated with
-   * @param namespace the namespace in which the pod exists
-   */
-  private void checkPodReadyAndServiceExists(String podName, String domainUid, String namespace) {
-    logger.info("Waiting for pod {0} to be ready in namespace {1}", podName, namespace);
-    checkPodReady(podName, domainUid, namespace);
-
-    logger.info("Check service {0} exists in namespace {1}", podName, namespace);
-    checkServiceExists(podName, namespace);
-
-  }
-
-  /**
    * Create a domain custom resource object.
    *
    * @param domainUid uid of the domain
    * @param domainNamespace namespace of the domain
-   * @param wlSecretName WebLogic secret name
    * @param pvName name of persistence volume
    * @param pvcName name of persistence volume claim
    * @param t3ChannelPort t3 channel port for admin server
@@ -977,7 +962,6 @@ public class ItTwoDomainsLoadBalancers {
    */
   private Domain createDomainCustomResource(String domainUid,
                                             String domainNamespace,
-                                            String wlSecretName,
                                             String pvName,
                                             String pvcName,
                                             int t3ChannelPort) {
@@ -992,7 +976,7 @@ public class ItTwoDomainsLoadBalancers {
             .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(image)
-            .imagePullSecrets(isUseSecret ? Arrays.asList(
+            .imagePullSecrets(isUseSecret ? Collections.singletonList(
                 new V1LocalObjectReference()
                     .name(OCR_SECRET_NAME))
                 : null)
@@ -1055,9 +1039,7 @@ public class ItTwoDomainsLoadBalancers {
     createSecretWithUsernamePassword(wlSecretName, defaultNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume
-    Path pvHostPath = assertDoesNotThrow(
-        () -> createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), "default-sharing-persistentVolume")),
-        "createDirectories failed with IOException");
+    Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), "default-sharing-persistentVolume");
 
     logger.info("Creating PV directory {0}", pvHostPath);
     assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
@@ -1070,7 +1052,6 @@ public class ItTwoDomainsLoadBalancers {
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
-            .accessModes(Arrays.asList("ReadWriteMany"))
             .hostPath(new V1HostPathVolumeSource()
                 .path(pvHostPath.toString())))
         .metadata(new V1ObjectMetaBuilder()
@@ -1100,7 +1081,7 @@ public class ItTwoDomainsLoadBalancers {
       String domainScriptConfigMapName = "create-domain" + i + "-scripts-cm";
       String createDomainInPVJobName = "create-domain" + i + "-onpv-job";
 
-      t3ChannelPort = getNextFreePort(32003, 32700);
+      t3ChannelPort = getNextFreePort(32003 + i, 32700);
       logger.info("t3ChannelPort for domain {0} is {1}", domainUid, t3ChannelPort);
 
       // run create a domain on PV job using WLST
@@ -1110,7 +1091,7 @@ public class ItTwoDomainsLoadBalancers {
       // create the domain custom resource configuration object
       logger.info("Creating domain custom resource");
       Domain domain =
-          createDomainCustomResource(domainUid, defaultNamespace, wlSecretName, pvName, pvcName, t3ChannelPort);
+          createDomainCustomResource(domainUid, defaultNamespace, pvName, pvcName, t3ChannelPort);
 
       logger.info("Creating domain custom resource {0} in namespace {1}", domainUid, defaultNamespace);
       createDomainAndVerify(domain, defaultNamespace);
@@ -1314,10 +1295,9 @@ public class ItTwoDomainsLoadBalancers {
 
   private int getTraefikLbNodePort(boolean isHttps) {
     logger.info("Getting web node port for Traefik loadbalancer {0}", traefikHelmParams.getReleaseName());
-    int webNodePort = assertDoesNotThrow(() ->
+    return assertDoesNotThrow(() ->
             getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
         "Getting web node port for Traefik loadbalancer failed");
-    return webNodePort;
   }
 
   private void bindDomainName(String domainUid, int lbPort) {
@@ -1358,10 +1338,9 @@ public class ItTwoDomainsLoadBalancers {
     for (int i = 1; i <= replicaCount; i++) {
       managedServers.add(MANAGED_SERVER_NAME_BASE + i);
     }
-    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-        .as("Verify members can see other in cluster.")
-        .withFailMessage("application not accessible through loadbalancer.")
-        .isTrue();
+
+    // verify each managed server can see other member in the cluster
+    verifyServerCommunication(curlRequest, managedServers);
 
     boolean hostRouting = false;
     //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
@@ -1389,5 +1368,54 @@ public class ItTwoDomainsLoadBalancers {
       }
     }
     assertTrue(hostRouting, "Host routing is not working");
+  }
+
+  private static void verifyServerCommunication(String curlRequest, List<String> managedServerNames) {
+
+    HashMap<String, Boolean> managedServers = new HashMap<>();
+    managedServerNames.forEach(managedServerName -> managedServers.put(managedServerName, false));
+
+    //verify each server in the cluster can see other members
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> logger.info("Waiting until each managed server can see other cluster members"
+                + "(elapsed time {0} ms, remaining time {1} ms)",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(() -> {
+          for (int i = 0; i < managedServerNames.size(); i++) {
+            logger.info(curlRequest);
+            // check the response contains managed server name
+            ExecResult result = null;
+            try {
+              result = ExecCommand.exec(curlRequest, true);
+            } catch (IOException | InterruptedException ex) {
+              logger.severe(ex.getMessage());
+            }
+            String response = result.stdout().trim();
+            logger.info(response);
+            for (var managedServer : managedServers.entrySet()) {
+              boolean seeEachOther = true;
+              logger.info("Looking for serverName:" + managedServer.getKey());
+              if (response.contains("ServerName:" + managedServer.getKey())) {
+                for (String managedServerName : managedServerNames) {
+                  logger.info("Looking for Bound:" + managedServerName);
+                  seeEachOther = seeEachOther && response.contains("Bound:" + managedServerName);
+                }
+                if (seeEachOther) {
+                  logger.info("Server:" + managedServer.getKey() + " can see all cluster members");
+                  managedServers.put(managedServer.getKey(), true);
+                }
+              }
+            }
+          }
+          managedServers.forEach((key, value) -> {
+            if (value) {
+              logger.info("The server {0} can see other cluster members", key);
+            } else {
+              logger.info("The server {0} unable to see other cluster members ", key);
+            }
+          });
+          return !managedServers.containsValue(false);
+        });
   }
 }
