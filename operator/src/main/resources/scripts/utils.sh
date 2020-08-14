@@ -244,6 +244,7 @@ function checkEnv() {
   return 0
 }
 
+#
 # traceEnv:
 #   purpose: trace a curated set of env vars
 #   warning: we purposely avoid dumping all env vars
@@ -308,6 +309,178 @@ function traceDirs() {
       cnt=$((cnt + 1))
     done
   done
+}
+
+
+#
+# internal helper for logFileRotate():
+#   return all files that match ${1}NNNNN in numeric order
+#
+function logFiles() {
+  ls -1 ${1}[0-9][0-9][0-9][0-9][0-9] 2>/dev/null
+}
+
+#
+# internal helper for logFileRotate():
+#   return all files that match ${1}NNNNN in reverse order
+#
+function logFilesReverse() {
+  ls -1r ${1}[0-9][0-9][0-9][0-9][0-9] 2>/dev/null
+}
+
+#
+# internal helper for logFileRotate():
+#   parse NNNNN out of $1, but if not found at end of $1 return 0
+#
+function logFileNum() {
+  local logNum=$(echo "$1" | sed 's/.*\([0-9][0-9][0-9][0-9][0-9]\)$/\1/' | sed 's/^0*//')
+  echo ${logNum:-0}
+}
+
+#
+# internal helper for logFileRotate():
+#   Rotate file from ${1} to ${1}NNNNN
+#     $1 = filename
+#     $2 = max files to keep
+#     $3 = if "quiet", then suppress any tracing 
+#   See logFileRotate() for detailed usage.A
+#
+function logFileRotateInner() {
+  local logmax=${2:-7}
+  local logcur
+
+  [ $logmax -le 1 ] && logmax=1
+  [ $logmax -gt 40000 ] && logmax=40000
+
+  # find highest numbered log file (0 if none found)
+
+  local lastlogfile=$(logFiles "$1" | tail -n 1)
+  local lastlognum=$(logFileNum $lastlogfile)
+
+  # delete oldest log files
+
+  local _logmax_=$logmax
+  if [ -f "$1" ]; then
+    # account for the current file (the one we're about to rotate) if there is one
+    _logmax_=$((logmax - 1))
+  fi
+  for logcur in $(logFilesReverse ${1} | tail -n +${_logmax_}); do
+    [ ! "$3" = "quiet" ] && trace "Removing old log file '${logcur}'."
+    rm $logcur
+  done
+
+  # if highest lognum is 99999, renumber existing files starting with 1
+  # (there should be no overlap because we just deleted older files)
+
+  if [ $lastlognum -ge 99999 ]; then
+    lastlognum=0
+    local logcur
+    for logcur in $(logFiles "$1"); do
+      lastlognum=$((lastlognum + 1))
+      mv "$logcur" "${1}$(printf "%0.5i" $lastlognum)"
+    done
+  fi
+
+  # rotate $1 if it exists, or simply remove it if logmax is 1
+
+  if [ ${logmax} -gt 1 ]; then
+    if [ -f "$1" ]; then
+      local nextlognum=$((lastlognum + 1))
+      [ ! "$3" = "quiet" ] && trace "Rotating '$1' to '${1}$(printf "%0.5i" $nextlognum)'."
+      mv "$1" "${1}$(printf "%0.5i" $nextlognum)"
+    fi
+  else
+    rm -f "$1"
+  fi
+}
+
+#
+# internal helper for logFileRotate():
+#
+function testLFRWarn() {
+  trace WARNING "File rotation test failed. Log files named '${1}' will not be rotated, errcode='${2}'."
+}
+
+#
+# internal helper for logFileRotate():
+#   Convert new-lines to space, multi-spaces to single space, and trim
+#
+function testTR() {
+  tr '\n' ' ' | sed 's/  */ /g' | sed 's/ $//g'
+}
+
+#
+# internal helper for logFileRotate():
+#   Verify  logFileRotateInner works, return non-zero if not.
+#
+function testLogFileRotate() {
+  local curfile=${1:-/tmp/unknown}
+  local fname=$(dirname $curfile)/testFileRotate.$RANDOM.$SECONDS.tmp
+  mkdir -p $(dirname $curfile)
+
+  rm -f ${fname}*
+  logFileRotateInner ${fname} 7 quiet
+  [ ! "$(ls ${fname}* 2>/dev/null)" = "" ]                  && testLFRWarn "$curfile" A1 && return 1
+  echo "a" > ${fname} && logFileRotateInner ${fname} 2 quiet
+  [ ! "$(ls ${fname}*)" = "${fname}00001" ]                 && testLFRWarn "$curfile" B1 && return 1
+  [ ! "$(cat ${fname}00001)" = "a" ]                        && testLFRWarn "$curfile" B2 && return 1
+  logFileRotateInner ${fname} 2 quiet
+  [ ! "$(ls ${fname}*)" = "${fname}00001" ]                 && testLFRWarn "$curfile" C1 && return 1
+  [ ! "$(cat ${fname}00001)" = "a" ]                        && testLFRWarn "$curfile" C2 && return 1
+  echo "b" > ${fname} && logFileRotateInner ${fname} 2 quiet
+  [ ! "$(ls ${fname}*)" = "${fname}00002" ]                 && testLFRWarn "$curfile" C3 && return 1
+  [ ! "$(cat ${fname}00002)" = "b" ]                        && testLFRWarn "$curfile" C4 && return 1
+  echo "c" > ${fname} && logFileRotateInner ${fname} 0 quiet
+  [ ! "$(ls ${fname}* 2>/dev/null)" = "" ]                  && testLFRWarn "$curfile" D1 && return 1
+
+  echo 1 > ${fname} && logFileRotateInner ${fname} 3 quiet
+  [ ! "$(ls ${fname}* | testTR)" = "${fname}00001" ]               && testLFRWarn "$curfile" E1 && return 1
+  echo 2 > ${fname} && logFileRotateInner ${fname} 3 quiet
+  [ ! "$(ls ${fname}* | testTR)" = "${fname}00001 ${fname}00002" ] && testLFRWarn "$curfile" E2 && return 1
+  echo 3 > ${fname} && logFileRotateInner ${fname} 3 quiet
+  [ ! "$(ls ${fname}* | testTR)" = "${fname}00002 ${fname}00003" ] && testLFRWarn "$curfile" E3 && return 1
+  echo 4 > ${fname} && logFileRotateInner ${fname} 3 quiet
+  [ ! "$(ls ${fname}* | testTR)" = "${fname}00003 ${fname}00004" ] && testLFRWarn "$curfile" E4 && return 1
+  [ ! "$(cat ${fname}00003)" = "3" ]                               && testLFRWarn "$curfile" E5 && return 1
+  [ ! "$(cat ${fname}00004)" = "4" ]                               && testLFRWarn "$curfile" E6 && return 1
+  local count
+  rm ${fname}*
+  echo "0" > ${fname}
+  for count in 99997 99998 99999; do
+    echo $count > ${fname}${count}
+  done
+  logFileRotateInner ${fname} 4 quiet
+  [ ! "$(ls ${fname}* | testTR)" = "${fname}00001 ${fname}00002 ${fname}00003" ]  \
+                                                            && testLFRWarn "$curfile" F1 && return 1
+  [ ! "$(cat ${fname}00001)" = "99998" ]                    && testLFRWarn "$curfile" F2 && return 1
+  [ ! "$(cat ${fname}00002)" = "99999" ]                    && testLFRWarn "$curfile" F3 && return 1
+  [ ! "$(cat ${fname}00003)" = "0" ]                        && testLFRWarn "$curfile" F4 && return 1
+  logFileRotateInner ${fname} 2 quiet
+  [ ! "$(ls ${fname}*)" = "${fname}00003" ]                 && testLFRWarn "$curfile" F5 && return 1
+  rm ${fname}*
+  return 0
+}
+
+#
+# logFileRotate
+#   Rotate file from ${1} to ${1}NNNNN, starting with 00001.
+#     $1 = filename
+#     $2 = max log files, default is 7
+#   Notes:
+#     - $2 = 0 or 1 implies there should be no saved files
+#            and causes $1 to be removed instead of rotated
+#
+#     - Silently tests rotation on scratch files first, and,
+#       if that fails logs a WARNING, does nothing, and returns.
+#
+#     - If current max file is 99999, then old files are
+#       renumbered starting with 00001.
+#
+function logFileRotate() {
+  # test rotation, if it fails, log a Warning that rotation of $1 is skipped.
+  testLogFileRotate "$1" || return 0
+  # now do the actual rotation
+  logFileRotateInner "$1" $2
 }
 
 
