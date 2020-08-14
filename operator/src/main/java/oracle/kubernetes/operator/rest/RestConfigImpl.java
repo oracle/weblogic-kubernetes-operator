@@ -16,19 +16,19 @@ public class RestConfigImpl implements RestConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final String principal;
-  private final Collection<String> targetNamespaces;
+  private final Collection<String> domainNamespaces;
 
   /**
    * Constructs a RestConfigImpl.
    *
    * @param principal is the name of the Kubernetes User or Service Account to use when calling the
    *     Kubernetes REST API.
-   * @param targetNamespaces is a list of the Kubernetes Namespaces covered by this Operator.
+   * @param domainNamespaces is a list of the Kubernetes Namespaces covered by this Operator.
    */
-  public RestConfigImpl(String principal, Collection<String> targetNamespaces) {
-    LOGGER.entering(principal, targetNamespaces);
+  public RestConfigImpl(String principal, Collection<String> domainNamespaces) {
+    LOGGER.entering(principal, domainNamespaces);
     this.principal = principal;
-    this.targetNamespaces = targetNamespaces;
+    this.domainNamespaces = domainNamespaces;
     LOGGER.exiting();
   }
 
@@ -90,7 +90,7 @@ public class RestConfigImpl implements RestConfig {
   @Override
   public RestBackend getBackend(String accessToken) {
     LOGGER.entering();
-    RestBackend result = new RestBackendImpl(principal, accessToken, targetNamespaces);
+    RestBackend result = new RestBackendImpl(principal, accessToken, domainNamespaces);
     LOGGER.exiting();
     return result;
   }

@@ -67,7 +67,7 @@ public class Operator {
    * @param inputMap       input
    * @param opNS           opNS
    * @param opSA           opSA
-   * @param targetdomainNS target
+   * @param domainNamespaces target
    * @param restCertType   cert
    * @throws Exception exception
    */
@@ -75,11 +75,11 @@ public class Operator {
       Map<String, Object> inputMap,
       boolean opNS,
       boolean opSA,
-      boolean targetdomainNS,
+      boolean domainNamespaces,
       RestCertType restCertType)
       throws Exception {
     this.restCertType = restCertType;
-    initialize(inputMap, opNS, opSA, targetdomainNS);
+    initialize(inputMap, opNS, opSA, domainNamespaces);
     generateInputYaml();
   }
 
@@ -479,7 +479,7 @@ public class Operator {
   }
 
   private void initialize(
-      Map<String, Object> inputMap, boolean opNS, boolean opSA, boolean targetdomainNS)
+      Map<String, Object> inputMap, boolean opNS, boolean opSA, boolean domainNamespaces)
       throws Exception {
     operatorMap = inputMap;
     userProjectsDir = (String) operatorMap.get("userProjectsDir");
@@ -512,13 +512,13 @@ public class Operator {
         }
       }
     }
-    if (targetdomainNS) {
+    if (domainNamespaces) {
       // create domain namespaces
 
-      ArrayList<String> domainNamespaces = (ArrayList<String>) operatorMap.get("domainNamespaces");
-      if (domainNamespaces != null) {
-        for (int i = 0; i < domainNamespaces.size(); i++) {
-          String domainNS = domainNamespaces.get(i);
+      ArrayList<String> dns = (ArrayList<String>) operatorMap.get("domainNamespaces");
+      if (dns != null) {
+        for (int i = 0; i < dns.size(); i++) {
+          String domainNS = dns.get(i);
           LoggerHelper.getLocal().log(Level.INFO, "domainNamespace " + domainNS);
           if (!domainNS.equals("default")) {
             LoggerHelper.getLocal().log(Level.INFO, "Creating domain namespace " + domainNS);

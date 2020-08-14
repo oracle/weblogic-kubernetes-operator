@@ -31,7 +31,14 @@
 {{-     $ignore := include "utils.verifyInteger" (list $scope "externalDebugHttpPort") -}}
 {{-   end -}}
 {{- end -}}
-{{- $ignore := include "utils.verifyStringList" (list $scope "domainNamespaces") -}}
+{{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "enableClusterRoleBinding") -}}
+{{- if and .enableClusterRoleBinding (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
+{{-   $errorMsg := "The enableClusterRoleBinding value may not be true when either dedicated is true or domainNamespaceSelectionStrategy is Dedicated" -}}
+{{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
+{{- end -}}
+{{- if eq $scope.domainNamespaceSelectionStrategy "List" -}}
+{{-     $ignore := include "utils.verifyStringList" (list $scope "domainNamespaces") -}}
+{{- end -}}
 {{- if include "utils.verifyBoolean" (list $scope "elkIntegrationEnabled") -}}
 {{-   if $scope.elkIntegrationEnabled -}}
 {{-     $ignore := include "utils.verifyString" (list $scope "logStashImage") -}}
@@ -40,6 +47,13 @@
 {{-   end -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "dedicated") -}}
+{{- $ignore := include "utils.verifyEnum" (list $scope "domainNamespaceSelectionStrategy" (list "List" "LabelSelector" "RegExp" "Dedicated")) -}}
+{{- if eq $scope.domainNamespaceSelectionStrategy "LabelSelector" -}}
+{{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceLabelSelector") -}}
+{{- end -}}
+{{- if eq $scope.domainNamespaceSelectionStrategy "RegExp" -}}
+{{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceRegExp") -}}
+{{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
 {{- $ignore := include "utils.endValidation" $scope -}}
 {{- end -}}
