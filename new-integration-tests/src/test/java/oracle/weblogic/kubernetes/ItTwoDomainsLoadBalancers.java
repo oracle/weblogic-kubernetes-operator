@@ -1130,9 +1130,16 @@ public class ItTwoDomainsLoadBalancers {
           getServiceNodePort(defaultNamespace, adminServerPodName + "-external", "default");
 
       logger.info("Validating WebLogic admin server access by login to console");
-      assertTrue(assertDoesNotThrow(
-          () -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-          "Access to admin server node port failed"), "Console login validation failed");
+      boolean adminAccessible = false;
+      for (int k = 0; k < 10; k++) {
+        adminAccessible = assertDoesNotThrow(
+            () -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT));
+        if (adminAccessible) {
+          break;
+        }
+        assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
+      }
+      assertTrue(adminAccessible, "Console login validation failed");
     }
   }
 
