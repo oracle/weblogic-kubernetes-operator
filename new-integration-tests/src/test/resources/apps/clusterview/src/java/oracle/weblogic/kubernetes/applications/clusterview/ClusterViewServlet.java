@@ -78,7 +78,7 @@ public class ClusterViewServlet extends HttpServlet {
         ctx.lookup(serverRuntime.getName());
       } catch (NameNotFoundException nnfe) {
         System.out.println("ITESTS:>>>>>>Server not found in JNDI tree, Binding " + serverRuntime.getName() + " in JNDI tree");
-        ctx.bind(serverRuntime.getName(), serverRuntime.getName());
+        ctx.bind("Bound" + serverRuntime.getName(), serverRuntime.getName());
         System.out.println("ITESTS:>>>>>>Bound " + serverRuntime.getName() + " in JNDI tree");
       }
     } catch (MalformedObjectNameException | NamingException ex) {
@@ -145,10 +145,18 @@ public class ClusterViewServlet extends HttpServlet {
         out.println("Members:" + String.join(",", serverNames));
         out.println("ServerName:" + serverRuntime.getName());
 
+        try {
+          double random = Math.random();
+          String randomString = serverRuntime.getName() + random;
+          ctx.bind(randomString, randomString);
+        } catch (NameNotFoundException nnfex) {
+          out.println(nnfex.getMessage());
+        }
+
         // lookup JNDI for other clustered servers bound in tree
         for (String serverName : serverNames) {
           try {
-            if (ctx.lookup(serverName) != null) {
+            if (ctx.lookup("Bound" + serverName) != null) {
               out.println("Bound:" + serverName);
             }
           } catch (NameNotFoundException nnfex) {
