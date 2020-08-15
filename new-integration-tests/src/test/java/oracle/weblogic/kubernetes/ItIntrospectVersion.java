@@ -475,7 +475,12 @@ public class ItIntrospectVersion {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
+        + "?domain=" + domainUid
+        + "&servers=" + String.join(":", managedServerNames)
+        + "&user=" + ADMIN_USERNAME_DEFAULT
+        + "&password=" + ADMIN_PASSWORD_DEFAULT
+        + "&port=" + managedServerPort,
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
 
     // verify each managed server can see other member in the cluster
@@ -595,7 +600,12 @@ public class ItIntrospectVersion {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
+        + "?domain=" + domainUid
+        + "&servers=" + String.join(":", managedServerNames)
+        + "&user=" + ADMIN_USERNAME_DEFAULT
+        + "&password=" + ADMIN_PASSWORD_DEFAULT
+        + "&port=8001",
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
 
     // verify each managed server can see other member in the cluster
@@ -961,11 +971,11 @@ public class ItIntrospectVersion {
             logger.info(response);
             for (var managedServer : managedServers.entrySet()) {
               boolean seeEachOther = true;
-              logger.info("Looking for serverName:" + managedServer.getKey());
-              if (response.contains("ServerName:" + managedServer.getKey())) {
+              logger.info("Looking for Server:" + managedServer.getKey());
+              if (response.contains("Server:" + managedServer.getKey())) {
                 for (String managedServerName : managedServerNames) {
-                  logger.info("Looking for Bound:" + managedServerName);
-                  seeEachOther = seeEachOther && response.contains("Bound:" + managedServerName);
+                  logger.info("Looking for Success:" + managedServerName);
+                  seeEachOther = seeEachOther && response.contains("Success:" + managedServerName);
                 }
                 if (seeEachOther) {
                   logger.info("Server:" + managedServer.getKey() + " can see all cluster members");

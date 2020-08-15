@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.applications.clusterview;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Hashtable;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -13,10 +14,14 @@ import javax.management.IntrospectionException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
+import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXServiceURL;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
@@ -184,6 +189,7 @@ public class ClusterViewServlet extends HttpServlet {
             System.out.println("ITESTS:>>>>>>Not Bound " + domainName + " in JNDI tree");
           }
         }
+        testConnection(request, out);
 
       } else {
         out.println(serverRuntime.getName() + ":Cluster runtime NULL <BR>");
@@ -225,6 +231,76 @@ public class ClusterViewServlet extends HttpServlet {
         | IntrospectionException | ReflectionException ex) {
       Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
     }
+  }
+
+  private void testConnection(HttpServletRequest request, PrintWriter out) {
+
+    String domain = request.getParameter("domain");
+    String servers = request.getParameter("servers");
+    String portString = request.getParameter("port");
+    String user = request.getParameter("user");
+    String password = request.getParameter("password");
+
+    out.println("Server:" + runtimeService.getServerRuntime().getName());
+    JMXConnector jmxConnector = null;
+
+    String[] managedServers = servers.split(":");
+    for (String managedServer : managedServers) {
+      try {
+        String host = domain + "-" + managedServer;
+        System.out.println("Host: " + host + " Port: " + portString + " username: " + user + " password :" + password);
+        String protocol = "t3";
+        Integer portInteger = Integer.valueOf(portString);
+        int port = portInteger;
+        Hashtable h = new Hashtable();
+        h.put(Context.SECURITY_PRINCIPAL, user);
+        h.put(Context.SECURITY_CREDENTIALS, password);
+        h.put(JMXConnectorFactory.PROTOCOL_PROVIDER_PACKAGES, "weblogic.management.remote");
+        h.put("jmx.remote.x.request.waiting.timeout", Long.valueOf(10000));
+        JMXServiceURL serviceURL = new JMXServiceURL(protocol, host, port, "/jndi/" + RuntimeServiceMBean.MBEANSERVER_JNDI_NAME);
+        System.out.println("Making mbean server connection with url" + serviceURL.toString());
+        jmxConnector = JMXConnectorFactory.connect(serviceURL, h);
+        MBeanServerConnection mbeanServer = jmxConnector.getMBeanServerConnection();
+        ObjectName runtimeserviceObjectName = new ObjectName(RuntimeServiceMBean.OBJECT_NAME);
+        RuntimeServiceMBean runtimeService = (RuntimeServiceMBean) MBeanServerInvocationHandler.newProxyInstance(mbeanServer, runtimeserviceObjectName);
+        ServerRuntimeMBean serverRuntime = runtimeService.getServerRuntime();
+        out.println("Success:" + serverRuntime.getName());
+      } catch (Exception ex) {
+        out.println(ex.getMessage());
+      } finally {
+        try {
+          if (jmxConnector != null) {
+            System.out.println("Closing mbean server connection");
+            jmxConnector.close();
+          }
+        } catch (IOException ex) {
+          out.println(ex.getMessage());
+        }
+      }
+    }
+  }
+
+  protected MBeanServerConnection lookupMBeanServerConnection(String host, String portString, String user, String password, String jndiName) {
+    JMXServiceURL serviceURL = null;
+    MBeanServerConnection mBeanServerConnection = null;
+    try {
+      System.out.println("Host: " + host + " Port: " + portString + " username: " + user + " password :" + password);
+      String protocol = "t3";
+      Integer portInteger = Integer.valueOf(portString);
+      int port = portInteger;
+      Hashtable h = new Hashtable();
+      h.put(Context.SECURITY_PRINCIPAL, user);
+      h.put(Context.SECURITY_CREDENTIALS, password);
+      h.put(JMXConnectorFactory.PROTOCOL_PROVIDER_PACKAGES, "weblogic.management.remote");
+      h.put("jmx.remote.x.request.waiting.timeout", Long.valueOf(10000));
+      serviceURL = new JMXServiceURL(protocol, host, port, "/jndi/" + jndiName);
+      System.out.println("Making mbean server connection with url" + serviceURL.toString());
+      JMXConnector jmxConnector = JMXConnectorFactory.connect(serviceURL, h);
+      mBeanServerConnection = jmxConnector.getMBeanServerConnection();
+    } catch (NumberFormatException | IOException e) {
+      System.out.println(e.getLocalizedMessage());
+    }
+    return mBeanServerConnection;
   }
 
   /**
