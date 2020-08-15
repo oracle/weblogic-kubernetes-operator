@@ -236,10 +236,16 @@ public class ClusterViewServlet extends HttpServlet {
   private void testConnection(HttpServletRequest request, PrintWriter out) {
 
     String domain = request.getParameter("domain");
+    System.out.println("domain:" + domain);
     String servers = request.getParameter("servers");
+    System.out.println("servers:" + servers);
     String portString = request.getParameter("port");
+    System.out.println("portString:" + portString);
     String user = request.getParameter("user");
+    System.out.println("user:" + user);
     String password = request.getParameter("password");
+    System.out.println("password:" + password);
+
 
     out.println("Server:" + runtimeService.getServerRuntime().getName());
     JMXConnector jmxConnector = null;
