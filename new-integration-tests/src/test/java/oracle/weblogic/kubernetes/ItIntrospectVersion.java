@@ -474,11 +474,8 @@ public class ItIntrospectVersion {
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
-        + "\"?domain=" + domainUid
-        + "&servers=" + String.join(":", managedServerNames)
-        + "&user=" + ADMIN_USERNAME_DEFAULT
-        + "&password=" + ADMIN_PASSWORD_DEFAULT
-        + "&port=" + managedServerPort + "\"",
+        + "\"?user=" + ADMIN_USERNAME_DEFAULT
+        + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
 
     // verify each managed server can see other member in the cluster
@@ -599,11 +596,8 @@ public class ItIntrospectVersion {
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
-        + "\"?domain=" + domainUid
-        + "&servers=" + String.join(":", managedServerNames)
-        + "&user=" + ADMIN_USERNAME_DEFAULT
-        + "&password=" + ADMIN_PASSWORD_DEFAULT
-        + "&port=8001\"",
+        + "\"?user=" + ADMIN_USERNAME_DEFAULT
+        + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
 
     // verify each managed server can see other member in the cluster
