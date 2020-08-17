@@ -35,6 +35,9 @@ import static java.net.HttpURLConnection.HTTP_GONE;
  * @param <T> The type of the object to be watched.
  */
 abstract class Watcher<T> {
+  @SuppressWarnings("FieldMayBeFinal") // not final so unit tests can set it
+  private static WatcherStarter STARTER = Watcher::startAsynchronousWatch;
+
   static final String HAS_NEXT_EXCEPTION_MESSAGE = "IO Exception during hasNext method.";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String IGNORED = "0";
@@ -101,8 +104,13 @@ abstract class Watcher<T> {
 
   /** Kick off the watcher processing that runs in a separate thread. */
   void start(ThreadFactory factory) {
-    thread = factory.newThread(this::doWatch);
+    thread = STARTER.startWatcher(factory, this::doWatch);
+  }
+
+  public static Thread startAsynchronousWatch(ThreadFactory factory, Runnable doWatch) {
+    final Thread thread = factory.newThread(doWatch);
     thread.start();
+    return thread;
   }
 
   private void doWatch() {

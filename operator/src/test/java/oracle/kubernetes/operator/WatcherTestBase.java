@@ -15,6 +15,7 @@ import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.utils.TestUtils.ConsoleHandlerMemento;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,9 +70,13 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
    */
   @Before
   public void setUp() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(hasNextException));
+    mementos.add(configureOperatorLogger());
     mementos.add(StubWatchFactory.install());
     StubWatchFactory.setListener(this);
+  }
+
+  protected ConsoleHandlerMemento configureOperatorLogger() {
+    return TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(hasNextException);
   }
 
   final void addMemento(Memento memento) {

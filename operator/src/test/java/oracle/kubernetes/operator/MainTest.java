@@ -9,13 +9,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -46,63 +43,47 @@ public class MainTest extends ThreadFactoryTestBase {
   private static final String DOMAIN_UID = "domain-uid-for-testing";
   private Method getDomainNamespaces;
 
-  public static final String NAMESPACE_STATUS_MAP = "namespaceStatuses";
-  public static final String NAMESPACE_STOPPING_MAP = "namespaceStoppingMap";
+  private static final String NAMESPACE_STATUS_MAP = "namespaceStatuses";
+  private static final String NAMESPACE_STOPPING_MAP = "namespaceStoppingMap";
 
-  public static final String REGEXP = "^weblogic";
-  public static final String NS_WEBLOGIC1 = "weblogic-alpha";
-  public static final String NS_WEBLOGIC2 = "weblogic-beta";
-  public static final String NS_WEBLOGIC3 = "weblogic-gamma";
-  public static final String NS_OTHER1 = "other-alpha";
-  public static final String NS_OTHER2 = "other-beta";
+  private static final String REGEXP = "^weblogic";
+  private static final String NS_WEBLOGIC1 = "weblogic-alpha";
+  private static final String NS_WEBLOGIC2 = "weblogic-beta";
+  private static final String NS_WEBLOGIC3 = "weblogic-gamma";
+  private static final String NS_OTHER1 = "other-alpha";
+  private static final String NS_OTHER2 = "other-beta";
 
-  public static final String LABEL = "weblogic-operator";
-  public static final String VALUE = "enabled";
+  private static final String LABEL = "weblogic-operator";
+  private static final String VALUE = "enabled";
 
-  public static final V1Namespace NAMESPACE_WEBLOGIC1
+  private static final V1Namespace NAMESPACE_WEBLOGIC1
       = new V1Namespace().metadata(new V1ObjectMeta().name(NS_WEBLOGIC1).putLabelsItem(LABEL, VALUE));
-  public static final V1Namespace NAMESPACE_WEBLOGIC2
+  private static final V1Namespace NAMESPACE_WEBLOGIC2
       = new V1Namespace().metadata(new V1ObjectMeta().name(NS_WEBLOGIC2).putLabelsItem(LABEL, VALUE));
-  public static final V1Namespace NAMESPACE_WEBLOGIC3
+  private static final V1Namespace NAMESPACE_WEBLOGIC3
       = new V1Namespace().metadata(new V1ObjectMeta().name(NS_WEBLOGIC3).putLabelsItem(LABEL, VALUE));
-  public static final V1Namespace NAMESPACE_OTHER1
+  private static final V1Namespace NAMESPACE_OTHER1
           = new V1Namespace().metadata(new V1ObjectMeta().name(NS_OTHER1));
-  public static final V1Namespace NAMESPACE_OTHER2
+  private static final V1Namespace NAMESPACE_OTHER2
           = new V1Namespace().metadata(new V1ObjectMeta().name(NS_OTHER2));
 
-  protected KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  protected List<Memento> mementos = new ArrayList<>();
-  private Map<String,String> helmValues = new HashMap<>();
-  private Function<String,String> getTestHelmValue = helmValues::get;
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
 
-  private static Memento installStub(Class<?> containingClass, String fieldName, Object newValue)
-          throws NoSuchFieldException {
-    return StaticStubSupport.install(containingClass, fieldName, newValue);
-  }
-
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
   @Before
   public void setUp() throws Exception {
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(StubWatchFactory.install());
-    mementos.add(StaticStubSupport.install(Main.class, "getHelmVariable", getTestHelmValue));
     mementos.add(StaticStubSupport.install(Main.class, "version", new KubernetesVersion(1, 16)));
-    mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
+    mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "INSTANCE", this));
     mementos.add(StaticStubSupport.install(Main.class, "engine", testSupport.getEngine()));
-    testSupport.addContainerComponent("TF", ThreadFactory.class, this);
     mementos.add(StaticStubSupport.install(Main.class, NAMESPACE_STATUS_MAP, createNamespaceStatuses()));
     mementos.add(StaticStubSupport.install(Main.class, NAMESPACE_STOPPING_MAP, createNamespaceFlags()));
+    mementos.add(NoopWatcherStarter.install());
   }
 
-  /**
-   * Tear down test.
-   * @throws Exception on failure
-   */
   @After
   public void tearDown() throws Exception {
     for (Memento memento : mementos) {
@@ -112,13 +93,7 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.throwOnCompletionFailure();
   }
 
-  private Map<String, AtomicBoolean> getNamespaceStoppingMap()
-          throws NoSuchFieldException, IllegalAccessException {
-    Field field = Main.class.getDeclaredField(NAMESPACE_STOPPING_MAP);
-    field.setAccessible(true);
-    return (Map<String, AtomicBoolean>) field.get(null);
-  }
-
+  @SuppressWarnings("unchecked")
   private Map<String, NamespaceStatus> getNamespaceStatusMap()
           throws NoSuchFieldException, IllegalAccessException {
     Field field = Main.class.getDeclaredField(NAMESPACE_STATUS_MAP);
