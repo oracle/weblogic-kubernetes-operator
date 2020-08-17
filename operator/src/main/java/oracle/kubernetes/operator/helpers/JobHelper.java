@@ -615,9 +615,7 @@ public class JobHelper {
             .findFirst()
             .ifPresent(name -> recordJobPodName(packet, name));
 
-      // HERE
-
-      return doNext(packet);
+      return doContinueListOrNext(callResponse, packet);
     }
 
     private String getName(V1Pod pod) {

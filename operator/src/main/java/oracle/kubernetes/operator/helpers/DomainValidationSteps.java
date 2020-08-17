@@ -57,9 +57,7 @@ public class DomainValidationSteps {
     public NextAction onSuccess(Packet packet, CallResponse<V1SecretList> callResponse) {
       packet.put(SECRETS, callResponse.getResult().getItems());
 
-      // HERE
-
-      return doNext(packet);
+      return doContinueListOrNext(callResponse, packet);
     }
   }
 
@@ -73,9 +71,7 @@ public class DomainValidationSteps {
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMapList> callResponse) {
       packet.put(CONFIGMAPS, callResponse.getResult().getItems());
 
-      // HERE
-
-      return doNext(packet);
+      return doContinueListOrNext(callResponse, packet);
     }
   }
 

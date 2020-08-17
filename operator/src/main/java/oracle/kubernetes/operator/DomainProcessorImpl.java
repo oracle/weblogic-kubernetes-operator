@@ -928,9 +928,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         }
       }
 
-      // HERE
-
-      return doNext(packet);
+      return doContinueListOrNext(callResponse, packet);
     }
   }
 

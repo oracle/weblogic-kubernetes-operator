@@ -16,6 +16,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.accessContinue;
+
 /**
  * Step to receive response of Kubernetes API server call.
  *
@@ -92,17 +94,34 @@ public abstract class ResponseStep<T> extends Step {
 
   /**
    * Returns next action that can be used to get the next batch of results from a list search that
-   * specified a "continue" value.
+   * specified a "continue" value, if any; otherwise, returns next.
    *
+   * @param callResponse Call response
    * @param packet Packet
    * @return Next action for list continue
    */
-  protected final NextAction doContinueList(Packet packet) {
-    RetryStrategy retryStrategy = packet.getSpi(RetryStrategy.class);
-    if (retryStrategy != null) {
-      retryStrategy.reset();
+  protected final NextAction doContinueListOrNext(CallResponse<T> callResponse, Packet packet) {
+    return doContinueListOrNext(callResponse, packet, getNext());
+  }
+
+  /**
+   * Returns next action that can be used to get the next batch of results from a list search that
+   * specified a "continue" value, if any; otherwise, returns next.
+   *
+   * @param callResponse Call response
+   * @param packet Packet
+   * @param next Next step, if no continuation
+   * @return Next action for list continue
+   */
+  protected final NextAction doContinueListOrNext(CallResponse<T> callResponse, Packet packet, Step next) {
+    if (callResponse != null && accessContinue(callResponse.getResult()) != null) {
+      RetryStrategy retryStrategy = packet.getSpi(RetryStrategy.class);
+      if (retryStrategy != null) {
+        retryStrategy.reset();
+      }
+      return doNext(previousStep, packet);
     }
-    return doNext(previousStep, packet);
+    return doNext(next, packet);
   }
 
   /**

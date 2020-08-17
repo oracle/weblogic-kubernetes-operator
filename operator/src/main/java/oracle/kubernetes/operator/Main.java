@@ -875,9 +875,7 @@ public class Main {
             ns, createDomainWatcher(ns, getResourceVersion(callResponse.getResult())));
       }
 
-      // HERE
-
-      return doNext(packet);
+      return doContinueListOrNext(callResponse, packet);
     }
 
     String getResourceVersion(DomainList result) {
@@ -921,9 +919,7 @@ public class Main {
         serviceWatchers.put(ns, createServiceWatcher(ns, getInitialResourceVersion(result)));
       }
 
-      // HERE
-
-      return doNext(packet);
+      return doContinueListOrNext(callResponse, packet);
     }
 
     private String getInitialResourceVersion(V1ServiceList result) {
@@ -954,9 +950,7 @@ public class Main {
         eventWatchers.put(ns, createEventWatcher(ns, getInitialResourceVersion(result)));
       }
 
-      // HERE
-
-      return doNext(packet);
+      return doContinueListOrNext(callResponse, packet);
     }
 
     private String getInitialResourceVersion(V1EventList result) {
@@ -1001,9 +995,7 @@ public class Main {
         podWatchers.put(ns, createPodWatcher(ns, getInitialResourceVersion(result)));
       }
 
-      // HERE
-
-      return doNext(packet);
+      return doContinueListOrNext(callResponse, packet);
     }
 
     private String getInitialResourceVersion(V1PodList result) {
@@ -1093,9 +1085,7 @@ public class Main {
       }
       stopNamespaces(namespacesToStart, namespacesToStop);
 
-      // HERE
-
-      return doNext(strategy, packet);
+      return doContinueListOrNext(callResponse, packet, strategy);
     }
     
     private Step createDomainCrdAndStartNamespaces(Collection<String> namespacesToStart, boolean isFullRecheck) {
