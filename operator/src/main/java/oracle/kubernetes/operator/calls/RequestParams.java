@@ -16,7 +16,7 @@ public final class RequestParams {
   public final String name;
   public final Object body;
   public String domainUid;
-  private CallParams callParams;
+  public CallParams callParams;
 
   /**
    * Construct request params.
@@ -61,6 +61,10 @@ public final class RequestParams {
 
   public String getLabelSelector() {
     return callParams.getLabelSelector();
+  }
+
+  public CallParams getCallParams() {
+    return callParams;
   }
 
   public String toString() {

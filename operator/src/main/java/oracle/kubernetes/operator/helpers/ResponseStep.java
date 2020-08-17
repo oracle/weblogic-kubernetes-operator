@@ -174,7 +174,7 @@ public abstract class ResponseStep<T> extends Step {
    * @return Next action for fiber processing
    */
   public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
-    throw new IllegalStateException("Should be overriden if called");
+    throw new IllegalStateException("Must be overridden, if called");
   }
 
 }

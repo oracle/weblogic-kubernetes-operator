@@ -83,6 +83,9 @@ public class DeleteDomainStep extends Step {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
+
+      // HERE
+
       return callResponse.getResult() == null
           ? doNext(packet)
           : doNext(createSuccessStep(callResponse.getResult(), getNext()), packet);

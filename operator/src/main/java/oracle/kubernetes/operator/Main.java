@@ -874,6 +874,9 @@ public class Main {
         domainWatchers.put(
             ns, createDomainWatcher(ns, getResourceVersion(callResponse.getResult())));
       }
+
+      // HERE
+
       return doNext(packet);
     }
 
@@ -917,6 +920,9 @@ public class Main {
       if (!serviceWatchers.containsKey(ns)) {
         serviceWatchers.put(ns, createServiceWatcher(ns, getInitialResourceVersion(result)));
       }
+
+      // HERE
+
       return doNext(packet);
     }
 
@@ -947,6 +953,9 @@ public class Main {
       if (!eventWatchers.containsKey(ns)) {
         eventWatchers.put(ns, createEventWatcher(ns, getInitialResourceVersion(result)));
       }
+
+      // HERE
+
       return doNext(packet);
     }
 
@@ -991,6 +1000,9 @@ public class Main {
       if (!podWatchers.containsKey(ns)) {
         podWatchers.put(ns, createPodWatcher(ns, getInitialResourceVersion(result)));
       }
+
+      // HERE
+
       return doNext(packet);
     }
 
@@ -1080,6 +1092,8 @@ public class Main {
         }
       }
       stopNamespaces(namespacesToStart, namespacesToStop);
+
+      // HERE
 
       return doNext(strategy, packet);
     }

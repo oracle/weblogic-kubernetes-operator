@@ -869,6 +869,9 @@ public class DomainProcessorImpl implements DomainProcessor {
           }
         }
       }
+
+      // HERE
+
       return doNext(packet);
     }
   }
@@ -924,6 +927,8 @@ public class DomainProcessorImpl implements DomainProcessor {
           ServiceHelper.addToPresence(info, service);
         }
       }
+
+      // HERE
 
       return doNext(packet);
     }

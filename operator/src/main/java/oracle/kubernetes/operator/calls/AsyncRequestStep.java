@@ -94,7 +94,12 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     next.setPrevious(this);
   }
 
-  private static String accessContinue(Object result) {
+  /**
+   * Access continue field, if any, from list metadata.
+   * @param result Kubernetes list result
+   * @return Continue value
+   */
+  public static String accessContinue(Object result) {
     String cont = "";
     if (result != null) {
       try {
