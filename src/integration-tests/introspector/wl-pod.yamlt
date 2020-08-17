@@ -18,6 +18,8 @@ spec:
     env:
     - name: JAVA_OPTIONS
       value: "-Djava.security.egd=file:/dev/./urandom "
+      #value: "-Djava.security.egd=file:/dev/./urandom -Dweblogic.log.StdoutSeverityLevel=Debug -Dweblogic.log.LogSeverity=Debug -Dweblogic.StdoutDebugEnabled=true -Dweblogic.debug.DebugStoreIOPhysicalVerbose=true -Dweblogic.kernel.debug=true -Dweblogic.debug.DebugConnection=true -Dweblogic.debug.DebugMessaging=true -Dweblogic.debug.DebugJNDI=true -Dweblogic.debug.DebugJNDIFactories=true -Dweblogic.debug.DebugJNDIResolution=true"
+      #value: "-Djava.security.egd=file:/dev/./urandom -Dweblogic.log.RotateLogOnStartup=true -Dweblogic.log.FileMinSize=1 -Dweblogic.log.FileCount=1 -Dweblogic.log.StdoutSeverityLevel=Debug -Dweblogic.log.LogSeverity=Debug -Dweblogic.StdoutDebugEnabled=true -Dweblogic.debug.DebugStoreIOPhysicalVerbose=true -Dweblogic.kernel.debug=true -Dweblogic.debug.DebugConnection=true -Dweblogic.debug.DebugMessaging=true -Dweblogic.debug.DebugJNDI=true -Dweblogic.debug.DebugJNDIFactories=true -Dweblogic.debug.DebugJNDIResolution=true"
     - name: USER_MEM_ARGS
       value: "-XX:MaxRAMFraction=1 "
     - name: NODEMGR_JAVA_OPTIONS
