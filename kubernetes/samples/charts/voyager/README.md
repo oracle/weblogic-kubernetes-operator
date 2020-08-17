@@ -119,17 +119,17 @@ $ curl -k -H 'host: domain2.org' https://${HOSTNAME}:30307/testwebapp/
 ```
 
 ## SSL termination at ingress controller
-This sample demonstrates how to terminate SSL traffic at ingress controller to access the WebLogic Server Administration Console through SSL port. 
+This sample demonstrates how to terminate SSL traffic at the ingress controller to access the WebLogic Server Administration Console through the SSL port. 
 
 ### 1. Enable "WebLogic Plugin Enabled" on the WebLogic domain level
 
-If you are using WDT to configure the WebLogic domain, you need to add the following resource section at the domain level to model YAML file.
+If you are using WDT to configure the WebLogic domain, you need to add the following resource section at the domain level to the model YAML file.
 ```
 resources:
      WebAppContainer:
          WeblogicPluginEnabled: true
 ```
-If you are using WLST script to configure the domain, then the following modificationis are needed to respective PY script.
+If you are using a WLST script to configure the domain, then the following modifications are needed to the respective PY script.
 ```
 # Configure the Administration Server
 cd('/Servers/AdminServer')
@@ -141,7 +141,7 @@ cd('/Clusters/%s' % cluster_name)
 set('WeblogicPluginEnabled',true)
 ```
 ### 2. Update the frontendRules section Ingress resource.
-Replace the string 'weblogic-domain' with namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserver' with name of the Administration server in the WebLogic domain.
+Replace the string 'weblogic-domain' with namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserver' with name of the Administration Server in the WebLogic domain.
 ```
 apiVersion: voyager.appscode.com/v1beta1
 kind: Ingress
@@ -175,7 +175,7 @@ Save the above configuration as 'voyager-tls-console.yaml'.
 ```
  kubectl create -f voyager-tls-console.yaml
 ```
-### 4. Access the WebLogic Server Administration Console using https port
+### 4. Access the WebLogic Server Administration Console using the HTTPS port
 In a web browser type 'https://${HOSTNAME}:30443/console' in the address bar to access the WebLogic Server Administration Console. 
 
 ## Uninstall the Voyager Operator
