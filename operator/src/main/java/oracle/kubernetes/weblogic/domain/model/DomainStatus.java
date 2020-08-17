@@ -50,7 +50,7 @@ public class DomainStatus {
   @Description(
       "Number of retries for introspect job failure.")
   @Range(minimum = 0)
-  private Integer introspectJobFailureRetryCount = new Integer(0);
+  private Integer introspectJobFailureRetryCount = new Integer(1);
 
   @Description("Status of WebLogic Servers in this domain.")
   @Valid

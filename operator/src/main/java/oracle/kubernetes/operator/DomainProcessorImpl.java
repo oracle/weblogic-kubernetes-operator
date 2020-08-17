@@ -64,6 +64,7 @@ import oracle.kubernetes.weblogic.domain.model.AdminServer;
 import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.ADMIN_SERVER_STARTING_PROGRESS_REASON;
@@ -631,11 +632,11 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private boolean isShouldContinue() {
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
-      int currentRetryCount = Optional.ofNullable(liveInfo)
+      int currentIntrospectFailureRetryCount = Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
           .map(DomainStatus::getIntrospectJobFailureRetryCount)
-          .orElse(0);
+          .orElse(1);
 
       String existingError = Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
@@ -643,20 +644,36 @@ public class DomainProcessorImpl implements DomainProcessor {
           .map(DomainStatus::getMessage)
           .orElse(null);
 
+      boolean exceededFailureRetryCount = (currentIntrospectFailureRetryCount
+          > DomainPresence.getDomainPresenceFailureRetryMaxCount());
+
+      boolean isVersionsChanged = isVersionsChanged(liveInfo, cachedInfo);
+
       if (cachedInfo == null || cachedInfo.getDomain() == null) {
         return true;
-      } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
-        return false;  // we have already cached this
-      } else if (currentRetryCount > DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
+      } else if (exceededFailureRetryCount && !isVersionsChanged) {
         LOGGER.fine("Stop introspection retry - exceeded configured domainPresenceFailureRetryMaxCount: "
             + DomainPresence.getDomainPresenceFailureRetryMaxCount());
         return false;
-      } else if (existingError != null && existingError.startsWith("MII Fatal Error")
-          && !isSpecChanged(liveInfo, cachedInfo)) {
+      } else if (existingError != null && existingError.startsWith("MII Fatal Error") && !isVersionsChanged) {
         LOGGER.fine("Stop introspection retry - MII Fatal Error: "
             + existingError);
         return false;
+      } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
+        return false;  // we have already cached this
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
+        if (exceededFailureRetryCount) {
+          DomainStatus status = Optional.ofNullable(liveInfo)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getStatus)
+              .orElse(null);
+          status.resetIntrospectJobFailureRetryCount();
+        }
+
+        if (currentIntrospectFailureRetryCount > 0) {
+          LOGGER.info("Retrying failed introspection job " + currentIntrospectFailureRetryCount + " of "
+              + DomainPresence.getDomainPresenceFailureRetryMaxCount());
+        }
         return true;
       }
       cachedInfo.setDomain(getDomain());
@@ -718,6 +735,50 @@ public class DomainProcessorImpl implements DomainProcessor {
           .map(Domain::getSpec)
           .map(spec -> !spec.equals(cachedInfo.getDomain().getSpec()))
           .orElse(true);
+  }
+
+  private static boolean isVersionsChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
+    String liveIntropectVersion = Optional.ofNullable(liveInfo.getDomain())
+        .map(Domain::getSpec)
+        .map(DomainSpec::getIntrospectVersion)
+        .orElse(null);
+
+    String cachedIntropectVersion = Optional.ofNullable(cachedInfo.getDomain())
+        .map(Domain::getSpec)
+        .map(DomainSpec::getIntrospectVersion)
+        .orElse(null);
+
+    if (!Objects.equals(liveIntropectVersion, cachedIntropectVersion)) {
+      return true;
+    }
+
+    String liveRestartVersion = Optional.ofNullable(liveInfo.getDomain())
+        .map(Domain::getRestartVersion)
+        .orElse(null);
+
+    String cachedRestartVersion = Optional.ofNullable(cachedInfo.getDomain())
+        .map(Domain::getRestartVersion)
+        .orElse(null);
+
+    if (!Objects.equals(liveRestartVersion, cachedRestartVersion)) {
+      return true;
+    }
+
+    String liveIntrospectImage = Optional.ofNullable(liveInfo.getDomain())
+        .map(Domain::getSpec)
+        .map(DomainSpec::getImage)
+        .orElse(null);
+
+    String cachedIntrospectImage = Optional.ofNullable(cachedInfo.getDomain())
+        .map(Domain::getSpec)
+        .map(DomainSpec::getImage)
+        .orElse(null);
+
+    if (Objects.equals(liveIntrospectImage, cachedIntrospectImage)) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   private static boolean isCachedInfoNewer(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
