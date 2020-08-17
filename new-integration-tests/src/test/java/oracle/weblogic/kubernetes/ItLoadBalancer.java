@@ -257,7 +257,8 @@ public class ItLoadBalancer {
     logger.info("Verifying the requests are routed to correct domain and cluster");
     String curlCmd = String.format("curl --silent --show-error -ks --noproxy '*' "
         + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
-        + "?user=" + ADMIN_USERNAME_DEFAULT + "&password=" + ADMIN_PASSWORD_DEFAULT,
+        + "\"?user=" + ADMIN_USERNAME_DEFAULT
+        + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
         domainUid + "." + domainNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort, domainUid);
 
     // call the webapp and verify the bound domain name to determine
