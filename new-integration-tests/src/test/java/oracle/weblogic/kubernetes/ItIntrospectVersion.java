@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,8 +40,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
-import oracle.weblogic.kubernetes.utils.ExecCommand;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
@@ -104,6 +101,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.TestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -470,7 +468,7 @@ public class ItIntrospectVersion {
     }
 
     //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames);
+    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
@@ -595,7 +593,7 @@ public class ItIntrospectVersion {
     }
 
     //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames);
+    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
@@ -756,7 +754,7 @@ public class ItIntrospectVersion {
     }
 
     //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames);
+    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
 
   }
 
@@ -847,7 +845,7 @@ public class ItIntrospectVersion {
     }
 
     //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames);
+    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
 
   }
 
@@ -914,7 +912,8 @@ public class ItIntrospectVersion {
     }
   }
 
-  private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames) {
+  private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
+      String user, String password) {
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
@@ -923,7 +922,7 @@ public class ItIntrospectVersion {
 
     logger.info("Getting the list of servers using the listServers");
     String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort
-        + "/clusterview/ClusterViewServlet?listServers=true";
+        + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
 
     withStandardRetryPolicy.conditionEvaluationListener(
         condition -> logger.info("Verifying the health of all cluster members"
@@ -945,56 +944,6 @@ public class ItIntrospectVersion {
           return health;
         });
   }
-
-  private static void verifyServerCommunication(String curlRequest, List<String> managedServerNames) {
-
-    HashMap<String, Boolean> managedServers = new HashMap<>();
-    managedServerNames.forEach(managedServerName -> managedServers.put(managedServerName, false));
-
-    //verify each server in the cluster can see other members
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Waiting until each managed server can see other cluster members"
-            + "(elapsed time {0} ms, remaining time {1} ms)",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
-          for (int i = 0; i < managedServerNames.size(); i++) {
-            logger.info(curlRequest);
-            // check the response contains managed server name
-            ExecResult result = null;
-            try {
-              result = ExecCommand.exec(curlRequest, true);
-            } catch (IOException | InterruptedException ex) {
-              logger.severe(ex.getMessage());
-            }
-            String response = result.stdout().trim();
-            logger.info(response);
-            for (var managedServer : managedServers.entrySet()) {
-              boolean seeEachOther = true;
-              logger.info("Looking for Server:" + managedServer.getKey());
-              if (response.contains("Server:" + managedServer.getKey())) {
-                for (String managedServerName : managedServerNames) {
-                  logger.info("Looking for Success:" + managedServerName);
-                  seeEachOther = seeEachOther && response.contains("Success:" + managedServerName);
-                }
-                if (seeEachOther) {
-                  logger.info("Server:" + managedServer.getKey() + " can see all cluster members");
-                  managedServers.put(managedServer.getKey(), true);
-                }
-              }
-            }
-          }
-          managedServers.forEach((key, value) -> {
-            if (value) {
-              logger.info("The server {0} can see other cluster members", key);
-            } else {
-              logger.info("The server {0} unable to see other cluster members ", key);
-            }
-          });
-          return !managedServers.containsValue(false);
-        });
-  }
-
 
   /**
    * Uninstall Nginx.

@@ -256,7 +256,7 @@ public class ItConfigDistributionStrategy {
 
     logger.info("Getting the list of servers using the listServers");
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/";
-    String serverListUri = "ClusterViewServlet?listServers=true";
+    String serverListUri = "ClusterViewServlet?user=" + ADMIN_USERNAME_DEFAULT + "&password=" + ADMIN_PASSWORD_DEFAULT;
     for (int i = 0; i < 5; i++) {
       assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
       HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));

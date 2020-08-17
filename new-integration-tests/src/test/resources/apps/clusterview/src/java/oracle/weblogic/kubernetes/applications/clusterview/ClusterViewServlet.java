@@ -5,26 +5,21 @@ package oracle.weblogic.kubernetes.applications.clusterview;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.Set;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.management.InstanceNotFoundException;
-import javax.management.IntrospectionException;
-import javax.management.MBeanAttributeInfo;
-import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
-import javax.management.ObjectInstance;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -37,6 +32,8 @@ import weblogic.management.jmx.MBeanServerInvocationHandler;
 import weblogic.management.mbeanservers.domainruntime.DomainRuntimeServiceMBean;
 import weblogic.management.mbeanservers.runtime.RuntimeServiceMBean;
 import weblogic.management.runtime.ClusterRuntimeMBean;
+import weblogic.management.runtime.DomainRuntimeMBean;
+import weblogic.management.runtime.ServerLifeCycleRuntimeMBean;
 import weblogic.management.runtime.ServerRuntimeMBean;
 
 /**
@@ -50,6 +47,10 @@ public class ClusterViewServlet extends HttpServlet {
   RuntimeServiceMBean runtimeService;
   MBeanServer domainMBeanServer;
   DomainRuntimeServiceMBean domainRuntimeServiceMbean;
+  DomainRuntimeMBean domainRuntime;
+  String adminUser;
+  String adminPassword;
+  List<JMXConnector> jmxConnectors;
 
   @Override
   public void init(ServletConfig config) throws ServletException {
@@ -63,46 +64,27 @@ public class ClusterViewServlet extends HttpServlet {
           .newProxyInstance(localMBeanServer, runtimeserviceObjectName);
       serverRuntime = runtimeService.getServerRuntime();
       System.out.println("ITTESTS:>>>>Found server runtime mbean server for server: " + serverRuntime.getName());
-
-      if (serverRuntime.isAdminServer()) {
-        try {
-          System.out.println("ITTESTS:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName());
-          domainMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/domainRuntime");
-          ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
-          domainRuntimeServiceMbean = (DomainRuntimeServiceMBean) MBeanServerInvocationHandler
-              .newProxyInstance(domainMBeanServer, domainServiceObjectName);
-          System.out.println("ITTESTS:>>>>Found domain runtime mbean in server : " + serverRuntime.getName());
-        } catch (MalformedObjectNameException | NamingException ex) {
-          System.out.println("ITTESTS:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName() + " threw exception");
-          System.out.println("ITTESTS:>>>>" + ex.getMessage());
-        }
-      }
-
-      try {
-        System.out.println("ITTESTS:>>>>Looking up server : " + serverRuntime.getName() + " in JNDI tree");
-        ctx.lookup(serverRuntime.getName());
-      } catch (NameNotFoundException nnfe) {
-        System.out.println("ITESTS:>>>>>>Server not found in JNDI tree, Binding " + serverRuntime.getName() + " in JNDI tree");
-        ctx.bind("Bound" + serverRuntime.getName(), serverRuntime.getName());
-        System.out.println("ITESTS:>>>>>>Bound " + serverRuntime.getName() + " in JNDI tree");
-      }
     } catch (MalformedObjectNameException | NamingException ex) {
       System.out.println("ITTESTS:>>>>ClusterViewServlet.init() threw exception");
       System.out.println("ITTESTS:>>>>" + ex.getMessage());
     }
-  }
 
-  @Override
-  public void destroy() {
-    try {
-      System.out.println("ITTESTS:>>>>Unbinding server : " + serverRuntime.getName());
-      ctx.unbind(serverRuntime.getName());
-      System.out.println("ITTESTS:>>>>Closing context in server : " + serverRuntime.getName());
-      ctx.close();
-    } catch (NamingException ex) {
-      System.out.println("ITTESTS:>>>>ClusterViewServlet.destroy() threw exception");
-      System.out.println("ITTESTS:>>>>" + ex.getMessage());
+    // get domain runtime when running in admin server
+    if (serverRuntime.isAdminServer()) {
+      try {
+        System.out.println("ITTESTS:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName());
+        domainMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/domainRuntime");
+        ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
+        domainRuntimeServiceMbean = (DomainRuntimeServiceMBean) MBeanServerInvocationHandler
+            .newProxyInstance(domainMBeanServer, domainServiceObjectName);
+        domainRuntime = domainRuntimeServiceMbean.getDomainRuntime();
+        System.out.println("ITTESTS:>>>>Found domain runtime mbean in server : " + serverRuntime.getName());
+      } catch (MalformedObjectNameException | NamingException ex) {
+        System.out.println("ITTESTS:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName() + " threw exception");
+        System.out.println("ITTESTS:>>>>" + ex.getMessage());
+      }
     }
+
   }
 
   /**
@@ -125,168 +107,182 @@ public class ClusterViewServlet extends HttpServlet {
       out.println("<body>");
       out.println("<pre>");
 
-      String queryServers = request.getParameter("queryServers");
-      if (queryServers != null) {
-        // print all mbeans and its attributes in the server runtime
-        out.println("Querying server: " + localMBeanServer.toString());
-        Set<ObjectInstance> mbeans = localMBeanServer.queryMBeans(null, null);
-        for (ObjectInstance mbeanInstance : mbeans) {
-          out.println("<br>ObjectName: " + mbeanInstance.getObjectName() + "<br>");
-          MBeanInfo mBeanInfo = localMBeanServer.getMBeanInfo(mbeanInstance.getObjectName());
-          MBeanAttributeInfo[] attributes = mBeanInfo.getAttributes();
-          for (MBeanAttributeInfo attribute : attributes) {
-            out.println("<br>Type: " + attribute.getType() + "<br>");
-            out.println("<br>Name: " + attribute.getName() + "<br>");
-          }
-        }
-      }
+      jmxConnectors = new ArrayList<>();
+      adminUser = request.getParameter("user");
+      adminPassword = request.getParameter("password");
 
-      ClusterRuntimeMBean clusterRuntime = serverRuntime.getClusterRuntime();
-      //if the server is part of a cluster get its cluster details
-      if (clusterRuntime != null) {
-        String[] serverNames = clusterRuntime.getServerNames();
-        out.println("Alive:" + clusterRuntime.getAliveServerCount());
-        out.println("Health:" + clusterRuntime.getHealthState().getState());
-        out.println("Members:" + String.join(",", serverNames));
-        out.println("ServerName:" + serverRuntime.getName());
+      // print the domain name in which this server resides in
+      printDomainName(out);
+      // print servers list and their health from admin server
+      printServersHealth(out);
+      // print the name of the server in which this Servlet object is located
+      out.println("ServerName:" + runtimeService.getServerName());
 
-        try {
-          int random = (int) (Math.random() * 1000000);
-          String randomString = "ms" + random;
-          ctx.bind(randomString, randomString);
-        } catch (NameNotFoundException nnfex) {
-          out.println(nnfex.getMessage());
-        }
+      // print cluster health when running in managed servers
+      printClusterHealth(out);
 
-        // lookup JNDI for other clustered servers bound in tree
-        for (String serverName : serverNames) {
-          try {
-            if (ctx.lookup("Bound" + serverName) != null) {
-              out.println("Bound:" + serverName);
-            }
-          } catch (NameNotFoundException nnfex) {
-            out.println(nnfex.getMessage());
-          }
-        }
-        if (request.getParameter("bindDomain") != null) {
-          String domainName = request.getParameter("bindDomain");
-          try {
-            if (ctx.lookup(domainName) != null) {
-              out.println("Bound:" + domainName);
-            }
-          } catch (NameNotFoundException nnfex) {
-            ctx.bind(domainName, domainName);
-            System.out.println("ITESTS:>>>>>>Bound " + domainName + " in JNDI tree");
-          }
-        }
-        if (request.getParameter("domainTest") != null) {
-          String domainName = request.getParameter("domainTest");
-          try {
-            if (ctx.lookup(domainName) != null) {
-              out.println("Bound:" + domainName);
-            }
-          } catch (NameNotFoundException nnfex) {
-            System.out.println("ITESTS:>>>>>>Not Bound " + domainName + " in JNDI tree");
-          }
-        }
-        testConnection(request, out);
+      // check connection to other servers in the domain is successful
+      connectToOtherServers(out);
 
-      } else {
-        out.println(serverRuntime.getName() + ":Cluster runtime NULL <BR>");
-        System.out.println("ITESTS:>>>>>>Cluster runtime is null in server:" + serverRuntime.getName());
-      }
-
-      String listServers = request.getParameter("listServers");
-      if (listServers != null) {
-        ServerRuntimeMBean[] serverRuntimes = domainRuntimeServiceMbean.getServerRuntimes();
-        for (ServerRuntimeMBean serverRuntime : serverRuntimes) {
-          out.println(serverRuntime.getName() + ":STATUS<BR>");
-          int state = serverRuntime.getHealthState().getState();
-          switch (state) {
-            case HealthState.HEALTH_OK:
-              out.print(serverRuntime.getName() + ":HEALTH_OK");
-              break;
-            case HealthState.HEALTH_CRITICAL:
-              out.print(serverRuntime.getName() + ":HEALTH_CRITICAL");
-              break;
-            case HealthState.HEALTH_FAILED:
-              out.print(serverRuntime.getName() + ":HEALTH_FAILED");
-              break;
-            case HealthState.HEALTH_OVERLOADED:
-              out.print(serverRuntime.getName() + ":HEALTH_OVERLOADED");
-              break;
-            case HealthState.HEALTH_WARN:
-              out.print(serverRuntime.getName() + ":HEALTH_WARN");
-              break;
-            default:
-              out.print(serverRuntime.getName() + ":HEALTH_WARN");
-          }
-          out.println("<BR>");
-        }
-      }
       out.println("</pre>");
       out.println("</body>");
       out.println("</html>");
-    } catch (NamingException | InstanceNotFoundException
-        | IntrospectionException | ReflectionException ex) {
-      Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
+    } finally {
+      jmxConnectors.forEach((jmxConnector) -> {
+        try {
+          System.out.println("Closing MBeanServer connection to : " + jmxConnector.getConnectionId());
+          jmxConnector.close();
+        } catch (Exception ex) {
+          //
+        }
+      });
     }
   }
 
-  private void testConnection(HttpServletRequest request, PrintWriter out) {
-
-    String domain = request.getParameter("domain");
-    System.out.println("domain:" + domain);
-    String servers = request.getParameter("servers");
-    System.out.println("servers:" + servers);
-    String portString = request.getParameter("port");
-    System.out.println("portString:" + portString);
-    String user = request.getParameter("user");
-    System.out.println("user:" + user);
-    String password = request.getParameter("password");
-    System.out.println("password:" + password);
-
-
-    out.println("Server:" + runtimeService.getServerRuntime().getName());
-    JMXConnector jmxConnector = null;
-
-    String[] managedServers = servers.split(":");
-    for (String managedServer : managedServers) {
+  /**
+   * Print the domain name. If this is a managed server, make connection to admin server mbean server and find the
+   * domain name.
+   *
+   * @param out PrintWriter to write the output to
+   */
+  private void printDomainName(PrintWriter out) {
+    System.out.println("printDomainName()");
+    if (serverRuntime.isAdminServer()) {
+      out.println("DomainName:" + domainRuntimeServiceMbean.getDomainConfiguration().getName());
+    } else {
       try {
-        String host = domain + "-" + managedServer;
-        System.out.println("Host: " + host + " Port: " + portString + " username: " + user + " password :" + password);
-        String protocol = "t3";
-        Integer portInteger = Integer.valueOf(portString);
-        int port = portInteger;
-        Hashtable h = new Hashtable();
-        h.put(Context.SECURITY_PRINCIPAL, user);
-        h.put(Context.SECURITY_CREDENTIALS, password);
-        h.put(JMXConnectorFactory.PROTOCOL_PROVIDER_PACKAGES, "weblogic.management.remote");
-        h.put("jmx.remote.x.request.waiting.timeout", Long.valueOf(10000));
-        JMXServiceURL serviceURL = new JMXServiceURL(protocol, host, port, "/jndi/" + RuntimeServiceMBean.MBEANSERVER_JNDI_NAME);
-        System.out.println("Making mbean server connection with url" + serviceURL.toString());
-        jmxConnector = JMXConnectorFactory.connect(serviceURL, h);
-        MBeanServerConnection mbeanServer = jmxConnector.getMBeanServerConnection();
+        String host = runtimeService.getServerRuntime().getAdminServerHost();
+        int port = runtimeService.getServerRuntime().getAdminServerListenPort();
+        MBeanServerConnection mbs = createMBeanServerConnection(host, Integer.toString(port),
+            adminUser, adminPassword, RuntimeServiceMBean.MBEANSERVER_JNDI_NAME);
         ObjectName runtimeserviceObjectName = new ObjectName(RuntimeServiceMBean.OBJECT_NAME);
-        RuntimeServiceMBean runtimeService = (RuntimeServiceMBean) MBeanServerInvocationHandler.newProxyInstance(mbeanServer, runtimeserviceObjectName);
-        ServerRuntimeMBean serverRuntime = runtimeService.getServerRuntime();
-        out.println("Success:" + serverRuntime.getName());
+        RuntimeServiceMBean adminRuntimeService = (RuntimeServiceMBean) MBeanServerInvocationHandler.newProxyInstance(mbs, runtimeserviceObjectName);
+        out.println("DomainName:" + adminRuntimeService.getDomainConfiguration().getName());
       } catch (Exception ex) {
-        out.println(ex.getMessage());
-      } finally {
-        try {
-          if (jmxConnector != null) {
-            System.out.println("Closing mbean server connection");
-            jmxConnector.close();
-          }
-        } catch (IOException ex) {
-          out.println(ex.getMessage());
-        }
+        out.println("printDomainName>>>" + ex.getMessage());
       }
     }
   }
 
-  protected MBeanServerConnection lookupMBeanServerConnection(String host, String portString, String user, String password, String jndiName) {
+  /**
+   * When running in admin server, print the health of all servers in the domain.
+   *
+   * @param out PrintWriter to write the output to
+   */
+  private void printServersHealth(PrintWriter out) {
+    System.out.println("printServersHealth()");
+    if (serverRuntime.isAdminServer()) {
+      ServerRuntimeMBean[] serverRuntimes = domainRuntimeServiceMbean.getServerRuntimes();
+      for (ServerRuntimeMBean serverRuntime : serverRuntimes) {
+        out.println(serverRuntime.getName() + ":STATUS<BR>");
+        int state = serverRuntime.getHealthState().getState();
+        switch (state) {
+          case HealthState.HEALTH_OK:
+            out.print(serverRuntime.getName() + ":HEALTH_OK");
+            break;
+          case HealthState.HEALTH_CRITICAL:
+            out.print(serverRuntime.getName() + ":HEALTH_CRITICAL");
+            break;
+          case HealthState.HEALTH_FAILED:
+            out.print(serverRuntime.getName() + ":HEALTH_FAILED");
+            break;
+          case HealthState.HEALTH_OVERLOADED:
+            out.print(serverRuntime.getName() + ":HEALTH_OVERLOADED");
+            break;
+          case HealthState.HEALTH_WARN:
+            out.print(serverRuntime.getName() + ":HEALTH_WARN");
+            break;
+          default:
+            out.print(serverRuntime.getName() + ":HEALTH_WARN");
+        }
+        out.println("<BR>");
+      }
+    }
+  }
+
+  /**
+   * Print the cluster details and its members health if this server is part of a cluster.
+   *
+   * @param out PrintWriter to write the output to
+   */
+  private void printClusterHealth(PrintWriter out) {
+    System.out.println("printClusterHealth()");
+    ClusterRuntimeMBean clusterRuntime = serverRuntime.getClusterRuntime();
+    //if the server is part of a cluster get its cluster details
+    if (clusterRuntime != null) {
+      out.println("ClusterName:" + clusterRuntime.getName());
+    }
+    if (clusterRuntime != null) {
+      String[] serverNames = clusterRuntime.getServerNames();
+      out.println("Alive:" + clusterRuntime.getAliveServerCount());
+      out.println("Health:" + clusterRuntime.getHealthState().getState());
+      out.println("Members:" + String.join(",", serverNames));
+      out.println("ServerName:" + serverRuntime.getName());
+    } else {
+      out.println(serverRuntime.getName() + ":Cluster:NULL <BR>");
+      System.out.println("ITESTS:>>>>>>Cluster runtime is null in server:" + serverRuntime.getName());
+    }
+  }
+
+  /**
+   * Make connection to other servers in this domain from the current server.
+   *
+   * @param out PrintWriter to write the output to
+   */
+  private void connectToOtherServers(PrintWriter out) {
+    System.out.println("connectToOtherServers()");
+    List<String> serverUrls = getServerUrls();
+    for (String serverUrl : serverUrls) {
+      JMXServiceURL url = null;
+      try {
+        url = new JMXServiceURL("service:jmx:" + serverUrl + "/jndi/" + RuntimeServiceMBean.MBEANSERVER_JNDI_NAME);
+      } catch (MalformedURLException ex) {
+        Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
+      }
+      MBeanServerConnection mbeanServerConnection = createMBeanServerConnection(url);
+      ObjectName runtimeserviceObjectName = null;
+      try {
+        runtimeserviceObjectName = new ObjectName(RuntimeServiceMBean.OBJECT_NAME);
+      } catch (MalformedObjectNameException ex) {
+        Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
+      }
+      RuntimeServiceMBean runtimeService = (RuntimeServiceMBean) MBeanServerInvocationHandler.newProxyInstance(mbeanServerConnection, runtimeserviceObjectName);
+      ServerRuntimeMBean serverRuntime = runtimeService.getServerRuntime();
+      out.println("Success:" + serverRuntime.getName());
+    }
+  }
+
+  /**
+   * Get the administration URLs of all servers in the domain.
+   *
+   * @return List containing server administration urls.
+   */
+  private List<String> getServerUrls() {
+    System.out.println("getServerUrls()");
+
+    List<String> serverUrls = new ArrayList<>();
+    String host = serverRuntime.getAdminServerHost();
+    int port = serverRuntime.getAdminServerListenPort();
+    MBeanServerConnection mbs = createMBeanServerConnection(host, Integer.toString(port), adminUser, adminPassword, DomainRuntimeServiceMBean.MBEANSERVER_JNDI_NAME);
+    ObjectName runtimeserviceObjectName = null;
+    try {
+      runtimeserviceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
+    } catch (MalformedObjectNameException ex) {
+      Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    DomainRuntimeServiceMBean domainRuntimeService = (DomainRuntimeServiceMBean) MBeanServerInvocationHandler.newProxyInstance(mbs, runtimeserviceObjectName);
+    DomainRuntimeMBean domainRuntime = domainRuntimeService.getDomainRuntime();
+    ServerLifeCycleRuntimeMBean[] serverLifeCycleRuntimes = domainRuntime.getServerLifeCycleRuntimes();
+    for (ServerLifeCycleRuntimeMBean serverLifeCycleRuntime : serverLifeCycleRuntimes) {
+      serverUrls.add(serverLifeCycleRuntime.getIPv4URL("t3"));
+      System.out.println("getIPv4URL(t3):" + serverLifeCycleRuntime.getIPv4URL("t3"));
+    }
+
+    return serverUrls;
+  }
+
+  protected MBeanServerConnection createMBeanServerConnection(String host, String portString, String user, String password, String jndiName) {
+    System.out.println("createMBeanServerConnection()");
     JMXServiceURL serviceURL = null;
     MBeanServerConnection mBeanServerConnection = null;
     try {
@@ -300,9 +296,29 @@ public class ClusterViewServlet extends HttpServlet {
       h.put(JMXConnectorFactory.PROTOCOL_PROVIDER_PACKAGES, "weblogic.management.remote");
       h.put("jmx.remote.x.request.waiting.timeout", Long.valueOf(10000));
       serviceURL = new JMXServiceURL(protocol, host, port, "/jndi/" + jndiName);
-      System.out.println("Making mbean server connection with url" + serviceURL.toString());
+      System.out.println("Making mbean server connection with url: " + serviceURL.toString());
       JMXConnector jmxConnector = JMXConnectorFactory.connect(serviceURL, h);
       mBeanServerConnection = jmxConnector.getMBeanServerConnection();
+      jmxConnectors.add(jmxConnector);
+    } catch (NumberFormatException | IOException e) {
+      System.out.println(e.getLocalizedMessage());
+    }
+    return mBeanServerConnection;
+  }
+
+  protected MBeanServerConnection createMBeanServerConnection(JMXServiceURL serviceURL) {
+    System.out.println("createMBeanServerConnection()");
+    MBeanServerConnection mBeanServerConnection = null;
+    try {
+      Hashtable h = new Hashtable();
+      h.put(Context.SECURITY_PRINCIPAL, adminUser);
+      h.put(Context.SECURITY_CREDENTIALS, adminPassword);
+      h.put(JMXConnectorFactory.PROTOCOL_PROVIDER_PACKAGES, "weblogic.management.remote");
+      h.put("jmx.remote.x.request.waiting.timeout", Long.valueOf(10000));
+      System.out.println("Making mbean server connection with url: " + serviceURL.toString());
+      JMXConnector jmxConnector = JMXConnectorFactory.connect(serviceURL, h);
+      mBeanServerConnection = jmxConnector.getMBeanServerConnection();
+      jmxConnectors.add(jmxConnector);
     } catch (NumberFormatException | IOException e) {
       System.out.println(e.getLocalizedMessage());
     }
