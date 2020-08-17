@@ -27,10 +27,14 @@
 #                          ${DOMAIN_UID}/${SERVER_NAME}_nodemanager.out
 #                       Default:
 #                          Use LOG_HOME.  If LOG_HOME not set, use NODEMGR_HOME.
+#   NODEMGR_LOG_FILE_MAX = max NM .log and .out files to keep around (default=11)
+#
 #   ADMIN_PORT_SECURE = "true" if the admin protocol is secure. Default is false
+#
 #   FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR = "true" if WebLogic server should fail to 
 #                       boot if situational configuration related errors are 
 #                       found. Default to "true" if unspecified.
+#
 #   NODEMGR_MEM_ARGS  = JVM mem args for starting the Node Manager instance
 #   NODEMGR_JAVA_OPTIONS  = Java options for starting the Node Manager instance
 #
@@ -172,46 +176,45 @@ fi
 # Create nodemanager.properties and nodemanager.domains files in NM home 
 #
 
-nm_props_file=${NODEMGR_HOME}/nodemanager.properties
 nm_domains_file=${NODEMGR_HOME}/nodemanager.domains
-
 cat <<EOF > ${nm_domains_file}
   ${domain_name}=${DOMAIN_HOME}
 EOF
+[ ! $? -eq 0 ] && trace SEVERE "Failed to create '${nm_domains_file}'." && exit 1
 
-  [ ! $? -eq 0 ] && trace SEVERE "Failed to create '${nm_domains_file}'." && exit 1
+nm_props_file=${NODEMGR_HOME}/nodemanager.properties
 
 cat <<EOF > ${nm_props_file}
   #Node manager properties
-  DomainsFile=${nm_domains_file}
-  LogLimit=0
-  DomainsDirRemoteSharingEnabled=true
-  PropertiesVersion=12.2.1
-  AuthenticationEnabled=false
   NodeManagerHome=${NODEMGR_HOME}
   JavaHome=${JAVA_HOME}
-  LogLevel=FINEST
+  DomainsFile=${nm_domains_file}
   DomainsFileEnabled=true
-  ListenAddress=127.0.0.1
+  DomainsDirRemoteSharingEnabled=true
   NativeVersionEnabled=true
+  PropertiesVersion=12.2.1
+  ListenAddress=127.0.0.1
   ListenPort=5556
-  LogToStderr=true
-  weblogic.StartScriptName=startWebLogic.sh
+  ListenBacklog=50
+  AuthenticationEnabled=false
   SecureListener=false
-  LogCount=1
-  QuitEnabled=false
-  LogAppend=true
+  weblogic.StartScriptEnabled=true
+  weblogic.StartScriptName=startWebLogic.sh
   weblogic.StopScriptEnabled=false
+  QuitEnabled=false
   StateCheckInterval=500
   CrashRecoveryEnabled=false
-  weblogic.StartScriptEnabled=true
-  LogFormatter=weblogic.nodemanager.server.LogFormatter
-  ListenBacklog=50
   LogFile=${nodemgr_log_file}
+  LogToStderr=true
+  LogFormatter=weblogic.nodemanager.server.LogFormatter
+  LogAppend=true
+  LogLimit=0
+  LogLevel=FINEST
+  LogCount=1
 
 EOF
 
-  [ ! $? -eq 0 ] && trace SEVERE "Failed to create '${nm_props_file}'." && exit 1
+[ ! $? -eq 0 ] && trace SEVERE "Failed to create '${nm_props_file}'." && exit 1
 
 ###############################################################################
 #
@@ -238,21 +241,11 @@ if [ ! "${SERVER_NAME}" = "introspector" ]; then
     [ ! $? -eq 0 ] && trace SEVERE "Could not remove stale file '$wl_state_file'." && exit 1
   fi
 
-
 cat <<EOF > ${wl_props_file}
 # Server startup properties
 AutoRestart=true
 RestartMax=2
-RotateLogOnStartup=false
-RotationType=bySize
-RotationTimeStart=00\\:00
-RotatedFileCount=100
-RestartDelaySeconds=0
-FileSizeKB=5000
-FileTimeSpanFactor=3600000
 RestartInterval=3600
-NumberOfFilesLimited=true
-FileTimeSpan=24
 NMHostName=${SERVICE_NAME}
 Arguments=${USER_MEM_ARGS} -Dweblogic.SituationalConfig.failBootOnError=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} ${serverOutOption} ${JAVA_OPTIONS}
 
@@ -316,18 +309,16 @@ export JAVA_OPTIONS="${NODEMGR_MEM_ARGS} ${NODEMGR_JAVA_OPTIONS} -Dweblogic.Root
 ###############################################################################
 #
 #  Start the NM
-#  1) remove old NM log file, if it exists
+#  1) rotate old NM log file, and old NM out file, if they exist
 #  2) start NM in background
-#  3) wait up to 15 seconds for NM by monitoring log file
-#  4) 'exit 1' if wait more than 15 seconds
+#  3) wait up to ${NODE_MANAGER_MAX_WAIT:-60} seconds for NM by monitoring NM's .out file
+#  4) log SEVERE, log INFO with 'exit 1' if wait more than ${NODE_MANAGER_MAX_WAIT:-60} seconds
 # 
 
 trace "Start the nodemanager, node manager home is '${NODEMGR_HOME}', log file is '${nodemgr_log_file}', out file is '${nodemgr_out_file}'."
 
-rm -f ${nodemgr_log_file}
-[ ! $? -eq 0 ] && trace SEVERE "Could not remove old file '$nodemgr_log_file'." && exit 1
-rm -f ${nodemgr_out_file}
-[ ! $? -eq 0 ] && trace SEVERE "Could not remove old file '$nodemgr_out_file'." && exit 1
+logFileRotate ${nodemgr_log_file} ${NODEMGR_LOG_FILE_MAX:-11}
+logFileRotate ${nodemgr_out_file} ${NODEMGR_LOG_FILE_MAX:-11}
 
 ${stm_script} > ${nodemgr_out_file} 2>&1 &
 

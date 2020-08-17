@@ -125,6 +125,40 @@ imagePullSecrets:
 - name: "my-image-pull-secret"
 ```
 
+##### `nodeSelector`
+Allows you to run the operator Pod on a Node whose labels match the specified `nodeSelector` labels. You can use this optional feature if you want the operator Pod to run on a Node with particular labels. See [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) in the Kubernetes documentation for more details. This is not required if the operator Pod can run on any Node.
+
+Example:
+```
+nodeSelector:
+  disktype: ssd
+```
+
+##### `nodeAffinity`
+Allows you to constrain the operator Pod to be scheduled on a Node with certain labels; it is conceptually similar to `nodeSelector`. `nodeAffinity` provides advanced capabilities to limit Pod placement on specific Nodes. See  [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) in the Kubernetes documentation for more details. This is optional and not required if the operator Pod can run on any Node or when using `nodeSelector`.
+
+Example:
+```
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodeType
+          operator: In
+          values:
+          - dev
+          - test
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      preference:
+        matchExpressions:
+        - key: another-node-label-key
+          operator: In
+          values:
+          - another-node-label-value
+```
+
 ##### `enableClusterRoleBinding`
 Specifies whether the roles necessary for the operator to manage domains
 will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.

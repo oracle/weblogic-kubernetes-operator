@@ -73,7 +73,6 @@ function generateInternalIdentity {
     -srckeystore ${OP_JKS} \
     -srcstorepass ${TEMP_PW} \
     -destkeystore ${OP_PKCS12} \
-    -srcstorepass ${TEMP_PW} \
     -deststorepass ${TEMP_PW} \
     -deststoretype PKCS12
 
