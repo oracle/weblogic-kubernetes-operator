@@ -83,12 +83,24 @@ public class DeleteDomainStep extends Step {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
-
-      // HERE
-
       return callResponse.getResult() == null
           ? doNext(packet)
-          : doNext(createSuccessStep(callResponse.getResult(), getNext()), packet);
+          : doNext(createSuccessStep(callResponse.getResult(),
+              new ContinueOrNextStep(callResponse, getNext())), packet);
+    }
+
+    private class ContinueOrNextStep extends Step {
+      private final CallResponse<T> callResponse;
+
+      public ContinueOrNextStep(CallResponse<T> callResponse, Step next) {
+        super(next);
+        this.callResponse = callResponse;
+      }
+
+      @Override
+      public NextAction apply(Packet packet) {
+        return ActionResponseStep.this.doContinueListOrNext(callResponse, packet);
+      }
     }
   }
 }
