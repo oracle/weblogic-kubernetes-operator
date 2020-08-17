@@ -19,6 +19,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlElement;
+import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
@@ -110,7 +114,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
@@ -176,7 +179,7 @@ public class ItTwoDomainsLoadBalancers {
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
       .and().with().pollInterval(10, SECONDS)
-      .atMost(3, MINUTES).await();
+      .atMost(5, MINUTES).await();
 
   // domain constants
   private final String clusterName = "cluster-1";
@@ -1111,16 +1114,9 @@ public class ItTwoDomainsLoadBalancers {
           getServiceNodePort(defaultNamespace, adminServerPodName + "-external", "default");
 
       logger.info("Validating WebLogic admin server access by login to console");
-      boolean adminAccessible = false;
-      for (int k = 0; k < 10; k++) {
-        adminAccessible = assertDoesNotThrow(
-            () -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT));
-        if (adminAccessible) {
-          break;
-        }
-        assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
-      }
-      assertTrue(adminAccessible, "Console login validation failed");
+      assertTrue(assertDoesNotThrow(
+          () -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+          "Access to admin server node port failed"), "Console login validation failed");
     }
   }
 
@@ -1417,5 +1413,47 @@ public class ItTwoDomainsLoadBalancers {
           });
           return !managedServers.containsValue(false);
         });
+  }
+
+  /**
+   * Verify admin node port(default/t3channel) is accessible by login to WebLogic console
+   * using the node port and validate its the Home page.
+   *
+   * @param nodePort the node port that needs to be tested for access
+   * @param userName WebLogic administration server user name
+   * @param password WebLogic administration server password
+   * @return true if login to WebLogic administration console is successful
+   * @throws IOException when connection to console fails
+   */
+  private static boolean adminNodePortAccessible(int nodePort, String userName, String password)
+      throws IOException {
+
+    String consoleUrl = new StringBuffer()
+        .append("http://")
+        .append(K8S_NODEPORT_HOST)
+        .append(":")
+        .append(nodePort)
+        .append("/console/login/LoginForm.jsp").toString();
+
+    boolean adminAccessible = false;
+    for (int i = 1; i <= 10; i++) {
+      getLogger().info("Iteration {0} out of 10: Accessing WebLogic console with url {1}", i, consoleUrl);
+      final WebClient webClient = new WebClient();
+      final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
+          "connection to the WebLogic admin console failed");
+      HtmlForm form = loginPage.getFormByName("loginData");
+      form.getInputByName("j_username").type(userName);
+      form.getInputByName("j_password").type(password);
+      HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
+      getLogger().info("Clicking login button");
+      HtmlPage home = submit.click();
+      if (home.asText().contains("Persistent Stores")) {
+        getLogger().info("Console login passed");
+        adminAccessible = true;
+        break;
+      }
+    }
+
+    return adminAccessible;
   }
 }
