@@ -33,7 +33,7 @@ Be aware of the following important considerations for WebLogic domains running 
   [WebLogic domain in Docker image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
   {{% /notice %}}
 
-* _Log File Locations:_ The operator can automatically override WebLogic domain, server, and introspector log locations.
+* _Log File Locations:_ The operator can automatically override WebLogic Server, domain, and introspector log locations.
   This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
   and `domainHomeSourceType` is set to `PersistentVolume`.  When overriding, the log location will be the location specified by the `logHome` setting.
   For additional log file tuning information, see [Log files](#log-files).
@@ -137,15 +137,15 @@ The operator let's you initiate scaling of clusters in various ways:
 
 ### Log files
 
-The operator can automatically override WebLogic domain, server, and introspector `.log` and `.out` locations.
+The operator can automatically override WebLogic Server, domain, and introspector `.log` and `.out` locations.
 This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
 and `domainHomeSourceType` is set to `PersistentVolume`.  When overriding, the log location will be the location specified by the `logHome` setting.
 
-If you want to fine tune the `.log` and `.out` rotation behavior for WebLogic domains and servers, then
+If you want to fine tune the `.log` and `.out` rotation behavior for WebLogic Servers and domains, then
 you can update the related `Log MBean` in your WebLogic configuration. Alternatively, for WebLogic
-servers, you can set corresponding system properties in `JAVA_OPTIONS`:
+Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
 
-- Here are some WLST off-line examples for creating and accessing commonly tuned Log MBeans:
+- Here are some WLST offline examples for creating and accessing commonly tuned Log MBeans:
 
   ```bash
   # domain log
@@ -164,7 +164,7 @@ servers, you can set corresponding system properties in `JAVA_OPTIONS`:
   cd('/ServerTemplates/' + tname + '/Log/' + tname)
   ```
 
-- Here is WLST off-line for commonly tuned Log MBean attributes:
+- Here is sample WLST offline code for commonly tuned Log MBean attributes:
 
   ```bash
   # minimum log file size before rotation in kilobytes
@@ -185,11 +185,11 @@ servers, you can set corresponding system properties in `JAVA_OPTIONS`:
   | FileCount | 100 | 7 |
   | RotateLogOnStartup | false | true |
 
-- For WebLogic server `.log` and `.out` files (including both dynamic and configured servers), you can alternatively
+- For WebLogic Server `.log` and `.out` files (including both dynamic and configured servers), you can alternatively
 set logging attributes using system properties that start with `weblogic.log.`
 and that end with the corresponding Log MBean attribute name. 
 
-  For example, you can include `-Dweblogic.log.FileMinSize=1000 -Dweblogic.log.FileCount=10 -Dweblogic.log.RotateLogOnStartup=true` in `domain.spec.serverPod.env.name.JAVA_OPTIONS` to set the behavior for all WebLogic servers in your domain. For information about setting `JAVA_OPTIONS`, see [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md#jvm-memory-and-java-option-environment-variables" >}}).
+  For example, you can include `-Dweblogic.log.FileMinSize=1000 -Dweblogic.log.FileCount=10 -Dweblogic.log.RotateLogOnStartup=true` in `domain.spec.serverPod.env.name.JAVA_OPTIONS` to set the behavior for all WebLogic Servers in your domain. For information about setting `JAVA_OPTIONS`, see [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md#jvm-memory-and-java-option-environment-variables" >}}).
 
 {{% notice warning %}}
 Kubernetes stores pod logs on each of its nodes, and, depending on the Kubernetes implementation, extra steps may be necessary to limit their disk space usage.
