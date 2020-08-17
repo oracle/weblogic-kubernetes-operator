@@ -1,0 +1,80 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+import os
+from weblogic.management.configuration import TargetMBean
+
+admin_username=sys.argv[1]
+admin_password=sys.argv[2]
+admin_t3_url=sys.argv[3]
+setListenPortEnabled=sys.argv[4]
+server_name=sys.argv[5]
+script_name = 'changeListenPort.py'
+print 'script_name: ' + script_name
+
+print 'admin_t3_url: ' + admin_t3_url
+print 'admin_username: ' + admin_username
+print 'admin_password: ' + admin_password
+print 'setListenPortEnabled: ' + setListenPortEnabled
+print 'server_name: ' + server_name
+
+
+def getEnvVar(var):
+  val=os.environ.get(var)
+  if val==None:
+    print "ERROR: Env var ",var, " not set."
+    sys.exit(1)
+  return val
+
+# This python script is used to create a WebLogic domain
+
+domain_path                  = getEnvVar("DOMAIN_HOME")
+cluster_name                 = getEnvVar("CLUSTER_NAME")
+domain_name                  = getEnvVar("DOMAIN_NAME")
+script_dir                   = getEnvVar("CREATE_DOMAIN_SCRIPT_DIR")
+production_mode_enabled      = getEnvVar("PRODUCTION_MODE_ENABLED")
+
+# Read the domain secrets from the common python file
+execfile('%s/read-domain-secret.py' % script_dir)
+
+print('domain_path        : [%s]' % domain_path);
+print('domain_name        : [%s]' % domain_name);
+print('cluster_name       : [%s]' % cluster_name);
+
+# Open default domain template
+# ============================
+readTemplate("/u01/oracle/wlserver/common/templates/wls/wls.jar")
+
+set('Name', domain_name)
+setOption('DomainName', domain_name)
+
+# Create a cluster
+# ======================
+cd('/')
+suc=create("LoggingExporterStartupClass", "StartupClass")
+suc.setClassName("weblogic.logging.exporter.Startup")
+suc.setTargets(jarray.array([ObjectName('com.bea:Name='+cluster_name+',Type=Cluster')],TargetMBean))
+
+print('Done configuring startup of WebLogic logging exporter on Cluster: %s' % cluster_name);
+
+# Write Domain
+# ============
+writeDomain(domain_path)
+closeTemplate()
+print 'Domain Created'
+
+# Update Domain
+readDomain(domain_path)
+cd('/')
+if production_mode_enabled == "true":
+  cmo.setProductionModeEnabled(true)
+else: 
+  cmo.setProductionModeEnabled(false)
+updateDomain()
+closeDomain()
+print 'Domain Updated'
+print 'Done'
+
+# Exit WLST
+# =========
+exit()
