@@ -474,6 +474,7 @@ public class DomainStatus {
         .append("servers", servers)
         .append("clusters", clusters)
         .append("startTime", startTime)
+        .append("introspectJobFailureRetryCount", introspectJobFailureRetryCount)
         .toString();
   }
 
@@ -486,6 +487,7 @@ public class DomainStatus {
         .append(Domain.sortOrNull(clusters))
         .append(Domain.sortOrNull(conditions))
         .append(message)
+        .append(introspectJobFailureRetryCount)
         .toHashCode();
   }
 
@@ -505,6 +507,7 @@ public class DomainStatus {
         .append(Domain.sortOrNull(clusters), Domain.sortOrNull(rhs.clusters))
         .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
         .append(message, rhs.message)
+        .append(introspectJobFailureRetryCount, rhs.introspectJobFailureRetryCount)
         .isEquals();
   }
 
@@ -512,6 +515,7 @@ public class DomainStatus {
         .withConstructor(DomainStatus::new)
         .withStringField("message", DomainStatus::getMessage)
         .withStringField("reason", DomainStatus::getReason)
+        .withIntegerField("introspectJobFailureRetryCount", DomainStatus::getIntrospectJobFailureRetryCount)
         .withIntegerField("replicas", DomainStatus::getReplicas)
         .withListField("conditions", DomainCondition.getObjectPatch(), DomainStatus::getConditions)
         .withListField("clusters", ClusterStatus.getObjectPatch(), DomainStatus::getClusters)

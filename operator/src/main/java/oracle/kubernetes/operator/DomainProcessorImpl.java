@@ -655,7 +655,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         LOGGER.fine("Stop introspection retry - exceeded configured domainPresenceFailureRetryMaxCount: "
             + DomainPresence.getDomainPresenceFailureRetryMaxCount());
         return false;
-      } else if (existingError != null && existingError.startsWith("MII Fatal Error") && !isVersionsChanged) {
+      } else if (existingError != null && existingError.startsWith("MII Fatal Error")) {
         LOGGER.fine("Stop introspection retry - MII Fatal Error: "
             + existingError);
         return false;
@@ -667,7 +667,9 @@ public class DomainProcessorImpl implements DomainProcessor {
               .map(DomainPresenceInfo::getDomain)
               .map(Domain::getStatus)
               .orElse(null);
-          status.resetIntrospectJobFailureRetryCount();
+          if (status != null) {
+            status.resetIntrospectJobFailureRetryCount();
+          }
         }
 
         if (currentIntrospectFailureRetryCount > 0) {
@@ -738,12 +740,14 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static boolean isVersionsChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
-    String liveIntropectVersion = Optional.ofNullable(liveInfo.getDomain())
+    String liveIntropectVersion = Optional.ofNullable(liveInfo)
+        .map(DomainPresenceInfo::getDomain)
         .map(Domain::getSpec)
         .map(DomainSpec::getIntrospectVersion)
         .orElse(null);
 
-    String cachedIntropectVersion = Optional.ofNullable(cachedInfo.getDomain())
+    String cachedIntropectVersion = Optional.ofNullable(cachedInfo)
+        .map(DomainPresenceInfo::getDomain)
         .map(Domain::getSpec)
         .map(DomainSpec::getIntrospectVersion)
         .orElse(null);
@@ -752,11 +756,13 @@ public class DomainProcessorImpl implements DomainProcessor {
       return true;
     }
 
-    String liveRestartVersion = Optional.ofNullable(liveInfo.getDomain())
+    String liveRestartVersion = Optional.ofNullable(liveInfo)
+        .map(DomainPresenceInfo::getDomain)
         .map(Domain::getRestartVersion)
         .orElse(null);
 
-    String cachedRestartVersion = Optional.ofNullable(cachedInfo.getDomain())
+    String cachedRestartVersion = Optional.ofNullable(cachedInfo)
+        .map(DomainPresenceInfo::getDomain)
         .map(Domain::getRestartVersion)
         .orElse(null);
 
@@ -764,12 +770,14 @@ public class DomainProcessorImpl implements DomainProcessor {
       return true;
     }
 
-    String liveIntrospectImage = Optional.ofNullable(liveInfo.getDomain())
+    String liveIntrospectImage = Optional.ofNullable(liveInfo)
+        .map(DomainPresenceInfo::getDomain)
         .map(Domain::getSpec)
         .map(DomainSpec::getImage)
         .orElse(null);
 
-    String cachedIntrospectImage = Optional.ofNullable(cachedInfo.getDomain())
+    String cachedIntrospectImage = Optional.ofNullable(cachedInfo)
+        .map(DomainPresenceInfo::getDomain)
         .map(Domain::getSpec)
         .map(DomainSpec::getImage)
         .orElse(null);
