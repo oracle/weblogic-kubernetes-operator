@@ -80,7 +80,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPodKubectl;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceImagePatched;
@@ -956,7 +956,7 @@ class ItMiiDomain {
             namespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(() -> appAccessibleInPodKubectl(
+        .until(() -> appAccessibleInPod(
                 namespace,
                 podName, 
                 internalPort, 
@@ -1051,7 +1051,7 @@ class ItMiiDomain {
     while (!v2AppAvailable)  {
       v2AppAvailable = true;
       for (int i = 1; i <= replicaCount; i++) {
-        v2AppAvailable = v2AppAvailable && appAccessibleInPodKubectl(
+        v2AppAvailable = v2AppAvailable && appAccessibleInPod(
                             namespace,
                             managedServerPrefix + i, 
                             internalPort, 
@@ -1061,7 +1061,7 @@ class ItMiiDomain {
 
       int count = 0;
       for (int i = 1; i <= replicaCount; i++) {
-        if (appAccessibleInPodKubectl(
+        if (appAccessibleInPod(
             namespace,
             managedServerPrefix + i, 
             internalPort, 
