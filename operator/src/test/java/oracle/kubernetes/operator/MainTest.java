@@ -25,13 +25,17 @@ import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.MainTest.NamespaceStatusMatcher.isNamespaceStarting;
 import static org.hamcrest.Matchers.aMapWithSize;
-import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
@@ -119,14 +123,34 @@ public class MainTest extends ThreadFactoryTestBase {
     Collection<String> domainNamespaces = Arrays.asList(NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3);
     testSupport.runSteps(Main.readExistingNamespaces(selectionStrategy, domainNamespaces, false));
 
-    Map<String, NamespaceStatus> statusMap = getNamespaceStatusMap();
-    assertThat(statusMap, aMapWithSize(3));
-    assertThat(statusMap, hasKey(NS_WEBLOGIC1));
-    assertThat(statusMap, hasKey(NS_WEBLOGIC2));
-    assertThat(statusMap, hasKey(NS_WEBLOGIC3));
-    assertThat(statusMap.get(NS_WEBLOGIC1).isNamespaceStarting().get(), is(true));
-    assertThat(statusMap.get(NS_WEBLOGIC2).isNamespaceStarting().get(), is(true));
-    assertThat(statusMap.get(NS_WEBLOGIC3).isNamespaceStarting().get(), is(true));
+    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
+    assertThat(getNamespaceStatusMap(),
+               allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
+                     hasEntry(is(NS_WEBLOGIC2), isNamespaceStarting()),
+                     hasEntry(is(NS_WEBLOGIC3), isNamespaceStarting())));
+  }
+
+  @SuppressWarnings("unused")
+  static class NamespaceStatusMatcher extends TypeSafeDiagnosingMatcher<NamespaceStatus> {
+
+    static NamespaceStatusMatcher isNamespaceStarting() {
+      return new NamespaceStatusMatcher();
+    }
+
+    @Override
+    protected boolean matchesSafely(NamespaceStatus item, Description mismatchDescription) {
+      if (item.isNamespaceStarting().get()) {
+        return true;
+      }
+
+      mismatchDescription.appendText("isNamespaceStarting is false");
+      return false;
+    }
+
+    @Override
+    public void describeTo(Description description) {
+      description.appendText("NamespaceStatus with isNamespaceStarting true");
+    }
   }
 
   @Test
@@ -139,14 +163,11 @@ public class MainTest extends ThreadFactoryTestBase {
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
     testSupport.runSteps(Main.readExistingNamespaces(selectionStrategy, null, false));
 
-    Map<String, NamespaceStatus> statusMap = getNamespaceStatusMap();
-    assertThat(statusMap, aMapWithSize(3));
-    assertThat(statusMap, hasKey(NS_WEBLOGIC1));
-    assertThat(statusMap, hasKey(NS_WEBLOGIC2));
-    assertThat(statusMap, hasKey(NS_WEBLOGIC3));
-    assertThat(statusMap.get(NS_WEBLOGIC1).isNamespaceStarting().get(), is(true));
-    assertThat(statusMap.get(NS_WEBLOGIC2).isNamespaceStarting().get(), is(true));
-    assertThat(statusMap.get(NS_WEBLOGIC3).isNamespaceStarting().get(), is(true));
+    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
+    assertThat(getNamespaceStatusMap(),
+               allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
+                     hasEntry(is(NS_WEBLOGIC2), isNamespaceStarting()),
+                     hasEntry(is(NS_WEBLOGIC3), isNamespaceStarting())));
   }
 
   @Test
@@ -159,15 +180,11 @@ public class MainTest extends ThreadFactoryTestBase {
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
     testSupport.runSteps(Main.readExistingNamespaces(selectionStrategy, null, false));
 
-    Map<String, NamespaceStatus> statusMap = getNamespaceStatusMap();
-
-    assertThat(statusMap, aMapWithSize(3));
-    assertThat(statusMap, hasKey(NS_WEBLOGIC1));
-    assertThat(statusMap, hasKey(NS_WEBLOGIC2));
-    assertThat(statusMap, hasKey(NS_WEBLOGIC3));
-    assertThat(statusMap.get(NS_WEBLOGIC1).isNamespaceStarting().get(), is(true));
-    assertThat(statusMap.get(NS_WEBLOGIC2).isNamespaceStarting().get(), is(true));
-    assertThat(statusMap.get(NS_WEBLOGIC3).isNamespaceStarting().get(), is(true));
+    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
+    assertThat(getNamespaceStatusMap(),
+               allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
+                     hasEntry(is(NS_WEBLOGIC2), isNamespaceStarting()),
+                     hasEntry(is(NS_WEBLOGIC3), isNamespaceStarting())));
   }
 
   @Test

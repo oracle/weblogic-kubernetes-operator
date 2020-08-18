@@ -158,14 +158,10 @@ public class CrdHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      try {
-        if (context.version.isCrdV1Supported()) {
-          return doNext(context.verifyCrd(getNext()), packet);
-        } else {
-          return doNext(context.verifyBetaCrd(getNext()), packet);
-        }
-      } catch (NullPointerException e) {
-        throw e;
+      if (context.version.isCrdV1Supported()) {
+        return doNext(context.verifyCrd(getNext()), packet);
+      } else {
+        return doNext(context.verifyBetaCrd(getNext()), packet);
       }
     }
   }
