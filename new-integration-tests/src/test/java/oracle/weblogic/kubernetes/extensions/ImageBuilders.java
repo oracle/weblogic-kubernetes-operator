@@ -212,7 +212,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
     // check initialization is already done and is not successful
     assertTrue(started.get() && isInitializationSuccessful,
-        "Initialization(pull images from OCR or build images and push to OCIR) failed");
+        "Initialization(pull images from OCR or login/push to OCIR) failed, "
+        + "check the actual error or stack trace in the first test that failed in the test suite");
 
   }
 
