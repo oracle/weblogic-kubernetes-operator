@@ -687,14 +687,14 @@ function wdtCreatePrimordialDomain() {
   ret=$?
   if [ $ret -ne 0 ]; then
     #
-    # MII Fatal Error is detected by DomainProcessorImpl.isShouldContinue
+    # FatalIntrospectorError is detected by DomainProcessorImpl.isShouldContinue
     # If it is detected then it will stop the periodic retry
     # We need to prevent retries with a "MII Fatal Error" because JRF without the OPSS_FLAGS indicates
     # a likely attempt to initialize the RCU DB schema for this domain, and we don't want to retry when this fails
     # without admin intervention (retrying can compound the problem and obscure the original issue).
     #
     if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] ; then
-      trace SEVERE "MII Fatal Error: WDT Create Primordial Domain Failed ${ret}"
+      trace SEVERE "FatalIntrospectorError: WDT Create Primordial Domain Failed ${ret}"
     else
       trace SEVERE "WDT Create Primordial Domain Failed ${ret}"
     fi

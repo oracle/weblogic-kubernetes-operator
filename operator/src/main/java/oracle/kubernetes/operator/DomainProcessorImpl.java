@@ -663,7 +663,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
             + " by adding it to the weblogic-operator-cm configmap.");
         return false;
-      } else if (existingError != null && existingError.startsWith("MII Fatal Error")) {
+      } else if (existingError != null && existingError.contains("FatalIntrospectorError")) {
         LOGGER.fine("Stop introspection retry - MII Fatal Error: "
             + existingError);
         return false;
