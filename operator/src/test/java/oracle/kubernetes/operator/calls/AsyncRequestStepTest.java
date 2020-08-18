@@ -33,6 +33,7 @@ import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONE
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertTrue;
@@ -127,6 +128,7 @@ public class AsyncRequestStepTest {
     callFactory.sendSuccessfulCallback(largeListPartOne);
 
     assertThat(nextStep.result, equalTo(largeListPartOne));
+    assertThat(nextStep.nextAction.getNext(), instanceOf(AsyncRequestStep.class));
   }
 
   @Test
@@ -212,6 +214,7 @@ public class AsyncRequestStepTest {
 
   static class TestStep extends ResponseStep<DomainList> {
     private DomainList result;
+    private NextAction nextAction;
 
     TestStep() {
       super(null);
@@ -220,7 +223,8 @@ public class AsyncRequestStepTest {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
       result = callResponse.getResult();
-      return doContinueListOrNext(callResponse, packet);
+      nextAction = doContinueListOrNext(callResponse, packet);
+      return nextAction;
     }
   }
 
