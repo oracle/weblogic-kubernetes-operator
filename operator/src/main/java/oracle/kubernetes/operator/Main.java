@@ -305,34 +305,33 @@ public class Main {
   }
 
   static Runnable recheckDomains() {
-    return () -> {
+    return () -> runSteps(createDomainRecheckSteps(DateTime.now()));
+  }
 
-      DomainNamespaceSelectionStrategy selectionStrategy = getDomainNamespaceSelectionStrategy();
-      Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredList();
+  static Step createDomainRecheckSteps(DateTime now) {
+    DomainNamespaceSelectionStrategy selectionStrategy = getDomainNamespaceSelectionStrategy();
+    Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredList();
 
-      int recheckInterval = tuningAndConfig().getMainTuning().domainPresenceRecheckIntervalSeconds;
-      DateTime now = DateTime.now();
-      boolean isFullRecheck = false;
-      if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {
-        processor.reportSuspendedFibers();
-        isFullRecheck = true;
-        lastFullRecheck.set(now);
-      }
+    int recheckInterval = tuningAndConfig().getMainTuning().domainPresenceRecheckIntervalSeconds;
+    boolean isFullRecheck = false;
+    if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {
+      processor.reportSuspendedFibers();
+      isFullRecheck = true;
+      lastFullRecheck.set(now);
+    }
 
-      Step strategy = Step.chain(
-          new InitializeNamespacesSecurityStep(configuredDomainNamespaces),
-          new NamespaceRulesReviewStep());
-      if (!DomainNamespaceSelectionStrategy.Dedicated.equals(selectionStrategy)) {
-        strategy = Step.chain(strategy, readExistingNamespaces(
-                selectionStrategy, configuredDomainNamespaces, isFullRecheck));
-      } else {
-        strategy = Step.chain(strategy, CrdHelper.createDomainCrdStep(
-            version, productVersion,
-            new StartNamespacesStep(configuredDomainNamespaces, isFullRecheck)));
-      }
-
-      runSteps(strategy);
-    };
+    Step strategy = Step.chain(
+        new InitializeNamespacesSecurityStep(configuredDomainNamespaces),
+        new NamespaceRulesReviewStep());
+    if (!DomainNamespaceSelectionStrategy.Dedicated.equals(selectionStrategy)) {
+      strategy = Step.chain(strategy, readExistingNamespaces(
+              selectionStrategy, configuredDomainNamespaces, isFullRecheck));
+    } else {
+      strategy = Step.chain(strategy, CrdHelper.createDomainCrdStep(
+          version, productVersion,
+          new StartNamespacesStep(configuredDomainNamespaces, isFullRecheck)));
+    }
+    return strategy;
   }
 
   static Step readExistingResources(String operatorNamespace, String ns) {
