@@ -741,6 +741,7 @@ public class Main {
         for (Domain dom : callResponse.getResult().getItems()) {
           String domainUid = dom.getDomainUid();
           domainUids.add(domainUid);
+          boolean existed = dpis.get(domainUid) != null;
           DomainPresenceInfo info =
               dpis.compute(
                   domainUid,
@@ -752,7 +753,13 @@ public class Main {
                     return v;
                   });
           info.setPopulated(true);
-          dp.createMakeRightOperation(info).withExplicitRecheck().execute();
+          try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
+            MakeRightDomainOperation mrdo = dp.createMakeRightOperation(info);
+            if (!existed) {
+              mrdo.withExplicitRecheck();
+            }
+            mrdo.execute();
+          }
         }
       }
 
