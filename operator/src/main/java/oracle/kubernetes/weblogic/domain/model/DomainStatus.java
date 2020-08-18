@@ -296,25 +296,27 @@ public class DomainStatus {
    *
    * @return retryCount
    */
-  public Integer incrementRetryCount() {
+  public Integer incrementIntrospectJobFailureRetryCount() {
     return this.introspectJobFailureRetryCount = this.introspectJobFailureRetryCount.intValue() + 1;
   }
 
 
   /**
-   * Set the number of retries for introspect job failure.
+   * Set the number of retries for introspect job failure to default (1).
    *
+   * @return this
    */
-  public void resetIntrospectJobFailureRetryCount() {
-    this.introspectJobFailureRetryCount = 0;
+  public DomainStatus resetIntrospectJobFailureRetryCount() {
+    this.introspectJobFailureRetryCount = 1;
+    return this;
   }
 
   /**
-   * The number of retries.
+   * Set the number of retries for introspect job failure and return the DomainStatus.
    * @param retryCount retryCount
    * @return this
    */
-  public DomainStatus withRetryCount(Integer retryCount) {
+  public DomainStatus withIntrospectJobFailureRetryCount(Integer retryCount) {
     this.introspectJobFailureRetryCount = retryCount;
     return this;
   }

@@ -669,13 +669,10 @@ public class DomainProcessorImpl implements DomainProcessor {
         return false;  // we have already cached this
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
         if (exceededFailureRetryCount) {
-          DomainStatus status = Optional.ofNullable(liveInfo)
+          Optional.ofNullable(liveInfo)
               .map(DomainPresenceInfo::getDomain)
               .map(Domain::getStatus)
-              .orElse(null);
-          if (status != null) {
-            status.resetIntrospectJobFailureRetryCount();
-          }
+              .map(o -> o.resetIntrospectJobFailureRetryCount());
         }
 
         if (currentIntrospectFailureRetryCount > 0) {
