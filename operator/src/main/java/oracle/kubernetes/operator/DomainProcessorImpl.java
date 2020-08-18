@@ -653,7 +653,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       boolean exceededFailureRetryCount = (currentIntrospectFailureRetryCount
           > DomainPresence.getDomainPresenceFailureRetryMaxCount());
 
-      boolean isVersionsChanged = isVersionsChanged(liveInfo, cachedInfo);
+      boolean isVersionsChanged = isImgRestartIntrospectVerChanged(liveInfo, cachedInfo);
 
       if (cachedInfo == null || cachedInfo.getDomain() == null) {
         return true;
@@ -742,8 +742,8 @@ public class DomainProcessorImpl implements DomainProcessor {
           .orElse(true);
   }
 
-  private static boolean isVersionsChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
-    String liveIntropectVersion = Optional.ofNullable(liveInfo)
+  private static boolean isImgRestartIntrospectVerChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
+    String liveIntrospectVersion = Optional.ofNullable(liveInfo)
         .map(DomainPresenceInfo::getDomain)
         .map(Domain::getSpec)
         .map(DomainSpec::getIntrospectVersion)
@@ -755,7 +755,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         .map(DomainSpec::getIntrospectVersion)
         .orElse(null);
 
-    if (!Objects.equals(liveIntropectVersion, cachedIntropectVersion)) {
+    if (!Objects.equals(liveIntrospectVersion, cachedIntropectVersion)) {
       return true;
     }
 
@@ -785,7 +785,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         .map(DomainSpec::getImage)
         .orElse(null);
 
-    if (Objects.equals(liveIntrospectImage, cachedIntrospectImage)) {
+    if (!Objects.equals(liveIntrospectImage, cachedIntrospectImage)) {
       return true;
     } else {
       return false;
