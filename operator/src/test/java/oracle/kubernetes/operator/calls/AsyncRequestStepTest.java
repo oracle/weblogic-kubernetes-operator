@@ -13,6 +13,7 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.builders.CallParams;
@@ -40,9 +41,12 @@ public class AsyncRequestStepTest {
 
   private static final int TIMEOUT_SECONDS = 10;
   private static final int MAX_RETRY_COUNT = 2;
+  private static final String CONTINUE = "continue-value";
+
   private FiberTestSupport testSupport = new FiberTestSupport();
-  private CallParams callParams;
-  private RequestParams requestParams = new RequestParams("testcall", "junit", "testName", "body");
+  private CallParams callParams = new CallParamsStub();
+  private RequestParams requestParams
+      = new RequestParams("testcall", "junit", "testName", "body", callParams);
   private CallFactoryStub callFactory = new CallFactoryStub();
   private TestStep nextStep = new TestStep();
   private ClientPool helper = ClientPool.getInstance();
@@ -59,6 +63,8 @@ public class AsyncRequestStepTest {
           null);
   private List<Memento> mementos = new ArrayList<>();
   private final DomainList smallList = generateDomainList(5);
+  private final DomainList largeListPartOne
+      = generateDomainList(50).withMetadata(new V1ListMeta()._continue(CONTINUE));
 
   private static DomainList generateDomainList(int size) {
     List<Domain> domains = new ArrayList<>();
@@ -114,6 +120,13 @@ public class AsyncRequestStepTest {
     callFactory.sendSuccessfulCallback(smallList);
 
     assertThat(nextStep.result, equalTo(smallList));
+  }
+
+  @Test
+  public void afterSuccessfulCallbackLargeList_nextStepAppliedWithValue() {
+    callFactory.sendSuccessfulCallback(largeListPartOne);
+
+    assertThat(nextStep.result, equalTo(largeListPartOne));
   }
 
   @Test
@@ -207,7 +220,7 @@ public class AsyncRequestStepTest {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
       result = callResponse.getResult();
-      return null;
+      return doContinueListOrNext(callResponse, packet);
     }
   }
 
@@ -250,17 +263,18 @@ public class AsyncRequestStepTest {
     }
   }
 
-  // TODO
   static class CallParamsStub implements CallParams {
+    private Integer limit = 50;
+    private Integer timeoutSeconds = 30;
 
     @Override
     public Integer getLimit() {
-      return null;
+      return limit;
     }
 
     @Override
     public Integer getTimeoutSeconds() {
-      return null;
+      return timeoutSeconds;
     }
 
     @Override
