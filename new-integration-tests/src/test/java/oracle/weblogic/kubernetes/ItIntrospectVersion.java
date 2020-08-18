@@ -914,7 +914,7 @@ public class ItIntrospectVersion {
         -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
 
-    logger.info("Getting the list of servers using the listServers");
+    logger.info("Checking the health of servers in cluster");
     String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort
         + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
 

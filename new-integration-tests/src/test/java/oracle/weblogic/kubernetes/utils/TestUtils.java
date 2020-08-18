@@ -98,14 +98,14 @@ public class TestUtils {
   }
 
   /**
-   * Call the curl command and check the managed servers can see each other.
+   * Call the curl command and check the managed servers connect to each other.
    *
    * @param curlRequest curl command to call the clusterview app
    * @param managedServerNames managed server names part of the cluster
    */
   public static void verifyServerCommunication(String curlRequest, List<String> managedServerNames) {
     LoggingFacade logger = getLogger();
-    
+
     ConditionFactory withStandardRetryPolicy
         = with().pollDelay(2, SECONDS)
             .and().with().pollInterval(10, SECONDS)
@@ -114,7 +114,7 @@ public class TestUtils {
     HashMap<String, Boolean> managedServers = new HashMap<>();
     managedServerNames.forEach(managedServerName -> managedServers.put(managedServerName, false));
 
-    //verify each server in the cluster can see other members
+    //verify each server in the cluster can connect to other
     withStandardRetryPolicy.conditionEvaluationListener(
         condition -> logger.info("Waiting until each managed server can see other cluster members"
             + "(elapsed time {0} ms, remaining time {1} ms)",
@@ -133,14 +133,14 @@ public class TestUtils {
             String response = result.stdout().trim();
             logger.info(response);
             for (var managedServer : managedServers.entrySet()) {
-              boolean seeEachOther = true;
+              boolean connectToOthers = true;
               logger.info("Looking for Server:" + managedServer.getKey());
               if (response.contains("ServerName:" + managedServer.getKey())) {
                 for (String managedServerName : managedServerNames) {
                   logger.info("Looking for Success:" + managedServerName);
-                  seeEachOther = seeEachOther && response.contains("Success:" + managedServerName);
+                  connectToOthers = connectToOthers && response.contains("Success:" + managedServerName);
                 }
-                if (seeEachOther) {
+                if (connectToOthers) {
                   logger.info("Server:" + managedServer.getKey() + " can see all cluster members");
                   managedServers.put(managedServer.getKey(), true);
                 }
