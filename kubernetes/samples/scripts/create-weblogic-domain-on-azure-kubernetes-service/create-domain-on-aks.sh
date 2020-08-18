@@ -97,14 +97,12 @@ function initOutputDir {
   adminLbOutput="${aksOutputDir}/admin-lb.yaml"
   clusterLbOutput="${aksOutputDir}/cluster-lb.yaml"
   domain1Output="${aksOutputDir}/domain1.yaml"
-  grantHelmAdminRole="${aksOutputDir}/cluster-admin-role.yaml"
 
   removeFileIfExists ${pvOutput}
   removeFileIfExists ${pvcOutput}
   removeFileIfExists ${adminLbOutput}
   removeFileIfExists ${clusterLbOutput}
   removeFileIfExists ${domain1Output}
-  removeFileIfExists ${grantHelmAdminRole}
   removeFileIfExists ${aksOutputDir}/create-domain-on-aks-inputs.yaml
 }
 
@@ -253,22 +251,6 @@ function createYamlFiles {
   sed -i -e "s:%SERVER_PORT%:${managedServerPort}:g" ${clusterLbOutput}
   sed -i -e "s:%SERVER_NAME%:${clusterName}:g" ${clusterLbOutput}
 
-  echo Generating ${grantHelmAdminRole}
-  cat <<EOF >${grantHelmAdminRole}
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: helm-user-cluster-admin-role
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: kube-system
-EOF
-
   # Remove any "...yaml-e" files left over from running sed
   rm -f ${aksOutputDir}/*.yaml-e
 }
@@ -378,10 +360,6 @@ function createFileShare {
 }
 
 function installWebLogicOperator {
-    # Grant the Helm service account the cluster-admin role
-    echo Granting the Helm service account the cluster-admin role.
-    kubectl apply -f ${grantHelmAdminRole}
-
     # Helm
     helmVersion=$(echo `helm version` | grep -Po '(?<=Version:\"v)\d')
     if [ $helmVersion -lt 3 ]
@@ -503,7 +481,6 @@ function printSummary {
   echo "  ${adminLbOutput}"
   echo "  ${clusterLbOutput}"
   echo "  ${domain1Output}"
-  echo "  ${grantHelmAdminRole}"
   echo ""
   
   echo "Completed"
