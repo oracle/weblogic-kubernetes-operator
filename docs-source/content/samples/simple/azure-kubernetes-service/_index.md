@@ -851,7 +851,7 @@ Now that you have WLS running in AKS, you can test the cluster by deploying the 
 3. Select Install.
 4. Select Upload your file(s).
 5. For the Deployment Archive, Select "Choose File".
-6. Select the file `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/testwebapp.war`.
+6. Select the file `kubernetes/samples/charts/application/testwebapp.war`.
 7. Select Next. Choose 'Install this deployment as an application'.
 8. Select Next. Select cluster-1 and All servers in the cluster.
 9. Accept the defaults in the next screens and Select Finish.
