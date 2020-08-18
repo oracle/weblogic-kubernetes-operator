@@ -243,7 +243,8 @@ public class ItLoadBalancer {
     logger.info("Accessing the clusterview app through load balancer to verify all servers in cluster");
     String curlRequest = String.format("curl --silent --show-error -ks --noproxy '*' "
         + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
-        + "?user=" + ADMIN_USERNAME_DEFAULT + "&password=" + ADMIN_PASSWORD_DEFAULT,
+        + "\"?user=" + ADMIN_USERNAME_DEFAULT
+        + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
         domainUid + "." + domainNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
