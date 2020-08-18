@@ -66,7 +66,7 @@ import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.AfterAll;
+//import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -227,7 +227,7 @@ public class ItTwoDomainsLoadBalancers {
 
     // initiate domainUid list for two domains
     for (int i = 1; i <= numberOfDomains; i++) {
-      domainUids.add("domain" + i);
+      domainUids.add("tdlbs-domain" + i);
     }
 
     domain1Uid = domainUids.get(0);
@@ -426,7 +426,7 @@ public class ItTwoDomainsLoadBalancers {
   /**
    * Cleanup all the remaining artifacts in default namespace created by the test.
    */
-  @AfterAll
+  //@AfterAll
   public void tearDownAll() {
     // uninstall Traefik loadbalancer
     if (traefikHelmParams != null) {
@@ -581,8 +581,8 @@ public class ItTwoDomainsLoadBalancers {
               .addAccessModesItem("ReadWriteMany")
               .storageClassName(domainUid + "-weblogic-domain-storage-class")
               .volumeMode("Filesystem")
-              .putCapacityItem("storage", Quantity.fromString("5Gi"))
-              .persistentVolumeReclaimPolicy("Recycle")
+              .putCapacityItem("storage", Quantity.fromString("2Gi"))
+              .persistentVolumeReclaimPolicy("Delete")
               .hostPath(new V1HostPathVolumeSource()
                   .path(pvHostPath.toString())))
           .metadata(new V1ObjectMetaBuilder()
@@ -596,7 +596,7 @@ public class ItTwoDomainsLoadBalancers {
               .storageClassName(domainUid + "-weblogic-domain-storage-class")
               .volumeName(pvName)
               .resources(new V1ResourceRequirements()
-                  .putRequestsItem("storage", Quantity.fromString("5Gi"))))
+                  .putRequestsItem("storage", Quantity.fromString("2Gi"))))
           .metadata(new V1ObjectMetaBuilder()
               .withName(pvcName)
               .withNamespace(domainNamespace)
@@ -1053,8 +1053,8 @@ public class ItTwoDomainsLoadBalancers {
             .addAccessModesItem("ReadWriteMany")
             .storageClassName("default-sharing-weblogic-domain-storage-class")
             .volumeMode("Filesystem")
-            .putCapacityItem("storage", Quantity.fromString("5Gi"))
-            .persistentVolumeReclaimPolicy("Recycle")
+            .putCapacityItem("storage", Quantity.fromString("6Gi"))
+            .persistentVolumeReclaimPolicy("Delete")
             .hostPath(new V1HostPathVolumeSource()
                 .path(pvHostPath.toString())))
         .metadata(new V1ObjectMetaBuilder()
@@ -1068,7 +1068,7 @@ public class ItTwoDomainsLoadBalancers {
             .storageClassName("default-sharing-weblogic-domain-storage-class")
             .volumeName(pvName)
             .resources(new V1ResourceRequirements()
-                .putRequestsItem("storage", Quantity.fromString("5Gi"))))
+                .putRequestsItem("storage", Quantity.fromString("6Gi"))))
         .metadata(new V1ObjectMetaBuilder()
             .withName(pvcName)
             .withNamespace(defaultNamespace)
@@ -1198,6 +1198,8 @@ public class ItTwoDomainsLoadBalancers {
       Files.deleteIfExists(dstFile);
       Files.createDirectories(dstFile.getParent());
       Files.write(dstFile, Files.readString(srcFile).replaceAll("@NS@", defaultNamespace)
+          .replaceAll("@domain1uid@", domainUids.get(0))
+          .replaceAll("@domain2uid@", domainUids.get(1))
           .getBytes(StandardCharsets.UTF_8));
     });
     String command = "kubectl create"
