@@ -22,6 +22,14 @@ spec:
         app: "weblogic-operator"
     spec:
       serviceAccountName: {{ .serviceAccount | quote }}
+      {{- with .nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
       - name: "weblogic-operator"
         image: {{ .image | quote }}
