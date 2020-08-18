@@ -659,7 +659,9 @@ public class DomainProcessorImpl implements DomainProcessor {
         return true;
       } else if (exceededFailureRetryCount && !isVersionsChanged) {
         LOGGER.fine("Stop introspection retry - exceeded configured domainPresenceFailureRetryMaxCount: "
-            + DomainPresence.getDomainPresenceFailureRetryMaxCount());
+            + DomainPresence.getDomainPresenceFailureRetryMaxCount()
+            + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
+            + " by adding it to the weblogic-operator-cm configmap.");
         return false;
       } else if (existingError != null && existingError.startsWith("MII Fatal Error")) {
         LOGGER.fine("Stop introspection retry - MII Fatal Error: "

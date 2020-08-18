@@ -48,9 +48,9 @@ public class DomainStatus {
   private String reason;
 
   @Description(
-      "Number of retries for introspect job failure. If the introspect job fails, it will retry based on the " +
-          "make-right interval (120s), in each retry this will be incremented until it exceeded the " +
-          "DomainPresenceFailureRetryMaxCount in the operator tuning parameter.")
+      "Number of retries for introspect job failure. If the introspect job fails, it will retry based on the "
+          + "make-right interval (120s), in each retry this will be incremented until it exceeded the "
+          + "DomainPresenceFailureRetryMaxCount in the operator tuning parameter.")
   @Range(minimum = 0)
   private Integer introspectJobFailureRetryCount = new Integer(1);
 
