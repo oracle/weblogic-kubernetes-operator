@@ -32,6 +32,7 @@ public class DomainProcessorTestSetup {
   public static final String NS = "namespace";
   public static final String SECRET_NAME = "secret-name";
   public static final String KUBERNETES_UID = "12345";
+  public static final String NODE_NAME = "Node1";
 
   private static final String INTROSPECTION_JOB = LegalNames.toJobIntrospectorName(UID);
   private static final String INTROSPECT_RESULT =
@@ -88,13 +89,14 @@ public class DomainProcessorTestSetup {
    * @return a domain
    */
   public static Domain createTestDomain() {
+    DomainSpec ds = new DomainSpec()
+            .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME).namespace(NS));
+    ds.setNodeName(NODE_NAME);
     return new Domain()
         .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
         .withKind(KubernetesConstants.DOMAIN)
         .withMetadata(withTimestamps(new V1ObjectMeta().name(UID).namespace(NS).uid(KUBERNETES_UID)))
-        .withSpec(
-            new DomainSpec()
-                .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME).namespace(NS)));
+        .withSpec(ds);
   }
 
   /**

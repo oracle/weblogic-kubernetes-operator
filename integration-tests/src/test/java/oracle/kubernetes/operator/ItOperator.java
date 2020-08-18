@@ -160,9 +160,9 @@ public class ItOperator extends BaseTest {
       //create operator just for this test to match the namespaces with wldf-policy.yaml
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
           true, testClassName);
-      ArrayList<String> targetDomainsNS = new ArrayList<String>();
-      targetDomainsNS.add("test2");
-      operatorMap.put("domainNamespaces", targetDomainsNS);
+      ArrayList<String> domainNamespaces = new ArrayList<String>();
+      domainNamespaces.add("test2");
+      operatorMap.put("domainNamespaces", domainNamespaces);
       operatorMap.put("namespace", "weblogic-operator2");
       operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       namespaceList.append(" ").append((String)operatorMap.get("namespace"));

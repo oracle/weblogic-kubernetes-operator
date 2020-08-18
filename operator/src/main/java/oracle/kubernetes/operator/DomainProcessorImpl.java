@@ -234,6 +234,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
       if (map != null) {
         for (DomainPresenceInfo dpi : map.values()) {
+          stack.domainUid(dpi.getDomainUid());
+
           Domain dom = dpi.getDomain();
           DomainPresenceInfo value =
               (dom != null)
@@ -517,7 +519,11 @@ public class DomainProcessorImpl implements DomainProcessor {
                           }
                         });
               } catch (Throwable t) {
-                LOGGER.severe(MessageKeys.EXCEPTION, t);
+                try (LoggingContext stack
+                         = LoggingContext.setThreadContext()
+                    .namespace(info.getNamespace()).domainUid(info.getDomainUid())) {
+                  LOGGER.severe(MessageKeys.EXCEPTION, t);
+                }
               }
             },
             main.initialShortDelay,

@@ -7,10 +7,10 @@ weight: 3
 
 #### Get these images and put them into your local registry.
 
-1. If you don't already have one, obtain a Docker store account, log in to the Docker store,
+1. If you don't already have one, obtain a Docker Store account, log in to the Docker Store,
 and accept the license agreement for the [WebLogic Server image](https://hub.docker.com/_/oracle-weblogic-server-12c).
 
-1. Log in to the Docker store from your Docker client:
+1. Log in to the Docker Store from your Docker client:
 
     ```bash
     $ docker login
@@ -19,16 +19,16 @@ and accept the license agreement for the [WebLogic Server image](https://hub.doc
 1. Pull the operator image:
 
     ```bash
-    $ docker pull oracle/weblogic-kubernetes-operator:3.0.0
+    $ docker pull oracle/weblogic-kubernetes-operator:3.1.0
     ```
 
-1. Pull the Traefik load balancer image:
+1. Pull the Traefik ingress controller image:
 
     ```bash
     $ docker pull traefik:2.2.1
     ```
 
-1. Obtain the WebLogic image from the [Oracle Container Registry](https://container-registry.oracle.com).
+1. Obtain the WebLogic Server image from the [Oracle Container Registry](https://container-registry.oracle.com).
 
     a. First time users, follow these [directions]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
 
@@ -38,7 +38,7 @@ and accept the license agreement for the [WebLogic Server image](https://hub.doc
      $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
      ```
 
-    {{% notice note %}} The WebLogic Docker image, `weblogic:12.2.1.3`, has all the necessary patches applied. The WebLogic Docker image, `weblogic:12.2.1.4`, does not require any additional patches.
+    {{% notice note %}} The WebLogic Server Docker image, `weblogic:12.2.1.3`, has all the necessary patches applied. The WebLogic Server Docker image, `weblogic:12.2.1.4`, does not require any additional patches.
     {{% /notice %}}
 
 

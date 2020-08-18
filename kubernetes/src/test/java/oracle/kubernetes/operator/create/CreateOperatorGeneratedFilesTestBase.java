@@ -106,7 +106,10 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                     .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
             .putDataItem("dedicated", getInputs().getDedicated())
             .putDataItem("serviceaccount", getInputs().getServiceAccount())
-            .putDataItem("targetNamespaces", getInputs().getTargetNamespaces());
+            .putDataItem("domainNamespaceSelectionStrategy", getInputs().getDomainNamespaceSelectionStrategy())
+            .putDataItem("domainNamespaceLabelSelector", getInputs().getDomainNamespaceLabelSelector())
+            .putDataItem("domainNamespaceRegExp", getInputs().getDomainNamespaceRegExp())
+            .putDataItem("domainNamespaces", getInputs().getDomainNamespaces());
     if (expectExternalCredentials()) {
       v1ConfigMap.putDataItem(
           "externalOperatorCert",
@@ -611,9 +614,9 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_targetNamespaces_weblogicOperatorRoleBindings() {
-    for (String targetNamespace : getInputs().getTargetNamespaces().split(",")) {
-      String namespace = targetNamespace.trim();
+  public void generatesCorrect_domainNamespaces_weblogicOperatorRoleBindings() {
+    for (String domainNamespace : getInputs().getDomainNamespaces().split(",")) {
+      String namespace = domainNamespace.trim();
       assertThat(
           getGeneratedFiles().getWeblogicOperatorRoleBinding(namespace),
           yamlEqualTo(getExpectedWeblogicOperatorRoleBinding(namespace)));

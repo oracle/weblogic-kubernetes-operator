@@ -38,8 +38,9 @@
 #        ORACLE_HOME = Oracle Install Home - defaults via utils.sh/exportInstallHomes
 #        MW_HOME     = MiddleWare Install Home - defaults to ${ORACLE_HOME}
 #        WL_HOME     = WebLogic Install Home - defaults to ${ORACLE_HOME}/wlserver
+#        INTROSPECTOR_LOG_FILE_MAX = Max number of log files to keep around (default 11).
 #
-#    - Transitively requires other env vars for startNodeManager.sh, wlst.sh,
+#    - Transitively requires other env vars for startNodeManager.sh, wlst.sh, modelInImage.sh,
 #      and introspectDomain.py (see these scripts to find out what else needs to be set).
 #
 
@@ -77,6 +78,7 @@ source ${SCRIPTPATH}/modelInImage.sh
 
 #
 # setup introspector log file
+#   keep max 11 total by default (delete oldest first)
 #
 
 traceDirs before LOG_HOME
@@ -87,17 +89,17 @@ if [ ! -z "${LOG_HOME}" ] && [ ! -d "${LOG_HOME}" ]; then
 fi
 
 ilog_dir="${LOG_HOME:-/tmp}"
-ilog_timestamp="$(date --utc '+%Y-%m-%d_%H.%M.%S')"
-ilog_prefix="${ilog_dir}/introspector_script"
-ilog_file="${ilog_prefix}_${ilog_timestamp}_.out"
-ilog_max=${MAX_INTROSPECTOR_LOG_FILES:-10}
+ilog_file="${ilog_dir}/introspector_script.out"
 
 if [ ! -d "${ilog_dir}" ]; then
   trace "Creating introspector log directory: '${ilog_dir}'"
   createFolder "${ilog_dir}"
 fi
 
-echo "" >> ${ilog_file}
+testLogFileRotate "${ilog_file}"
+[ $? -ne 0 ] && trace SEVERE "Error accessing '${ilog_dir}'. See previous log messages." && exit 1
+
+logFileRotate ${ilog_file} ${INTROSPECTOR_LOG_FILE_MAX:-11}
 
 #
 # main introspection function
@@ -108,14 +110,6 @@ function doIntrospect() {
   trace "Introspecting domain '${DOMAIN_UID}', log location: '$ilog_file'"
 
   traceDirs after LOG_HOME
-
-  # keep only 10 total log files by default (delete oldest first)
-  for ilog_cur in \
-    $(ls -1r ${ilog_prefix}* 2>/dev/null | tail -n +$((ilog_max + 1)))
-  do
-    trace "Removing old introspector log file '${ilog_cur}'"
-    rm ${ilog_cur}
-  done
 
   # list potentially interesting env-vars and dirs before they're updated by export.*Homes
 
