@@ -233,6 +233,9 @@ public class ClusterViewServlet extends HttpServlet {
     System.out.println("connectToOtherServers()");
     List<String> serverUrls = getServerUrls();
     for (String serverUrl : serverUrls) {
+      if (serverUrl.equals("null")) {
+        continue;
+      }
       JMXServiceURL url = null;
       try {
         url = new JMXServiceURL("service:jmx:" + serverUrl + "/jndi/" + RuntimeServiceMBean.MBEANSERVER_JNDI_NAME);
@@ -274,8 +277,10 @@ public class ClusterViewServlet extends HttpServlet {
     DomainRuntimeMBean domainRuntime = domainRuntimeService.getDomainRuntime();
     ServerLifeCycleRuntimeMBean[] serverLifeCycleRuntimes = domainRuntime.getServerLifeCycleRuntimes();
     for (ServerLifeCycleRuntimeMBean serverLifeCycleRuntime : serverLifeCycleRuntimes) {
-      serverUrls.add(serverLifeCycleRuntime.getIPv4URL("t3"));
-      System.out.println("getIPv4URL(t3):" + serverLifeCycleRuntime.getIPv4URL("t3"));
+      if (null != serverLifeCycleRuntime.getIPv4URL("t3")) {
+        serverUrls.add(serverLifeCycleRuntime.getIPv4URL("t3"));
+        System.out.println("getIPv4URL(t3):" + serverLifeCycleRuntime.getIPv4URL("t3"));
+      }
     }
 
     return serverUrls;
