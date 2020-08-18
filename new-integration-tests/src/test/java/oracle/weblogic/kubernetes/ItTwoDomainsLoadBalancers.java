@@ -66,7 +66,7 @@ import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
-//import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -133,6 +133,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyV
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.TestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -152,10 +153,10 @@ public class ItTwoDomainsLoadBalancers {
 
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
-  private static final String defaultNamespace = "default";
   private static final String wlSecretName = "weblogic-credentials";
 
   private static boolean isUseSecret = true;
+  private static String defaultNamespace = "default";
   private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
   private static String domain1Uid = null;
   private static String domain2Uid = null;
@@ -215,11 +216,16 @@ public class ItTwoDomainsLoadBalancers {
     }
 
     logger.info("Assign a unique namespace for Traefik");
+    assertNotNull(namespaces.get(4), "Namespace list is null");
     traefikNamespace = namespaces.get(4);
 
     // get a unique Voyager namespace
     logger.info("Assign a unique namespace for Voyager");
+    assertNotNull(namespaces.get(5), "Namespace list is null");
     voyagerNamespace = namespaces.get(5);
+
+    //assertNotNull(namespaces.get(6), "Namespace list is null");
+    //defaultNamespace = namespaces.get(6);
 
     // install and verify operator
     operatorHelmParams = installAndVerifyOperator(opNamespaces.get(0), domainNamespaces.get(0), defaultNamespace);
@@ -371,10 +377,7 @@ public class ItTwoDomainsLoadBalancers {
   @Test
   @DisplayName("Create domain1 and domain2 and Ingress resources")
   public void testTraefikHttpHostRoutingAcrossDomains() {
-    // bind domain name in the managed servers
-    for (String domain : domainUids) {
-      bindDomainName(domain, getTraefikLbNodePort(false));
-    }
+
     // verify load balancing works when 2 domains are running in the same namespace
     logger.info("Verifying http traffic");
     for (String domainUid : domainUids) {
@@ -391,10 +394,7 @@ public class ItTwoDomainsLoadBalancers {
   @Test
   @DisplayName("Loadbalance WebLogic cluster traffic through Traefik loadbalancer websecure channel")
   public void testTraefikHostHttpsRoutingAcrossDomains() {
-    // bind domain name in the managed servers
-    for (String domain : domainUids) {
-      bindDomainName(domain, getTraefikLbNodePort(false));
-    }
+
     logger.info("Verifying https traffic");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, "https", getTraefikLbNodePort(true));
@@ -410,12 +410,8 @@ public class ItTwoDomainsLoadBalancers {
   @Test
   @DisplayName("Loadbalance WebLogic cluster traffic through Voyager loadbalancer tcp channel")
   public void testVoyagerHostHttpRoutingAcrossDomains() {
+
     // verify load balancing works when 2 domains are running in the same namespace
-    // bind domain name in the managed servers
-    for (String domain : domainUids) {
-      String ingressName = domain + "-ingress-host-routing";
-      bindDomainName(domain, getVoyagerLbNodePort(ingressName));
-    }
     logger.info("Verifying http traffic");
     for (String domainUid : domainUids) {
       String ingressName = domainUid + "-ingress-host-routing";
@@ -426,7 +422,7 @@ public class ItTwoDomainsLoadBalancers {
   /**
    * Cleanup all the remaining artifacts in default namespace created by the test.
    */
-  //@AfterAll
+  @AfterAll
   public void tearDownAll() {
     // uninstall Traefik loadbalancer
     if (traefikHelmParams != null) {
@@ -582,7 +578,7 @@ public class ItTwoDomainsLoadBalancers {
               .storageClassName(domainUid + "-weblogic-domain-storage-class")
               .volumeMode("Filesystem")
               .putCapacityItem("storage", Quantity.fromString("2Gi"))
-              .persistentVolumeReclaimPolicy("Delete")
+              .persistentVolumeReclaimPolicy("Retain")
               .hostPath(new V1HostPathVolumeSource()
                   .path(pvHostPath.toString())))
           .metadata(new V1ObjectMetaBuilder()
@@ -1054,7 +1050,7 @@ public class ItTwoDomainsLoadBalancers {
             .storageClassName("default-sharing-weblogic-domain-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("6Gi"))
-            .persistentVolumeReclaimPolicy("Delete")
+            .persistentVolumeReclaimPolicy("Retain")
             .hostPath(new V1HostPathVolumeSource()
                 .path(pvHostPath.toString())))
         .metadata(new V1ObjectMetaBuilder()
@@ -1298,39 +1294,14 @@ public class ItTwoDomainsLoadBalancers {
         "Getting web node port for Traefik loadbalancer failed");
   }
 
-  private void bindDomainName(String domainUid, int lbPort) {
-    //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
-    String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
-            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?bindDomain=%s",
-        domainUid + "." + defaultNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST,
-        lbPort, domainUid);
-
-    // call the webapp and bind the domain name in the JNDI tree of each managed server in the cluster
-    for (int i = 0; i < 10; i++) {
-      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
-      ExecResult result;
-      try {
-        logger.info("Binding domain name in managed server JNDI tree using curl iteration {0}, request {0}",
-            i, curlCmd);
-        result = ExecCommand.exec(curlCmd, true);
-        String response = result.stdout().trim();
-        logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
-            i, result.exitValue(), response, result.stderr());
-        if (result.stdout().contains("Bound:" + domainUid)) {
-          break;
-        }
-      } catch (IOException | InterruptedException ex) {
-        // ignore
-      }
-    }
-  }
-
   private void verifyClusterLoadbalancing(String domainUid, String protocol, int lbPort) {
 
     //access application in managed servers through Traefik load balancer
     logger.info("Accessing the clusterview app through load balancer to verify all servers in cluster");
     String curlRequest = String.format("curl --silent --show-error -ks --noproxy '*' "
-            + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet",
+            + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
+            + "\"?user=" + ADMIN_USERNAME_DEFAULT
+            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
         domainUid + "." + defaultNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -1344,7 +1315,9 @@ public class ItTwoDomainsLoadBalancers {
     //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
     logger.info("Verifying the requests are routed to correct domain and cluster");
     String curlCmd = String.format("curl --silent --show-error -ks --noproxy '*' "
-            + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
+            + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
+            + "\"?user=" + ADMIN_USERNAME_DEFAULT
+            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
         domainUid + "." + defaultNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort, domainUid);
 
     // call the webapp and verify the bound domain name to determine
@@ -1366,55 +1339,6 @@ public class ItTwoDomainsLoadBalancers {
       }
     }
     assertTrue(hostRouting, "Host routing is not working");
-  }
-
-  private static void verifyServerCommunication(String curlRequest, List<String> managedServerNames) {
-
-    HashMap<String, Boolean> managedServers = new HashMap<>();
-    managedServerNames.forEach(managedServerName -> managedServers.put(managedServerName, false));
-
-    //verify each server in the cluster can see other members
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Waiting until each managed server can see other cluster members"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> {
-          for (int i = 0; i < managedServerNames.size(); i++) {
-            logger.info(curlRequest);
-            // check the response contains managed server name
-            ExecResult result = null;
-            try {
-              result = ExecCommand.exec(curlRequest, true);
-            } catch (IOException | InterruptedException ex) {
-              logger.severe(ex.getMessage());
-            }
-            String response = result.stdout().trim();
-            logger.info(response);
-            for (var managedServer : managedServers.entrySet()) {
-              boolean seeEachOther = true;
-              logger.info("Looking for serverName:" + managedServer.getKey());
-              if (response.contains("ServerName:" + managedServer.getKey())) {
-                for (String managedServerName : managedServerNames) {
-                  logger.info("Looking for Bound:" + managedServerName);
-                  seeEachOther = seeEachOther && response.contains("Bound:" + managedServerName);
-                }
-                if (seeEachOther) {
-                  logger.info("Server:" + managedServer.getKey() + " can see all cluster members");
-                  managedServers.put(managedServer.getKey(), true);
-                }
-              }
-            }
-          }
-          managedServers.forEach((key, value) -> {
-            if (value) {
-              logger.info("The server {0} can see other cluster members", key);
-            } else {
-              logger.info("The server {0} unable to see other cluster members ", key);
-            }
-          });
-          return !managedServers.containsValue(false);
-        });
   }
 
   /**
