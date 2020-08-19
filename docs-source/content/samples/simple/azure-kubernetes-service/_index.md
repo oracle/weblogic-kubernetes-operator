@@ -156,10 +156,10 @@ $ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
 $ az aks create \
    --resource-group $AKS_PERS_RESOURCE_GROUP \
    --name $AKS_CLUSTER_NAME \
-   --node-count 3 \
+   --node-count 2 \
    --generate-ssh-keys \
    --nodepool-name nodepool1 \
-   --node-vm-size Standard_D4s_v3 \
+   --node-vm-size Standard_DS2_v2 \
    --location $AKS_PERS_LOCATION \
    --service-principal $SP_APP_ID \
    --client-secret $SP_CLIENT_SECRET
