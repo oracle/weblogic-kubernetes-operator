@@ -354,6 +354,14 @@ public class ItIntrospectVersion {
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
+    List<String> managedServerNames = new ArrayList<String>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(managedServerNameBase + i);
+    }
+
+    //verify admin server accessibility and the health of cluster members
+    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
     // get the pod creation time stamps
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
@@ -462,7 +470,7 @@ public class ItIntrospectVersion {
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
         introDomainNamespace);
 
-    List<String> managedServerNames = new ArrayList<String>();
+    managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount + 1; i++) {
       managedServerNames.add(managedServerNameBase + i);
     }
