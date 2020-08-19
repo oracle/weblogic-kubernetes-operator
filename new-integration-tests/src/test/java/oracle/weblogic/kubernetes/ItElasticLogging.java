@@ -280,7 +280,8 @@ class ItElasticLogging {
     // Expected return result is:
     // {"count":0,"_shards":{"total":5,"successful":5,"skipped":0,"failed":0}}
     regex = ".*count\":(\\d+),.*failed\":(\\d+)";
-    queryCriteria = "/_count?q=serverName:" + managedServerFilter;
+    String filteredServer = managedServerFilter.split("-")[1];
+    queryCriteria = "/_count?q=serverName:" + filteredServer;
     verifySearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, true, "notExist");
 
     logger.info("Query WebLogic log info succeeded");

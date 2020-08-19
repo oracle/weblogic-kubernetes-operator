@@ -95,7 +95,7 @@ public interface TestConstants {
 
   // ELK Stack and WebLogic Logging Exporter constants
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
-  public static final String ELK_STACK_VERSION = "6.8.11";
+  public static final String ELK_STACK_VERSION = "7.8.1";
   public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_NAME + ":" + ELK_STACK_VERSION;
   public static final String ELASTICSEARCH_HOST = "elasticsearch.default.svc.cluster.local";
   public static final int ELASTICSEARCH_HTTP_PORT = 9200;
