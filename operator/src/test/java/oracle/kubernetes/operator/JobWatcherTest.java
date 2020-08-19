@@ -41,10 +41,10 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
   private static final String NS = "ns1";
   private static final String VERSION = "123";
-  private V1Job cachedJob = createJob();
+  private final V1Job cachedJob = createJob();
   private long clock;
 
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
 
   @Override
@@ -384,7 +384,6 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
     assertThat(JobWatcher.getOrCreateFor(domain), sameInstance(firstWatcher));
   }
 
-  @SuppressWarnings({"rawtypes"})
   public void receivedEvents_areSentToListeners() {
     // Override as JobWatcher doesn't currently implement listener for callback
   }
