@@ -337,11 +337,11 @@ class ItMiiUpdateDomainConfig {
 
   /**
    * Create a WebLogic domain with a defined configmap in configuration/model 
-   *  section of the domain resource.
+   * section of the domain resource.
    * The configmap has multiple sparse WDT model files that define 
-   *  a JDBCSystemResource, a JMSSystemResource and a WLDFSystemResource.
+   * a JDBCSystemResource, a JMSSystemResource and a WLDFSystemResource.
    * Verify all the SystemResource configurations using the rest API call 
-   *   using adminserver's public nodeport
+   * using the public nodeport of the administration server.
    */
   @Test
   @Order(1)
@@ -380,8 +380,8 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Start a WebLogic domain using model-in-image with JMS/JDBC SystemResource.
-   * Create a configmap to delete JMS/JDBC System Resource.
+   * Start a WebLogic domain using model-in-image with JMS/JDBC SystemResources.
+   * Create a configmap to delete JMS/JDBC SystemResources.
    * Patch the domain resource with the configmap.
    * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
@@ -535,7 +535,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(4)
-  @DisplayName("Add a dynamic cluster to a model-in-image domain with default repicar count")
+  @DisplayName("Add a dynamic cluster to a model-in-image domain with default repica count")
   public void testMiiAddDynmicClusteriWithNoReplica() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -742,12 +742,12 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Start a WebLogic domain with model-in-imge 
+   * Start a WebLogic domain with model-in-imge.
    * Patch domain CRD with new webLogicCredentialsSecret.
    * Update domainRestartVersion to trigger a rolling restart of server pods.
    * make sure all the server pods are re-started in a rolling fashion. 
-   * Check the validitity of new credentials by accessing 
-   *  WebLogic RESTful Management Services.
+   * Check the validity of new credentials by accessing 
+   * WebLogic RESTful Management Services.
    */
   @Test
   @Order(7)
