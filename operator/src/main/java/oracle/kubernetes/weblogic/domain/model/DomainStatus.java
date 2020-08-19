@@ -52,7 +52,7 @@ public class DomainStatus {
           + "make-right interval (120s), in each retry this will be incremented until it exceeded the "
           + "DomainPresenceFailureRetryMaxCount in the operator tuning parameter.")
   @Range(minimum = 0)
-  private Integer introspectJobFailureRetryCount = new Integer(1);
+  private Integer introspectJobFailureRetryCount = new Integer(0);
 
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
@@ -309,7 +309,7 @@ public class DomainStatus {
    * @return this
    */
   public DomainStatus resetIntrospectJobFailureRetryCount() {
-    this.introspectJobFailureRetryCount = 1;
+    this.introspectJobFailureRetryCount = 0;
     return this;
   }
 
