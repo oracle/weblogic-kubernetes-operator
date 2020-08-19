@@ -199,7 +199,7 @@ public class ItTwoDomainsLoadBalancers {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(7) List<String> namespaces) {
+  public static void initAll(@Namespaces(6) List<String> namespaces) {
     logger = getLogger();
     // get unique operator namespaces
     logger.info("Get unique namespaces for operator1 and operator2");
@@ -223,9 +223,6 @@ public class ItTwoDomainsLoadBalancers {
     logger.info("Assign a unique namespace for Voyager");
     assertNotNull(namespaces.get(5), "Namespace list is null");
     voyagerNamespace = namespaces.get(5);
-
-    assertNotNull(namespaces.get(6), "Namespace list is null");
-    defaultNamespace = namespaces.get(6);
 
     // install and verify operator
     operatorHelmParams = installAndVerifyOperator(opNamespaces.get(0), domainNamespaces.get(0), defaultNamespace);
