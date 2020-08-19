@@ -322,9 +322,12 @@ public class LoggingExporter {
                             .containerPort(new Integer(elasticsearchHttpPort)))
                         .addPortsItem(new V1ContainerPort()
                             .containerPort(new Integer(elasticsearchHttpsPort)))
-                        .env(Arrays.asList(new V1EnvVar()
+                        .addEnvItem(new V1EnvVar()
                             .name("ES_JAVA_OPTS")
-                            .value("-Xms1024m -Xmx1024m"))))))));
+                            .value("-Xms1024m -Xmx1024m"))
+                        .addEnvItem(new V1EnvVar()
+                            .name("discovery.type")
+                            .value("single-node")))))));
 
     return elasticsearchDeployment;
   }
