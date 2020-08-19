@@ -66,7 +66,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
-import static oracle.weblogic.kubernetes.utils.TestUtils.verifyServerCommunication;
+import static oracle.weblogic.kubernetes.utils.TestUtils.verifyClusterMemberCommunication;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -195,6 +195,10 @@ public class ItLoadBalancer {
   @Test
   @DisplayName("Create model in image domains domain1 and domain2 and Ingress resources")
   public void testTraefikHttpHostRoutingAcrossDomains() {
+    // bind domain name in the managed servers
+    for (String domain : domains) {
+      bindDomainName(domain, getTraefikLbNodePort(false));
+    }
     // verify load balancing works when 2 domains are running in the same namespace
     logger.info("Verifying http traffic");
     for (String domainUid : domains) {
@@ -212,6 +216,10 @@ public class ItLoadBalancer {
   @Test
   @DisplayName("Loadbalance WebLogic cluster traffic through Traefik loadbalancer websecure channel")
   public void testTraefikHostHttpsRoutingAcrossDomains() {
+    // bind domain name in the managed servers
+    for (String domain : domains) {
+      bindDomainName(domain, getTraefikLbNodePort(false));
+    }
     logger.info("Verifying https traffic");
     for (String domainUid : domains) {
       verifyClusterLoadbalancing(domainUid, "https", getTraefikLbNodePort(true));
@@ -229,6 +237,11 @@ public class ItLoadBalancer {
   @DisplayName("Loadbalance WebLogic cluster traffic through Voyager loadbalancer tcp channel")
   public void testVoyagerHostHttpRoutingAcrossDomains() {
     // verify load balancing works when 2 domains are running in the same namespace
+    // bind domain name in the managed servers
+    for (String domain : domains) {
+      String ingressName = domain + "-ingress-host-routing";
+      bindDomainName(domain, getVoyagerLbNodePort(ingressName));
+    }
     logger.info("Verifying http traffic");
     for (String domainUid : domains) {
       String ingressName = domainUid + "-ingress-host-routing";
@@ -242,24 +255,22 @@ public class ItLoadBalancer {
     //access application in managed servers through Traefik load balancer
     logger.info("Accessing the clusterview app through load balancer to verify all servers in cluster");
     String curlRequest = String.format("curl --silent --show-error -ks --noproxy '*' "
-        + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
-        + "\"?user=" + ADMIN_USERNAME_DEFAULT
-        + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
+        + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + domainNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
       managedServers.add(managedServerNameBase + i);
     }
-    // verify the servers can connect to each other with in the domain
-    verifyServerCommunication(curlRequest, managedServers);
+    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
+        .as("Verify members can see other in cluster.")
+        .withFailMessage("application not accessible through loadbalancer.")
+        .isTrue();
 
     boolean hostRouting = false;
     //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
     logger.info("Verifying the requests are routed to correct domain and cluster");
     String curlCmd = String.format("curl --silent --show-error -ks --noproxy '*' "
-        + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
-        + "\"?user=" + ADMIN_USERNAME_DEFAULT
-        + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
+        + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet?domainTest=%s",
         domainUid + "." + domainNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort, domainUid);
 
     // call the webapp and verify the bound domain name to determine
@@ -316,6 +327,34 @@ public class ItLoadBalancer {
       }
     }
     assertTrue(hostRouting, "Couldn't access admin server console");
+  }
+
+  private void bindDomainName(String domainUid, int lbPort) {
+    //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
+    String curlCmd = String.format("curl --silent --show-error --noproxy '*' "
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet?bindDomain=%s",
+        domainUid + "." + domainNamespace + "." + "cluster-1" + ".test", K8S_NODEPORT_HOST,
+        lbPort, domainUid);
+
+    // call the webapp and bind the domain name in the JNDI tree of each managed server in the cluster
+    for (int i = 0; i < 10; i++) {
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
+      ExecResult result;
+      try {
+        logger.info("Binding domain name in managed server JNDI tree using curl iteration {0}, request {0}",
+            i, curlCmd);
+        result = ExecCommand.exec(curlCmd, true);
+        String response = result.stdout().trim();
+        logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
+            i, result.exitValue(), response, result.stderr());
+        if (result.stdout().contains("Bound:" + domainUid)) {
+          break;
+        }
+      } catch (IOException | InterruptedException ex) {
+        //
+      }
+    }
+
   }
 
   private static void createTraefikIngressRoutingRules() {
