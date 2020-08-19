@@ -202,7 +202,8 @@ public class ItOperatorUpgrade {
           .image(latestOperatorImageName)
           .externalRestEnabled(true);
 
-      upgradeAndVerifyOperator(opNamespace, opParams);
+      assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
+          String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
       // check operator image name after upgrade
       logger.info("Checking image name in operator container ");
