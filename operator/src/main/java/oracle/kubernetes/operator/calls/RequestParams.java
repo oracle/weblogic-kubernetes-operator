@@ -25,7 +25,7 @@ public final class RequestParams {
    * @param name name
    * @param body body
    */
-  public RequestParams(String call, String namespace, String name, Object body) {
+  private RequestParams(String call, String namespace, String name, Object body) {
     this.call = call;
     this.namespace = namespace;
     this.name = name;

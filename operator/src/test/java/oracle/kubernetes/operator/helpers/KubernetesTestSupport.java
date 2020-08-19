@@ -122,7 +122,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
         = Pattern.compile("(" + PATH_PATTERN + ")(" + OP_PATTERN + ")(" + VALUE_PATTERN + ")");
 
   private static final RequestParams REQUEST_PARAMS
-      = new RequestParams("testcall", "junit", "testName", "body");
+      = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
 
   private final Map<String, DataRepository<?>> repositories = new HashMap<>();
   private final Map<Class<?>, String> dataTypes = new HashMap<>();
@@ -671,7 +671,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
         resources = getResources(namespace, fieldSelector, labelSelectors);
       }
 
-      if (limit == null || limit <= resources.size()) {
+      if (limit == null || limit > resources.size()) {
         return listFactory.apply(resources);
       }
 
@@ -1093,9 +1093,12 @@ public class KubernetesTestSupport extends FiberTestSupport {
     private final CallContext callContext;
 
     SimulatedResponseStep(
-        Step next, RequestParams requestParams, String fieldSelector, String labelSelector) {
+        ResponseStep next, RequestParams requestParams, String fieldSelector, String labelSelector) {
       super(next);
       callContext = new CallContext(requestParams, fieldSelector, labelSelector);
+      if (next != null) {
+        next.setPrevious(this);
+      }
     }
 
     @Override

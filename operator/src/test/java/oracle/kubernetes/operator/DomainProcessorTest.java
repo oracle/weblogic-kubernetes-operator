@@ -88,7 +88,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class DomainProcessorTest {
   private static final String ADMIN_NAME = "admin";
   private static final String CLUSTER = "cluster";
-  private static final int MAX_SERVERS = 5;
+  private static final int MAX_SERVERS = 60;
   private static final String MS_PREFIX = "managed-server";
   private static final int MIN_REPLICAS = 2;
   private static final int NUM_ADMIN_SERVERS = 1;

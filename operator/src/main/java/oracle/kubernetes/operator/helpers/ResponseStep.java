@@ -29,7 +29,7 @@ public abstract class ResponseStep<T> extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final Step conflictStep;
-  private AsyncRequestStep previousStep = null;
+  private Step previousStep = null;
 
   /** Constructor specifying no next step. */
   public ResponseStep() {
@@ -56,7 +56,7 @@ public abstract class ResponseStep<T> extends Step {
     this.conflictStep = conflictStep;
   }
 
-  public final void setPrevious(AsyncRequestStep previousStep) {
+  public final void setPrevious(Step previousStep) {
     this.previousStep = previousStep;
   }
 
