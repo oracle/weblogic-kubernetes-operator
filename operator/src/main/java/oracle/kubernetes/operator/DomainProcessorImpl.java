@@ -651,7 +651,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           .orElse(null);
 
       boolean exceededFailureRetryCount = (currentIntrospectFailureRetryCount
-          > DomainPresence.getDomainPresenceFailureRetryMaxCount());
+          >= DomainPresence.getDomainPresenceFailureRetryMaxCount());
 
       boolean isVersionsChanged = isImgRestartIntrospectVerChanged(liveInfo, cachedInfo);
 
