@@ -222,7 +222,8 @@ public class ItOperatorUpgrade {
       opServiceAccount = opNamespace2 + "-sa";
 
       // uninstall operator 2.5.0/2.6.0
-      uninstallOperator(opHelmParams);
+      assertTrue(uninstallOperator(opHelmParams),
+          String.format("Uninstall operator failed in namespace %s", opNamespace1));
 
       // install latest operator
       installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
