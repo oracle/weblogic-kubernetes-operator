@@ -45,10 +45,10 @@ namePrefix: wls
 azureFileShareSecretNameSuffix: azure-secret
 
 # Number of azure kubernetes nodes, used to create azure kubernetes cluster.
-azureKubernetesNodeCount: 3
+azureKubernetesNodeCount: 2
 
 # VM size of azure kubernetes node.
-azureKubernetesNodeVMSize: Standard_D4s_v3
+azureKubernetesNodeVMSize: Standard_DS2_v2
 
 # The suffix of azure kubernetes node pool name, the azure kubernetes node pool name will be${azureKubernetesNodepoolNamePrefix} ${namePrefix}.
 azureKubernetesNodepoolNamePrefix: pool1
