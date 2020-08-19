@@ -277,7 +277,8 @@ public class ClusterViewServlet extends HttpServlet {
     DomainRuntimeMBean domainRuntime = domainRuntimeService.getDomainRuntime();
     ServerLifeCycleRuntimeMBean[] serverLifeCycleRuntimes = domainRuntime.getServerLifeCycleRuntimes();
     for (ServerLifeCycleRuntimeMBean serverLifeCycleRuntime : serverLifeCycleRuntimes) {
-      if (null != serverLifeCycleRuntime.getIPv4URL("t3")) {
+      //check state and get the url only if its running, also make sure the url is not null
+      if (null != serverLifeCycleRuntime.getIPv4URL("t3") && serverLifeCycleRuntime.getState().equals("RUNNING")) {
         serverUrls.add(serverLifeCycleRuntime.getIPv4URL("t3"));
         System.out.println("getIPv4URL(t3):" + serverLifeCycleRuntime.getIPv4URL("t3"));
       }
