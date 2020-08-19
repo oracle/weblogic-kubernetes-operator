@@ -56,32 +56,32 @@ public class ClusterViewServlet extends HttpServlet {
   public void init(ServletConfig config) throws ServletException {
     try {
       ctx = new InitialContext();
-      System.out.println("ITTESTS:>>>>Looking up server runtime mbean server");
+      System.out.println("ClusterViewServlet:>>>>Looking up server runtime mbean server");
       localMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/runtime");
       // get ServerRuntimeMBean
       ObjectName runtimeserviceObjectName = new ObjectName(RuntimeServiceMBean.OBJECT_NAME);
       runtimeService = (RuntimeServiceMBean) MBeanServerInvocationHandler
           .newProxyInstance(localMBeanServer, runtimeserviceObjectName);
       serverRuntime = runtimeService.getServerRuntime();
-      System.out.println("ITTESTS:>>>>Found server runtime mbean server for server: " + serverRuntime.getName());
+      System.out.println("ClusterViewServlet:>>>>Found server runtime mbean server for server: " + serverRuntime.getName());
     } catch (MalformedObjectNameException | NamingException ex) {
-      System.out.println("ITTESTS:>>>>ClusterViewServlet.init() threw exception");
-      System.out.println("ITTESTS:>>>>" + ex.getMessage());
+      System.out.println("ClusterViewServlet:>>>>ClusterViewServlet.init() threw exception");
+      System.out.println("ClusterViewServlet:>>>>" + ex.getMessage());
     }
 
     // get domain runtime when running in admin server
     if (serverRuntime.isAdminServer()) {
       try {
-        System.out.println("ITTESTS:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName());
+        System.out.println("ClusterViewServlet:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName());
         domainMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/domainRuntime");
         ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
         domainRuntimeServiceMbean = (DomainRuntimeServiceMBean) MBeanServerInvocationHandler
             .newProxyInstance(domainMBeanServer, domainServiceObjectName);
         domainRuntime = domainRuntimeServiceMbean.getDomainRuntime();
-        System.out.println("ITTESTS:>>>>Found domain runtime mbean in server : " + serverRuntime.getName());
+        System.out.println("ClusterViewServlet:>>>>Found domain runtime mbean in server : " + serverRuntime.getName());
       } catch (MalformedObjectNameException | NamingException ex) {
-        System.out.println("ITTESTS:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName() + " threw exception");
-        System.out.println("ITTESTS:>>>>" + ex.getMessage());
+        System.out.println("ClusterViewServlet:>>>>Looking up domain runtime mbean in server : " + serverRuntime.getName() + " threw exception");
+        System.out.println("ClusterViewServlet:>>>>" + ex.getMessage());
       }
     }
 
@@ -277,7 +277,8 @@ public class ClusterViewServlet extends HttpServlet {
     DomainRuntimeMBean domainRuntime = domainRuntimeService.getDomainRuntime();
     ServerLifeCycleRuntimeMBean[] serverLifeCycleRuntimes = domainRuntime.getServerLifeCycleRuntimes();
     for (ServerLifeCycleRuntimeMBean serverLifeCycleRuntime : serverLifeCycleRuntimes) {
-      if (null != serverLifeCycleRuntime.getIPv4URL("t3")) {
+      //check state and get the url only if its running, also make sure the url is not null
+      if (null != serverLifeCycleRuntime.getIPv4URL("t3") && serverLifeCycleRuntime.getState().equals("RUNNING")) {
         serverUrls.add(serverLifeCycleRuntime.getIPv4URL("t3"));
         System.out.println("getIPv4URL(t3):" + serverLifeCycleRuntime.getIPv4URL("t3"));
       }
