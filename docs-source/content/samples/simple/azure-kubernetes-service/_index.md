@@ -70,8 +70,7 @@ Create the new service principal with the following commands:
 $ export SP_NAME=myAKSClusterServicePrincipal
 $ az ad sp create-for-rbac --skip-assignment --name $SP_NAME
 
-# Copy the output to a file, we will use it to
-# Specifically we will need the app ID, client secret and tenant ID later.
+# Copy the output to a file, we will use it later.
 ```
 
 If you see an error similar to the following:
@@ -399,12 +398,6 @@ $ helm version
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
 $ helm repo update
 $ helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.0.0"
-
-# For helm 2.x, run the following:
-$ helm init
-$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
-$ helm repo update
-$ helm install weblogic-operator/weblogic-operator --name weblogic-operator --version "3.0.0"
 ```
 
 The output will show something similar to the following:
@@ -819,7 +812,7 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 
 | Name in YAML file | Example value | Notes |
 |-------------------|---------------|-------|
-| `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | Application ID of your service principal, refer to the application ID in [Create Service Principal](#create-service-principal-for-aks) section. |
+| `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | Application ID of your service principal, refer to the application ID in the [Create Service Principal](#create-service-principal-for-aks) section. |
 | `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | A client secret of your service principal, refer to the client secret in the [Create Service Principal](#create-service-principal-for-aks) section. |
 | `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | Tenant (Directory ) ID of your service principal, refer to the client secret in the [Create Service Principal](#create-service-principal-for-aks) section. |
 | `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image. |
@@ -957,6 +950,22 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
    internal-weblogic-operator-svc     ClusterIP      10.0.1.23     <none>          8082/TCP             9m59s
    kubernetes                         ClusterIP      10.0.0.1      <none>          443/TCP              16m
    ```
+
+#### Clean Up Resources
+
+The output from the `create-domain-on-aks.sh` script includes a statement about the Azure resources created by the script.  To delete the cluster and free all related resources, simply delete the resource groups.  The output will list the resource groups, such as.
+
+```bash
+The following Azure Resouces have been created: 
+  Resource groups: ejb8191resourcegroup1597641911, MC_ejb8191resourcegroup1597641911_ejb8191akscluster1597641911_eastus
+```
+
+Given the above output, the following Azure CLI commands will delete the resource groups. 
+
+```bash
+az group delete --yes --no-wait --name ejb8191resourcegroup1597641911
+az group delete --yes --no-wait --name MC_ejb8191resourcegroup1597641911_ejb8191akscluster1597641911_eastus
+```
 
 #### Useful links
 
