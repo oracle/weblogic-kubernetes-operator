@@ -91,7 +91,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   private static String wdtBasicImage;
 
   private static Collection<String> pushedImages = new ArrayList<>();
-
+  private static boolean isInitializationSuccessful = false;
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -122,7 +122,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         operatorImage = Operator.getImageName();
         logger.info("Operator image name {0}", operatorImage);
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
-        assertTrue(Operator.buildImage(operatorImage));
+        assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
 
         if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
           // build MII basic image
@@ -189,6 +189,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
           pullImageFromOcrAndPushToKind(images);
         }
+
+        // set initialization success to true, not counting the istio installation as not all tests use istio
+        isInitializationSuccessful = true;
         logger.info("Installing istio before any test suites are run");
         installIstio();
       } finally {
@@ -206,6 +209,12 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         throw new IllegalStateException(e);
       }
     }
+
+    // check initialization is already done and is not successful
+    assertTrue(started.get() && isInitializationSuccessful,
+        "Initialization(pull images from OCR or login/push to OCIR) failed, "
+        + "check the actual error or stack trace in the first test that failed in the test suite");
+
   }
 
   /**

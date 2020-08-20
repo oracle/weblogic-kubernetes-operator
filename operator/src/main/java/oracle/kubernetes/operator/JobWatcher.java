@@ -19,9 +19,9 @@ import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
+import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
-import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -181,7 +181,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   }
 
   @Override
-  public WatchI<V1Job> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+  public Watchable<V1Job> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder
         .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
         .createJobWatch(namespace);
