@@ -65,9 +65,6 @@ import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
-import static oracle.kubernetes.operator.DomainStatusUpdater.ADMIN_SERVER_STARTING_PROGRESS_REASON;
-import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
-import static oracle.kubernetes.operator.DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
@@ -211,8 +208,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static Step bringManagedServersUp(Step next) {
-    return DomainStatusUpdater.createProgressingStep(MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
-            new ManagedServersUpStep(next));
+    return new ManagedServersUpStep(next);
   }
 
   private FiberGate getMakeRightFiberGate(String ns) {
@@ -801,14 +797,12 @@ public class DomainProcessorImpl implements DomainProcessor {
         Step.chain(
             domainIntrospectionSteps(info),
             new DomainStatusStep(info, null),
-            DomainStatusUpdater.createProgressingStep(ADMIN_SERVER_STARTING_PROGRESS_REASON,true, null),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
 
     return Step.chain(
           createDomainUpInitialStep(info),
           ConfigMapHelper.readExistingIntrospectorConfigMap(info.getNamespace(), info.getDomainUid()),
-          DomainStatusUpdater.createProgressingStep(INSPECTING_DOMAIN_PROGRESS_REASON,true, null),
           DomainPresenceStep.createDomainPresenceStep(info.getDomain(), domainUpStrategy, managedServerStrategy));
   }
 
