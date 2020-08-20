@@ -52,6 +52,7 @@ def create_domain():
   print('Set managed server port in template')
   cmo.setListenPort(int(managed_server_port))
   cmo.setCluster(cl)
+  cmo.setResolveDNSName(true)
 
   template_channel_name = "ms-nap"
   print('Creating server template NAP: %s' % cluster_name + "-NAP")
