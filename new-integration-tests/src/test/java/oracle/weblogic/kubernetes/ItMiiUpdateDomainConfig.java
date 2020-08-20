@@ -33,6 +33,8 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -95,7 +97,6 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -104,22 +105,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test class verifies the following scenerios
  *
  * <p>testMiiCheckSystemResources
- *  Check the SystemResourece in a pre-configured in ConfigMap
+ *  Check the SystemResoureces in a pre-configured in ConfigMap
  *
  * <p>testMiiDeleteSystemResources
- *  Delete SystemResourece(s) defined in WebLogic domain 
+ *  Delete SystemResoureces defined in WebLogic domain 
  *
  * <p>testMiiAddSystemResources
  *  Add new SystemResources to a running domain
  *
  * <p>testMiiAddDynmicClusteriWithNoReplica
  *  Add a new dynamic WebLogic cluster to a running domain with default Replica
- *  count(zero), so that no manged server on the new cluster is activated.
+ *  count(zero), so that no managed server on the new cluster is activated.
  *
  * <p>testMiiAddDynamicCluster
  *  Add a new dynamic WebLogic cluster to a running domain with non-zero Replica
- *  count so that required number of manged servers(s) on new cluster get  
- *  activted after rolling restart. 
+ *  count so that required number of managed servers(s) on new cluster get  
+ *  activated after rolling restart. 
  *
  * <p>testMiiAddConfiguredCluster
  *  Add a new configured WebLogic cluster to a running domain 
@@ -347,28 +348,20 @@ class ItMiiUpdateDomainConfig {
   @Order(1)
   @DisplayName("Verify the pre-configured SystemResources in a model-in-image domain")
   public void testMiiCheckSystemResources() {
-    ExecResult result = null;
-    result = checkSystemResourceConfiguration("JDBCSystemResources", "TestDataSource");
-    assertNotNull(result, "CheckJDBCSystemResources returned null");
-    logger.info("CheckJDBCSystemResource returned {0}", result.toString());
-    assertEquals("200", result.stdout(), "JDBCSystemResource not found");
+
+    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
+        "TestDataSource"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");
 
-    result = null;
-    result = checkSystemResourceConfiguration("JMSSystemResources", "TestClusterJmsModule");
-    assertNotNull(result, "CheckJMSSystemResources returned null");
-    logger.info("CheckJMSSystemResource returned {0}", result.toString());
-    assertEquals("200", result.stdout(), "JMSSystemResource not found");
+    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
+        "TestClusterJmsModule"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
 
-    result = null;
-    result = checkSystemResourceConfiguration("WLDFSystemResources", "TestWldfModule");
-    assertNotNull(result, "CheckWLDFSystemResources returned null");
-    logger.info("CheckWLDFSystemResource returned {0}", result.toString());
-    assertEquals("200", result.stdout(), "WLDFSystemResource not found");
+    assertTrue(checkSystemResourceConfiguration("WLDFSystemResources", 
+        "TestWldfModule"), "WLDFSystemResources not found");
     logger.info("Found the WLDFSystemResource configuration");
 
-    result = null;
+    ExecResult result = null;
     result = checkJdbcRuntime("TestDataSource");
     logger.info("checkJdbcRuntime: returned {0}", result.toString());
     assertTrue(result.stdout().contains("jdbc:oracle:thin:localhost"),
@@ -386,7 +379,7 @@ class ItMiiUpdateDomainConfig {
    * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * for all the server pods before and after rolling restart.
-   * Verify System Resource are deleted from the domain.
+   * Verify SystemResources are deleted from the domain.
    */
   @Test
   @Order(2)
@@ -436,20 +429,10 @@ class ItMiiUpdateDomainConfig {
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
    
-    ExecResult result = null;
-    result = checkSystemResourceConfiguration("JDBCSystemResources", "TestDataSource");
-    assertNotNull(result, "CheckJDBCSystemResources returned null");
-    logger.info("CheckJDBCSystemResource returned {0}", result.toString());
-    assertEquals("404", result.stdout(), "JDBCSystemResource not found");
-    logger.info("JDBCSystemResource configuration not found");
-
-    result = null;
-    result = checkSystemResourceConfiguration("JMSSystemResources", "TestClusterJmsModule");
-    assertNotNull(result, "CheckJMSSystemResources returned null");
-    logger.info("CheckJMSSystemResource returned {0}", result.toString());
-    assertEquals("404", result.stdout(), "JMSSystemResource not found");
-    logger.info("JMSSystemResource configuration not found");
-
+    assertFalse(checkSystemResourceConfiguration("JDBCSystemResources", 
+         "TestDataSource"), "JDBCSystemResource should be deleted");
+    assertFalse(checkSystemResourceConfiguration("JMSSystemResources", 
+         "TestClusterJmsModule"), "JMSSystemResources should be deleted");
   }
 
   /**
@@ -510,18 +493,12 @@ class ItMiiUpdateDomainConfig {
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
 
-    ExecResult result = null;
-    result = checkSystemResourceConfiguration("JDBCSystemResources", "TestDataSource2");
-    assertNotNull(result, "CheckJDBCSystemResources returned null");
-    logger.info("CheckJDBCSystemResource returned {0}", result.toString());
-    assertEquals("200", result.stdout(), "JDBCSystemResource not found");
+    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
+          "TestDataSource2"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");
 
-    result = null;
-    result = checkSystemResourceConfiguration("JMSSystemResources", "TestClusterJmsModule2");
-    assertNotNull(result, "CheckJMSSystemResources returned null");
-    logger.info("CheckJMSSystemResource returned {0}", result.toString());
-    assertEquals("200", result.stdout(), "JMSSystemResource not found");
+    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
+          "TestClusterJmsModule2"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
   }
 
@@ -743,7 +720,7 @@ class ItMiiUpdateDomainConfig {
 
   /**
    * Start a WebLogic domain with model-in-imge.
-   * Patch domain CRD with new webLogicCredentialsSecret.
+   * Patch the domain CRD with a new credentials secret.
    * Update domainRestartVersion to trigger a rolling restart of server pods.
    * make sure all the server pods are re-started in a rolling fashion. 
    * Check the validity of new credentials by accessing 
@@ -1006,7 +983,7 @@ class ItMiiUpdateDomainConfig {
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
   }
 
-  private ExecResult checkSystemResourceConfiguration(String resourcesType, String resourcesName) {
+  private boolean checkSystemResourceConfiguration(String resourcesType, String resourcesName) {
 
     int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
     ExecResult result = null;
@@ -1023,13 +1000,10 @@ class ItMiiUpdateDomainConfig {
          .append(" -w %{http_code});")
          .append("echo ${status}");
     logger.info("checkSystemResource: curl command {0}", new String(curlString));
-    try {
-      result = exec(new String(curlString), true);
-    } catch (Exception ex) {
-      logger.info("checkSystemResource: caught unexpected exception {0}", ex);
-      return null;
-    }
-    return result;
+    return new Command()
+          .withParams(new CommandParams()
+              .command(curlString.toString()))
+          .executeAndVerify("200");
   }
 
   private ExecResult checkJdbcRuntime(String resourcesName) {
