@@ -4,32 +4,67 @@
 package oracle.kubernetes.operator.builders;
 
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Iterator;
+import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.util.Watch;
-import oracle.kubernetes.operator.helpers.Pool;
+import io.kubernetes.client.util.Watchable;
+import okhttp3.Call;
+import oracle.kubernetes.operator.helpers.ClientPool;
 
 /**
- * A pass-through implementation of the Kubernetes Watch class which implements a facade interface.
+ * A wrapper of the Kubernetes Watch class that includes management of clients.
  */
-public class WatchImpl<T> implements WatchI<T> {
-  private final Pool<ApiClient> pool;
-  private ApiClient client;
-  private final Watch<T> impl;
+public class WatchImpl<T> implements Watchable<T> {
+  @SuppressWarnings("FieldMayBeFinal") // non-final to allow unit testing
+  private static WatchFactory<?> FACTORY = WatchImpl::createWatch;
 
-  WatchImpl(Pool<ApiClient> pool, ApiClient client, Watch<T> impl) {
-    this.pool = pool;
-    this.client = client;
-    this.impl = impl;
+  private ApiClient client;
+  private final Watchable<T> impl;
+
+  @SuppressWarnings("unchecked")
+  WatchImpl(CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) {
+    client = ClientPool.getInstance().take();
+    impl = (Watchable<T>) FACTORY.createWatch(client, function.apply(client, callParams), getType(responseBodyType));
+  }
+
+  private static <W> Watchable<W> createWatch(ApiClient client, Call call, Type type) {
+    try {
+      return Watch.createWatch(client, call, type);
+    } catch (ApiException e) {
+      throw new UncheckedApiException(e);
+    }
+  }
+
+  static Type getType(Class<?> responseBodyType) {
+    return new ParameterizedType() {
+      @Override
+      public Type[] getActualTypeArguments() {
+        return new Type[] {responseBodyType};
+      }
+
+      @Override
+      public Type getRawType() {
+        return Watch.Response.class;
+      }
+
+      @Override
+      public Type getOwnerType() {
+        return Watch.class;
+      }
+    };
   }
 
   @Override
   public void close() throws IOException {
     impl.close();
     if (client != null) {
-      pool.recycle(client);
+      ClientPool.getInstance().recycle(client);
     }
   }
 
