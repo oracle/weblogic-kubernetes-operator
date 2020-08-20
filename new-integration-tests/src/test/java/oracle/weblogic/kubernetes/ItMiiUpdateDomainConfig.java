@@ -105,13 +105,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test class verifies the following scenerios
  *
  * <p>testMiiCheckSystemResources
- *  Check the SystemResoureces in a pre-configured in ConfigMap
+ *  Check the System Resources in a pre-configured ConfigMap
  *
  * <p>testMiiDeleteSystemResources
- *  Delete SystemResoureces defined in WebLogic domain 
+ *  Delete System Resources defined in a WebLogic domain 
  *
  * <p>testMiiAddSystemResources
- *  Add new SystemResources to a running domain
+ *  Add new System Resources to a running WebLogic domain
  *
  * <p>testMiiAddDynmicClusteriWithNoReplica
  *  Add a new dynamic WebLogic cluster to a running domain with default Replica
@@ -126,7 +126,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *  Add a new configured WebLogic cluster to a running domain 
  *
  * <p>testMiiUpdateWebLogicCredential
- *  Update the adminstrative credential of a running domain by updating the 
+ *  Update the administrative credential of a running domain by updating the 
  *  secret and activating a rolling restart.
  */
 
@@ -350,15 +350,15 @@ class ItMiiUpdateDomainConfig {
   public void testMiiCheckSystemResources() {
 
     assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
-        "TestDataSource"), "JDBCSystemResource not found");
+        "TestDataSource", "200"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");
 
     assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
-        "TestClusterJmsModule"), "JMSSystemResources not found");
+        "TestClusterJmsModule", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
 
     assertTrue(checkSystemResourceConfiguration("WLDFSystemResources", 
-        "TestWldfModule"), "WLDFSystemResources not found");
+        "TestWldfModule", "200"), "WLDFSystemResources not found");
     logger.info("Found the WLDFSystemResource configuration");
 
     ExecResult result = null;
@@ -430,9 +430,9 @@ class ItMiiUpdateDomainConfig {
     }
    
     assertFalse(checkSystemResourceConfiguration("JDBCSystemResources", 
-         "TestDataSource"), "JDBCSystemResource should be deleted");
+         "TestDataSource", "404"), "JDBCSystemResource should be deleted");
     assertFalse(checkSystemResourceConfiguration("JMSSystemResources", 
-         "TestClusterJmsModule"), "JMSSystemResources should be deleted");
+         "TestClusterJmsModule", "404"), "JMSSystemResources should be deleted");
   }
 
   /**
@@ -494,11 +494,11 @@ class ItMiiUpdateDomainConfig {
     }
 
     assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
-          "TestDataSource2"), "JDBCSystemResource not found");
+          "TestDataSource2", "200"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");
 
     assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
-          "TestClusterJmsModule2"), "JMSSystemResources not found");
+          "TestClusterJmsModule2", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
   }
 
@@ -512,7 +512,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(4)
-  @DisplayName("Add a dynamic cluster to a model-in-image domain with default repica count")
+  @DisplayName("Add a dynamic cluster to a model-in-image domain with default replica count")
   public void testMiiAddDynmicClusteriWithNoReplica() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -983,7 +983,8 @@ class ItMiiUpdateDomainConfig {
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
   }
 
-  private boolean checkSystemResourceConfiguration(String resourcesType, String resourcesName) {
+  private boolean checkSystemResourceConfiguration(String resourcesType, 
+         String resourcesName, String expectedStatusCode) {
 
     int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
     ExecResult result = null;
@@ -1003,7 +1004,7 @@ class ItMiiUpdateDomainConfig {
     return new Command()
           .withParams(new CommandParams()
               .command(curlString.toString()))
-          .executeAndVerify("200");
+          .executeAndVerify(expectedStatusCode);
   }
 
   private ExecResult checkJdbcRuntime(String resourcesName) {
