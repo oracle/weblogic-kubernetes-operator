@@ -951,6 +951,10 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
    kubernetes                         ClusterIP      10.0.0.1      <none>          443/TCP              16m
    ```
 
+3. **Domain debugging**
+
+   Some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed are found in the section on [debugging](/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/).
+
 #### Clean Up Resources
 
 The output from the `create-domain-on-aks.sh` script includes a statement about the Azure resources created by the script.  To delete the cluster and free all related resources, simply delete the resource groups.  The output will list the resource groups, such as.
