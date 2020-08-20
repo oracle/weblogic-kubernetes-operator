@@ -252,17 +252,22 @@ public class PodHelper {
       return getAsName();
     }
 
+    private Step createProgressingStep(Step actionStep) {
+      return DomainStatusUpdater.createProgressingStep(
+          DomainStatusUpdater.ADMIN_SERVER_STARTING_PROGRESS_REASON, false, actionStep);
+    }
+
     @Override
     Step createNewPod(Step next) {
-      return createPod(next);
+      return createProgressingStep(createPod(next));
     }
 
     @Override
     Step replaceCurrentPod(Step next) {
       if (MakeRightDomainOperation.isInspectionRequired(packet)) {
-        return MakeRightDomainOperation.createStepsToRerunWithIntrospection(packet);
+        return createProgressingStep(MakeRightDomainOperation.createStepsToRerunWithIntrospection(packet));
       } else {
-        return createCyclePodStep(next);
+        return createProgressingStep(createCyclePodStep(next));
       }
     }
 
