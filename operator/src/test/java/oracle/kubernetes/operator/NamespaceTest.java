@@ -20,9 +20,12 @@ import java.util.stream.Collectors;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,20 +49,16 @@ public class NamespaceTest {
   private static final String ADDITIONAL_NAMESPACE = "NS3";
   public static final String NAMESPACE_STOPPING_MAP = "namespaceStoppingMap";
 
-  private Domain domain = DomainProcessorTestSetup.createTestDomain();
-  private final TuningParameters.WatchTuning tuning
-          = new TuningParameters.WatchTuning(30, 0, 5);
-  private List<Memento> mementos = new ArrayList<>();
-  private Set<String> currentNamespaces = new HashSet<>();
-  private Map<String,String> helmValues = new HashMap<>();
-  private Function<String,String> getTestHelmValue = helmValues::get;
+  KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final WatchTuning tuning = new WatchTuning(30, 0, 5);
+  private final List<Memento> mementos = new ArrayList<>();
+  private final Set<String> currentNamespaces = new HashSet<>();
+  private final Map<String,String> helmValues = new HashMap<>();
+  private final Function<String,String> getTestHelmValue = helmValues::get;
+  private final DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
   private Method stopNamespace = null;
-  private DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -68,6 +67,7 @@ public class NamespaceTest {
     mementos.add(StaticStubSupport.install(Main.class, "getHelmVariable", getTestHelmValue));
     mementos.add(TuningParametersStub.install());
     mementos.add(StaticStubSupport.install(Main.class, "processor", dp));
+    mementos.add(testSupport.install());
     AtomicBoolean stopping = new AtomicBoolean(true);
     JobWatcher.defineFactory(r -> createDaemonThread(), tuning, ns -> stopping);
   }
@@ -94,7 +94,7 @@ public class NamespaceTest {
     // Stop the namespace before removing as a domain namespace so operator will stop it.
     invoke_stopNamespace(NS, true);
     deleteDomainNamespace(NS);
-    Main.recheckDomains().run();
+    testSupport.runSteps(Main.createDomainRecheckSteps(DateTime.now()));
 
     assertThat(JobWatcher.getOrCreateFor(domain), not(sameInstance(oldWatcher)));
   }
@@ -201,7 +201,6 @@ public class NamespaceTest {
         .collect(Collectors.toMap(identity(), a -> new AtomicBoolean()));
   }
 
-  @SuppressWarnings("unchecked")
   private void invoke_stopNamespace(String namespace, boolean inDomainNamespaceList)
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     if (stopNamespace == null) {

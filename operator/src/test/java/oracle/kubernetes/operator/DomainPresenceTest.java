@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -59,10 +58,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return StaticStubSupport.install(containingClass, fieldName, newValue);
   }
 
-  /**
-   * Setup test environment.
-   * @throws Exception if StaticStubSupport fails to install
-   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().withLogLevel(Level.OFF));
@@ -71,7 +66,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(StubWatchFactory.install());
     mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
     mementos.add(StaticStubSupport.install(Main.class, "engine", testSupport.getEngine()));
-    testSupport.addContainerComponent("TF", ThreadFactory.class, this);
+    mementos.add(NoopWatcherStarter.install());
 
     namespaceStoppingMap = getStoppingVariable();
     namespaceStoppingMap.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
@@ -82,10 +77,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return stoppingMemento.getOriginalValue();
   }
 
-  /**
-   * Cleanup test environment.
-   * @throws Exception if test support fails.
-   */
   @After
   public void tearDown() throws Exception {
     namespaceStoppingMap.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);

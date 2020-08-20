@@ -3,8 +3,6 @@
 
 package oracle.kubernetes.operator.builders;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
@@ -18,11 +16,8 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.util.Watch;
+import io.kubernetes.client.util.Watchable;
 import okhttp3.Call;
-import okhttp3.OkHttpClient;
-import oracle.kubernetes.operator.helpers.ClientPool;
-import oracle.kubernetes.operator.helpers.Pool;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.lang.ArrayUtils;
@@ -36,30 +31,12 @@ public class WatchBuilder {
 
   private static final Boolean ALLOW_BOOKMARKS = false;
 
+  @SuppressWarnings("FieldMayBeFinal") // Leave non-final for unit test
   private static WatchFactory FACTORY = new WatchFactoryImpl();
 
   private final CallParamsImpl callParams = new CallParamsImpl();
 
   public WatchBuilder() {
-  }
-
-  private static Type getType(Class<?> responseBodyType) {
-    return new ParameterizedType() {
-      @Override
-      public Type[] getActualTypeArguments() {
-        return new Type[] {responseBodyType};
-      }
-
-      @Override
-      public Type getRawType() {
-        return Watch.Response.class;
-      }
-
-      @Override
-      public Type getOwnerType() {
-        return Watch.class;
-      }
-    };
   }
 
   /**
@@ -69,12 +46,8 @@ public class WatchBuilder {
    * @return the active web hook
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
-  public WatchI<V1Service> createServiceWatch(String namespace) throws ApiException {
-    return FACTORY.createWatch(
-        ClientPool.getInstance(),
-        callParams,
-        V1Service.class,
-        new ListNamespacedServiceCall(namespace));
+  public Watchable<V1Service> createServiceWatch(String namespace) throws ApiException {
+    return FACTORY.createWatch(callParams, V1Service.class, new ListNamespacedServiceCall(namespace));
   }
 
   /**
@@ -84,9 +57,9 @@ public class WatchBuilder {
    * @return the active web hook
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
-  public WatchI<V1Pod> createPodWatch(String namespace) throws ApiException {
+  public Watchable<V1Pod> createPodWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(
-        ClientPool.getInstance(), callParams, V1Pod.class, new ListPodCall(namespace));
+          callParams, V1Pod.class, new ListPodCall(namespace));
   }
 
   /**
@@ -96,9 +69,9 @@ public class WatchBuilder {
    * @return the active web hook
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
-  public WatchI<V1Job> createJobWatch(String namespace) throws ApiException {
+  public Watchable<V1Job> createJobWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(
-        ClientPool.getInstance(), callParams, V1Job.class, new ListJobCall(namespace));
+          callParams, V1Job.class, new ListJobCall(namespace));
   }
 
   /**
@@ -108,9 +81,9 @@ public class WatchBuilder {
    * @return the active web hook
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
-  public WatchI<V1Event> createEventWatch(String namespace) throws ApiException {
+  public Watchable<V1Event> createEventWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(
-        ClientPool.getInstance(), callParams, V1Event.class, new ListEventCall(namespace));
+          callParams, V1Event.class, new ListEventCall(namespace));
   }
 
   /**
@@ -120,9 +93,9 @@ public class WatchBuilder {
    * @return the active web hook
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
-  public WatchI<Domain> createDomainWatch(String namespace) throws ApiException {
+  public Watchable<Domain> createDomainWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(
-        ClientPool.getInstance(), callParams, Domain.class, new ListDomainsCall(namespace));
+          callParams, Domain.class, new ListDomainsCall(namespace));
   }
 
   /**
@@ -132,12 +105,11 @@ public class WatchBuilder {
    * @return the active web hook
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
-  public WatchI<V1ConfigMap> createConfigMapWatch(String namespace) throws ApiException {
+  public Watchable<V1ConfigMap> createConfigMapWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(
-        ClientPool.getInstance(),
-        callParams,
+          callParams,
         V1ConfigMap.class,
-        new ListNamespacedConfigMapCall(namespace));
+          new ListNamespacedConfigMapCall(namespace));
   }
 
   /**
@@ -146,12 +118,11 @@ public class WatchBuilder {
    * @return the active web hook
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
-  public WatchI<V1Namespace> createNamespacesWatch() throws ApiException {
+  public Watchable<V1Namespace> createNamespacesWatch() throws ApiException {
     return FACTORY.createWatch(
-        ClientPool.getInstance(),
-        callParams,
+          callParams,
         V1Namespace.class,
-        new ListNamespaceCall());
+          new ListNamespaceCall());
   }
 
   /**
@@ -193,36 +164,29 @@ public class WatchBuilder {
   }
 
   public interface WatchFactory {
-    <T> WatchI<T> createWatch(
-        Pool<ApiClient> pool,
-        CallParams callParams,
-        Class<?> responseBodyType,
-        BiFunction<ApiClient, CallParams, Call> function)
+    <T> Watchable<T> createWatch(
+          CallParams callParams,
+          Class<?> responseBodyType,
+          BiFunction<ApiClient, CallParams, Call> function)
         throws ApiException;
   }
 
   static class WatchFactoryImpl implements WatchFactory {
     @Override
-    public <T> WatchI<T> createWatch(
-        Pool<ApiClient> pool,
-        CallParams callParams,
-        Class<?> responseBodyType,
-        BiFunction<ApiClient, CallParams, Call> function)
+    public <T> Watchable<T> createWatch(
+          CallParams callParams,
+          Class<?> responseBodyType,
+          BiFunction<ApiClient, CallParams, Call> function)
         throws ApiException {
-      ApiClient client = pool.take();
       try {
-        return new WatchImpl<>(
-            pool,
-            client,
-            Watch.createWatch(
-                client, function.apply(client, callParams), getType(responseBodyType)));
+        return new WatchImpl<>(callParams, responseBodyType, function);
       } catch (UncheckedApiException e) {
         throw e.getCause();
       }
     }
   }
 
-  private class ListNamespacedServiceCall implements BiFunction<ApiClient, CallParams, Call> {
+  private static class ListNamespacedServiceCall implements BiFunction<ApiClient, CallParams, Call> {
     private final String namespace;
 
     ListNamespacedServiceCall(String namespace) {
@@ -231,11 +195,7 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      // infinite timeout
-      OkHttpClient httpClient =
-          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
-      client.setHttpClient(httpClient);
+      configureClient(client);
 
       try {
         return new CoreV1Api(client)
@@ -257,7 +217,12 @@ public class WatchBuilder {
     }
   }
 
-  private class ListPodCall implements BiFunction<ApiClient, CallParams, Call> {
+  // Specify an infinite timeout to ensure the client doesn't timeout before call or watch.
+  private static void configureClient(ApiClient client) {
+    client.setHttpClient(client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build());
+  }
+
+  private static class ListPodCall implements BiFunction<ApiClient, CallParams, Call> {
     private final String namespace;
 
     ListPodCall(String namespace) {
@@ -266,11 +231,7 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      // infinite timeout
-      OkHttpClient httpClient =
-          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
-      client.setHttpClient(httpClient);
+      configureClient(client);
 
       try {
         return new CoreV1Api(client)
@@ -292,7 +253,7 @@ public class WatchBuilder {
     }
   }
 
-  private class ListJobCall implements BiFunction<ApiClient, CallParams, Call> {
+  private static class ListJobCall implements BiFunction<ApiClient, CallParams, Call> {
     private final String namespace;
 
     ListJobCall(String namespace) {
@@ -301,11 +262,7 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      // infinite timeout
-      OkHttpClient httpClient =
-          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
-      client.setHttpClient(httpClient);
+      configureClient(client);
 
       try {
         return new BatchV1Api(client)
@@ -327,7 +284,7 @@ public class WatchBuilder {
     }
   }
 
-  private class ListEventCall implements BiFunction<ApiClient, CallParams, Call> {
+  private static class ListEventCall implements BiFunction<ApiClient, CallParams, Call> {
     private final String namespace;
 
     ListEventCall(String namespace) {
@@ -336,11 +293,7 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      // infinite timeout
-      OkHttpClient httpClient =
-          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
-      client.setHttpClient(httpClient);
+      configureClient(client);
 
       try {
         return new CoreV1Api(client)
@@ -362,7 +315,7 @@ public class WatchBuilder {
     }
   }
 
-  private class ListDomainsCall implements BiFunction<ApiClient, CallParams, Call> {
+  private static class ListDomainsCall implements BiFunction<ApiClient, CallParams, Call> {
     private final String namespace;
 
     ListDomainsCall(String namespace) {
@@ -371,11 +324,7 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      // infinite timeout
-      OkHttpClient httpClient =
-          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
-      client.setHttpClient(httpClient);
+      configureClient(client);
 
       try {
         return new WeblogicApi(client)
@@ -396,7 +345,7 @@ public class WatchBuilder {
     }
   }
 
-  private class ListNamespacedConfigMapCall implements BiFunction<ApiClient, CallParams, Call> {
+  private static class ListNamespacedConfigMapCall implements BiFunction<ApiClient, CallParams, Call> {
     private final String namespace;
 
     ListNamespacedConfigMapCall(String namespace) {
@@ -405,11 +354,7 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      // infinite timeout
-      OkHttpClient httpClient =
-          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
-      client.setHttpClient(httpClient);
+      configureClient(client);
 
       try {
         return new CoreV1Api(client)
@@ -431,15 +376,11 @@ public class WatchBuilder {
     }
   }
 
-  private class ListNamespaceCall implements BiFunction<ApiClient, CallParams, Call> {
+  private static class ListNamespaceCall implements BiFunction<ApiClient, CallParams, Call> {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      // infinite timeout
-      OkHttpClient httpClient =
-          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
-      client.setHttpClient(httpClient);
+      configureClient(client);
 
       try {
         return new CoreV1Api(client)
