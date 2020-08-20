@@ -3,20 +3,24 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
-#  This sample script creates a WebLogic domain home on the Azure Kubernetes Service (AKS). 
+#  This sample script creates a WebLogic Server domain home on the Azure Kubernetes Service (AKS). 
 #  It creates a new Azure resource group, with a new Azure Storage Account and Azure File Share to allow WebLogic 
 #  to persist its configuration and data separately from the Kubernetes pods that run WebLogic workloads.
 #  Besides, it also generates the domain resource yaml files, which can be used to restart the Kubernetes 
 #  artifacts of the corresponding domain.
 #
-#  The Azure resource customized by editing create-domain-on-aks-inputs.yaml
-#  If you also want to customized WebLogic domain configuration, please edit kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml. 
-#  or create a new copy and edit it, specify the file using "-d <your-domain-inputs.yaml>".
+#  The Azure resource deployment is customized by editing
+#  create-domain-on-aks-inputs.yaml. If you also want to customize
+#  WebLogic Server domain configuration, please edit
+#  kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml.  Or you can create a copy of this file and edit it and refer to the copy using "-d <your-domain-inputs.yaml>".
 #
 #  The following pre-requisites must be handled prior to running this script:
 #    * Environment has set up, with git, azure cli, kubectl and helm installed.
-#    * The doker hub account must have created, and checkouted Oracle WebLogic Server, we use 12.2.1.3 by default.
-#    * The Azure Service Principal must have created, with permission to create AKS.
+#    * The user must have accepted the license terms for the WebLogic Server docker
+#      images in Oracle Container Registry.
+#      See https://oracle.github.io/weblogic-kubernetes-operator/quickstart/get-images/
+#    * The Azure Service Principal must have been created, with permission to
+#      create AKS.
 
 # Initialize
 script="${BASH_SOURCE[0]}"
@@ -30,7 +34,7 @@ function usage {
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated yaml files, must be specified."
   echo "  -u UID of resource, used to name file share, persistent valume, and persistent valume claim. "
-  echo "  -e Also create the Azure Kubernetes Service and create WebLogic domain on it using the generated yaml files"
+  echo "  -e Also create the Azure Kubernetes Service and create WebLogic Server domain on it using the generated yaml files"
   echo "  -d Paramters inputs file for creating domain, you can use specifed configuration by changing values of kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml, otherwise, we will use that file by default."
   echo "  -h Help"
   exit $1
@@ -138,7 +142,7 @@ function initialize {
 
   wlsLbInput="${scriptDir}/loadbalancer-template.yaml"
   if [ ! -f ${wlsLbInput} ]; then
-    validationError "The template file ${wlsLbInput} for generating load balancer for admin server was not found"
+    validationError "The template file ${wlsLbInput} for generating load balancer for Administration Server was not found"
   fi
 
   failIfValidationErrors
@@ -166,7 +170,7 @@ function initialize {
 }
 
 #
-# Function to generate the yaml files for creating Azure resources and weblogic domain
+# Function to generate the yaml files for creating Azure resources and WebLogic Server domain
 #
 function createYamlFiles {
 
@@ -195,7 +199,7 @@ function createYamlFiles {
   sed -i -e "s:%PERSISTENT_VOLUME_CLAIM_NAME%:${persistentVolumeClaimName}:g" ${pvcOutput}
   sed -i -e "s:%STORAGE_CLASS_NAME%:${azureStorageClassName}:g" ${pvcOutput}
 
-  # Generate the yaml to create weblogic domain.
+  # Generate the yaml to create WebLogic Server domain.
   echo Generating ${domain1Output}
 
   if [ -z ${domainInputFile} ]; then
@@ -233,7 +237,7 @@ function createYamlFiles {
   source ${tmpFile}
   rm ${exportValuesFile} ${tmpFile}
 
-  # Generate the yaml to create load balancer for admin server.
+  # Generate the yaml to create load balancer for Administration Server.
   echo Generating ${adminLbOutput}
 
   cp ${wlsLbInput} ${adminLbOutput}  
@@ -242,7 +246,7 @@ function createYamlFiles {
   sed -i -e "s:%SERVER_PORT%:${adminPort}:g" ${adminLbOutput}
   sed -i -e "s:%SERVER_NAME%:${adminServerName}:g" ${adminLbOutput}
 
-  # Generate the yaml to create load balancer for weblogic cluster.
+  # Generate the yaml to create load balancer for WebLogic Server cluster.
   echo Generating ${clusterLbOutput}
 
   cp ${wlsLbInput} ${clusterLbOutput}
@@ -377,8 +381,8 @@ function installWebLogicOperator {
 }
 
 function createWebLogicDomain {
-    # Create WebLogic Domain Credentials.
-    echo Creating weblogic credentials, with user ${weblogicUserName}, domainUID ${domainUID}
+    # Create WebLogic Server Domain Credentials.
+    echo Creating WebLogic Server Domain credentials, with user ${weblogicUserName}, domainUID ${domainUID}
     bash ${dirCreateDomainCredentials}/create-weblogic-credentials.sh -u ${weblogicUserName} \
     -p ${weblogicAccountPassword} -d ${domainUID}
 
@@ -390,8 +394,8 @@ function createWebLogicDomain {
       -s ${imagePullSecretName} \
       -d container-registry.oracle.com
 
-    # Create Weblogic Domain
-    echo Creating weblogic domain ${domainUID}
+    # Create Weblogic Server Domain
+    echo Creating WebLogic Server domain ${domainUID}
     bash ${dirCreateDomain}/create-domain.sh -i $domain1Output -o ${outputDir} -e -v
 
     kubectl  apply -f ${adminLbOutput}
@@ -475,7 +479,7 @@ function printSummary {
 
     echo ""
     clusterLbIP=`kubectl  get svc ${domainUID}-${clusterName}-external-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}'`
-    echo "Cluster external ip is ${clusterLbIP}, after you deploy application to WebLogic cluster, you can access it at http://${clusterLbIP}:${managedServerPort}/<your-app-path>"
+    echo "Cluster external ip is ${clusterLbIP}, after you deploy application to WebLogic Server cluster, you can access it at http://${clusterLbIP}:${managedServerPort}/<your-app-path>"
   fi
   echo ""
   echo "The following files were generated:"
@@ -502,7 +506,7 @@ export selectorClusterServerName="clusterName"
 cd ${scriptDir}
 
 #
-# Perform the following sequence of steps to create Azure resources and WebLogic domain
+# Do these steps to create Azure resources and a WebLogic Server domain.
 #
 
 # Setup the environment for running this script and perform initial validation checks
@@ -529,7 +533,7 @@ if [ "${executeIt}" = true ]; then
   # Install WebLogic Operator to AKS Cluster
   installWebLogicOperator
 
-  # Create WebLogic Domain
+  # Create WebLogic Server Domain
   createWebLogicDomain
  
   # Wait for all the jobs completed
