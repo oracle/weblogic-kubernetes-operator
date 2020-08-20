@@ -184,7 +184,7 @@ public class ItConfigDistributionStrategy {
     logger.info("Assign a unique namespace for domain namspace");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
-    
+
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
 
@@ -254,14 +254,19 @@ public class ItConfigDistributionStrategy {
         -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
 
-    logger.info("Getting the list of servers using the listServers");
+    logger.info("Checking if the clusterview app in admin server is accessible after restart");
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/";
-    String serverListUri = "ClusterViewServlet?listServers=true";
-    for (int i = 0; i < 5; i++) {
-      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
-      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
-      assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    }
+    String serverListUri = "ClusterViewServlet?user=" + ADMIN_USERNAME_DEFAULT + "&password=" + ADMIN_PASSWORD_DEFAULT;
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for clusterview app in admin server is accessible after restart"
+                + "(elapsed time {0} ms, remaining time {1} ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until((Callable<Boolean>) () -> {
+          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
+          return response.statusCode() == 200;
+        });
   }
 
   /**
@@ -313,7 +318,7 @@ public class ItConfigDistributionStrategy {
                 + "(elapsed time {0} ms, remaining time {1} ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(configUpdated("9999999"));
+        .until(configUpdated("100000000"));
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -370,7 +375,7 @@ public class ItConfigDistributionStrategy {
                     + "(elapsed time {0} ms, remaining time {1} ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(configUpdated("9999999"));
+        .until(configUpdated("100000000"));
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -422,7 +427,7 @@ public class ItConfigDistributionStrategy {
                     + "(elapsed time {0} ms, remaining time {1} ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(configUpdated("88888888"));
+        .until(configUpdated("99999999"));
 
     verifyResourceJDBC0Override(true);
 
@@ -491,7 +496,7 @@ public class ItConfigDistributionStrategy {
                 + "(elapsed time {0} ms, remaining time {1} ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(configUpdated("9999999"));
+        .until(configUpdated("100000000"));
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -667,7 +672,7 @@ public class ItConfigDistributionStrategy {
     int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/";
 
-    //verify server attribute MaxMessageSize to be equal to 9999999
+    //verify server attribute MaxMessageSize
     String configUri = "ConfigServlet?"
         + "attributeTest=true"
         + "&serverType=adminserver"
@@ -676,7 +681,7 @@ public class ItConfigDistributionStrategy {
 
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
     if (configUpdated) {
-      assertTrue(response.body().contains("MaxMessageSize=9999999"), "Didn't get MaxMessageSize=9999999");
+      assertTrue(response.body().contains("MaxMessageSize=100000000"), "Didn't get MaxMessageSize=100000000");
     } else {
       assertTrue(response.body().contains("MaxMessageSize=10000000"), "Didn't get MaxMessageSize=10000000");
     }
@@ -793,7 +798,7 @@ public class ItConfigDistributionStrategy {
     createPV(pvName, domainUid, this.getClass().getSimpleName());
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
-    t3ChannelPort = getNextFreePort(31500, 32767);
+    t3ChannelPort = getNextFreePort(31518, 32767);
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(()
@@ -856,10 +861,12 @@ public class ItConfigDistributionStrategy {
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.debug.DebugSituationalConfig=true"))
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.debug.DebugSituationalConfigDumpXml=true"))
+                    .value("-Dweblogic.debug.DebugSituationalConfig=true "
+                        + "-Dweblogic.debug.DebugSituationalConfigDumpXml=true "
+                        + "-Dweblogic.kernel.debug=true "
+                        + "-Dweblogic.debug.DebugMessaging=true "
+                        + "-Dweblogic.debug.DebugConnection=true "
+                        + "-Dweblogic.ResolveDNSName=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
