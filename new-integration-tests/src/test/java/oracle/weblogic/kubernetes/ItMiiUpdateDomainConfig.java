@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
-import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -32,7 +31,6 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -62,36 +60,26 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
-import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainWithNewSecretAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -180,88 +168,12 @@ class ItMiiUpdateDomainConfig {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
-    // Create a service account for the unique opNamespace
-    logger.info("Creating service account");
-    String serviceAccountName = opNamespace + "-sa";
-    assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
-        .metadata(
-            new V1ObjectMeta()
-                .namespace(opNamespace)
-                .name(serviceAccountName))));
-    logger.info("Created service account: {0}", serviceAccountName);
-
-    // get Operator image name
-    operatorImage = getOperatorImageName();
-    assertFalse(operatorImage.isEmpty(), "Operator image name can not be empty");
-    logger.info("Operator image name {0}", operatorImage);
-
-    // Create docker registry secret in the operator namespace to pull the image from repository
-    logger.info("Creating docker registry secret in namespace {0}", opNamespace);
-    JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
-    dockerConfigJson = dockerConfigJsonObject.toString();
-
-    // Create the V1Secret configuration
-    logger.info("Creating repo secret {0}", REPO_SECRET_NAME);
-    V1Secret repoSecret = new V1Secret()
-        .metadata(new V1ObjectMeta()
-            .name(REPO_SECRET_NAME)
-            .namespace(opNamespace))
-        .type("kubernetes.io/dockerconfigjson")
-        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
-
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace",
-                  REPO_SECRET_NAME, opNamespace));
-
-    // map with secret
-    secretNameMap = new HashMap<String, Object>();
-    secretNameMap.put("name", REPO_SECRET_NAME);
-    // helm install parameters
-    opHelmParams = new HelmParams()
-        .releaseName(OPERATOR_RELEASE_NAME)
-        .namespace(opNamespace)
-        .chartDir(OPERATOR_CHART_DIR);
-
-    // Operator chart values to override
-    OperatorParams opParams =
-        new OperatorParams()
-            .helmParams(opHelmParams)
-            .image(operatorImage)
-            .imagePullSecrets(secretNameMap)
-            .domainNamespaces(Arrays.asList(domainNamespace))
-            .serviceAccount(serviceAccountName);
-
-    // install Operator
-    logger.info("Installing Operator in namespace {0}", opNamespace);
-    assertTrue(installOperator(opParams),
-        String.format("Operator install failed in namespace %s", opNamespace));
-    logger.info("Operator installed in namespace {0}", opNamespace);
-
-    // list helm releases matching Operator release name in operator namespace
-    logger.info("Checking Operator release {0} status in namespace {1}",
-        OPERATOR_RELEASE_NAME, opNamespace);
-    assertTrue(isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace),
-        String.format("Operator release %s is not in deployed status in namespace %s",
-            OPERATOR_RELEASE_NAME, opNamespace));
-    logger.info("Operator release {0} status is deployed in namespace {1}",
-        OPERATOR_RELEASE_NAME, opNamespace);
-
-    // check operator is running
-    logger.info("Check Operator pod is running in namespace {0}", opNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for operator to be running in namespace {0} "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                opNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(operatorIsReady(opNamespace));
+    // install and verify operator
+    installAndVerifyOperator(opNamespace, domainNamespace);
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createRepoSecret(domainNamespace),
-            String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
+          String.format("createSecret failed for %s", REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -795,34 +707,6 @@ class ItMiiUpdateDomainConfig {
     logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
   }
 
-  private static void createRepoSecret(String domNamespace) throws ApiException {
-    V1Secret repoSecret = new V1Secret()
-            .metadata(new V1ObjectMeta()
-                    .name(REPO_SECRET_NAME)
-                    .namespace(domNamespace))
-            .type("kubernetes.io/dockerconfigjson")
-            .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
-
-    boolean secretCreated = false;
-    try {
-      secretCreated = createSecret(repoSecret);
-    } catch (ApiException e) {
-      logger.info("Exception when calling CoreV1Api#createNamespacedSecret");
-      logger.info("Status code: " + e.getCode());
-      logger.info("Reason: " + e.getResponseBody());
-      logger.info("Response headers: " + e.getResponseHeaders());
-      //409 means that the secret already exists - it is not an error, so can proceed
-      if (e.getCode() != 409) {
-        throw e;
-      } else {
-        secretCreated = true;
-      }
-
-    }
-    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s",
-            REPO_SECRET_NAME, domNamespace));
-  }
-
   private static void createDatabaseSecret(
         String secretName, String username, String password, 
         String dburl, String domNamespace) throws ApiException {
@@ -839,7 +723,6 @@ class ItMiiUpdateDomainConfig {
 
   }
 
-
   private static void createDomainSecret(String secretName, String username, String password, String domNamespace)
           throws ApiException {
     Map<String, String> secretMap = new HashMap();
@@ -851,7 +734,6 @@ class ItMiiUpdateDomainConfig {
                     .namespace(domNamespace))
             .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
-
   }
 
   private static void createDomainResource(
@@ -924,7 +806,6 @@ class ItMiiUpdateDomainConfig {
         .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
             String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
                 podName, domNamespace)));
-
   }
 
   /*
