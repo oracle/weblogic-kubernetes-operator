@@ -452,10 +452,13 @@ function waitForJobComplete {
 
 function printSummary {
   if [ "${executeIt}" = true ]; then
+    regionJsonExcerpt=`az group list --query "[?name=='${azureResourceGroupName}']" | grep location`
+    tokens=($(IFS='"'; for word in $regionJsonExcerpt; do echo "$word"; done))
+    region=${tokens[2]}
     echo ""
-	  echo ""
-    echo "The following Azure Resouces are created: "
-    echo "  Resource group: ${azureResourceGroupName}"
+    echo ""
+    echo "The following Azure Resouces have been created: "
+    echo "  Resource groups: ${azureResourceGroupName}, MC_${azureResourceGroupName}_${aksClusterName}_${region}"
     echo "  Kubernetes service cluster name: ${aksClusterName}"
     echo "  Storage account: ${storageAccountName}"
     echo ""
