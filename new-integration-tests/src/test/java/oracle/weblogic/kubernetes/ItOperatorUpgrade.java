@@ -202,7 +202,8 @@ public class ItOperatorUpgrade {
           .image(latestOperatorImageName)
           .externalRestEnabled(true);
 
-      upgradeAndVerifyOperator(opNamespace, opParams);
+      assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
+          String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
       // check operator image name after upgrade
       logger.info("Checking image name in operator container ");
@@ -221,7 +222,8 @@ public class ItOperatorUpgrade {
       opServiceAccount = opNamespace2 + "-sa";
 
       // uninstall operator 2.5.0/2.6.0
-      uninstallOperator(opHelmParams);
+      assertTrue(uninstallOperator(opHelmParams),
+          String.format("Uninstall operator failed in namespace %s", opNamespace1));
 
       // install latest operator
       installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
