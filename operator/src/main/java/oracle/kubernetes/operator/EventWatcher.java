@@ -9,9 +9,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.util.Watch.Response;
+import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
-import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 /**
@@ -60,7 +60,7 @@ public class EventWatcher extends Watcher<V1Event> {
   }
 
   @Override
-  public WatchI<V1Event> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+  public Watchable<V1Event> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder.withFieldSelector(fieldSelector).createEventWatch(ns);
   }
 
