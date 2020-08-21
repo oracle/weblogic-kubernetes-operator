@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 resources:
     JDBCSystemResource:
-        TestDataSource:
+        TestDataSource2:
             Target: 'cluster-1'
             JdbcResource:
                 JDBCConnectionPoolParams:
@@ -12,7 +12,7 @@ resources:
                 JDBCDataSourceParams:
                     GlobalTransactionsProtocol: OnePhaseCommit
                     RowPrefetchSize: 200
-                    JNDIName: jdbc/TestDataSource
+                    JNDIName: jdbc/TestDataSource2
                 JDBCDriverParams:
                     URL: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:url@@'
                     PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:password@@'
