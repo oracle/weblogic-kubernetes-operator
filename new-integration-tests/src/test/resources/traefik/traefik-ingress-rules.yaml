@@ -54,7 +54,7 @@ spec:
     match: Host(`domain2.@NS@.cluster-1.test`)
     services:
     - kind: Service
-      name: domain1-cluster-cluster-1
+      name: domain2-cluster-cluster-1
       port: 8001
 ---
 apiVersion: traefik.containo.us/v1alpha1
@@ -72,7 +72,7 @@ spec:
     match: Host(`domain2.@NS@.cluster-1.test`)
     services:
     - kind: Service
-      name: domain1-cluster-cluster-1
+      name: domain2-cluster-cluster-1
       port: 8001
   tls:
      secretName: domain2-tls-secret
