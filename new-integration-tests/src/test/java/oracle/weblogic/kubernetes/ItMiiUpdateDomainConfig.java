@@ -85,7 +85,6 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -341,9 +340,9 @@ class ItMiiUpdateDomainConfig {
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
    
-    assertFalse(checkSystemResourceConfiguration("JDBCSystemResources", 
+    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
          "TestDataSource", "404"), "JDBCSystemResource should be deleted");
-    assertFalse(checkSystemResourceConfiguration("JMSSystemResources", 
+    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
          "TestClusterJmsModule", "404"), "JMSSystemResources should be deleted");
   }
 
