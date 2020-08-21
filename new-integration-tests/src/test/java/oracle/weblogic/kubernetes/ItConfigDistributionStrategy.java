@@ -254,14 +254,20 @@ public class ItConfigDistributionStrategy {
         -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
 
-    logger.info("Getting the list of servers using the listServers");
+    logger.info("Checking if the clusterview app in admin server is accessible after restart");
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/";
     String serverListUri = "ClusterViewServlet?user=" + ADMIN_USERNAME_DEFAULT + "&password=" + ADMIN_PASSWORD_DEFAULT;
-    for (int i = 0; i < 5; i++) {
-      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
-      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
-      assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    }
+
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for clusterview app in admin server is accessible after restart"
+                + "(elapsed time {0} ms, remaining time {1} ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until((Callable<Boolean>) () -> {
+          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
+          return response.statusCode() == 200;
+        });
   }
 
   /**

@@ -354,6 +354,28 @@ public class ItIntrospectVersion {
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
+    // deploy application and verify all servers functions normally
+    logger.info("Getting node port for T3 channel");
+    int t3channelNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        "Getting admin server t3channel node port failed");
+    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
+
+    //deploy clusterview application
+    logger.info("Deploying clusterview app {0} to cluster {1}",
+        clusterViewAppPath, clusterName);
+    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
+        introDomainNamespace);
+
+    List<String> managedServerNames = new ArrayList<String>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(managedServerNameBase + i);
+    }
+
+    //verify admin server accessibility and the health of cluster members
+    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
     // get the pod creation time stamps
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
@@ -448,21 +470,7 @@ public class ItIntrospectVersion {
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, introDomainNamespace);
     createIngressForDomainAndVerify(domainUid, introDomainNamespace, clusterNameMsPortMap);
 
-    // deploy application and verify all servers functions normally
-    logger.info("Getting node port for T3 channel");
-    int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
-        "Getting admin server t3channel node port failed");
-    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
-
-    //deploy clusterview application
-    logger.info("Deploying clusterview app {0} to cluster {1}",
-        clusterViewAppPath, clusterName);
-    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
-        introDomainNamespace);
-
-    List<String> managedServerNames = new ArrayList<String>();
+    managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount + 1; i++) {
       managedServerNames.add(managedServerNameBase + i);
     }
