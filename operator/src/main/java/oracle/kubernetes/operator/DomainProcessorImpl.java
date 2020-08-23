@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -64,6 +65,9 @@ import oracle.kubernetes.weblogic.domain.model.AdminServer;
 import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.ServerHealth;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.ADMIN_SERVER_STARTING_PROGRESS_REASON;
 import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
@@ -71,6 +75,8 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.MANAGED_SERVERS_STA
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
 
 public class DomainProcessorImpl implements DomainProcessor {
@@ -659,7 +665,7 @@ public class DomainProcessorImpl implements DomainProcessor {
               Component.createFor(liveInfo, delegate.getVersion(),
                   PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                   V1SubjectRulesReviewStatus.class, delegate.getSubjectRulesReviewStatus(getNamespace())));
-
+      populateServerStateHealthFromDomain(packet);
       runDomainPlan(
             getDomain(),
             getDomainUid(),
@@ -667,6 +673,23 @@ public class DomainProcessorImpl implements DomainProcessor {
             new StepAndPacket(createSteps(), packet),
             deleting,
             willInterrupt);
+    }
+
+    private void populateServerStateHealthFromDomain(Packet packet) {
+      Map<String, ServerHealth> serverHealth = new HashMap<String, ServerHealth>();
+      Map<String, String> serverState = new HashMap<String, String>();
+      Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getServers)
+          .ifPresent(servers -> servers.forEach(item -> addServerToMaps(serverHealth, serverState, item)));
+      packet.put(SERVER_STATE_MAP, serverState);
+      packet.put(SERVER_HEALTH_MAP, serverHealth);
+    }
+
+    private void addServerToMaps(Map serverHealthMap, Map serverStateMap, ServerStatus item) {
+      serverHealthMap.put(item.getServerName(), item.getHealth());
+      serverStateMap.put(item.getServerName(), item.getState());
     }
 
     private Domain getDomain() {

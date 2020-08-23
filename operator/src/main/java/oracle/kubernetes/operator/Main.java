@@ -11,6 +11,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -76,8 +77,14 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.ServerHealth;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
+
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
@@ -840,7 +847,6 @@ public class Main {
         for (Domain dom : callResponse.getResult().getItems()) {
           String domainUid = dom.getDomainUid();
           domainUids.add(domainUid);
-          boolean absent = dpis.get(domainUid) == null;
           DomainPresenceInfo info =
               dpis.compute(
                   domainUid,
@@ -853,11 +859,7 @@ public class Main {
                   });
           info.setPopulated(true);
           try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
-            MakeRightDomainOperation mrdo = dp.createMakeRightOperation(info);
-            if (absent) {
-              mrdo.withExplicitRecheck();
-            }
-            mrdo.execute();
+            dp.createMakeRightOperation(info).withExplicitRecheck().execute();
           }
         }
       }
