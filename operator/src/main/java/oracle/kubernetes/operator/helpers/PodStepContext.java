@@ -59,6 +59,8 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON;
+
 public abstract class PodStepContext extends BasePodStepContext {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -330,9 +332,11 @@ public abstract class PodStepContext extends BasePodStepContext {
     KubernetesUtils.addPatches(
         patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
 
-    return new CallBuilder()
-        .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
-            new V1Patch(patchBuilder.build().toString()), patchResponse(next));
+    return Step.chain(
+        DomainStatusUpdater.createProgressingStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true, null),
+        new CallBuilder()
+            .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
+            new V1Patch(patchBuilder.build().toString()), patchResponse(next)));
   }
 
   private Map<String, String> getLabels(V1Pod pod) {

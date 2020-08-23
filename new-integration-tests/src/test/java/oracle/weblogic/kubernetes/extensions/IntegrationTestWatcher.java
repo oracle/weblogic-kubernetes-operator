@@ -318,6 +318,11 @@ public class IntegrationTestWatcher implements
       getLogger().info("Skipping cleanup after test class");
     } else {
       getLogger().info("Starting cleanup after test class");
+      try {
+        Thread.sleep(8 * 1000);
+      } catch (InterruptedException ie) {
+        getLogger().info("Exception in testFailed sleep {0}", ie);
+      }
       CleanupUtil.cleanup(namespaces);
     }
   }
