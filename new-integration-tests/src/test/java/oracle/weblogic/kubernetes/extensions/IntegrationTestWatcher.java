@@ -313,7 +313,7 @@ public class IntegrationTestWatcher implements
     } else {
       getLogger().info("Starting cleanup after test class");
       try {
-        Thread.sleep(8 * 1000);
+        Thread.sleep(400 * 1000);
       } catch (InterruptedException ie) {
         getLogger().info("Exception in testFailed sleep {0}", ie);
       }
