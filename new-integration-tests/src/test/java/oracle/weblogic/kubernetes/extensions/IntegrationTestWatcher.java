@@ -317,6 +317,7 @@ public class IntegrationTestWatcher implements
       } catch (InterruptedException ie) {
         getLogger().info("Exception in testFailed sleep {0}", ie);
       }
+      collectLogs(context, "forceOnsuccess");
       CleanupUtil.cleanup(namespaces);
     }
   }
