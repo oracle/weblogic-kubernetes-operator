@@ -305,7 +305,6 @@ public class LoggingExporter {
    * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
    * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
    * @param wlsLoggingExporterArchiveLoc the directory where WebLogic Logging Exporter jar files store
-   *
    * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
    */
   public static boolean installWlsLoggingExporter(String filter,
@@ -337,7 +336,7 @@ public class LoggingExporter {
     assertDoesNotThrow(() -> addFilterToElkFile(filter),
         "Failed to add WebLogic Logging Exporter filter");
 
-    // Download WebLogic Logging Exporter jar file, weblogic-logging-exporter-1.0.0.jar
+    // Download WebLogic Logging Exporter jar file, WLS_LOGGING_EXPORTER_JAR_NAME
     ExecResult result = assertDoesNotThrow(
         () -> downloadWlsLoggingExporterJarsAndVerify(WLS_LOGGING_EXPORTER_JAR_REPOS,
           WLS_LOGGING_EXPORTER_JAR_NAME, wlsLoggingExporterArchiveLoc),

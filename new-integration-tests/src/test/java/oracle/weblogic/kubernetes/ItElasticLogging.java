@@ -30,6 +30,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -77,17 +78,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * To test ELK Stack used in Operator env, this Elasticsearch test does
- * 1. Install Kibana/Elasticsearch 
- * 2. Install and start Operator with ELK Stack enabled
+ * 1. Install Kibana/Elasticsearch.
+ * 2. Install and start Operator with ELK Stack enabled.
  * 3. Verify that ELK Stack is ready to use by checking the index status of
  *    Kibana and Logstash created in the Operator pod successfully
- * 4. Install WebLogic logging exporter in all WebLogic server pods
- * 5. Create and start the WebLogic domain
+ * 4. Install WebLogic logging exporter in all WebLogic server pods by
+ *    adding it to MII via --additionalBuildCommands and --additionalBuildFiles.
+ * 5. Create and start the WebLogic domain.
  * 6. Verify that
  *    1) Elasticsearch collects data from WebLogic logs and
- *       stores them in its repository correctly
+ *       stores them in its repository correctly.
  *    2) Using WebLogic logging exporter, WebLogic server Logs can be integrated to
- *       ELK Stack in the same pod that the domain is running on
+ *       ELK Stack in the same pod that the domain is running on.
  */
 @DisplayName("Test to use Elasticsearch API to query WebLogic logs")
 @IntegrationTest
@@ -231,7 +233,7 @@ class ItElasticLogging {
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=level:INFO";
 
-    verifySearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true);
+    verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true);
 
     logger.info("Query logs of level=INFO succeeded");
   }
@@ -247,9 +249,26 @@ class ItElasticLogging {
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=type:weblogic-operator";
 
-    verifySearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, false);
+    verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, false);
 
     logger.info("Query Operator log info succeeded");
+  }
+
+  /**
+   * Use Elasticsearch Search APIs to query WebLogic log info.
+   * Verify that WebLogic server status of "RUNNING" is found.
+   */
+  @Disabled("Disabled the test due to JIRA OWLS-83899")
+  @Test
+  @DisplayName("Use Elasticsearch Search APIs to query Operator log info and verify")
+  public void testWebLogicLogSearch() {
+    // Verify that the admin status of "RUNNING" is found in query return from Elasticsearch repository
+    verifyServerRunningInSearchResults(adminServerPodName);
+
+    // Verify that the ms status of "RUNNING" is found in query return from Elasticsearch repos
+    verifyServerRunningInSearchResults(managedServerPodPrefix + "1");
+
+    logger.info("Query Operator log for WebLogic server status info succeeded");
   }
 
   /**
@@ -266,13 +285,13 @@ class ItElasticLogging {
     // Verify that hits of log level = Notice are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=level:Notice";
-    verifySearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
+    verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
     // Verify that hits of loggerName = WebLogicServer are not empty
     queryCriteria = "/_search?q=loggerName:WebLogicServer";
-    verifySearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
+    verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
     // Verify that hits of _type:doc are not empty
     queryCriteria = "/_search?q=_type:doc";
-    verifySearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
+    verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
     // Verify that serverName:managed-server1 is filtered out
     // by checking the count of logs from serverName:managed-server1 is zero and no failures
     // e.g. when running the query:
@@ -282,7 +301,7 @@ class ItElasticLogging {
     regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String filteredServer = managedServerFilter.split("-")[1];
     queryCriteria = "/_count?q=serverName:" + filteredServer;
-    verifySearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, true, "notExist");
+    verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, true, "notExist");
 
     logger.info("Query WebLogic log info succeeded");
   }
@@ -417,7 +436,33 @@ class ItElasticLogging {
     createDomainAndVerify(domain, domainNamespace);
   }
 
-  private void verifySearchResults(String queryCriteria, String regex,
+  private void verifyServerRunningInSearchResults(String serverName) {
+    int i = 0;
+    String queryResult = null;
+    String queryCriteria = "/_search?q=log:" + serverName;
+    while (i < maxIterationsPod) {
+      queryResult = execSearchQuery(queryCriteria, LOGSTASH_INDEX_KEY);
+      if (null != queryResult && queryResult.contains("RUNNING")) {
+        break;
+      }
+
+      logger.info("Logs are not pushed to ELK Stack Ite [{0}/{1}], sleeping {2} seconds more",
+          i, maxIterationsPod, maxIterationsPod);
+
+      try {
+        Thread.sleep(maxIterationsPod * 1000);
+      } catch (InterruptedException ex) {
+        //ignore
+      }
+      i++;
+    }
+
+    assertTrue(queryResult != null, String.format("Failed to get the status of %s", serverName));
+    logger.info("query result is {0}", queryResult);
+    assertTrue(queryResult.contains("RUNNING"), serverName + " is not RUNNING");
+  }
+
+  private void verifyCountsHitsInSearchResults(String queryCriteria, String regex,
                                    String index, boolean checkCount, String... args) {
     String checkExist = (args.length == 0) ? "" : args[0];
     int count = -1;
@@ -448,7 +493,6 @@ class ItElasticLogging {
       } catch (InterruptedException ex) {
         //ignore
       }
-
       i++;
     }
 
