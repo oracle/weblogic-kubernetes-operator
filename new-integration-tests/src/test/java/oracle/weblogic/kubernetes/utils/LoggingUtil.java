@@ -232,7 +232,6 @@ public class LoggingUtil {
     } catch (Exception ex) {
       logger.warning("Listing domain failed, not collecting any data for domain");
     }
-
     // get pods
     try {
       writeToFile(Kubernetes.listPods(namespace, null), resultDir, namespace + ".list.pods.log");
