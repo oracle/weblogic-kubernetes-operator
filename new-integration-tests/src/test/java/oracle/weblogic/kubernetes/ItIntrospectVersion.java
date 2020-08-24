@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -53,11 +52,14 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.opentest4j.AssertionFailedError;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
@@ -67,10 +69,10 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -79,6 +81,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResource
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
@@ -98,7 +101,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.TestUtils.verifyClusterMemberCommunication;
+import static oracle.weblogic.kubernetes.utils.TestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -107,6 +110,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -133,7 +137,7 @@ public class ItIntrospectVersion {
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
       .and().with().pollInterval(10, SECONDS)
-      .atMost(5, MINUTES).await();
+      .atMost(10, MINUTES).await();
 
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
@@ -162,8 +166,8 @@ public class ItIntrospectVersion {
     installAndVerifyOperator(opNamespace, introDomainNamespace);
 
     // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
+    nodeportshttp = getNextFreePort(30109, 30405);
+    int nodeportshttps = getNextFreePort(30143, 30543);
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
@@ -219,7 +223,7 @@ public class ItIntrospectVersion {
     // in general the node port range has to be between 30,000 to 32,767
     // to avoid port conflict because of the delay in using it, the port here
     // starts with 30100
-    final int t3ChannelPort = getNextFreePort(30100, 32767);
+    final int t3ChannelPort = getNextFreePort(30172, 32767);
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
@@ -292,7 +296,17 @@ public class ItIntrospectVersion {
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.kernel.debug=true "
+                        + "-Dweblogic.debug.DebugMessaging=true "
+                        + "-Dweblogic.debug.DebugConnection=true "
+                        + "-Dweblogic.debug.DebugUnicastMessaging=true "
+                        + "-Dweblogic.debug.DebugClusterHeartbeats=true "
+                        + "-Dweblogic.debug.DebugJNDI=true "
+                        + "-Dweblogic.debug.DebugJNDIResolution=true "
+                        + "-Dweblogic.debug.DebugCluster=true "
+                        + "-Dweblogic.ResolveDNSName=true "
+                        + "-Dweblogic.MaxMessageSize=20000000"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
@@ -339,6 +353,28 @@ public class ItIntrospectVersion {
           managedServerPodNamePrefix + i, introDomainNamespace);
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
+
+    // deploy application and verify all servers functions normally
+    logger.info("Getting node port for T3 channel");
+    int t3channelNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        "Getting admin server t3channel node port failed");
+    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
+
+    //deploy clusterview application
+    logger.info("Deploying clusterview app {0} to cluster {1}",
+        clusterViewAppPath, clusterName);
+    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
+        introDomainNamespace);
+
+    List<String> managedServerNames = new ArrayList<String>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(managedServerNameBase + i);
+    }
+
+    //verify admin server accessibility and the health of cluster members
+    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // get the pod creation time stamps
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
@@ -434,62 +470,24 @@ public class ItIntrospectVersion {
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, introDomainNamespace);
     createIngressForDomainAndVerify(domainUid, introDomainNamespace, clusterNameMsPortMap);
 
-    // deploy application and verify all servers functions normally
-    logger.info("Getting node port for T3 channel");
-    int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
-        "Getting admin server t3channel node port failed");
-    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
-
-    //deploy application
-    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
-    logger.info("Deploying webapp to domain {0}", archivePath);
-    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
-        introDomainNamespace);
-
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
-        "Getting admin server node port failed");
-
-    //access application from admin server
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/testwebapp/index.jsp";
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
-
-
-    //deploy clusterview application
-    logger.info("Deploying clusterview app {0} to cluster {1}",
-        clusterViewAppPath, clusterName);
-    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
-        introDomainNamespace);
-
-    logger.info("Getting the list of servers using the listServers");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/";
-    String serverListUri = "ClusterViewServlet?listServers=true";
-    for (int i = 0; i < 5; i++) {
-      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
-      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
-      assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    managedServerNames = new ArrayList<String>();
+    for (int i = 1; i <= replicaCount + 1; i++) {
+      managedServerNames.add(managedServerNameBase + i);
     }
+
+    //verify admin server accessibility and the health of cluster members
+    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
+        + "\"?user=" + ADMIN_USERNAME_DEFAULT
+        + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
-    List<String> managedServers = new ArrayList<>();
-    for (int i = 1; i <= replicaCount + 1; i++) {
-      managedServers.add(managedServerNameBase + i);
-    }
-    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-        .as("Verify all managed servers can see each other")
-        .withFailMessage("managed servers cannot see other")
-        .isTrue();
+
+    // verify each managed server can see other member in the cluster
+    verifyServerCommunication(curlRequest, managedServerNames);
 
   }
 
@@ -567,7 +565,7 @@ public class ItIntrospectVersion {
 
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
-    
+
     // verify the admin server service created
     checkServiceExists(adminServerPodName, introDomainNamespace);
 
@@ -594,40 +592,171 @@ public class ItIntrospectVersion {
         "Getting admin server port failed"),
         "Updated admin server port is not equal to expected value");
 
-    logger.info("Getting node port for default channel");
-    int adminServerNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
-        "Getting admin server node port failed");
-
-    //access application from admin server to validate the new port
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + adminServerNodePort + "/testwebapp/index.jsp";
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
-
-    logger.info("Getting the list of servers using the listServers");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + adminServerNodePort + "/clusterview/";
-    String serverListUri = "ClusterViewServlet?listServers=true";
-    for (int i = 0; i < 5; i++) {
-      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
-      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
-      assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    List<String> managedServerNames = new ArrayList<String>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(managedServerNameBase + i);
     }
+
+    //verify admin server accessibility and the health of cluster members
+    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
+        + "\"?user=" + ADMIN_USERNAME_DEFAULT
+        + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
-    List<String> managedServers = new ArrayList<>();
+
+    // verify each managed server can see other member in the cluster
+    verifyServerCommunication(curlRequest, managedServerNames);
+  }
+
+  /**
+   * Test changes the WebLogic credentials and verifies the servers can startup and function with changed credentials.
+   * a. Creates new WebLogic credentials using WLST.
+   * b. Creates new Kubernetes secret for WebLogic credentials.
+   * c. Patch the Domain Resource with new credentials, restartVerion and introspectVersion.
+   * d. Verifies the servers in the domain restarted and accessing the admin server console with new password works.
+   * e. Verifies the the admin server console access with old credentials fail.
+   */
+  @Order(3)
+  @Test
+  @DisplayName("Test change WebLogic admin credentials for domain running in persistent volume")
+  public void testCredentialChange() {
+
+    final String domainUid = "mydomain";
+
+    final String adminServerName = "admin-server";
+    final String adminServerPodName = domainUid + "-" + adminServerName;
+
+    final String managedServerNameBase = "ms-";
+    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+
+    int replicaCount = 3;
+
+    logger.info("Getting node port for T3 channel");
+    int adminServerT3Port = getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel");
+    assertNotEquals(-1, adminServerT3Port, "Couldn't get valid port for T3 channel");
+
+    // get the pod creation time stamps
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
-      managedServers.add(managedServerNameBase + i);
+      pods.put(managedServerPodNamePrefix + i,
+          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
     }
-    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-        .as("Verify all managed servers can see each other")
-        .withFailMessage("managed servers cannot see other")
-        .isTrue();
+
+    // create a temporary WebLogic WLST property file
+    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+        "Creating WLST properties file failed");
+    Properties p = new Properties();
+    p.setProperty("admin_host", K8S_NODEPORT_HOST);
+    p.setProperty("admin_port", Integer.toString(adminServerT3Port));
+    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("new_admin_user", ADMIN_USERNAME_PATCH);
+    p.setProperty("new_admin_password", ADMIN_PASSWORD_PATCH);
+    p.setProperty("test_name", "replace_admin_user");
+    assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
+        "Failed to write the WLST properties to file");
+
+    // change the admin server port to a different value to force pod restart
+    logger.info("Creating a new WebLogic user/password {0}/{1} in default security realm",
+        ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
+    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
+    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
+
+    // create a new secret for admin credentials
+    logger.info("Create a new secret that contains new WebLogic admin credentials");
+    String newWlSecretName = "weblogic-credentials-new";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        newWlSecretName,
+        introDomainNamespace,
+        ADMIN_USERNAME_PATCH,
+        ADMIN_PASSWORD_PATCH),
+        String.format("createSecret failed for %s", newWlSecretName));
+
+    // delete the old secret
+    logger.info("Deleting the old secret");
+    deleteSecret(wlSecretName, introDomainNamespace);
+
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
+    String oldVersion = assertDoesNotThrow(()
+        -> getDomainCustomResource(domainUid, introDomainNamespace).getSpec().getRestartVersion());
+    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
+
+    logger.info("patch the domain resource with new WebLogic secret, restartVersion and introspectVersion");
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/webLogicCredentialsSecret/name\", "
+        + "\"value\": \"" + newWlSecretName + "\"},"
+        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", "
+        + "\"value\": \"" + introspectVersion + "\"},"
+        + "{\"op\": \"add\", \"path\": \"/spec/restartVersion\", "
+        + "\"value\": \"" + newVersion + "\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    //verify the introspector pod is created and runs
+    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+
+    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+
+    //verify the pods are restarted
+    verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
+
+    // verify the admin server service created
+    checkServiceExists(adminServerPodName, introDomainNamespace);
+
+    // verify admin server pod is ready
+    checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
+
+    // verify new cluster managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, introDomainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+    }
+
+    // verify new cluster managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
+          managedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    }
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        introDomainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+    assertNotEquals(-1, serviceNodePort, "Couldn't get valid node port for default channel");
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    boolean loginSuccessful = assertDoesNotThrow(()
+        -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH),
+        "Access to admin server node port failed");
+    assertTrue(loginSuccessful, "Console login validation failed");
+
+    logger.info("Validating WebLogic admin server access by login to console using old credentials");
+    assertThrows(AssertionFailedError.class, ()
+        -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+        "Accessing using old user/password succeeded, supposed to fail");
+
+    List<String> managedServerNames = new ArrayList<String>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(managedServerNameBase + i);
+    }
+
+    //verify admin server accessibility and the health of cluster members
+    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
 
   }
 
@@ -639,7 +768,7 @@ public class ItIntrospectVersion {
    * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
    * pre-existing WebLogic cluster.
    */
-  @Order(3)
+  @Order(4)
   @Test
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
   public void testCreateNewCluster() {
@@ -664,8 +793,8 @@ public class ItIntrospectVersion {
     Properties p = new Properties();
     p.setProperty("admin_host", K8S_NODEPORT_HOST);
     p.setProperty("admin_port", Integer.toString(adminServerT3Port));
-    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("admin_username", ADMIN_USERNAME_PATCH);
+    p.setProperty("admin_password", ADMIN_PASSWORD_PATCH);
     p.setProperty("test_name", "create_cluster");
     p.setProperty("cluster_name", clusterName);
     p.setProperty("server_prefix", managedServerNameBase);
@@ -712,25 +841,15 @@ public class ItIntrospectVersion {
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
-    logger.info("Getting the list of servers using the listServers");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + adminServerT3Port + "/clusterview/";
-    String serverListUri = "ClusterViewServlet?listServers=true";
-    HttpResponse<String> response = null;
-    for (int i = 0; i < 5; i++) {
-      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
-      response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
-      assertEquals(200, response.statusCode(), "Status code not equals to 200");
+    List<String> managedServerNames = new ArrayList<String>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(managedServerNameBase + i);
     }
 
-    // verify managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking {0} health", managedServerNameBase + i);
-      assertTrue(response.body().contains(managedServerNameBase + i + ":HEALTH_OK"),
-          "Didn't get " + managedServerNameBase + i + ":HEALTH_OK");
-    }
+    //verify admin server accessibility and the health of cluster members
+    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
 
   }
-
 
   /**
    * Create a WebLogic domain on a persistent volume by doing the following.
@@ -795,6 +914,38 @@ public class ItIntrospectVersion {
     }
   }
 
+  private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
+      String user, String password) {
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Checking the health of servers in cluster");
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort
+        + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
+
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> logger.info("Verifying the health of all cluster members"
+            + "(elapsed time {0} ms, remaining time {1} ms)",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until((Callable<Boolean>) () -> {
+          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
+          assertEquals(200, response.statusCode(), "Status code not equals to 200");
+          boolean health = true;
+          for (String managedServer : managedServerNames) {
+            health = health && response.body().contains(managedServer + ":HEALTH_OK");
+            if (health) {
+              logger.info(managedServer + " is healthy");
+            } else {
+              logger.info(managedServer + " health is not OK or server not found");
+            }
+          }
+          return health;
+        });
+  }
 
   /**
    * Uninstall Nginx.

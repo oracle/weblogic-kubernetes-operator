@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -12,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
-import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -31,12 +31,11 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
@@ -52,50 +51,76 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
-import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainWithNewSecretAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * This test class verifies the following scenerios
+ *
+ * <p>testMiiCheckSystemResources
+ *  Check the System Resources in a pre-configured ConfigMap
+ *
+ * <p>testMiiDeleteSystemResources
+ *  Delete System Resources defined in a WebLogic domain 
+ *
+ * <p>testMiiAddSystemResources
+ *  Add new System Resources to a running WebLogic domain
+ *
+ * <p>testMiiAddDynmicClusteriWithNoReplica
+ *  Add a new dynamic WebLogic cluster to a running domain with default Replica
+ *  count(zero), so that no managed server on the new cluster is activated.
+ *
+ * <p>testMiiAddDynamicCluster
+ *  Add a new dynamic WebLogic cluster to a running domain with non-zero Replica
+ *  count so that required number of managed servers(s) on new cluster get  
+ *  activated after rolling restart. 
+ *
+ * <p>testMiiAddConfiguredCluster
+ *  Add a new configured WebLogic cluster to a running domain 
+ *
+ * <p>testMiiUpdateWebLogicCredential
+ *  Update the administrative credential of a running domain by updating the 
+ *  secret and activating a rolling restart.
+ */
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to add a cluster to model in image domain")
+@DisplayName("Test add SystemResources, Clusters to model in image domain")
 @IntegrationTest
-class ItMiiAddCluster {
+class ItMiiUpdateDomainConfig {
 
   private static HelmParams opHelmParams = null;
   private static V1ServiceAccount serviceAccount = null;
@@ -107,7 +132,8 @@ class ItMiiAddCluster {
   private static String dockerConfigJson = "";
 
   private static int replicaCount = 2;
-  private static final String domainUid = "mii-add-cluster";
+  private static final String domainUid = "mii-add-config";
+  private StringBuffer curlString = null;
 
   private StringBuffer checkCluster = null;
   private V1Patch patch = null;
@@ -141,88 +167,12 @@ class ItMiiAddCluster {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
-    // Create a service account for the unique opNamespace
-    logger.info("Creating service account");
-    String serviceAccountName = opNamespace + "-sa";
-    assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
-        .metadata(
-            new V1ObjectMeta()
-                .namespace(opNamespace)
-                .name(serviceAccountName))));
-    logger.info("Created service account: {0}", serviceAccountName);
-
-    // get Operator image name
-    operatorImage = getOperatorImageName();
-    assertFalse(operatorImage.isEmpty(), "Operator image name can not be empty");
-    logger.info("Operator image name {0}", operatorImage);
-
-    // Create docker registry secret in the operator namespace to pull the image from repository
-    logger.info("Creating docker registry secret in namespace {0}", opNamespace);
-    JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
-    dockerConfigJson = dockerConfigJsonObject.toString();
-
-    // Create the V1Secret configuration
-    logger.info("Creating repo secret {0}", REPO_SECRET_NAME);
-    V1Secret repoSecret = new V1Secret()
-        .metadata(new V1ObjectMeta()
-            .name(REPO_SECRET_NAME)
-            .namespace(opNamespace))
-        .type("kubernetes.io/dockerconfigjson")
-        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
-
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace",
-                  REPO_SECRET_NAME, opNamespace));
-
-    // map with secret
-    secretNameMap = new HashMap<String, Object>();
-    secretNameMap.put("name", REPO_SECRET_NAME);
-    // helm install parameters
-    opHelmParams = new HelmParams()
-        .releaseName(OPERATOR_RELEASE_NAME)
-        .namespace(opNamespace)
-        .chartDir(OPERATOR_CHART_DIR);
-
-    // Operator chart values to override
-    OperatorParams opParams =
-        new OperatorParams()
-            .helmParams(opHelmParams)
-            .image(operatorImage)
-            .imagePullSecrets(secretNameMap)
-            .domainNamespaces(Arrays.asList(domainNamespace))
-            .serviceAccount(serviceAccountName);
-
-    // install Operator
-    logger.info("Installing Operator in namespace {0}", opNamespace);
-    assertTrue(installOperator(opParams),
-        String.format("Operator install failed in namespace %s", opNamespace));
-    logger.info("Operator installed in namespace {0}", opNamespace);
-
-    // list helm releases matching Operator release name in operator namespace
-    logger.info("Checking Operator release {0} status in namespace {1}",
-        OPERATOR_RELEASE_NAME, opNamespace);
-    assertTrue(isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace),
-        String.format("Operator release %s is not in deployed status in namespace %s",
-            OPERATOR_RELEASE_NAME, opNamespace));
-    logger.info("Operator release {0} status is deployed in namespace {1}",
-        OPERATOR_RELEASE_NAME, opNamespace);
-
-    // check operator is running
-    logger.info("Check Operator pod is running in namespace {0}", opNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for operator to be running in namespace {0} "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                opNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(operatorIsReady(opNamespace));
+    // install and verify operator
+    installAndVerifyOperator(opNamespace, domainNamespace);
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createRepoSecret(domainNamespace),
-            String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
+          String.format("createSecret failed for %s", REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -237,10 +187,22 @@ class ItMiiAddCluster {
     assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
             "weblogicenc", domainNamespace),
              String.format("createSecret failed for %s", encryptionSecretName));
-    // create the domain CR with no configmap
+
+    logger.info("Create database secret");
+    final String dbSecretName = domainUid  + "-db-secret";
+    assertDoesNotThrow(() -> createDatabaseSecret(dbSecretName, "scott",
+            "tiger", "jdbc:oracle:thin:localhost:/ORCLCDB", domainNamespace),
+             String.format("createSecret failed for %s", dbSecretName));
+    String configMapName = "jdbc-jms-wldf-configmap";
+
+    createConfigMapAndVerify(
+        configMapName, domainUid, domainNamespace,
+        Arrays.asList("model.sysresources.yaml"));
+
+    // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
         REPO_SECRET_NAME, encryptionSecretName,
-        replicaCount);
+        replicaCount, configMapName, dbSecretName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -286,19 +248,183 @@ class ItMiiAddCluster {
   }
 
   /**
-   * Patch the domain resource with the configmap to add a cluster.
-   * Update the restart version of the domain resource to 1.
-   * Verify rolling restart of the domain by comparing PodCreationTimestamp
-   * before and after rolling restart.
-   * Verify servers from new cluster are not in running state, because i
-   * the spec level replica count to zero(default).
+   * Create a WebLogic domain with a defined configmap in configuration/model 
+   * section of the domain resource.
+   * The configmap has multiple sparse WDT model files that define 
+   * a JDBCSystemResource, a JMSSystemResource and a WLDFSystemResource.
+   * Verify all the SystemResource configurations using the rest API call 
+   * using the public nodeport of the administration server.
    */
   @Test
   @Order(1)
-  @DisplayName("Add a cluster to model in image domain with default replica count")
-  @Slow
-  @MustNotRunInParallel
-  public void testAddMiiClusteriWithNoReplica() {
+  @DisplayName("Verify the pre-configured SystemResources in a model-in-image domain")
+  public void testMiiCheckSystemResources() {
+
+    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
+        "TestDataSource", "200"), "JDBCSystemResource not found");
+    logger.info("Found the JDBCSystemResource configuration");
+
+    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
+        "TestClusterJmsModule", "200"), "JMSSystemResources not found");
+    logger.info("Found the JMSSystemResource configuration");
+
+    assertTrue(checkSystemResourceConfiguration("WLDFSystemResources", 
+        "TestWldfModule", "200"), "WLDFSystemResources not found");
+    logger.info("Found the WLDFSystemResource configuration");
+
+    ExecResult result = null;
+    result = checkJdbcRuntime("TestDataSource");
+    logger.info("checkJdbcRuntime: returned {0}", result.toString());
+    assertTrue(result.stdout().contains("jdbc:oracle:thin:localhost"),
+         String.format("DB URL does not match with RuntimeMBean Info"));
+    assertTrue(result.stdout().contains("scott"),
+         String.format("DB user name does not match with RuntimeMBean Info"));
+    logger.info("Found the JDBCSystemResource configuration");
+
+  }
+
+  /**
+   * Start a WebLogic domain using model-in-image with JMS/JDBC SystemResources.
+   * Create a configmap to delete JMS/JDBC SystemResources.
+   * Patch the domain resource with the configmap.
+   * Update the restart version of the domain resource.
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp
+   * for all the server pods before and after rolling restart.
+   * Verify SystemResources are deleted from the domain.
+   */
+  @Test
+  @Order(2)
+  @DisplayName("Delete SystemResources from a model-in-image domain")
+  public void testMiiDeleteSystemResources() {
+
+    String configMapName = "deletesysrescm";
+    createConfigMapAndVerify(
+        configMapName, domainUid, domainNamespace,
+        Arrays.asList("model.delete.sysresources.yaml"));
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/configuration/model/configMap\",")
+        .append(" \"value\":  \"" + configMapName + "\"")
+        .append(" }]");
+    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
+
+    patch = new V1Patch(new String(patchStr));
+    boolean cmPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(configMap)  failed ");
+    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+
+    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
+    
+    assertTrue(assertDoesNotThrow(
+        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
+         "More than one pod was restarted at same time"),
+        "Rolling restart failed");
+
+    // Even if pods are created, need the service to created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
+    }
+   
+    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
+         "TestDataSource", "404"), "JDBCSystemResource should be deleted");
+    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
+         "TestClusterJmsModule", "404"), "JMSSystemResources should be deleted");
+  }
+
+  /**
+   * Start a WebLogic domain using model-in-image.
+   * Create a configmap with sparse JDBC/JMS model files.
+   * Patch the domain resource with the configmap.
+   * Update the restart version of the domain resource.
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp
+   * for all the server pods before and after rolling restart.
+   * Verify SystemResource configurations using Rest API call to admin server.
+   */
+  @Test
+  @Order(3)
+  @DisplayName("Add New JDBC/JMS SystemResources to a model-in-image domain")
+  public void testMiiAddSystemResources() {
+
+    logger.info("Use same database secret created in befreAll() method");
+    String configMapName = "dsjmsconfigmap";
+    createConfigMapAndVerify(
+        configMapName, domainUid, domainNamespace,
+        Arrays.asList("model.jdbc2.yaml", "model.jms2.yaml"));
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/configuration/model/configMap\",")
+        .append(" \"value\":  \"" + configMapName + "\"")
+        .append(" }]");
+    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
+
+    patch = new V1Patch(new String(patchStr));
+    boolean cmPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(configMap)  failed ");
+    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+
+    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
+    
+    assertTrue(assertDoesNotThrow(
+        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
+         "More than one pod was restarted at same time"),
+        "Rolling restart failed");
+
+    // Even if pods are created, need the service to created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
+    }
+
+    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
+          "TestDataSource2", "200"), "JDBCSystemResource not found");
+    logger.info("Found the JDBCSystemResource configuration");
+
+    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
+          "TestClusterJmsModule2", "200"), "JMSSystemResources not found");
+    logger.info("Found the JMSSystemResource configuration");
+  }
+
+  /**
+   * Patch the domain resource with the configmap to add a cluster.
+   * Update the restart version of the domain resource.
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp
+   * before and after rolling restart.
+   * Verify servers from new cluster are not in running state, because 
+   * the spec level replica count to zero(default).
+   */
+  @Test
+  @Order(4)
+  @DisplayName("Add a dynamic cluster to a model-in-image domain with default replica count")
+  public void testMiiAddDynmicClusteriWithNoReplica() {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -351,18 +477,16 @@ class ItMiiAddCluster {
   /**
    * Create a configmap with a sparse model file to add a dynamic cluster.
    * Patch the domain resource with the configmap.
-   * Update the restart version of the domain resource to 2.
    * Patch the domain resource with the spec/replicas set to 1.
+   * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * before and after rolling restart.
    * Verify servers from new cluster are in running state.
    */
   @Test
-  @Order(2)
-  @DisplayName("Add a dynamic cluster to model in image domain")
-  @Slow
-  @MustNotRunInParallel
-  public void testAddMiiDynamicCluster() {
+  @Order(5)
+  @DisplayName("Add a dynamic cluster to model-in-image domain with non-zero replica count")
+  public void testMiiAddDynamicCluster() {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -432,18 +556,16 @@ class ItMiiAddCluster {
   /**
    * Create a configmap with a sparse model file to add a configured cluster.
    * Patch the domain resource with the configmap.
-   * Update the restart version of the domain resource to 3.
    * Patch the domain resource with the spec/replicas set to 1.
+   * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * before and after rolling restart.
    * Verify servers from new cluster are in running state.
    */
   @Test
-  @Order(3)
-  @DisplayName("Add a configured cluster to model in image domain")
-  @Slow
-  @MustNotRunInParallel
-  public void testAddMiiConfiguredCluster() {
+  @Order(6)
+  @DisplayName("Add a configured cluster to a model-in-image domain")
+  public void testMiiAddConfiguredCluster() {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -507,6 +629,72 @@ class ItMiiAddCluster {
     logger.info("Found new managed server configuration");
   }
 
+  /**
+   * Start a WebLogic domain with model-in-imge.
+   * Patch the domain CRD with a new credentials secret.
+   * Update domainRestartVersion to trigger a rolling restart of server pods.
+   * make sure all the server pods are re-started in a rolling fashion. 
+   * Check the validity of new credentials by accessing 
+   * WebLogic RESTful Management Services.
+   */
+  @Test
+  @Order(7)
+  @DisplayName("Change the WebLogic Admin credential in model-in-image domain")
+  public void testMiiUpdateWebLogicCredential() {
+    final boolean VALID = true;
+    final boolean INVALID = false;
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    logger.info("Check that before patching current credentials are valid and new credentials are not");
+    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, VALID);
+    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, INVALID);
+
+    // create a new secret for admin credentials
+    logger.info("Create a new secret that contains new WebLogic admin credentials");
+    String adminSecretName = "weblogic-credentials-new";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        adminSecretName,
+        domainNamespace,
+        ADMIN_USERNAME_PATCH,
+        ADMIN_PASSWORD_PATCH),
+        String.format("createSecret failed for %s", adminSecretName));
+
+    // patch the domain resource with the new secret and verify that the domain resource is patched.
+    logger.info("Patch domain {0} in namespace {1} with the secret {2}, and verify the result",
+        domainUid, domainNamespace, adminSecretName);
+    String restartVersion = patchDomainWithNewSecretAndVerify(
+        domainUid,
+        domainNamespace,
+        adminServerPodName,
+        managedServerPrefix,
+        replicaCount,
+        adminSecretName);
+
+    logger.info("Wait for domain {0} admin server pod {1} in namespace {2} to be restarted",
+        domainUid, adminServerPodName, domainNamespace);
+
+    assertTrue(assertDoesNotThrow(
+        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
+         "More than one pod was restarted at same time"),
+        "Rolling restart failed");
+
+    // check if the new credentials are valid and the old credentials are not valid any more
+    logger.info("Check that after patching current credentials are not valid and new credentials are");
+    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, INVALID);
+    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, VALID);
+
+    logger.info("Domain {0} in namespace {1} is fully started after changing WebLogic credentials secret",
+        domainUid, domainNamespace);
+  }
+
   // This method is needed in this test class, since the cleanup util
   // won't cleanup the images.
   @AfterAll
@@ -518,32 +706,20 @@ class ItMiiAddCluster {
     logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
   }
 
-  private static void createRepoSecret(String domNamespace) throws ApiException {
-    V1Secret repoSecret = new V1Secret()
+  private static void createDatabaseSecret(
+        String secretName, String username, String password, 
+        String dburl, String domNamespace) throws ApiException {
+    Map<String, String> secretMap = new HashMap();
+    secretMap.put("username", username);
+    secretMap.put("password", password);
+    secretMap.put("url", dburl);
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
             .metadata(new V1ObjectMeta()
-                    .name(REPO_SECRET_NAME)
+                    .name(secretName)
                     .namespace(domNamespace))
-            .type("kubernetes.io/dockerconfigjson")
-            .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
+            .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
 
-    boolean secretCreated = false;
-    try {
-      secretCreated = createSecret(repoSecret);
-    } catch (ApiException e) {
-      logger.info("Exception when calling CoreV1Api#createNamespacedSecret");
-      logger.info("Status code: " + e.getCode());
-      logger.info("Reason: " + e.getResponseBody());
-      logger.info("Response headers: " + e.getResponseHeaders());
-      //409 means that the secret already exists - it is not an error, so can proceed
-      if (e.getCode() != 409) {
-        throw e;
-      } else {
-        secretCreated = true;
-      }
-
-    }
-    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s",
-            REPO_SECRET_NAME, domNamespace));
   }
 
   private static void createDomainSecret(String secretName, String username, String password, String domNamespace)
@@ -557,13 +733,14 @@ class ItMiiAddCluster {
                     .namespace(domNamespace))
             .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
-
   }
 
-  private static void  createDomainResource(
+  private static void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName,
-      int replicaCount) {
+      String repoSecretName, String encryptionSecretName, 
+      int replicaCount, String configmapName, String dbSecretName) {
+    List<String> securityList = new ArrayList<>();
+    securityList.add(dbSecretName);
     // create the domain CR
     Domain domain = new Domain()
             .apiVersion(DOMAIN_API_VERSION)
@@ -600,8 +777,10 @@ class ItMiiAddCluster {
                             .replicas(replicaCount)
                             .serverStartState("RUNNING"))
                     .configuration(new Configuration()
+                            .secrets(securityList)
                             .model(new Model()
                                     .domainType("WLS")
+                                    .configMap(configmapName)
                                     .runtimeEncryptionSecret(encryptionSecretName))
                         .introspectorJobActiveDeadlineSeconds(300L)));
 
@@ -626,7 +805,6 @@ class ItMiiAddCluster {
         .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
             String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
                 podName, domNamespace)));
-
   }
 
   /*
@@ -683,6 +861,50 @@ class ItMiiAddCluster {
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
+  }
+
+  private boolean checkSystemResourceConfiguration(String resourcesType, 
+         String resourcesName, String expectedStatusCode) {
+
+    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    ExecResult result = null;
+    curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+         .append("/management/weblogic/latest/domainConfig")
+         .append("/")
+         .append(resourcesType)
+         .append("/")
+         .append(resourcesName)
+         .append("/")
+         .append(" --silent --show-error ")
+         .append(" -o /dev/null ")
+         .append(" -w %{http_code});")
+         .append("echo ${status}");
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+    return new Command()
+          .withParams(new CommandParams()
+              .command(curlString.toString()))
+          .executeAndVerify(expectedStatusCode);
+  }
+
+  private ExecResult checkJdbcRuntime(String resourcesName) {
+    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    ExecResult result = null;
+
+    curlString = new StringBuffer("curl --user weblogic:welcome1 ");
+    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+         .append("/management/wls/latest/datasources/id/")
+         .append(resourcesName)
+         .append("/")
+         .append(" --silent --show-error ");
+    logger.info("checkJdbcRuntime: curl command {0}", new String(curlString));
+    try {
+      result = exec(new String(curlString), true);
+    } catch (Exception ex) {
+      logger.info("checkJdbcRuntime: caught unexpected exception {0}", ex);
+      return null;
+    }
+    return result;
   }
 
 }
