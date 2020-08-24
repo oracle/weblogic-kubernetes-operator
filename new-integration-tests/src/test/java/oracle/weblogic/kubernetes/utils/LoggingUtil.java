@@ -228,7 +228,30 @@ public class LoggingUtil {
 
     // get domain objects in the given namespace
     try {
-      writeToFile(Kubernetes.listDomains(namespace), resultDir, namespace + ".list.domains.log");
+      writeToFile(Kubernetes.listDomains(namespace), resultDir, namespace + ".list.domains.1.log");
+    } catch (Exception ex) {
+      logger.warning("Listing domain failed, not collecting any data for domain");
+    }
+
+    try {
+      Thread.sleep(300 * 1000);
+    } catch (InterruptedException ie) {
+      getLogger().info("Exception in testFailed sleep {0}", ie);
+    }
+
+    try {
+      writeToFile(Kubernetes.listDomains(namespace), resultDir, namespace + ".list.domains.2.log");
+    } catch (Exception ex) {
+      logger.warning("Listing domain failed, not collecting any data for domain");
+    }
+    try {
+      Thread.sleep(300 * 1000);
+    } catch (InterruptedException ie) {
+      getLogger().info("Exception in testFailed sleep {0}", ie);
+    }
+
+    try {
+      writeToFile(Kubernetes.listDomains(namespace), resultDir, namespace + ".list.domains.3.log");
     } catch (Exception ex) {
       logger.warning("Listing domain failed, not collecting any data for domain");
     }
