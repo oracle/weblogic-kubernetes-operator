@@ -190,7 +190,7 @@ public class Kubernetes {
         new GenericKubernetesApi<>(
             V1Job.class,  // the api type class
             V1JobList.class, // the api list type class
-            "", // the api group
+            "batch", // the api group
             "v1", // the api version
             "jobs", // the resource plural
             apiClient //the api client
@@ -1823,23 +1823,22 @@ public class Kubernetes {
    * @return true if delete was successful
    * @throws ApiException when deletion of job fails
    */
-  public static boolean deleteJob(String namespace, String name) throws ApiException {
-    try {
-      BatchV1Api apiInstance = new BatchV1Api(apiClient);
-      apiInstance.deleteNamespacedJob(
-          name, // String | name of the job.
-          namespace, // String | name of the namespace.
-          PRETTY, // String | pretty print output.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
-      );
-    } catch (ApiException apex) {
-      getLogger().warning(apex.getResponseBody());
-      throw apex;
+  public static boolean deleteJob(String namespace, String name) {
+
+    KubernetesApiResponse<V1Job> response = jobClient.delete(namespace, name);
+
+    if (!response.isSuccess()) {
+      getLogger().warning("Failed to delete job '" + name + "' from namespace: "
+          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+      return false;
     }
+
+    if (response.getObject() != null) {
+      getLogger().info(
+          "Received after-deletion status of the requested object, will be deleting "
+              + "job in background!");
+    }
+
     return true;
   }
 
@@ -2307,6 +2306,35 @@ public class Kubernetes {
   }
 
   /**
+   * Delete an ingress in the specified namespace.
+   *
+   * @param name  ingress name to be deleted
+   * @param namespace namespace in which the specified ingress exists
+   * @return true if deleting ingress succeed, false otherwise
+   * @throws ApiException if Kubernetes API client call fails
+   */
+  public static boolean deleteIngress(String name, String namespace) throws ApiException {
+    try {
+      NetworkingV1beta1Api apiInstance = new NetworkingV1beta1Api(apiClient);
+      apiInstance.deleteNamespacedIngress(
+          name, // ingress name
+          namespace, // namespace
+          PRETTY, // String | If 'true', then the output is pretty printed.
+          null, // String | dry run or permanent change
+          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null, // Boolean | Deprecated: use the PropagationPolicy.
+          BACKGROUND, // String | Whether and how garbage collection will be performed.
+          null // V1DeleteOptions.
+      );
+    } catch (ApiException apex) {
+      getLogger().warning(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
    * Get Ingress in the given namespace by name.
    *
    * @param namespace name of the namespace
@@ -2353,50 +2381,62 @@ public class Kubernetes {
     KubernetesExec kubernetesExec = createKubernetesExec(pod, containerName);
     final Process proc = kubernetesExec.exec(command);
 
+    // If redirect enabled, copy stdout and stderr to corresponding Outputstream
     final CopyingOutputStream copyOut =
         redirectToStdout ? new CopyingOutputStream(System.out) : new CopyingOutputStream(null);
+    final CopyingOutputStream copyErr =
+        redirectToStdout ? new CopyingOutputStream(System.err) : new CopyingOutputStream(null);
 
     // Start a thread to begin reading the output stream of the command
-    Thread out = null;
     try {
-      out =
-          new Thread(
-              () -> {
-                try {
-                  ByteStreams.copy(proc.getInputStream(), copyOut);
-                } catch (IOException ex) {
-                  // "Pipe broken" is expected when process is finished so don't log
-                  if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
-                    getLogger().warning("Exception reading from input stream.", ex);
-                  }
-                }
-              });
+      Thread out = createStreamReader(proc.getInputStream(), copyOut,
+          "Exception reading from stdout input stream.");
       out.start();
+
+      // Start a thread to begin reading the error stream of the command
+      Thread err = createStreamReader(proc.getErrorStream(), copyErr,
+          "Exception reading from stderr input stream.");
+      err.start();
 
       // wait for the process, which represents the executing command, to terminate
       proc.waitFor();
 
-      // wait for reading thread to finish any remaining output
+      // wait for stdout reading thread to finish any remaining output
       out.join();
+
+      // wait for stderr reading thread to finish any remaining output
+      err.join();
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());
 
       // Read from process's stderr, if data available
-      String stderr = null;
-      try {
-        stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
-      } catch (IllegalStateException e) {
-        // IllegalStateException thrown when stream is already closed, ignore since there is
-        // nothing to read
-      }
+      String stderr = readExecCmdData(copyErr.getInputStream());;
 
-      return new ExecResult(proc.exitValue(), stdout, stderr);
+      ExecResult result = new ExecResult(proc.exitValue(), stdout, stderr);
+      getLogger().fine("result from exec command: " + result);
+      return result;
     } finally {
       if (proc != null) {
         proc.destroy();
       }
     }
+  }
+
+  private static Thread createStreamReader(InputStream inputStream, CopyingOutputStream copyOut,
+      String s) {
+    return
+        new Thread(
+            () -> {
+              try {
+                ByteStreams.copy(inputStream, copyOut);
+              } catch (IOException ex) {
+                // "Pipe broken" is expected when process is finished so don't log
+                if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
+                  getLogger().warning(s, ex);
+                }
+              }
+            });
   }
 
   /**

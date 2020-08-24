@@ -128,7 +128,19 @@ public class TestAssertions {
    * @return true if domain object exists
    */
   public static Callable<Boolean> domainExists(String domainUid, String domainVersion, String namespace) {
-    return Domain.doesDomainExist(domainUid, domainVersion, namespace);
+    return () -> Domain.doesDomainExist(domainUid, domainVersion, namespace);
+  }
+
+  /**
+   * Check if a WebLogic custom resource domain object does not exist in specified namespace.
+   *
+   * @param domainUid ID of the domain
+   * @param domainVersion version of the domain resource definition
+   * @param namespace in which the domain custom resource object exists
+   * @return true if domain object exists
+   */
+  public static Callable<Boolean> domainDoesNotExist(String domainUid, String domainVersion, String namespace) {
+    return () -> !Domain.doesDomainExist(domainUid, domainVersion, namespace);
   }
 
   /**
