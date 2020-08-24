@@ -66,7 +66,7 @@ externalRestHttpsPort: 31001
 
 # javaLoggingLevel specifies the Java logging level for the operator.
 # Valid values are: "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
-javaLoggingLevel: "FINEST"
+javaLoggingLevel: "INFO"
 
 # Values related to debugging the operator.
 # Customers should not need to use the following properties
