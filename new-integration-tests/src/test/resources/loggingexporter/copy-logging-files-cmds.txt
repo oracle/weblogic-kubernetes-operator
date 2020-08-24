@@ -4,4 +4,4 @@ RUN mkdir -p /u01/domains/elk-domain1/config && chown oracle:oracle /u01/domains
 COPY --chown=oracle:oracle files/WebLogicLoggingExporter.yaml /u01/domains/elk-domain1/config/
 
 RUN mkdir -p /u01/domains/elk-domain1/lib && chown oracle:oracle /u01/domains/elk-domain1/lib
-COPY --chown=oracle:oracle files/snakeyaml-1.23.jar files/weblogic-logging-exporter-1.0.0.jar /u01/domains/elk-domain1/lib/
+COPY --chown=oracle:oracle files/SNAKEYAML_JAR files/WEBLOGICLOGGINGEXPORTER_JAR /u01/domains/elk-domain1/lib/

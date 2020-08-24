@@ -310,7 +310,6 @@ public class LoggingExporter {
   public static boolean installWlsLoggingExporter(String filter,
                                                   String wlsLoggingExporterYamlFileLoc,
                                                   String wlsLoggingExporterArchiveLoc) {
-
     try {
       // Create a dir to hold downloaded WebLogic Logging Exporter archive files
       FileUtils.cleanupDirectory(wlsLoggingExporterArchiveLoc);
@@ -329,8 +328,26 @@ public class LoggingExporter {
       Path destPath = Paths.get(WORK_DIR, loggingFile);
       assertDoesNotThrow(() -> FileUtils.copy(srcPath, destPath),
           String.format("Failed to copy %s to %s", srcPath, destPath));
-      logger.severe("Copied {0} to {1}}", srcPath, destPath);
+      logger.info("Copied {0} to {1}}", srcPath, destPath);
     }
+
+    // Replace tokens in COPY_WLS_LOGGING_EXPORTER_FILE_NAME, copy-logging-files-cmds.txt
+    String fileToReplace = WORK_DIR + "/" + COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
+
+    logger.info("Replace SNAKEYAML_JAR with {0} in {1}",
+        SNAKE_YAML_JAR_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME);
+    assertDoesNotThrow(
+        () -> FileUtils.replaceStringInFile(fileToReplace, "SNAKEYAML_JAR", SNAKE_YAML_JAR_NAME),
+          String.format("Failed to replace SNAKEYAML_JAR with %s in %s",
+            SNAKE_YAML_JAR_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME));
+
+    logger.info("Replace WEBLOGICLOGGINGEXPORTER_JAR with {0} in {1}",
+        WLS_LOGGING_EXPORTER_JAR_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME);
+    assertDoesNotThrow(
+        () -> FileUtils.replaceStringInFile(fileToReplace,
+          "WEBLOGICLOGGINGEXPORTER_JAR", WLS_LOGGING_EXPORTER_JAR_NAME),
+          String.format("Failed to replace WEBLOGICLOGGINGEXPORTER_JAR with %s in %s",
+            WLS_LOGGING_EXPORTER_JAR_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME));
 
     // Add filter to weblogicLoggingExporterFilters in WebLogic Logging Exporter YAML file
     assertDoesNotThrow(() -> addFilterToElkFile(filter),
@@ -574,7 +591,7 @@ public class LoggingExporter {
         break;
       }
 
-      logger.severe("Downloading {0} not done [{1}/{2}], sleeping {3} econds more",
+      logger.info("Downloading {0} not done [{1}/{2}], sleeping {3} econds more",
           jarReposUrl, i, maxIterationsPod, maxIterationsPod);
 
       try {
