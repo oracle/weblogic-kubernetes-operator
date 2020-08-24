@@ -475,16 +475,8 @@ class ModelFileDiffer:
         current_dict = self.eval_file(sys.argv[1])
         past_dict = self.eval_file(sys.argv[2])
         obj = ModelDiffer(current_dict, past_dict)
-        obj.calculate_changed_model()
-        net_diff = obj.get_final_changed_model()
-        fh = open('/tmp/diffed_model.json', 'w')
-        self.write_dictionary_to_json_file(net_diff, fh)
-        #print all_added
-        fh.close()
-        fh = open('/tmp/diffed_model.yaml', 'w')
-        pty = PythonToYaml()
-        pty._write_dictionary_to_yaml_file(net_diff, fh)
-        fh.close()
+
+        net_diff = self.eval_file('/tmp/diffed_model.json')
         return obj.is_safe_diff(net_diff)
 
 def debug(format_string, *arguments):

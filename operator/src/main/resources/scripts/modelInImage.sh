@@ -7,7 +7,7 @@
 
 source ${SCRIPTPATH}/utils.sh
 
-WDT_MINIMUM_VERSION="1.7.3"
+WDT_MINIMUM_VERSION="1.9.4"
 INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormii/inventory_image.md5"
 INTROSPECTCM_CM_MD5="/weblogic-operator/introspectormii/inventory_cm.md5"
 INTROSPECTCM_PASSPHRASE_MD5="/weblogic-operator/introspectormii/inventory_passphrase.md5"
@@ -520,6 +520,17 @@ function createModelDomain() {
 
 function diff_model() {
   trace "Entering diff_model"
+
+  export __WLSDEPLOY_STORE_MODEL__=1
+
+  ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2
+  ret=$?
+
+  if [ $ret -ne 0 ]; then
+    trace SEVERE "WDT Compare Model failed:"
+    cat /tmp/compare_model_stdout
+    exitOrLoop
+  fi
 
   #
   local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
