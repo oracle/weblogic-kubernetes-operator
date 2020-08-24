@@ -6,17 +6,17 @@ kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-  name: domain1-http-ingress-rule
+  name: @domain1uid@-http-ingress-rule
   namespace: @NS@
 spec:
   entryPoints:
    - web
   routes:
   - kind: Rule
-    match: Host(`domain1.@NS@.cluster-1.test`)
+    match: Host(`@domain1uid@.@NS@.cluster-1.test`)
     services:
     - kind: Service
-      name: domain1-cluster-cluster-1
+      name: @domain1uid@-cluster-cluster-1
       port: 8001
 ---
 apiVersion: traefik.containo.us/v1alpha1
@@ -24,37 +24,37 @@ kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-  name: domain1-https-ingress-rule
+  name: @domain1uid@-https-ingress-rule
   namespace: @NS@
 spec:
   entryPoints:
    - websecure
   routes:
   - kind: Rule
-    match: Host(`domain1.@NS@.cluster-1.test`)
+    match: Host(`@domain1uid@.@NS@.cluster-1.test`)
     services:
     - kind: Service
-      name: domain1-cluster-cluster-1
+      name: @domain1uid@-cluster-cluster-1
       port: 8001
   tls:
-     secretName: domain1-tls-secret
+     secretName: @domain1uid@-tls-secret
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-  name: domain2-http-ingress-rule
+  name: @domain2uid@-http-ingress-rule
   namespace: @NS@
 spec:
   entryPoints:
    - web
   routes:
   - kind: Rule
-    match: Host(`domain2.@NS@.cluster-1.test`)
+    match: Host(`@domain2uid@.@NS@.cluster-1.test`)
     services:
     - kind: Service
-      name: domain2-cluster-cluster-1
+      name: @domain2uid@-cluster-cluster-1
       port: 8001
 ---
 apiVersion: traefik.containo.us/v1alpha1
@@ -62,37 +62,37 @@ kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-  name: domain2-https-ingress-rule
+  name: @domain2uid@-https-ingress-rule
   namespace: @NS@
 spec:
   entryPoints:
    - websecure
   routes:
   - kind: Rule
-    match: Host(`domain2.@NS@.cluster-1.test`)
+    match: Host(`@domain2uid@.@NS@.cluster-1.test`)
     services:
     - kind: Service
-      name: domain2-cluster-cluster-1
+      name: @domain2uid@-cluster-cluster-1
       port: 8001
   tls:
-     secretName: domain2-tls-secret
+     secretName: @domain2uid@-tls-secret
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-  name: domain1-admin-http-ingress-rule
+  name: @domain1uid@-admin-http-ingress-rule
   namespace: @NS@
 spec:
   entryPoints:
    - web
   routes:
   - kind: Rule
-    match: Host(`domain1.@NS@.admin-server.test`)
+    match: Host(`@domain1uid@.@NS@.admin-server.test`)
     services:
     - kind: Service
-      name: domain1-admin-server
+      name: @domain1uid@-admin-server
       port: 7001
 ---
 apiVersion: traefik.containo.us/v1alpha1
@@ -100,15 +100,15 @@ kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-  name: domain2-admin-http-ingress-rule
+  name: @domain2uid@-admin-http-ingress-rule
   namespace: @NS@
 spec:
   entryPoints:
    - web
   routes:
   - kind: Rule
-    match: Host(`domain2.@NS@.admin-server.test`)
+    match: Host(`@domain2uid@.@NS@.admin-server.test`)
     services:
     - kind: Service
-      name: domain2-admin-server
+      name: @domain2uid@-admin-server
       port: 7001
