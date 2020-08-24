@@ -5,11 +5,14 @@ package oracle.weblogic.kubernetes;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
@@ -20,8 +23,9 @@ import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.Shutdown;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+//import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+//import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -119,7 +123,7 @@ class ItPodsShutdown {
    */
   @Test
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
-  public void testShutdownProps() {
+  public void testShutdownProps() throws ApiException {
 
     //scare the cluster to 2 managed servers
     assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, 2)))
@@ -248,10 +252,7 @@ class ItPodsShutdown {
     }
   }
 
-  /**
-   * Verify the server pod Shutdown properties.
-   */
-  private static boolean verifyServerShutdownProp(
+  /*private static boolean verifyServerShutdownProp(
       String podName,
       String domainNS,
       String... props) {
@@ -284,7 +285,42 @@ class ItPodsShutdown {
       found = true;
     }
     return found;
+  }*/
+
+  /**
+   * Verify the server pod Shutdown properties.
+   */
+  private static boolean verifyServerShutdownProp(
+      String podName,
+      String domainNS,
+      String... props) throws io.kubernetes.client.openapi.ApiException {
+
+    V1Pod serverPod = Kubernetes.getPod(domainNS, null, podName);
+    assertNotNull(serverPod,"The server pod does not exist in namespace " + domainNS);
+    List<V1EnvVar> envVars = Objects.requireNonNull(serverPod.getSpec()).getContainers().get(0).getEnv();
+
+    boolean found = false;
+    HashMap<String, Boolean> propFound = new HashMap<String, Boolean>();
+    for (String prop : props) {
+      for (var envVar : envVars) {
+        logger.info("envVar has name " + envVar.getName() + " with value " + envVar.getValue());
+        if (envVar.getValue().contains(prop)) {
+          logger.info("envVar: " + envVar.getValue() + " has found");
+          logger.info("Property with value " + prop + " has found");
+          propFound.put(prop, true);
+        }
+      }
+    }
+    if (props.length == propFound.size()) {
+      found = true;
+    }
+    return found;
+
+
+
   }
+
+
 
 }
 
