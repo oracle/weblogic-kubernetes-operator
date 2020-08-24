@@ -3,11 +3,11 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 /**
  * All parameters needed to install Apache ingress controller.
@@ -17,8 +17,20 @@ public class ApacheParams {
   // Only add the values which need to be updated here.
   // The default values can be found here:
   // weblogic-kubernetes-operator/kubernetes/samples/charts/apache-webtier/values.yaml
+  private static final String IMAGE = "image";
+  private static final String IMAGE_PULL_POLICY = "imagePullPolicy";
+  private static final String IMAGE_PULL_SECRETS = "imagePullSecrets";
+  private static final String VOLUME_PATH = "volumePath";
+  private static final String HTTP_NODEPORT = "httpNodePort";
+  private static final String HTTPS_NODEPORT = "httpsNodePort";
+  private static final String VIRTUAL_HOSTNAME = "virtualHostName";
+  private static final String CUSTOM_CERT = "customCert";
+  private static final String CUSTOM_KEY = "customKey";
+  private static final String DOMAIN_UID = "domainUID";
+
   private String image = null;
-  private String imagePullSecretsName = null;
+  private String imagePullPolicy = null;
+  private Map<String, Object> imagePullSecrets = null;
   private String volumePath = null;
   private int httpNodePort = 0;
   private int httpsNodePort = 0;
@@ -33,8 +45,13 @@ public class ApacheParams {
     return this;
   }
 
-  public ApacheParams imagePullSecretsName(String imagePullSecretsName) {
-    this.imagePullSecretsName = imagePullSecretsName;
+  public ApacheParams imagePullPolicy(String imagePullPolicy) {
+    this.imagePullPolicy = imagePullPolicy;
+    return this;
+  }
+
+  public ApacheParams imagePullSecrets(Map<String, Object> imagePullSecrets) {
+    this.imagePullSecrets = imagePullSecrets;
     return this;
   }
 
@@ -90,21 +107,22 @@ public class ApacheParams {
   public Map<String, Object> getValues() {
     Map<String, Object> values = new HashMap<>();
 
-    values.put("image", image);
-    values.put("imagePullSecrets.name", imagePullSecretsName);
-    values.put("volumePath", volumePath);
+    values.put(IMAGE, image);
+    values.put(IMAGE_PULL_POLICY, imagePullPolicy);
+    values.put(IMAGE_PULL_SECRETS, imagePullSecrets);
+    values.put(VOLUME_PATH, volumePath);
 
     if (httpNodePort >= 0) {
-      values.put("httpNodePort", httpNodePort);
+      values.put(HTTP_NODEPORT, httpNodePort);
     }
     if (httpsNodePort >= 0) {
-      values.put("httpsNodePort", httpsNodePort);
+      values.put(HTTPS_NODEPORT, httpsNodePort);
     }
 
-    values.put("virtualHostName", virtualHostName);
-    values.put("customCert", customCert);
-    values.put("customKey", customKey);
-    values.put("domainUID", domainUID);
+    values.put(VIRTUAL_HOSTNAME, virtualHostName);
+    values.put(CUSTOM_CERT, customCert);
+    values.put(CUSTOM_KEY, customKey);
+    values.put(DOMAIN_UID, domainUID);
 
     values.values().removeIf(Objects::isNull);
     return values;

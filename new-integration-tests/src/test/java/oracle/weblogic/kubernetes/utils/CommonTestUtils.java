@@ -52,6 +52,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
+import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
@@ -71,6 +72,9 @@ import org.joda.time.DateTime;
 import static java.nio.file.Files.readString;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.APACHE_IMAGE_12213;
+import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
@@ -145,6 +149,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageNam
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.installApache;
 import static oracle.weblogic.kubernetes.actions.TestActions.installElasticsearch;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installKibana;
@@ -166,6 +171,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNo
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isApacheReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isElkStackPodReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
@@ -183,6 +189,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
@@ -603,6 +610,78 @@ public class CommonTestUtils {
             "isVoyagerReady failed with ApiException"));
 
     return voyagerHelmParams;
+  }
+
+  /**
+   * Install Apache and wait up to five minutes until the Apache pod is ready.
+   *
+   * @param apacheNamespace the namespace in which the Apache will be installed
+   * @param httpNodePort the http nodeport of Apache
+   * @param httpsNodePort the https nodeport of Apache
+   * @param domainUid the uid of the domain to which Apache will route the services
+   * @return the Apache Helm installation parameters
+   */
+  public static HelmParams installAndVerifyApache(String apacheNamespace,
+                                                  int httpNodePort,
+                                                  int httpsNodePort,
+                                                  String domainUid) {
+    LoggingFacade logger = getLogger();
+
+    // Create Docker registry secret in the operator namespace to pull the image from repository
+    if (!secretExists(REPO_SECRET_NAME, apacheNamespace)) {
+      logger.info("Creating Docker registry secret in namespace {0}", apacheNamespace);
+      createDockerRegistrySecret(apacheNamespace);
+    }
+
+    // map with secret
+    Map<String, Object> secretNameMap = new HashMap<>();
+    secretNameMap.put("name", REPO_SECRET_NAME);
+
+    // Helm install parameters
+    HelmParams apacheHelmParams = new HelmParams()
+        .releaseName(APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3))
+        .namespace(apacheNamespace)
+        .chartDir(APACHE_SAMPLE_CHART_DIR);
+
+    // Apache chart values to override
+    ApacheParams apacheParams = new ApacheParams()
+        .helmParams(apacheHelmParams)
+        .imagePullSecrets(secretNameMap)
+        .image(APACHE_IMAGE_12213)
+        .domainUID(domainUid);
+
+    if (httpNodePort >= 0 && httpsNodePort >= 0) {
+      apacheParams
+          .httpNodePort(httpNodePort)
+          .httpsNodePort(httpsNodePort);
+    }
+
+    // install Apache
+    assertThat(installApache(apacheParams))
+        .as("Test Apache installation succeeds")
+        .withFailMessage("Apache installation is failed")
+        .isTrue();
+
+    // verify that Apache is installed
+    logger.info("Checking Apache release {0} status in namespace {1}",
+        APACHE_RELEASE_NAME, apacheNamespace);
+    assertTrue(isHelmReleaseDeployed(APACHE_RELEASE_NAME, apacheNamespace),
+        String.format("Apache release %s is not in deployed status in namespace %s",
+            APACHE_RELEASE_NAME, apacheNamespace));
+    logger.info("Apache release {0} status is deployed in namespace {1}",
+        APACHE_RELEASE_NAME, apacheNamespace);
+
+    // wait until the Apache pod is ready.
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info(
+                "Waiting for Apache to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+                apacheNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isApacheReady(apacheNamespace), "isApacheReady failed with ApiException"));
+
+    return apacheHelmParams;
   }
 
   /**
@@ -2581,5 +2660,4 @@ public class CommonTestUtils {
           return false;
         });
   }
-
 }

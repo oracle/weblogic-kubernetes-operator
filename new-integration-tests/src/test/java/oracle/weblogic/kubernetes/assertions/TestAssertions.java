@@ -8,7 +8,10 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
+import oracle.weblogic.kubernetes.actions.impl.Secret;
+import oracle.weblogic.kubernetes.assertions.impl.Apache;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
@@ -63,6 +66,16 @@ public class TestAssertions {
    */
   public static Callable<Boolean> isNginxReady(String namespace) {
     return Nginx.isReady(namespace);
+  }
+
+  /**
+   * Check if there are ready Apache pods in the specified namespace.
+   *
+   * @param namespace in which to check if APache pods are in the ready state
+   * @return true if there are ready Apache pods in the specified namespace , false otherwise
+   */
+  public static Callable<Boolean> isApacheReady(String namespace) {
+    return Apache.isReady(namespace);
   }
 
   /**
@@ -596,5 +609,25 @@ public class TestAssertions {
    */
   public static boolean clusterRoleBindingExists(String clusterRoleBindingName) throws ApiException {
     return ClusterRoleBinding.clusterRoleBindingExists(clusterRoleBindingName);
+  }
+
+  /**
+   * Check whether the secret exists in the specified namespace.
+   *
+   * @param secretName name of the secret
+   * @param namespace namespace in which the secret exists
+   * @return true if secret exists, false otherwise
+   */
+  public static boolean secretExists(String secretName, String namespace) {
+    for (V1Secret secret : Secret.listSecrets(namespace).getItems()) {
+      if (secret.getMetadata() != null) {
+        String name = secret.getMetadata().getName();
+        if (name != null && name.equals(secretName)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 }
