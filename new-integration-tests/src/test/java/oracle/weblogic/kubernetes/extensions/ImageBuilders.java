@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.extensions;
 
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
@@ -25,9 +27,12 @@ import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_NAME;
@@ -76,6 +81,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
@@ -125,20 +131,33 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
 
         if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
+          ConditionFactory withStandardRetryPolicy
+              = with().pollDelay(0, SECONDS)
+                  .and().with().pollInterval(10, SECONDS)
+                  .atMost(15, MINUTES).await();
           // build MII basic image
           miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-          assertTrue(createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
-              null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
-              String.format("Failed to create the image %s using WebLogic Image Tool",
-                  miiBasicImage));
+          withStandardRetryPolicy
+              .conditionEvaluationListener(
+                  condition -> logger.info("Waiting for createBasicImage to be successful"
+                      + "(elapsed time {0} ms, remaining time {1} ms)",
+                      condition.getElapsedTimeInMS(),
+                      condition.getRemainingTimeInMS()))
+              .until(createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
+                  null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE)
+              );
 
           // build basic wdt-domain-in-image image
           wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
-          assertTrue(createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
-              WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
-              String.format("Failed to create the image %s using WebLogic Image Tool",
-                  wdtBasicImage));
-
+          withStandardRetryPolicy
+              .conditionEvaluationListener(
+                  condition -> logger.info("Waiting for createBasicImage to be successful"
+                      + "(elapsed time {0} ms, remaining time {1} ms)",
+                      condition.getElapsedTimeInMS(),
+                      condition.getRemainingTimeInMS()))
+              .until(createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
+                  WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE)
+              );
 
           /* Check image exists using docker images | grep image tag.
            * Tag name is unique as it contains date and timestamp.
@@ -365,67 +384,70 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
    * @param domainType domain type to be built
    * @return true if image is created successfully
    */
-  private boolean createBasicImage(String imageName, String imageTag, String modelFile, String varFile,
-                                   String appName, String domainType) {
-    LoggingFacade logger = getLogger();
-    final String image = imageName + ":" + imageTag;
 
-    // build the model file list
-    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
+  public Callable<Boolean> createBasicImage(String imageName, String imageTag, String modelFile, String varFile,
+      String appName, String domainType) {
+    return (() -> {
+      LoggingFacade logger = getLogger();
+      final String image = imageName + ":" + imageTag;
 
-    // build an application archive using what is in resources/apps/APP_NAME
-    logger.info("Build an application archive using resources/apps/{0}", appName);
-    assertTrue(buildAppArchive(defaultAppParams()
-        .srcDirList(Collections.singletonList(appName))),
-        String.format("Failed to create app archive for %s", appName));
+      // build the model file list
+      final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
 
-    // build the archive list
-    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
-    final List<String> archiveList = Collections.singletonList(zipFile);
+      // build an application archive using what is in resources/apps/APP_NAME
+      logger.info("Build an application archive using resources/apps/{0}", appName);
+      assertTrue(buildAppArchive(defaultAppParams()
+          .srcDirList(Collections.singletonList(appName))),
+          String.format("Failed to create app archive for %s", appName));
 
-    // Set additional environment variables for WIT
-    checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap<>();
-    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
+      // build the archive list
+      String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+      final List<String> archiveList = Collections.singletonList(zipFile);
 
-    // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
-    // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
-    // the next JDK 14 versions are released.
-    String witJavaHome = System.getenv("WIT_JAVA_HOME");
-    if (witJavaHome != null) {
-      env.put("JAVA_HOME", witJavaHome);
-    }
+      // Set additional environment variables for WIT
+      checkDirectory(WIT_BUILD_DIR);
+      Map<String, String> env = new HashMap<>();
+      env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
-    // build an image using WebLogic Image Tool
-    boolean imageCreation = false;
-    logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
-    if (domainType.equalsIgnoreCase("wdt")) {
-      final List<String> modelVarList = Collections.singletonList(MODEL_DIR + "/" + varFile);
-      imageCreation = createImage(
-          defaultWitParams()
-              .modelImageName(imageName)
-              .modelImageTag(WDT_BASIC_IMAGE_TAG)
-              .modelFiles(modelList)
-              .modelArchiveFiles(archiveList)
-              .modelVariableFiles(modelVarList)
-              .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
-              .wdtOperation("CREATE")
-              .wdtVersion(WDT_VERSION)
-              .env(env)
-              .redirect(true));
-    } else if (domainType.equalsIgnoreCase("mii")) {
-      imageCreation = createImage(
-        defaultWitParams()
-            .modelImageName(imageName)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
-            .modelFiles(modelList)
-            .modelArchiveFiles(archiveList)
-            .wdtModelOnly(true)
-            .wdtVersion(WDT_VERSION)
-            .env(env)
-            .redirect(true));
-    }
-    return imageCreation;
+      // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
+      // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
+      // the next JDK 14 versions are released.
+      String witJavaHome = System.getenv("WIT_JAVA_HOME");
+      if (witJavaHome != null) {
+        env.put("JAVA_HOME", witJavaHome);
+      }
+
+      // build an image using WebLogic Image Tool
+      boolean imageCreation = false;
+      logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
+      if (domainType.equalsIgnoreCase("wdt")) {
+        final List<String> modelVarList = Collections.singletonList(MODEL_DIR + "/" + varFile);
+        imageCreation = createImage(
+            defaultWitParams()
+                .modelImageName(imageName)
+                .modelImageTag(WDT_BASIC_IMAGE_TAG)
+                .modelFiles(modelList)
+                .modelArchiveFiles(archiveList)
+                .modelVariableFiles(modelVarList)
+                .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
+                .wdtOperation("CREATE")
+                .wdtVersion(WDT_VERSION)
+                .env(env)
+                .redirect(true));
+      } else if (domainType.equalsIgnoreCase("mii")) {
+        imageCreation = createImage(
+            defaultWitParams()
+                .modelImageName(imageName)
+                .modelImageTag(MII_BASIC_IMAGE_TAG)
+                .modelFiles(modelList)
+                .modelArchiveFiles(archiveList)
+                .wdtModelOnly(true)
+                .wdtVersion(WDT_VERSION)
+                .env(env)
+                .redirect(true));
+      }
+      return imageCreation;
+    });
   }
 
   private void pullImageFromOcrAndPushToKind(Collection<String> imagesList) {
