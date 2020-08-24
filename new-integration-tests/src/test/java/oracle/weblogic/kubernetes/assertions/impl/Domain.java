@@ -4,7 +4,6 @@
 package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
 
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
@@ -86,20 +85,19 @@ public class Domain {
    * @param namespace in which the domain object exists
    * @return true if domain object exists otherwise false
    */
-  public static Callable<Boolean> doesDomainExist(String domainUid, String domainVersion, String namespace) {
-    return () -> {
-      Object domainObject = null;
-      try {
-        domainObject
-            = customObjectsApi.getNamespacedCustomObject(
-            "weblogic.oracle", domainVersion, namespace, "domains", domainUid);
-      } catch (ApiException apex) {
-        getLogger().info(apex.getMessage());
-      }
-      boolean domainExist = (domainObject != null);
-      getLogger().info("Domain Object exists : " + domainExist);
-      return domainExist;
-    };
+  public static boolean doesDomainExist(String domainUid, String domainVersion, String namespace) {
+
+    Object domainObject = null;
+    try {
+      domainObject
+          = customObjectsApi.getNamespacedCustomObject(
+          "weblogic.oracle", domainVersion, namespace, "domains", domainUid);
+    } catch (ApiException apex) {
+      getLogger().info(apex.getMessage());
+    }
+    boolean domainExist = (domainObject != null);
+    getLogger().info("Domain Object exists : " + domainExist);
+    return domainExist;
   }
 
   /**
