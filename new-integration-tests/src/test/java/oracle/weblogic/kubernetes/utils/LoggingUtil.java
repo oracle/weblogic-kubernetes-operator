@@ -228,7 +228,7 @@ public class LoggingUtil {
 
     // get domain objects in the given namespace
     try {
-      writeToFile(Kubernetes.listDomains(namespace), resultDir, namespace + ".list.domains.1.log");
+      writeToFile(Kubernetes.listDomains(namespace), resultDir, namespace + ".list.domains.log");
     } catch (Exception ex) {
       logger.warning("Listing domain failed, not collecting any data for domain");
     }
