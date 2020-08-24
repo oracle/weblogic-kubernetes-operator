@@ -257,6 +257,7 @@ public class ItConfigDistributionStrategy {
     logger.info("Checking if the clusterview app in admin server is accessible after restart");
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/";
     String serverListUri = "ClusterViewServlet?user=" + ADMIN_USERNAME_DEFAULT + "&password=" + ADMIN_PASSWORD_DEFAULT;
+
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for clusterview app in admin server is accessible after restart"
