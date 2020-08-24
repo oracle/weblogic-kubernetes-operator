@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
@@ -48,8 +49,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
@@ -71,7 +70,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
@@ -98,6 +96,11 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
   private static Collection<String> pushedImages = new ArrayList<>();
   private static boolean isInitializationSuccessful = false;
+
+  ConditionFactory withStandardRetryPolicy
+      = with().pollDelay(0, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(15, MINUTES).await();
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -131,10 +134,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
 
         if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
-          ConditionFactory withStandardRetryPolicy
-              = with().pollDelay(0, SECONDS)
-                  .and().with().pollInterval(10, SECONDS)
-                  .atMost(15, MINUTES).await();
           // build MII basic image
           miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
           withStandardRetryPolicy
@@ -173,7 +172,13 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
           if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
             logger.info("docker login");
-            assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+            withStandardRetryPolicy
+                .conditionEvaluationListener(
+                    condition -> logger.info("Waiting for docker login to be successful"
+                        + "(elapsed time {0} ms, remaining time {1} ms)",
+                        condition.getElapsedTimeInMS(),
+                        condition.getRemainingTimeInMS()))
+                .until(dockerLogin());
           }
         }
         // push the image
@@ -205,8 +210,24 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           images.add(JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG);
           images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
 
-          assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
-          pullImageFromOcrAndPushToKind(images);
+          withStandardRetryPolicy
+              .conditionEvaluationListener(
+                  condition -> logger.info("Waiting for docker login to be successful"
+                      + "(elapsed time {0} ms, remaining time {1} ms)",
+                      condition.getElapsedTimeInMS(),
+                      condition.getRemainingTimeInMS()))
+              .until(dockerLogin());
+
+          for (String image : images) {
+            withStandardRetryPolicy
+                .conditionEvaluationListener(
+                    condition -> logger.info("Waiting for pullImageFromOcrAndPushToKind for image {0} to be successful"
+                        + "(elapsed time {1} ms, remaining time {2} ms)", image,
+                        condition.getElapsedTimeInMS(),
+                        condition.getRemainingTimeInMS()))
+                .until(pullImageFromOcrAndPushToKind(image)
+                );
+          }
         }
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
@@ -450,14 +471,15 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     });
   }
 
-  private void pullImageFromOcrAndPushToKind(Collection<String> imagesList) {
-    for (String image : imagesList) {
-      assertTrue(dockerPull(image), String.format("docker pull failed for image %s", image));
+  private Callable<Boolean> pullImageFromOcrAndPushToKind(String image) {
+    return (() -> {
       String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      assertTrue(dockerTag(image, kindRepoImage),
-          String.format("docker tag failed for images %s, %s", image, kindRepoImage));
-      assertTrue(dockerPush(kindRepoImage), String.format("docker push failed for image %s", kindRepoImage));
-    }
+      return dockerPull(image) && dockerTag(image, kindRepoImage) && dockerPush(kindRepoImage);
+    });
+  }
+
+  private Callable<Boolean> dockerLogin() {
+    return (() -> TestActions.dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
   }
 
 }
