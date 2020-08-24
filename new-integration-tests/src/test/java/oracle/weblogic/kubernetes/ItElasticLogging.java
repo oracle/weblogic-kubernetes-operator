@@ -81,14 +81,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 1. Install Kibana/Elasticsearch.
  * 2. Install and start Operator with ELK Stack enabled.
  * 3. Verify that ELK Stack is ready to use by checking the index status of
- *    Kibana and Logstash created in the Operator pod successfully
- * 4. Install WebLogic logging exporter in all WebLogic server pods by
- *    adding it to MII via --additionalBuildCommands and --additionalBuildFiles.
+ *    Kibana and Logstash created in the Operator pod successfully.
+ * 4. Install WebLogic Logging Exporter in all WebLogic server pods by
+ *    adding WebLogic Logging Exporter binary to the image builder process
+ *    so that it will be available in the domain image via
+ *    --additionalBuildCommands and --additionalBuildFiles.
  * 5. Create and start the WebLogic domain.
  * 6. Verify that
  *    1) Elasticsearch collects data from WebLogic logs and
  *       stores them in its repository correctly.
- *    2) Using WebLogic logging exporter, WebLogic server Logs can be integrated to
+ *    2) Using WebLogic Logging Exporter, WebLogic server Logs can be integrated to
  *       ELK Stack in the same pod that the domain is running on.
  */
 @DisplayName("Test to use Elasticsearch API to query WebLogic logs")
@@ -126,12 +128,12 @@ class ItElasticLogging {
   private static final int maxIterationsPod = 10;
 
   /**
-   * Install Elasticsearch, Kibana and Operator and verify,
-   * install WebLogic logging exporter in all WebLogic server pods to collect WebLogic logs,
-   * create a one cluster domain.
+   * Install Elasticsearch, Kibana and Operator.
+   * Install WebLogic Logging Exporter in all WebLogic server pods to collect WebLogic logs.
+   * Create domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   *                   JUnit engine parameter resolution mechanism
+   *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
   public static void init(@Namespaces(2) List<String> namespaces) {
@@ -239,13 +241,13 @@ class ItElasticLogging {
   }
 
   /**
-   * Use Elasticsearch Search APIs to query Operator log info. Verify that log hits for
-   * type=weblogic-operator are not empty
+   * Use Elasticsearch Search APIs to query Operator log info. Verify that log occurrence for
+   * type=weblogic-operator are not empty.
    */
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query Operator log info and verify")
   public void testOperatorLogSearch() {
-    // Verify that log hits for Operator are not empty
+    // Verify that log occurrence for Operator are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=type:weblogic-operator";
 
@@ -273,7 +275,7 @@ class ItElasticLogging {
 
   /**
    * Use Elasticsearch Search APIs to query WebLogic log info pushed to Elasticsearch repository
-   * by WebLogic logging exporter . Verify that log hits for WebLogic servers are not empty
+   * by WebLogic Logging Exporter. Verify that log occurrence for WebLogic servers are not empty.
    */
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query WebLogic log info in WLS server pod and verify")
@@ -282,14 +284,14 @@ class ItElasticLogging {
     // merge testVarMap and wlsMap
     testVarMap.putAll(wlsMap);
 
-    // Verify that hits of log level = Notice are not empty
+    // Verify that occurrence of log level = Notice are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=level:Notice";
     verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
-    // Verify that hits of loggerName = WebLogicServer are not empty
+    // Verify that occurrence of loggerName = WebLogicServer are not empty
     queryCriteria = "/_search?q=loggerName:WebLogicServer";
     verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
-    // Verify that hits of _type:doc are not empty
+    // Verify that occurrence of _type:doc are not empty
     queryCriteria = "/_search?q=_type:doc";
     verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
     // Verify that serverName:managed-server1 is filtered out
