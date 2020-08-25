@@ -40,6 +40,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.excludeProgressingStep;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
@@ -483,7 +484,7 @@ public class ManagedServersUpStepTest {
   public void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
     addServer(domainPresenceInfo, "server1");
 
-    assertThat(createNextStep(), instanceOf(ServerDownIteratorStep.class));
+    assertThat(excludeProgressingStep(createNextStep()), instanceOf(ServerDownIteratorStep.class));
   }
 
   @Test
@@ -493,7 +494,7 @@ public class ManagedServersUpStepTest {
     addServer(domainPresenceInfo, "server3");
     addServer(domainPresenceInfo, ADMIN);
 
-    assertStoppingServers(createNextStepWithout("server2"), "server1", "server3");
+    assertStoppingServers(excludeProgressingStep(createNextStepWithout("server2")), "server1", "server3");
   }
 
   @Test
@@ -505,7 +506,7 @@ public class ManagedServersUpStepTest {
     addServer(domainPresenceInfo, "server3");
     addServer(domainPresenceInfo, ADMIN);
 
-    assertStoppingServers(createNextStepWithout("server2"), "server1", "server3", ADMIN);
+    assertStoppingServers(excludeProgressingStep(createNextStepWithout("server2")), "server1", "server3", ADMIN);
   }
 
   @Test
