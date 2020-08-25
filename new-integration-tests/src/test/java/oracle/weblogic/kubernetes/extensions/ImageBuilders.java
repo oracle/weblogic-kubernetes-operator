@@ -181,38 +181,24 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                 .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
           }
         }
-        // push the image
+        // push the images to repo
         if (!REPO_NAME.isEmpty()) {
-          logger.info("docker push image {0} to {1}", operatorImage, REPO_NAME);
-          withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Waiting for docker push for image {0} to be successful"
-                      + "(elapsed time {1} ms, remaining time {2} ms)",
-                      operatorImage,
-                      condition.getElapsedTimeInMS(),
-                      condition.getRemainingTimeInMS()))
-              .until(() -> dockerPush(operatorImage));
 
-          if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
-            logger.info("docker push mii basic image {0} to registry", miiBasicImage);
+          List<String> images = new ArrayList<>();
+          images.add(operatorImage);
+          images.add(miiBasicImage);
+          images.add(wdtBasicImage);
+
+          for (String image : images) {
+            logger.info("docker push image {0} to {1}", image, REPO_NAME);
             withStandardRetryPolicy
                 .conditionEvaluationListener(
                     condition -> logger.info("Waiting for docker push for image {0} to be successful"
                         + "(elapsed time {1} ms, remaining time {2} ms)",
-                        miiBasicImage,
+                        image,
                         condition.getElapsedTimeInMS(),
                         condition.getRemainingTimeInMS()))
-                .until(() -> dockerPush(miiBasicImage));
-
-            logger.info("docker push wdt basic domain in image {0} to registry", wdtBasicImage);
-            withStandardRetryPolicy
-                .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for docker push for image {0} to be successful"
-                        + "(elapsed time {1} ms, remaining time {2} ms)",
-                        wdtBasicImage,
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-                .until(() -> dockerPush(wdtBasicImage));
+                .until(() -> dockerPush(image));
           }
         }
 
