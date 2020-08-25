@@ -306,7 +306,8 @@ public class PodHelper {
       return getAsName();
     }
 
-    private Step createProgressingStep(Step actionStep) {
+    @Override
+    Step createProgressingStep(Step actionStep) {
       return DomainStatusUpdater.createProgressingStep(
           DomainStatusUpdater.ADMIN_SERVER_STARTING_PROGRESS_REASON, false, actionStep);
     }
@@ -469,7 +470,8 @@ public class PodHelper {
       return (Map<String, Step.StepAndPacket>) packet.get(SERVERS_TO_ROLL);
     }
 
-    private Step createProgressingStep(Step actionStep) {
+    @Override
+    Step createProgressingStep(Step actionStep) {
       return DomainStatusUpdater.createProgressingStep(
           DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, actionStep);
     }
