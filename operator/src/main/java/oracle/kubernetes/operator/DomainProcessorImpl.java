@@ -5,12 +5,12 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -669,8 +669,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private void populateServerStateHealthFromDomain(Packet packet) {
-      Map<String, ServerHealth> serverHealth = new HashMap<String, ServerHealth>();
-      Map<String, String> serverState = new HashMap<String, String>();
+      ConcurrentMap<String, ServerHealth> serverHealth = new ConcurrentHashMap<String, ServerHealth>();
+      ConcurrentMap<String, String> serverState = new ConcurrentHashMap<String, String>();
       Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
@@ -681,8 +681,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private void addServerToMaps(Map serverHealthMap, Map serverStateMap, ServerStatus item) {
-      serverHealthMap.put(item.getServerName(), item.getHealth());
-      serverStateMap.put(item.getServerName(), item.getState());
+      if (item.getHealth() != null) {
+        serverHealthMap.put(item.getServerName(), item.getHealth());
+      }
+      if (item.getState() != null) {
+        serverStateMap.put(item.getServerName(), item.getState());
+      }
     }
 
     private Domain getDomain() {
