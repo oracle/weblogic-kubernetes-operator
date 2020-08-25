@@ -156,14 +156,14 @@ public class BuildApplication {
       Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
           null, zipFile, Paths.get("/u01", zipFile.getFileName().toString()));
     } catch (ApiException | IOException  ioex) {
-      logger.info("Exception while copying file to pod {0}", ioex.getMessage());
+      logger.info("Exception while copying file to pod {0}", ioex);
     }
     try {
       //copy the build script to /u01 location inside pod
       Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
           null, BUILD_SCRIPT_SOURCE_PATH, Paths.get("/u01", BUILD_SCRIPT));
     } catch (ApiException | IOException  ioex) {
-      logger.info("Exception while copying file to pod {0}", ioex.getMessage());
+      logger.info("Exception while copying file to pod {0}", ioex);
     }
     try {
       //Kubernetes.exec(webLogicPod, new String[]{"/bin/sh", "/u01/" + BUILD_SCRIPT});
@@ -180,7 +180,7 @@ public class BuildApplication {
       Kubernetes.copyDirectoryFromPod(webLogicPod,
           Paths.get(APPLICATIONS_PATH, archiveDistDir).toString(), destArchiveBaseDir);
     } catch (ApiException | IOException | InterruptedException ioex) {
-      logger.info("Exception while copying file from pod {0}", ioex.getMessage());
+      logger.info("Exception while copying file from pod {0}", ioex);
     }
 
     return destDir = Paths.get(destArchiveBaseDir.toString(), "u01/application", archiveDistDir);
