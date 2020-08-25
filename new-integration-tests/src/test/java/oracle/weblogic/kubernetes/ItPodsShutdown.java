@@ -23,8 +23,6 @@ import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.Shutdown;
-//import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-//import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -252,41 +250,6 @@ class ItPodsShutdown {
     }
   }
 
-  /*private static boolean verifyServerShutdownProp(
-      String podName,
-      String domainNS,
-      String... props) {
-
-    StringBuffer cmd = new StringBuffer("kubectl get pod ");
-    cmd.append(podName);
-    cmd.append(" -o yaml ");
-    cmd.append(" -n ").append(domainNS);
-    cmd.append(" | grep SHUTDOWN -A 1 ");
-
-    CommandParams params = Command
-        .defaultCommandParams()
-        .command(cmd.toString())
-        .saveResults(true)
-        .redirect(true);
-
-    Command.withParams(params).execute();
-    String stdout = params.stdout();
-    logger.info("The result of command is: " + stdout);
-
-    boolean found = false;
-    HashMap<String, Boolean> propFound = new HashMap<String, Boolean>();
-    for (String prop : props) {
-      if (stdout.contains(prop)) {
-        logger.info("Property with value " + prop + " has found");
-        propFound.put(prop, true);
-      }
-    }
-    if (props.length == propFound.size()) {
-      found = true;
-    }
-    return found;
-  }*/
-
   /**
    * Verify the server pod Shutdown properties.
    */
@@ -303,11 +266,13 @@ class ItPodsShutdown {
     HashMap<String, Boolean> propFound = new HashMap<String, Boolean>();
     for (String prop : props) {
       for (var envVar : envVars) {
-        logger.info("envVar has name " + envVar.getName() + " with value " + envVar.getValue());
-        if (envVar.getValue().contains(prop)) {
-          logger.info("envVar: " + envVar.getValue() + " has found");
-          logger.info("Property with value " + prop + " has found");
-          propFound.put(prop, true);
+        if (envVar.getName().contains("SHUTDOWN")) {
+          if (envVar.getValue() != null && envVar.getValue().contains(prop)) {
+            logger.info("For pod {0} SHUTDOWN option {1} has value {2} ",
+                podName, envVar.getName(),  envVar.getValue());
+            logger.info("Property with value " + prop + " has found");
+            propFound.put(prop, true);
+          }
         }
       }
     }
@@ -315,12 +280,7 @@ class ItPodsShutdown {
       found = true;
     }
     return found;
-
-
-
   }
-
-
 
 }
 
