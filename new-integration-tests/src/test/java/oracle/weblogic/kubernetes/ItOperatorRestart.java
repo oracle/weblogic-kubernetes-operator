@@ -355,16 +355,11 @@ public class ItOperatorRestart {
         assertDoesNotThrow(() -> getOperatorPodName(TestConstants.OPERATOR_RELEASE_NAME, opNamespace),
         "Failed to get the name of the operator pod");
 
-
     // get the creation time of the admin server pod before patching
     DateTime opPodCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(opNamespace, "", opPodName),
             String.format("Failed to get creationTimestamp for pod %s", opPodName));
     assertNotNull(opPodCreationTime, "creationTimestamp of the operator pod is null");
-
-    /* assertDoesNotThrow(
-        () -> deletePod(opPodName, opNamespace),
-        "Got exception in deleting the Operator pod"); */
 
     // stop operator by changing replica to 0 in operator deployment
     assertTrue(stopOperator(opNamespace), "Couldn't stop the Operator");

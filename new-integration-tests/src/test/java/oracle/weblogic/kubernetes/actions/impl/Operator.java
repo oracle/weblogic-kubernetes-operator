@@ -126,17 +126,7 @@ public class Operator {
    */
   public static boolean stop(String namespace) {
     // change the /spec/replicas to 0 to stop the operator
-    StringBuffer patchStr = new StringBuffer("[{")
-            .append("\"op\": \"replace\", ")
-            .append("\"path\": \"/spec/replicas\", ")
-            .append("\"value\": 0")
-            .append("}]");
-
-    getLogger().info("Stopping Operator in namespace {0} using patch string: {1}",
-             namespace, patchStr.toString());
-
-    V1Patch patch = new V1Patch(new String(patchStr));
-    return patchDeployment(OPERATOR_RELEASE_NAME, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    return patchReplicas(0, namespace);
   }
 
   /**
@@ -146,14 +136,18 @@ public class Operator {
    */
   public static boolean start(String namespace) {
     // change the /spec/replicas to 1 to start the operator
+    return patchReplicas(1, namespace);
+  }
+
+  private static boolean patchReplicas(int replicaCount, String namespace) {
     StringBuffer patchStr = new StringBuffer("[{")
-            .append("\"op\": \"replace\", ")
-            .append("\"path\": \"/spec/replicas\", ")
-            .append("\"value\": 1")
-            .append("}]");
+        .append("\"op\": \"replace\", ")
+        .append("\"path\": \"/spec/replicas\", ")
+        .append("\"value\": 1")
+        .append("}]");
 
     getLogger().info("Starting Operator in namespace {0} using patch string: {1}",
-            namespace, patchStr.toString());
+        namespace, patchStr.toString());
 
     V1Patch patch = new V1Patch(new String(patchStr));
     return patchDeployment(OPERATOR_RELEASE_NAME, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
