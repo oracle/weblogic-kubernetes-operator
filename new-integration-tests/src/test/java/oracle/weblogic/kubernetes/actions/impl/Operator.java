@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.Optional;
 
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -15,8 +16,11 @@ import static oracle.weblogic.kubernetes.TestConstants.BRANCH_NAME_FROM_JENKINS;
 import static oracle.weblogic.kubernetes.TestConstants.BUILD_ID;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_NAME_OPERATOR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_DOCKER_BUILD_SCRIPT;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getContainerImage;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.patchDeployment;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
  * Action class with implementation methods for Operator.
@@ -114,4 +118,45 @@ public class Operator {
     return getContainerImage(namespace, "weblogic-operator-",
         String.format("weblogic.operatorName in (%s)", namespace), null);
   }
+
+  /**
+   * Stop operator by changing the replica in the operator deployment to 0.
+   * @param namespace namespace of the operator
+   * @return true on success
+   */
+  public static boolean stop(String namespace) {
+    // change the /spec/replicas to 0 to stop the operator
+    StringBuffer patchStr = new StringBuffer("[{")
+            .append("\"op\": \"replace\", ")
+            .append("\"path\": \"/spec/replicas\", ")
+            .append("\"value\": 0")
+            .append("}]");
+
+    getLogger().info("Stopping Operator in namespace {0} using patch string: {1}",
+             namespace, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+    return patchDeployment(OPERATOR_RELEASE_NAME, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
+
+  /**
+   * Start operator by changing the replica in the operator deployment to 1.
+   * @param namespace namespace of the operator
+   * @return true on success
+   */
+  public static boolean start(String namespace) {
+    // change the /spec/replicas to 1 to start the operator
+    StringBuffer patchStr = new StringBuffer("[{")
+            .append("\"op\": \"replace\", ")
+            .append("\"path\": \"/spec/replicas\", ")
+            .append("\"value\": 1")
+            .append("}]");
+
+    getLogger().info("Starting Operator in namespace {0} using patch string: {1}",
+            namespace, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+    return patchDeployment(OPERATOR_RELEASE_NAME, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
+
 }

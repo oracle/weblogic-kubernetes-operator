@@ -76,6 +76,7 @@ import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.util.ClientBuilder;
+import io.kubernetes.client.util.PatchUtils;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -344,6 +345,7 @@ public class Kubernetes {
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
+
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -1088,6 +1090,43 @@ public class Kubernetes {
       return false;
     }
 
+    return true;
+  }
+
+  /**
+   * Patch the Deployment.
+   *
+   * @param deploymentName name of the deployment
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *     "application/json-patch+json", "application/merge-patch+json",
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchDeployment(String deploymentName, String namespace,
+                                        V1Patch patch, String patchFormat) {
+
+    AppsV1Api apiInstance = new AppsV1Api(apiClient);
+    try {
+      PatchUtils.patch(
+          V1Deployment.class,
+          () ->
+              apiInstance.patchNamespacedDeploymentCall(
+                  deploymentName,
+                  namespace,
+                  patch,
+                  null,
+                  null,
+                  null, // field-manager is optional
+                  null,
+                  null),
+          patchFormat,
+          apiClient);
+    } catch (ApiException apiex) {
+      getLogger().warning("Exception while patching the deployment {0} in namespace {1} : {2} ",
+          deploymentName, namespace, apiex);
+      return false;
+    }
     return true;
   }
 

@@ -1189,6 +1189,28 @@ public class CommonTestUtils {
                 podName, namespace)));
   }
 
+
+  /**
+   * Check pod does not exist in the specified namespace.
+   *
+   * @param podName pod name to check
+   * @param namespace the namespace in which to check whether the pod exists
+   */
+  public static void checkPodDoesNotExist(String podName, String namespace) {
+    LoggingFacade logger = getLogger();
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
+                                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                        podName,
+                        namespace,
+                        condition.getElapsedTimeInMS(),
+                        condition.getRemainingTimeInMS()))
+            .until(assertDoesNotThrow(() -> podDoesNotExist(podName, null, namespace),
+                    String.format("podDoesNotExist failed with ApiException for pod %s in namespace %s",
+                            podName, namespace)));
+  }
+
   /**
    * Check service does not exist in the specified namespace.
    *
