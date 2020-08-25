@@ -99,9 +99,11 @@ class ItPodsShutdown {
   }
 
   /**
-   * This test is to verify shutdown rules when shutdown options of serverPos are defined
-   * at domain level, adminServer level and cluster and managedServer level.
-   * step 1: Create one managed server domain with the following settings
+   * This test is to verify different shutdown options specified at different scopes in Domain Resource Definition.
+   * Refer to section "Shutdown options" of Documentation link:
+   * https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/
+   * step 1: Startup a WebLogic domain with one cluster that initially has one running managed server. The shutdown option is
+   * configured as follows:
    * domain: SHUTDOWN_TYPE -> Graceful.
    * adminServer: SHUTDOWN_TYPE -> Forced.
    *              SHUTDOWN_IGNORE_SESSIONS -> true.
