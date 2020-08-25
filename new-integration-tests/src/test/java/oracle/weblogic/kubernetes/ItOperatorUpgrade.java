@@ -137,6 +137,20 @@ public class ItOperatorUpgrade {
   }
 
   /**
+   * Operator upgrade from 3.0.1 to latest.
+   * Install 3.0.1 Operator from GitHub chart repository and create a domain.
+   * Upgrade operator with latest Operator image and verify CRD version and image are updated
+   * and the domain can be managed by scaling the cluster using operator REST api.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.0.1 to latest")
+  @MustNotRunInParallel
+  public void testOperatorUpgradeFrom3_0_1(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    upgradeOperator("3.0.1", true);
+  }
+
+  /**
    * Cleanup Kubernetes artifacts in the namespaces used by the test and
    * delete CRD.
    */
@@ -202,7 +216,8 @@ public class ItOperatorUpgrade {
           .image(latestOperatorImageName)
           .externalRestEnabled(true);
 
-      upgradeAndVerifyOperator(opNamespace, opParams);
+      assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
+          String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
       // check operator image name after upgrade
       logger.info("Checking image name in operator container ");
@@ -221,7 +236,8 @@ public class ItOperatorUpgrade {
       opServiceAccount = opNamespace2 + "-sa";
 
       // uninstall operator 2.5.0/2.6.0
-      uninstallOperator(opHelmParams);
+      assertTrue(uninstallOperator(opHelmParams),
+          String.format("Uninstall operator failed in namespace %s", opNamespace1));
 
       // install latest operator
       installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);

@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -482,6 +483,18 @@ public class TestActions {
     return Ingress.listIngresses(namespace);
   }
 
+  /**
+   * Delete an ingress in the specified namespace.
+   *
+   * @param name  ingress name to be deleted
+   * @param namespace namespace in which the specified ingress exists
+   * @return true if deleting ingress succeed, false otherwise
+   * @throws ApiException if Kubernetes API client call fails
+   */
+  public static boolean deleteIngress(String name, String namespace) throws ApiException {
+    return Ingress.deleteIngress(name, namespace);
+  }
+
   // -------------------------  namespaces -------------------------------
 
   /**
@@ -715,7 +728,6 @@ public class TestActions {
   public static int getServiceNodePort(String namespace, String serviceName, String channelName) {
     return Service.getServiceNodePort(namespace, serviceName, channelName);
   }
-
 
   /**
    * Get node port of a namespaced service.
@@ -1027,6 +1039,29 @@ public class TestActions {
    */
   public static V1Job getJob(String jobName, String namespace) throws ApiException {
     return Job.getJob(jobName, namespace);
+  }
+
+  /**
+   * Delete a job.
+   *
+   * @param jobName name of the job
+   * @param namespace name of the namespace
+   * @return true if delete was successful
+   * @throws ApiException when deletion of job fails
+   */
+  public static boolean deleteJob(String jobName, String namespace) throws ApiException {
+    return Job.deleteJob(jobName, namespace);
+  }
+
+  /**
+   * List jobs in the given namespace.
+   *
+   * @param namespace in which to list the jobs
+   * @return V1JobList list of {@link V1Job} from Kubernetes cluster
+   * @throws ApiException when list fails
+   */
+  public static V1JobList listJobs(String namespace) throws ApiException {
+    return Job.listJobs(namespace);
   }
 
   // ----------------------   pod  ---------------------------------
