@@ -611,6 +611,16 @@ public class DomainStatusUpdater {
     }
   }
 
+  /**
+   * A utility method for unit testing.
+   */
+  public static Step excludeProgressingStep(Step step) {
+    if (step instanceof DomainStatusUpdater.ProgressingStep) {
+      return step.getNext();
+    }
+    return step;
+  }
+
   private static class EndProgressingStep extends DomainStatusUpdaterStep {
 
     EndProgressingStep(Step next) {
