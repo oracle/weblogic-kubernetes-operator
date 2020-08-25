@@ -143,10 +143,11 @@ public class Operator {
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"replace\", ")
         .append("\"path\": \"/spec/replicas\", ")
-        .append("\"value\": 1")
+        .append("\"value\": ")
+        .append(replicaCount)
         .append("}]");
 
-    getLogger().info("Starting Operator in namespace {0} using patch string: {1}",
+    getLogger().info("Stop/Start Operator in namespace {0} using patch string: {1}",
         namespace, patchStr.toString());
 
     V1Patch patch = new V1Patch(new String(patchStr));
