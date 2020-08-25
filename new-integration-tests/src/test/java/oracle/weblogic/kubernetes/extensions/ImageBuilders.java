@@ -100,7 +100,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   ConditionFactory withStandardRetryPolicy
       = with().pollDelay(0, SECONDS)
           .and().with().pollInterval(10, SECONDS)
-          .atMost(15, MINUTES).await();
+          .atMost(30, MINUTES).await();
 
   @Override
   public void beforeAll(ExtensionContext context) {
