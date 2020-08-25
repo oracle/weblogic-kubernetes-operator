@@ -252,6 +252,9 @@ class ItPodsShutdown {
 
   /**
    * Verify the server pod Shutdown properties.
+   * @param podName the name of the server pod
+   * @param domainNS the namespace where the server pod exist
+   * @param props the shutdown properties
    */
   private static boolean verifyServerShutdownProp(
       String podName,
