@@ -23,7 +23,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.weblogic.kubernetes.TestConstants;
-import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
@@ -70,6 +69,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
@@ -178,7 +178,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                         + "(elapsed time {0} ms, remaining time {1} ms)",
                         condition.getElapsedTimeInMS(),
                         condition.getRemainingTimeInMS()))
-                .until(dockerLogin());
+                .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
           }
         }
         // push the image
@@ -237,7 +237,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                       + "(elapsed time {0} ms, remaining time {1} ms)",
                       condition.getElapsedTimeInMS(),
                       condition.getRemainingTimeInMS()))
-              .until(dockerLogin());
+              .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
 
           for (String image : images) {
             withStandardRetryPolicy
@@ -497,10 +497,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
       return dockerPull(image) && dockerTag(image, kindRepoImage) && dockerPush(kindRepoImage);
     });
-  }
-
-  private Callable<Boolean> dockerLogin() {
-    return (() -> TestActions.dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
   }
 
 }
