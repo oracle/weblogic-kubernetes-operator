@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
-public class ItOperatorRestartWhenPodRoll {
+public class ItOperatorRestart {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String domainUid = "domain1";
