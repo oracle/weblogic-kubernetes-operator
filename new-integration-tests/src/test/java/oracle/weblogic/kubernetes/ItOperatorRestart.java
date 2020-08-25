@@ -202,8 +202,6 @@ public class ItOperatorRestart {
 
   }
 
-
-
   /**
    * Test patching a running model-in-image domain with a new WebLogic credentials secret.
    * Perform two patching operations to the domain spec. First, change the webLogicCredentialsSecret to
