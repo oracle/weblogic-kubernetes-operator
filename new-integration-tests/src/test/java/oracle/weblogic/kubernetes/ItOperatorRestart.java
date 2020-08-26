@@ -15,10 +15,7 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -58,7 +55,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to restart the operator when the server pods roll after changing the WebLogic credentials secret of a
 // domain custom resource that uses model-in-image.
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
 public class ItOperatorRestart {
@@ -113,10 +109,9 @@ public class ItOperatorRestart {
   }
 
   /**
-   * Stop Operator and kill admin and managed server pods.
+   * Stop Operator and delete the admin and managed server pods.
    * Restart Operator and verify admin and managed servers are started.
    */
-  @Order(1)
   @Test
   @DisplayName("Stop operator, delete all the server pods and restart operator, verify servers are started")
   public void testRestartOperatorAndVerifyDomainUp() {
@@ -169,7 +164,6 @@ public class ItOperatorRestart {
    * Stop Operator and increase the replica count for the domain.
    * Restart Operator and verify the cluster is scaled up.
    */
-  @Order(2)
   @Test
   @DisplayName("Stop operator, increase replica count for the domain, restart operator and verify cluster is scaled up")
   public void testRestartOperatorAndVerifyScaling() {
