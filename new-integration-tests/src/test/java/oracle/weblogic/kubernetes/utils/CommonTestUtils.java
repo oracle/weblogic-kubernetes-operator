@@ -16,6 +16,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -72,7 +73,6 @@ import org.joda.time.DateTime;
 import static java.nio.file.Files.readString;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.APACHE_IMAGE_12213;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
@@ -616,15 +616,44 @@ public class CommonTestUtils {
    * Install Apache and wait up to five minutes until the Apache pod is ready.
    *
    * @param apacheNamespace the namespace in which the Apache will be installed
+   * @param image the image name of Apache webtier
    * @param httpNodePort the http nodeport of Apache
    * @param httpsNodePort the https nodeport of Apache
    * @param domainUid the uid of the domain to which Apache will route the services
    * @return the Apache Helm installation parameters
    */
   public static HelmParams installAndVerifyApache(String apacheNamespace,
+                                                  String image,
                                                   int httpNodePort,
                                                   int httpsNodePort,
-                                                  String domainUid) {
+                                                  String domainUid) throws IOException {
+    return installAndVerifyApache(apacheNamespace, image, httpNodePort, httpsNodePort, domainUid,
+        null, null, null);
+  }
+
+  /**
+   * Install Apache and wait up to five minutes until the Apache pod is ready.
+   *
+   * @param apacheNamespace the namespace in which the Apache will be installed
+   * @param image the image name of Apache webtier
+   * @param httpNodePort the http nodeport of Apache
+   * @param httpsNodePort the https nodeport of Apache
+   * @param domainUid the uid of the domain to which Apache will route the services
+   * @param volumePath the path to put your own custom_mod_wl_apache.conf file
+   * @param virtualHostName the VirtualHostName of the Apache HTTP server which is used to enables custom SSL config
+   * @param clusterNamePortMap the map with clusterName as key and cluster port number as value
+   * @return the Apache Helm installation parameters
+   */
+  public static HelmParams installAndVerifyApache(String apacheNamespace,
+                                                  String image,
+                                                  int httpNodePort,
+                                                  int httpsNodePort,
+                                                  String domainUid,
+                                                  String volumePath,
+                                                  String virtualHostName,
+                                                  LinkedHashMap<String, String> clusterNamePortMap)
+      throws IOException {
+
     LoggingFacade logger = getLogger();
 
     // Create Docker registry secret in the operator namespace to pull the image from repository
@@ -647,13 +676,77 @@ public class CommonTestUtils {
     ApacheParams apacheParams = new ApacheParams()
         .helmParams(apacheHelmParams)
         .imagePullSecrets(secretNameMap)
-        .image(APACHE_IMAGE_12213)
+        .image(image)
         .domainUID(domainUid);
 
     if (httpNodePort >= 0 && httpsNodePort >= 0) {
       apacheParams
           .httpNodePort(httpNodePort)
           .httpsNodePort(httpsNodePort);
+    }
+
+    if (volumePath != null && clusterNamePortMap != null) {
+      // create a custom Apache plugin configuration file named custom_mod_wl_apache.conf
+      Path customConf = Paths.get(volumePath, "custom_mod_wl_apache.conf");
+      ArrayList<String> lines = new ArrayList<>();
+      lines.add("<IfModule mod_weblogic.c>");
+      lines.add("WebLogicHost ${WEBLOGIC_HOST}");
+      lines.add("WebLogicPort ${WEBLOGIC_PORT}");
+      lines.add("</IfModule>");
+
+      lines.add("<Location /console>");
+      lines.add("SetHandler weblogic-handler");
+      lines.add("WebLogicHost " + domainUid + "-admin-server");
+      lines.add("WebLogicPort ${WEBLOGIC_PORT}");
+      lines.add("</Location>");
+
+      int i = 1;
+      for (String clusterName : clusterNamePortMap.keySet()) {
+        lines.add("<Location /weblogic" + i + ">");
+        lines.add("WLSRequest On");
+        lines.add("WebLogicCluster " + clusterName + ":" + clusterNamePortMap.get(clusterName));
+        lines.add("PathTrim /weblogic" + i);
+        lines.add("</Location>");
+        i++;
+      }
+
+      try {
+        Files.write(customConf, lines);
+      } catch (IOException ioex) {
+        logger.info("Got IOException while write to a file");
+        throw ioex;
+      }
+
+      apacheParams.volumePath(volumePath);
+    }
+
+    if (virtualHostName != null) {
+      // create the certificate and private key
+      String certFile = RESULTS_ROOT + "/apache-sample.crt";
+      String keyFile = RESULTS_ROOT + "/apache-sample.key";
+
+      Map<String, String> envs = new HashMap<>();
+      envs.put("VIRTUAL_HOST_NAME", virtualHostName);
+      envs.put("SSL_CERT_FILE", certFile);
+      envs.put("SSL_CERT_KEY_FILE", keyFile);
+
+      String command = "sh ../kubernetes/samples/charts/apache-samples/custom-sample/certgen.sh";
+      CommandParams params = Command
+          .defaultCommandParams()
+          .command(command)
+          .env(envs)
+          .saveResults(true)
+          .redirect(true);
+
+      Command.withParams(params).execute();
+
+      String customCert = Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(certFile)));
+      String customKey = Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(keyFile)));
+
+      // set the Apache helm install parameters
+      apacheParams.virtualHostName(virtualHostName);
+      apacheParams.customCert(customCert);
+      apacheParams.customKey(customKey);
     }
 
     // install Apache
