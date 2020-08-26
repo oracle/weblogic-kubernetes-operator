@@ -125,7 +125,7 @@ class ItPodsShutdown {
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
   public void testShutdownProps() throws ApiException {
 
-    //scare the cluster to 2 managed servers
+    //scale the cluster to 2 managed servers
     assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, 2)))
         .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
               clusterName, domainUid, domainNamespace)
