@@ -40,8 +40,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRolling
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.checkPodRestartVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
@@ -126,7 +125,7 @@ public class ItOperatorRestart {
     assertTrue(stopOperator(opNamespace), "Couldn't stop the Operator");
 
     // check operator pod is not running
-    checkPodDoesNotExist(operatorPodName, opNamespace);
+    checkPodDoesNotExist(operatorPodName, null, opNamespace);
 
     // delete server pods
     for (int i = 1; i <= replicaCount; i++) {
@@ -156,8 +155,16 @@ public class ItOperatorRestart {
                 condition.getRemainingTimeInMS()))
         .until(operatorIsReady(opNamespace));
 
-    // check server services are created and server pods are ready
-    checkServiceExistsAndPodReady();
+    logger.info("Check admin service and pod {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check managed server services and pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server services and pods are created in namespace {0}",
+           domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
   }
 
   /**
@@ -178,7 +185,7 @@ public class ItOperatorRestart {
     assertTrue(stopOperator(opNamespace), "Couldn't stop the Operator");
 
     // check operator pod is not running
-    checkPodDoesNotExist(operatorPodName, opNamespace);
+    checkPodDoesNotExist(operatorPodName, null, opNamespace);
 
     // scale up the domain by increasing replica count
     replicaCount = 3;
@@ -192,7 +199,16 @@ public class ItOperatorRestart {
     assertTrue(startOperator(opNamespace), "Couldn't start the Operator");
 
     // check new server is started and existing servers are running
-    checkServiceExistsAndPodReady();
+    logger.info("Check admin service and pod {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check managed server services and pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
 
   }
 
@@ -320,7 +336,7 @@ public class ItOperatorRestart {
     assertTrue(stopOperator(opNamespace), "Couldn't stop the Operator");
 
     // check operator pod is not running
-    checkPodDoesNotExist(opPodName, opNamespace);
+    checkPodDoesNotExist(opPodName, null, opNamespace);
 
     // start operator by changing replica to 1 in operator deployment
     assertTrue(startOperator(opNamespace), "Couldn't start the Operator");
@@ -345,29 +361,4 @@ public class ItOperatorRestart {
         "The operator names before and after a restart should be different");
   }
 
-  private void checkServiceExistsAndPodReady() {
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-  }
 }
