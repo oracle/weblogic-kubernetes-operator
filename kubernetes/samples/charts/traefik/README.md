@@ -106,8 +106,6 @@ If you are using a WLST script to configure the domain, then the following modif
 ```
 # Configure the Administration Server
 cd('/Servers/AdminServer')
-set('ListenPort', admin_port)
-set('Name', admin_server_name)
 set('WeblogicPluginEnabled',true)
 ...
 cd('/Clusters/%s' % cluster_name)
