@@ -716,6 +716,28 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
+   * Test if the MII domain wants to use online update.
+   *
+   * @return true if using online update
+   */
+  boolean isUseOnlineUpdate() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::isUseOnlineUpdate)
+        .orElse(false);
+  }
+
+  /**
+   * Test if the MII domain updates should rollback the udpate if it requires restart.
+   *
+   * @return true or false
+   */
+  boolean isRollbackIfRestartRequire() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::isRollBackIfRestartRequired)
+        .orElse(false);
+  }
+
+  /**
    * Test if the domain is deployed under Istio environment.
    *
    * @return istioEnabled

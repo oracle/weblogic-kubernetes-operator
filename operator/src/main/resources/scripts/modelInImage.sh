@@ -41,6 +41,8 @@ WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./ur
 ARCHIVE_ZIP_CHANGED=0
 WDT_ARTIFACTS_CHANGED=0
 ROLLBACK_ERROR=3
+MII_USE_ONLINE_UPDATE="MII_USE_ONLINE_UPDATE"
+MII_ROLLBACK_IFRESTART="MII_ROLLBACK_IFRESTART"
 
 # return codes for model_diff
 UNSAFE_ONLINE_UPDATE=0
@@ -515,6 +517,9 @@ function createModelDomain() {
 
   wdtUpdateModelDomain
 
+  # This will be a no op if MII_USE_ONLINE_UPDATE is not defined or false
+  wdtHandleOnlineUpdate
+
   trace "Exiting createModelDomain"
 }
 
@@ -753,6 +758,61 @@ function wdtUpdateModelDomain() {
   # restore trap
   start_trap
   trace "Exiting wdtUpdateModelDomain"
+}
+
+function wdtHandleOnlineUpdate() {
+
+  if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" -eq "${MII_USE_ONLINE_UPDATE}" ] \
+    || [ ! -f "/tmp/diffed_model.json" ]; then
+    return
+  fi
+
+  if [ "$(cat /tmp/diffed_model.json)" == "{}" ] ; then
+    return
+  fi
+
+  trace "Entering wdtHandleOnlineUpdate"
+  # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
+  # temporarily disable it
+
+  stop_trap
+
+  local admin_user=$(cat /weblogic-operator/secrets/username)
+  local admin_pwd=$(cat /weblogic-operator/secrets/password)
+
+  local ROLLBACK_FLAG=""
+  if [ ! -z "${MII_ROLLBACK_IFRESTART}" ] && [ "${MII_ROLLBACK_IFRESTART}" == "true" ]; then
+      ROLLBACK_FLAG="-rollback_if_require_restart"
+  fi
+  # no need for encryption phrase because the diffed model has real value
+  # note: using yes seems to et a 141 return code, switch to echo seems to be ok
+  # the problem is likely due to how wdt closing the input stream
+
+  echo ${admin_pwd} | ${wdt_bin}/updateDomain.sh -oracle_home ${MW_HOME} \
+   -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
+   /tmp/diffed_model.json -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG}
+
+  local ret=$?
+
+  echo "Completed online update="${ret}
+
+  if [ ${ret} -eq ${ROLLBACK_ERROR} ] ; then
+    trace ">>>  updatedomainResult=3"
+    exit 1
+  elif [ ${ret} -ne 0 ] ; then
+    trace "Introspect job terminated: Online update failed. Check error in the logs"
+    trace "Note: Changes in the optional configmap and/or image may needs to be correction"
+    trace ">>>  updatedomainResult=${ret}"
+    exit 1
+  else
+    trace ">>>  updatedomainResult=${ret}"
+  fi
+
+  trace "wrote updateResult"
+
+  start_trap
+  trace "Exiting wdtUpdateModelDomain"
+
 }
 
 function contain_returncode() {

@@ -188,9 +188,17 @@
           "description": "Settings for OPSS security.",
           "$ref": "#/definitions/Opss"
         },
+        "useOnlineUpdate": {
+          "description": "Use online update.",
+          "type": "boolean"
+        },
         "model": {
           "description": "Model in image model files and properties.",
           "$ref": "#/definitions/Model"
+        },
+        "rollBackIfRestartRequired": {
+          "description": "Rollback the changes if the update require domain restart.",
+          "type": "boolean"
         },
         "secrets": {
           "description": "A list of names of the Secrets for WebLogic configuration overrides or model. If this field is specified, then the value of `spec.configOverrideSecrets` is ignored.",
@@ -211,7 +219,11 @@
           "description": "The introspector job timeout value in seconds. If this field is specified, then the operator\u0027s ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds.",
           "type": "number"
         }
-      }
+      },
+      "required": [
+        "useOnlineUpdate",
+        "rollBackIfRestartRequired"
+      ]
     },
     "DateTime": {
       "format": "date-time",

@@ -193,6 +193,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private List<V1ContainerPort> getContainerPorts() {
     if (scan != null) {
+
       List<V1ContainerPort> ports = new ArrayList<>();
       if (scan.getNetworkAccessPoints() != null) {
         for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {

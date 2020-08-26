@@ -459,9 +459,18 @@ public class Domain {
     return spec.getHttpAccessLogInLogHome();
   }
 
+  public boolean isUseOnlineUpdate() {
+    return spec.isUseOnlineUpdate();
+  }
+
+  public boolean isRollbackIfRestartRequire() {
+    return spec.isRollbackIfRestartRequire();
+  }
+
   public boolean isIstioEnabled() {
     return spec.isIstioEnabled();
   }
+
 
   public int getIstioReadinessPort() {
     return spec.getIstioReadinessPort();

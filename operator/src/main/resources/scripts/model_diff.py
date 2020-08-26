@@ -475,8 +475,10 @@ class ModelFileDiffer:
         current_dict = self.eval_file(sys.argv[1])
         past_dict = self.eval_file(sys.argv[2])
         obj = ModelDiffer(current_dict, past_dict)
-
-        net_diff = self.eval_file('/tmp/diffed_model.json')
+        if os.path.exists('/tmp/diffed_model.json'):
+            net_diff = self.eval_file('/tmp/diffed_model.json')
+        else:
+            net_diff = {}
         return obj.is_safe_diff(net_diff)
 
 def debug(format_string, *arguments):

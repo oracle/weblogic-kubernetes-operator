@@ -58,6 +58,16 @@ public class IntrospectorJobEnvVars {
   public static final String WDT_DOMAIN_TYPE = "WDT_DOMAIN_TYPE";
 
   /**
+   * MII Use Online Update.
+   */
+  public static final String MII_USE_ONLINE_UPDATE = "MII_USE_ONLINE_UPDATE";
+
+  /**
+   * MII rollback if restart require.
+   */
+  public static final String MII_ROLLBACK_IFRESTART = "MII_ROLLBACK_IFRESTART";
+
+  /**
    * Istio enabled.
    */
   public static final String ISTIO_ENABLED = "ISTIO_ENABLED";
