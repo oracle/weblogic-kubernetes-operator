@@ -59,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels")
 @IntegrationTest
-class ItPodsShutdown {
+class ItPodsShutdownOption {
 
   private static String domainNamespace = null;
 
@@ -102,8 +102,8 @@ class ItPodsShutdown {
    * This test is to verify different shutdown options specified at different scopes in Domain Resource Definition.
    * Refer to section "Shutdown options" of Documentation link:
    * https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/
-   * step 1: Startup a WebLogic domain with one cluster that initially has one running managed server. The shutdown option is
-   * configured as follows:
+   * step 1: Startup a WebLogic domain with one cluster that initially has one running managed server. The shutdown  
+   * option is configured as follows:
    * domain: SHUTDOWN_TYPE -> Graceful.
    * adminServer: SHUTDOWN_TYPE -> Forced.
    *              SHUTDOWN_IGNORE_SESSIONS -> true.
