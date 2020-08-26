@@ -1,0 +1,146 @@
+# Install and configure NGINX
+
+## A step-by-step guide to install the NGINX operator
+See the official installation document at:
+- https://kubernetes.github.io/ingress-nginx/deploy/#using-helm
+
+As a *demonstration*, the following are steps to install the NGINX operator by using Helm 3 on a Linux OS.
+
+### 1. Add the ingress-nginx chart repository
+```
+$ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+$ helm repo update
+```
+Verify that the chart repository has been added.
+
+```
+$ helm search repo ingress-nginx
+NAME               CHART VERSION APP VERSION	DESCRIPTION
+ingress-nginx/ingress-nginx	2.12.0       	0.34.1     	Ingress controller for Kubernetes using NGINX a...
+```
+> **NOTE**: After updating the helm repository, the NGINX version listed maybe newer that the one appearing here, please check with the NGINX site for the lastest supported versions.
+
+### 2. Install the NGINX operator
+
+> **NOTE**: The NGINX version used for the install should match the version found with `helm search`.
+
+```
+$ kubectl create ns nginx
+$ helm install nginx-operator ingress-nginx/ingress-nginx --namespace nginx
+```
+
+Wait until the NGINX Operator is running.
+```
+$ kubectl get all -n nginx 
+NAME                                                           READY   STATUS    RESTARTS   AGE
+pod/nginx-operator-ingress-nginx-controller-84fbd64787-v4p4c   1/1     Running   0          11m
+NAME                                                        TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+service/nginx-operator-ingress-nginx-controller             LoadBalancer   10.107.159.96   <pending>     80:31470/TCP,443:32465/TCP   11m
+service/nginx-operator-ingress-nginx-controller-admission   ClusterIP      10.109.12.133   <none>        443/TCP                      11m
+NAME                                                      READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-operator-ingress-nginx-controller   1/1     1            1           11m
+NAME                                                                 DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-operator-ingress-nginx-controller-84fbd64787   1         1         1       11m
+$ POD_NAME=$(kubectl get pods -n nginx -l app.kubernetes.io/name=ingress-nginx -o jsonpath='{.items[0].metadata.name}')
+$ kubectl exec -it $POD_NAME -n nginx -- /nginx-ingress-controller --version
+
+```
+> **NOTE**: All the generated Kubernetes resources of the NGINX operator have names controlled by the NGINX Helm chart. In our case, we use `releaseName` of `nginx-operator`.
+
+## Update the NGINX operator
+After the NGINX operator is installed and running, to change some configuration of the NGINX operator, use `helm upgrade` to achieve this.
+```
+$ helm upgrade nginx-operator ingress-nginx/ingress-nginx [flags]
+```
+
+## Configure NGINX as a load balancer for WebLogic domains
+We'll demonstrate how to use NGINX to handle traffic to backend WebLogic domains.
+
+### 1. Install WebLogic domains
+Now we need to prepare two domains for NGINX load balancing.
+
+Create two WebLogic domains:
+- One domain with `domain1` as the domain UID and namespace `weblogic-domain1`.
+- One domain with `domain2` as the domain UID and namespace `weblogic-domain2`.
+- Each domain has a web application installed with the URL context `testwebapp`.
+- Each domain has a WebLogic cluster `cluster-1` where each Managed Server listens on port `8001`.
+
+### 2. Web request routing
+The following sections describe how to route an application web request to the WebLogic domain through a NGINX frontend.
+
+#### Host-based routing 
+This sample demonstrates how to access an application on two WebLogic domains using host-based routing. Install a host-based routing ingress controller.
+```
+$ kubectl create -f samples/host-routing.yaml
+ingress.networking.k8s.io/domain1-ingress-host created
+ingress.networking.k8s.io/domain2-ingress-host created
+
+```
+Now you can send requests to different WebLogic domains with the unique NGINX entry point of different host names as defined in the route section of the `host-routing.yaml` file.
+```
+# Get the ingress controller web port
+$ export LB_PORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+$ curl -H 'host: domain1.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
+$ curl -H 'host: domain2.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
+```
+
+#### Path-based routing 
+This sample demonstrates how to access an application on two WebLogic domains using path-based routing. Install a path-based routing ingress controller.
+```
+$ kubectl create -f samples/path-routing.yaml
+ingress.networking.k8s.io/domain1-ingress-path created
+ingress.networking.k8s.io/domain2-ingress-path created
+```
+Now you can send requests to different WebLogic domains with the unique NGINX entry point of different paths, as defined in the route section of the `path-routing.yaml` file.
+
+```
+# Get the ingress controller web port
+$ export LB_PORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+$ curl http://${HOSTNAME}:${LB_PORT}/domain1/
+$ curl http://${HOSTNAME}:${LB_PORT}/domain2/
+```
+
+#### Host-based secured routing
+This sample demonstrates how to access an application on two WebLogic domains using an HTTPS endpoint. Install a TLS-enabled ingress controller.
+
+First, you need to create two secrets with TLS certificates, one with the common name `domain1.org`, the other with the common name `domain2.org`. We use `openssl` to generate self-signed certificates for demonstration purposes. Note that the TLS secret needs to be in the same namespace as the WebLogic domain.
+```
+# create a TLS secret for domain1
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out /tmp/tls1.crt -subj "/CN=domain1.org"
+$ kubectl -n weblogic-domain1 create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
+
+# create a TLS secret for domain2
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls2.key -out /tmp/tls2.crt -subj "/CN=domain2.org"
+$ kubectl -n weblogic-domain1 create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
+# Deploy the TLS ingress controller.
+$ kubectl create -f samples/tls.yaml
+ingress.networking.k8s.io/domain1-ingress-tls created
+ingress.networking.k8s.io/domain2-ingress-tls created
+```
+Now you can access the application on the WebLogic domain with the host name in the HTTP header. The ingress controller secure port can be obtained dynamically from the `nginx-operator` service in the `nginx` namespace.
+
+```
+# Get the ingress controller secure web port
+$ export TLS_PORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
+$ curl -k -H 'host: domain1.org' https://${HOSTNAME}:${TLS_PORT}/testwebapp/
+$ curl -k -H 'host: domain2.org' https://${HOSTNAME}:${TLS_PORT}/testwebapp/
+```
+
+## Uninstall the NGINX Operator
+After removing all the NGINX Ingress resources, uninstall the NGINX operator:
+
+```
+$ helm uninstall nginx-operator --namespace nginx
+```
+
+## Install and uninstall the NGINX operator with setupLoadBalancer.sh
+Alternatively, you can run the helper script ` setupLoadBalancer.sh` under the `kubernetes/samples/charts/util` folder, to install and uninstall NGINX.
+
+To install NGINX:
+```
+$ ./ setupLoadBalancer.sh create nginx
+```
+To uninstall NGINX:
+```
+$ ./ setupLoadBalancer.sh delete nginx
+```
