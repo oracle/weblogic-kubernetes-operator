@@ -21,7 +21,7 @@ $ helm search repo appscode/voyager
 NAME               CHART VERSION APP VERSION	DESCRIPTION
 appscode/voyager   v12.0.0       v12.0.0    	Voyager by AppsCode - Secure HAProxy Ingress Co...
 ```
-> **NOTE**: After updating the helm repository, the Voyager version listed maybe newer that the one appearing here, please check with the Voyager site for the lastest supported versions.
+> **NOTE**: After updating the helm repository, the Voyager version listed maybe newer that the one appearing here, please check with the Voyager site for the latest supported versions.
 
 ### 2. Install the Voyager operator
 
@@ -133,8 +133,6 @@ If you are using a WLST script to configure the domain, then the following modif
 ```
 # Configure the Administration Server
 cd('/Servers/AdminServer')
-set('ListenPort', admin_port)
-set('Name', admin_server_name)
 set('WeblogicPluginEnabled',true)
 ...
 cd('/Clusters/%s' % cluster_name)
