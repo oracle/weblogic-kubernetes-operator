@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
@@ -24,6 +25,7 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
@@ -235,9 +237,9 @@ class ItUsabilityOperatorHelmChart {
     }
     // delete operator
     logger.info("Uninstalling operator");
-    uninstallOperator(opHelmParams);
-    deleteServiceAccount(opNamespace + "-sa", opNamespace);
+    cleanUpSA(opNamespace);
     deleteSecret("ocir-secret",opNamespace);
+    uninstallOperator(opHelmParams);
 
     // verify the operator pod does not exist in the operator namespace
     logger.info("Checking that operator pod does not exist in operator namespace");
@@ -331,9 +333,9 @@ class ItUsabilityOperatorHelmChart {
       assertTrue(scaleDomain(domain1Namespace, domain1Uid,2,1,
           opNamespace, opServiceAccount, externalRestHttpsPort), "Domain1 " + domain1Namespace + " scaling failed");
     } finally {
-      uninstallOperator(op1HelmParams);
       deleteSecret("ocir-secret",opNamespace);
-      deleteServiceAccount(opServiceAccount,opNamespace);
+      cleanUpSA(opNamespace);
+      uninstallOperator(op1HelmParams);
     }
   }
 
@@ -346,7 +348,7 @@ class ItUsabilityOperatorHelmChart {
    * Verify it can't be managed by operator anymore.
    * Test fails when an operator fails to manage the domains as expected
    */
-  //@Test
+  @Test
   @DisplayName("Create domain1, managed by operator and domain2, upgrade operator for domain2,"
       + "delete domain1 , verify management for domain2 and no access to domain1")
   @Slow
@@ -355,12 +357,12 @@ class ItUsabilityOperatorHelmChart {
 
     String opReleaseName = OPERATOR_RELEASE_NAME;
     HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
-        .namespace(opNamespace)
+        .namespace(op2Namespace)
         .chartDir(OPERATOR_CHART_DIR);
     try {
       // install operator
-      String opServiceAccount = opNamespace + "-sa";
-      HelmParams opHelmParams = installAndVerifyOperator(opNamespace, opServiceAccount, true,
+      String opServiceAccount = op2Namespace + "-sa";
+      HelmParams opHelmParams = installAndVerifyOperator(op2Namespace, opServiceAccount, true,
           0, op1HelmParams, domain1Namespace);
       assertNotNull(opHelmParams, "Can't install operator");
 
@@ -374,12 +376,12 @@ class ItUsabilityOperatorHelmChart {
       // upgrade operator
       HelmParams upgradeHelmParams = new HelmParams()
           .releaseName(OPERATOR_RELEASE_NAME)
-          .namespace(opNamespace)
+          .namespace(op2Namespace)
           .chartDir(OPERATOR_CHART_DIR)
           .repoUrl(null)
           .chartVersion(null)
           .chartName(null);
-      int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+      int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
       // operator chart values
       OperatorParams opParams =
           new OperatorParams()
@@ -388,7 +390,7 @@ class ItUsabilityOperatorHelmChart {
               .externalRestHttpsPort(externalRestHttpsPort)
               .domainNamespaces(java.util.Arrays.asList(domain1Namespace,domain2Namespace));
 
-      upgradeAndVerifyOperator(opNamespace, opParams);
+      upgradeAndVerifyOperator(op2Namespace, opParams);
       //assertTrue(upgradeOperator(opParams), "Helm Upgrade failed to add domain to operator");
       if (!isDomain2Running) {
         logger.info("Installing and verifying domain");
@@ -397,24 +399,24 @@ class ItUsabilityOperatorHelmChart {
         isDomain2Running = true;
       }
       assertTrue(scaleDomain(domain1Namespace, domain1Uid,2,1,
-          opNamespace, opServiceAccount, externalRestHttpsPort), "Domain1 " + domain1Namespace + " scaling failed");
+          op2Namespace, opServiceAccount, externalRestHttpsPort), "Domain1 " + domain1Namespace + " scaling failed");
       assertTrue(scaleDomain(domain2Namespace,domain2Uid,2,1,
-          opNamespace, opServiceAccount, externalRestHttpsPort), "Domain2 " + domain2Namespace + " scaling failed");
+          op2Namespace, opServiceAccount, externalRestHttpsPort), "Domain2 " + domain2Namespace + " scaling failed");
       opParams = new OperatorParams()
               .helmParams(upgradeHelmParams)
               .externalRestEnabled(true)
               .externalRestHttpsPort(externalRestHttpsPort)
               .domainNamespaces(java.util.Arrays.asList(domain2Namespace));
-      upgradeAndVerifyOperator(opNamespace, opParams);
+      upgradeAndVerifyOperator(op2Namespace, opParams);
       //verify operator can't scale domain1 anymore
       assertFalse(scaleDomain(domain1Namespace,domain1Uid,1,2,
-          opNamespace, opServiceAccount, externalRestHttpsPort), "operator still can manage domain1");
+          op2Namespace, opServiceAccount, externalRestHttpsPort), "operator still can manage domain1");
       assertTrue(scaleDomain(domain2Namespace,domain2Uid,1,2,
-          opNamespace, opServiceAccount, externalRestHttpsPort),"Domain " + domain2Namespace + " scaling failed");
+          op2Namespace, opServiceAccount, externalRestHttpsPort),"Domain " + domain2Namespace + " scaling failed");
     } finally {
+      cleanUpSA(op2Namespace);
+      deleteSecret("ocir-secret",op2Namespace);
       uninstallOperator(op1HelmParams);
-      deleteSecret("ocir-secret",opNamespace);
-      deleteServiceAccount(opNamespace + "-sa",opNamespace);
     }
   }
 
@@ -455,11 +457,10 @@ class ItUsabilityOperatorHelmChart {
       assertNull(opHelmParam2,
           "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
+      deleteSecret("ocir-secret",op2Namespace);
+      cleanUpSA(op2Namespace);
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
-      deleteSecret("ocir-secret",op2Namespace);
-      deleteServiceAccount(op2Namespace + "-sa",op2Namespace);
-      deleteServiceAccount(opServiceAccount,op2Namespace);
     }
   }
 
@@ -497,12 +498,11 @@ class ItUsabilityOperatorHelmChart {
           expectedError,"failed", 0, op2HelmParams, false, domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      deleteServiceAccount(opNamespace + "-sa",opNamespace);
       deleteSecret("ocir-secret",opNamespace);
+      cleanUpSA(opNamespace);
+      cleanUpSA(op2Namespace);
       uninstallOperator(opHelmParams);
-
       uninstallOperator(op2HelmParams);
-      deleteServiceAccount(opServiceAccount,op2Namespace);
     }
   }
 
@@ -543,9 +543,10 @@ class ItUsabilityOperatorHelmChart {
           externalRestHttpsPort, op2HelmParams, false, domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      deleteServiceAccount(opServiceAccount,opNamespace);
+      cleanUpSA(opNamespace);
+      cleanUpSA(op2Namespace);
       deleteSecret("ocir-secret",opNamespace);
-      deleteServiceAccount(op2ServiceAccount,op2Namespace);
+      deleteSecret("ocir-secret",op2Namespace);
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
     }
@@ -606,9 +607,9 @@ class ItUsabilityOperatorHelmChart {
           true,null,"deployed", 0, op2HelmParams, false, "");
       assertNotNull(opHelmParam2, "FAILURE: Helm can't installs operator with empty set for target domainnamespaces ");
     } finally {
-      uninstallOperator(op2HelmParams);
       deleteSecret("ocir-secret",op2Namespace);
-      deleteServiceAccount(opServiceAccount,op2Namespace);
+      cleanUpSA(op2Namespace);
+      uninstallOperator(op2HelmParams);
     }
   }
 
@@ -675,7 +676,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       //uninstall operator
       deleteSecret("ocir-secret",op2Namespace);
-      deleteServiceAccount(opServiceAccount,op2Namespace);
+      cleanUpSA(op2Namespace);
       uninstallOperator(opHelmParams);
     }
   }
@@ -1075,5 +1076,15 @@ class ItUsabilityOperatorHelmChart {
       return false;
     }
     return true;
+  }
+
+  private void cleanUpSA(String namespace) {
+
+        V1ServiceAccountList sas = Kubernetes.listServiceAccounts(namespace);
+        if(sas !=null) {
+          for (V1ServiceAccount sa : sas.getItems()) {
+            deleteServiceAccount(sa.getMetadata().getName(), namespace);
+          }
+        }
   }
 }
