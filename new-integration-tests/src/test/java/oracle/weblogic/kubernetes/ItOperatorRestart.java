@@ -273,11 +273,16 @@ public class ItOperatorRestart {
         replicaCount,
         adminSecretName);
 
+    // wait till rolling restart has started by checking admin server pod is deleted
+    logger.info("Waiting for rolling restart to start by checking {0} pod is deleted in namespace {0}",
+        adminServerPodName, domainNamespace);
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
+
     logger.info("Delete the operator pod in namespace {0} and wait for it to be restarted", opNamespace);
     restartOperatorAndVerify();
 
-    logger.info("Wait for domain {0} admin server pod {1} in namespace {2} to be restarted",
-        domainUid, adminServerPodName, domainNamespace);
+    logger.info("Wait for domain {0} server pods in namespace {1} to be restarted",
+        domainUid, domainNamespace);
 
     assertTrue(assertDoesNotThrow(
         () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
