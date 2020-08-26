@@ -18,7 +18,7 @@ $ helm search repo ingress-nginx
 NAME               CHART VERSION APP VERSION	DESCRIPTION
 ingress-nginx/ingress-nginx	2.12.0       	0.34.1     	Ingress controller for Kubernetes using NGINX a...
 ```
-> **NOTE**: After updating the helm repository, the NGINX version listed maybe newer that the one appearing here, please check with the NGINX site for the lastest supported versions.
+> **NOTE**: After updating the helm repository, the NGINX version listed maybe newer that the one appearing here, please check with the NGINX site for the latest supported versions.
 
 ### 2. Install the NGINX operator
 
@@ -50,6 +50,7 @@ $ kubectl exec -it $POD_NAME -n nginx -- /nginx-ingress-controller --version
 ## Update the NGINX operator
 After the NGINX operator is installed and running, to change some configuration of the NGINX operator, use `helm upgrade` to achieve this.
 ```
+# To update configuration on a helm chart 'nginx-operator'
 $ helm upgrade nginx-operator ingress-nginx/ingress-nginx [flags]
 ```
 
@@ -141,15 +142,13 @@ If you are using a WLST script to configure the domain, then the following modif
 ```
 # Configure the Administration Server
 cd('/Servers/AdminServer')
-set('ListenPort', admin_port)
-set('Name', admin_server_name)
 set('WeblogicPluginEnabled',true)
 ...
 cd('/Clusters/%s' % cluster_name)
 set('WeblogicPluginEnabled',true)
 ```
 ### 2. Update the Ingress resource with customRequestHeaders value.
-Replace the string 'weblogic-domain' with namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserver' with name of the Administration server in the WebLogic domain.  
+Replace the string 'weblogic-domain' with namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserver' with name of the Administration server in the WebLogic domain.
 
 ```
 apiVersion: extensions/v1beta1
