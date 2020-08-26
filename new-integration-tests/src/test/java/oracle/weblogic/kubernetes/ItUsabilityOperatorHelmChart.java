@@ -113,7 +113,6 @@ class ItUsabilityOperatorHelmChart {
 
   private static String opNamespace = null;
   private static String op2Namespace = null;
-  private static String op3Namespace = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static HelmParams nginxHelmParams = null;
@@ -146,7 +145,7 @@ class ItUsabilityOperatorHelmChart {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  public static void initAll(@Namespaces(5) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -172,11 +171,6 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Getting a unique namespace for operator 2");
     assertNotNull(namespaces.get(4), "Namespace list is null");
     op2Namespace = namespaces.get(4);
-
-    // get a unique operator 2 namespace
-    logger.info("Getting a unique namespace for operator 2");
-    assertNotNull(namespaces.get(5), "Namespace list is null");
-    op3Namespace = namespaces.get(5);
 
     // install and verify NGINX
     logger.info("Installing and verifying NGINX");
@@ -363,15 +357,15 @@ class ItUsabilityOperatorHelmChart {
 
     String opReleaseName = OPERATOR_RELEASE_NAME;
     HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
-        .namespace(op3Namespace)
+        .namespace(opNamespace)
         .chartDir(OPERATOR_CHART_DIR);
     try {
       // install operator
-      String opServiceAccount = op3Namespace + "-sa";
-      HelmParams opHelmParams = installAndVerifyOperator(op3Namespace, opServiceAccount, true,
+      String opServiceAccount = opNamespace + "-sa";
+      HelmParams opHelmParams = installAndVerifyOperator(opNamespace, opServiceAccount, true,
           0, op1HelmParams, domain1Namespace);
       assertNotNull(opHelmParams, "Can't install operator");
-      int externalRestHttpsPort = getServiceNodePort(op3Namespace, "external-weblogic-operator-svc");
+      int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
       if (!isDomain1Running) {
         logger.info("Installing and verifying domain");
         assertTrue(createVerifyDomain(domain1Namespace, domain1Uid),
@@ -389,7 +383,7 @@ class ItUsabilityOperatorHelmChart {
           .domainNamespaces(java.util.Arrays.asList(domain1Namespace, domain2Namespace));
 
       // upgrade operator
-      assertTrue(upgradeAndVerifyOperator(op3Namespace, opParams));
+      assertTrue(upgradeAndVerifyOperator(opNamespace, opParams));
 
       //assertTrue(upgradeOperator(opParams), "Helm Upgrade failed to add domain to operator");
       if (!isDomain2Running) {
@@ -399,9 +393,9 @@ class ItUsabilityOperatorHelmChart {
         isDomain2Running = true;
       }
       assertTrue(scaleDomain(domain1Namespace, domain1Uid,2,3,
-          op3Namespace, opServiceAccount, externalRestHttpsPort), "Domain1 " + domain1Namespace + " scaling failed");
+          opNamespace, opServiceAccount, externalRestHttpsPort), "Domain1 " + domain1Namespace + " scaling failed");
       assertTrue(scaleDomain(domain2Namespace,domain2Uid,2,3,
-          op3Namespace, opServiceAccount, externalRestHttpsPort), "Domain2 " + domain2Namespace + " scaling failed");
+          opNamespace, opServiceAccount, externalRestHttpsPort), "Domain2 " + domain2Namespace + " scaling failed");
       // operator chart values
       opParams = new OperatorParams()
           .helmParams(opHelmParams)
@@ -410,16 +404,16 @@ class ItUsabilityOperatorHelmChart {
           .serviceAccount(opServiceAccount)
           .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME)
           .domainNamespaces(java.util.Arrays.asList(domain2Namespace));
-      assertTrue(upgradeAndVerifyOperator(op3Namespace, opParams));
+      assertTrue(upgradeAndVerifyOperator(opNamespace, opParams));
 
+      assertTrue(scaleDomain(domain2Namespace,domain2Uid,3,2,
+          opNamespace, opServiceAccount, externalRestHttpsPort),"Domain " + domain2Namespace + " scaling failed");
       //verify operator can't scale domain1 anymore
       assertFalse(scaleDomain(domain1Namespace,domain1Uid,3,2,
-          op3Namespace, opServiceAccount, externalRestHttpsPort), "operator still can manage domain1");
-      assertTrue(scaleDomain(domain2Namespace,domain2Uid,3,2,
-          op3Namespace, opServiceAccount, externalRestHttpsPort),"Domain " + domain2Namespace + " scaling failed");
+          opNamespace, opServiceAccount, externalRestHttpsPort), "operator still can manage domain1");
     } finally {
-      cleanUpSA(op3Namespace);
-      deleteSecret("ocir-secret",op3Namespace);
+      cleanUpSA(opNamespace);
+      deleteSecret("ocir-secret",opNamespace);
       uninstallOperator(op1HelmParams);
     }
   }
