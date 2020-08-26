@@ -126,6 +126,69 @@ $ curl -k -H 'host: domain1.org' https://${HOSTNAME}:${TLS_PORT}/testwebapp/
 $ curl -k -H 'host: domain2.org' https://${HOSTNAME}:${TLS_PORT}/testwebapp/
 ```
 
+## SSL termination at ingress controller
+This sample demonstrates how to terminate SSL traffic at the ingress controller to access the WebLogic Server Administration Console through the SSL port. 
+
+### 1. Enable "WebLogic Plugin Enabled" on the WebLogic domain level
+
+If you are using WDT to configure the WebLogic domain, you need to add the following resource section at the domain level to the model YAML file.
+```
+resources:
+     WebAppContainer:
+         WeblogicPluginEnabled: true
+```
+If you are using a WLST script to configure the domain, then the following modifications are needed to the respective PY script.
+```
+# Configure the Administration Server
+cd('/Servers/AdminServer')
+set('ListenPort', admin_port)
+set('Name', admin_server_name)
+set('WeblogicPluginEnabled',true)
+...
+cd('/Clusters/%s' % cluster_name)
+set('WeblogicPluginEnabled',true)
+```
+### 2. Update the Ingress resource with customRequestHeaders value.
+Replace the string 'weblogic-domain' with namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserver' with name of the Administration server in the WebLogic domain.  
+
+```
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nginx-console-tls
+  namespace: weblogic-domain
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_input_headers "X-Forwarded-Proto: https";
+      more_set_input_headers "WL-Proxy-SSL: true";
+    nginx.ingress.kubernetes.io/ingress.allow-http: "false"
+spec:
+  tls:
+  - hosts:
+    secretName: domain-tls-cert
+  rules:
+  - host: 
+    http:
+      paths:
+      - path: /console
+        backend:
+          serviceName: domain1-adminserver
+          servicePort: 7001
+```
+### 3. Create Ingress resource.
+Save the above configuration as 'nginx-tls-console.yaml'.
+```
+ kubectl create -f nginx-tls-console.yaml
+```
+### 4. Access the WebLogic Server Administration Console using the HTTPS port
+Get the SSL port from the Kubernetes service 
+```
+# Get the ingress controller secure web port
+SSLPORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
+```
+In a web browser type 'https://${HOSTNAME}:${SSLPORT}/console' in the address bar to access the WebLogic Server Administration Console.
+
 ## Uninstall the NGINX Operator
 After removing all the NGINX Ingress resources, uninstall the NGINX operator:
 
@@ -138,9 +201,9 @@ Alternatively, you can run the helper script ` setupLoadBalancer.sh` under the `
 
 To install NGINX:
 ```
-$ ./ setupLoadBalancer.sh create nginx
+$ ./setupLoadBalancer.sh create nginx
 ```
 To uninstall NGINX:
 ```
-$ ./ setupLoadBalancer.sh delete nginx
+$ ./setupLoadBalancer.sh delete nginx
 ```
