@@ -186,8 +186,11 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
           List<String> images = new ArrayList<>();
           images.add(operatorImage);
-          images.add(miiBasicImage);
-          images.add(wdtBasicImage);
+          // add images only if SKIP_BASIC_IMAGE_BUILD is not set
+          if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
+            images.add(miiBasicImage);
+            images.add(wdtBasicImage);
+          }
 
           for (String image : images) {
             logger.info("docker push image {0} to {1}", image, REPO_NAME);
