@@ -67,6 +67,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.joda.time.DateTime;
 
+import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
+import static oracle.weblogic.kubernetes.actions.impl.Operator.stop;
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -137,6 +139,24 @@ public class TestActions {
    */
   public static String getOperatorContainerImageName(String namespace) throws ApiException {
     return Operator.getOperatorContainerImage(namespace);
+  }
+
+  /**
+   * Stop operator by changing the replica in the operator deployment to 0.
+   * @param namespace namespace of the operator
+   * @return true on success
+   */
+  public static boolean stopOperator(String namespace) {
+    return stop(namespace);
+  }
+
+  /**
+   * Start operator by changing the replica in the operator deployment to 1.
+   * @param namespace namespace of the operator
+   * @return true on success
+   */
+  public static boolean startOperator(String namespace) {
+    return start(namespace);
   }
 
   // ----------------------   domain  -----------------------------------
@@ -1339,6 +1359,22 @@ public class TestActions {
                                                                String labelSelector,
                                                                String index) {
     return LoggingExporter.verifyLoggingExporterReady(namespace, labelSelector, index);
+  }
+
+  // --------------------------- WebLogic Logging Exporter---------------------------------
+  /**
+   * Install WebLogic Logging Exporter.
+   *
+   * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
+   * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
+   * @param wlsLoggingExporterArchiveLoc the directory where WebLogic Logging Exporter jar files store
+   * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
+   */
+  public static boolean installWlsLoggingExporter(String filter,
+                                                  String wlsLoggingExporterYamlFileLoc,
+                                                  String wlsLoggingExporterArchiveLoc) {
+    return LoggingExporter.installWlsLoggingExporter(filter,
+        wlsLoggingExporterYamlFileLoc, wlsLoggingExporterArchiveLoc);
   }
 
   /**

@@ -60,6 +60,12 @@ public class WitParams {
   // Whether the output of the command is redirected to system out
   private boolean redirect;
 
+  // Path to a file with additional build commands
+  private String additionalBuildCommands;
+
+  // Additional files that are required by additionalBuildCommands
+  private String additionalBuildFiles;
+
   /**
    * Generate default WIT parameters.
    * @return WIT parameters
@@ -203,4 +209,21 @@ public class WitParams {
     return redirect;
   }
 
+  public WitParams additionalBuildCommands(String additionalBuildCommands) {
+    this.additionalBuildCommands = additionalBuildCommands;
+    return this;
+  }
+
+  public String additionalBuildCommands() {
+    return additionalBuildCommands;
+  }
+
+  public WitParams additionalBuildFiles(String additionalBuildFiles) {
+    this.additionalBuildFiles = additionalBuildFiles;
+    return this;
+  }
+
+  public String additionalBuildFiles() {
+    return additionalBuildFiles;
+  }
 }
