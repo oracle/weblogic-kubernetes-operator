@@ -141,7 +141,7 @@ cd('/Clusters/%s' % cluster_name)
 set('WeblogicPluginEnabled',true)
 ```
 ### 2. Create a ingress resource file with custom annotation value
-Save the below configuration as 'nginx-tls-console.yaml' by replacing the string 'weblogic-domain' with namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserver' with name of the Administration server in the WebLogic domain.
+Save the below configuration as 'nginx-tls-console.yaml' and replace the string 'weblogic-domain' with the namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserver' with name of the Administration server in the WebLogic domain.
 
 ```
 apiVersion: extensions/v1beta1
