@@ -3,6 +3,12 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,15 +31,24 @@ import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.FileUtils;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.SNAKE_YAML_JAR_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.SNAKE_YAML_JAR_REPOS;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_JAR_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_JAR_REPOS;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
@@ -45,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Utility class for ELK Stack and WebLogic logging exporter.
+ * Utility class for ELK Stack and WebLogic Logging Exporter.
  */
 public class LoggingExporter {
 
@@ -235,10 +250,10 @@ public class LoggingExporter {
   }
 
   /**
-   * Verify that the logging exporter is ready to use in Operator pod or WebLogic server pod.
+   * Verify that the Logging Exporter is ready to use in Operator pod or WebLogic server pod.
    *
    * @param namespace namespace of Operator pod (for ELK Stack) or
-   *                  WebLogic server pod (for WebLogic logging exporter)
+   *                  WebLogic server pod (for WebLogic Logging Exporter)
    * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
    * @param index key word used to search the index status of the logging exporter
    * @return a map containing key and value pair of logging exporter index
@@ -252,6 +267,7 @@ public class LoggingExporter {
     assertNotNull(statusLine);
 
     String [] parseString = statusLine.split("\\s+");
+    assertTrue(parseString.length >= 3, index + " does not exist!");
     String healthStatus = parseString[0];
     String indexStatus = parseString[1];
     String indexName = parseString[2];
@@ -281,6 +297,84 @@ public class LoggingExporter {
     logger.info("logging exporter {0} is up and running and ready to use!", indexName);
 
     return testVarMap;
+  }
+
+  /**
+   * Install WebLogic Logging Exporter.
+   *
+   * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
+   * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
+   * @param wlsLoggingExporterArchiveLoc the directory where WebLogic Logging Exporter jar files store
+   * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
+   */
+  public static boolean installWlsLoggingExporter(String filter,
+                                                  String wlsLoggingExporterYamlFileLoc,
+                                                  String wlsLoggingExporterArchiveLoc) {
+    try {
+      // Create a dir to hold downloaded WebLogic Logging Exporter archive files
+      FileUtils.cleanupDirectory(wlsLoggingExporterArchiveLoc);
+      FileUtils.checkDirectory(wlsLoggingExporterArchiveLoc);
+    } catch (IOException ioe) {
+      logger.severe("Failed to cleanup and re-create the download directory {0}. Error is {1} ",
+          wlsLoggingExporterArchiveLoc, ioe.getMessage());
+    }
+
+    // Copy WebLogic Logging Exporter files to WORK_DIR
+    String[] loggingExporterFiles =
+        {WLS_LOGGING_EXPORTER_YAML_FILE_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME};
+
+    for (String loggingFile : loggingExporterFiles) {
+      Path srcPath = Paths.get(wlsLoggingExporterYamlFileLoc, loggingFile);
+      Path destPath = Paths.get(WORK_DIR, loggingFile);
+      assertDoesNotThrow(() -> FileUtils.copy(srcPath, destPath),
+          String.format("Failed to copy %s to %s", srcPath, destPath));
+      logger.info("Copied {0} to {1}}", srcPath, destPath);
+    }
+
+    // Replace tokens in COPY_WLS_LOGGING_EXPORTER_FILE_NAME, copy-logging-files-cmds.txt
+    String fileToReplace = WORK_DIR + "/" + COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
+
+    logger.info("Replace SNAKEYAML_JAR with {0} in {1}",
+        SNAKE_YAML_JAR_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME);
+    assertDoesNotThrow(
+        () -> FileUtils.replaceStringInFile(fileToReplace, "SNAKEYAML_JAR", SNAKE_YAML_JAR_NAME),
+          String.format("Failed to replace SNAKEYAML_JAR with %s in %s",
+            SNAKE_YAML_JAR_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME));
+
+    logger.info("Replace WEBLOGICLOGGINGEXPORTER_JAR with {0} in {1}",
+        WLS_LOGGING_EXPORTER_JAR_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME);
+    assertDoesNotThrow(
+        () -> FileUtils.replaceStringInFile(fileToReplace,
+          "WEBLOGICLOGGINGEXPORTER_JAR", WLS_LOGGING_EXPORTER_JAR_NAME),
+          String.format("Failed to replace WEBLOGICLOGGINGEXPORTER_JAR with %s in %s",
+            WLS_LOGGING_EXPORTER_JAR_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME));
+
+    // Add filter to weblogicLoggingExporterFilters in WebLogic Logging Exporter YAML file
+    assertDoesNotThrow(() -> addFilterToElkFile(filter),
+        "Failed to add WebLogic Logging Exporter filter");
+
+    // Download WebLogic Logging Exporter jar file, WLS_LOGGING_EXPORTER_JAR_NAME
+    ExecResult result = assertDoesNotThrow(
+        () -> downloadWlsLoggingExporterJarsAndVerify(WLS_LOGGING_EXPORTER_JAR_REPOS,
+          WLS_LOGGING_EXPORTER_JAR_NAME, wlsLoggingExporterArchiveLoc),
+          "downloadWlsLoggingExporterJarsAndVerify failed with Exception");
+    if (result.exitValue() != 0) {
+      logger.severe("Failed to download {0} from {1} with error {2}",
+          WLS_LOGGING_EXPORTER_JAR_NAME, WLS_LOGGING_EXPORTER_JAR_REPOS, result.stderr());
+      return false;
+    }
+
+    // Download the YAML parser, snakeyaml-1.23.jar
+    result = assertDoesNotThrow(() -> downloadWlsLoggingExporterJarsAndVerify(SNAKE_YAML_JAR_REPOS,
+        SNAKE_YAML_JAR_NAME, wlsLoggingExporterArchiveLoc),
+        "downloadWlsLoggingExporterJarsAndVerify failed with Exception");
+    if (result.exitValue() != 0) {
+      logger.severe("Failed to download {0} from {1} with error {2}",
+          SNAKE_YAML_JAR_REPOS, SNAKE_YAML_JAR_NAME, result.stderr());
+      return false;
+    }
+
+    return true;
   }
 
   private static V1Deployment createElasticsearchDeploymentCr(LoggingExporterParams params) {
@@ -467,5 +561,70 @@ public class LoggingExporter {
     }
 
     return statusLine.stdout();
+  }
+
+  private static ExecResult downloadWlsLoggingExporterJarsAndVerify(String jarReposUrl,
+                                                                    String jarFileName,
+                                                                    String wlsLoggingExporterArchiveLoc)
+        throws IOException, InterruptedException {
+
+    ExecResult result = null;
+    File wlsLoggingExpFile =
+        new File(wlsLoggingExporterArchiveLoc + "/" + jarFileName);
+    int i = 0;
+
+    StringBuffer getJars = new StringBuffer();
+    getJars
+        .append(" wget -P ")
+        .append(wlsLoggingExporterArchiveLoc)
+        .append(" --server-response --waitretry=5 --retry-connrefused ")
+        .append(jarReposUrl)
+        .append("/")
+        .append(jarFileName);
+    logger.info("Executing cmd " + getJars.toString());
+
+    // Make sure downloading completed
+    while (i < maxIterationsPod) {
+      result = ExecCommand.exec(getJars.toString(), true);
+
+      if (wlsLoggingExpFile.exists()) {
+        break;
+      }
+
+      logger.info("Downloading {0} not done [{1}/{2}], sleeping {3} econds more",
+          jarReposUrl, i, maxIterationsPod, maxIterationsPod);
+
+      try {
+        Thread.sleep(maxIterationsPod * 1000);
+      } catch (Exception ex) {
+        //ignore
+      }
+      i++;
+    }
+
+    assertTrue(wlsLoggingExpFile.exists(), "Failed to download " + wlsLoggingExpFile);
+
+    File wlsLoggingExporterJarRepoDir = new File(wlsLoggingExporterArchiveLoc);
+    File[] jarFiles = wlsLoggingExporterJarRepoDir.listFiles();
+    for (File jarFile : jarFiles) {
+      logger.info("Downloaded jar file {0}", jarFile.getName());
+    }
+
+    return result;
+  }
+
+  private static void addFilterToElkFile(String filter) throws Exception {
+    String filterStr = new StringBuffer()
+        .append(System.lineSeparator())
+        .append("weblogicLoggingExporterFilters:")
+        .append(System.lineSeparator())
+        .append("- FilterExpression: NOT(SERVER = '")
+        .append(filter)
+        .append("')")
+        .toString();
+    logger.info("Command to add filter {0}", filterStr);
+
+    Files.write(Paths.get(WORK_DIR, WLS_LOGGING_EXPORTER_YAML_FILE_NAME),
+        filterStr.getBytes(), StandardOpenOption.APPEND);
   }
 }
