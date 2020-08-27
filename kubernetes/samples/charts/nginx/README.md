@@ -25,13 +25,13 @@ ingress-nginx/ingress-nginx	2.12.0       	0.34.1     	Ingress controller for Kub
 > **NOTE**: The NGINX version used for the install should match the version found with `helm search`.
 
 ```
-$ kubectl create ns nginx
+$ kubectl create namespace nginx
 $ helm install nginx-operator ingress-nginx/ingress-nginx --namespace nginx
 ```
 
 Wait until the NGINX Operator is running.
 ```
-$ kubectl get all -n nginx 
+$ kubectl get all --namespace nginx 
 NAME                                                           READY   STATUS    RESTARTS   AGE
 pod/nginx-operator-ingress-nginx-controller-84fbd64787-v4p4c   1/1     Running   0          11m
 NAME                                                        TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
@@ -63,7 +63,7 @@ Create two WebLogic domains:
 The following sections describe how to route an application web request to the WebLogic domain through a NGINX frontend.
 
 #### Host-based routing 
-This sample demonstrates how to access an application on two WebLogic domains using host-based routing. Install a host-based routing ingress controller.
+This sample demonstrates how to access an application on two WebLogic domains using host-based routing. Install a host-based routing NGINX ingress.
 ```
 $ kubectl create -f samples/host-routing.yaml
 ingress.networking.k8s.io/domain1-ingress-host created
@@ -77,23 +77,6 @@ $ export LB_PORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-con
 $ curl -H 'host: domain1.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 $ curl -H 'host: domain2.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 ```
-
-#### Path-based routing 
-This sample demonstrates how to access an application on two WebLogic domains using path-based routing. Install a path-based routing ingress controller.
-```
-$ kubectl create -f samples/path-routing.yaml
-ingress.networking.k8s.io/domain1-ingress-path created
-ingress.networking.k8s.io/domain2-ingress-path created
-```
-Now you can send requests to different WebLogic domains with the unique NGINX entry point of different paths, as defined in the route section of the `path-routing.yaml` file.
-
-```
-# Get the ingress controller web port
-$ export LB_PORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
-$ curl http://${HOSTNAME}:${LB_PORT}/domain1/
-$ curl http://${HOSTNAME}:${LB_PORT}/domain2/
-```
-
 #### Host-based secured routing
 This sample demonstrates how to access an application on two WebLogic domains using an HTTPS endpoint. Install a TLS-enabled ingress controller.
 
@@ -140,7 +123,7 @@ set('WeblogicPluginEnabled',true)
 cd('/Clusters/%s' % cluster_name)
 set('WeblogicPluginEnabled',true)
 ```
-### 2. Create a ingress resource file with custom annotation value
+### 2. Create NGINX ingress resource with custom annotation values
 Save the below configuration as 'nginx-tls-console.yaml' and replace the string 'weblogic-domain' with the namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserver' with name of the Administration server in the WebLogic domain.
 
 ```
@@ -179,10 +162,10 @@ Get the SSL port from the Kubernetes service
 # Get the ingress controller secure web port
 SSLPORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
 ```
-In a web browser type 'https://${HOSTNAME}:${SSLPORT}/console' in the address bar to access the WebLogic Server Administration Console.
+In a web browser address bar type 'https://${HOSTNAME}:${SSLPORT}/console' to access the WebLogic Server Administration Console.
 
 ## Uninstall the NGINX Operator
-After removing all the NGINX Ingress resources, uninstall the NGINX operator:
+After removing all the NGINX Ingress resources, uninstall the NGINX operator.
 
 ```
 $ helm uninstall nginx-operator --namespace nginx
