@@ -95,7 +95,7 @@ public interface TestConstants {
   public static final String APPSCODE_REPO_NAME = "appscode";
   public static final String VOYAGER_CHART_NAME = "voyager";
   public static final String VOYAGER_CHART_VERSION = "12.0.0";
-  
+
   // Apache constants
   public static final String APACHE_RELEASE_NAME = "apache-release" + BUILD_ID;
   public static final String APACHE_SAMPLE_CHART_DIR = "../kubernetes/samples/charts/apache-webtier";
