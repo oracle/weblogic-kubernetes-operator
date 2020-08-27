@@ -48,6 +48,8 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
@@ -178,9 +180,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                         + "(elapsed time {0} ms, remaining time {1} ms)",
                         condition.getElapsedTimeInMS(),
                         condition.getRemainingTimeInMS()))
-                .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
+                .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
           }
         }
+
         // push the images to repo
         if (!REPO_NAME.isEmpty()) {
 

@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -93,6 +94,9 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -107,6 +111,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.listJobs;
@@ -182,6 +190,7 @@ public class ItTwoDomainsLoadBalancers {
   private static Path dstFile = null;
   private static HelmParams apacheHelmParams1 = null;
   private static HelmParams apacheHelmParams2 = null;
+  private static String kindRepoApacheImage = APACHE_IMAGE_12213;
 
   // domain constants
   private final String clusterName = "cluster-1";
@@ -246,6 +255,33 @@ public class ItTwoDomainsLoadBalancers {
       logger.info("Using image {0}", kindRepoImage);
       image = kindRepoImage;
       isUseSecret = false;
+
+      // We do not know why the kind clusters can't pull Apache webtier image from OCIR using the image pull secret.
+      // Try the following instead
+      //   1. docker login
+      //   2. docker pull
+      //   3. docker tag with the KIND_REPO value
+      ConditionFactory withStandardRetryPolicy
+          = with().pollDelay(0, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(30, MINUTES).await();
+
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for docker login to be successful"
+                      + "(elapsed time {0} ms, remaining time {1} ms)",
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
+
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for pullImageFromOcirAndPushToKind for image {0} to be successful"
+                      + "(elapsed time {1} ms, remaining time {2} ms)", APACHE_IMAGE_12213,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(pullImageFromOcirAndPushToKind(APACHE_IMAGE_12213)
+          );
     }
   }
 
@@ -356,14 +392,14 @@ public class ItTwoDomainsLoadBalancers {
 
     // install and verify Apache
     apacheHelmParams1 = assertDoesNotThrow(
-        () -> installAndVerifyApache(domain1Namespace, APACHE_IMAGE_12213, 0, 0, domain1Uid));
+        () -> installAndVerifyApache(domain1Namespace, kindRepoApacheImage, 0, 0, domain1Uid));
 
     LinkedHashMap<String, String> clusterNamePortMap = new LinkedHashMap<>();
     for (int i = 0; i < numberOfDomains; i++) {
       clusterNamePortMap.put(domainUids.get(i) + "-cluster-cluster-1", managedServerPort);
     }
     apacheHelmParams2 = assertDoesNotThrow(
-        () -> installAndVerifyApache(defaultNamespace, APACHE_IMAGE_12213, 0, 0, domain1Uid,
+        () -> installAndVerifyApache(defaultNamespace, kindRepoApacheImage, 0, 0, domain1Uid,
             RESULTS_ROOT, "apache-sample-host", clusterNamePortMap));
   }
 
@@ -1452,4 +1488,14 @@ public class ItTwoDomainsLoadBalancers {
 
     return adminAccessible;
   }
+
+  private static Callable<Boolean> pullImageFromOcirAndPushToKind(String apacheImage) {
+    return (() -> {
+      kindRepoApacheImage = KIND_REPO + apacheImage.substring(TestConstants.REPO_DEFAULT.length());
+      logger.info("pulling image {0} from ocir, tag it as image {1} and push to kind repo",
+          apacheImage, kindRepoApacheImage);
+      return dockerPull(apacheImage) && dockerTag(apacheImage, kindRepoApacheImage) && dockerPush(kindRepoApacheImage);
+    });
+  }
+
 }
