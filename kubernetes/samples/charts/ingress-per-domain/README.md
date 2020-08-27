@@ -1,10 +1,10 @@
-# An Ingress per domain chart
-This chart is for deploying an Ingress resource in front of a WebLogic domain cluster. We support two Ingress types: Traeafik and Voyager.
+# An ingress per domain chart
+This chart is for deploying an ingress resource in front of a WebLogic domain cluster. We support ingress types: Traefik, Voyager, and NGINX.
 
 ## Prerequisites
 - Have Docker and a Kubernetes cluster running and have `kubectl` installed and configured.
 - Have Helm installed.
-- The corresponding Ingress controller, Traefik, Voyager or Nginx, is installed in the Kubernetes cluster.
+- The corresponding ingress controller, Traefik, Voyager or NGINX, is installed in the Kubernetes cluster.
 - A WebLogic domain cluster deployed by `weblogic-operator` is running in the Kubernetes cluster.
 
 ## Installing the chart
@@ -17,9 +17,9 @@ $ cd kubernetes/samples/charts
 # Use helm to install the chart.  Use `--namespace` to specify the name of the WebLogic domain's namespace.
 $ helm install ingress-per-domain --name my-ingress --namespace my-domain-namespace --values values.yaml
 ```
-The Ingress resource will be created in the same namespace as the WebLogic domain cluster.
+The ingress resource will be created in the same namespace as the WebLogic domain cluster.
 
-Sample `values.yaml` for the Traefik Ingress:
+Sample `values.yaml` file for the Traefik ingress:
 ```
 type: TRAEFIK
 
@@ -35,7 +35,7 @@ traefik:
   hostname: domain1.org
 ```
 
-Sample `values.yaml` for the Voyager Ingress:
+Sample `values.yaml` file for the Voyager ingress:
 ```
 type: VOYAGER
 
@@ -53,7 +53,7 @@ voyager:
   statsPort: 30315
 ```
 
-Sample `values.yaml` for the Nginx Ingress:
+Sample `values.yaml` file for the NGINX ingress:
 ```
 type: NGINX
 
@@ -63,7 +63,7 @@ wlsDomain:
   clusterName: cluster1
   managedServerPort: 8001
 
-# Nginx specific values
+# NGINX specific values
 nginx:
   # hostname used by host-routing
   hostname: domain1.org
@@ -79,7 +79,7 @@ The following table lists the configurable parameters of this chart and their de
 
 | Parameter | Description | Default |
 | --- | --- | --- |
-| `type` | Type of Ingress controller. Legal values are `TRAEFIK` or `VOYAGER` or 'NGINX'. | `TRAEFIK` |
+| `type` | Type of ingress controller. Legal values are `TRAEFIK` or `VOYAGER` or `NGINX`. | `TRAEFIK` |
 | `wlsDomain.domainUID` | DomainUID of the WLS domain. | `domain1` |
 | `wlsDomain.clusterName` | Cluster name in the WLS domain. | `cluster-1` |
 | `wlsDomain.managedServerPort` | Port number of the managed servers in the WLS domain cluster. | `8001` |

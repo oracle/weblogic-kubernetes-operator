@@ -4,7 +4,7 @@
 See the official installation document at:
 - https://kubernetes.github.io/ingress-nginx/deploy/#using-helm
 
-As a *demonstration*, the following are steps to install the NGINX operator by using Helm 3 on a Linux OS.
+As a *demonstration*, the following are steps to install the NGINX operator using Helm 3 on a Linux OS.
 
 ### 1. Add the ingress-nginx chart repository
 ```
@@ -18,7 +18,7 @@ $ helm search repo ingress-nginx
 NAME               CHART VERSION APP VERSION	DESCRIPTION
 ingress-nginx/ingress-nginx	2.12.0       	0.34.1     	Ingress controller for Kubernetes using NGINX a...
 ```
-> **NOTE**: After updating the helm repository, the NGINX version listed maybe newer that the one appearing here, please check with the NGINX site for the latest supported versions.
+> **NOTE**: After updating the Helm repository, the NGINX version listed may be newer that the one appearing here. Please check with the NGINX site for the latest supported versions.
 
 ### 2. Install the NGINX operator
 
@@ -124,7 +124,7 @@ cd('/Clusters/%s' % cluster_name)
 set('WeblogicPluginEnabled',true)
 ```
 ### 2. Create NGINX ingress resource with custom annotation values
-Save the below configuration as 'nginx-tls-console.yaml' and replace the string 'weblogic-domain' with the namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserver' with name of the Administration server in the WebLogic domain.
+Save the below configuration as 'nginx-tls-console.yaml' and replace the string 'weblogic-domain' with the namespace of the WebLogic domain, the string 'domain1' with the domain UID, and the string 'adminserver' with the name of the Administration server in the WebLogic domain.
 
 ```
 apiVersion: extensions/v1beta1
@@ -152,20 +152,20 @@ spec:
           servicePort: 7001
 ```
 ### 3. Deploy the ingress resource
-Deploy the ingress resource using 'kubectl'.
+Deploy the ingress resource using `kubectl`.
 ```
  kubectl create -f nginx-tls-console.yaml
 ```
 ### 4. Access the WebLogic Server Administration Console using the HTTPS port
-Get the SSL port from the Kubernetes service 
+Get the SSL port from the Kubernetes service. 
 ```
 # Get the ingress controller secure web port
 SSLPORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
 ```
-In a web browser address bar type 'https://${HOSTNAME}:${SSLPORT}/console' to access the WebLogic Server Administration Console.
+In a web browser address bar type `https://${HOSTNAME}:${SSLPORT}/console` to access the WebLogic Server Administration Console.
 
-## Uninstall the NGINX Operator
-After removing all the NGINX Ingress resources, uninstall the NGINX operator.
+## Uninstall the NGINX operator
+After removing all the NGINX ingress resources, uninstall the NGINX operator.
 
 ```
 $ helm uninstall nginx-operator --namespace nginx
