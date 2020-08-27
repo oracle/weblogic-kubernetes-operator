@@ -30,22 +30,28 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_INDEX_KEY;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.SNAKE_YAML_JAR_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_JAR_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
@@ -53,11 +59,13 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyElasticsearch;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyWlsLoggingExporter;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.uninstallAndVerifyElasticsearch;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.uninstallAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyLoggingExporterReady;
@@ -70,28 +78,41 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * To test ELK Stack used in Operator env, this Elasticsearch test does
- * 1. Install Kibana/Elasticsearch 
- * 2. Install and start Operator with ELK Stack enabled
+ * 1. Install Kibana/Elasticsearch.
+ * 2. Install and start Operator with ELK Stack enabled.
  * 3. Verify that ELK Stack is ready to use by checking the index status of
- *    Kibana and Logstash created in the Operator pod successfully
- * 4. Create and start the WebLogic domain
- * 5. Verify that Elasticsearch collects data from WebLogic logs and
- *    stores them in its repository correctly.
+ *    Kibana and Logstash created in the Operator pod successfully.
+ * 4. Install WebLogic Logging Exporter in all WebLogic server pods by
+ *    adding WebLogic Logging Exporter binary to the image builder process
+ *    so that it will be available in the domain image via
+ *    --additionalBuildCommands and --additionalBuildFiles.
+ * 5. Create and start the WebLogic domain.
+ * 6. Verify that
+ *    1) Elasticsearch collects data from WebLogic logs and
+ *       stores them in its repository correctly.
+ *    2) Using WebLogic Logging Exporter, WebLogic server Logs can be integrated to
+ *       ELK Stack in the same pod that the domain is running on.
  */
 @DisplayName("Test to use Elasticsearch API to query WebLogic logs")
 @IntegrationTest
 class ItElasticLogging {
 
-  private static String k8sExecCmdPrefix;
-  private static Map<String, String> testVarMap;
-  private static final int maxIterationsPod = 10;
+  // constants for creating domain image using model in image
+  private static final String WLS_LOGGING_MODEL_FILE = "model.wlslogging.yaml";
+  private static final String WLS_LOGGING_IMAGE_NAME = "wls-logging-image";
 
+  // constants for testing WebLogic Logging Exporter
+  private static final String wlsLoggingExporterYamlFileLoc = RESOURCE_DIR + "/loggingexporter";
+  private static final String wlsLoggingExporterArchiveLoc = DOWNLOAD_DIR + "/loggingExporterArchiveDir";
+
+  // constants for Domain
   private static String domainUid = "elk-domain1";
   private static String clusterName = "cluster-1";
   private static String adminServerName = "admin-server";
   private static String adminServerPodName = domainUid + "-" + adminServerName;
   private static String managedServerPrefix = "managed-server";
   private static String managedServerPodPrefix = domainUid + "-" + managedServerPrefix;
+  private static String managedServerFilter = managedServerPrefix + "1";
   private static int replicaCount = 2;
 
   private static String opNamespace = null;
@@ -102,11 +123,16 @@ class ItElasticLogging {
   private static LoggingExporterParams kibanaParams = null;
   private static LoggingFacade logger = null;
 
+  private static String k8sExecCmdPrefix;
+  private static Map<String, String> testVarMap;
+
   /**
-   * Install Elasticsearch, Kibana and Operator and verify, create a one cluster domain.
+   * Install Elasticsearch, Kibana and Operator.
+   * Install WebLogic Logging Exporter in all WebLogic server pods to collect WebLogic logs.
+   * Create domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   *                   JUnit engine parameter resolution mechanism
+   *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
   public static void init(@Namespaces(2) List<String> namespaces) {
@@ -139,11 +165,19 @@ class ItElasticLogging {
     assertTrue(kibanaParams != null, "Failed to install Kibana");
 
     // install and verify Operator
-    installAndVerifyOperator(opNamespace, opNamespace + "-sa", false, 0, true, domainNamespace);
+    installAndVerifyOperator(opNamespace, opNamespace + "-sa",
+        false, 0, true, domainNamespace);
+
+    // install WebLogic Logging Exporter
+    installAndVerifyWlsLoggingExporter(managedServerFilter,
+        wlsLoggingExporterYamlFileLoc, wlsLoggingExporterArchiveLoc);
+
+    // create and verify WebLogic domain image using model in image with model files
+    String imageName = createAndVerifyDomainImage();
 
     // create and verify one cluster domain
     logger.info("Create domain and verify that it's running");
-    createAndVerifyDomain();
+    createAndVerifyDomain(imageName);
 
     testVarMap = new HashMap<String, String>();
 
@@ -153,7 +187,7 @@ class ItElasticLogging {
             .append(":")
             .append(ELASTICSEARCH_HTTP_PORT);
     k8sExecCmdPrefix = elasticsearchUrlBuff.toString();
-    logger.info("elasticsearch URL {0}", k8sExecCmdPrefix);
+    logger.info("Elasticsearch URL {0}", k8sExecCmdPrefix);
 
     // Verify that ELK Stack is ready to use
     testVarMap = verifyLoggingExporterReady(opNamespace, null, LOGSTASH_INDEX_KEY);
@@ -200,30 +234,103 @@ class ItElasticLogging {
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=level:INFO";
 
-    verifySearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true);
+    verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true);
 
     logger.info("Query logs of level=INFO succeeded");
   }
 
   /**
-   * Use Elasticsearch Search APIs to query Operator log info. Verify that log hits for
-   * type=weblogic-operator are not empty
+   * Use Elasticsearch Search APIs to query Operator log info. Verify that log occurrence for
+   * type=weblogic-operator are not empty.
    */
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query Operator log info and verify")
   public void testOperatorLogSearch() {
-    // Verify that log hits for Operator are not empty
+    // Verify that log occurrence for Operator are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=type:weblogic-operator";
 
-    verifySearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, false);
+    verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, false);
 
     logger.info("Query Operator log info succeeded");
   }
 
-  private static void createAndVerifyDomain() {
-    // get the pre-built image created by IntegrationTestWatcher
-    String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+  /**
+   * Use Elasticsearch Search APIs to query WebLogic log info.
+   * Verify that WebLogic server status of "RUNNING" is found.
+   */
+  @Disabled("Disabled the test due to JIRA OWLS-83899")
+  @Test
+  @DisplayName("Use Elasticsearch Search APIs to query Operator log info and verify")
+  public void testWebLogicLogSearch() {
+    // Verify that the admin status of "RUNNING" is found in query return from Elasticsearch repository
+    verifyServerRunningInSearchResults(adminServerPodName);
+
+    // Verify that the ms status of "RUNNING" is found in query return from Elasticsearch repos
+    verifyServerRunningInSearchResults(managedServerPodPrefix + "1");
+
+    logger.info("Query Operator log for WebLogic server status info succeeded");
+  }
+
+  /**
+   * Use Elasticsearch Search APIs to query WebLogic log info pushed to Elasticsearch repository
+   * by WebLogic Logging Exporter. Verify that log occurrence for WebLogic servers are not empty.
+   */
+  @Test
+  @DisplayName("Use Elasticsearch Search APIs to query WebLogic log info in WLS server pod and verify")
+  public void testWlsLoggingExporter() throws Exception {
+    Map<String, String> wlsMap = verifyLoggingExporterReady(opNamespace, null, WEBLOGIC_INDEX_KEY);
+    // merge testVarMap and wlsMap
+    testVarMap.putAll(wlsMap);
+
+    // Verify that occurrence of log level = Notice are not empty
+    String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
+    String queryCriteria = "/_search?q=level:Notice";
+    verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
+
+    // Verify that occurrence of loggerName = WebLogicServer are not empty
+    queryCriteria = "/_search?q=loggerName:WebLogicServer";
+    verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
+
+    // Verify that occurrence of _type:doc are not empty
+    queryCriteria = "/_search?q=_type:doc";
+    verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
+
+    // Verify that serverName:managed-server1 is filtered out
+    // by checking the count of logs from serverName:managed-server1 is zero and no failures
+    // e.g. when running the query:
+    // curl -X GET http://elasticsearch.default.svc.cluster.local:9200/wls/_count?q=serverName:managed-server1
+    // Expected return result is:
+    // {"count":0,"_shards":{"total":5,"successful":5,"skipped":0,"failed":0}}
+    regex = ".*count\":(\\d+),.*failed\":(\\d+)";
+    String filteredServer = managedServerFilter.split("-")[1];
+    queryCriteria = "/_count?q=serverName:" + filteredServer;
+    verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, true, "notExist");
+
+    logger.info("Query WebLogic log info succeeded");
+  }
+
+  private static String createAndVerifyDomainImage() {
+    // create image with model files
+    String additionalBuildCommands = WORK_DIR + "/" + COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
+
+    StringBuffer additionalBuildFilesVarargsBuff = new StringBuffer()
+        .append(WORK_DIR)
+        .append("/")
+        .append(WLS_LOGGING_EXPORTER_YAML_FILE_NAME)
+        .append(",")
+        .append(wlsLoggingExporterArchiveLoc)
+        .append("/")
+        .append(WLS_LOGGING_EXPORTER_JAR_NAME)
+        .append(",")
+        .append(wlsLoggingExporterArchiveLoc)
+        .append("/")
+        .append(SNAKE_YAML_JAR_NAME);
+
+    logger.info("Create image with model file and verify");
+    String miiImage =
+        createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE, MII_BASIC_APP_NAME,
+            additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
@@ -233,6 +340,10 @@ class ItElasticLogging {
     assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
         String.format("create Docker Registry Secret failed for %s", REPO_SECRET_NAME));
 
+    return miiImage;
+  }
+
+  private static void createAndVerifyDomain(String miiImage) {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
@@ -291,8 +402,8 @@ class ItElasticLogging {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHomeSourceType("Image")
-            .image(WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1SecretReference()
@@ -329,39 +440,32 @@ class ItElasticLogging {
     createDomainAndVerify(domain, domainNamespace);
   }
 
-  private void verifySearchResults(String queryCriteria, String regex,
+  private void verifyServerRunningInSearchResults(String serverName) {
+    String queryCriteria = "/_search?q=log:" + serverName;
+    withStandardRetryPolicy.untilAsserted(
+        () -> assertTrue(execSearchQuery(queryCriteria, LOGSTASH_INDEX_KEY).contains("RUNNING"),
+          String.format("serverName %s is not RUNNING", serverName)));
+
+    String queryResult = execSearchQuery(queryCriteria, LOGSTASH_INDEX_KEY);
+    logger.info("query result is {0}", queryResult);
+  }
+
+  private void verifyCountsHitsInSearchResults(String queryCriteria, String regex,
                                    String index, boolean checkCount, String... args) {
     String checkExist = (args.length == 0) ? "" : args[0];
     int count = -1;
     int failedCount = -1;
     String hits = "";
-    String results = null;
-    int i = 0;
-    while (i < maxIterationsPod) {
-      results = execSearchQuery(queryCriteria, index);
-      Pattern pattern = Pattern.compile(regex);
-      Matcher matcher = pattern.matcher(results);
-      if (matcher.find()) {
-        count = Integer.parseInt(matcher.group(1));
-        if (checkCount) {
-          failedCount = Integer.parseInt(matcher.group(2));
-        } else {
-          hits = matcher.group(2);
-        }
-
-        break;
+    String results = execSearchQuery(queryCriteria, index);
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(results);
+    if (matcher.find()) {
+      count = Integer.parseInt(matcher.group(1));
+      if (checkCount) {
+        failedCount = Integer.parseInt(matcher.group(2));
+      } else {
+        hits = matcher.group(2);
       }
-
-      logger.info("Logs are not pushed to ELK Stack Ite [{0}/{1}], sleeping {2} seconds more",
-          i, maxIterationsPod, maxIterationsPod);
-
-      try {
-        Thread.sleep(maxIterationsPod * 1000);
-      } catch (InterruptedException ex) {
-        //ignore
-      }
-
-      i++;
     }
 
     logger.info("Total count of logs: " + count);
@@ -385,7 +489,7 @@ class ItElasticLogging {
     assertTrue(operatorPodName != null && !operatorPodName.isEmpty(), "Failed to get Operator pad name");
     logger.info("Operator pod name " + operatorPodName);
 
-    int waittime = maxIterationsPod / 2;
+    int waittime = 5;
     String indexName = (String) testVarMap.get(index);
     StringBuffer curlOptions = new StringBuffer(" --connect-timeout " + waittime)
         .append(" --max-time " + waittime)
