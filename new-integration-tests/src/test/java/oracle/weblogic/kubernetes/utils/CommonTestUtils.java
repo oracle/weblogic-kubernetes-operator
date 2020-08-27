@@ -714,10 +714,31 @@ public class CommonTestUtils {
   }
 
   /**
+   * Install WebLogic Logging Exporter.
+   *
+   * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
+   * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
+   * @param wlsLoggingExporterArchiveLoc the directory where WebLogic Logging Exporter jar files store
+   * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
+   */
+  public static boolean installAndVerifyWlsLoggingExporter(String filter,
+                                                           String wlsLoggingExporterYamlFileLoc,
+                                                           String wlsLoggingExporterArchiveLoc) {
+    // Install WebLogic Logging Exporter
+    assertThat(TestActions.installWlsLoggingExporter(filter,
+        wlsLoggingExporterYamlFileLoc, wlsLoggingExporterArchiveLoc))
+        .as("WebLogic Logging Exporter installation succeeds")
+        .withFailMessage("WebLogic Logging Exporter installation failed")
+        .isTrue();
+
+    return true;
+  }
+
+  /**
    * Verify that the logging exporter is ready to use in Operator pod or WebLogic server pod.
    *
    * @param namespace namespace of Operator pod (for ELK Stack) or
-   *                  WebLogic server pod (for WebLogic logging exporter)
+   *                  WebLogic server pod (for WebLogic Logging Exporter)
    * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
    * @param index key word used to search the index status of the logging exporter
    * @return a map containing key and value pair of logging exporter index
@@ -1231,6 +1252,31 @@ public class CommonTestUtils {
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
    * @param wdtModelFile the WDT model file used to build the Docker image
    * @param appName the sample application name used to build sample app ear file in WDT model file
+   * @param additionalBuildCommands - Path to a file with additional build commands
+   * @param additionalBuildFilesVarargs - Additional files that are required by your additionalBuildCommands
+   * @return image name with tag
+   */
+  public static  String createMiiImageAndVerify(String miiImageNameBase,
+                                                String wdtModelFile,
+                                                String appName,
+                                                String additionalBuildCommands,
+                                                String... additionalBuildFilesVarargs) {
+    // build the model file list
+    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
+    final List<String> appSrcDirList = Collections.singletonList(appName);
+
+    return createImageAndVerify(
+        miiImageNameBase, modelList, appSrcDirList, null, WLS_BASE_IMAGE_NAME,
+        WLS_BASE_IMAGE_TAG, WLS, true, null, false,
+        additionalBuildCommands, additionalBuildFilesVarargs);
+  }
+
+  /**
+   * Create a Docker image for a model in image domain.
+   *
+   * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
+   * @param wdtModelFile the WDT model file used to build the Docker image
+   * @param appName the sample application name used to build sample app ear file in WDT model file
    * @param baseImageName the WebLogic base image name to be used while creating mii image
    * @param baseImageTag the WebLogic base image tag to be used while creating mii image
    * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
@@ -1367,6 +1413,38 @@ public class CommonTestUtils {
                                             boolean modelType,
                                             String domainHome,
                                             boolean oneArchiveContainsMultiApps) {
+    return createImageAndVerify(
+        imageNameBase, wdtModelList, appSrcDirList, modelPropList, baseImageName, baseImageTag, domainType,
+        modelType, domainHome, oneArchiveContainsMultiApps, null);
+  }
+
+  /**
+   * Create a Docker image for a model in image domain or domain home in image using multiple WDT model
+   * files and application ear files.
+   * @param imageNameBase - the base mii image name used in local or to construct the image name in repository
+   * @param wdtModelList - list of WDT model files used to build the Docker image
+   * @param appSrcDirList - list of the sample application source directories used to build sample app ear files
+   * @param modelPropList - the WebLogic base image name to be used while creating mii image
+   * @param baseImageName - the WebLogic base image name to be used while creating mii image
+   * @param baseImageTag - the WebLogic base image tag to be used while creating mii image
+   * @param domainType - the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
+   * @param modelType - create a model image only or domain in image. set to true for MII
+   * @param additionalBuildCommands - Path to a file with additional build commands
+   * @param additionalBuildFilesVarargs -Additional files that are required by your additionalBuildCommands
+   * @return image name with tag
+   */
+  public static String createImageAndVerify(String imageNameBase,
+                                            List<String> wdtModelList,
+                                            List<String> appSrcDirList,
+                                            List<String> modelPropList,
+                                            String baseImageName,
+                                            String baseImageTag,
+                                            String domainType,
+                                            boolean modelType,
+                                            String domainHome,
+                                            boolean oneArchiveContainsMultiApps,
+                                            String additionalBuildCommands,
+                                            String... additionalBuildFilesVarargs) {
 
     LoggingFacade logger = getLogger();
 
@@ -1475,20 +1553,31 @@ public class CommonTestUtils {
                 .env(env)
                 .redirect(true));
     } else {
-      result = createImage(
-              new WitParams()
-                .baseImageName(baseImageName)
-                .baseImageTag(baseImageTag)
-                .domainType(domainType)
-                .modelImageName(imageName)
-                .modelImageTag(imageTag)
-                .modelFiles(wdtModelList)
-                .modelVariableFiles(modelPropList)
-                .modelArchiveFiles(archiveList)
-                .wdtModelOnly(modelType)
-                .wdtVersion(WDT_VERSION)
-                .env(env)
-                .redirect(true));
+      WitParams witParams = new WitParams()
+          .baseImageName(baseImageName)
+          .baseImageTag(baseImageTag)
+          .domainType(domainType)
+          .modelImageName(imageName)
+          .modelImageTag(imageTag)
+          .modelFiles(wdtModelList)
+          .modelVariableFiles(modelPropList)
+          .modelArchiveFiles(archiveList)
+          .wdtModelOnly(modelType)
+          .wdtVersion(WDT_VERSION)
+          .env(env)
+          .redirect(true);
+
+      if (additionalBuildCommands != null) {
+        logger.info("additionalBuildCommands {0}", additionalBuildCommands);
+        witParams.additionalBuildCommands(additionalBuildCommands);
+        StringBuffer additionalBuildFilesBuff = new StringBuffer();
+        for (String buildFile:additionalBuildFilesVarargs) {
+          additionalBuildFilesBuff.append(buildFile).append(" ");
+        }
+
+        witParams.additionalBuildFiles(additionalBuildFilesBuff.toString().trim());
+      }
+      result = createImage(witParams);
     }
 
     assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
