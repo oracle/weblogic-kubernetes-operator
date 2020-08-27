@@ -47,13 +47,6 @@ $ kubectl exec -it $POD_NAME -n nginx -- /nginx-ingress-controller --version
 ```
 > **NOTE**: All the generated Kubernetes resources of the NGINX operator have names controlled by the NGINX Helm chart. In our case, we use `releaseName` of `nginx-operator`.
 
-## Update the NGINX operator
-After the NGINX operator is installed and running, to change some configuration of the NGINX operator, use `helm upgrade` to achieve this.
-```
-# To update configuration on a helm chart 'nginx-operator'
-$ helm upgrade nginx-operator ingress-nginx/ingress-nginx [flags]
-```
-
 ## Configure NGINX as a load balancer for WebLogic domains
 We'll demonstrate how to use NGINX to handle traffic to backend WebLogic domains.
 
@@ -147,8 +140,8 @@ set('WeblogicPluginEnabled',true)
 cd('/Clusters/%s' % cluster_name)
 set('WeblogicPluginEnabled',true)
 ```
-### 2. Update the Ingress resource with customRequestHeaders value.
-Replace the string 'weblogic-domain' with namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserver' with name of the Administration server in the WebLogic domain.
+### 2. Create a ingress resource file with custom annotation value
+Save the below configuration as 'nginx-tls-console.yaml' by replacing the string 'weblogic-domain' with namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserver' with name of the Administration server in the WebLogic domain.
 
 ```
 apiVersion: extensions/v1beta1
@@ -175,8 +168,8 @@ spec:
           serviceName: domain1-adminserver
           servicePort: 7001
 ```
-### 3. Create Ingress resource.
-Save the above configuration as 'nginx-tls-console.yaml'.
+### 3. Deploy the ingress resource
+Deploy the ingress resource using 'kubectl'.
 ```
  kubectl create -f nginx-tls-console.yaml
 ```
