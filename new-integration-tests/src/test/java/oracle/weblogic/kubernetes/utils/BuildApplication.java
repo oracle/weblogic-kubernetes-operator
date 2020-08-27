@@ -156,30 +156,31 @@ public class BuildApplication {
       Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
           null, zipFile, Paths.get("/u01", zipFile.getFileName().toString()));
     } catch (ApiException | IOException  ioex) {
-      logger.info(ioex.getMessage());
+      logger.info("Exception while copying file " + zipFile + " to pod", ioex);
     }
     try {
       //copy the build script to /u01 location inside pod
       Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
           null, BUILD_SCRIPT_SOURCE_PATH, Paths.get("/u01", BUILD_SCRIPT));
     } catch (ApiException | IOException  ioex) {
-      logger.info(ioex.getMessage());
+      logger.info("Exception while copying file " + zipFile + " to pod", ioex);
     }
     try {
       //Kubernetes.exec(webLogicPod, new String[]{"/bin/sh", "/u01/" + BUILD_SCRIPT});
       ExecResult exec = Exec.exec(webLogicPod, null, false, "/bin/sh", "/u01/" + BUILD_SCRIPT);
       if (exec.stdout() != null) {
-        logger.info(exec.stdout());
+        logger.info("Exec stdout {0}", exec.stdout());
       }
       if (exec.stderr() != null) {
-        logger.info(exec.stderr());
+        logger.info("Exec stderr {0}", exec.stderr());
       }
       assertEquals(0, exec.exitValue(), "Exec into " + webLogicPod.getMetadata().getName()
-          + " to build an application failed");
+          + " to build an application failed with exit value " + exec.exitValue());
+
       Kubernetes.copyDirectoryFromPod(webLogicPod,
           Paths.get(APPLICATIONS_PATH, archiveDistDir).toString(), destArchiveBaseDir);
     } catch (ApiException | IOException | InterruptedException ioex) {
-      logger.info(ioex.getMessage());
+      logger.info("Exception while copying file " + Paths.get(APPLICATIONS_PATH, archiveDistDir) + " from pod", ioex);
     }
 
     return destDir = Paths.get(destArchiveBaseDir.toString(), "u01/application", archiveDistDir);
