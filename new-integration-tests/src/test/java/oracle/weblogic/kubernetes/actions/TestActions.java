@@ -67,6 +67,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.joda.time.DateTime;
 
+import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
+import static oracle.weblogic.kubernetes.actions.impl.Operator.stop;
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -137,6 +139,24 @@ public class TestActions {
    */
   public static String getOperatorContainerImageName(String namespace) throws ApiException {
     return Operator.getOperatorContainerImage(namespace);
+  }
+
+  /**
+   * Stop operator by changing the replica in the operator deployment to 0.
+   * @param namespace namespace of the operator
+   * @return true on success
+   */
+  public static boolean stopOperator(String namespace) {
+    return stop(namespace);
+  }
+
+  /**
+   * Start operator by changing the replica in the operator deployment to 1.
+   * @param namespace namespace of the operator
+   * @return true on success
+   */
+  public static boolean startOperator(String namespace) {
+    return start(namespace);
   }
 
   // ----------------------   domain  -----------------------------------
