@@ -91,8 +91,10 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
@@ -265,6 +267,13 @@ public class ItTwoDomainsLoadBalancers {
           = with().pollDelay(0, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(30, MINUTES).await();
+
+      logger.info("DEBUG: REPO_REGISTRY: {0}", REPO_REGISTRY);
+      logger.info("DEBUG: REPO_USERNAME: {0}", REPO_USERNAME);
+      logger.info("DEBUG: REPO_PASSWORD: {0}", REPO_PASSWORD);
+      logger.info("DEBUG: OCR_REGISTRY: {0}", OCR_REGISTRY);
+      logger.info("DEBUG: OCR_USERNAME: {0}", OCR_USERNAME);
+      logger.info("DEBUG: OCR_PASSWORD: {0}", OCR_PASSWORD);
 
       withStandardRetryPolicy
           .conditionEvaluationListener(
