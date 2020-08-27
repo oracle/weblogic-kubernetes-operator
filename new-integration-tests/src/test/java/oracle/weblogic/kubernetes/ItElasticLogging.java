@@ -125,7 +125,6 @@ class ItElasticLogging {
 
   private static String k8sExecCmdPrefix;
   private static Map<String, String> testVarMap;
-  private static final int maxIterationsPod = 10;
 
   /**
    * Install Elasticsearch, Kibana and Operator.
@@ -288,12 +287,15 @@ class ItElasticLogging {
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=level:Notice";
     verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
+
     // Verify that occurrence of loggerName = WebLogicServer are not empty
     queryCriteria = "/_search?q=loggerName:WebLogicServer";
     verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
+
     // Verify that occurrence of _type:doc are not empty
     queryCriteria = "/_search?q=_type:doc";
     verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
+
     // Verify that serverName:managed-server1 is filtered out
     // by checking the count of logs from serverName:managed-server1 is zero and no failures
     // e.g. when running the query:
@@ -439,29 +441,13 @@ class ItElasticLogging {
   }
 
   private void verifyServerRunningInSearchResults(String serverName) {
-    int i = 0;
-    String queryResult = null;
     String queryCriteria = "/_search?q=log:" + serverName;
-    while (i < maxIterationsPod) {
-      queryResult = execSearchQuery(queryCriteria, LOGSTASH_INDEX_KEY);
-      if (null != queryResult && queryResult.contains("RUNNING")) {
-        break;
-      }
+    withStandardRetryPolicy.untilAsserted(
+        () -> assertTrue(execSearchQuery(queryCriteria, LOGSTASH_INDEX_KEY).contains("RUNNING"),
+          String.format("serverName %s is not RUNNING", serverName)));
 
-      logger.info("Logs are not pushed to ELK Stack Ite [{0}/{1}], sleeping {2} seconds more",
-          i, maxIterationsPod, maxIterationsPod);
-
-      try {
-        Thread.sleep(maxIterationsPod * 1000);
-      } catch (InterruptedException ex) {
-        //ignore
-      }
-      i++;
-    }
-
-    assertTrue(queryResult != null, String.format("Failed to get the status of %s", serverName));
+    String queryResult = execSearchQuery(queryCriteria, LOGSTASH_INDEX_KEY);
     logger.info("query result is {0}", queryResult);
-    assertTrue(queryResult.contains("RUNNING"), serverName + " is not RUNNING");
   }
 
   private void verifyCountsHitsInSearchResults(String queryCriteria, String regex,
@@ -470,32 +456,16 @@ class ItElasticLogging {
     int count = -1;
     int failedCount = -1;
     String hits = "";
-    String results = null;
-    int i = 0;
-    while (i < maxIterationsPod) {
-      results = execSearchQuery(queryCriteria, index);
-      Pattern pattern = Pattern.compile(regex);
-      Matcher matcher = pattern.matcher(results);
-      if (matcher.find()) {
-        count = Integer.parseInt(matcher.group(1));
-        if (checkCount) {
-          failedCount = Integer.parseInt(matcher.group(2));
-        } else {
-          hits = matcher.group(2);
-        }
-
-        break;
+    String results = execSearchQuery(queryCriteria, index);
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(results);
+    if (matcher.find()) {
+      count = Integer.parseInt(matcher.group(1));
+      if (checkCount) {
+        failedCount = Integer.parseInt(matcher.group(2));
+      } else {
+        hits = matcher.group(2);
       }
-
-      logger.info("Logs are not pushed to ELK Stack Ite [{0}/{1}], sleeping {2} seconds more",
-          i, maxIterationsPod, maxIterationsPod);
-
-      try {
-        Thread.sleep(maxIterationsPod * 1000);
-      } catch (InterruptedException ex) {
-        //ignore
-      }
-      i++;
     }
 
     logger.info("Total count of logs: " + count);
@@ -519,7 +489,7 @@ class ItElasticLogging {
     assertTrue(operatorPodName != null && !operatorPodName.isEmpty(), "Failed to get Operator pad name");
     logger.info("Operator pod name " + operatorPodName);
 
-    int waittime = maxIterationsPod / 2;
+    int waittime = 5;
     String indexName = (String) testVarMap.get(index);
     StringBuffer curlOptions = new StringBuffer(" --connect-timeout " + waittime)
         .append(" --max-time " + waittime)
