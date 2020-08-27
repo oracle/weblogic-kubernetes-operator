@@ -128,9 +128,9 @@ class ItPodsShutdownOption {
     //scale the cluster to 2 managed servers
     assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, 2)))
         .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
-              clusterName, domainUid, domainNamespace)
+            clusterName, domainUid, domainNamespace)
         .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} failed",
-              clusterName, domainUid, domainNamespace)
+            clusterName, domainUid, domainNamespace)
         .isTrue();
     assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
 
@@ -288,4 +288,3 @@ class ItPodsShutdownOption {
   }
 
 }
-
