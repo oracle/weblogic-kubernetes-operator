@@ -72,6 +72,7 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 public class DomainProcessorImpl implements DomainProcessor {
 
@@ -403,7 +404,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         case "DELETED":
           delegate.runSteps(
               ConfigMapHelper.createScriptConfigMapStep(
-                  delegate.getOperatorNamespace(), c.getMetadata().getNamespace()));
+                  getOperatorNamespace(), c.getMetadata().getNamespace()));
           break;
 
         case "ERROR":

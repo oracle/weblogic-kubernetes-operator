@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.json.JsonPatchBuilder;
 
+import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.LabelConstants;
 import org.apache.commons.collections.MapUtils;
@@ -107,6 +108,25 @@ public class KubernetesUtils {
           | IllegalArgumentException
           | IllegalAccessException e) {
       return new V1ObjectMeta();
+    }
+  }
+
+  /**
+   * Returns the metadata of the list.
+   *
+   * @param resource a Kubernetes resource
+   * @return the metadata, if found; otherwise a newly created one.
+   */
+  static V1ListMeta getListMetadata(Object resource) {
+    try {
+      Field metadataField = resource.getClass().getDeclaredField("metadata");
+      metadataField.setAccessible(true);
+      return (V1ListMeta) metadataField.get(resource);
+    } catch (NoSuchFieldException
+          | SecurityException
+          | IllegalArgumentException
+          | IllegalAccessException e) {
+      return new V1ListMeta();
     }
   }
 

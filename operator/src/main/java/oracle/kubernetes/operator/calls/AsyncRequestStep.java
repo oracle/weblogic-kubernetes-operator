@@ -3,8 +3,6 @@
 
 package oracle.kubernetes.operator.calls;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,10 +13,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ListMeta;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.ListParams;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -58,15 +56,13 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
   /**
    * Construct async step.
-   *
    * @param next Next
    * @param requestParams Request parameters
    * @param factory Factory
    * @param helper Client pool
    * @param timeoutSeconds Timeout
    * @param maxRetryCount Max retry count
-   * @param fieldSelector Field selector
-   * @param labelSelector Label selector
+   * @param listParams parameters to control list operations
    * @param resourceVersion Resource version
    */
   public AsyncRequestStep(
@@ -76,8 +72,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       ClientPool helper,
       int timeoutSeconds,
       int maxRetryCount,
-      String fieldSelector,
-      String labelSelector,
+      ListParams listParams,
       String resourceVersion) {
     super(next);
     this.helper = helper;
@@ -85,33 +80,13 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     this.factory = factory;
     this.timeoutSeconds = timeoutSeconds;
     this.maxRetryCount = maxRetryCount;
-    this.fieldSelector = fieldSelector;
-    this.labelSelector = labelSelector;
+    this.fieldSelector = listParams.fieldSelector;
+    this.labelSelector = listParams.labelSelector;
     this.resourceVersion = resourceVersion;
 
     // TODO, RJE: consider reimplementing the connection between the response and request steps using just
     // elements in the packet so that all step implementations are stateless.
     next.setPrevious(this);
-  }
-
-  private static String accessContinue(Object result) {
-    String cont = "";
-    if (result != null) {
-      try {
-        Method m = result.getClass().getMethod("getMetadata");
-        Object meta = m.invoke(result);
-        if (meta instanceof V1ListMeta) {
-          return ((V1ListMeta) meta).getContinue();
-        }
-      } catch (NoSuchMethodException
-          | SecurityException
-          | IllegalAccessException
-          | IllegalArgumentException
-          | InvocationTargetException e) {
-        // no-op, no-log
-      }
-    }
-    return cont;
   }
 
   @Override
@@ -132,21 +107,19 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
     final Packet packet;
     final RetryStrategy retryStrategy;
-    final String cont;
     final AtomicBoolean didResume = new AtomicBoolean(false);
     final ApiClient client;
 
-    public AsyncRequestStepProcessing(Packet packet, RetryStrategy retry, String cont) {
+    public AsyncRequestStepProcessing(Packet packet, RetryStrategy retry) {
       this.packet = packet;
       retryStrategy = Optional.ofNullable(retry)
             .orElse(new DefaultRetryStrategy(maxRetryCount, AsyncRequestStep.this, AsyncRequestStep.this));
-      this.cont = Optional.ofNullable(cont).orElse("");
       client = helper.take();
     }
 
     // Create a call to Kubernetes that we can cancel if it doesn't succeed in time.
     private CancellableCall createCall(AsyncFiber fiber) throws ApiException {
-      return factory.generate(requestParams, client, cont, new ApiCallbackImpl(this, fiber));
+      return factory.generate(requestParams, client, new ApiCallbackImpl(this, fiber));
     }
 
     // The Kubernetes request succeeded. Recycle the client, add the response to the packet, and proceed.
@@ -181,7 +154,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
     // If this is the first event after the fiber resumes, it indicates that we did not receive
     // a callback within the timeout. So cancel the call and prepare to try again.
-    private void handleTimeout(RequestParams requestParams, AsyncFiber fiber, CancellableCall cc) {
+    private void handleTimeout(AsyncFiber fiber, CancellableCall cc) {
       if (firstTimeResumed()) {
         try {
           cc.cancel();
@@ -227,17 +200,9 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
 
     // clear out earlier results
-    String cont = null;
     RetryStrategy retry = null;
     Component oldResponse = packet.getComponents().remove(RESPONSE_COMPONENT_NAME);
     if (oldResponse != null) {
-      @SuppressWarnings("unchecked")
-      CallResponse<T> old = oldResponse.getSpi(CallResponse.class);
-      if (old != null && old.getResult() != null) {
-        // called again, access continue value, if available
-        cont = accessContinue(old.getResult());
-      }
-
       retry = oldResponse.getSpi(RetryStrategy.class);
     }
 
@@ -245,12 +210,12 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       logAsyncRequest();
     }
 
-    AsyncRequestStepProcessing processing = new AsyncRequestStepProcessing(packet, retry, cont);
+    AsyncRequestStepProcessing processing = new AsyncRequestStepProcessing(packet, retry);
     return doSuspend(
         (fiber) -> {
           try {
             CancellableCall cc = processing.createCall(fiber);
-            scheduleTimeoutCheck(fiber, timeoutSeconds, () -> processing.handleTimeout(requestParams, fiber, cc));
+            scheduleTimeoutCheck(fiber, timeoutSeconds, () -> processing.handleTimeout(fiber, cc));
           } catch (ApiException t) {
             logAsyncFailure(t, t.getResponseBody());
             processing.resumeAfterThrowable(fiber);
@@ -302,7 +267,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   private void logTimeout() {
     // called from a code path where we don't have the necessary information for logging context
     // so we need to use th ethread context to pass in the logging context
-    try (LoggingContext stack =
+    try (LoggingContext ignored =
              LoggingContext.setThreadContext()
                  .namespace(requestParams.namespace)
                  .domainUid(requestParams.domainUid)) {
@@ -324,7 +289,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   private void logSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
     // called from a code path where we don't have the necessary information for logging context
     // so we need to use th ethread context to pass in the logging context
-    try (LoggingContext stack =
+    try (LoggingContext ignored =
              LoggingContext.setThreadContext()
                  .namespace(requestParams.namespace)
                  .domainUid(requestParams.domainUid)) {
@@ -341,7 +306,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   private void logFailure(ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
     // called from a code path where we don't have the necessary information for logging context
     // so we need to use th ethread context to pass in the logging context
-    try (LoggingContext stack =
+    try (LoggingContext ignored =
              LoggingContext.setThreadContext()
                  .namespace(requestParams.namespace)
                  .domainUid(requestParams.domainUid)) {

@@ -20,12 +20,12 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
-import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWithName;
-import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWithNameAndValue;
+import static oracle.kubernetes.operator.helpers.OperatorMatchers.EnvVarMatcher.envVarWithName;
+import static oracle.kubernetes.operator.helpers.OperatorMatchers.EnvVarMatcher.envVarWithNameAndValue;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 
-public class Matchers {
+public class OperatorMatchers {
 
   public static Matcher<Iterable<? super V1Container>> hasContainer(
       String name, String image, String... command) {
@@ -169,6 +169,7 @@ public class Matchers {
     }
   }
 
+  @SuppressWarnings("unused")
   static class EnvVarMatcher extends TypeSafeDiagnosingMatcher<V1EnvVar> {
     private static final String DONTCARE = "SENTINEL_DONT_CARE";
     private final String expectedName;
@@ -194,21 +195,21 @@ public class Matchers {
 
     @Override
     protected boolean matchesSafely(V1EnvVar item, Description mismatchDescription) {
-      if (expectedValueRegEx == DONTCARE) {
-        if (expectedName.equals(item.getName())) {
-          return true;
-        }
-        mismatchDescription.appendText("EnvVar with name ").appendValue(item.getName());
-        return false;
-      }
       if (expectedValueRegEx == null) {
         if (expectedName.equals(item.getName()) && item.getValue() == null) {
           return true;
         }
         mismatchDescription.appendText("EnvVar with name ").appendValue(item.getName());
         return false;
+      } else if (expectedValueRegEx.equals(DONTCARE)) {
+        if (expectedName.equals(item.getName())) {
+          return true;
+        }
+        mismatchDescription.appendText("EnvVar with name ").appendValue(item.getName());
+        return false;
       }
-      if (expectedName.equals(item.getName()) 
+
+      if (expectedName.equals(item.getName())
           && item.getValue() != null 
           && item.getValue().matches(expectedValueRegEx)) {
         return true;
@@ -224,7 +225,7 @@ public class Matchers {
     @Override
     public void describeTo(Description description) {
       description.appendText("EnvVar with name=").appendValue(expectedName);
-      if (expectedValueRegEx != DONTCARE) {
+      if (!Objects.equals(expectedValueRegEx, DONTCARE)) {
         description.appendText(" value=").appendValue(expectedValueRegEx);
       }
     }

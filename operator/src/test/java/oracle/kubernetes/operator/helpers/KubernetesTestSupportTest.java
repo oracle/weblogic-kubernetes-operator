@@ -4,10 +4,14 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
@@ -17,9 +21,14 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1EventList;
+import io.kubernetes.client.openapi.models.V1ListMeta;
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1NamespaceList;
+import io.kubernetes.client.openapi.models.V1NamespaceSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -56,8 +65,11 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_A
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.TOKEN_REVIEW;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -200,7 +212,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterPatchDomainAsynchronously_statusIsUnchanged() throws ApiException {
+  public void afterPatchDomainAsynchronously_statusIsUnchanged() {
     Domain originalDomain = createDomain(NS, "domain").withStatus(new DomainStatus().withMessage("leave this"));
     testSupport.defineResources(originalDomain);
 
@@ -384,7 +396,7 @@ public class KubernetesTestSupportTest {
 
     TestResponseStep<V1PodList> responseStep = new TestResponseStep<>();
     testSupport.runSteps(
-          new CallBuilder().withLabelSelectors("k1=v1").listPodAsync("ns1", responseStep));
+          new CallBuilder().withLabelSelector("k1=v1").listPodAsync("ns1", responseStep));
 
     assertThat(responseStep.callResponse.getResult().getItems(), containsInAnyOrder(pod1, pod3));
   }
@@ -504,6 +516,201 @@ public class KubernetesTestSupportTest {
 
   private V1Secret createSecret(String namespace, String name) {
     return new V1Secret().metadata(new V1ObjectMeta().name(name).namespace(namespace));
+  }
+
+  @Test
+  public void listConfigMap_includesResourceVersion() {
+    testSupport.defineResources(createNamespaces(150));
+
+    final V1ListMeta meta = getConfigMapListResponseMeta("ns1", new CallBuilder());
+
+    assertThat(meta.getResourceVersion(), notNullValue());
+  }
+
+  private V1ListMeta getConfigMapListResponseMeta(String namespace, CallBuilder callBuilder) {
+    TestResponseStep<V1ConfigMapList> responseStep = new TestResponseStep<>();
+    testSupport.runSteps(callBuilder.listConfigMapsAsync(namespace, responseStep));
+    return responseStep.callResponse.getResult().getMetadata();
+  }
+
+  @Test
+  public void listConfigMapTwice_hasSameResourceVersion() {
+    testSupport.defineResources(createNamespaces(150));
+
+    final V1ListMeta meta1 = getConfigMapListResponseMeta("ns1", new CallBuilder());
+    final V1ListMeta meta2 = getConfigMapListResponseMeta("ns1", new CallBuilder());
+
+    assertThat(meta1.getResourceVersion(), equalTo(meta2.getResourceVersion()));
+  }
+
+  @Test
+  public void whenConfigMapAdded_listResourceVersionChanged() {
+    testSupport.defineResources(createNamespaces(150));
+
+    final V1ListMeta meta1 = getConfigMapListResponseMeta("ns1", new CallBuilder());
+    testSupport.runSteps(createConfigMapAsyncStep("ns1", "cm1"));
+    final V1ListMeta meta2 = getConfigMapListResponseMeta("ns1", new CallBuilder());
+
+    assertThat(meta1.getResourceVersion(), not(equalTo(meta2.getResourceVersion())));
+  }
+
+  public Step createConfigMapAsyncStep(String namespace, String name) {
+    return new CallBuilder().createConfigMapAsync(namespace,
+          new V1ConfigMap().metadata(new V1ObjectMeta().namespace(namespace).name(name)), new TestResponseStep<>());
+  }
+
+  @Test
+  public void whenConfigMapAddedInOtherNamespace_listResourceVersionNotChanged() {
+    testSupport.defineResources(createNamespaces(150));
+
+    final V1ListMeta meta1 = getConfigMapListResponseMeta("ns1", new CallBuilder());
+    testSupport.runSteps(createConfigMapAsyncStep("ns2", "cm1"));
+    final V1ListMeta meta2 = getConfigMapListResponseMeta("ns1", new CallBuilder());
+
+    assertThat(meta1.getResourceVersion(), equalTo(meta2.getResourceVersion()));
+  }
+
+  @Test
+  public void whenNumberOfEntriesLessThanLimit_listNamespaceReturnsAllEntries() {
+    testSupport.defineResources(createNamespaces(150));
+
+    final CallResponse<V1NamespaceList> callResponse = getNamespaceListResponse(new CallBuilder());
+
+    assertThat(callResponse.getResult().getItems(), hasSize(150));
+  }
+
+  @Nonnull
+  public V1Namespace[] createNamespaces(int numNamespaces) {
+    return IntStream.rangeClosed(1, numNamespaces).boxed().map(this::createNamespace).toArray(V1Namespace[]::new);
+  }
+
+  private V1Namespace createNamespace(int i) {
+    return new V1Namespace().metadata(createNamespaceMetaData(i)).spec(new V1NamespaceSpec());
+  }
+
+  private V1ObjectMeta createNamespaceMetaData(int i) {
+    return new V1ObjectMeta().name("ns" + i);
+  }
+
+  @Test
+  public void whenNumberOfEntriesLessThanLimit_continueTokenIsEmpty() {
+    testSupport.defineResources(createNamespaces(150));
+
+    final CallResponse<V1NamespaceList> callResponse = getNamespaceListResponse(new CallBuilder());
+
+    assertThat(getResponseMetadata(callResponse).getContinue(), emptyString());
+  }
+
+  @Test
+  public void whenNumberOfEntriesGreaterThanLimit_listNamespaceReturnsOnlyTheLimitedNumberOfEntries() {
+    testSupport.defineResources(createNamespaces(150));
+
+    final CallResponse<V1NamespaceList> callResponse = getNamespaceListResponse(new CallBuilder().withLimit(100));
+
+    assertThat(callResponse.getResult().getItems(), hasSize(100));
+  }
+
+  private CallResponse<V1NamespaceList> getNamespaceListResponse(CallBuilder callBuilder) {
+    TestResponseStep<V1NamespaceList> responseStep = new TestResponseStep<>();
+    testSupport.runSteps(callBuilder.listNamespaceAsync(responseStep));
+    return responseStep.callResponse;
+  }
+
+  @Test
+  public void whenNumberOfEntriesGreaterThanLimit_responseIncludesContinueToken() {
+    testSupport.defineResources(createNamespaces(150));
+
+    final CallResponse<V1NamespaceList> callResponse = getNamespaceListResponse(new CallBuilder().withLimit(100));
+
+    assertThat(getResponseMetadata(callResponse).getContinue(), not(emptyString()));
+  }
+
+  public V1ListMeta getResponseMetadata(CallResponse<V1NamespaceList> callResponse) {
+    return callResponse.getResult().getMetadata();
+  }
+
+  @Test
+  public void whenNumberOfEntriesGreaterThanLimit_responseIncludesNumberRemaining() {
+    testSupport.defineResources(createNamespaces(150));
+
+    final CallResponse<V1NamespaceList> callResponse = getNamespaceListResponse(new CallBuilder().withLimit(100));
+
+    assertThat(getResponseMetadata(callResponse).getRemainingItemCount(), equalTo(50L));
+  }
+
+  @Test
+  public void afterPartialListingReturned_newRequestWithContinueTokenGetsNonOverlappingChunk() {
+    testSupport.defineResources(createNamespaces(250));
+
+    final CallResponse<V1NamespaceList> callResponse1 = getNamespaceListResponse(new CallBuilder().withLimit(100));
+    final String token = getResponseMetadata(callResponse1).getContinue();
+    final CallResponse<V1NamespaceList> callResponse2 = getNamespaceListResponse(new CallBuilder().withContinue(token));
+
+    final Set<V1Namespace> items1 = new HashSet<>(callResponse1.getResult().getItems());
+    final Set<V1Namespace> items2 = new HashSet<>(callResponse2.getResult().getItems());
+    items1.retainAll(items2);
+    assertThat(items1, empty());
+  }
+
+  @Test
+  public void afterPartialListingReturned_newRequestWithContinueTokenGetsRemainingIfUnderLimit() {
+    testSupport.defineResources(createNamespaces(150));
+
+    final CallResponse<V1NamespaceList> callResponse1 = getNamespaceListResponse(new CallBuilder().withLimit(100));
+    final String token = getResponseMetadata(callResponse1).getContinue();
+    final CallResponse<V1NamespaceList> callResponse2 = getNamespaceListResponse(new CallBuilder().withContinue(token));
+
+    assertThat(callResponse2.getResult().getItems(), hasSize(50));
+  }
+
+  @Test
+  public void afterPartialListingsReturnAllItems_newRequestRestarts() {
+    testSupport.defineResources(createNamespaces(150));
+
+    final CallResponse<V1NamespaceList> response1 = getNamespaceListResponse(new CallBuilder().withLimit(100));
+    final String token1 = getResponseMetadata(response1).getContinue();
+    final CallResponse<V1NamespaceList> response2 = getNamespaceListResponse(new CallBuilder().withContinue(token1));
+    final String token2 = getResponseMetadata(response2).getContinue();
+    final CallResponse<V1NamespaceList> response3 = getNamespaceListResponse(new CallBuilder().withContinue(token2));
+
+    assertThat(response3.getResult().getItems(), hasSize(150));
+  }
+
+  @Test
+  public void afterPartialListingReturned_newRequestWithoutContinueTokenGetsSameItems() {
+    testSupport.defineResources(createNamespaces(250));
+
+    final CallResponse<V1NamespaceList> callResponse1 = getNamespaceListResponse(new CallBuilder().withLimit(100));
+    final CallResponse<V1NamespaceList> callResponse2 = getNamespaceListResponse(new CallBuilder().withLimit(100));
+
+    final Set<V1Namespace> items1 = new HashSet<>(callResponse1.getResult().getItems());
+    final Set<V1Namespace> items2 = new HashSet<>(callResponse2.getResult().getItems());
+    assertThat(items1, equalTo(items2));
+  }
+
+  @Test
+  public void afterPartialListingFollowedByItemCreated_requestWithContinueTokenRestartsList() {
+    testSupport.defineResources(createConfigMaps("ns1", 50));
+
+    final V1ListMeta meta1 = getConfigMapListResponseMeta("ns1", new CallBuilder().withLimit(10));
+    testSupport.runSteps(createConfigMapAsyncStep("ns1", "added"));
+    final V1ListMeta meta2 = getConfigMapListResponseMeta("ns1",
+                                                    new CallBuilder().withLimit(10).withContinue(meta1.getContinue()));
+
+    assertThat(meta2.getRemainingItemCount(), equalTo(41L));
+  }
+
+  @Nonnull
+  public V1ConfigMap[] createConfigMaps(String ns, int numConfigMaps) {
+    return IntStream.rangeClosed(1, numConfigMaps).boxed().map(i -> createConfigMap(ns, i)).toArray(V1ConfigMap[]::new);
+  }
+
+  private V1ConfigMap createConfigMap(String ns, int i) {
+    return new V1ConfigMap().metadata(createConfigMapMetaData(ns, i)).data(Collections.emptyMap());
+  }
+
+  private V1ObjectMeta createConfigMapMetaData(String namespace, int i) {
+    return new V1ObjectMeta().namespace(namespace).name("cm" + i);
   }
 
   @Test

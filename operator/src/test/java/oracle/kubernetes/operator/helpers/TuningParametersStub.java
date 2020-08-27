@@ -23,6 +23,11 @@ public abstract class TuningParametersStub implements TuningParameters {
   static final int LIVENESS_PERIOD = 6;
   static final int LIVENESS_TIMEOUT = 5;
   static final long INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = 180L;
+
+  static final int REQUEST_LIMIT = 20;
+  static final int TIMEOUT_SECONDS = 5;
+  static final int MAX_RETRY_COUNT = 5;
+
   static Map<String, String> namedParameters;
 
   /**
@@ -55,7 +60,7 @@ public abstract class TuningParametersStub implements TuningParameters {
 
   @Override
   public CallBuilderTuning getCallBuilderTuning() {
-    return null;
+    return new CallBuilderTuning(REQUEST_LIMIT, TIMEOUT_SECONDS, MAX_RETRY_COUNT);
   }
 
   @Override

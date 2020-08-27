@@ -586,7 +586,7 @@ public class JobHelper {
 
     private Step readDomainIntrospectorPod(String domainUid, String namespace, Step next) {
       return new CallBuilder()
-            .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
+            .withLabelSelector(LabelConstants.JOBNAME_LABEL)
             .listPodAsync(namespace, new PodListStep(domainUid, next));
     }
   }

@@ -89,14 +89,14 @@ import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTAT
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
-import static oracle.kubernetes.operator.helpers.Matchers.ProbeMatcher.hasExpectedTuning;
-import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.readOnlyVolumeMount;
-import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.writableVolumeMount;
-import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
-import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
-import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
-import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
-import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
+import static oracle.kubernetes.operator.helpers.OperatorMatchers.ProbeMatcher.hasExpectedTuning;
+import static oracle.kubernetes.operator.helpers.OperatorMatchers.VolumeMountMatcher.readOnlyVolumeMount;
+import static oracle.kubernetes.operator.helpers.OperatorMatchers.VolumeMountMatcher.writableVolumeMount;
+import static oracle.kubernetes.operator.helpers.OperatorMatchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.OperatorMatchers.hasPvClaimVolume;
+import static oracle.kubernetes.operator.helpers.OperatorMatchers.hasResourceQuantity;
+import static oracle.kubernetes.operator.helpers.OperatorMatchers.hasVolume;
+import static oracle.kubernetes.operator.helpers.OperatorMatchers.hasVolumeMount;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME;
@@ -167,7 +167,7 @@ public abstract class PodHelperTestBase {
   }
 
   Domain getDomain() {
-    return (Domain) testSupport.getResourceWithName(DOMAIN, DOMAIN_NAME);
+    return testSupport.getResourceWithName(DOMAIN, DOMAIN_NAME);
   }
 
   String getPodName() {
@@ -569,7 +569,7 @@ public abstract class PodHelperTestBase {
 
     assertThat(logRecords, containsInfo(getPatchedMessageKey()));
 
-    return (V1Pod) testSupport.getResourceWithName(KubernetesTestSupport.POD, getPodName());
+    return testSupport.getResourceWithName(KubernetesTestSupport.POD, getPodName());
   }
 
   protected abstract ServerConfigurator configureServer(

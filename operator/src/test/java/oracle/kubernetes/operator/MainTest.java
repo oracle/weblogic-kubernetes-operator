@@ -4,8 +4,6 @@
 package oracle.kubernetes.operator;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -13,10 +11,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.IntStream;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1NamespaceSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -45,7 +46,6 @@ public class MainTest extends ThreadFactoryTestBase {
 
   private static final String NS = "default";
   private static final String DOMAIN_UID = "domain-uid-for-testing";
-  private Method getDomainNamespaces;
 
   private static final String NAMESPACE_STATUS_MAP = "namespaceStatuses";
   private static final String NAMESPACE_STOPPING_MAP = "namespaceStoppingMap";
@@ -119,7 +119,7 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
             NAMESPACE_OTHER1, NAMESPACE_OTHER2);
 
-    Main.DomainNamespaceSelectionStrategy selectionStrategy = Main.DomainNamespaceSelectionStrategy.List;
+    DomainNamespaceSelectionStrategy selectionStrategy = DomainNamespaceSelectionStrategy.List;
     Collection<String> domainNamespaces = Arrays.asList(NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3);
     testSupport.runSteps(Main.readExistingNamespaces(selectionStrategy, domainNamespaces, false));
 
@@ -159,7 +159,7 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
             NAMESPACE_OTHER1, NAMESPACE_OTHER2);
 
-    Main.DomainNamespaceSelectionStrategy selectionStrategy = Main.DomainNamespaceSelectionStrategy.RegExp;
+    DomainNamespaceSelectionStrategy selectionStrategy = DomainNamespaceSelectionStrategy.RegExp;
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
     testSupport.runSteps(Main.readExistingNamespaces(selectionStrategy, null, false));
 
@@ -176,7 +176,7 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
             NAMESPACE_OTHER1, NAMESPACE_OTHER2);
 
-    Main.DomainNamespaceSelectionStrategy selectionStrategy = Main.DomainNamespaceSelectionStrategy.LabelSelector;
+    DomainNamespaceSelectionStrategy selectionStrategy = DomainNamespaceSelectionStrategy.LabelSelector;
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
     testSupport.runSteps(Main.readExistingNamespaces(selectionStrategy, null, false));
 
@@ -187,51 +187,18 @@ public class MainTest extends ThreadFactoryTestBase {
                      hasEntry(is(NS_WEBLOGIC3), isNamespaceStarting())));
   }
 
-  @Test
-  public void getDomainNamespaces_withEmptyValue_should_return_default()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getDomainNamespaces("", NS);
-    assertTrue(namespaces.contains("default"));
+  @SuppressWarnings("SameParameterValue")
+  @Nonnull
+  private V1Namespace[] createNamespaces(int numNamespaces) {
+    return IntStream.rangeClosed(1, numNamespaces).boxed().map(this::createNamespace).toArray(V1Namespace[]::new);
   }
 
-  @Test
-  public void getDomainNamespaces_withNonEmptyValue_should_not_return_default()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getDomainNamespaces("dev-domain", NS);
-    assertFalse(namespaces.contains("default"));
+  private V1Namespace createNamespace(int i) {
+    return new V1Namespace().metadata(createNamespaceMetaData(i)).spec(new V1NamespaceSpec());
   }
 
-  @Test
-  public void getDomainNamespaces_with_single_target_should_return_it()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getDomainNamespaces("dev-domain", NS);
-    assertTrue(namespaces.contains("dev-domain"));
-  }
-
-  @Test
-  public void getDomainNamespaces_with_multiple_targets_should_include_all()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces =
-        invoke_getDomainNamespaces("dev-domain,domain1,test-domain", NS);
-    assertTrue(namespaces.contains("dev-domain"));
-    assertTrue(namespaces.contains("domain1"));
-    assertTrue(namespaces.contains("test-domain"));
-  }
-
-  @Test
-  public void getDomainNamespaces_should_remove_leading_spaces()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getDomainNamespaces(" test-domain, dev-domain", NS);
-    assertTrue(namespaces.contains("dev-domain"));
-    assertTrue(namespaces.contains("test-domain"));
-  }
-
-  @Test
-  public void getDomainNamespaces_should_remove_trailing_spaces()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getDomainNamespaces("dev-domain ,test-domain ", NS);
-    assertTrue(namespaces.contains("dev-domain"));
-    assertTrue(namespaces.contains("test-domain"));
+  private V1ObjectMeta createNamespaceMetaData(int i) {
+    return new V1ObjectMeta().name("ns" + i);
   }
 
   private V1ObjectMeta createMetadata(DateTime creationTimestamp) {
@@ -274,14 +241,4 @@ public class MainTest extends ThreadFactoryTestBase {
     assertTrue(KubernetesUtils.isFirstNewer(domainMeta, domain2Meta));
   }
 
-  @SuppressWarnings({"unchecked", "SameParameterValue"})
-  private Collection<String> invoke_getDomainNamespaces(String tnValue, String namespace)
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    if (getDomainNamespaces == null) {
-      getDomainNamespaces =
-          Main.class.getDeclaredMethod("getDomainNamespacesList", String.class, String.class);
-      getDomainNamespaces.setAccessible(true);
-    }
-    return (Collection<String>) getDomainNamespaces.invoke(null, tnValue, namespace);
-  }
 }

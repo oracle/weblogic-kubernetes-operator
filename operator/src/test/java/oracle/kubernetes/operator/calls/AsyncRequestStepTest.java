@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.helpers.ListParams;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.NextAction;
@@ -36,11 +37,11 @@ public class AsyncRequestStepTest {
 
   private static final int TIMEOUT_SECONDS = 10;
   private static final int MAX_RETRY_COUNT = 2;
-  private FiberTestSupport testSupport = new FiberTestSupport();
-  private RequestParams requestParams = new RequestParams("testcall", "junit", "testName", "body");
-  private CallFactoryStub callFactory = new CallFactoryStub();
-  private TestStep nextStep = new TestStep();
-  private ClientPool helper = ClientPool.getInstance();
+  private final FiberTestSupport testSupport = new FiberTestSupport();
+  private final RequestParams requestParams = new RequestParams("testcall", "junit", "testName", "body");
+  private final CallFactoryStub callFactory = new CallFactoryStub();
+  private final TestStep nextStep = new TestStep();
+  private final ClientPool helper = ClientPool.getInstance();
   private final AsyncRequestStep<Integer> asyncRequestStep =
       new AsyncRequestStep<>(
           nextStep,
@@ -49,10 +50,9 @@ public class AsyncRequestStepTest {
           helper,
           TIMEOUT_SECONDS,
           MAX_RETRY_COUNT,
-          null,
-          null,
+          new ListParams(),
           null);
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
 
   /**
    * Setup test.
@@ -71,9 +71,7 @@ public class AsyncRequestStepTest {
    */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test
@@ -141,6 +139,7 @@ public class AsyncRequestStepTest {
     assertThat(nextStep.result, equalTo(17));
   }
 
+  @SuppressWarnings("SameParameterValue")
   private void sendMultipleFailedCallback(int statusCode, int maxRetries) {
     for (int retryCount = 0; retryCount < maxRetries; retryCount++) {
       testSupport.schedule(
@@ -162,6 +161,7 @@ public class AsyncRequestStepTest {
     assertThat(nextStep.result, equalTo(17));
   }
 
+  @SuppressWarnings("SameParameterValue")
   private void sendMultipleFailedCallbackWithSetTime(int statusCode, int maxRetries) {
     for (int retryCount = 0; retryCount < maxRetries; retryCount++) {
       testSupport.schedule(
@@ -221,7 +221,7 @@ public class AsyncRequestStepTest {
 
     @Override
     public CancellableCall generate(
-        RequestParams requestParams, ApiClient client, String cont, ApiCallback<Integer> callback) {
+          RequestParams requestParams, ApiClient client, ApiCallback<Integer> callback) {
       this.requestParams = requestParams;
       this.callback = callback;
 

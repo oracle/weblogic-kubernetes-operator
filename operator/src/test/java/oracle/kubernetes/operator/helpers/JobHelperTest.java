@@ -50,9 +50,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
-import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
-import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVarRegEx;
+import static oracle.kubernetes.operator.helpers.OperatorMatchers.hasContainer;
+import static oracle.kubernetes.operator.helpers.OperatorMatchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.OperatorMatchers.hasEnvVarRegEx;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAffinity;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createConfigMapKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createContainer;
@@ -95,8 +95,8 @@ public class JobHelperTest {
   private final V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
   private final V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
   private final V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
-  private List<Memento> mementos = new ArrayList<>();
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
   /**
    * Setup test environment.
