@@ -28,7 +28,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
@@ -197,16 +196,12 @@ class ItUsabilityOperatorHelmChart {
    * Create operator and verify it is deployed successfully.
    * Create a custom domain resource and verify all server pods in the domain were created and ready.
    * Verify NGINX can access the sample app from all managed servers in the domain.
-   * Delete operator.
+   * Uninstall operator.
    * Verify the states of all server pods in the domain were not changed.
    * Verify NGINX can access the sample app from all managed servers in the domain after the operator was deleted.
-   * Test fails if the state of any pod in the domain was changed or NGINX can not access the sample app from
-   * all managed servers in the absence of operator.
    */
   @Test
   @DisplayName("Create operator and domain, then delete operator and verify the domain is still running")
-  @Slow
-  @MustNotRunInParallel
   public void testDeleteOperatorButNotDomain() {
     // install and verify operator
     logger.info("Installing and verifying operator");
@@ -289,17 +284,14 @@ class ItUsabilityOperatorHelmChart {
    * Create operator and verify it is deployed successfully.
    * Create a custom domain resource and verify all server pods in the domain were created and ready.
    * Verify NGINX can access the sample app from all managed servers in the domain.
-   * Delete operator.
+   * Uninstall operator.
    * Verify the states of all server pods in the domain were not changed.
    * Verify NGINX can access the sample app from all managed servers in the domain after the operator was deleted.
-   * Test fails if the state of any pod in the domain was changed or NGINX can not access the sample app from
-   * all managed servers in the absence of operator.
+   * Install operator again reusing same helm values and scale domain to verify it can manage it
    */
   @Test
   @DisplayName("Create operator and domain, then delete operator and"
       + " create again operator and verify it can still manage domain")
-  @Slow
-  @MustNotRunInParallel
   public void testCreateDeleteCreateOperatorButNotDomain() {
     String opReleaseName = OPERATOR_RELEASE_NAME;
     HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
@@ -349,11 +341,9 @@ class ItUsabilityOperatorHelmChart {
    * Test fails when an operator fails to manage the domains as expected
    */
   @Test
-  @DisplayName("Create domain1, managed by operator and domain2, upgrade operator for domain2,"
-      + "delete domain1 , verify management for domain2 and no access to domain1")
-  @Slow
-  @MustNotRunInParallel
-  public void testAddRemoveDomainUpdateOperatorHC() throws Exception {
+  @DisplayName("Create domain1, managed by operator and domain2, upgrade operator to add domain2,"
+      + "delete domain1 , verify operator management for domain2 and no access to domain1")
+  public void testAddRemoveDomainNameSpacesOnOperator() {
 
     String opReleaseName = OPERATOR_RELEASE_NAME;
     HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
@@ -385,7 +375,6 @@ class ItUsabilityOperatorHelmChart {
       // upgrade operator
       assertTrue(upgradeAndVerifyOperator(opNamespace, opParams));
 
-      //assertTrue(upgradeOperator(opParams), "Helm Upgrade failed to add domain to operator");
       if (!isDomain2Running) {
         logger.info("Installing and verifying domain");
         assertTrue(createVerifyDomain(domain2Namespace, domain2Uid),
@@ -429,7 +418,6 @@ class ItUsabilityOperatorHelmChart {
    */
   @Test
   @DisplayName("Negative test to install two operators sharing the same namespace")
-  @Slow
   public void testCreateSecondOperatorUsingSameOperatorNsNegativeInstall() {
     HelmParams opHelmParams = installAndVerifyOperator(opNamespace, domain1Namespace);
     if (!isDomain1Running) {
@@ -472,7 +460,6 @@ class ItUsabilityOperatorHelmChart {
    */
   @Test
   @DisplayName("Negative test to install two operators sharing the same domain namespace")
-  @Slow
   public void testSecondOpSharingSameDomainNamespacesNegativeInstall() {
     HelmParams opHelmParams = installAndVerifyOperator(opNamespace, domain2Namespace);
     if (!isDomain2Running) {
@@ -514,7 +501,6 @@ class ItUsabilityOperatorHelmChart {
    */
   @Test
   @DisplayName("Negative test to try to create the operator with not preexisted namespace")
-  @Slow
   public void testSecondOpSharingSameExternalRestPortNegativeInstall() {
     String opServiceAccount = opNamespace + "-sa";
     String op2ServiceAccount = op2Namespace + "-sa2";
@@ -558,7 +544,6 @@ class ItUsabilityOperatorHelmChart {
    */
   @Test
   @DisplayName("Negative test to try to create the operator with not preexisted namespace")
-  @Slow
   public void testNotPreCreatedOpNsCreateOperatorNegativeInstall() {
     // install and verify operator
     logger.info("Installing and verifying operator");
@@ -588,8 +573,6 @@ class ItUsabilityOperatorHelmChart {
    */
   @Test
   @DisplayName("Test to create the operator with empty string for domains namespace")
-  @Slow
-  @MustNotRunInParallel
   public void testCreateWithEmptyDomainNamespaceInstall() {
     String opReleaseName = OPERATOR_RELEASE_NAME + "2";
     String opServiceAccount = op2Namespace + "-sa2";
