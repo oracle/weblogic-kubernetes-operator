@@ -722,7 +722,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   boolean isUseOnlineUpdate() {
     return Optional.ofNullable(configuration)
-        .map(Configuration::isUseOnlineUpdate)
+        .map(Configuration::getUseOnlineUpdate)
         .orElse(false);
   }
 
@@ -733,7 +733,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   boolean isRollbackIfRestartRequire() {
     return Optional.ofNullable(configuration)
-        .map(Configuration::isRollBackIfRestartRequired)
+        .map(Configuration::getRollBackIfRestartRequired)
         .orElse(false);
   }
 

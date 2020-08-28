@@ -41,6 +41,12 @@ public class Configuration {
       + "Legal values are DYNAMIC (the default) and ON_RESTART. See also introspectVersion.")
   private String overrideDistributionStrategy;
 
+  @ApiModelProperty("Use online update.")
+  private Boolean useOnlineUpdate = false;
+
+  @ApiModelProperty("Rollback the changes if the update require domain restart.")
+  private Boolean rollBackIfRestartRequired = false;
+
   @ApiModelProperty("Istio service mesh integration")
   private Istio istio;
 
@@ -77,6 +83,33 @@ public class Configuration {
   public void setOpss(Opss opss) {
     this.opss = opss;
   }
+
+  public Configuration rollBackIfRestartRequired(boolean rollBackIfRestartRequired) {
+    this.rollBackIfRestartRequired = rollBackIfRestartRequired;
+    return this;
+  }
+
+  public Boolean getRollBackIfRestartRequired() {
+    return rollBackIfRestartRequired;
+  }
+
+  public void setRollBackIfRestartRequired(boolean rollBackIfRestartRequired) {
+    this.rollBackIfRestartRequired = rollBackIfRestartRequired;
+  }
+
+  public Configuration useOnlineUpdate(boolean useOnlineUpdate) {
+    this.useOnlineUpdate = useOnlineUpdate;
+    return this;
+  }
+
+  public Boolean getUseOnlineUpdate() {
+    return useOnlineUpdate;
+  }
+
+  public void setUseOnlineUpdate(boolean useOnlineUpdate) {
+    this.useOnlineUpdate = useOnlineUpdate;
+  }
+
 
   public Configuration secrets(List<String> secrets) {
     this.secrets = secrets;
@@ -182,6 +215,8 @@ public class Configuration {
             .append("secrets", secrets)
             .append("overridesConfigMap", overridesConfigMap)
             .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds)
+            .append("useOnlineUpdate", useOnlineUpdate)
+            .append("rollBackIfRestartRequired", rollBackIfRestartRequired)
             .append("istio", istio);
 
     return builder.toString();
@@ -196,6 +231,8 @@ public class Configuration {
             .append(secrets)
             .append(overridesConfigMap)
             .append(introspectorJobActiveDeadlineSeconds)
+            .append(useOnlineUpdate)
+            .append(rollBackIfRestartRequired)
             .append(istio);
 
     return builder.toHashCode();
@@ -218,6 +255,8 @@ public class Configuration {
             .append(secrets, rhs.secrets)
             .append(overridesConfigMap, rhs.overridesConfigMap)
             .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
+            .append(useOnlineUpdate, rhs.useOnlineUpdate)
+            .append(rollBackIfRestartRequired, rhs.rollBackIfRestartRequired)
             .append(istio, rhs.istio);
 
     return builder.isEquals();

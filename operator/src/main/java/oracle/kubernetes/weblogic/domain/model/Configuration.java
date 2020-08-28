@@ -11,6 +11,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+
 public class Configuration {
 
   @Description("Model in image model files and properties.")
@@ -45,10 +46,10 @@ public class Configuration {
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
   @Description("Use online update.")
-  private boolean useOnlineUpdate = false;
+  private Boolean useOnlineUpdate = false;
 
   @Description("Rollback the changes if the update require domain restart.")
-  private boolean rollBackIfRestartRequired = false;
+  private Boolean rollBackIfRestartRequired = false;
 
   @Description("The Istio service mesh integration settings.")
   private Istio istio;
@@ -106,7 +107,7 @@ public class Configuration {
     return overrideDistributionStrategy;
   }
 
-  public boolean isUseOnlineUpdate() {
+  public Boolean getUseOnlineUpdate() {
     return useOnlineUpdate;
   }
 
@@ -119,7 +120,7 @@ public class Configuration {
     return this;
   }
 
-  public boolean isRollBackIfRestartRequired() {
+  public Boolean getRollBackIfRestartRequired() {
     return rollBackIfRestartRequired;
   }
 

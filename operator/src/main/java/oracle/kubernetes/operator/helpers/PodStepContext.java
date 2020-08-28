@@ -800,6 +800,11 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
+        if (Objects.equals(true, packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))) {
+          LOGGER.info("PodStepContext.verifyPodStep: Model in Image dynamic updated no restart necessary");
+          logPodExists();
+          return doNext(packet);
+        }
         LOGGER.info(
             MessageKeys.CYCLING_POD,
             Objects.requireNonNull(currentPod.getMetadata()).getName(),

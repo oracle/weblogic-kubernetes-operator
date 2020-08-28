@@ -776,7 +776,8 @@ function wdtHandleOnlineUpdate() {
   # temporarily disable it
 
   stop_trap
-
+  # Save off the encrypted model
+  cp ${DOMAIN_HOME}/wlsdeploy/domain_model.json /tmp/encrypted_merge_model.json
   local admin_user=$(cat /weblogic-operator/secrets/username)
   local admin_pwd=$(cat /weblogic-operator/secrets/password)
 
@@ -787,14 +788,15 @@ function wdtHandleOnlineUpdate() {
   # no need for encryption phrase because the diffed model has real value
   # note: using yes seems to et a 141 return code, switch to echo seems to be ok
   # the problem is likely due to how wdt closing the input stream
+  cat /tmp/diffed_model.json
 
-  echo ${admin_pwd} | ${wdt_bin}/updateDomain.sh -oracle_home ${MW_HOME} \
+  echo ${admin_pwd} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} \
    -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
-   /tmp/diffed_model.json -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG}
+   /tmp/diffed_model.yaml -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG}
 
   local ret=$?
 
-  echo "Completed online update="${ret}
+  trace "Completed online update="${ret}
 
   if [ ${ret} -eq ${ROLLBACK_ERROR} ] ; then
     trace ">>>  updatedomainResult=3"
@@ -807,6 +809,10 @@ function wdtHandleOnlineUpdate() {
   else
     trace ">>>  updatedomainResult=${ret}"
   fi
+
+  # Restore encrypted merge model otherwise the on in the domain will be the diffed model
+
+  cp  /tmp/encrypted_merge_model.json ${DOMAIN_HOME}/wlsdeploy/domain_model.json
 
   trace "wrote updateResult"
 

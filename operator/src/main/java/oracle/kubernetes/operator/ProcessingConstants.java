@@ -30,6 +30,7 @@ public interface ProcessingConstants {
   String DOMAIN_INTROSPECTOR_LOG_RESULT = "domainIntrospectorLogResult";
   String DOMAIN_INTROSPECT_REQUESTED = "domainIntrospectRequested";
   String REMAINING_SERVERS_HEALTH_TO_READ = "serverHealthRead";
+  String MII_DYNAMIC_UPDATE = "miiDynamicUpdate";
 
   String ENCODED_CREDENTIALS = "encodedCredentials";
   String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
