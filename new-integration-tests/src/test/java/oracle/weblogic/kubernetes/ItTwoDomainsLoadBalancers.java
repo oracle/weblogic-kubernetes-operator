@@ -94,6 +94,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
@@ -432,7 +433,7 @@ public class ItTwoDomainsLoadBalancers {
     // verify load balancing works when 2 domains are running in the same namespace
     logger.info("Verifying http traffic");
     for (String domainUid : domainUids) {
-      verifyClusterLoadbalancing(domainUid, defaultNamespace,"http", getTraefikLbNodePort(false),
+      verifyClusterLoadbalancing(domainUid, defaultNamespace, "http", getTraefikLbNodePort(false),
           replicaCount, true, "");
     }
   }
@@ -474,26 +475,25 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Verify Apache load balancer default sample.
+   * Verify Apache load balancer default sample through HTTP channel.
    */
   @Order(8)
   @Test
-  @DisplayName("verify Apache loadbalancer default sample through HTTP channel")
+  @DisplayName("verify Apache load balancer default sample through HTTP channel")
   public void testApacheDefaultSample() {
 
     // verify Apache default sample
     logger.info("Verifying Apache default sample");
     int httpNodePort = getApacheNodePort(domain1Namespace, "http");
-    verifyClusterLoadbalancing(domain1Uid, domain1Namespace, "http", httpNodePort, 3,
-        false, "weblogic");
+    verifyClusterLoadbalancing(domain1Uid, domain1Namespace, "http", httpNodePort, 3, false, "/weblogic");
   }
 
   /**
-   * Verify Apache load balancer custom sample.
+   * Verify Apache load balancer custom sample through HTTP and HTTPS channel.
    */
   @Order(9)
   @Test
-  @DisplayName("verify Apache loadbalancer custom sample through HTTP and HTTPS channel")
+  @DisplayName("verify Apache load balancer custom sample through HTTP and HTTPS channel")
   public void testApacheCustomSample() {
 
     // verify Apache custom sample
@@ -501,11 +501,11 @@ public class ItTwoDomainsLoadBalancers {
     for (int i = 1; i <= numberOfDomains; i++) {
       int httpNodePort = getApacheNodePort(defaultNamespace, "http");
       verifyClusterLoadbalancing(domainUids.get(i - 1), defaultNamespace, "http", httpNodePort, replicaCount,
-          false, "weblogic" + i);
+          false, "/weblogic" + i);
 
       int httpsNodePort = getApacheNodePort(defaultNamespace, "https");
       verifyClusterLoadbalancing(domainUids.get(i - 1), defaultNamespace, "https", httpsNodePort, replicaCount,
-          false, "weblogic" + i);
+          false, "/weblogic" + i);
     }
   }
 
@@ -533,15 +533,15 @@ public class ItTwoDomainsLoadBalancers {
     // uninstall Apache
     if (apacheHelmParams1 != null) {
       assertThat(uninstallApache(apacheHelmParams1))
-          .as("Test uninstallApache returns true")
-          .withFailMessage("uninstallApache() did not return true")
+          .as("Test whether uninstallApache in domain1Namespace returns true")
+          .withFailMessage("uninstallApache() in domain1Namespace did not return true")
           .isTrue();
     }
 
     if (apacheHelmParams2 != null) {
       assertThat(uninstallApache(apacheHelmParams2))
-          .as("Test uninstallApache returns true")
-          .withFailMessage("uninstallApache() did not return true")
+          .as("Test whether uninstallApache in default namespace returns true")
+          .withFailMessage("uninstallApache() in default namespace did not return true")
           .isTrue();
     }
 
@@ -1023,7 +1023,7 @@ public class ItTwoDomainsLoadBalancers {
    * Shutdown domain and verify all the server pods were shutdown.
    *
    * @param domainNamespace the namespace where the domain exists
-   * @param domainUid the uid of the domain
+   * @param domainUid the uid of the domain to shutdown
    */
   private void shutdownDomainAndVerify(String domainNamespace, String domainUid) {
 
@@ -1037,8 +1037,8 @@ public class ItTwoDomainsLoadBalancers {
     checkPodDoesNotExist(domainUid + "-" + ADMIN_SERVER_NAME_BASE,
           domainUid, domainNamespace);
 
-    for (int j = 1; j <= replicaCount; j++) {
-      String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + j;
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + i;
       checkPodDoesNotExist(managedServerPodName, domainUid, domainNamespace);
     }
   }
@@ -1333,12 +1333,12 @@ public class ItTwoDomainsLoadBalancers {
   private static int getApacheNodePort(String namespace, String channelName) {
     String apacheServiceName = APACHE_RELEASE_NAME + "-" + namespace.substring(3) + "-apache-webtier";
 
-    // get ingress service Nodeport
-    int apacheHttpNodePort = assertDoesNotThrow(() ->
+    // get Apache service NodePort
+    int apacheNodePort = assertDoesNotThrow(() ->
             getServiceNodePort(namespace, apacheServiceName, channelName),
-        "Getting Apache load balancer service node port failed");
-    logger.info("Node port for {0} is: {1} :", apacheServiceName, apacheHttpNodePort);
-    return apacheHttpNodePort;
+        "Getting Apache service NodePort failed");
+    logger.info("NodePort for {0} is: {1} :", apacheServiceName, apacheNodePort);
+    return apacheNodePort;
   }
 
   private static void deployApplication(String namespace, String domainUid, String adminServerPodName) {
@@ -1399,10 +1399,26 @@ public class ItTwoDomainsLoadBalancers {
         "Getting web node port for Traefik loadbalancer failed");
   }
 
-  private void verifyClusterLoadbalancing(String domainUid, String namespace, String protocol, int lbPort,
-                                          int replicaCount, boolean hostRouting, String apacheLocationString) {
+  /**
+   * Verify cluster load balancing with ClusterViewServlet app.
+   *
+   * @param domainUid uid of the domain in which the cluster exists
+   * @param namespace namespace in which the domain exists
+   * @param protocol protocol used to test, accepted value: http or https
+   * @param lbPort  load balancer service port
+   * @param replicaCount replica count of the managed servers in the cluster
+   * @param hostRouting whether it is a host base routing
+   * @param apacheLocationString location string in apache configuration
+   */
+  private void verifyClusterLoadbalancing(String domainUid,
+                                          String namespace,
+                                          String protocol,
+                                          int lbPort,
+                                          int replicaCount,
+                                          boolean hostRouting,
+                                          String apacheLocationString) {
 
-    //access application in managed servers through Traefik load balancer
+    // access application in managed servers through load balancer
     logger.info("Accessing the clusterview app through load balancer to verify all servers in cluster");
     String curlRequest;
     if (hostRouting) {
@@ -1413,7 +1429,7 @@ public class ItTwoDomainsLoadBalancers {
           domainUid + "." + namespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort);
     } else {
       curlRequest = String.format("curl --silent --show-error -ks --noproxy '*' "
-              + "%s://%s:%s/" + apacheLocationString + "/clusterview/ClusterViewServlet"
+              + "%s://%s:%s" + apacheLocationString + "/clusterview/ClusterViewServlet"
               + "\"?user=" + ADMIN_USERNAME_DEFAULT
               + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
           protocol, K8S_NODEPORT_HOST, lbPort);
@@ -1445,7 +1461,7 @@ public class ItTwoDomainsLoadBalancers {
         // ignore
       }
     }
-    assertTrue(containsCorrectDomainUid, "Host routing is not working");
+    assertTrue(containsCorrectDomainUid, "The request was not routed to the correct domain");
   }
 
   /**
@@ -1492,11 +1508,10 @@ public class ItTwoDomainsLoadBalancers {
 
   private static Callable<Boolean> pullImageFromOcirAndPushToKind(String apacheImage) {
     return (() -> {
-      kindRepoApacheImage = KIND_REPO + apacheImage.substring(TestConstants.REPO_DEFAULT.length());
-      logger.info("pulling image {0} from ocir, tag it as image {1} and push to kind repo",
+      kindRepoApacheImage = KIND_REPO + apacheImage.substring(REPO_DEFAULT.length());
+      logger.info("pulling image {0} from OCIR, tag it as image {1} and push to KIND repo",
           apacheImage, kindRepoApacheImage);
       return dockerPull(apacheImage) && dockerTag(apacheImage, kindRepoApacheImage) && dockerPush(kindRepoApacheImage);
     });
   }
-
 }

@@ -6,7 +6,7 @@ package oracle.weblogic.kubernetes.assertions.impl;
 import java.util.concurrent.Callable;
 
 /**
- * Assertions for Apache ingress controller.
+ * Assertions for Apache load balancer.
  */
 public class Apache {
 

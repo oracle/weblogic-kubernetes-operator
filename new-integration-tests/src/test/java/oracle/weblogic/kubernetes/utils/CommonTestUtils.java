@@ -640,7 +640,7 @@ public class CommonTestUtils {
    * @param httpsNodePort the https nodeport of Apache
    * @param domainUid the uid of the domain to which Apache will route the services
    * @param volumePath the path to put your own custom_mod_wl_apache.conf file
-   * @param virtualHostName the VirtualHostName of the Apache HTTP server which is used to enables custom SSL config
+   * @param virtualHostName the VirtualHostName of the Apache HTTP server which is used to enable custom SSL config
    * @param clusterNamePortMap the map with clusterName as key and cluster port number as value
    * @return the Apache Helm installation parameters
    */
@@ -656,7 +656,7 @@ public class CommonTestUtils {
 
     LoggingFacade logger = getLogger();
 
-    // Create Docker registry secret in the operator namespace to pull the image from repository
+    // Create Docker registry secret in the apache namespace to pull the Apache webtier image from repository
     if (!secretExists(REPO_SECRET_NAME, apacheNamespace)) {
       logger.info("Creating Docker registry secret in namespace {0}", apacheNamespace);
       createDockerRegistrySecret(apacheNamespace);
@@ -758,12 +758,12 @@ public class CommonTestUtils {
 
     // verify that Apache is installed
     logger.info("Checking Apache release {0} status in namespace {1}",
-        APACHE_RELEASE_NAME, apacheNamespace);
-    assertTrue(isHelmReleaseDeployed(APACHE_RELEASE_NAME, apacheNamespace),
+        APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace);
+    assertTrue(isHelmReleaseDeployed(APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace),
         String.format("Apache release %s is not in deployed status in namespace %s",
-            APACHE_RELEASE_NAME, apacheNamespace));
+            APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace));
     logger.info("Apache release {0} status is deployed in namespace {1}",
-        APACHE_RELEASE_NAME, apacheNamespace);
+        APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace);
 
     // wait until the Apache pod is ready.
     withStandardRetryPolicy

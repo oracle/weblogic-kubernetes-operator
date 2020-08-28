@@ -10,11 +10,10 @@ import java.util.Objects;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 /**
- * All parameters needed to install Apache ingress controller.
+ * All parameters needed to install Apache load balancer.
  */
 public class ApacheParams {
 
-  // Only add the values which need to be updated here.
   // The default values can be found here:
   // weblogic-kubernetes-operator/kubernetes/samples/charts/apache-webtier/values.yaml
   private static final String IMAGE = "image";

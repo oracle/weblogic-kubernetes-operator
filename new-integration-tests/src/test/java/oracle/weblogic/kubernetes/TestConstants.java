@@ -80,9 +80,6 @@ public interface TestConstants {
   public static final String STABLE_REPO_NAME = "stable";
   public static final String NGINX_CHART_NAME = "nginx-ingress";
 
-  // Apache constants
-  public static final String APACHE_IMAGE_12213 = "phx.ocir.io/weblogick8s/oracle/apache:12.2.1.3";
-
   // Traefik constants
   public static final String TRAEFIK_REPO_URL = "https://containous.github.io/traefik-helm-chart";
   public static final String TRAEFIK_REPO_NAME = "traefik";
@@ -97,6 +94,7 @@ public interface TestConstants {
   public static final String VOYAGER_CHART_VERSION = "12.0.0";
 
   // Apache constants
+  public static final String APACHE_IMAGE_12213 = "phx.ocir.io/weblogick8s/oracle/apache:12.2.1.3";
   public static final String APACHE_RELEASE_NAME = "apache-release" + BUILD_ID;
   public static final String APACHE_SAMPLE_CHART_DIR = "../kubernetes/samples/charts/apache-webtier";
 

@@ -10,7 +10,6 @@ import java.util.concurrent.Callable;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
-import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.assertions.impl.Apache;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
@@ -32,6 +31,8 @@ import oracle.weblogic.kubernetes.assertions.impl.Traefik;
 import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import org.joda.time.DateTime;
+
+import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
@@ -71,7 +72,7 @@ public class TestAssertions {
   /**
    * Check if there are ready Apache pods in the specified namespace.
    *
-   * @param namespace in which to check if APache pods are in the ready state
+   * @param namespace in which to check if Apache pods are in the ready state
    * @return true if there are ready Apache pods in the specified namespace , false otherwise
    */
   public static Callable<Boolean> isApacheReady(String namespace) {
@@ -631,7 +632,7 @@ public class TestAssertions {
    * @return true if secret exists, false otherwise
    */
   public static boolean secretExists(String secretName, String namespace) {
-    for (V1Secret secret : Secret.listSecrets(namespace).getItems()) {
+    for (V1Secret secret : listSecrets(namespace).getItems()) {
       if (secret.getMetadata() != null) {
         String name = secret.getMetadata().getName();
         if (name != null && name.equals(secretName)) {

@@ -347,7 +347,7 @@ public class Kubernetes {
 
   /**
    * Checks if a Apache pod is running in the specified namespace.
-   * The method assumes that the Apache pod name contains "APACHE_RELEAE_NAME-apache-webtier".
+   * The method assumes the Apache pod name contains "APACHE_RELEAE_NAME-namespace.substring(3)-apache-webtier".
    *
    * @param namespace in which to check if the Apache pod is running
    * @return true if the pod is running, otherwise false
@@ -361,7 +361,7 @@ public class Kubernetes {
 
   /**
    * Check whether the Apache pod is ready in the specified namespace.
-   * The method assumes that the Apache pod name starts with "APACHE_RELEASE_NAME_apache-webtier".
+   * The method assumes the Apache pod name contains "APACHE_RELEASE_NAME-namespace.substring(3)-apache-webtier".
    *
    * @param namespace in which to check if the Apache pod is ready
    * @return true if the pod is in the ready state, false otherwise
