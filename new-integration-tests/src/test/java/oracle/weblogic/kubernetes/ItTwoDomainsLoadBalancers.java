@@ -91,14 +91,12 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-//import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-//import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
-//import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-//import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-//import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -113,7 +111,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
-//import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
@@ -263,18 +261,12 @@ public class ItTwoDomainsLoadBalancers {
       //   1. docker login
       //   2. docker pull
       //   3. docker tag with the KIND_REPO value
-      /*
+      //   4. docker push to KIND_REPO
+
       ConditionFactory withStandardRetryPolicy
           = with().pollDelay(0, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(30, MINUTES).await();
-
-      logger.info("DEBUG: REPO_REGISTRY: {0}", REPO_REGISTRY);
-      logger.info("DEBUG: REPO_USERNAME: {0}", REPO_USERNAME);
-      logger.info("DEBUG: REPO_PASSWORD: {0}", REPO_PASSWORD);
-      logger.info("DEBUG: OCR_REGISTRY: {0}", OCR_REGISTRY);
-      logger.info("DEBUG: OCR_USERNAME: {0}", OCR_USERNAME);
-      logger.info("DEBUG: OCR_PASSWORD: {0}", OCR_PASSWORD);
 
       withStandardRetryPolicy
           .conditionEvaluationListener(
@@ -290,9 +282,7 @@ public class ItTwoDomainsLoadBalancers {
                       + "(elapsed time {1} ms, remaining time {2} ms)", APACHE_IMAGE_12213,
                   condition.getElapsedTimeInMS(),
                   condition.getRemainingTimeInMS()))
-          .until(pullImageFromOcirAndPushToKind(APACHE_IMAGE_12213)
-          );
-      */
+          .until(pullImageFromOcirAndPushToKind(APACHE_IMAGE_12213));
     }
   }
 
@@ -411,7 +401,7 @@ public class ItTwoDomainsLoadBalancers {
     }
     apacheHelmParams2 = assertDoesNotThrow(
         () -> installAndVerifyApache(defaultNamespace, kindRepoApacheImage, 0, 0, domain1Uid,
-            RESULTS_ROOT, "apache-sample-host", clusterNamePortMap));
+            PV_ROOT + "/" + this.getClass().getSimpleName(), "apache-sample-host", clusterNamePortMap));
   }
 
   /**
