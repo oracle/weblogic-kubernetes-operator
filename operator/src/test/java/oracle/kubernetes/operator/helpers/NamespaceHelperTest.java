@@ -119,22 +119,28 @@ public class NamespaceHelperTest {
   }
 
   @Test
-  public void whenNamespacesAddedDuringList_retrieveFinalSetOfNamespaces() {
+  public void whenNamespaceAddedDuringList_retrieveFinalSetOfNamespaces() {
     testSupport.defineResources(createNamespaces(3 * REQUEST_LIMIT - 1));
-    testSupport.doOnList(KubernetesTestSupport.NAMESPACE, new DoResourceUpdate());
+    testSupport.doOnList(KubernetesTestSupport.NAMESPACE, new DelayedNamespaceAddition(2));
 
     testSupport.runSteps(NamespaceHelper.createNamespaceListStep(responseStep, null));
 
     assertThat(responseStep.getItems(), hasSize(3 * REQUEST_LIMIT));
   }
 
-  // Adds an addition namespace after the first list request has received two chunks.
-  class DoResourceUpdate implements Runnable {
+  // Adds an additional namespace after the specified number of list requests.
+  class DelayedNamespaceAddition implements Runnable {
+    private final int creationDelay;
     private int count;
+
+    // creates a callback that will create a namespace after the specified number of list requests.
+    DelayedNamespaceAddition(int creationDelay) {
+      this.creationDelay = creationDelay;
+    }
 
     @Override
     public void run() {
-      if (count++ == 2) {
+      if (count++ == creationDelay) {
         testSupport.defineResources(createNamespace(5 * REQUEST_LIMIT));
       }
     }

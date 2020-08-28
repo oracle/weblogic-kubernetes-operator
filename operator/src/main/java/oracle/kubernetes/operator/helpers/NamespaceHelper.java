@@ -86,14 +86,10 @@ public class NamespaceHelper {
     }
 
     boolean restartNeeded(String newResourceVersion) {
-      if (resourceVersion == null) {
+      try {
+        return (resourceVersion != null && !resourceVersion.equals(newResourceVersion));
+      } finally {
         resourceVersion = newResourceVersion;
-        return false;
-      } else if (resourceVersion.equals(newResourceVersion)) {
-        return false;
-      } else {
-        resourceVersion = newResourceVersion;
-        return true;
       }
     }
 
@@ -130,6 +126,10 @@ public class NamespaceHelper {
       private int getStatusCode() {
         return callResponse.getStatusCode();
       }
+
+      private boolean allItemsRetrieved() {
+        return Strings.isNullOrEmpty(continueToken);
+      }
     }
 
     class NamespaceListStep extends Step {
@@ -147,7 +147,7 @@ public class NamespaceHelper {
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
         SuccessContextUpdate update = new SuccessContextUpdate(callResponse);
-        if (Strings.isNullOrEmpty(continueToken)) {
+        if (update.allItemsRetrieved()) {
           return responseStep.onSuccess(packet, update.createSuccessResponse());
         } else {
           return doNext(createListStep(), packet);
