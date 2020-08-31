@@ -325,12 +325,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private Step patchCurrentPod(V1Pod currentPod, Step next) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-
     KubernetesUtils.addPatches(
         patchBuilder, "/metadata/labels/", getLabels(currentPod), getPodLabels());
     KubernetesUtils.addPatches(
         patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
-
     return new CallBuilder()
         .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
@@ -801,9 +799,27 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
         if (Objects.equals(true, packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))) {
-          LOGGER.info("PodStepContext.verifyPodStep: Model in Image dynamic updated no restart necessary");
+          LOGGER.fine("PodStepContext.verifyPodStep: Model in Image dynamic updated no restart necessary");
           logPodExists();
-          return doNext(packet);
+          Map<String,String> podLabels = Optional.ofNullable(info)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getAdminServerSpec)
+              .map(ServerSpec::getPodLabels)
+              .orElse(null);
+          if (podLabels != null) {
+            if (miiDomainZipHash != null) {
+              podLabels.put(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
+            }
+
+            if (domainRestartVersion != null) {
+              podLabels.put(LabelConstants.DOMAINRESTARTVERSION_LABEL, domainRestartVersion);
+            }
+
+            if (miiModelSecretsHash != null) {
+              podLabels.put(LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, miiDomainZipHash);
+            }
+          }
+          return  doNext(patchCurrentPod(currentPod, getNext()), packet);
         }
         LOGGER.info(
             MessageKeys.CYCLING_POD,

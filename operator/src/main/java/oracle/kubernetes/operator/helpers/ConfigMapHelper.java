@@ -515,9 +515,8 @@ public class ConfigMapHelper {
 
       String updateDomainResult = data.get("UPDATEDOMAINRESULT");
       if (updateDomainResult != null) {
-        LOGGER.info("ConfigMapHelper:updateDomainResult " + updateDomainResult);
         if (updateDomainResult.equals("0")) {
-          LOGGER.info("ConfigMapHelper apply: short circuit finished online update");
+          LOGGER.fine("ConfigMapHelper apply: short circuit finished online update");
           packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE, true);
         }
       }
