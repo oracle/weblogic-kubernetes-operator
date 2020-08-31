@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
@@ -62,7 +63,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmValuesToString;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseStatus;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
@@ -77,14 +79,11 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createExternalRestIdentitySecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -109,12 +108,12 @@ class ItUsabilityOperatorHelmChart {
   private static String op2Namespace = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
-  private static HelmParams nginxHelmParams = null;
-  private static int nodeportshttp = 0;
+  private static String domain3Namespace = null;
 
   // domain constants
   private final String domain1Uid = "usabdomain1";
   private final String domain2Uid = "usabdomain2";
+  private final String domain3Uid = "usabdomain3";
   private final String clusterName = "cluster-1";
   private final int managedServerPort = 8001;
   private final int replicaCount = 2;
@@ -134,8 +133,7 @@ class ItUsabilityOperatorHelmChart {
           .atMost(5, MINUTES).await();
 
   /**
-   * Get namespaces for operator, domain and NGINX.
-   * Install and verify NGINX.
+   * Get namespaces for operator, domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
@@ -158,47 +156,44 @@ class ItUsabilityOperatorHelmChart {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domain2Namespace = namespaces.get(2);
 
-    // get a unique NGINX namespace
-    logger.info("Getting a unique namespace for NGINX");
+    // get a unique domain namespace
+    logger.info("Getting a unique namespace for WebLogic domain 3");
     assertNotNull(namespaces.get(3), "Namespace list is null");
-    String nginxNamespace = namespaces.get(3);
+    domain3Namespace = namespaces.get(3);
 
     // get a unique operator 2 namespace
     logger.info("Getting a unique namespace for operator 2");
     assertNotNull(namespaces.get(4), "Namespace list is null");
     op2Namespace = namespaces.get(4);
-
-    // install and verify NGINX
-    logger.info("Installing and verifying NGINX");
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-
-    String nginxServiceName = nginxHelmParams.getReleaseName() + "-nginx-ingress-controller";
-    logger.info("NGINX service name: {0}", nginxServiceName);
-    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
-    logger.info("NGINX http node port: {0}", nodeportshttp);
   }
 
   @AfterAll
   public void tearDownAll() {
-    // uninstall NGINX release
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
-          .as("Test uninstallNginx returns true")
-          .withFailMessage("uninstallNginx() did not return true")
-          .isTrue();
+    if (isDomain1Running) {
+      // Delete domain custom resource
+      logger.info("Delete domain custom resource in namespace {0}", domain1Namespace);
+      assertDoesNotThrow(() -> deleteDomainCustomResource(domain1Uid, domain1Namespace),
+          "deleteDomainCustomResource failed with ApiException");
+      logger.info("Deleted Domain Custom Resource " + domain1Uid + " from " + domain1Namespace);
+    }
+    if (isDomain2Running) {
+      logger.info("Delete domain custom resource in namespace {0}", domain2Namespace);
+      assertDoesNotThrow(() -> deleteDomainCustomResource(domain2Uid, domain2Namespace),
+          "deleteDomainCustomResource failed with ApiException");
+      logger.info("Deleted Domain Custom Resource " + domain2Uid + " from " + domain2Namespace);
     }
   }
 
   /**
-   * Create operator and verify it is deployed successfully.
-   * Create a custom domain resource and verify all server pods in the domain were created and ready.
-   * Verify NGINX can access the sample app from all managed servers in the domain.
-   * Uninstall operator.
+   * Install the Operator successfully and verify it is deployed successfully.
+   * Deploy a custom domain resource and verify all server pods in the domain were created and ready.
+   * Uninstall operator helm chart.
    * Verify the states of all server pods in the domain were not changed.
-   * Verify NGINX can access the sample app from all managed servers in the domain after the operator was deleted.
+   * Verify the access to managed server configuration via rest api in the domain after the operator was deleted.
    */
   @Test
-  @DisplayName("Create operator and domain, then delete operator and verify the domain is still running")
+  @DisplayName("install operator helm chart and domain, "
+      + " then uninstall operator helm chart and verify the domain is still running")
   public void testDeleteOperatorButNotDomain() {
     // install and verify operator
     logger.info("Installing and verifying operator");
@@ -270,25 +265,24 @@ class ItUsabilityOperatorHelmChart {
           .isTrue();
     }
 
-    // verify the sample app in the domain is still accessible from all managed servers through NGINX
-    logger.info("Checking that the sample app can be accessed from all managed servers through NGINX "
+    // verify the managed server Mbean is still accessible via rest api
+    logger.info("Verify the managed server1 MBean configuration through rest API "
         + "after the operator was deleted");
-    verifySampleAppAccessThroughNginx();
+    assertTrue(checkManagedServerConfiguration(domain1Namespace, domain1Uid));
 
   }
 
   /**
-   * Create operator and verify it is deployed successfully.
+   * Install the Operator helm chart successfully.
    * Create a custom domain resource and verify all server pods in the domain were created and ready.
-   * Verify NGINX can access the sample app from all managed servers in the domain.
-   * Uninstall operator.
+   * Uninstall operator helm chart.
    * Verify the states of all server pods in the domain were not changed.
-   * Verify NGINX can access the sample app from all managed servers in the domain after the operator was deleted.
-   * Install operator again reusing same helm values and scale domain to verify it can manage it
+   * Verify rest api access to managed server configuration in the domain after the operator was deleted.
+   * Install operator helm chart again reusing same helm values and scale domain to verify it can manage it
    */
   @Test
-  @DisplayName("Create operator and domain, then delete operator and"
-      + " create again operator and verify it can still manage domain")
+  @DisplayName("Install operator helm chart and domain, then uninstall operator helm chart, "
+      + " install operator helm chart again and verify it can still manage domain")
   public void testCreateDeleteCreateOperatorButNotDomain() {
     String opReleaseName = OPERATOR_RELEASE_NAME;
     HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
@@ -304,8 +298,8 @@ class ItUsabilityOperatorHelmChart {
 
       if (!isDomain1Running) {
         logger.info("Installing and verifying domain");
-        assertTrue(createVerifyDomain(domain1Namespace, domain1Uid),
-            "can't start or verify domain in namespace " + domain1Namespace);
+        assertTrue(createVerifyDomain(domain3Namespace, domain3Uid),
+            "can't start or verify domain in namespace " + domain3Namespace);
         isDomain1Running = true;
       }
       // delete operator
@@ -322,9 +316,16 @@ class ItUsabilityOperatorHelmChart {
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
       //check if can still manage domain1
-      assertTrue(scaleDomain(domain1Namespace, domain1Uid,replicaCountDomain1,replicaCountDomain1 - 1,
-          opNamespace, opServiceAccount, externalRestHttpsPort), "Domain1 " + domain1Namespace + " scaling failed");
-      replicaCountDomain1--;
+      assertTrue(scaleClusterWithRestApi(domain1Uid, clusterName,replicaCountDomain1 - 1,
+          externalRestHttpsPort,opNamespace, opServiceAccount),
+          "Domain1 " + domain1Namespace + " scaling failed");
+      String managedServerPodName1 = domain1Uid + managedServerPrefix + replicaCountDomain1;
+      logger.info("Checking that the managed server pod {0} exists in namespace {1}",
+          managedServerPodName1, domain1Namespace);
+      assertDoesNotThrow(() -> checkPodDoesNotExist(managedServerPodName1, domain1Uid, domain1Namespace),
+          "operator failed to manage domain1, scaling was not succeeded");
+      --replicaCountDomain1;
+      logger.info("Domain1 scaled to " + replicaCountDomain1 + " servers");
 
     } finally {
       deleteSecret("ocir-secret",opNamespace);
@@ -334,9 +335,9 @@ class ItUsabilityOperatorHelmChart {
   }
 
   /**
-   * Create operator and verify it is deployed successfully
+   * Install the Operator successfully.
    * Create domain1 and verify the domain is started
-   * Upgrade the operator domainNamespaces to include namespace for domain2
+   * Upgrade the operator helm chart domainNamespaces to include namespace for domain2
    * Verify both domains are managed by the operator by making a REST API call
    * Call helm upgrade to remove the first domain from operator domainNamespaces
    * Verify it can't be managed by operator anymore.
@@ -349,23 +350,23 @@ class ItUsabilityOperatorHelmChart {
 
     String opReleaseName = OPERATOR_RELEASE_NAME;
     HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
-        .namespace(opNamespace)
+        .namespace(op2Namespace)
         .chartDir(OPERATOR_CHART_DIR);
     try {
       // install operator
-      String opServiceAccount = opNamespace + "-sa";
-      HelmParams opHelmParams = installAndVerifyOperator(opNamespace, opServiceAccount, true,
-          0, op1HelmParams, domain1Namespace);
+      String opServiceAccount = op2Namespace + "-sa";
+      HelmParams opHelmParams = installAndVerifyOperator(op2Namespace, opServiceAccount, true,
+          0, op1HelmParams, domain2Namespace);
       assertNotNull(opHelmParams, "Can't install operator");
-      int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+      int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
       assertTrue(externalRestHttpsPort != -1,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
-      if (!isDomain1Running) {
+      if (!isDomain2Running) {
         logger.info("Installing and verifying domain");
-        assertTrue(createVerifyDomain(domain1Namespace, domain1Uid),
-            "can't start or verify domain in namespace " + domain1Namespace);
-        isDomain1Running = true;
+        assertTrue(createVerifyDomain(domain2Namespace, domain2Uid),
+            "can't start or verify domain in namespace " + domain2Namespace);
+        isDomain2Running = true;
       }
 
       // operator chart values
@@ -375,24 +376,37 @@ class ItUsabilityOperatorHelmChart {
           .externalRestHttpsPort(externalRestHttpsPort)
           .serviceAccount(opServiceAccount)
           .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME)
-          .domainNamespaces(java.util.Arrays.asList(domain1Namespace, domain2Namespace));
+          .domainNamespaces(java.util.Arrays.asList(domain3Namespace, domain2Namespace));
 
       // upgrade operator
-      assertTrue(upgradeAndVerifyOperator(opNamespace, opParams));
+      assertTrue(upgradeAndVerifyOperator(op2Namespace, opParams));
 
-      if (!isDomain2Running) {
         logger.info("Installing and verifying domain");
-        assertTrue(createVerifyDomain(domain2Namespace, domain2Uid),
-            "can't start or verify domain in namespace " + domain2Namespace);
-        isDomain2Running = true;
-      }
-      assertTrue(scaleDomain(domain1Namespace, domain1Uid,replicaCountDomain1,replicaCountDomain1 + 1,
-          opNamespace, opServiceAccount, externalRestHttpsPort), "Domain1 " + domain1Namespace + " scaling failed");
-      replicaCountDomain1++;
-      assertTrue(scaleDomain(domain2Namespace,domain2Uid,replicaCountDomain2,replicaCountDomain2 + 1,
-          opNamespace, opServiceAccount, externalRestHttpsPort), "Domain2 " + domain2Namespace + " scaling failed");
-      replicaCountDomain2++;
-      // operator chart values
+        assertTrue(createVerifyDomain(domain3Namespace, domain3Uid),
+            "can't start or verify domain in namespace " + domain3Namespace);
+
+      assertTrue(scaleClusterWithRestApi(domain3Uid, clusterName,3,
+          externalRestHttpsPort,op2Namespace, opServiceAccount),
+          "Domain3 " + domain3Namespace + " scaling operation failed");
+      String managedServerPodName1 = domain3Uid + managedServerPrefix + 3;
+      logger.info("Checking that the managed server pod {0} exists in namespace {1}",
+          managedServerPodName1, domain3Namespace);
+      assertDoesNotThrow(() ->
+              checkPodExists(managedServerPodName1, domain3Uid, domain3Namespace),
+          "operator failed to manage domain1, scaling was not succeeded");
+
+      logger.info("Domain3 scaled to 3 servers");
+      assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,replicaCountDomain2 + 1,
+          externalRestHttpsPort,op2Namespace, opServiceAccount),
+          "Domain2 " + domain2Namespace + " scaling operation failed");
+      String managedServerPodName2 = domain2Uid + managedServerPrefix + (replicaCountDomain2 + 1);
+      logger.info("Checking that the managed server pod {0} exists in namespace {1}",
+          managedServerPodName2, domain2Namespace);
+      assertDoesNotThrow(() -> checkPodExists(managedServerPodName2, domain2Uid, domain2Namespace),
+          "operator failed to manage domain2, scaling was not succeeded");
+      ++replicaCountDomain2;
+      logger.info("Domain2 scaled to " + replicaCountDomain2 + " servers");
+      // operator chart values for upgrade
       opParams = new OperatorParams()
           .helmParams(opHelmParams)
           .externalRestEnabled(true)
@@ -400,18 +414,33 @@ class ItUsabilityOperatorHelmChart {
           .serviceAccount(opServiceAccount)
           .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME)
           .domainNamespaces(java.util.Arrays.asList(domain2Namespace));
-      assertTrue(upgradeAndVerifyOperator(opNamespace, opParams));
+      assertTrue(upgradeAndVerifyOperator(op2Namespace, opParams));
 
-      assertTrue(scaleDomain(domain2Namespace,domain2Uid,replicaCountDomain2,replicaCountDomain2 - 1,
-          opNamespace, opServiceAccount, externalRestHttpsPort),"Domain " + domain2Namespace + " scaling failed");
-      replicaCountDomain2--;
+      assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,replicaCountDomain2 - 1,
+          externalRestHttpsPort,op2Namespace, opServiceAccount),
+          "Domain2 " + domain2Namespace + " scaling execution failed");
+      // check new managed server pod exists in the namespace
+      logger.info("Checking that the managed server pod {0} does not exist in namespace {1}",
+          managedServerPodName2, domain2Namespace);
+      assertDoesNotThrow(() -> checkPodDoesNotExist(managedServerPodName2, domain2Uid, domain2Namespace),
+          "operator failed to managed domain2, scaling was not succeeded, pod "
+              + managedServerPodName2 +  " still exists");
+      --replicaCountDomain2;
+      logger.info("Domain2 scaled to " + replicaCountDomain2 + " servers");
+
       //verify operator can't scale domain1 anymore
-      assertFalse(scaleDomain(domain1Namespace,domain1Uid,replicaCountDomain1,replicaCountDomain1 - 1,
-          opNamespace, opServiceAccount, externalRestHttpsPort), "operator still can manage domain1");
+      assertTrue(scaleClusterWithRestApi(domain3Uid, clusterName,2,
+          externalRestHttpsPort,op2Namespace, opServiceAccount),
+          "Domain1 " + domain3Namespace + " scaling execution failed ");
+      // check new managed server pod exists in the namespace
+      logger.info("Checking that the managed server pod {0} exists in namespace {1}",
+          managedServerPodName1, domain3Namespace);
+      assertDoesNotThrow(() -> checkPodExists(managedServerPodName1, domain3Uid, domain3Namespace),
+          "operator can still manage domain1, scaling was succeeded for " + managedServerPodName1);
 
     } finally {
-      cleanUpSA(opNamespace);
-      deleteSecret("ocir-secret",opNamespace);
+      cleanUpSA(op2Namespace);
+      deleteSecret("ocir-secret",op2Namespace);
       uninstallOperator(op1HelmParams);
     }
   }
@@ -619,9 +648,16 @@ class ItUsabilityOperatorHelmChart {
         isDomain2Running = true;
       }
       //verify operator can scale domain
-      assertTrue(scaleDomain(domain2Namespace,domain2Uid,replicaCountDomain2,replicaCountDomain2 + 1,
-          op2Namespace, opServiceAccount, externalRestHttpsPort),"Domain " + domain2Namespace + " scaling failed");
-      replicaCountDomain2++;
+      assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,replicaCountDomain2 - 1,
+          externalRestHttpsPort,op2Namespace, opServiceAccount),
+          "Domain2 " + domain2Namespace + " scaling operation failed");
+      String managedServerPodName2 = domain2Uid + managedServerPrefix + replicaCountDomain2;
+      logger.info("Checking that the managed server pod {0} exists in namespace {1}",
+          managedServerPodName2, domain2Namespace);
+      assertDoesNotThrow(() -> checkPodDoesNotExist(managedServerPodName2, domain2Uid, domain2Namespace),
+          "operator failed to manage domain2, scaling was not succeeded for " + managedServerPodName2);
+      --replicaCountDomain2;
+      logger.info("Domain2 scaled to " + replicaCountDomain2 + " servers");
 
 
     } finally {
@@ -690,7 +726,7 @@ class ItUsabilityOperatorHelmChart {
       //comment it out due OWLS-84294, helm does not report failed status
       //assertNull(errorMsg, errorMsg);
     } finally {
-      //uninstall operator
+      //uninstall operator helm chart
       deleteSecret("ocir-secret",op2Namespace);
       cleanUpSA(op2Namespace);
       uninstallOperator(opHelmParams);
@@ -703,17 +739,6 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Creating and verifying model in image domain");
 
     createAndVerifyMiiDomain(domainNamespace, domainUid);
-
-    // create ingress for the domain
-    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-    clusterNameMsPortMap.put(clusterName, managedServerPort);
-    ingressHostList =
-        createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
-
-    // verify the sample apps for the domain
-    logger.info("Checking that the sample app can be accessed from all managed servers through NGINX");
-    verifySampleAppAccessThroughNginx();
     return true;
   }
 
@@ -775,7 +800,11 @@ class ItUsabilityOperatorHelmChart {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
+                .serverStartState("RUNNING")
+                .adminService(new oracle.weblogic.domain.AdminService()
+                    .addChannelsItem(new oracle.weblogic.domain.Channel()
+                        .channelName("default")
+                        .nodePort(0))))
             .clusters(clusters)
             .configuration(new Configuration()
                 .model(new Model()
@@ -820,26 +849,8 @@ class ItUsabilityOperatorHelmChart {
           managedServerPodName, domainNamespace);
       checkServiceExists(managedServerPodName, domainNamespace);
     }
-  }
-
-  /**
-   * Verify the sample app can be accessed from all managed servers in the domain through NGINX.
-   */
-  private void verifySampleAppAccessThroughNginx() {
-
-    List<String> managedServerNames = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
-    }
-
-    // check that NGINX can access the sample apps from all managed servers in the domain
-    String curlCmd =
-        String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
-            ingressHostList.get(0), K8S_NODEPORT_HOST, nodeportshttp);
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
-        .as("Verify NGINX can access the sample app from all managed servers in the domain")
-        .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
-        .isTrue();
+    //check the access to managed server mbean via rest api
+    checkManagedServerConfiguration(domainNamespace, domainUid);
   }
 
   /**
@@ -1048,36 +1059,6 @@ class ItUsabilityOperatorHelmChart {
     return null;
   }
 
-  /**
-   * Scale domain .
-   */
-  private boolean scaleDomain(String domainNS, String domainUid,
-                              int replicaCount,
-                              int replicasAfterScale,
-                              String opNamespace,
-                              String opServiceAccount,
-                              int externalRestHttpsPort) {
-
-    // scale domain
-    logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-        clusterName, domainUid, domainNS, replicasAfterScale);
-    assertTrue(externalRestHttpsPort != -1,
-        "Could not get the Operator external service node port");
-    logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
-    String managedServerPodNamePrefix = domainUid + "-managed-server";
-    try {
-      // check domain can be managed from the operator by scaling the cluster
-      scaleAndVerifyCluster("cluster-1", domainUid, domainNS,
-          managedServerPodNamePrefix, replicaCount, replicasAfterScale,
-          true, externalRestHttpsPort, opNamespace, opServiceAccount,
-          false, "", "", 0, "", "", null, null);
-    } catch (Exception ex) {
-      logger.info("Getting error during scale " + ex.getMessage());
-      return false;
-    }
-    return true;
-  }
-
   private void cleanUpSA(String namespace) {
     V1ServiceAccountList sas = Kubernetes.listServiceAccounts(namespace);
     if (sas != null) {
@@ -1086,6 +1067,39 @@ class ItUsabilityOperatorHelmChart {
         deleteServiceAccount(saName, namespace);
         checkServiceDoesNotExist(saName, namespace);
       }
+    }
+  }
+
+  /*
+   * Verify the server MBEAN configuration through rest API.
+   * @param managedServer name of the managed server
+   * @returns true if MBEAN is found otherwise false
+   **/
+  private boolean checkManagedServerConfiguration(String domainNamespace, String domainUid) {
+    ExecResult result = null;
+    String adminServerPodName = domainUid + adminServerPrefix;
+    String managedServer = "managed-server1";
+    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    StringBuffer checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+        .append("/management/tenant-monitoring/servers/")
+        .append(managedServer)
+        .append(" --silent --show-error ")
+        .append(" -o /dev/null")
+        .append(" -w %{http_code});")
+        .append("echo ${status}");
+    logger.info("checkManagedServerConfiguration: curl command {0}", new String(checkCluster));
+    try {
+      result = exec(new String(checkCluster), true);
+    } catch (Exception ex) {
+      logger.info("Exception in checkManagedServerConfiguration() {0}", ex);
+      return false;
+    }
+    logger.info("checkManagedServerConfiguration: curl command returned {0}", result.toString());
+    if (result.stdout().equals("200")) {
+      return true;
+    } else {
+      return false;
     }
   }
 }
