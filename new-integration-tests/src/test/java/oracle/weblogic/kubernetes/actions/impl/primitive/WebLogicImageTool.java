@@ -119,6 +119,14 @@ public class WebLogicImageTool {
       command += " --wdtOperation " + params.wdtOperation();
     }
 
+    if (params.additionalBuildCommands() != null) {
+      command += " --additionalBuildCommands " + params.additionalBuildCommands();
+    }
+
+    if (params.additionalBuildFiles() != null) {
+      command += " --additionalBuildFiles " + params.additionalBuildFiles();
+    }
+
     return command;
   }
 

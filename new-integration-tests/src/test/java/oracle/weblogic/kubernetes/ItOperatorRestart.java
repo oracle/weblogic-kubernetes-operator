@@ -9,17 +9,13 @@ import java.util.List;
 
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonPatchTestUtils;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -31,13 +27,20 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.actions.TestActions.startOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.stopOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isOperatorPodRestarted;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.checkPodRestartVersionUpdated;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
@@ -48,12 +51,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+
 // Test to restart the operator when the server pods roll after changing the WebLogic credentials secret of a
 // domain custom resource that uses model-in-image.
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
-public class ItOperatorRestartWhenPodRoll {
+public class ItOperatorRestart {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String domainUid = "domain1";
@@ -105,6 +108,111 @@ public class ItOperatorRestartWhenPodRoll {
   }
 
   /**
+   * Stop Operator and delete the admin and managed server pods.
+   * Restart Operator and verify admin and managed servers are started.
+   */
+  @Test
+  @DisplayName("Stop operator, delete all the server pods and restart operator, verify servers are started")
+  public void testRestartOperatorAndVerifyDomainUp() {
+
+    // get operator pod name
+    String operatorPodName = assertDoesNotThrow(
+        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    assertNotNull(operatorPodName, "Operator pod name returned is null");
+    logger.info("Operator pod name {0}", operatorPodName);
+
+    // stop operator by changing replica to 0 in operator deployment
+    assertTrue(stopOperator(opNamespace), "Couldn't stop the Operator");
+
+    // check operator pod is not running
+    checkPodDoesNotExist(operatorPodName, null, opNamespace);
+
+    // delete server pods
+    for (int i = 1; i <= replicaCount; i++) {
+      final String managedServerPodName = managedServerPrefix + i;
+      logger.info("Deleting managed server {0} in namespace {1}", managedServerPodName, domainNamespace);
+      assertDoesNotThrow(() -> deletePod(managedServerPodName, domainNamespace),
+              "Got exception while deleting server " + managedServerPodName);
+      checkPodDoesNotExist(managedServerPodName, domainUid, domainNamespace);
+    }
+
+    logger.info("deleting admin server pod");
+    assertDoesNotThrow(() -> deletePod(adminServerPodName, domainNamespace),
+            "Got exception while deleting admin server pod");
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
+
+    // start operator by changing replica to 1 in operator deployment
+    assertTrue(startOperator(opNamespace), "Couldn't start the Operator");
+
+    // check operator is running
+    logger.info("Check Operator pod is running in namespace {0}", opNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for operator to be running in namespace {0} "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                opNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(operatorIsReady(opNamespace));
+
+    logger.info("Check admin service and pod {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check managed server services and pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server services and pods are created in namespace {0}",
+           domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+  }
+
+  /**
+   * Stop Operator and increase the replica count for the domain.
+   * Restart Operator and verify the cluster is scaled up.
+   */
+  @Test
+  @DisplayName("Stop operator, increase replica count for the domain, restart operator and verify cluster is scaled up")
+  public void testRestartOperatorAndVerifyScaling() {
+
+    // get operator pod name
+    String operatorPodName = assertDoesNotThrow(
+        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    assertNotNull(operatorPodName, "Operator pod name returned is null");
+    logger.info("Operator pod name {0}", operatorPodName);
+
+    // stop operator by changing replica to 0 in operator deployment
+    assertTrue(stopOperator(opNamespace), "Couldn't stop the Operator");
+
+    // check operator pod is not running
+    checkPodDoesNotExist(operatorPodName, null, opNamespace);
+
+    // scale up the domain by increasing replica count
+    replicaCount = 3;
+    boolean scalingSuccess = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", replicaCount),
+        String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed", domainUid, domainNamespace));
+    assertTrue(scalingSuccess,
+        String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    // start operator by changing replica to 1 in operator deployment
+    assertTrue(startOperator(opNamespace), "Couldn't start the Operator");
+
+    // check new server is started and existing servers are running
+    logger.info("Check admin service and pod {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check managed server services and pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
+  }
+
+  /**
    * Test patching a running model-in-image domain with a new WebLogic credentials secret.
    * Perform two patching operations to the domain spec. First, change the webLogicCredentialsSecret to
    * a new secret, and then change the domainRestartVersion to trigger a rolling restart of the server pods.
@@ -116,8 +224,6 @@ public class ItOperatorRestartWhenPodRoll {
    */
   @Test
   @DisplayName("Restart operator when the domain is rolling after the admin credentials are changed")
-  @Slow
-  @MustNotRunInParallel
   public void testOperatorRestartWhenPodRoll() {
     final boolean VALID = true;
     final boolean INVALID = false;
@@ -183,11 +289,16 @@ public class ItOperatorRestartWhenPodRoll {
         replicaCount,
         adminSecretName);
 
+    // wait till rolling restart has started by checking admin server pod is deleted
+    logger.info("Waiting for rolling restart to start by checking {0} pod is deleted in namespace {0}",
+        adminServerPodName, domainNamespace);
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
+
     logger.info("Delete the operator pod in namespace {0} and wait for it to be restarted", opNamespace);
     restartOperatorAndVerify();
 
-    logger.info("Wait for domain {0} admin server pod {1} in namespace {2} to be restarted",
-        domainUid, adminServerPodName, domainNamespace);
+    logger.info("Wait for domain {0} server pods in namespace {1} to be restarted",
+        domainUid, domainNamespace);
 
     assertTrue(assertDoesNotThrow(
         () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
@@ -221,9 +332,14 @@ public class ItOperatorRestartWhenPodRoll {
             String.format("Failed to get creationTimestamp for pod %s", opPodName));
     assertNotNull(opPodCreationTime, "creationTimestamp of the operator pod is null");
 
-    assertDoesNotThrow(
-        () -> deletePod(opPodName, opNamespace),
-        "Got exception in deleting the Operator pod");
+    // stop operator by changing replica to 0 in operator deployment
+    assertTrue(stopOperator(opNamespace), "Couldn't stop the Operator");
+
+    // check operator pod is not running
+    checkPodDoesNotExist(opPodName, null, opNamespace);
+
+    // start operator by changing replica to 1 in operator deployment
+    assertTrue(startOperator(opNamespace), "Couldn't start the Operator");
 
     // wait for the operator to be ready
     logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
@@ -244,4 +360,5 @@ public class ItOperatorRestartWhenPodRoll {
     assertFalse(opPodNameNew.equals(opPodName),
         "The operator names before and after a restart should be different");
   }
+
 }
