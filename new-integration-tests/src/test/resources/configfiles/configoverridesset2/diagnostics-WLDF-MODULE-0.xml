@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<wldf:wldf-resource
+    xmlns:wldf="http://xmlns.oracle.com/weblogic/weblogic-diagnostics"
+    xmlns:diagf="http://xmlns.oracle.com/weblogic/weblogic-diagnostics-fragment"
+    xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
+    <wldf:name>WLDF-MODULE-0</wldf:name>
+    <wldf:instrumentation diagf:combine-mode="add">
+        <wldf:wldf-instrumentation-monitor diagf:combine-mode="add">
+            <wldf:name>Connector_After_Inbound</wldf:name>
+            <wldf:description></wldf:description>
+        </wldf:wldf-instrumentation-monitor>
+        <wldf:wldf-instrumentation-monitor diagf:combine-mode="add">
+            <wldf:name>Connector_Around_Outbound</wldf:name>
+            <wldf:description></wldf:description>
+        </wldf:wldf-instrumentation-monitor>
+        <wldf:wldf-instrumentation-monitor diagf:combine-mode="add">
+            <wldf:name>Connector_Around_Tx</wldf:name>
+            <wldf:description></wldf:description>
+        </wldf:wldf-instrumentation-monitor>
+        <wldf:wldf-instrumentation-monitor diagf:combine-mode="add">
+            <wldf:name>Connector_Around_Work</wldf:name>
+            <wldf:description></wldf:description>
+        </wldf:wldf-instrumentation-monitor>
+        <wldf:wldf-instrumentation-monitor diagf:combine-mode="add">
+            <wldf:name>Connector_Before_Inbound</wldf:name>
+            <wldf:description></wldf:description>
+        </wldf:wldf-instrumentation-monitor>
+    </wldf:instrumentation>
+    <wldf:harvester diagf:combine-mode="add">
+        <wldf:enabled diagf:combine-mode="add">true</wldf:enabled>
+        <wldf:harvested-type diagf:combine-mode="add">
+            <wldf:name>weblogic.management.runtime.JDBCServiceRuntimeMBean</wldf:name>
+            <wldf:harvested-instance>com.bea:Location=admin-server,Name=admin-server,ServerRuntime=admin-server,Type=JDBCServiceRuntime</wldf:harvested-instance>
+            <wldf:namespace>DomainRuntime</wldf:namespace>
+        </wldf:harvested-type>
+        <wldf:harvested-type diagf:combine-mode="add">
+            <wldf:name>weblogic.management.runtime.ServerRuntimeMBean</wldf:name>
+            <wldf:harvested-attribute>SocketsOpenedTotalCount</wldf:harvested-attribute>
+            <wldf:harvested-attribute>StableState</wldf:harvested-attribute>
+            <wldf:harvested-attribute>State</wldf:harvested-attribute>
+            <wldf:harvested-attribute>StateVal</wldf:harvested-attribute>
+            <wldf:harvested-attribute>WeblogicHome</wldf:harvested-attribute>
+            <wldf:harvested-instance>com.bea:Location=admin-server,Name=admin-server,Type=ServerRuntime</wldf:harvested-instance>
+            <wldf:namespace>DomainRuntime</wldf:namespace>
+        </wldf:harvested-type>
+    </wldf:harvester>
+</wldf:wldf-resource>
