@@ -5114,6 +5114,16 @@ spec:
                         additionalProperties:
                           type: string
                         type: object
+                  maxConcurrentShutdown:
+                    description: The maximum number of Managed Servers instances that
+                      the operator will shutdown in parallel for this cluster in response
+                      to a change in the `replicas` count. If more Managed Server
+                      instances must be shutdown, the operator will wait until a Managed
+                      Server Pod is terminated before shutting down the next Managed
+                      Server instance. A value of 0 means all Managed Server instances
+                      will shutdown in parallel. Defaults to 1.
+                    type: number
+                    minimum: 0.0
                   serverStartPolicy:
                     description: 'The strategy for deciding whether to start a WebLogic
                       Server instance. Legal values are NEVER, or IF_NEEDED. Defaults
@@ -5184,6 +5194,14 @@ spec:
                 If cluster members are started because of their entries under `managedServers`,
                 then a cluster may have more cluster members running than its `replicas`
                 count. Defaults to 0.
+              minimum: 0.0
+            maxClusterConcurrentShutdown:
+              type: number
+              description: The maximum number of cluster member Managed Server instances
+                that the operator will shutdown in parallel for a given cluster, if
+                `maxConcurrentShutdown` is not specified for a specific cluster under
+                the `clusters` field. A value of 0 means there is no configured limit.
+                Defaults to 1.
               minimum: 0.0
             domainHomeInImage:
               type: boolean

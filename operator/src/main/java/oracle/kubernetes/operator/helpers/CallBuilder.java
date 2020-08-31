@@ -48,6 +48,7 @@ import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallWrapper;
 import oracle.kubernetes.operator.calls.CancellableCall;
 import oracle.kubernetes.operator.calls.RequestParams;
+import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.work.Step;
@@ -1183,6 +1184,28 @@ public class CallBuilder {
         responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid), deletePod);
   }
 
+  /**
+   * Asynchronous step for deleting pod.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the pod is associated with
+   * @param deleteOptions Delete options
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step deletePodAsyncWithRetryStrategy(
+          String name,
+          String namespace,
+          String domainUid,
+          V1DeleteOptions deleteOptions,
+          ResponseStep<V1Status> responseStep,
+          RetryStrategy retryStrategy) {
+    return createRequestAsync(
+            responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid),
+            deletePod, retryStrategy);
+  }
+
   private Call patchPodAsync(
       ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1Pod> callback)
       throws ApiException {
@@ -1835,12 +1858,28 @@ public class CallBuilder {
         next,
         requestParams,
         factory,
+        null,
         helper,
         timeoutSeconds,
         maxRetryCount,
         fieldSelector,
         labelSelector,
         resourceVersion);
+  }
+
+  private <T> Step createRequestAsync(
+          ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, RetryStrategy retryStrategy) {
+    return STEP_FACTORY.createRequestAsync(
+            next,
+            requestParams,
+            factory,
+            retryStrategy,
+            helper,
+            timeoutSeconds,
+            maxRetryCount,
+            fieldSelector,
+            labelSelector,
+            resourceVersion);
   }
 
   private CancellableCall wrap(Call call) {

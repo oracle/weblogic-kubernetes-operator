@@ -88,6 +88,16 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Range(minimum = 0)
   private Integer maxConcurrentStartup;
 
+  @Description(
+          "The maximum number of Managed Servers instances that the operator will shutdown in parallel "
+                  + "for this cluster in response to a change in the `replicas` count. "
+                  + "If more Managed Server instances must be shutdown, the operator will wait until a Managed "
+                  + "Server Pod is terminated before shutting down the next Managed Server instance. "
+                  + "A value of 0 means all Managed Server instances will shutdown in parallel. Defaults to 1."
+  )
+  @Range(minimum = 0)
+  private Integer maxConcurrentShutdown;
+
   protected Cluster getConfiguration() {
     Cluster configuration = new Cluster();
     configuration.fillInFrom(this);
@@ -137,6 +147,14 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
 
   public void setMaxConcurrentStartup(Integer value) {
     maxConcurrentStartup = value;
+  }
+
+  public Integer getMaxConcurrentShutdown() {
+    return maxConcurrentShutdown;
+  }
+
+  public void setMaxConcurrentShutdown(Integer value) {
+    maxConcurrentShutdown = value;
   }
 
   @Nullable
@@ -224,6 +242,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(maxUnavailable, cluster.maxUnavailable)
         .append(allowReplicasBelowMinDynClusterSize, cluster.allowReplicasBelowMinDynClusterSize)
         .append(maxConcurrentStartup, cluster.maxConcurrentStartup)
+        .append(maxConcurrentShutdown, cluster.maxConcurrentShutdown)
         .isEquals();
   }
 
@@ -238,6 +257,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(maxUnavailable)
         .append(allowReplicasBelowMinDynClusterSize)
         .append(maxConcurrentStartup)
+        .append(maxConcurrentShutdown)
         .toHashCode();
   }
 

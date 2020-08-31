@@ -302,6 +302,9 @@ public class Domain {
     return getEffectiveConfigurationFactory().getMaxConcurrentStartup(clusterName);
   }
 
+  public int getMaxConcurrentShutdown(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxConcurrentShutdown(clusterName);
+  }
 
   /**
    * DomainSpec is a description of a domain.
