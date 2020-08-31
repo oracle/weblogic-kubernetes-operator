@@ -169,19 +169,21 @@ class ItUsabilityOperatorHelmChart {
 
   @AfterAll
   public void tearDownAll() {
-    if (isDomain1Running) {
-      // Delete domain custom resource
-      logger.info("Delete domain custom resource in namespace {0}", domain1Namespace);
-      assertDoesNotThrow(() -> deleteDomainCustomResource(domain1Uid, domain1Namespace),
-          "deleteDomainCustomResource failed with ApiException");
-      logger.info("Deleted Domain Custom Resource " + domain1Uid + " from " + domain1Namespace);
-    }
-    if (isDomain2Running) {
-      logger.info("Delete domain custom resource in namespace {0}", domain2Namespace);
-      assertDoesNotThrow(() -> deleteDomainCustomResource(domain2Uid, domain2Namespace),
-          "deleteDomainCustomResource failed with ApiException");
-      logger.info("Deleted Domain Custom Resource " + domain2Uid + " from " + domain2Namespace);
-    }
+
+    // Delete domain custom resource
+    logger.info("Delete domain1 custom resource in namespace {0}", domain1Namespace);
+    deleteDomainCustomResource(domain1Uid, domain1Namespace);
+    logger.info("Deleted Domain Custom Resource " + domain1Uid + " from " + domain1Namespace);
+
+    logger.info("Delete domain2 custom resource in namespace {0}", domain2Namespace);
+    deleteDomainCustomResource(domain2Uid, domain2Namespace);
+    logger.info("Deleted Domain Custom Resource " + domain2Uid + " from " + domain2Namespace);
+
+    logger.info("Delete domain3 custom resource in namespace {0}", domain2Namespace);
+
+    deleteDomainCustomResource(domain3Uid, domain3Namespace);
+    logger.info("Deleted Domain Custom Resource " + domain3Uid + " from " + domain3Namespace);
+
   }
 
   /**
