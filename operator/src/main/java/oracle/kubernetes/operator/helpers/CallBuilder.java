@@ -1185,13 +1185,14 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for deleting pod.
+   * Asynchronous step for deleting pod with custom retry strategy.
    *
    * @param name Name
    * @param namespace Namespace
    * @param domainUid Identifier of the domain that the pod is associated with
    * @param deleteOptions Delete options
    * @param responseStep Response step for when call completes
+   * @param retryStrategy Custom retry strategy for async pod delete                    !
    * @return Asynchronous step
    */
   public Step deletePodAsyncWithRetryStrategy(
