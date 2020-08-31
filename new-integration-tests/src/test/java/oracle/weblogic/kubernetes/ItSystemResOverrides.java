@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,7 +25,6 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -37,7 +35,6 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -46,12 +43,8 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -64,17 +57,16 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
-import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
-import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
+import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -92,7 +84,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -101,10 +92,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests related to overrideDistributionStrategy attribute.
+ * Tests related to Situational Configuration overrides for system resources.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify the overrideDistributionStrategy applies the overrides accordingly to the value set")
+@DisplayName("Verify the JMS and WLDF system resources are overridden with values from override files")
 @IntegrationTest
 public class ItSystemResOverrides {
 
@@ -127,18 +117,9 @@ public class ItSystemResOverrides {
   final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   int replicaCount = 2;
 
-  static Path clusterViewAppPath;
+  static Path sitconfigAppPath;
   String overridecm = "configoverride-cm";
   LinkedHashMap<String, DateTime> podTimestamps;
-
-  static int mysqlDBPort1;
-  static int mysqlDBPort2;
-  static String dsUrl1;
-  static String dsUrl2;
-
-  String dsName0 = "JdbcTestDataSource-0";
-  String dsName1 = "JdbcTestDataSource-1";
-  String dsSecret = domainUid.concat("-mysql-secret");
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -151,10 +132,9 @@ public class ItSystemResOverrides {
    * Assigns unique namespaces for operator and domains.
    * Pulls WebLogic image if running tests in Kind cluster.
    * Installs operator.
-   * Creates 2 MySQL database instances.
-   * Creates and starts WebLogic domain containing 2 instances in dynamic cluser.
-   * Creates 2 JDBC data sources targeted to cluster.
-   * Deploys clusterview application to cluster and admin targets.
+   * Creates and starts WebLogic domain containing 2 instances in dynamic cluster.
+   * Creates JMS and WLDF system resources.
+   * Deploys sitconfig application to cluster and admin targets.
    *
    * @param namespaces injected by JUnit
    */
@@ -185,20 +165,24 @@ public class ItSystemResOverrides {
     //create and start WebLogic domain
     createDomain();
 
+    // build the clusterview application
+    Path distDir = buildApplication(Paths.get(APP_DIR, "sitconfig"),
+        null, null, "dist", domainNamespace);
+    sitconfigAppPath = Paths.get(distDir.toString(), "sitconfig.war");
+    assertTrue(sitconfigAppPath.toFile().exists(), "Application archive is not available");
+
+    //deploy application to view server configuration
+    deployApplication(clusterName + "," + adminServerName);
+
   }
 
   /**
-   * Test server configuration and JDBC datasource configurations are overridden dynamically when
-   * /spec/configuration/overrideDistributionStrategy: field is not set. By default it should be DYNAMIC.
-   *
-   * <p>Test sets the /spec/configuration/overridesConfigMap and with new configuration for config.xml and datasources.
-   *
-   * <p>Verifies after introspector runs the server configuration and JDBC datasource configurations are updated
-   * as expected.
+   * Test JMS and WLDF system resources configurations are overridden dynamically when domain resource
+   * is updated with overridesConfigMap property. After the override verifies the system resources properties
+   * are overridden as per the values set.
    */
-  @Order(1)
   @Test
-  @DisplayName("Test overrideDistributionStrategy set to DEFAULT")
+  @DisplayName("Test JMS and WLDF system resources override")
   public void testSystemResourceOverride() {
 
     //store the pod creation timestamps
@@ -232,17 +216,18 @@ public class ItSystemResOverrides {
     //wait until config is updated upto 5 minutes
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for server configuration to be updated"
+            condition -> logger.info("Waiting for jms server configuration to be updated"
                 + "(elapsed time {0} ms, remaining time {1} ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(configUpdated("100000000"));
+        .until(configUpdated());
 
-    verifyConfigXMLOverride(true);
-    verifyResourceJDBC0Override(true);
+    verifyJMSResourceOverride();
+    verifyWLDFResourceOverride();
+
   }
 
-  private Callable<Boolean> configUpdated(String maxMessageSize) {
+  private Callable<Boolean> configUpdated() {
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(domainNamespace, adminServerPodName
@@ -251,106 +236,41 @@ public class ItSystemResOverrides {
         "Getting admin server node port failed");
 
     //verify server attribute MaxMessageSize
-    String appURI = "/clusterview/ConfigServlet?"
-        + "attributeTest=true&"
-        + "serverType=adminserver&"
-        + "serverName=" + adminServerName;
+    String appURI = "/clusterview/SitconfigServlet";
     String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
 
     return (()
         -> {
       HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
       assertEquals(200, response.statusCode(), "Status code not equals to 200");
-      return response.body().contains("MaxMessageSize=".concat(maxMessageSize));
+      return response.body().contains("ExpirationPolicy=Discard");
     });
   }
 
-  private void verifyConfigXMLOverride(boolean configUpdated) {
-
+  private void verifyJMSResourceOverride() {
     int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/";
+    String uri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/sitconfig/SitconfigServlet";
 
-    //verify server attribute MaxMessageSize
-    String configUri = "ConfigServlet?"
-        + "attributeTest=true"
-        + "&serverType=adminserver"
-        + "&serverName=" + adminServerName;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
-
+    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(uri, true));
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (configUpdated) {
-      assertTrue(response.body().contains("MaxMessageSize=100000000"), "Didn't get MaxMessageSize=100000000");
-    } else {
-      assertTrue(response.body().contains("MaxMessageSize=10000000"), "Didn't get MaxMessageSize=10000000");
-    }
-
+    assertTrue(response.body().contains("ExpirationPolicy=Discard"), "Didn't get ExpirationPolicy=Discard");
+    assertTrue(response.body().contains("RedeliveryLimit:20"), "Didn't get RedeliveryLimit:20");
   }
 
-  //use the http client and access the clusterview application to get server configuration
-  //and JDBC datasource configuration.
-  private void verifyResourceJDBC0Override(boolean configUpdated) {
-
-    // get admin server node port and construct a base url for clusterview app
+  private void verifyWLDFResourceOverride() {
     int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/ConfigServlet?";
+    String uri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/sitconfig/SitconfigServlet";
 
-    //verify datasource attributes of JdbcTestDataSource-0
-    String appURI = "resTest=true&resName=" + dsName0;
-    String dsOverrideTestUrl = baseUri + appURI;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
-
+    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(uri, true));
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (configUpdated) {
-      assertTrue(response.body().contains("getMaxCapacity:12"), "Did get getMaxCapacity:12");
-      assertTrue(response.body().contains("getInitialCapacity:2"), "Did get getInitialCapacity:2");
-    } else {
-      assertTrue(response.body().contains("getMaxCapacity:15"), "Did get getMaxCapacity:15");
-      assertTrue(response.body().contains("getInitialCapacity:1"), "Did get getInitialCapacity:1");
-    }
-
-    //test connection pool in all managed servers of dynamic cluster
-    for (int i = 1; i <= replicaCount; i++) {
-      appURI = "dsTest=true&dsName=" + dsName0 + "&" + "serverName=" + managedServerNameBase + i;
-      String dsConnectionPoolTestUrl = baseUri + appURI;
-      response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
-      assertEquals(200, response.statusCode(), "Status code not equals to 200");
-      assertTrue(response.body().contains("Connection successful"), "Didn't get Connection successful");
-    }
+    assertTrue(response.body().contains("MONITORS:PASSED"), "Didn't get MONITORS:PASSED");
+    assertTrue(response.body().contains("HARVESTORS:PASSED"), "Didn't get HARVESTORS:PASSED");
+    assertTrue(response.body().contains("HARVESTOR MATCHED:weblogic.management.runtime.JDBCServiceRuntimeMBean"),
+        "Didn't get HARVESTOR MATCHED:weblogic.management.runtime.JDBCServiceRuntimeMBean");
+    assertTrue(response.body().contains("HARVESTOR MATCHED:weblogic.management.runtime.ServerRuntimeMBean"),
+        "Didn't get HARVESTOR MATCHED:weblogic.management.runtime.ServerRuntimeMBean");
   }
 
-  //use the http client and access the clusterview application to get server configuration
-  //and JDBC datasource configuration.
-  private void verifyResourceJDBC1Override(boolean configUpdated) {
-
-    // get admin server node port and construct a base url for clusterview app
-    int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/ConfigServlet?";
-
-    //verify datasource attributes of JdbcTestDataSource-0
-    String appURI = "resTest=true&resName=" + dsName1;
-    String dsOverrideTestUrl = baseUri + appURI;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
-
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (configUpdated) {
-      assertTrue(response.body().contains("getMaxCapacity:10"), "Did get getMaxCapacity:10");
-      assertTrue(response.body().contains("getInitialCapacity:4"), "Did get getInitialCapacity:4");
-      assertTrue(response.body().contains("Url:" + dsUrl2), "Didn't get Url:" + dsUrl2);
-    } else {
-      assertTrue(response.body().contains("getMaxCapacity:15"), "Did get getMaxCapacity:15");
-      assertTrue(response.body().contains("getInitialCapacity:1"), "Did get getInitialCapacity:1");
-      assertTrue(response.body().contains("Url:" + dsUrl1), "Didn't get Url:" + dsUrl1);
-    }
-
-    //test connection pool in all managed servers of dynamic cluster
-    for (int i = 1; i <= replicaCount; i++) {
-      appURI = "dsTest=true&dsName=" + dsName1 + "&" + "serverName=" + managedServerNameBase + i;
-      String dsConnectionPoolTestUrl = baseUri + appURI;
-      response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
-      assertEquals(200, response.statusCode(), "Status code not equals to 200");
-      assertTrue(response.body().contains("Connection successful"), "Didn't get Connection successful");
-    }
-  }
 
   //store pod creation timestamps for podstate check
   private void storePodCreationTimestamps() {
@@ -522,75 +442,10 @@ public class ItSystemResOverrides {
     assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
 
     //deploy application
-    logger.info("Deploying webapp {0} to domain", clusterViewAppPath);
+    logger.info("Deploying webapp {0} to domain", sitconfigAppPath);
     deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, targets, clusterViewAppPath,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, targets, sitconfigAppPath,
         domainNamespace);
-  }
-
-  //restart pods by manipulating the serverStartPolicy to NEVER and IF_NEEDED
-  private void restartDomain() {
-    logger.info("Restarting domain {0}", domainNamespace);
-    shutdownDomain(domainUid, domainNamespace);
-
-    logger.info("Checking for admin server pod shutdown");
-    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
-    logger.info("Checking managed server pods were shutdown");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace);
-    }
-
-    startDomain(domainUid, domainNamespace);
-    //make sure that the introspector runs on a cold start
-    verifyIntrospectorRuns();
-
-
-    // verify the admin server service created
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    logger.info("Checking for admin server pod readiness");
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // verify managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
-    }
-
-    logger.info("Checking for managed servers pod readiness");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
-    }
-  }
-
-  //create a JDBC datasource targeted to cluster.
-  private void createJdbcDataSource(String dsName, String user, String password, int mySQLNodePort) {
-
-    try {
-      String jdbcDsUrl = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mySQLNodePort;
-
-      // create a temporary WebLogic domain property file
-      File domainPropertiesFile = File.createTempFile("domain", "properties");
-      Properties p = new Properties();
-      p.setProperty("admin_host", K8S_NODEPORT_HOST);
-      p.setProperty("admin_port", Integer.toString(t3ChannelPort));
-      p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-      p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-      p.setProperty("dsName", dsName);
-      p.setProperty("dsUrl", jdbcDsUrl);
-      p.setProperty("dsDriver", "com.mysql.cj.jdbc.Driver");
-      p.setProperty("dsUser", user);
-      p.setProperty("dsPassword", password);
-      p.setProperty("dsTarget", clusterName);
-      p.store(new FileOutputStream(domainPropertiesFile), "domain properties file");
-
-      // WLST script for creating jdbc datasource
-      Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "create-jdbc-resource.py");
-      executeWLSTScript(wlstScript, domainPropertiesFile.toPath(), domainNamespace);
-    } catch (IOException ex) {
-      logger.severe(ex.getMessage());
-    }
   }
 
   /**
@@ -655,17 +510,6 @@ public class ItSystemResOverrides {
       createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
           OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
     }
-  }
-
-  private static Integer getMySQLNodePort(String namespace, String dbName) {
-    logger.info(dump(Kubernetes.listServices(namespace)));
-    List<V1Service> services = listServices(namespace).getItems();
-    for (V1Service service : services) {
-      if (service.getMetadata().getName().startsWith(dbName)) {
-        return service.getSpec().getPorts().get(0).getNodePort();
-      }
-    }
-    return -1;
   }
 
 }
