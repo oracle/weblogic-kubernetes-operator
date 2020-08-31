@@ -635,6 +635,16 @@ public class DomainPresenceInfo {
     /**
      * Create server shutdown info.
      *
+     * @param serverName the name of the server to shutdown
+     * @param clusterName the name of the cluster
+     */
+    public ServerShutdownInfo(String serverName, String clusterName) {
+      this(new WlsServerConfig(serverName, null, 0), clusterName, null, false);
+    }
+
+    /**
+     * Create server shutdown info.
+     *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
      * @param serverSpec Server specifications
@@ -647,10 +657,6 @@ public class DomainPresenceInfo {
       this.clusterName = clusterName;
       this.serverSpec = serverSpec;
       this.isServiceOnly = isServiceOnly;
-    }
-
-    public ServerShutdownInfo(String serverName, String clusterName) {
-      this(new WlsServerConfig(serverName, null, 0), clusterName, null, false);
     }
 
     public String getName() {

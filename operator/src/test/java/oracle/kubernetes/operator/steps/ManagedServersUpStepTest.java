@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.steps;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;

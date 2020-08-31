@@ -57,19 +57,18 @@ public class ManagedServersUpStep extends Step {
 
     List<Step> steps = new ArrayList<>(Collections.singletonList(next));
 
+    List<String> serversToIgnore = new ArrayList<>(factory.servers);
     if (info.getDomain().isShuttingDown()) {
       insert(steps, createAvailableHookStep());
     }
 
-    List<String> serversToIgnore = new ArrayList<>(factory.servers);
     if (info.getDomain().isShuttingDown()) {
       insert(steps, createAvailableHookStep());
     } else {
       serversToIgnore.add(domainTopology.getAdminServerName());
     }
 
-    List<ServerShutdownInfo> serversToStop = getServersToStop(info,
-            factory.shutdownInfos);
+    List<ServerShutdownInfo> serversToStop = getServersToStop(info, factory.shutdownInfos);
 
     if (!serversToStop.isEmpty()) {
       insert(steps, new ServerDownIteratorStep(factory.shutdownInfos, null));
@@ -211,7 +210,7 @@ public class ManagedServersUpStep extends Step {
       return false;
     }
 
-    private Step  createNextStep(Step next) {
+    private Step createNextStep(Step next) {
       if (servers.isEmpty()) {
         return next;
       } else {

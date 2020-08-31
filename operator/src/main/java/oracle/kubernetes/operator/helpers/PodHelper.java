@@ -611,6 +611,7 @@ public class PodHelper {
     }
   }
 
+  /* Retry strategy for delete pod which will not perform any retries */
   private static final class DeletePodRetryStrategy implements RetryStrategy {
     private long retryCount = 0;
     private final Step retryStep;
@@ -628,7 +629,6 @@ public class PodHelper {
 
     @Override
     public void reset() {
-
     }
   }
 

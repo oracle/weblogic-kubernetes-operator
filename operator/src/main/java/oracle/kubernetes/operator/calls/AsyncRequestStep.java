@@ -80,7 +80,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       String fieldSelector,
       String labelSelector,
       String resourceVersion) {
-    this(next, requestParams,factory, null, helper, timeoutSeconds, maxRetryCount,
+    this(next, requestParams, factory, null, helper, timeoutSeconds, maxRetryCount,
             fieldSelector, labelSelector, resourceVersion);
   }
 

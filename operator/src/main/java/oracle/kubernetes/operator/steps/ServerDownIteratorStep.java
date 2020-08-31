@@ -23,32 +23,32 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class ServerDownIteratorStep extends Step {
-  private final Collection<DomainPresenceInfo.ServerShutdownInfo> serverNamesInfos;
+  private final Collection<DomainPresenceInfo.ServerShutdownInfo> serverShutdownInfos;
 
-  ServerDownIteratorStep(List<DomainPresenceInfo.ServerShutdownInfo> serverNamesInfos, Step next) {
+  ServerDownIteratorStep(List<DomainPresenceInfo.ServerShutdownInfo> serverShutdownInfos, Step next) {
     super(next);
-    Collections.reverse(serverNamesInfos);
-    this.serverNamesInfos = serverNamesInfos;
+    Collections.reverse(serverShutdownInfos);
+    this.serverShutdownInfos = serverShutdownInfos;
   }
 
   List<String> getServersToStop() {
     List<String> serverNames = new ArrayList<>();
-    serverNamesInfos.forEach(s -> serverNames.add(s.getServerName()));
+    serverShutdownInfos.forEach(s -> serverNames.add(s.getServerName()));
     return serverNames;
   }
 
-  Collection<DomainPresenceInfo.ServerShutdownInfo> getServersInfoToStop() {
-    return serverNamesInfos;
+  Collection<DomainPresenceInfo.ServerShutdownInfo> getServerShutdownInfos() {
+    return serverShutdownInfos;
   }
 
   @Override
   public NextAction apply(Packet packet) {
     List<StepAndPacket> shutdownDetails =
-            getServersInfoToStop().stream()
+            getServerShutdownInfos().stream()
                     .filter(ssi -> !isServerInCluster(ssi))
                     .map(ssi -> createManagedServerDownDetails(packet, ssi)).collect(Collectors.toList());
 
-    getShutdownClusteredServersStepFactories(getServersInfoToStop(), packet).values()
+    getShutdownClusteredServersStepFactories(getServerShutdownInfos(), packet).values()
             .forEach(factory -> shutdownDetails.addAll(factory.getServerShutdownStepAndPackets()));
 
     return doNext((new ShutdownManagedServersStep(shutdownDetails, getNext())), packet);
@@ -78,7 +78,7 @@ public class ServerDownIteratorStep extends Step {
   }
 
   private StepAndPacket createManagedServerDownDetails(Packet packet, DomainPresenceInfo.ServerShutdownInfo ssi) {
-    if ((ssi.isServiceOnly()) && (ssi.serverConfig != null)) {
+    if (ssi.isServiceOnly()) {
       return new StepAndPacket(createServiceStep(ssi),
               createPacketForServer(packet, ssi));
     } else {
