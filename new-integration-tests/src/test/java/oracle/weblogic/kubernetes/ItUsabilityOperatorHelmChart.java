@@ -64,7 +64,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.helmValuesToString;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
-import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseStatus;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
@@ -383,9 +382,9 @@ class ItUsabilityOperatorHelmChart {
       // upgrade operator
       assertTrue(upgradeAndVerifyOperator(op2Namespace, opParams));
 
-        logger.info("Installing and verifying domain");
-        assertTrue(createVerifyDomain(domain3Namespace, domain3Uid),
-            "can't start or verify domain in namespace " + domain3Namespace);
+      logger.info("Installing and verifying domain");
+      assertTrue(createVerifyDomain(domain3Namespace, domain3Uid),
+          "can't start or verify domain in namespace " + domain3Namespace);
 
       assertTrue(scaleClusterWithRestApi(domain3Uid, clusterName,3,
           externalRestHttpsPort,op2Namespace, opServiceAccount),
