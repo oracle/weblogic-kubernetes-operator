@@ -4,7 +4,7 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 /**
- * All parameters needed to install ELK Stack and WebLogic logging exporter.
+ * All parameters needed to install ELK Stack and WebLogic Logging Exporter.
  */
 public class LoggingExporterParams {
 
