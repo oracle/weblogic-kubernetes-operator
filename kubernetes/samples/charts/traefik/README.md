@@ -111,8 +111,8 @@ set('WeblogicPluginEnabled',true)
 cd('/Clusters/%s' % cluster_name)
 set('WeblogicPluginEnabled',true)
 ```
-### 2. Update the Ingress resource with customRequestHeaders value.
-Replace the string 'weblogic-domain' with namespace of the WebLogic domain, the string 'domain1' with domain UID and the string 'adminserver' with name of the Administration server in the WebLogic domain.  
+### 2. Update the ingress resource with customRequestHeaders value
+Replace the string `weblogic-domain` with namespace of the WebLogic domain, the string `domain1` with domain UID and the string `adminserver` with name of the Administration Server in the WebLogic domain.  
 
 ```
 apiVersion: traefik.containo.us/v1alpha1
@@ -150,18 +150,18 @@ spec:
       Wl-Proxy-Ssl: "true"
     sslRedirect: true
 ```
-### 3. Create Ingress resource.
-Save the above configuration as 'traefik-tls-console.yaml'.
+### 3. Create ingress resource
+Save the above configuration as `traefik-tls-console.yaml`.
 ```
  kubectl create -f traefik-tls-console.yaml
 ```
 ### 4. Access the WebLogic Server Administration Console using the HTTPS port
-Get the SSL port from the Kubernetes service 
+Get the SSL port from the Kubernetes service. 
 ```
 # Get the ingress controller secure web port
 SSLPORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}')
 ```
-In a web browser type 'https://${HOSTNAME}:${SSLPORT}/console' in the address bar to access the WebLogic Server Administration Console.
+In a web browser, type `https://${HOSTNAME}:${SSLPORT}/console` in the address bar to access the WebLogic Server Administration Console.
 
 ## Uninstall the Traefik operator
 After removing all the ingress resources, uninstall the Traefik operator:
