@@ -688,6 +688,8 @@ public class CommonTestUtils {
 
     if (volumePath != null && clusterNamePortMap != null) {
       // create a custom Apache plugin configuration file named custom_mod_wl_apache.conf
+      // and put it under the directory specified in volumePath
+      // this file provides a custom Apache plugin configuration to fine tune the behavior of Apache
       Path customConf = Paths.get(volumePath, "custom_mod_wl_apache.conf");
       ArrayList<String> lines = new ArrayList<>();
       lines.add("<IfModule mod_weblogic.c>");
@@ -695,12 +697,20 @@ public class CommonTestUtils {
       lines.add("WebLogicPort ${WEBLOGIC_PORT}");
       lines.add("</IfModule>");
 
+      // Directive for weblogic admin Console deployed on Weblogic Admin Server
       lines.add("<Location /console>");
       lines.add("SetHandler weblogic-handler");
       lines.add("WebLogicHost " + domainUid + "-admin-server");
       lines.add("WebLogicPort ${WEBLOGIC_PORT}");
       lines.add("</Location>");
 
+      // Directive for all application deployed on weblogic cluster with a prepath defined by LOCATION variable
+      // For example, if the LOCAITON is set to '/weblogic1', all applications deployed on the cluster can be accessed
+      // via http://myhost:myport/weblogic1/application_end_url
+      // where 'myhost' is the IP of the machine that runs the Apache web tier, and
+      //       'myport' is the port that the Apache web tier is publicly exposed to.
+      // Note that LOCATION cannot be set to '/' unless this is the only Location module configured.
+      // create a LOCATION variable for each domain cluster
       int i = 1;
       for (String clusterName : clusterNamePortMap.keySet()) {
         lines.add("<Location /weblogic" + i + ">");

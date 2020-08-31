@@ -84,7 +84,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.APACHE_IMAGE_12213;
+import static oracle.weblogic.kubernetes.TestConstants.APACHE_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
@@ -191,7 +191,7 @@ public class ItTwoDomainsLoadBalancers {
   private static Path dstFile = null;
   private static HelmParams apacheHelmParams1 = null;
   private static HelmParams apacheHelmParams2 = null;
-  private static String kindRepoApacheImage = APACHE_IMAGE_12213;
+  private static String kindRepoApacheImage = APACHE_IMAGE;
 
   // domain constants
   private final String clusterName = "cluster-1";
@@ -280,10 +280,10 @@ public class ItTwoDomainsLoadBalancers {
       withStandardRetryPolicy
           .conditionEvaluationListener(
               condition -> logger.info("Waiting for pullImageFromOcirAndPushToKind for image {0} to be successful"
-                      + "(elapsed time {1} ms, remaining time {2} ms)", APACHE_IMAGE_12213,
+                      + "(elapsed time {1} ms, remaining time {2} ms)", APACHE_IMAGE,
                   condition.getElapsedTimeInMS(),
                   condition.getRemainingTimeInMS()))
-          .until(pullImageFromOcirAndPushToKind(APACHE_IMAGE_12213));
+          .until(pullImageFromOcirAndPushToKind(APACHE_IMAGE));
     }
   }
 
@@ -476,6 +476,10 @@ public class ItTwoDomainsLoadBalancers {
 
   /**
    * Verify Apache load balancer default sample through HTTP channel.
+   * Configure the Apache webtier as a load balancer for a WebLogic domain using the default configuration.
+   * It only support HTTP protocol.
+   * For details, please see
+   * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/default-sample
    */
   @Order(8)
   @Test
@@ -490,6 +494,11 @@ public class ItTwoDomainsLoadBalancers {
 
   /**
    * Verify Apache load balancer custom sample through HTTP and HTTPS channel.
+   * Configure the Apache webtier as a load balancer for multiple WebLogic domains using a custom configuration.
+   * Create a custom Apache plugin configuration file named custom_mod_wl_apache.conf in a directory specified
+   * in helm chart parameter volumePath.
+   * For more details, please check:
+   * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/custom-sample
    */
   @Order(9)
   @Test
@@ -1448,7 +1457,7 @@ public class ItTwoDomainsLoadBalancers {
     for (int i = 0; i < 10; i++) {
       ExecResult result;
       try {
-        logger.info(curlRequest);
+        logger.info("executing curl command: {0}", curlRequest);
         result = ExecCommand.exec(curlRequest, true);
         String response = result.stdout().trim();
         logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
