@@ -58,9 +58,6 @@ public class ManagedServersUpStep extends Step {
     List<Step> steps = new ArrayList<>(Collections.singletonList(next));
 
     List<String> serversToIgnore = new ArrayList<>(factory.servers);
-    if (info.getDomain().isShuttingDown()) {
-      insert(steps, createAvailableHookStep());
-    }
 
     if (info.getDomain().isShuttingDown()) {
       insert(steps, createAvailableHookStep());
