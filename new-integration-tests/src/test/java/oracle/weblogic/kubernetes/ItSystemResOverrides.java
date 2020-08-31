@@ -207,7 +207,7 @@ public class ItSystemResOverrides {
     List<Path> overrideFiles = new ArrayList<>();
     overrideFiles.add(
         Paths.get(RESOURCE_DIR, "configfiles/configoverridesset2/jms-ClusterJmsSystemResource.xml"));
-    overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset2/diagnostics-WLDF-MODULE-0"));
+    overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset2/diagnostics-WLDF-MODULE-0.xml"));
     overrideFiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset2/version.txt"));
 
     //create config override map
