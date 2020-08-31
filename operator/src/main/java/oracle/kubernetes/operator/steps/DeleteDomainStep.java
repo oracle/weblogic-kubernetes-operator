@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.steps;
 import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -59,7 +58,7 @@ public class DeleteDomainStep extends Step {
         .listServiceAsync(
             namespace,
             new ActionResponseStep<V1ServiceList>() {
-              Step createSuccessStep(V1ServiceList result, Step next) {
+              public Step createSuccessStep(V1ServiceList result, Step next) {
                 return new DeleteServiceListStep(result.getItems(), next);
               }
             });
@@ -71,36 +70,4 @@ public class DeleteDomainStep extends Step {
         .deleteCollectionPodAsync(namespace, new DefaultResponseStep<>(null));
   }
 
-  /**
-   * A response step which treats a NOT_FOUND status as success with a null result. On success with
-   * a non-null response, runs a specified new step before continuing the step chain.
-   */
-  abstract static class ActionResponseStep<T> extends DefaultResponseStep<T> {
-    ActionResponseStep() {
-    }
-
-    abstract Step createSuccessStep(T result, Step next);
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
-      return callResponse.getResult() == null
-          ? doNext(packet)
-          : doNext(createSuccessStep(callResponse.getResult(),
-              new ContinueOrNextStep(callResponse, getNext())), packet);
-    }
-
-    private class ContinueOrNextStep extends Step {
-      private final CallResponse<T> callResponse;
-
-      public ContinueOrNextStep(CallResponse<T> callResponse, Step next) {
-        super(next);
-        this.callResponse = callResponse;
-      }
-
-      @Override
-      public NextAction apply(Packet packet) {
-        return ActionResponseStep.this.doContinueListOrNext(callResponse, packet);
-      }
-    }
-  }
 }
