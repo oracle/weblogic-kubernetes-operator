@@ -370,15 +370,15 @@ public class Main {
   }
 
   static Step readExistingNamespaces(DomainNamespaceSelectionStrategy selectionStrategy,
-                                             Collection<String> domainNamespaces,
-                                             boolean isFullRecheck) {
+                                     Collection<String> domainNamespaces,
+                                     boolean isFullRecheck) {
     CallBuilder builder = new CallBuilder();
     String selector = selectionStrategy.getLabelSelector();
     if (selector != null) {
       builder.withLabelSelectors(selector);
     }
     return builder.listNamespaceAsync(
-      new ActionResponseStep<V1NamespaceList>(new NamespaceListAfterStep()) {
+      new ActionResponseStep<V1NamespaceList>(new NamespaceListAfterStep(selectionStrategy)) {
         private Step createDomainCrdAndStartNamespaces(Collection<String> namespacesToStart, boolean isFullRecheck) {
           return CrdHelper.createDomainCrdStep(
               version, productVersion,
@@ -1062,15 +1062,7 @@ public class Main {
         }
       } else {
         namespacesToStartNow = new TreeSet<>(configuredDomainNamespaces);
-        for (String ns : configuredDomainNamespaces) {
-          if (!nsPossiblyPartialList.contains(ns)) {
-            try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
-              // FIXME: move
-              LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, ns);
-            }
-            namespacesToStartNow.remove(ns);
-          }
-        }
+        namespacesToStartNow.retainAll(nsPossiblyPartialList);
       }
 
       Step strategy = null;
@@ -1122,12 +1114,28 @@ public class Main {
   }
 
   private static class NamespaceListAfterStep extends Step {
+    private final DomainNamespaceSelectionStrategy selectionStrategy;
+
+    public NamespaceListAfterStep(DomainNamespaceSelectionStrategy selectionStrategy) {
+      this.selectionStrategy = selectionStrategy;
+    }
 
     @Override
     public NextAction apply(Packet packet) {
       Collection<String> allDomainNamespaces = (Collection<String>) packet.get(ALL_DOMAIN_NAMESPACES);
       if (allDomainNamespaces == null) {
         allDomainNamespaces = new HashSet<>();
+      }
+
+      Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredList();
+      if (configuredDomainNamespaces != null) {
+        for (String ns : configuredDomainNamespaces) {
+          if (!allDomainNamespaces.contains(ns)) {
+            try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+              LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, ns);
+            }
+          }
+        }
       }
 
       // Check for namespaces that are removed from the operator's
