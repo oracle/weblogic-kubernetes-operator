@@ -625,16 +625,11 @@ public class ManagedServersUpStepTest {
 
   private void addShutdownServerInfo(String serverName, List<String> servers,
                                      List<DomainPresenceInfo.ServerShutdownInfo> ssi) {
-    if (isAdminAndNotShuttingDown(serverName)) {
+    if (serverName.equals(configSupport.createDomainConfig().getAdminServerName())) {
       return;
     } else if (!servers.contains(serverName)) {
       ssi.add(new DomainPresenceInfo.ServerShutdownInfo(serverName, null));
     }
-  }
-
-  private boolean isAdminAndNotShuttingDown(String serverName) {
-    return (serverName.equals(configSupport.createDomainConfig().getAdminServerName()))
-            && (!domainPresenceInfo.getDomain().isShuttingDown());
   }
 
   private void addWlsServer(String serverName) {

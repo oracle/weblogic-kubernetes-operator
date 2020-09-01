@@ -43,13 +43,14 @@ public class ServerDownIteratorStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     List<StepAndPacket> shutdownDetails =
             getServerShutdownInfos().stream()
                     .filter(ssi -> !isServerInCluster(ssi))
                     .map(ssi -> createManagedServerDownDetails(packet, ssi)).collect(Collectors.toList());
 
     getShutdownClusteredServersStepFactories(getServerShutdownInfos(), packet).values()
-            .forEach(factory -> shutdownDetails.addAll(factory.getServerShutdownStepAndPackets()));
+            .forEach(factory -> shutdownDetails.addAll(factory.getServerShutdownStepAndPackets(info)));
 
     return doNext((new ShutdownManagedServersStep(shutdownDetails, getNext())), packet);
 
@@ -126,8 +127,8 @@ public class ServerDownIteratorStep extends Step {
       serversToShutdown.add(serverToShutdown);
     }
 
-    Collection<StepAndPacket> getServerShutdownStepAndPackets() {
-      if ((maxConcurrency == 0) || (replicaCount == 0)) {
+    Collection<StepAndPacket> getServerShutdownStepAndPackets(DomainPresenceInfo info) {
+      if ((maxConcurrency == 0) || (replicaCount == 0) || info.getDomain().isShuttingDown()) {
         return serversToShutdown;
       }
       ArrayList<StepAndPacket> steps = new ArrayList<>(maxConcurrency);
