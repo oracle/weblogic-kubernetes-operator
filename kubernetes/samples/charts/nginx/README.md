@@ -29,7 +29,7 @@ $ kubectl create namespace nginx
 $ helm install nginx-operator ingress-nginx/ingress-nginx --namespace nginx
 ```
 
-Wait until the NGINX Operator is running.
+Wait until the NGINX operator is running.
 ```
 $ kubectl get all --namespace nginx 
 NAME                                                           READY   STATUS    RESTARTS   AGE
