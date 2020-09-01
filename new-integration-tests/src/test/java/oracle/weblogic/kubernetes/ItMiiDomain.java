@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,12 +15,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -47,6 +61,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Paths.get;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -59,6 +75,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_TWO_APP_WDT_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
@@ -71,11 +88,11 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
@@ -90,12 +107,14 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -624,7 +643,7 @@ class ItMiiDomain {
   @AfterAll
   public void tearDownAll() {
     // Delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
+    /* logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
         "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
@@ -645,7 +664,7 @@ class ItMiiDomain {
     }
     if (miiImageAddSecondApp != null) {
       deleteImage(miiImageAddSecondApp);
-    }
+    } */
   }
 
   private void pushImageIfNeeded(String image) {
@@ -826,6 +845,50 @@ class ItMiiDomain {
   private Domain createDomainResource(String domainUid, String domNamespace, String adminSecretName,
                                     String repoSecretName, String encryptionSecretName, int replicaCount,
                                       String miiImage) {
+    final String pvName = domainUid + "-pv"; // name of the persistent volume
+    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+
+    // create persistent volume and persistent volume claim for domain
+    // these resources should be labeled with domainUid for cleanup after testing
+    Path pvHostPath =
+        get(PV_ROOT, ItMiiDomain.class.getSimpleName(), pvcName);
+
+    logger.info("Creating PV directory {0}", pvHostPath);
+    assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
+    assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
+
+    V1PersistentVolume v1pv = new V1PersistentVolume()
+        .spec(new V1PersistentVolumeSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName(domainUid + "-weblogic-domain-storage-class")
+            .volumeMode("Filesystem")
+            .putCapacityItem("storage", Quantity.fromString("5Gi"))
+            .persistentVolumeReclaimPolicy("Recycle")
+            .hostPath(new V1HostPathVolumeSource()
+                .path(pvHostPath.toString())))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(pvName)
+            .build()
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUid", domainUid));
+
+    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
+        .spec(new V1PersistentVolumeClaimSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName(domainUid + "-weblogic-domain-storage-class")
+            .volumeName(pvName)
+            .resources(new V1ResourceRequirements()
+                .putRequestsItem("storage", Quantity.fromString("5Gi"))))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(pvcName)
+            .withNamespace(domNamespace)
+            .build()
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUid", domainUid));
+
+    String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domNamespace);
+
     // create the domain CR
     return new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -843,6 +906,8 @@ class ItMiiDomain {
                 .name(adminSecretName)
                 .namespace(domNamespace))
             .includeServerOutInPodLog(true)
+            .logHomeEnabled(Boolean.TRUE)
+            .logHome("/shared/logs")
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
@@ -850,7 +915,27 @@ class ItMiiDomain {
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addVolumesItem(new V1Volume()
+                    .name(pvName)
+                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName)))
+                .addVolumeMountsItem(new V1VolumeMount()
+                    .mountPath("/shared")
+                    .name(pvName))
+                .addInitContainersItem(new V1Container()
+                    .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
+                    .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
+                    .addCommandItem("/bin/sh")
+                    .addArgsItem("-c")
+                    .addArgsItem("chown -R 1000:1000 /shared")
+                    .addVolumeMountsItem(
+                        new V1VolumeMount()
+                            .name(pvName)
+                            .mountPath("/shared"))
+                    .securityContext(new V1SecurityContext()
+                        .runAsGroup(0L)
+                        .runAsUser(0L))))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
@@ -866,7 +951,6 @@ class ItMiiDomain {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
-
 
   }
 
