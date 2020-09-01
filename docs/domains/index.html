@@ -1051,6 +1051,11 @@ window.onload = function() {
           "type": "number",
           "minimum": 0.0
         },
+        "maxConcurrentShutdown": {
+          "description": "The maximum number of Managed Servers instances that the operator will shutdown in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be shutdown, the operator will wait until a Managed Server Pod is terminated before shutting down the next Managed Server instance. A value of 0 means all Managed Server instances will shutdown in parallel. Defaults to 1.",
+          "type": "number",
+          "minimum": 0.0
+        },
         "restartVersion": {
           "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
           "type": "string"
@@ -1267,6 +1272,11 @@ window.onload = function() {
         },
         "maxClusterConcurrentStartup": {
           "description": "The maximum number of cluster member Managed Server instances that the operator will start in parallel for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the `clusters` field. A value of 0 means there is no configured limit. Defaults to 0.",
+          "type": "number",
+          "minimum": 0.0
+        },
+        "maxClusterConcurrentShutdown": {
+          "description": "The maximum number of cluster member Managed Server instances that the operator will shutdown in parallel for a given cluster, if `maxConcurrentShutdown` is not specified for a specific cluster under the `clusters` field. A value of 0 means there is no configured limit. Defaults to 1.",
           "type": "number",
           "minimum": 0.0
         },
