@@ -581,8 +581,7 @@ class ItUsabilityOperatorHelmChart {
   /**
    * Install the operator with non existing operator namespace.
    * The helm install command should fail.
-   *
-   * @throws Exception when helm install does not fail
+   * Test report failure when helm install does not fail
    */
   @Test
   @DisplayName("Negative test to try to create the operator with not preexisted namespace")
@@ -609,6 +608,7 @@ class ItUsabilityOperatorHelmChart {
    * Install the operator with empty string as domains namespaces.
    * This is equivalent of QuickStart guide does when it installs the operator
    * with ' --set "domainNamespaces={}" '.
+   * Add new domain namespace and make sure that the the WebLogic domain is activated by Operator.
    *
    */
   @Test
