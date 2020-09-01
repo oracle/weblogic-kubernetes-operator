@@ -257,8 +257,8 @@ public class ItTwoDomainsLoadBalancers {
       image = kindRepoImage;
       isUseSecret = false;
 
-      // We do not know why the kind clusters can't pull Apache webtier image from OCIR using the image pull secret.
-      // Try the following instead
+      // The kind clusters can't pull Apache webtier image from OCIR using the image pull secret.
+      // Try the following instead:
       //   1. docker login
       //   2. docker pull
       //   3. docker tag with the KIND_REPO value

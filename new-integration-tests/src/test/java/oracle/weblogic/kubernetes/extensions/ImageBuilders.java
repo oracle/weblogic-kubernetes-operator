@@ -148,8 +148,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
         // The following code is for pulling WLS images if running tests in Kind cluster
         if (KIND_REPO != null) {
-          // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
-          // is some evidence it may be a containerd bug. Therefore, we are going to "give up" and workaround the issue.
+          // The kind clusters can't pull images from OCR using the image pull secret. 
           // The workaround will be to:
           //   1. docker login
           //   2. docker pull
