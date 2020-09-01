@@ -708,9 +708,15 @@ public class DomainProcessorImpl implements DomainProcessor {
             getDomain(),
             getDomainUid(),
             getNamespace(),
-            new StepAndPacket(createPopulatePacketServerMapsStep(createSteps()), packet),
+            createDomainPlanSteps(packet),
             deleting,
             willInterrupt);
+    }
+
+    private StepAndPacket createDomainPlanSteps(Packet packet) {
+      return new StepAndPacket(
+          createPopulatePacketServerMapsStep(createSteps()),
+          packet);
     }
 
     private Domain getDomain() {
