@@ -165,7 +165,7 @@ public class ItSystemResOverrides {
     //create and start WebLogic domain
     createDomain();
 
-    // build the clusterview application
+    // build the sitconfig application
     Path distDir = buildApplication(Paths.get(APP_DIR, "sitconfig"),
         null, null, "dist", domainNamespace);
     sitconfigAppPath = Paths.get(distDir.toString(), "sitconfig.war");
@@ -236,7 +236,7 @@ public class ItSystemResOverrides {
         "Getting admin server node port failed");
 
     //verify server attribute MaxMessageSize
-    String appURI = "/clusterview/SitconfigServlet";
+    String appURI = "/sitconfig/SitconfigServlet";
     String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
 
     return (()
@@ -433,7 +433,7 @@ public class ItSystemResOverrides {
     }
   }
 
-  //deploy application clusterview.war to domain
+  //deploy application sitconfig.war to domain
   private void deployApplication(String targets) {
     logger.info("Getting node port for T3 channel");
     int t3channelNodePort = assertDoesNotThrow(()
