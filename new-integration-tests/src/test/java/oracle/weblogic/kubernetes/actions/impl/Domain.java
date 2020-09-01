@@ -399,9 +399,6 @@ public class Domain {
         "/bin/sh", "-c", "mkdir -p " + domainHomeLocation + "/bin/scripts");
     if (result.exitValue() != 0) {
       logger.info("failed to create directory {0}/bin/scripts on admin server pod", domainHomeLocation);
-      logger.info("result.existValue={0}", result.exitValue());
-      logger.info("result.stdout={0}", result.stdout());
-      logger.info("result.stderr={0}", result.stderr());
       return false;
     }
 
@@ -428,9 +425,6 @@ public class Domain {
     if (result.exitValue() != 0) {
       logger.info("failed to add execute mode for file {0} in admin server pod {1}",
           domainHomeLocation + "/bin/scripts/scalingAction.sh", adminServerPodName);
-      logger.info("result.exitValue={0}", result.exitValue());
-      logger.info("result.stdout={0}", result.stdout());
-      logger.info("result.stderr={0}", result.stderr());
       return false;
     }
 
@@ -460,9 +454,6 @@ public class Domain {
     if (result.exitValue() != 0) {
       logger.info("failed to add execute mode for file /u01/oracle/callpyscript.sh in admin pod {0}",
           adminServerPodName);
-      logger.info("result.exitValue={0}", result.exitValue());
-      logger.info("result.stdout={0}", result.stdout());
-      logger.info("result.stderr={0}", result.stderr());
       return false;
     }
 
@@ -499,9 +490,6 @@ public class Domain {
     result = exec(adminPod, null, true, "/bin/sh", "-c", command);
     if (result.exitValue() != 0) {
       logger.info("failed to create WLDF policy rule and action");
-      logger.info("result.exitValue={0}", result.exitValue());
-      logger.info("result.stdout={0}", result.stdout());
-      logger.info("result.stderr={0}", result.stderr());
       return false;
     }
 
