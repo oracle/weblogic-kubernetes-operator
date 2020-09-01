@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -260,7 +259,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.getCurrentFibers().forEach(
                 (key, fiber) -> {
                   Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
-                    try (LoggingContext stack
+                    try (LoggingContext ignored
                              = LoggingContext.setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
                       LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getName());
                     }
@@ -519,7 +518,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                           }
                         });
               } catch (Throwable t) {
-                try (LoggingContext stack
+                try (LoggingContext ignored
                          = LoggingContext.setThreadContext()
                     .namespace(info.getNamespace()).domainUid(info.getDomainUid())) {
                   LOGGER.severe(MessageKeys.EXCEPTION, t);
@@ -551,6 +550,49 @@ public class DomainProcessorImpl implements DomainProcessor {
   @Override
   public MakeRightDomainOperation createMakeRightOperation(Domain liveDomain) {
     return createMakeRightOperation(new DomainPresenceInfo(liveDomain));
+  }
+
+  public Step createPopulatePacketServerMapsStep(oracle.kubernetes.operator.work.Step next) {
+    return new PopulatePacketServerMapsStep(next);
+  }
+
+  public static class PopulatePacketServerMapsStep extends Step {
+    public PopulatePacketServerMapsStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      populatePacketServerMapsFromDomain(packet);
+      return doNext(packet);
+    }
+
+    private void populatePacketServerMapsFromDomain(Packet packet) {
+      Map<String, ServerHealth> serverHealth = new ConcurrentHashMap<>();
+      Map<String, String> serverState = new ConcurrentHashMap<>();
+      Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getServers)
+          .ifPresent(servers -> servers.forEach(item -> addServerToMaps(serverHealth, serverState, item)));
+      if (!serverState.isEmpty()) {
+        packet.put(SERVER_STATE_MAP, serverState);
+      }
+      if (!serverHealth.isEmpty()) {
+        packet.put(SERVER_HEALTH_MAP, serverHealth);
+      }
+    }
+
+    private void addServerToMaps(Map<String, ServerHealth> serverHealthMap,
+                                 Map<String, String> serverStateMap, ServerStatus item) {
+      if (item.getHealth() != null) {
+        serverHealthMap.put(item.getServerName(), item.getHealth());
+      }
+      if (item.getState() != null) {
+        serverStateMap.put(item.getServerName(), item.getState());
+      }
+    }
+
   }
 
   /**
@@ -661,35 +703,13 @@ public class DomainProcessorImpl implements DomainProcessor {
               Component.createFor(liveInfo, delegate.getVersion(),
                   PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                   V1SubjectRulesReviewStatus.class, delegate.getSubjectRulesReviewStatus(getNamespace())));
-      populateServerStateHealthFromDomain(packet);
       runDomainPlan(
             getDomain(),
             getDomainUid(),
             getNamespace(),
-            new StepAndPacket(createSteps(), packet),
+            new StepAndPacket(createPopulatePacketServerMapsStep(createSteps()), packet),
             deleting,
             willInterrupt);
-    }
-
-    private void populateServerStateHealthFromDomain(Packet packet) {
-      ConcurrentMap<String, ServerHealth> serverHealth = new ConcurrentHashMap<String, ServerHealth>();
-      ConcurrentMap<String, String> serverState = new ConcurrentHashMap<String, String>();
-      Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getServers)
-          .ifPresent(servers -> servers.forEach(item -> addServerToMaps(serverHealth, serverState, item)));
-      packet.put(SERVER_STATE_MAP, serverState);
-      packet.put(SERVER_HEALTH_MAP, serverHealth);
-    }
-
-    private void addServerToMaps(Map serverHealthMap, Map serverStateMap, ServerStatus item) {
-      if (item.getHealth() != null) {
-        serverHealthMap.put(item.getServerName(), item.getHealth());
-      }
-      if (item.getState() != null) {
-        serverStateMap.put(item.getServerName(), item.getState());
-      }
     }
 
     private Domain getDomain() {
@@ -782,7 +802,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                     () -> {
                       DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
                       if (existing != null) {
-                        try (LoggingContext stack =
+                        try (LoggingContext ignored =
                                  LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
                           existing.setPopulated(false);
                           // proceed only if we have not already retried max number of times

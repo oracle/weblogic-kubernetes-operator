@@ -591,7 +591,7 @@ public class DomainStatusUpdater {
     }
   }
 
-  private static class ProgressingStep extends DomainStatusUpdaterStep {
+  public static class ProgressingStep extends DomainStatusUpdaterStep {
     private final String reason;
     private final boolean isPreserveAvailable;
 
@@ -609,16 +609,6 @@ public class DomainStatusUpdater {
         status.removeConditionIf(c -> c.getType() == Available);
       }
     }
-  }
-
-  /**
-   * A utility method for unit testing.
-   */
-  public static Step excludeProgressingStep(Step step) {
-    if (step instanceof DomainStatusUpdater.ProgressingStep) {
-      return step.getNext();
-    }
-    return step;
   }
 
   private static class EndProgressingStep extends DomainStatusUpdaterStep {
