@@ -134,13 +134,12 @@ public class SitconfigServlet extends HttpServlet {
    * diagnostics-WLDF-MODULE-0.xml. The added elements wldf-instrumentation-monitor harvested-type are expected to show
    * up in the domain configuration.
    */
-  public void testSystemResourcesWldfAttributeAdd(PrintWriter out) {
+  public void testSystemResourcesWldfAttributeChange(PrintWriter out) {
     final String wldfModName0 = "WLDF-MODULE-0";
 
     // verify the changed properties
     out.println("Verifying the configuration changes made by WLDF sit config file");
-    String resourceName = wldfModName0;
-    WLDFSystemResourceMBean wldfSystemModule = getWldfSystemModule(resourceName, out);
+    WLDFSystemResourceMBean wldfSystemModule = getWldfSystemModule(wldfModName0, out);
     if (wldfSystemModule == null) {
       out.println("WLDF TEST FAILED");
       return;
