@@ -18,6 +18,27 @@ public class Helm {
    * @return true on success
    */
   public static boolean isReleaseDeployed(String releaseName, String namespace) {
+    return checkHelmReleaseStatus(releaseName, namespace, "deployed");
+  }
+
+  /**
+   * Check Helm release status is failed.
+   * @param releaseName release name which unique in a namespace
+   * @param namespace namespace name
+   * @return true on success
+   */
+  public static boolean isReleaseFailed(String releaseName, String namespace) {
+    return checkHelmReleaseStatus(releaseName, namespace, "failed");
+  }
+
+  /**
+   * Check Helm release status against expected.
+   * @param releaseName release name which unique in a namespace
+   * @param namespace namespace name
+   * @param status expected value
+   * @return true on success
+   */
+  public static boolean checkHelmReleaseStatus(String releaseName, String namespace, String status) {
     CommandParams cmdParams = Command.defaultCommandParams()
         .command(String.format("helm list -n %s --filter %s", namespace, releaseName))
         .saveResults(true)
@@ -25,7 +46,7 @@ public class Helm {
 
     if (Command.withParams(cmdParams)
         .execute()) {
-      return cmdParams.stdout().toLowerCase().contains("deployed");
+      return cmdParams.stdout().toLowerCase().contains(status);
     }
     return false;
   }

@@ -334,6 +334,7 @@ public class CommonTestUtils {
                                                     boolean elkIntegrationEnabled,
                                                     String... domainNamespace) {
     LoggingFacade logger = getLogger();
+
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
     assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
@@ -341,6 +342,7 @@ public class CommonTestUtils {
             .namespace(opNamespace)
             .name(opServiceAccount))));
     logger.info("Created service account: {0}", opServiceAccount);
+
 
     // get operator image name
     String operatorImage = getOperatorImageName();
@@ -2280,7 +2282,7 @@ public class CommonTestUtils {
    * @param secretName name of the secret to be created
    * @return true if the command to create secret succeeds, false otherwise
    */
-  private static boolean createExternalRestIdentitySecret(String namespace, String secretName) {
+  public static boolean createExternalRestIdentitySecret(String namespace, String secretName) {
 
     StringBuffer command = new StringBuffer()
         .append(GEN_EXTERNAL_REST_IDENTITY_FILE);
