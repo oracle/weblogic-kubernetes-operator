@@ -581,7 +581,7 @@ class ItUsabilityOperatorHelmChart {
   /**
    * Install the operator with non existing operator namespace.
    * The helm install command should fail.
-   * Test report failure when helm install does not fail
+   * Test reports failure when helm install does not fail
    */
   @Test
   @DisplayName("Negative test to try to create the operator with not preexisted namespace")
