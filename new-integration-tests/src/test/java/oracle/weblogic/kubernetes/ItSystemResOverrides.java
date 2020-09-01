@@ -242,7 +242,7 @@ public class ItSystemResOverrides {
     return (()
         -> {
       HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
-      return (response.statusCode() == 200) && response.body().contains("ExpirationPolicy=Discard");
+      return (response.statusCode() == 200) && response.body().contains("ExpirationPolicy:Discard");
     });
   }
 
@@ -252,7 +252,7 @@ public class ItSystemResOverrides {
 
     HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(uri, true));
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    assertTrue(response.body().contains("ExpirationPolicy=Discard"), "Didn't get ExpirationPolicy=Discard");
+    assertTrue(response.body().contains("ExpirationPolicy:Discard"), "Didn't get ExpirationPolicy:Discard");
     assertTrue(response.body().contains("RedeliveryLimit:20"), "Didn't get RedeliveryLimit:20");
   }
 
