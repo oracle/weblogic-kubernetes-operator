@@ -90,7 +90,7 @@ public class SitconfigServlet extends HttpServlet {
     response.setContentType("text/html;charset=UTF-8");
     try (PrintWriter out = response.getWriter()) {
       testSystemResourcesJmsAttributeChange(out);
-      testSystemResourcesWldfAttributeAdd(out);
+      testSystemResourcesWldfAttributeChange(out);
     }
   }
 
