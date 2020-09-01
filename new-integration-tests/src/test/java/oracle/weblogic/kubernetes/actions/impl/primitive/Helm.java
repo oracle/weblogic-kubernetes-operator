@@ -184,7 +184,7 @@ public class Helm {
    * @param helmValues hash map with key, value pairs
    * @return string with chart helmValues
    */
-  private static String valuesToString(Map<String, Object> helmValues) {
+  public static String valuesToString(Map<String, Object> helmValues) {
     StringBuffer valuesString = new StringBuffer("");
     // values can be Map or String
     for (Map.Entry<String,Object> entry : helmValues.entrySet()) {
@@ -215,6 +215,9 @@ public class Helm {
     getLogger().info("Running command - \n" + command);
     try {
       ExecResult result = ExecCommand.exec(command, true);
+      getLogger().info("The command returned exit value: "
+          + result.exitValue() + " command output: "
+          + result.stderr() + "\n" + result.stdout());
       if (result.exitValue() != 0) {
         getLogger().info("Command failed with errors " + result.stderr() + "\n" + result.stdout());
         return false;
@@ -225,5 +228,4 @@ public class Helm {
     }
     return true;
   }
-
 }

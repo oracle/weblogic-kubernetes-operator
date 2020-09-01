@@ -1422,4 +1422,13 @@ public class TestActions {
   public static String getOperatorPodName(String release, String namespace) throws ApiException {
     return Kubernetes.getOperatorPodName(release, namespace);
   }
+
+  /**
+   * Append the helmValues to the given string buffer.
+   * @param helmValues hash map with key, value pairs
+   * @return string with chart helmValues
+   */
+  public static String helmValuesToString(Map<String, Object> helmValues) {
+    return Helm.valuesToString(helmValues);
+  }
 }

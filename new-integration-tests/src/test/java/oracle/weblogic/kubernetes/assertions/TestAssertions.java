@@ -485,6 +485,27 @@ public class TestAssertions {
   }
 
   /**
+   * Check Helm release status is deployed.
+   * @param releaseName release name which unique in a namespace
+   * @param namespace namespace name
+   * @param status expected helm release status
+   * @return true on success
+   */
+  public static boolean checkHelmReleaseStatus(String releaseName, String namespace, String status) {
+    return Helm.checkHelmReleaseStatus(releaseName, namespace, status);
+  }
+
+  /**
+   * Check Helm release status is deployed.
+   * @param releaseName release name which unique in a namespace
+   * @param namespace namespace name
+   * @return true on success
+   */
+  public static boolean isHelmReleaseFailed(String releaseName, String namespace) {
+    return Helm.isReleaseFailed(releaseName, namespace);
+  }
+
+  /**
    * Check if a pod is restarted based on podCreationTimestamp.
    *
    * @param podName the name of the pod to check for
