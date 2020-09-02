@@ -4,7 +4,6 @@
 package oracle.weblogic.domain;
 
 import io.kubernetes.client.common.KubernetesObject;
-import io.kubernetes.client.common.KubernetesType;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -15,7 +14,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 @ApiModel(
     description =
         "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.")
-public class Domain implements KubernetesType, KubernetesObject {
+public class Domain implements KubernetesObject {
 
   @ApiModelProperty("The API version for the Domain.")
   private String apiVersion;

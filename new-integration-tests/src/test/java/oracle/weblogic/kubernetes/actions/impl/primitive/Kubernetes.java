@@ -654,7 +654,7 @@ public class Kubernetes {
    * @throws ApiException when pod interaction fails
    */
   public static void copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
-          throws IOException, ApiException, CopyNotSupportedException {
+      throws IOException, ApiException, CopyNotSupportedException {
     Copy copy = new Copy();
     copy.copyDirectoryFromPod(pod, srcPath, destination);
   }
