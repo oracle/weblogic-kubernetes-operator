@@ -160,6 +160,12 @@ public class DomainProcessorTest {
     makeRightOperation.execute();
 
     assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, domain.getDomainUid());
+    assertThat(getResourceVersion(updatedDomain), equalTo(getResourceVersion(domain)));
+  }
+
+  private String getResourceVersion(Domain domain) {
+    return Optional.of(domain).map(Domain::getMetadata).map(V1ObjectMeta::getResourceVersion).orElse("");
   }
 
   @Test
@@ -199,6 +205,7 @@ public class DomainProcessorTest {
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
+    assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
   }
 
   @Test
