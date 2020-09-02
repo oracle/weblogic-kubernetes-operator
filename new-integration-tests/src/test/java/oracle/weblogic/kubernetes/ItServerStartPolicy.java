@@ -345,18 +345,22 @@ class ItServerStartPolicy {
   /**
    * Stop a configured cluster by patching the resource defintion with 
    *  spec/clusters/1/serverStartPolicy set to NEVER.
-   * Make sure that ONLY servers in second Cluster are stopped. 
+   * Make sure that only server(s) in configured cluster are stopped. 
+   * Make sure that server(s) in dynamic cluster are in RUNNING state. 
    * Restart the cluster by patching the resource defintion with 
    *  spec/clusters/1/serverStartPolicy set to IF_NEEDED.
-   * Make sure that servers in second cluster are in RUNNING state. 
+   * Make sure that servers in configured cluster are in RUNNING state. 
    */
   @Test
   @DisplayName("Restart the configured cluster with serverStartPolicy")
   public void testConfigClusterRestart() {
 
     String configServerPodName = domainUid + "-config-cluster-server1";
+    String dynamicServerPodName = domainUid + "-managed-server1";
 
-    // Make sure that Configured Cluster Managed server is Ready 
+    DateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
+
+    // Make sure that configured cluster managed servers are ready 
     checkPodReady(configServerPodName, domainUid, domainNamespace);
     checkServiceExists(configServerPodName, domainNamespace);
     logger.info("(BeforePatch) configured cluster managed server is RUNNING");
@@ -380,11 +384,11 @@ class ItServerStartPolicy {
     logger.info("Config cluster shutdown success");
 
     // check managed server from other cluster are not affected
-    logger.info("Check managed server pods are not affected");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-    logger.info("Managed servers on cluster-1 are RUNNING after cluster-2 is stopped");
+    logger.info("Check dynamic managed server pods are not affected");
+    DateTime dynTs2 = getPodCreationTime(domainNamespace, dynamicServerPodName);
+    assertTrue(
+        dynTs2.withTimeAtStartOfDay().isEqual(dynTs.withTimeAtStartOfDay()),
+        "Dynamic managed server pod creation time must be same");
 
     patchStr = null;
     patchStr = new StringBuffer("[{");
@@ -401,10 +405,9 @@ class ItServerStartPolicy {
         "patchDomainCustomResource(clusterRestart) failed");
 
     assertTrue(crdPatched, "patchDomainCustomResource(clusterRestart) failed");
-    logger.info("Wait for Cluster server pod {0} to be ready in namespace {1}",
+    logger.info("Wait for cluster server pod {0} to be ready in namespace {1}",
         configServerPodName, domainNamespace);
     checkPodReady(configServerPodName, domainUid, domainNamespace);
-
     logger.info("Check configured cluster managed service {0} is created in namespace {1}",
         configServerPodName, domainNamespace);
     checkServiceExists(configServerPodName, domainNamespace);
@@ -414,10 +417,11 @@ class ItServerStartPolicy {
   /**
    * Stop a dynamic cluster by patching the resource defintion with 
    *  spec/clusters/1/serverStartPolicy set to NEVER.
-   * Make sure that ONLY servers in second Cluster are stopped. 
+   * Make sure that ONLY server(s) in dynamic cluster are stopped. 
+   * Make sure that ONLY server(s) in configured cluster are in RUNNING state. 
    * Restart the dynamic cluster by patching the resource defintion with 
    *  spec/clusters/1/serverStartPolicy set to IF_NEEDED.
-   * Make sure that servers in second cluster are in RUNNING state. 
+   * Make sure that servers in dynamic cluster are in RUNNING state again. 
    */
   @Test
   @DisplayName("Restart the dynamic cluster with serverStartPolicy")
@@ -426,7 +430,9 @@ class ItServerStartPolicy {
     String dynamicServerPodName = domainUid + "-managed-server1";
     String configServerPodName = domainUid + "-config-cluster-server1";
 
-    // Make sure that dynamic cluster managed server is Ready 
+    DateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
+
+    // Make sure that dynamic cluster managed server is ready 
     checkPodReady(dynamicServerPodName, domainUid, domainNamespace);
     checkServiceExists(dynamicServerPodName, domainNamespace);
     logger.info("(BeforePatch) dynamic cluster Managed Server is RUNNING");
@@ -449,9 +455,11 @@ class ItServerStartPolicy {
     logger.info("Dynamic cluster shutdown success");
 
     // check managed server from other cluster are not affected
-    logger.info("Check managed server pods are not affected");
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
-    checkServiceExists(configServerPodName, domainNamespace);
+    logger.info("Check configured managed server pods are not affected");
+    DateTime cfgTs2 = getPodCreationTime(domainNamespace, configServerPodName);
+    assertTrue(
+        cfgTs2.withTimeAtStartOfDay().isEqual(cfgTs.withTimeAtStartOfDay()),
+        "Configured managed server pod creation time must be same");
 
     patchStr = null;
     patchStr = new StringBuffer("[{");
@@ -467,11 +475,11 @@ class ItServerStartPolicy {
             patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(dynamicClusterRestart) failed");
     assertTrue(crdPatched, "patchDomainCustomResource(dynamicClusterRestart) failed");
-    logger.info("Wait for dynamic Cluster server pod {0} to be ready in namespace {1}", domainNamespace);
+    logger.info("Wait for dynamic cluster server pod {0} to be ready in namespace {1}", domainNamespace);
     checkPodReady(dynamicServerPodName, domainUid, domainNamespace);
     checkServiceExists(dynamicServerPodName, domainNamespace);
 
-    logger.info("Dynamic Cluster restart success");
+    logger.info("Dynamic cluster restart success");
   }
 
   /**
