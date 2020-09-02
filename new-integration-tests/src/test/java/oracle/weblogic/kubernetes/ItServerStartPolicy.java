@@ -33,6 +33,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +62,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -69,7 +71,12 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+
 /**
+ * Create a WebLogic domain with one dynamic cluster (with two managed servers)
+ * one configured cluster (with two managed servers) and a standalone manged 
+ * server. The replica count is set to 1 and serverStartPolicy is set to 
+ * IF_NEEDED at managed server level. 
  * This test class verifies the following scenarios.
  *
  * <p>testAdminServerRestart
@@ -232,26 +239,25 @@ class ItServerStartPolicy {
   @BeforeEach
   public void beforeEach() {
 
-    // Check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
     logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkServiceExists(adminServerPodName, domainNamespace);
+
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} is created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
+    }
 
     // Check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    // Check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
 
     // Check configured cluster configuration is available 
@@ -279,6 +285,10 @@ class ItServerStartPolicy {
   @DisplayName("Restart the Administration server with serverStartPolicy")
   public void testAdminServerRestart() {
 
+    String configServerPodName = domainUid + "-config-cluster-server1";
+    String dynamicServerPodName = domainUid + "-managed-server1";
+    DateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
+    DateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
@@ -297,12 +307,17 @@ class ItServerStartPolicy {
     checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
     logger.info("AdminServer shutdown success");
 
-    // check managed server pods are not affected
     logger.info("Check managed server pods are not affected");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-    logger.info("Managed servers are still RUNNING after AdminServer is stopped");
+    DateTime dynTs2 = getPodCreationTime(domainNamespace, dynamicServerPodName);
+    DateTime cfgTs2 = getPodCreationTime(domainNamespace, configServerPodName);
+
+    assertTrue(
+        dynTs2.withTimeAtStartOfDay().isEqual(dynTs.withTimeAtStartOfDay()), 
+        "Dynamic managed server pod creation time must be same");
+    assertTrue(
+        cfgTs2.withTimeAtStartOfDay().isEqual(cfgTs.withTimeAtStartOfDay()), 
+        "Configured managed server pod creation time must be same");
+
     patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
@@ -562,7 +577,7 @@ class ItServerStartPolicy {
 
   /**
    * Add a second managed server (config-cluster-server2) in a configured 
-   * cluster with SeeverStartuoPolicy IF_NEEDED. 
+   * cluster with serverStartPolicy IF_NEEDED. 
    * Initially, server will not come up since the replica count is set to 1.
    * Update the serverStartPolicy for config-cluster-server2 to ALWAYS
    * by patching the resource defintion with 
@@ -623,7 +638,7 @@ class ItServerStartPolicy {
 
   /**
    * Add a second managed server (config-cluster-server2) in a configured 
-   * cluster with SeeverStartuoPolicy IF_NEEDED. 
+   * cluster with serverStartPolicy IF_NEEDED. 
    * Initially, server will not come up since the replica count is set to 1.
    * Update the serverStartPolicy for config-cluster-server2 to ALWAYS
    * by patching the resource defintion with 
@@ -804,7 +819,7 @@ class ItServerStartPolicy {
 
   /**
    * Add the first managed server (config-cluster-server1) in a configured 
-   * cluster with SeeverStartuoPolicy IF_NEEDED. 
+   * cluster with serverStartPolicy IF_NEEDED. 
    * Initially, server will come up since the replica count is set to 1.
    * (a) Update the serverStartPolicy for config-cluster-server1 to NEVER
    *      by patching the resource defintion with 
@@ -879,7 +894,7 @@ class ItServerStartPolicy {
 
   /**
    * Add the first managed server (managed-server1) in a dynamic 
-   * cluster with SeeverStartuoPolicy IF_NEEDED. 
+   * cluster with serverStartPolicy IF_NEEDED. 
    * Initially, server will come up since the replica count is set to 1.
    * (a) Update the serverStartPolicy for managed-server1 to NEVER
    *      by patching the resource defintion with 
