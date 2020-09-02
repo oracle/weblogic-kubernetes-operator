@@ -34,6 +34,10 @@ spec:
         hostPath:
           path: {{ .Values.volumePath | quote }}
 {{- end }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+      - name: {{ (index .Values.imagePullSecrets 0).name }}
+{{- end }}
       containers:
       - name: {{ template "apache.fullname" . }}
         image: {{ .Values.image | quote }}
