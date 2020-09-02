@@ -95,6 +95,7 @@ tmp_scriptdir=os.path.dirname(tmp_info[0])
 sys.path.append(tmp_scriptdir)
 
 from utils import *
+from weblogic.management.configuration import LegalHelper
 
 class OfflineWlstEnv(object):
 
@@ -462,7 +463,7 @@ class TopologyGenerator(Generator):
              SSL_LISTEN_PORT: sslListenPort,
              SSL_LISTEN_PORT_ENABLED: sslListenPortEnabled,
              ADMIN_LISTEN_PORT: server.getAdministrationPort(),
-             ADMIN_LISTEN_PORT_ENABLED: server.isAdministrationPortEnabled()
+             ADMIN_LISTEN_PORT_ENABLED: isAdministrationPortEnabledForServer(server, self.env.getDomain())
      }[clusterListenPortProperty]
 
   def validateNonDynamicClusterServersHaveSameListenPort(self, cluster):
@@ -484,7 +485,7 @@ class TopologyGenerator(Generator):
               sslListenPort = ssl.getListenPort()
               sslListenPortEnabled = ssl.isEnabled()
         adminPort = server.getAdministrationPort()
-        adminPortEnabled = server.isAdministrationPortEnabled()
+        adminPortEnabled = isAdministrationPortEnabledForServer(server, self.env.getDomain())
         if firstServer is None:
           firstServer = server
           firstListenPort = listenPort
@@ -668,10 +669,10 @@ class TopologyGenerator(Generator):
     if server.isListenPortEnabled():
       self.writeln("  listenPort: " + str(server.getListenPort()))
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
-    if server.isAdministrationPortEnabled():
+    if isAdministrationPortEnabledForServer(server, self.env.getDomain(), is_server_template):
       self.writeln("  adminPort: " + str(server.getAdministrationPort()))
     else:
-      if self.env.getDomain().isAdministrationPortEnabled():
+      if isAdministrationPortEnabledForDomain(self.env.getDomain()):
         self.writeln("  adminPort: " + str(self.env.getDomain().getAdministrationPort()))
     self.addSSL(server)
     self.addNetworkAccessPoints(server, is_server_template)
@@ -818,7 +819,7 @@ class TopologyGenerator(Generator):
       self.addIstioNetworkAccessPoint("tls-default", "t3s", ssl_listen_port, 0)
       self.addIstioNetworkAccessPoint("tls-iiops", "iiops", ssl_listen_port, 0)
 
-    if server.isAdministrationPortEnabled():
+    if isAdministrationPortEnabledForServer(server, self.env.getDomain(), is_server_template):
       self.addIstioNetworkAccessPoint("https-admin", "https", server.getAdministrationPort(), 0)
     return True
 
@@ -1229,7 +1230,7 @@ class SitConfigGenerator(Generator):
       self._writeIstioNAP(name='tls-iiops', server=server, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='iiops')
 
-    if server.isAdministrationPortEnabled():
+    if isAdministrationPortEnabledForServer(server, self.env.getDomain()):
       self._writeIstioNAP(name='https-admin', server=server, listen_address=listen_address,
                           listen_port=server.getAdministrationPort(), protocol='https', http_enabled="true")
 
@@ -1663,6 +1664,41 @@ def getSSLOrNone(server):
     trace("Ignoring getSSL() exception, this is expected.")
     ret = None
   return ret
+
+# Derive the default value for SecureMode of a domain
+def isSecureModeEnabledForDomain(domain):
+  secureModeEnabled = false
+  if domain.getSecurityConfiguration().getSecureMode() != None:
+    secureModeEnabled = domain.getSecurityConfiguration().getSecureMode().isSecureModeEnabled()
+  else:
+    secureModeEnabled = domain.isProductionModeEnabled() and not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0")
+  return secureModeEnabled
+
+def isAdministrationPortEnabledForDomain(domain):
+  administrationPortEnabled = false
+  #"if domain.isSet('AdministrationPortEnabled'):" does not work in off-line WLST!
+  # Go to the domain root
+  cd('/')
+  if isSet('AdministrationPortEnabled'):
+    administrationPortEnabled = domain.isAdministrationPortEnabled()
+  else:
+    # AdministrationPortEnabled is not explicitly set so going with the default
+    # Starting with 14.1.2.0, the domain's AdministrationPortEnabled default is derived from the domain's SecureMode
+    administrationPortEnabled = isSecureModeEnabledForDomain(domain)
+  return administrationPortEnabled
+
+def isAdministrationPortEnabledForServer(server, domain, isServerTemplate=False):
+  administrationPortEnabled = false
+  #"if server.isSet('AdministrationPortEnabled'):" does not work in off-line WLST!
+  cd('/')
+  if isServerTemplate:
+    cd('ServerTemplate')
+  else:
+    cd('Server')
+  cd(server.getName())
+  if isSet('AdministrationPortEnabled'):
+    administrationPortEnabled = server.isAdministrationPortEnabled()
+  return administrationPortEnabled
 
 def main(env):
   try:
