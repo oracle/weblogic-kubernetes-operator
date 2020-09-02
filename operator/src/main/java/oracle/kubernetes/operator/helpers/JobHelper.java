@@ -45,6 +45,8 @@ import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
+import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 
@@ -342,10 +344,12 @@ public class JobHelper {
         packet.putIfAbsent(START_TIME, System.currentTimeMillis());
 
         return doNext(
-              context.createNewJob(
-                    readDomainIntrospectorPodLogStep(
-                          deleteDomainIntrospectorJobStep(
-                                ConfigMapHelper.createIntrospectorConfigMapStep(getNext())))),
+            Step.chain(
+                createProgressingStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
+                context.createNewJob(null),
+                readDomainIntrospectorPodLogStep(null),
+                deleteDomainIntrospectorJobStep(null),
+                ConfigMapHelper.createIntrospectorConfigMapStep(getNext())),
               packet);
       }
 
