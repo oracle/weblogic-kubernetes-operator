@@ -114,19 +114,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>testStopConfigClusterReplicaManaged
  *  Change the serverStartPolicy of a running managed server (say ms1) in config
  *  cluster to NEVER. 
- *  Make sure next managed server (say ms2) is scheduled to run to mantain the 
- *  replica count whle the running managed server ms1 goes down.
+ *  Make sure next managed server (say ms2) is scheduled to run to maintain the 
+ *  replica count while the running managed server ms1 goes down.
  *  Change the serverStartPolicy of server ms1 to IF_NEEDED.
- *  Make sure server ms2 goes down and server ms1 is re-scheduled to mantain 
+ *  Make sure server ms2 goes down and server ms1 is re-scheduled to maintain 
  *  the replica count
  *
  * <p>testStopDynamicClusterReplicaManaged
  *  Change the serverStartPolicy of a running managed server (say ms1) in a 
  *  dynamic cluster to NEVER. 
- *  Make sure next managed server (say ms2) is scheduled to run to mantain the 
- *  replica count whle the running managed server ms1 goes down.
+ *  Make sure next managed server (say ms2) is scheduled to run to maintain the 
+ *  replica count while the running managed server ms1 goes down.
  *  Change the serverStartPolicy of server ms1 to IF_NEEDED.
- *  Make sure server ms2 goes down and server ms1 is re-scheduled to mantain 
+ *  Make sure server ms2 goes down and server ms1 is re-scheduled to maintain 
  *  the replica count
  *
  * <p>testStandaloneManagedRestartIfNeeded
@@ -167,7 +167,7 @@ class ItServerStartPolicy {
 
   /**
    * Install Operator.
-   * Create domain resource defintion.
+   * Create a domain resource definition.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    JUnit engine parameter resolution mechanism
    */
@@ -274,12 +274,12 @@ class ItServerStartPolicy {
   }
 
   /**
-   * Stop the Administration server by patching the resource defintion with 
+   * Stop the Administration server by patching the resource definition with 
    *  spec/adminServer/serverStartPolicy set to NEVER.
    * Make sure that Only the Administration server is stopped. 
-   * Restart the Administration server by patching the resource defintion with 
+   * Restart the Administration server by patching the resource definition with 
    *  spec/adminServer/serverStartPolicy set to IF_NEEDED.
-   * Make sure that Administration server is in RUNNING state. 
+   * Make sure that the Administration server is in RUNNING state. 
    */
   @Test
   @DisplayName("Restart the Administration server with serverStartPolicy")
@@ -333,23 +333,23 @@ class ItServerStartPolicy {
         "patchDomainCustomResource(restart) failed");
 
     assertTrue(crdPatched, "patchDomainCustomResource(restart) failed");
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
     logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkServiceExists(adminServerPodName, domainNamespace);
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
     logger.info("AdminServer restart success");
   }
 
   /**
-   * Stop a configured cluster by patching the resource defintion with 
+   * Stop a configured cluster by patching the resource definition with 
    *  spec/clusters/1/serverStartPolicy set to NEVER.
-   * Make sure that only server(s) in configured cluster are stopped. 
-   * Make sure that server(s) in dynamic cluster are in RUNNING state. 
-   * Restart the cluster by patching the resource defintion with 
+   * Make sure that only server(s) in the configured cluster are stopped. 
+   * Make sure that server(s) in the dynamic cluster are in RUNNING state. 
+   * Restart the cluster by patching the resource definition with 
    *  spec/clusters/1/serverStartPolicy set to IF_NEEDED.
-   * Make sure that servers in configured cluster are in RUNNING state. 
+   * Make sure that servers in the configured cluster are in RUNNING state. 
    */
   @Test
   @DisplayName("Restart the configured cluster with serverStartPolicy")
@@ -360,9 +360,8 @@ class ItServerStartPolicy {
 
     DateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
 
-    // Make sure that configured cluster managed servers are ready 
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
     checkServiceExists(configServerPodName, domainNamespace);
+    checkPodReady(configServerPodName, domainUid, domainNamespace);
     logger.info("(BeforePatch) configured cluster managed server is RUNNING");
 
     StringBuffer patchStr = null;
@@ -405,23 +404,24 @@ class ItServerStartPolicy {
         "patchDomainCustomResource(clusterRestart) failed");
 
     assertTrue(crdPatched, "patchDomainCustomResource(clusterRestart) failed");
-    logger.info("Wait for cluster server pod {0} to be ready in namespace {1}",
-        configServerPodName, domainNamespace);
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
     logger.info("Check configured cluster managed service {0} is created in namespace {1}",
         configServerPodName, domainNamespace);
     checkServiceExists(configServerPodName, domainNamespace);
+    logger.info("Wait for cluster server pod {0} to be ready in namespace {1}",
+        configServerPodName, domainNamespace);
+    checkPodReady(configServerPodName, domainUid, domainNamespace);
     logger.info("Configured cluster restart success");
   }
 
   /**
-   * Stop a dynamic cluster by patching the resource defintion with 
+   * Stop a dynamic cluster by patching the resource definition with 
    *  spec/clusters/1/serverStartPolicy set to NEVER.
-   * Make sure that ONLY server(s) in dynamic cluster are stopped. 
-   * Make sure that ONLY server(s) in configured cluster are in RUNNING state. 
-   * Restart the dynamic cluster by patching the resource defintion with 
+   * Make sure that only servers in the dynamic cluster are stopped. 
+   * Make sure that only servers in the configured cluster are in the 
+   * RUNNING state. 
+   * Restart the dynamic cluster by patching the resource definition with 
    *  spec/clusters/1/serverStartPolicy set to IF_NEEDED.
-   * Make sure that servers in dynamic cluster are in RUNNING state again. 
+   * Make sure that servers in the dynamic cluster are in RUNNING state again. 
    */
   @Test
   @DisplayName("Restart the dynamic cluster with serverStartPolicy")
@@ -432,9 +432,8 @@ class ItServerStartPolicy {
 
     DateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
 
-    // Make sure that dynamic cluster managed server is ready 
-    checkPodReady(dynamicServerPodName, domainUid, domainNamespace);
     checkServiceExists(dynamicServerPodName, domainNamespace);
+    checkPodReady(dynamicServerPodName, domainUid, domainNamespace);
     logger.info("(BeforePatch) dynamic cluster Managed Server is RUNNING");
 
     StringBuffer patchStr = null;
@@ -476,20 +475,20 @@ class ItServerStartPolicy {
         "patchDomainCustomResource(dynamicClusterRestart) failed");
     assertTrue(crdPatched, "patchDomainCustomResource(dynamicClusterRestart) failed");
     logger.info("Wait for dynamic cluster server pod {0} to be ready in namespace {1}", domainNamespace);
-    checkPodReady(dynamicServerPodName, domainUid, domainNamespace);
     checkServiceExists(dynamicServerPodName, domainNamespace);
+    checkPodReady(dynamicServerPodName, domainUid, domainNamespace);
 
     logger.info("Dynamic cluster restart success");
   }
 
   /**
-   * Stop the entire domain by patching the resource defintion with 
+   * Stop the entire domain by patching the resource definition with 
    *  spec/serverStartPolicy set to NEVER.
    * Make sure that all servers in the domain are stopped. 
-   * Restart the domain by patching the resource defintion with 
+   * Restart the domain by patching the resource definition with 
    *  spec/serverStartPolicy set to ADMIN_ONLY.
    * Make sure that ONLY Admin Server is in RUNNING state. 
-   * Restart the domain by patching the resource defintion with 
+   * Restart the domain by patching the resource definition with 
    *  spec/serverStartPolicy set to IF_NEEDED.
    * Make sure that all servers in the domain are in RUNNING state. 
    */
@@ -543,8 +542,8 @@ class ItServerStartPolicy {
     assertTrue(crdPatched, "patchDomainCustomResource(adminonly) failed");
     logger.info("!!! Domain Resource patched for shutdown (ADMIN_ONLY) !!!");
 
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
     checkServiceExists(adminServerPodName, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
     // make sure all other managed server pods are not provisioned 
     for (int i = 1; i <= replicaCount; i++) {
@@ -575,8 +574,8 @@ class ItServerStartPolicy {
     
     // check dynamic managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
       checkServiceExists(managedServerPrefix + i, domainNamespace);
+      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
     }
     checkPodReady(configServerPodName, domainUid, domainNamespace);
     checkPodReady(standaloneServerPodName, domainUid, domainNamespace);
@@ -586,12 +585,12 @@ class ItServerStartPolicy {
   /**
    * Add a second managed server (config-cluster-server2) in a configured 
    * cluster with serverStartPolicy IF_NEEDED. 
-   * Initially, server will not come up since the replica count is set to 1.
+   * Initially, the server will not come up since the replica count is set to 1.
    * Update the serverStartPolicy for config-cluster-server2 to ALWAYS
-   * by patching the resource defintion with 
+   * by patching the resource definition with 
    *  spec/managedServers/1/serverStartPolicy set to ALWAYS.
    * Make sure that managed server config-cluster-server2 is up and running
-   * Stop the managed server by patching the resource defintion 
+   * Stop the managed server by patching the resource definition 
    *   with spec/managedServers/1/serverStartPolicy set to IF_NEEDED.
    * Make sure the specified managed server is stopped as per replica count.
    */
@@ -618,8 +617,8 @@ class ItServerStartPolicy {
         "patchDomainCustomResource(managedShutdown) failed");
     assertTrue(crdPatched, "patchDomainCustomResource(managedShutdown) failed");
     logger.info("!!! Domain Resource patched for config cluster managed server !!!");
-    checkPodReady(serverPodName, domainUid, domainNamespace);
     checkServiceExists(serverPodName, domainNamespace);
+    checkPodReady(serverPodName, domainUid, domainNamespace);
     logger.info("Configured cluster managed Server is RUNNING");
 
     patchStr = null;
@@ -647,12 +646,12 @@ class ItServerStartPolicy {
   /**
    * Add a second managed server (config-cluster-server2) in a configured 
    * cluster with serverStartPolicy IF_NEEDED. 
-   * Initially, server will not come up since the replica count is set to 1.
+   * Initially, the server will not come up since the replica count is set to 1.
    * Update the serverStartPolicy for config-cluster-server2 to ALWAYS
-   * by patching the resource defintion with 
+   * by patching the resource definition with 
    *  spec/managedServers/1/serverStartPolicy set to ALWAYS.
    * Make sure that managed server config-cluster-server2 is up and running
-   * Stop the managed server by patching the resource defintion 
+   * Stop the managed server by patching the resource definition 
    *   with spec/managedServers/1/serverStartPolicy set to NEVER.
    */
 
@@ -678,8 +677,8 @@ class ItServerStartPolicy {
         "patchDomainCustomResource(managedShutdown) failed");
     assertTrue(crdPatched, "patchDomainCustomResource(managedShutdown) failed");
     logger.info("!!! Domain Resource patched for config cluster managed server !!!");
-    checkPodReady(serverPodName, domainUid, domainNamespace);
     checkServiceExists(serverPodName, domainNamespace);
+    checkPodReady(serverPodName, domainUid, domainNamespace);
     logger.info("Configured cluster managed Server is RUNNING");
 
     patchStr = null;
@@ -707,12 +706,12 @@ class ItServerStartPolicy {
   /**
    * Add managed server configuration (managed-server2) to CRD in a dynamic 
    * cluster with ServerStartPolicy IF_NEEDED. 
-   * So initially,the server will not come up since replica count is set to 1.
+   * So initially, the server will not come up since replica count is set to 1.
    * Update the ServerStartPolicy for managed-server2 to ALWAYS
-   * by patching the resource defintion with 
+   * by patching the resource definition with 
    *  spec/managedServers/2/serverStartPolicy set to ALWAYS.
    * Make sure that managed server managed-server2 is up and running
-   * Stop the managed server by patching the resource defintion 
+   * Stop the managed server by patching the resource definition 
    *   with spec/managedServers/2/serverStartPolicy set to IF_NEEDED.
    * Make sure the specified managed server is stopped as per replica count.
    */
@@ -739,8 +738,8 @@ class ItServerStartPolicy {
         "patchDomainCustomResource(managedShutdown) failed");
     assertTrue(crdPatched, "patchDomainCustomResource(managedShutdown) failed");
     logger.info("!!! Domain Resource patched for dynamic cluster managed server !!!");
-    checkPodReady(serverPodName, domainUid, domainNamespace);
     checkServiceExists(serverPodName, domainNamespace);
+    checkPodReady(serverPodName, domainUid, domainNamespace);
     logger.info("Config cluster Managed Server is RUNNING");
 
     patchStr = null;
@@ -768,12 +767,12 @@ class ItServerStartPolicy {
   /**
    * Add managed server configuration (managed-server2) to CRD in a dynamic 
    * cluster with ServerStartPolicy IF_NEEDED. 
-   * So initially,the server will not come up since replica count is set to 1.
+   * So initially, the server will not come up since replica count is set to 1.
    * Update the ServerStartPolicy for managed-server2 to ALWAYS
-   * by patching the resource defintion with 
+   * by patching the resource definition with 
    *  spec/managedServers/2/serverStartPolicy set to ALWAYS.
    * Make sure that managed server managed-server2 is up and running
-   * Stop the managed server by patching the resource defintion 
+   * Stop the managed server by patching the resource definition 
    *   with spec/managedServers/2/serverStartPolicy set to NEVER
    */
 
@@ -799,8 +798,8 @@ class ItServerStartPolicy {
         "patchDomainCustomResource(managedShutdown) failed");
     assertTrue(crdPatched, "patchDomainCustomResource(managedShutdown) failed");
     logger.info("!!! Domain Resource patched for dynamic cluster managed server !!!");
-    checkPodReady(serverPodName, domainUid, domainNamespace);
     checkServiceExists(serverPodName, domainNamespace);
+    checkPodReady(serverPodName, domainUid, domainNamespace);
     logger.info("Config cluster Managed Server is RUNNING");
 
     patchStr = null;
@@ -828,22 +827,22 @@ class ItServerStartPolicy {
   /**
    * Add the first managed server (config-cluster-server1) in a configured 
    * cluster with serverStartPolicy IF_NEEDED. 
-   * Initially, server will come up since the replica count is set to 1.
+   * Initially, the server will come up since the replica count is set to 1.
    * (a) Update the serverStartPolicy for config-cluster-server1 to NEVER
-   *      by patching the resource defintion with 
+   *      by patching the resource definition with 
    *        spec/managedServers/3/serverStartPolicy set to NEVER.
    *     Make sure that managed server config-cluster-server1 is shutdown.
-   *     Make sure that managed server config-cluster-server2 comes up.
-   *       in order to mantain the replica count of 1
+   *     Make sure that managed server config-cluster-server2 comes up
+   *       to maintain the replica count of 1.
    * (b) Update the serverStartPolicy for config-cluster-server1 to IF_NEEDED
-   *       by patching the resource defintion with 
+   *       by patching the resource definition with 
    *       spec/managedServers/3/serverStartPolicy set to IF_NEEDED.
    *     Make sure that managed server config-cluster-server2 is shutdown.
-   *     Make sure that managed server config-cluster-server1 comes up.
-   *       in order to mantain the replica count of 1
+   *     Make sure that managed server config-cluster-server1 comes up
+   *       to maintain the replica count of 1.
    */
   @Test
-  @DisplayName("Stop a running config cluster managed server and verify the replica count is mantained")
+  @DisplayName("Stop a running config cluster managed server and verify the replica count is maintained")
   public void testStopConfigClusterReplicaManaged() {
     String serverPodName = domainUid + "-config-cluster-server1";
     String serverPodName2 = domainUid + "-config-cluster-server2";
@@ -870,8 +869,8 @@ class ItServerStartPolicy {
     // Make sure config-cluster-server1 is deleted 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
     // Make sure  config-cluster-server2 is started 
-    checkPodReady(serverPodName2, domainUid, domainNamespace);
     checkServiceExists(serverPodName2, domainNamespace);
+    checkPodReady(serverPodName2, domainUid, domainNamespace);
     logger.info("Configured cluster managed Server(2) is RUNNING");
 
     // Patch(start) the config-cluster-server1 
@@ -896,26 +895,26 @@ class ItServerStartPolicy {
     checkPodDeleted(serverPodName2, domainUid, domainNamespace);
 
     // Make sure config-cluster-server1 is re-started
-    checkPodReady(serverPodName, domainUid, domainNamespace);
     checkServiceExists(serverPodName, domainNamespace);
+    checkPodReady(serverPodName, domainUid, domainNamespace);
   }
 
   /**
    * Add the first managed server (managed-server1) in a dynamic 
    * cluster with serverStartPolicy IF_NEEDED. 
-   * Initially, server will come up since the replica count is set to 1.
+   * Initially, the server will come up since the replica count is set to 1.
    * (a) Update the serverStartPolicy for managed-server1 to NEVER
-   *      by patching the resource defintion with 
+   *      by patching the resource definition with 
    *        spec/managedServers/4/serverStartPolicy set to NEVER.
    *     Make sure that managed server managed-server1 is shutdown.
-   *     Make sure that managed server managed-server2 comes up.
-   *       in order to mantain the replica count of 1
+   *     Make sure that managed server managed-server2 comes up
+   *       to maintain the replica count of 1.
    * (b) Update the serverStartPolicy for managed-server1 to IF_NEEDED
-   *       by patching the resource defintion with 
+   *       by patching the resource definition with 
    *       spec/managedServers/4/serverStartPolicy set to IF_NEEDED.
    *     Make sure that managed server managed-server2 is shutdown.
-   *     Make sure that managed server managed-server1 comes up.
-   *       in order to mantain the replica count of 1
+   *     Make sure that managed server managed-server1 comes up
+   *       to maintain the replica count of 1.
    */
   @Test
   @DisplayName("Stop a running dynamic cluster managed server and verify the replica count ")
@@ -944,9 +943,8 @@ class ItServerStartPolicy {
 
     // Make sure maanged-server1 is deleted 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
-    // Make sure  managed-server2 is started 
-    checkPodReady(serverPodName2, domainUid, domainNamespace);
     checkServiceExists(serverPodName2, domainNamespace);
+    checkPodReady(serverPodName2, domainUid, domainNamespace);
     logger.info("Dynamic cluster managed Server(2) is RUNNING");
 
     // Patch(start) the managed-server1 
@@ -971,16 +969,16 @@ class ItServerStartPolicy {
     checkPodDeleted(serverPodName2, domainUid, domainNamespace);
 
     // Make sure managed-server1 is re-started
-    checkPodReady(serverPodName, domainUid, domainNamespace);
     checkServiceExists(serverPodName, domainNamespace);
+    checkPodReady(serverPodName, domainUid, domainNamespace);
   }
 
   /**
    * Start independent managed server by setting serverStartPolicy to IF_NEEDED.
-   * Stop an independent managed server by patching the resource defintion with 
+   * Stop an independent managed server by patching the resource definition with 
    *  spec/managedServers/0/serverStartPolicy set to NEVER.
    * Make sure that ONLY the specified managed server is stopped. 
-   * Restart the independent managed server by patching the resource defintion 
+   * Restart the independent managed server by patching the resource definition 
    * with spec/managedServers/0/serverStartPolicy set to ALWAYS.
    * Make sure that the specified managed server is in RUNNING state.
    */
@@ -995,8 +993,8 @@ class ItServerStartPolicy {
     String configServerPodName = domainUid + "-standalone-managed";
 
     // Make sure that configured managed server is ready 
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
     checkServiceExists(configServerPodName, domainNamespace);
+    checkPodReady(configServerPodName, domainUid, domainNamespace);
     logger.info("Configured Managed Server is RUNNING");
 
     StringBuffer patchStr = null;
@@ -1035,17 +1033,17 @@ class ItServerStartPolicy {
     logger.info("!!! Domain Resource patched for managedRestart !!!");
 
     logger.info("Wait for standalone managed server ${0} to be restarted", configServerPodName);
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
     checkServiceExists(configServerPodName, domainNamespace);
+    checkPodReady(configServerPodName, domainUid, domainNamespace);
     logger.info("Managed Server restart success");
   }
 
   /**
    * Start independent managed server by setting serverStartPolicy to IF_NEEDED.
-   * Stop an independent managed server by patching the resource defintion with 
+   * Stop an independent managed server by patching the resource definition with 
    *  spec/managedServers/0/serverStartPolicy set to NEVER.
    * Make sure that ONLY the specified managed server is stopped. 
-   * Restart the independent managed server by patching the resource defintion 
+   * Restart the independent managed server by patching the resource definition 
    * with spec/managedServers/0/serverStartPolicy set to IF_NEEDED.
    * Make sure that the specified managed server is in RUNNING state.
    */
@@ -1060,8 +1058,8 @@ class ItServerStartPolicy {
     String configServerPodName = domainUid + "-standalone-managed";
 
     // Make sure that configured managed server is ready 
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
     checkServiceExists(configServerPodName, domainNamespace);
+    checkPodReady(configServerPodName, domainUid, domainNamespace);
     logger.info("Configured Managed Server is RUNNING");
 
     StringBuffer patchStr = null;
@@ -1100,13 +1098,13 @@ class ItServerStartPolicy {
     logger.info("!!! Domain Resource patched for managedRestart !!!");
 
     logger.info("Wait for standalone managed server ${0} to be restarted", configServerPodName);
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
     checkServiceExists(configServerPodName, domainNamespace);
+    checkPodReady(configServerPodName, domainUid, domainNamespace);
     logger.info("Managed Server restart success");
   }
 
   // This method is needed in this test class, since the cleanup util
-  // won't cleanup the images.
+  // won't clean up the images.
   @AfterAll
   void tearDown() {
     // Delete domain custom resource
