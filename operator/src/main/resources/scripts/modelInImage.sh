@@ -835,7 +835,7 @@ function wdtHandleOnlineUpdate() {
 
   echo ${admin_pwd} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} \
    -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
-   /tmp/diffed_model.yaml -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG}
+   /tmp/diffed_model.yaml -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG} ${archive_list}
 
   local ret=$?
 
