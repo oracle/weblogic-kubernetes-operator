@@ -14,9 +14,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -82,6 +84,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.APACHE_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -90,6 +94,10 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -104,6 +112,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.listJobs;
@@ -111,6 +123,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallApache;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
@@ -127,6 +140,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVer
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyApache;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
@@ -175,16 +189,14 @@ public class ItTwoDomainsLoadBalancers {
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
   private static Path dstFile = null;
-
-  // create standard, reusable retry/backoff policy
-  private static final ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(5, MINUTES).await();
+  private static HelmParams apacheHelmParams1 = null;
+  private static HelmParams apacheHelmParams2 = null;
+  private static String kindRepoApacheImage = APACHE_IMAGE;
 
   // domain constants
   private final String clusterName = "cluster-1";
   private final int replicaCount = 2;
+  private final String managedServerPort = "8001";
 
   private int t3ChannelPort = 0;
   private int replicasAfterScale;
@@ -244,6 +256,34 @@ public class ItTwoDomainsLoadBalancers {
       logger.info("Using image {0}", kindRepoImage);
       image = kindRepoImage;
       isUseSecret = false;
+
+      // The kind clusters can't pull Apache webtier image from OCIR using the image pull secret.
+      // Try the following instead:
+      //   1. docker login
+      //   2. docker pull
+      //   3. docker tag with the KIND_REPO value
+      //   4. docker push to KIND_REPO
+
+      ConditionFactory withStandardRetryPolicy
+          = with().pollDelay(0, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(30, MINUTES).await();
+
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for docker login to be successful"
+                      + "(elapsed time {0} ms, remaining time {1} ms)",
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
+
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for pullImageFromOcirAndPushToKind for image {0} to be successful"
+                      + "(elapsed time {1} ms, remaining time {2} ms)", APACHE_IMAGE,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(pullImageFromOcirAndPushToKind(APACHE_IMAGE));
     }
   }
 
@@ -274,8 +314,8 @@ public class ItTwoDomainsLoadBalancers {
     // restart domain1 and verify no impact on domain2
     restartDomain1AndVerifyNoImpactOnDomain2(replicasAfterScale, domain1Namespace, domain2Namespace);
 
-    // shutdown both domains and verify the pods were shutdown
-    shutdownBothDomainsAndVerify(domainNamespaces);
+    // shutdown domain2 and verify the pods were shutdown
+    shutdownDomainAndVerify(domain2Namespace, domain2Uid);
   }
 
   /**
@@ -332,12 +372,15 @@ public class ItTwoDomainsLoadBalancers {
         "Application archive is not available");
     clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
 
-    // deploy clusterview application
+    // deploy clusterview application in default namespace
     for (String domainUid : domainUids) {
       // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
       String adminServerPodName = domainUid + "-admin-server";
-      deployApplication(domainUid, adminServerPodName);
+      deployApplication(defaultNamespace, domainUid, adminServerPodName);
     }
+
+    // deploy clusterview application in domain1Namespace
+    deployApplication(domain1Namespace, domain1Uid, domain1Uid + "-admin-server");
 
     // create TLS secret for https traffic
     for (String domainUid : domainUids) {
@@ -348,6 +391,18 @@ public class ItTwoDomainsLoadBalancers {
     // create loadbalancing rules for Traefik
     createTraefikIngressRoutingRules();
     createVoyagerIngressRoutingRules();
+
+    // install and verify Apache
+    apacheHelmParams1 = assertDoesNotThrow(
+        () -> installAndVerifyApache(domain1Namespace, kindRepoApacheImage, 0, 0, domain1Uid));
+
+    LinkedHashMap<String, String> clusterNamePortMap = new LinkedHashMap<>();
+    for (int i = 0; i < numberOfDomains; i++) {
+      clusterNamePortMap.put(domainUids.get(i) + "-cluster-cluster-1", managedServerPort);
+    }
+    apacheHelmParams2 = assertDoesNotThrow(
+        () -> installAndVerifyApache(defaultNamespace, kindRepoApacheImage, 0, 0, domain1Uid,
+            PV_ROOT + "/" + this.getClass().getSimpleName(), "apache-sample-host", clusterNamePortMap));
   }
 
   /**
@@ -378,7 +433,8 @@ public class ItTwoDomainsLoadBalancers {
     // verify load balancing works when 2 domains are running in the same namespace
     logger.info("Verifying http traffic");
     for (String domainUid : domainUids) {
-      verifyClusterLoadbalancing(domainUid, "http", getTraefikLbNodePort(false));
+      verifyClusterLoadbalancing(domainUid, defaultNamespace, "http", getTraefikLbNodePort(false),
+          replicaCount, true, "");
     }
   }
 
@@ -394,7 +450,8 @@ public class ItTwoDomainsLoadBalancers {
 
     logger.info("Verifying https traffic");
     for (String domainUid : domainUids) {
-      verifyClusterLoadbalancing(domainUid, "https", getTraefikLbNodePort(true));
+      verifyClusterLoadbalancing(domainUid, defaultNamespace, "https", getTraefikLbNodePort(true),
+          replicaCount, true, "");
     }
   }
 
@@ -412,7 +469,52 @@ public class ItTwoDomainsLoadBalancers {
     logger.info("Verifying http traffic");
     for (String domainUid : domainUids) {
       String ingressName = domainUid + "-ingress-host-routing";
-      verifyClusterLoadbalancing(domainUid, "http", getVoyagerLbNodePort(ingressName));
+      verifyClusterLoadbalancing(domainUid, defaultNamespace, "http", getVoyagerLbNodePort(ingressName),
+          replicaCount, true, "");
+    }
+  }
+
+  /**
+   * Verify Apache load balancer default sample through HTTP channel.
+   * Configure the Apache webtier as a load balancer for a WebLogic domain using the default configuration.
+   * It only support HTTP protocol.
+   * For details, please see
+   * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/default-sample
+   */
+  @Order(8)
+  @Test
+  @DisplayName("verify Apache load balancer default sample through HTTP channel")
+  public void testApacheDefaultSample() {
+
+    // verify Apache default sample
+    logger.info("Verifying Apache default sample");
+    int httpNodePort = getApacheNodePort(domain1Namespace, "http");
+    verifyClusterLoadbalancing(domain1Uid, domain1Namespace, "http", httpNodePort, 3, false, "/weblogic");
+  }
+
+  /**
+   * Verify Apache load balancer custom sample through HTTP and HTTPS channel.
+   * Configure the Apache webtier as a load balancer for multiple WebLogic domains using a custom configuration.
+   * Create a custom Apache plugin configuration file named custom_mod_wl_apache.conf in a directory specified
+   * in helm chart parameter volumePath.
+   * For more details, please check:
+   * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/custom-sample
+   */
+  @Order(9)
+  @Test
+  @DisplayName("verify Apache load balancer custom sample through HTTP and HTTPS channel")
+  public void testApacheCustomSample() {
+
+    // verify Apache custom sample
+    logger.info("Verifying Apache custom sample");
+    for (int i = 1; i <= numberOfDomains; i++) {
+      int httpNodePort = getApacheNodePort(defaultNamespace, "http");
+      verifyClusterLoadbalancing(domainUids.get(i - 1), defaultNamespace, "http", httpNodePort, replicaCount,
+          false, "/weblogic" + i);
+
+      int httpsNodePort = getApacheNodePort(defaultNamespace, "https");
+      verifyClusterLoadbalancing(domainUids.get(i - 1), defaultNamespace, "https", httpsNodePort, replicaCount,
+          false, "/weblogic" + i);
     }
   }
 
@@ -434,6 +536,21 @@ public class ItTwoDomainsLoadBalancers {
       assertThat(uninstallVoyager(voyagerHelmParams))
           .as("Test uninstallVoyager returns true")
           .withFailMessage("uninstallVoyager() did not return true")
+          .isTrue();
+    }
+
+    // uninstall Apache
+    if (apacheHelmParams1 != null) {
+      assertThat(uninstallApache(apacheHelmParams1))
+          .as("Test whether uninstallApache in domain1Namespace returns true")
+          .withFailMessage("uninstallApache() in domain1Namespace did not return true")
+          .isTrue();
+    }
+
+    if (apacheHelmParams2 != null) {
+      assertThat(uninstallApache(apacheHelmParams2))
+          .as("Test whether uninstallApache in default namespace returns true")
+          .withFailMessage("uninstallApache() in default namespace did not return true")
           .isTrue();
     }
 
@@ -912,38 +1029,27 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Shutdown both domains and verify all the server pods were shutdown.
+   * Shutdown domain and verify all the server pods were shutdown.
    *
-   * @param domainNamespaces list of domain namespaces
+   * @param domainNamespace the namespace where the domain exists
+   * @param domainUid the uid of the domain to shutdown
    */
-  private void shutdownBothDomainsAndVerify(List<String> domainNamespaces) {
+  private void shutdownDomainAndVerify(String domainNamespace, String domainUid) {
 
-    // shutdown both domains
-    logger.info("Shutting down both domains");
-    for (int i = 0; i < numberOfDomains; i++) {
-      shutdownDomain(domainUids.get(i), domainNamespaces.get(i));
-    }
+    // shutdown domain
+    logger.info("Shutting down domain {0} in namespace {1}", domainUid, domainNamespace);
+    shutdownDomain(domainUid, domainNamespace);
 
     // verify all the pods were shutdown
-    logger.info("Verifying all server pods were shutdown for both domains");
-    for (int i = 0; i < numberOfDomains; i++) {
-      // check admin server pod was shutdown
-      checkPodDoesNotExist(domainUids.get(i) + "-" + ADMIN_SERVER_NAME_BASE,
-          domainUids.get(i), domainNamespaces.get(i));
+    logger.info("Verifying all server pods were shutdown for the domain");
+    // check admin server pod was shutdown
+    checkPodDoesNotExist(domainUid + "-" + ADMIN_SERVER_NAME_BASE,
+          domainUid, domainNamespace);
 
-      for (int j = 1; j <= replicaCount; j++) {
-        String managedServerPodName = domainUids.get(i) + "-" + MANAGED_SERVER_NAME_BASE + j;
-        checkPodDoesNotExist(managedServerPodName, domainUids.get(i), domainNamespaces.get(i));
-      }
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + i;
+      checkPodDoesNotExist(managedServerPodName, domainUid, domainNamespace);
     }
-
-    // check the scaled up managed servers in domain1 were shutdown
-    logger.info("Verifying the scaled up managed servers in domain1 were shutdown");
-    for (int i = replicaCount + 1; i <= replicasAfterScale; i++) {
-      String managedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
-      checkPodDoesNotExist(managedServerPodName, domain1Uid, domain1Namespace);
-    }
-
   }
 
   /**
@@ -1233,14 +1339,25 @@ public class ItTwoDomainsLoadBalancers {
     return ingressServiceNodePort;
   }
 
-  private static void deployApplication(String domainUid, String adminServerPodName) {
+  private static int getApacheNodePort(String namespace, String channelName) {
+    String apacheServiceName = APACHE_RELEASE_NAME + "-" + namespace.substring(3) + "-apache-webtier";
+
+    // get Apache service NodePort
+    int apacheNodePort = assertDoesNotThrow(() ->
+            getServiceNodePort(namespace, apacheServiceName, channelName),
+        "Getting Apache service NodePort failed");
+    logger.info("NodePort for {0} is: {1} :", apacheServiceName, apacheNodePort);
+    return apacheNodePort;
+  }
+
+  private static void deployApplication(String namespace, String domainUid, String adminServerPodName) {
     logger.info("Getting node port for admin server default channel");
     int serviceNodePort = assertDoesNotThrow(() ->
-            getServiceNodePort(defaultNamespace, adminServerPodName + "-external", "default"),
+            getServiceNodePort(namespace, adminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
 
-    logger.info("Deploying application {0} in domain {1} cluster target cluster-1",
-        clusterViewAppPath, domainUid);
+    logger.info("Deploying application {0} to domain {1} cluster target cluster-1 in namespace {2}",
+        clusterViewAppPath, domainUid, namespace);
     ExecResult result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(serviceNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
@@ -1291,15 +1408,42 @@ public class ItTwoDomainsLoadBalancers {
         "Getting web node port for Traefik loadbalancer failed");
   }
 
-  private void verifyClusterLoadbalancing(String domainUid, String protocol, int lbPort) {
+  /**
+   * Verify cluster load balancing with ClusterViewServlet app.
+   *
+   * @param domainUid uid of the domain in which the cluster exists
+   * @param namespace namespace in which the domain exists
+   * @param protocol protocol used to test, accepted value: http or https
+   * @param lbPort  load balancer service port
+   * @param replicaCount replica count of the managed servers in the cluster
+   * @param hostRouting whether it is a host base routing
+   * @param apacheLocationString location string in apache configuration
+   */
+  private void verifyClusterLoadbalancing(String domainUid,
+                                          String namespace,
+                                          String protocol,
+                                          int lbPort,
+                                          int replicaCount,
+                                          boolean hostRouting,
+                                          String apacheLocationString) {
 
-    //access application in managed servers through Traefik load balancer
+    // access application in managed servers through load balancer
     logger.info("Accessing the clusterview app through load balancer to verify all servers in cluster");
-    String curlRequest = String.format("curl --silent --show-error -ks --noproxy '*' "
-            + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
-            + "\"?user=" + ADMIN_USERNAME_DEFAULT
-            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
-        domainUid + "." + defaultNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort);
+    String curlRequest;
+    if (hostRouting) {
+      curlRequest = String.format("curl --silent --show-error -ks --noproxy '*' "
+              + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
+              + "\"?user=" + ADMIN_USERNAME_DEFAULT
+              + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
+          domainUid + "." + namespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort);
+    } else {
+      curlRequest = String.format("curl --silent --show-error -ks --noproxy '*' "
+              + "%s://%s:%s" + apacheLocationString + "/clusterview/ClusterViewServlet"
+              + "\"?user=" + ADMIN_USERNAME_DEFAULT
+              + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
+          protocol, K8S_NODEPORT_HOST, lbPort);
+    }
+
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
       managedServers.add(MANAGED_SERVER_NAME_BASE + i);
@@ -1308,34 +1452,25 @@ public class ItTwoDomainsLoadBalancers {
     // verify each managed server can see other member in the cluster
     verifyServerCommunication(curlRequest, managedServers);
 
-    boolean hostRouting = false;
-    //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
+    boolean containsCorrectDomainUid = false;
     logger.info("Verifying the requests are routed to correct domain and cluster");
-    String curlCmd = String.format("curl --silent --show-error -ks --noproxy '*' "
-            + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
-            + "\"?user=" + ADMIN_USERNAME_DEFAULT
-            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
-        domainUid + "." + defaultNamespace + "." + "cluster-1.test", protocol, K8S_NODEPORT_HOST, lbPort, domainUid);
-
-    // call the webapp and verify the bound domain name to determine
-    // the requests are sent to the correct cluster members.
     for (int i = 0; i < 10; i++) {
       ExecResult result;
       try {
-        logger.info(curlCmd);
-        result = ExecCommand.exec(curlCmd, true);
+        logger.info("executing curl command: {0}", curlRequest);
+        result = ExecCommand.exec(curlRequest, true);
         String response = result.stdout().trim();
         logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
             i, result.exitValue(), response, result.stderr());
         if (response.contains(domainUid)) {
-          hostRouting = true;
+          containsCorrectDomainUid = true;
           break;
         }
       } catch (IOException | InterruptedException ex) {
         // ignore
       }
     }
-    assertTrue(hostRouting, "Host routing is not working");
+    assertTrue(containsCorrectDomainUid, "The request was not routed to the correct domain");
   }
 
   /**
@@ -1378,5 +1513,14 @@ public class ItTwoDomainsLoadBalancers {
     }
 
     return adminAccessible;
+  }
+
+  private static Callable<Boolean> pullImageFromOcirAndPushToKind(String apacheImage) {
+    return (() -> {
+      kindRepoApacheImage = KIND_REPO + apacheImage.substring(REPO_DEFAULT.length());
+      logger.info("pulling image {0} from OCIR, tag it as image {1} and push to KIND repo",
+          apacheImage, kindRepoApacheImage);
+      return dockerPull(apacheImage) && dockerTag(apacheImage, kindRepoApacheImage) && dockerPush(kindRepoApacheImage);
+    });
   }
 }
