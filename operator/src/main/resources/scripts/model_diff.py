@@ -380,10 +380,10 @@ class ModelDiffer:
         else:
             return 0
 
-        if model.has_key('appDeployments'):
-            for thiskey in model['appDeployments']:
-                if not thiskey.startswith('!'):
-                    return 1
+        # if model.has_key('appDeployments'):
+        #     for thiskey in model['appDeployments']:
+        #         if not thiskey.startswith('!'):
+        #             return 1
 
         _TOPOLOGY = 'topology'
         _NAP = 'NetworkAccessPoint'
