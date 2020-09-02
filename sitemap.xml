@@ -533,6 +533,11 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/</loc>
+    <lastmod>2020-07-12T18:22:31-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/faq/oci-lb/</loc>
     <lastmod>2019-09-25T12:41:38-04:00</lastmod>
   </url>
