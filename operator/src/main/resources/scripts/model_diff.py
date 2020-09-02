@@ -21,6 +21,7 @@ FATAL_MODEL_CHANGES=2
 MODELS_SAME=3
 SECURITY_INFO_UPDATED=4
 RCU_PASSWORD_CHANGED=5
+NOT_FOR_ONLINE_UPDATE=6
 
 # The following class is borrowed directly from the WDT project's yaml_tranlator.py
 class PythonToYaml:
@@ -272,6 +273,40 @@ class ModelDiffer:
                 else:
                     dictionary[key] = new_value
 
+    def is_not_safe_for_online_update(self, model):
+        """
+        Is it a safe difference to do online update.
+        :param model: diffed model
+        return 1 for not safe
+            0 for safe
+        """
+        if os.environ.has_key('MII_USE_ONLINE_UPDATE'):
+            if "false" == os.environ['MII_USE_ONLINE_UPDATE']:
+                return 0
+        else:
+            return 0
+        # case to handle include deletion, redeploy...
+        #
+        if model.has_key('appDeployments'):
+            for thiskey in model['appDeployments']:
+                if not thiskey.startswith('!'):
+                    return 1
+
+        if self.in_forbidden_list(model):
+            return 1
+
+        #if len(all_added) > 0:
+        # rc = self._is_safe_addition(all_added)
+        # if rc != SAFE_ONLINE_UPDATE:
+        #     return rc
+        #
+        # rc = self._is_safe_addition(all_changes)
+        # if rc != SAFE_ONLINE_UPDATE:
+        #     return rc
+
+        return 0
+
+
     def is_safe_diff(self, model):
         """
         Is it a safe difference for update.
@@ -295,47 +330,10 @@ class ModelDiffer:
                 if rcu_db_info.has_key('rcu_db_conn_string') \
                     or rcu_db_info.has_key('rcu_prefix'):
                     changed_items.append(SECURITY_INFO_UPDATED)
+        if self.is_not_safe_for_online_update(model):
+            changed_items.append(NOT_FOR_ONLINE_UPDATE)
 
         return 0
-
-    def _is_safe_addition(self, items):
-        """
-        check the items in all_added to see if can be used for online update
-        return 0 false ;
-            1 true ;
-            2 for fatal
-        """
-        # allows add attribute to existing entity
-
-        found_in_past_dictionary = 1
-        has_topology=0
-        for itm in items:
-            if itm.find('topology.') == 0:
-                has_topology = 1
-
-            debug('DEBUG: is_safe_addition %s', itm)
-            found_in_past_dictionary = self._in_model(self.past_dict, itm)
-            debug('DBUEG: found_in_past_dictionary %s', found_in_past_dictionary)
-            if not found_in_past_dictionary:
-                break
-            else:
-                # check whether it is in the forbidden list
-                if self.in_forbidden_list(itm):
-                    print 'Found changes not supported for update: %s. Exiting' % (itm)
-                    return FATAL_MODEL_CHANGES
-
-
-        # if there is a shape change
-        # return 2 ?
-        if has_topology and not found_in_past_dictionary:
-            print 'Found changes not supported for update: %s. Exiting' % (itm)
-            return FATAL_MODEL_CHANGES
-
-        if found_in_past_dictionary:
-            return SAFE_ONLINE_UPDATE
-
-        # allow new additions for anything ??
-        return SAFE_ONLINE_UPDATE
 
     def _in_model(self, dictionary, keylist):
         """
@@ -370,11 +368,41 @@ class ModelDiffer:
 
         return 0
 
-    def in_forbidden_list(self, itm):
-        forbidden_list = [ '.ListenPort', '.ListenAddress' ]
-        for forbidden in forbidden_list:
-            if itm.endswith(forbidden):
-                return 1
+    def in_forbidden_list(self, model):
+        # forbidden_list = [ '.ListenPort', '.ListenAddress' ]
+        # for forbidden in forbidden_list:
+        #     if itm.endswith(forbidden):
+        #         return 1
+
+        if os.environ.has_key('MII_USE_ONLINE_UPDATE'):
+            if "false" == os.environ['MII_USE_ONLINE_UPDATE']:
+                return 0
+        else:
+            return 0
+
+        if model.has_key('appDeployments'):
+            for thiskey in model['appDeployments']:
+                if not thiskey.startswith('!'):
+                    return 1
+
+        _TOPOLOGY = 'topology'
+        _NAP = 'NetworkAccessPoint'
+        forbidden_network_attributes = [ 'ListenAddress', 'ListenPort' ]
+        if model.has_key(_TOPOLOGY):
+            for key in [ 'Server', 'ServerTemplate']:
+                if model[_TOPOLOGY].has_key[key]:
+                    temp = model[_TOPOLOGY][key]
+                    for server in temp:
+                        for not_this in forbidden_network_attributes:
+                            if server.has_key(not_this):
+                                return 1
+                        if server.has_key(_NAP):
+                            nap = server[_NAP]
+                            for n in nap:
+                                for not_this in forbidden_network_attributes:
+                                    if server.has_key(not_this):
+                                        return 1
+
         return 0
 
     def get_final_changed_model(self):

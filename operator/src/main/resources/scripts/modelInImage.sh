@@ -51,6 +51,7 @@ FATAL_MODEL_CHANGES=2
 MODELS_SAME=3
 SECURITY_INFO_UPDATED=4
 RCU_PASSWORD_CHANGED=5
+NOT_FOR_ONLINE_UPDATE=6
 
 SCRIPT_ERROR=255
 
@@ -584,9 +585,18 @@ function createPrimordialDomain() {
     rm ${DECRYPTED_MERGED_MODEL}
     trace "createPrimordialDomain: model diff returns "${diff_rc}
 
-
     local security_info_updated="false"
+    local cannot_perform_online_update="false"
     security_info_updated=$(contain_returncode ${diff_rc} ${SECURITY_INFO_UPDATED})
+    cannot_perform_online_update=$(contain_returncode ${diff_rc} ${NOT_FOR_ONLINE_UPDATE})
+
+    if [ ${cannot_perform_online_update} == "true" ] ; then
+      trace SEVERE "Domain resource specified online update, but model changes cannot use online update. The  " \
+      " followings are not supported: adding a new application deployments, changing ListenPort or ListenAddress."
+      trace SEVERE $(cat /tmp/diffed_model.json)
+      exitOrLoop
+    fi
+
     # recreate the domain if there is an unsafe security update such as admin password update or security roles
 
     # Always use the schema password in RCUDbInfo.  Since once the password is updated by the DBA.  The
@@ -595,7 +605,7 @@ function createPrimordialDomain() {
     # domain will fail since without this flag set, defaults is to use the RCU cached info. (aka. wlst
     # getDatabaseDefaults).
     #
-    if [ ${security_info_updated} == "true" ]; then
+    if [ ${security_info_updated} == "true" ] ; then
       recreate_domain=1
       if [ ${WDT_DOMAIN_TYPE} == "JRF" ] ; then
         UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
@@ -763,11 +773,13 @@ function wdtUpdateModelDomain() {
 function wdtHandleOnlineUpdate() {
 
   if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" -eq "${MII_USE_ONLINE_UPDATE}" ] \
-    || [ ! -f "/tmp/diffed_model.json" ]; then
+    || [ ! -f "/tmp/diffed_model.json" ] ; then
+    trace "Not using online update: no op"
     return
   fi
 
   if [ "$(cat /tmp/diffed_model.json)" == "{}" ] ; then
+    trace "No difference in the models"
     return
   fi
 
@@ -776,6 +788,36 @@ function wdtHandleOnlineUpdate() {
   # temporarily disable it
 
   stop_trap
+  # We need to extract all the archives, WDT online checks for file existence
+  # even for delete
+  #
+  mkdir -p ${DOMAIN_HOME}/lib || exitOrLoop
+  for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
+    do
+        # expand the archive domain libraries to the domain lib
+        cd ${DOMAIN_HOME}/lib || return exitOrLoop
+        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
+
+        if [ $? -ne 0 ] ; then
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domain libs ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          exitOrLoop
+        fi
+
+        # expand the archive apps and shared lib to the wlsdeploy/* directories
+        # the config.xml is referencing them from that path
+
+        cd ${DOMAIN_HOME} || exitOrLoop
+        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
+
+        if [ $? -ne 0 ] ; then
+          trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          exitOrLoop
+        fi
+
+
+    done
+
+
   # Save off the encrypted model
   cp ${DOMAIN_HOME}/wlsdeploy/domain_model.json /tmp/encrypted_merge_model.json
   local admin_user=$(cat /weblogic-operator/secrets/username)
@@ -788,6 +830,7 @@ function wdtHandleOnlineUpdate() {
   # no need for encryption phrase because the diffed model has real value
   # note: using yes seems to et a 141 return code, switch to echo seems to be ok
   # the problem is likely due to how wdt closing the input stream
+  #TODO remove this when ready
   cat /tmp/diffed_model.json
 
   echo ${admin_pwd} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} \
