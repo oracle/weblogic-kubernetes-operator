@@ -70,7 +70,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * This test class verifies the following scenerios.
+ * This test class verifies the following scenarios.
  *
  * <p>testAdminServerRestart
  *  Restart the Administration Server by changing serverStartPolicy 
@@ -242,14 +242,14 @@ class ItServerStartPolicy {
 
     // Check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managedserver pod {0} to be ready in namespace {1}",
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
     // Check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managedserver service {0} is created in namespace {1}",
+      logger.info("Check managed server service {0} is created in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
@@ -364,7 +364,7 @@ class ItServerStartPolicy {
     checkPodDeleted(configServerPodName, domainUid, domainNamespace);
     logger.info("Config cluster shutdown success");
 
-    // check managed server from other clusyter are not affected
+    // check managed server from other cluster are not affected
     logger.info("Check managed server pods are not affected");
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
