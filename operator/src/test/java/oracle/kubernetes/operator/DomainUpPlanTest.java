@@ -75,6 +75,7 @@ public class DomainUpPlanTest {
     mementos.add(InMemoryCertificates.install());
     mementos.add(TuningParametersStub.install());
 
+    testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
 
