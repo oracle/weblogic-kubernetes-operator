@@ -2454,6 +2454,13 @@ public class Kubernetes {
 
       ExecResult result = new ExecResult(proc.exitValue(), stdout, stderr);
       getLogger().fine("result from exec command: " + result);
+
+      if (result.exitValue() != 0) {
+        getLogger().info("result.exitValue={0}", result.exitValue());
+        getLogger().info("result.stdout={0}", result.stdout());
+        getLogger().info("result.stderr={0}", result.stderr());
+      }
+
       return result;
     } finally {
       if (proc != null) {
