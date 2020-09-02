@@ -93,7 +93,14 @@ public interface TestConstants {
   public static final String VOYAGER_CHART_NAME = "voyager";
   public static final String VOYAGER_CHART_VERSION = "12.0.0";
 
-  // ELK Stack and WebLogic Logging Exporter constants
+  // Apache constants
+  public static final String APACHE_IMAGE_NAME = "phx.ocir.io/weblogick8s/oracle/apache";
+  public static final String APACHE_IMAGE_VERSION = "12.2.1.3";
+  public static final String APACHE_IMAGE = APACHE_IMAGE_NAME + ":" + APACHE_IMAGE_VERSION;
+  public static final String APACHE_RELEASE_NAME = "apache-release" + BUILD_ID;
+  public static final String APACHE_SAMPLE_CHART_DIR = "../kubernetes/samples/charts/apache-webtier";
+
+  // ELK Stack and WebLogic logging exporter constants
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
   public static final String ELK_STACK_VERSION = "7.8.1";
   public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_NAME + ":" + ELK_STACK_VERSION;
