@@ -132,7 +132,7 @@ public class ItSystemResOverrides {
    * Assigns unique namespaces for operator and domains.
    * Pulls WebLogic image if running tests in Kind cluster.
    * Installs operator.
-   * Creates and starts WebLogic domain containing 2 instances in dynamic cluster.
+   * Creates and starts a WebLogic domain with a dynamic cluster containing 2 managed server instances.
    * Creates JMS and WLDF system resources.
    * Deploys sitconfig application to cluster and admin targets.
    *
@@ -180,10 +180,13 @@ public class ItSystemResOverrides {
    * Test JMS and WLDF system resources configurations are overridden dynamically when domain resource
    * is updated with overridesConfigMap property. After the override verifies the system resources properties
    * are overridden as per the values set.
+   * 1. Creates a config override map containing JMS and WLDF override files
+   * 2. Patches the domain with new configmap override and introspect version
+   * 3. Verifies the introspector is run and resource config is updated
    */
   @Test
   @DisplayName("Test JMS and WLDF system resources override")
-  public void testSystemResourceOverride() {
+  public void testJmsWldfSystemResourceOverride() {
 
     //store the pod creation timestamps
     storePodCreationTimestamps();
