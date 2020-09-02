@@ -1,0 +1,87 @@
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+# The version of this inputs file. Do not modify.
+version: create-domain-on-aks-inputs-v1
+
+#
+# Parameters that must be changed from these values!
+#
+
+# The service principal is used to login to azure and create an azure kubernetes cluster.
+# If you don't have a service principal, please follow README.md
+# Application id of the service principal.
+azureServicePrincipalAppId: azure-service-principal-app-id
+
+# A client secret of the service principal.
+azureServicePrincipalClientSecret: azure-service-principal-client-secret
+
+# Tenant (Directory) id of the service principal.
+azureServicePrincipalTenantId: azure-service-principal-tenant-id
+
+# Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image
+dockerEmail: docker-email
+
+# Password for Oracle SSO account password, used to pull the WebLogic Server Docker image
+dockerPassword: docker-password
+
+# The same value as dockerEmail
+dockerUserName: docker-user-name
+
+# Specify where to create azure resource.
+azureLocation: eastus
+
+# Specify a prefix to name resources, only allow lowercase letters and numbers, between 1 and 7 characters.
+# Resource group is named with ${namePrefix}resourcegroup<timestamp>, e.g. wlsresourcegroup1592469388
+# Kubernetes cluster is named with ${namePrefix}akscluster<timestamp>, e.g. wlsakscluster1592469388
+# Storage account is named with ${namePrefix}storage<timestamp>, e.g. wlsstorage1592469388
+namePrefix: wls
+
+#
+# Parameters that may optionally be changed.
+#
+
+# The suffix of file share secret name, the complete value is ${namePrefix}${azureFileShareSecretNameSuffix}.
+azureFileShareSecretNameSuffix: azure-secret
+
+# Number of azure kubernetes nodes, used to create azure kubernetes cluster.
+azureKubernetesNodeCount: 2
+
+# VM size of azure kubernetes node.
+azureKubernetesNodeVMSize: Standard_DS2_v2
+
+# The suffix of azure kubernetes node pool name, the azure kubernetes node pool name will be${azureKubernetesNodepoolNamePrefix} ${namePrefix}.
+azureKubernetesNodepoolNamePrefix: pool1
+
+# SKU of azure storage account, used to create storage account.
+azureStorageAccountSku: Standard_LRS
+
+# Name of Azure Storage Class. We will use initial StorageClasses azurefile.
+# If you want to create new class, follow the document: https://docs.microsoft.com/en-us/azure/aks/azure-files-dynamic-pv#create-a-storage-class.
+# Go to this page for more details:  https://docs.microsoft.com/en-us/azure/aks/concepts-storage#storage-classes
+azureStorageClassName: azurefile
+
+# The suffix of azure storage file share name, the complete value is ${namePrefix}-${azureStorageShareNameSuffix}-<timestamp>, used to create file share, and mount file share. 
+azureStorageShareNameSuffix: weblogic
+
+# The suffix of the Kubernetes secret name, the complete value is ${namePrefix}${imagePullSecretNameSuffix}. The secret name is used to access the Docker Store to pull the WebLogic Server Docker image
+# Used to create kubenetes secret for docker hub account.
+# Parameter "imagePullSecretName" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
+imagePullSecretNameSuffix: regcred
+
+# The suffix of the persistent volume claim name, the complete value is ${namePrefix}-${persistentVolumeClaimNameSuffix}-<timestamp>.
+# Parameter "persistentVolumeClaimName" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
+persistentVolumeClaimNameSuffix: azurefile
+
+# Password for weblogic account.
+weblogicAccountPassword: welcome1
+
+# WebLogic Server Docker image.
+# Parameter "image" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
+weblogicDockerImage: container-registry.oracle.com/middleware/weblogic:12.2.1.3
+
+# Name of weblogic user.
+weblogicUserName: weblogic
+
+
+
