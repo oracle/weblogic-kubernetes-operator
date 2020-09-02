@@ -1108,8 +1108,8 @@ public class CommonTestUtils {
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-            .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
-            .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
+            .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
+            .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
             .contains(ingressName);
 
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
@@ -1167,8 +1167,8 @@ public class CommonTestUtils {
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-            .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
-            .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
+            .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
+            .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
             .contains(ingressName);
 
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
@@ -1235,8 +1235,8 @@ public class CommonTestUtils {
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-        .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
-        .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
+        .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
+        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
         .contains(ingressName);
 
     // get ingress service Nodeport
@@ -2022,27 +2022,27 @@ public class CommonTestUtils {
     if (withRestApi) {
       assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApi(domainUid, clusterName,
           replicasAfterScale, externalRestHttpsPort, opNamespace, opServiceAccount)))
-          .as("Verify scaling cluster {0} of domain {1} in namespace {2} with REST API succeeds",
-              clusterName, domainUid, domainNamespace)
-          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} with REST API failed",
-              clusterName, domainUid, domainNamespace)
+          .as(String.format("Verify scaling cluster %s of domain %s in namespace %s with REST API succeeds",
+              clusterName, domainUid, domainNamespace))
+          .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s with REST API failed",
+              clusterName, domainUid, domainNamespace))
           .isTrue();
     } else if (withWLDF) {
       // scale the cluster using WLDF policy
       assertThat(assertDoesNotThrow(() -> scaleClusterWithWLDF(clusterName, domainUid, domainNamespace,
           domainHomeLocation, scalingAction, scalingSize, opNamespace, opServiceAccount, myWebAppName,
           curlCmdForWLDFApp)))
-          .as("Verify scaling cluster {0} of domain {1} in namespace {2} with WLDF policy succeeds",
-              clusterName, domainUid, domainNamespace)
-          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} with WLDF policy failed",
-              clusterName, domainUid, domainNamespace)
+          .as(String.format("Verify scaling cluster %s of domain %s in namespace %s with WLDF policy succeeds",
+              clusterName, domainUid, domainNamespace))
+          .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s with WLDF policy failed",
+              clusterName, domainUid, domainNamespace))
           .isTrue();
     } else {
       assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, replicasAfterScale)))
-          .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
-              clusterName, domainUid, domainNamespace)
-          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} failed",
-              clusterName, domainUid, domainNamespace)
+          .as(String.format("Verify scaling cluster %s of domain %s in namespace %s succeeds",
+              clusterName, domainUid, domainNamespace))
+          .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s failed",
+              clusterName, domainUid, domainNamespace))
           .isTrue();
     }
 
