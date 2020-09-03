@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 
@@ -17,8 +18,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
-import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -39,15 +39,11 @@ import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.hamcrest.junit.MatcherAssert;
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ServerDownIteratorStepTest {
@@ -55,12 +51,9 @@ public class ServerDownIteratorStepTest {
   protected static final String DOMAIN_NAME = "domain1";
   private static final String NS = "namespace";
   private static final String UID = "uid1";
-  protected static final String KUBERNETES_UID = "12345";
   private static final String ADMIN = "asName";
   private static final String CLUSTER = "cluster1";
-  private static final boolean INCLUDE_SERVER_OUT_IN_POD_LOG = true;
-  private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
-  private static final String LATEST_IMAGE = "image:latest";
+  private static final String CLUSTER2 = "cluster2";
   private static final String MS_PREFIX = "ms";
   private static final String MS1 = MS_PREFIX + "1";
   private static final String MS2 = MS_PREFIX + "2";
@@ -77,7 +70,7 @@ public class ServerDownIteratorStepTest {
     return MS_PREFIX + n;
   }
 
-  private final Domain domain = createDomain();
+  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
 
@@ -86,6 +79,7 @@ public class ServerDownIteratorStepTest {
   private final List<Memento> mementos = new ArrayList<>();
   private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfoWithServers();
   private final WlsDomainConfig domainConfig = createDomainConfig();
+  private List<ServerShutdownInfo> serverShutdownInfos;
 
   private static WlsDomainConfig createDomainConfig() {
     WlsClusterConfig clusterConfig = new WlsClusterConfig(CLUSTER);
@@ -102,22 +96,6 @@ public class ServerDownIteratorStepTest {
     addServer(dpi, ADMIN);
     Arrays.asList(serverNames).forEach(serverName -> addServer(dpi, serverName));
     return dpi;
-  }
-
-  private Domain createDomain() {
-    return new Domain()
-            .withApiVersion(KubernetesConstants.DOMAIN_VERSION)
-            .withKind(KubernetesConstants.DOMAIN)
-            .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME).uid(KUBERNETES_UID))
-            .withSpec(createDomainSpec());
-  }
-
-  private DomainSpec createDomainSpec() {
-    return new DomainSpec()
-            .withDomainUid(UID)
-            .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
-            .withIncludeServerOutInPodLog(INCLUDE_SERVER_OUT_IN_POD_LOG)
-            .withImage(LATEST_IMAGE);
   }
 
   private static void addServer(DomainPresenceInfo domainPresenceInfo, String serverName) {
@@ -163,7 +141,6 @@ public class ServerDownIteratorStepTest {
             ProcessingConstants.PODWATCHER_COMPONENT_NAME,
             PodAwaiterStepFactory.class,
             new PodHelperTestBase.DelayedPodAwaiterStepFactory(1));
-
   }
 
   /**
@@ -184,17 +161,15 @@ public class ServerDownIteratorStepTest {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(1).withReplicas(1);
     addWlsCluster(CLUSTER, 8001, MS1, MS2);
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
-    testSupport
-            .addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
-    invokeStepWithServerShutdownInfos(createServerShutdownInfosForCluster(CLUSTER,MS1, MS2));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS2), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS1), is(Boolean.FALSE));
+    createShutdownInfos()
+            .forClusteredServers(CLUSTER,MS1, MS2)
+            .shutdown();
+
+    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS2));
     testSupport.setTime(10, TimeUnit.SECONDS);
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS1), is(Boolean.TRUE));
+    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS1, MS2));
   }
 
   @Test
@@ -202,73 +177,57 @@ public class ServerDownIteratorStepTest {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(2).withReplicas(1);
     addWlsCluster(CLUSTER, PORT, MS1, MS2);
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
-    testSupport
-            .addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
-    invokeStepWithServerShutdownInfos(createServerShutdownInfosForCluster(CLUSTER,MS1, MS2));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS2), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS1), is(Boolean.TRUE));
+    createShutdownInfos()
+            .forClusteredServers(CLUSTER,MS1, MS2)
+            .shutdown();
+
+    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS1, MS2));
   }
 
   @Test
   public void withConcurrencyOf0_clusteredServersShutdownConcurrently() {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(0);
     addWlsCluster(CLUSTER, PORT, MS1, MS2);
-
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
-    testSupport
-            .addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
-    invokeStepWithServerShutdownInfos(createServerShutdownInfosForCluster(CLUSTER,MS1, MS2));
+    createShutdownInfos()
+            .forClusteredServers(CLUSTER,MS1, MS2)
+            .shutdown();
 
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS2), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS1), is(Boolean.TRUE));
+    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS1, MS2));
   }
 
   @Test
   public void withReplicaCountOf0AndConcurrencyOf1_clusteredServersShutdownConcurrently() {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(1).withReplicas(0);
     addWlsCluster(CLUSTER, PORT, MS1, MS2);
-
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
-    testSupport
-            .addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
-    invokeStepWithServerShutdownInfos(createServerShutdownInfosForCluster(CLUSTER,MS1, MS2));
+    createShutdownInfos()
+            .forClusteredServers(CLUSTER,MS1, MS2)
+            .shutdown();
 
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS2), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS1), is(Boolean.TRUE));
+    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS1, MS2));
   }
 
   @Test
-  public void withConcurrencyOf2AndReplicaCount1_3clusteredServersShutdownIn2Threads() {
+  public void withConcurrencyOf2AndReplicaCount1_3rdClusteredServerIsShutdownAfterPreviousPodTerminated() {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(2).withReplicas(1);
     addWlsCluster(CLUSTER, PORT, MS1, MS2, MS3, MS4);
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2,MS3,MS4);
-    testSupport
-            .addDomainPresenceInfo(domainPresenceInfo);
-    assertThat(MS2 + " pod", domainPresenceInfo.getServerPod(MS2), notNullValue());
+    testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
-    invokeStepWithServerShutdownInfos(createServerShutdownInfosForCluster(CLUSTER, MS1, MS2, MS3, MS4));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS4), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS3), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS2), is(Boolean.FALSE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS1), is(Boolean.FALSE));
+    createShutdownInfos()
+            .forClusteredServers(CLUSTER,MS1, MS2, MS3, MS4)
+            .shutdown();
+
+    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS3, MS4));
     testSupport.setTime(10, TimeUnit.SECONDS);
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS2), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS1), is(Boolean.FALSE));
+    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS2, MS3, MS4));
   }
 
   @Test
@@ -276,92 +235,78 @@ public class ServerDownIteratorStepTest {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(2).withReplicas(0);
     addWlsCluster(CLUSTER, PORT, MS1, MS2, MS3, MS4);
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2,MS3,MS4);
-    testSupport
-            .addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
-    invokeStepWithServerShutdownInfos(createServerShutdownInfosForCluster(CLUSTER, MS1, MS2, MS3, MS4));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS4), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS3), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS1), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS2), is(Boolean.TRUE));
+    createShutdownInfos()
+            .forClusteredServers(CLUSTER,MS1, MS2, MS3, MS4)
+            .shutdown();
+
+    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS1, MS2, MS3, MS4));
   }
 
   @Test
   public void withMultipleClusters_differentClusterScheduleAndShutdownDifferently() {
-    final String CLUSTER2 = "cluster2";
-
     configureCluster(CLUSTER).withMaxConcurrentShutdown(0).withReplicas(1);
     configureCluster(CLUSTER2).withMaxConcurrentShutdown(1).withReplicas(1);
-
     addWlsCluster(CLUSTER, PORT, MS1, MS2);
     addWlsCluster(CLUSTER2, PORT, MS3, MS4);
-
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2,MS3,MS4);
-    testSupport
-            .addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
-    List<ServerShutdownInfo> serverShutdownInfos =
-            createServerShutdownInfosForCluster(CLUSTER, MS1, MS2);
-    serverShutdownInfos.addAll(createServerShutdownInfosForCluster(CLUSTER2, MS3, MS4));
-    invokeStepWithServerShutdownInfos(serverShutdownInfos);
+    createShutdownInfos()
+            .forClusteredServers(CLUSTER,MS1, MS2)
+            .forClusteredServers(CLUSTER2, MS3, MS4)
+            .shutdown();
 
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS2), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS1), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS4), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS3), is(Boolean.FALSE));
+    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS1, MS2, MS4));
   }
 
   @Test
   public void maxClusterConcurrentShutdown_doesNotApplyToNonClusteredServers() {
     domain.getSpec().setMaxClusterConcurrentShutdown(1);
-
     addWlsServers(MS3, MS4);
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS3,MS4);
-    testSupport
-            .addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
-    invokeStepWithServerShutdownInfos(createServerShutdownInfos(MS3, MS4));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS4), is(Boolean.TRUE));
-    MatcherAssert.assertThat(
-            domainPresenceInfo.isServerPodBeingDeleted(MS3), is(Boolean.TRUE));
+    createShutdownInfos()
+            .forServers(MS3, MS4)
+            .shutdown();
+
+    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS3, MS4));
   }
 
-  @NotNull
-  private List<ServerShutdownInfo> createServerShutdownInfosForCluster(String clusterName, String... servers) {
-    List<ServerShutdownInfo> serverShutdownInfos = new ArrayList<>();
-    Arrays.stream(servers).forEach(server ->
-            serverShutdownInfos.add(
-                    new ServerShutdownInfo(configSupport.getWlsServer(clusterName, server).getName(),
-                            clusterName)
-            )
-    );
-    return serverShutdownInfos;
+  private List<String> serverPodsBeingDeleted() {
+    return domainPresenceInfo.getServerNames().stream()
+            .filter(s -> domainPresenceInfo.isServerPodBeingDeleted(s)).collect(Collectors.toList());
   }
 
-  @NotNull
-  private List<ServerShutdownInfo> createServerShutdownInfos(String... servers) {
-    List<ServerShutdownInfo> serverShutdownInfos = new ArrayList<>();
-    Arrays.stream(servers).forEach(server ->
-            serverShutdownInfos.add(
-                    new ServerShutdownInfo(configSupport.getWlsServer(server).getName(), null)
-
-            )
-    );
-    return serverShutdownInfos;
+  private ServerDownIteratorStepTest createShutdownInfos() {
+    this.serverShutdownInfos = new ArrayList<>();
+    return this;
   }
 
-  private void invokeStepWithServerShutdownInfos(List<ServerShutdownInfo> shutdownInfo) {
-    ServerDownIteratorStep step = new ServerDownIteratorStep(shutdownInfo, nextStep);
-    testSupport.runSteps(step);
+  private ServerDownIteratorStepTest forServers(String... servers) {
+    this.serverShutdownInfos.addAll(Arrays.stream(servers).map(this::createShutdownInfo).collect(Collectors.toList()));
+    return this;
+  }
+
+  private ServerDownIteratorStepTest forClusteredServers(String clusterName, String... servers) {
+    this.serverShutdownInfos.addAll(Arrays.stream(servers).map(s -> createShutdownInfo(clusterName, s))
+            .collect(Collectors.toList()));
+    return this;
+  }
+
+  private void shutdown() {
+    testSupport.runSteps(new ServerDownIteratorStep(this.serverShutdownInfos, nextStep));
+  }
+
+  private ServerShutdownInfo createShutdownInfo(String clusterName, String serverName) {
+    return new ServerShutdownInfo(configSupport.getWlsServer(clusterName, serverName).getName(), clusterName);
+  }
+
+  @Nonnull
+  private ServerShutdownInfo createShutdownInfo(String server) {
+    return new ServerShutdownInfo(configSupport.getWlsServer(server).getName(), null);
   }
 
   private ClusterConfigurator configureCluster(String clusterName) {

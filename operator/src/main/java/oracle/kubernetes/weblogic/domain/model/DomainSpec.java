@@ -210,9 +210,10 @@ public class DomainSpec extends BaseConfiguration {
   private Integer maxClusterConcurrentStartup;
 
   @Description(
-          "The maximum number of cluster member Managed Server instances that the operator will shutdown in parallel "
-                  + "for a given cluster, if `maxConcurrentShutdown` is not specified for a specific cluster under the "
-                  + "`clusters` field. A value of 0 means there is no configured limit. Defaults to 1."
+          "The default maximum WebLogic Server instances that a cluster will shutdown in parallel when it is being "
+                  + "partially shutdown by lowering its replica count. You can override this default on a per cluster "
+                  + "basis by setting the cluster's `maxConcurrentShutdown` attribute. A value of 0 means there is "
+                  + "no limit. Defaults to 1"
   )
   @Range(minimum = 0)
   private Integer maxClusterConcurrentShutdown;

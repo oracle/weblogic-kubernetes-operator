@@ -230,6 +230,7 @@ public class CallBuilder {
                   null,
                   callback));
   private String fieldSelector;
+  private RetryStrategy retryStrategy;
 
   /* Version */
   private String labelSelector;
@@ -513,6 +514,11 @@ public class CallBuilder {
 
   public CallBuilder withFieldSelector(String fieldSelector) {
     this.fieldSelector = fieldSelector;
+    return this;
+  }
+
+  public CallBuilder withRetryStrategy(RetryStrategy retryStrategy) {
+    this.retryStrategy = retryStrategy;
     return this;
   }
 
@@ -1181,29 +1187,7 @@ public class CallBuilder {
       V1DeleteOptions deleteOptions,
       ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid), deletePod);
-  }
-
-  /**
-   * Asynchronous step for deleting pod with custom retry strategy.
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @param domainUid Identifier of the domain that the pod is associated with
-   * @param deleteOptions Delete options
-   * @param responseStep Response step for when call completes
-   * @param retryStrategy Custom retry strategy for async pod delete                    !
-   * @return Asynchronous step
-   */
-  public Step deletePodAsyncWithRetryStrategy(
-          String name,
-          String namespace,
-          String domainUid,
-          V1DeleteOptions deleteOptions,
-          ResponseStep<V1Status> responseStep,
-          RetryStrategy retryStrategy) {
-    return createRequestAsync(
-            responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid),
+        responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid),
             deletePod, retryStrategy);
   }
 

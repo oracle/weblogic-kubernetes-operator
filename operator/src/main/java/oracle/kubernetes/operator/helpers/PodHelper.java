@@ -605,9 +605,8 @@ public class PodHelper {
 
       V1DeleteOptions deleteOptions = new V1DeleteOptions().gracePeriodSeconds(gracePeriodSeconds);
       DeletePodRetryStrategy retryStrategy = new DeletePodRetryStrategy(next);
-      return new CallBuilder()
-          .deletePodAsyncWithRetryStrategy(
-              name, namespace, domainUid, deleteOptions, new DefaultResponseStep<>(conflictStep, next), retryStrategy);
+      return new CallBuilder().withRetryStrategy(retryStrategy)
+              .deletePodAsync(name, namespace, domainUid, deleteOptions, new DefaultResponseStep<>(conflictStep, next));
     }
   }
 

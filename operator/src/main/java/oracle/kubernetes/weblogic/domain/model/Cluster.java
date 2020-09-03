@@ -89,11 +89,10 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   private Integer maxConcurrentStartup;
 
   @Description(
-          "The maximum number of Managed Servers instances that the operator will shutdown in parallel "
-                  + "for this cluster in response to a change in the `replicas` count. "
-                  + "If more Managed Server instances must be shutdown, the operator will wait until a Managed "
-                  + "Server Pod is terminated before shutting down the next Managed Server instance. "
-                  + "A value of 0 means all Managed Server instances will shutdown in parallel. Defaults to 1."
+          "The maximum WebLogic Server instances that will shutdown in parallel "
+                  + "for this cluster when it is being partially shutdown by lowering its replica count."
+                  + "A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown` "
+                  + "(which in turn defaults to 1)."
   )
   @Range(minimum = 0)
   private Integer maxConcurrentShutdown;
