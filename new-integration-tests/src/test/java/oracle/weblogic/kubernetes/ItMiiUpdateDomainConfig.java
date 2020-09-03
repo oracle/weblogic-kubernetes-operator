@@ -287,7 +287,7 @@ class ItMiiUpdateDomainConfig {
   public void testServerLogsAreOnPV() {
 
     // check server logs are written on PV
-    String command = "ls /shared/logs/" + domainUid + "/" + adminServerName + ".log";
+    String command = "ls /shared/logs/" + adminServerName + ".log";
     logger.info("Checking server logs are written on PV by running the command {0} on pod {1}, namespace {2}",
         command, adminServerPodName, domainNamespace);
     V1Pod adminPod = assertDoesNotThrow(() ->
