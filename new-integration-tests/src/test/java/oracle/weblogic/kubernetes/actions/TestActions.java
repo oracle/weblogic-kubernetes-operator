@@ -26,6 +26,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.weblogic.domain.DomainList;
+import oracle.weblogic.kubernetes.actions.impl.Apache;
+import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
 import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRole;
@@ -385,6 +387,16 @@ public class TestActions {
     return Traefik.install(params);
   }
 
+  /**
+   * Install Apache ingress controller.
+   *
+   * @param params the parameters to Helm install command, such as release name, namespace, repo url,
+   *               repo name and chart name
+   * @return true on success, false otherwise
+   */
+  public static boolean installApache(ApacheParams params) {
+    return Apache.install(params);
+  }
 
   /**
    * Upgrade NGINX release.
@@ -404,6 +416,16 @@ public class TestActions {
    */
   public static boolean upgradeVoyager(VoyagerParams params) {
     return Voyager.upgrade(params);
+  }
+
+  /**
+   * Upgrade Apache release.
+   *
+   * @param params the parameters to Helm upgrade command, such as release name and http/https nodeport
+   * @return true on success, false otherwise
+   */
+  public static boolean upgradeApache(ApacheParams params) {
+    return Apache.upgrade(params);
   }
 
   /**
@@ -434,6 +456,16 @@ public class TestActions {
    */
   public static boolean uninstallVoyager(HelmParams params) {
     return Voyager.uninstall(params);
+  }
+
+  /**
+   * Uninstall the Apache release.
+   *
+   * @param params the parameters to Helm uninstall command, such as release name and namespace
+   * @return true on success, false otherwise
+   */
+  public static boolean uninstallApache(HelmParams params) {
+    return Apache.uninstall(params);
   }
 
   /**
@@ -1361,6 +1393,22 @@ public class TestActions {
     return LoggingExporter.verifyLoggingExporterReady(namespace, labelSelector, index);
   }
 
+  // --------------------------- WebLogic Logging Exporter---------------------------------
+  /**
+   * Install WebLogic Logging Exporter.
+   *
+   * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
+   * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
+   * @param wlsLoggingExporterArchiveLoc the directory where WebLogic Logging Exporter jar files store
+   * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
+   */
+  public static boolean installWlsLoggingExporter(String filter,
+                                                  String wlsLoggingExporterYamlFileLoc,
+                                                  String wlsLoggingExporterArchiveLoc) {
+    return LoggingExporter.installWlsLoggingExporter(filter,
+        wlsLoggingExporterYamlFileLoc, wlsLoggingExporterArchiveLoc);
+  }
+
   /**
    * Patch the domain resource with a new restartVersion.
    *
@@ -1405,5 +1453,14 @@ public class TestActions {
    */
   public static String getOperatorPodName(String release, String namespace) throws ApiException {
     return Kubernetes.getOperatorPodName(release, namespace);
+  }
+
+  /**
+   * Append the helmValues to the given string buffer.
+   * @param helmValues hash map with key, value pairs
+   * @return string with chart helmValues
+   */
+  public static String helmValuesToString(Map<String, Object> helmValues) {
+    return Helm.valuesToString(helmValues);
   }
 }
