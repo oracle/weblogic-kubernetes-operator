@@ -102,7 +102,7 @@ class ItPodsShutdownOption {
    * This test is to verify different shutdown options specified at different scopes in Domain Resource Definition.
    * Refer to section "Shutdown options" of Documentation link:
    * https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/
-   * step 1: Startup a WebLogic domain with one cluster that initially has one running managed server. The shutdown  
+   * step 1: Startup a WebLogic domain with one cluster that initially has one running managed server. The shutdown
    * option is configured as follows:
    * domain: SHUTDOWN_TYPE -> Graceful.
    * adminServer: SHUTDOWN_TYPE -> Forced.
@@ -137,6 +137,11 @@ class ItPodsShutdownOption {
     assertTrue(verifyServerShutdownProp(adminServerPodName, domainNamespace, "Graceful", "40", "false"));
     assertTrue(verifyServerShutdownProp(managedServerPrefix + 1, domainNamespace, "Graceful", "100", "true"));
     assertTrue(verifyServerShutdownProp(managedServerPrefix + 2, domainNamespace, "Graceful", "30", "true"));
+    try {
+      TimeUnit.MINUTES.sleep(30);
+    } catch (InterruptedException ex) {
+      //
+    }
   }
 
   /**
@@ -194,22 +199,28 @@ class ItPodsShutdownOption {
                     .value("Graceful")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
-                .serverPod(new ServerPod().shutdown(new Shutdown().shutdownType("Forced")))
-                .serverPod(new ServerPod().shutdown(new Shutdown().ignoreSessions(true)))
-                .serverPod(new ServerPod().shutdown(new Shutdown().timeoutSeconds(40L))))
+                .serverPod(new ServerPod()
+                    .shutdown(new Shutdown()
+                        .shutdownType("Forced")
+                        .ignoreSessions(Boolean.TRUE)
+                        .timeoutSeconds(40L))))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING")
-                .serverPod(new ServerPod().shutdown(new Shutdown().timeoutSeconds(80L)))
-                .serverPod(new ServerPod().shutdown(new Shutdown().ignoreSessions(true))))
+                .serverPod(new ServerPod()
+                    .shutdown(new Shutdown()
+                        .timeoutSeconds(80L)
+                        .ignoreSessions(Boolean.TRUE))))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName)))
             .addManagedServersItem(new ManagedServer()
                 .serverName(managedServer1Name)
-                .serverPod(new ServerPod().shutdown(new Shutdown().timeoutSeconds(100L)))));
+                .serverPod(new ServerPod()
+                    .shutdown(new Shutdown()
+                        .timeoutSeconds(100L)))));
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
