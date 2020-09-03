@@ -59,7 +59,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -123,7 +122,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * This test class verifies the following scenerios
+ * This test class verifies the following scenarios
+ *
+ * <p>testServerLogsAreOnPV
+ * domain logHome is on PV, check server logs are on PV
  *
  * <p>testMiiCheckSystemResources
  *  Check the System Resources in a pre-configured ConfigMap
@@ -152,7 +154,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test add SystemResources, Clusters to model in image domain")
+@DisplayName("Test logHome on PV, add SystemResources, Clusters to model in image domain")
 @IntegrationTest
 class ItMiiUpdateDomainConfig {
 
@@ -285,6 +287,31 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
+   * Check server logs are written on PV.
+   */
+  @Test
+  @Order(1)
+  @DisplayName("Check the server logs are written on PV")
+  public void testServerLogsAreOnPV() {
+
+    // check server logs are written on PV
+    String command = "ls /shared/logs/" + domainUid + "/" + adminServerName + ".log";
+    logger.info("Checking server logs are written on PV by running the command {0} on pod {1}, namespace {2}",
+        command, adminServerPodName, domainNamespace);
+    V1Pod adminPod = assertDoesNotThrow(() ->
+            Kubernetes.getPod(domainNamespace, null, adminServerPodName),
+        "Could not get the admin pod in namespace " + domainNamespace);
+    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
+        "/bin/sh", "-c", command),
+        String.format("Could not execute the command %s in pod %s, namespace %s",
+            command, adminServerPodName, domainNamespace));
+    assertTrue(result.exitValue() == 0,
+        String.format("Couldn't access the server log on PV, exitvalue is %s, stderr is %s, stdout is %s",
+            result.exitValue(), result.stderr(), result.stdout()));
+
+  }
+
+  /**
    * Create a WebLogic domain with a defined configmap in configuration/model 
    * section of the domain resource.
    * The configmap has multiple sparse WDT model files that define 
@@ -293,7 +320,7 @@ class ItMiiUpdateDomainConfig {
    * using the public nodeport of the administration server.
    */
   @Test
-  @Order(1)
+  @Order(2)
   @DisplayName("Verify the pre-configured SystemResources in a model-in-image domain")
   public void testMiiCheckSystemResources() {
 
@@ -330,7 +357,7 @@ class ItMiiUpdateDomainConfig {
    * Verify SystemResources are deleted from the domain.
    */
   @Test
-  @Order(2)
+  @Order(3)
   @DisplayName("Delete SystemResources from a model-in-image domain")
   public void testMiiDeleteSystemResources() {
 
@@ -393,7 +420,7 @@ class ItMiiUpdateDomainConfig {
    * Verify SystemResource configurations using Rest API call to admin server.
    */
   @Test
-  @Order(3)
+  @Order(4)
   @DisplayName("Add New JDBC/JMS SystemResources to a model-in-image domain")
   public void testMiiAddSystemResources() {
 
@@ -459,7 +486,7 @@ class ItMiiUpdateDomainConfig {
    * the spec level replica count to zero(default).
    */
   @Test
-  @Order(4)
+  @Order(5)
   @DisplayName("Add a dynamic cluster to a model-in-image domain with default replica count")
   public void testMiiAddDynmicClusteriWithNoReplica() {
 
@@ -521,7 +548,7 @@ class ItMiiUpdateDomainConfig {
    * Verify servers from new cluster are in running state.
    */
   @Test
-  @Order(5)
+  @Order(6)
   @DisplayName("Add a dynamic cluster to model-in-image domain with non-zero replica count")
   public void testMiiAddDynamicCluster() {
 
@@ -600,7 +627,7 @@ class ItMiiUpdateDomainConfig {
    * Verify servers from new cluster are in running state.
    */
   @Test
-  @Order(6)
+  @Order(7)
   @DisplayName("Add a configured cluster to a model-in-image domain")
   public void testMiiAddConfiguredCluster() {
 
@@ -675,7 +702,7 @@ class ItMiiUpdateDomainConfig {
    * WebLogic RESTful Management Services.
    */
   @Test
-  @Order(7)
+  @Order(8)
   @DisplayName("Change the WebLogic Admin credential in model-in-image domain")
   public void testMiiUpdateWebLogicCredential() {
     final boolean VALID = true;
@@ -732,35 +759,6 @@ class ItMiiUpdateDomainConfig {
         domainUid, domainNamespace);
   }
 
-  @Test
-  @DisplayName("Check the server logs are written on PV")
-  public void testServerLogsAreOnPV() {
-
-    // check server logs are written on PV
-    String command = "ls /shared/logs/" + domainUid + "/" + adminServerName + ".log";
-    logger.info("Checking server logs are written on PV by running the command {0} on pod {1}, namespace {2}",
-        command, adminServerPodName, domainNamespace);
-    V1Pod adminPod = assertDoesNotThrow(() ->
-            Kubernetes.getPod(domainNamespace, null, adminServerPodName),
-        "Could not get the admin pod in namespace " + domainNamespace);
-    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
-        "/bin/sh", "-c", command),
-        String.format("Could not execute the command %s in pod %s, namespace %s",
-            command, adminServerPodName, domainNamespace));
-    assertTrue(result.exitValue() == 0, "Couldn't access the server log on PV");
-
-  }
-
-  // This method is needed in this test class, since the cleanup util
-  // won't cleanup the images.
-  @AfterAll
-  void tearDown() {
-    // Delete domain custom resource
-    /* logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace); */
-  }
 
   private static void createDatabaseSecret(
         String secretName, String username, String password, 
@@ -976,7 +974,7 @@ class ItMiiUpdateDomainConfig {
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
     Path pvHostPath =
-        get(PV_ROOT, ItMiiDomain.class.getSimpleName(), pvcName);
+        get(PV_ROOT, ItMiiUpdateDomainConfig.class.getSimpleName(), pvcName);
 
     logger.info("Creating PV directory {0}", pvHostPath);
     assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
