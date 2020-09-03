@@ -123,10 +123,11 @@ versions may work as well.
 
 ##### Clone WebLogic Server Kubernetes Operator repository
 
-Clone this repository to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.0.0.
+Clone the [Oracle WebLogic Server Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.0.0.
 
 ```bash
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+#cd weblogic-kubernetes-operator
 $ git checkout v3.0.0
 ```
   
