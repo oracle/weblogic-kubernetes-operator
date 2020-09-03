@@ -48,6 +48,8 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
@@ -133,6 +135,44 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
         assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
 
+        // docker login to OCR if OCR_USERNAME and OCR_PASSWORD is provided in env var
+        if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
+          withStandardRetryPolicy
+              .conditionEvaluationListener(
+                  condition -> logger.info("Waiting for docker login to be successful"
+                          + "(elapsed time {0} ms, remaining time {1} ms)",
+                      condition.getElapsedTimeInMS(),
+                      condition.getRemainingTimeInMS()))
+              .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
+        }
+
+        // The following code is for pulling WLS images if running tests in Kind cluster
+        if (KIND_REPO != null) {
+          // The kind clusters can't pull images from OCR using the image pull secret.
+          // It may be a containerd bug. We are going to workaround this issue.
+          // The workaround will be to:
+          //   1. docker login
+          //   2. docker pull
+          //   3. docker tag with the KIND_REPO value
+          //   4. docker push this new image name
+          //   5. use this image name to create the domain resource
+          Collection<String> images = new ArrayList<>();
+          images.add(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG);
+          images.add(JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG);
+          images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
+
+          for (String image : images) {
+            withStandardRetryPolicy
+                .conditionEvaluationListener(
+                    condition -> logger.info("Waiting for pullImageFromOcrAndPushToKind for image {0} to be successful"
+                            + "(elapsed time {1} ms, remaining time {2} ms)", image,
+                        condition.getElapsedTimeInMS(),
+                        condition.getRemainingTimeInMS()))
+                .until(pullImageFromOcrAndPushToKind(image)
+                );
+          }
+        }
+
         if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
           // build MII basic image
           miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
@@ -178,9 +218,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                         + "(elapsed time {0} ms, remaining time {1} ms)",
                         condition.getElapsedTimeInMS(),
                         condition.getRemainingTimeInMS()))
-                .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
+                .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
           }
         }
+
         // push the images to repo
         if (!REPO_NAME.isEmpty()) {
 
@@ -202,41 +243,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                         condition.getElapsedTimeInMS(),
                         condition.getRemainingTimeInMS()))
                 .until(() -> dockerPush(image));
-          }
-        }
-
-        // The following code is for pulling WLS images if running tests in Kind cluster
-        if (KIND_REPO != null) {
-          // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
-          // is some evidence it may be a containerd bug. Therefore, we are going to "give up" and workaround the issue.
-          // The workaround will be to:
-          //   1. docker login
-          //   2. docker pull
-          //   3. docker tag with the KIND_REPO value
-          //   4. docker push this new image name
-          //   5. use this image name to create the domain resource
-          Collection<String> images = new ArrayList<>();
-          images.add(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG);
-          images.add(JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG);
-          images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
-
-          withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Waiting for docker login to be successful"
-                      + "(elapsed time {0} ms, remaining time {1} ms)",
-                      condition.getElapsedTimeInMS(),
-                      condition.getRemainingTimeInMS()))
-              .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
-
-          for (String image : images) {
-            withStandardRetryPolicy
-                .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for pullImageFromOcrAndPushToKind for image {0} to be successful"
-                        + "(elapsed time {1} ms, remaining time {2} ms)", image,
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-                .until(pullImageFromOcrAndPushToKind(image)
-                );
           }
         }
 
