@@ -27,7 +27,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -58,8 +57,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
@@ -95,23 +93,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *  Restart all servers in dynamic cluster by changing serverStartPolicy 
  *   IF_NEEDED->NEVER->IF_NEEDED
  *
- * <p>testStartAlwaysConfigClusterManaged
+ * <p>testConfigClusterStartServerUsingAlways
  *  Restart a server in configured cluster (beyond replica count) 
  *   IF_NEEDED->ALWAYS->IF_NEEDED
  *
- * <p>testStartAlwaysDynamicClusterManaged
+ * <p>testDynamicClusterStartServerUsingAlways
  *  Restart a server in dynamic cluster (beyond replica count) 
  *   IF_NEEDED->ALWAYS->IF_NEEDED
  *
- * <p>testStopNeverConfigClusterManaged
- *  Stop a server in configured cluster by changing serverStartPolicy
- *   IF_NEEDED->ALWAYS->NEVER
- *
- * <p>testStopNeverDynamicClusterManaged
- *  Stop a server in dynamic cluster by changing serverStartPolicy
- *   IF_NEEDED->ALWAYS->NEVER
- *
- * <p>testStopConfigClusterReplicaManaged
+ * <p>testConfigClusterReplicaCountIsMaintained
  *  Change the serverStartPolicy of a running managed server (say ms1) in config
  *  cluster to NEVER. 
  *  Make sure next managed server (say ms2) is scheduled to run to maintain the 
@@ -120,7 +110,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *  Make sure server ms2 goes down and server ms1 is re-scheduled to maintain 
  *  the replica count
  *
- * <p>testStopDynamicClusterReplicaManaged
+ * <p>testDynamicClusterReplicaCountIsMaintained
  *  Change the serverStartPolicy of a running managed server (say ms1) in a 
  *  dynamic cluster to NEVER. 
  *  Make sure next managed server (say ms2) is scheduled to run to maintain the 
@@ -130,20 +120,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *  the replica count
  *
  * <p>testStandaloneManagedRestartIfNeeded
- *  Restart standalone server changing serverStartPolicy 
+ *  Restart standalone server by changing serverStartPolicy 
  *   IF_NEEDED->NEVER->IF_NEEDED
  *
  * <p>testStandaloneManagedRestartAlways
- *  Restart standalone server changing serverStartPolicy 
+ *  Restart standalone server by changing serverStartPolicy 
  *   IF_NEEDED->NEVER->ALWAYS
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("ServerStartPolicy attribute in different scope in a mii domain")
+@DisplayName("ServerStartPolicy attribute in different levels in a MII domain")
 @IntegrationTest
 class ItServerStartPolicy {
 
-  private static HelmParams opHelmParams = null;
   private static V1ServiceAccount serviceAccount = null;
   private String serviceAccountName = null;
   private static String opNamespace = null;
@@ -239,38 +228,29 @@ class ItServerStartPolicy {
   @BeforeEach
   public void beforeEach() {
 
-    logger.info("Check admin service {0} is created in namespace {1}",
+    logger.info("Check admin service/pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, 
+          domainUid, domainNamespace);
 
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
-
-    // Check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, 
+                domainUid, domainNamespace);
     }
 
     // Check configured cluster configuration is available 
     boolean isServerConfigured = 
-        checkManagedServerConfiguration("config-cluster-server1");
+         checkManagedServerConfiguration("config-cluster-server1");
     assertTrue(isServerConfigured, 
         "Could not find managed server from configured cluster");
     logger.info("Found managed server from configured cluster");
 
     // Check standalone server configuration is available 
-    isServerConfigured = 
-       checkManagedServerConfiguration("standalone-managed");
-    logger.info("Found non-cluster managed server configuration");
+    boolean isStandaloneServerConfigured = 
+         checkManagedServerConfiguration("standalone-managed");
+    assertTrue(isStandaloneServerConfigured, 
+        "Could not find standalone managed server from configured cluster");
+    logger.info("Found standalone managed server configuration");
   }
 
   /**
@@ -287,25 +267,15 @@ class ItServerStartPolicy {
 
     String configServerPodName = domainUid + "-config-cluster-server1";
     String dynamicServerPodName = domainUid + "-managed-server1";
+
     DateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
     DateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/adminServer/serverStartPolicy\",")
-        .append(" \"value\":  \"NEVER\"")
-        .append(" }]");
-    logger.info("AdminServer shutdown patch string: {0}", patchStr);
 
-    patch = new V1Patch(new String(patchStr));
-    boolean crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(adminShutdown) failed");
-
-    assertTrue(crdPatched, "patchDomainCustomResource(adminShutdown) failed");
+    patchServerStartPolicy("/spec/adminServer/serverStartPolicy", "NEVER");
+    logger.info("Domain is patched to shutdown administration server");
    
     checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
-    logger.info("AdminServer shutdown success");
+    logger.info("Administration server shutdown success");
 
     logger.info("Check managed server pods are not affected");
     DateTime dynTs2 = getPodCreationTime(domainNamespace, dynamicServerPodName);
@@ -318,27 +288,13 @@ class ItServerStartPolicy {
         cfgTs2.withTimeAtStartOfDay().isEqual(cfgTs.withTimeAtStartOfDay()), 
         "Configured managed server pod creation time must be same");
 
-    patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/adminServer/serverStartPolicy\",")
-        .append(" \"value\":  \"IF_NEEDED\"")
-        .append(" }]");
-    logger.info("AdminServer restart patch string: {0}", patchStr);
+    patchServerStartPolicy("/spec/adminServer/serverStartPolicy", "IF_NEEDED");
+    logger.info("Domain is patched to start administration server");
 
-    patch = new V1Patch(new String(patchStr));
-    crdPatched = false;
-    crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(restart) failed");
-
-    assertTrue(crdPatched, "patchDomainCustomResource(restart) failed");
-    logger.info("Check admin service {0} is created in namespace {1}",
+    logger.info("Check admin service/pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, 
+            domainUid, domainNamespace);
     logger.info("AdminServer restart success");
   }
 
@@ -360,25 +316,13 @@ class ItServerStartPolicy {
 
     DateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
 
-    checkServiceExists(configServerPodName, domainNamespace);
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(configServerPodName, 
+              domainUid, domainNamespace);
     logger.info("(BeforePatch) configured cluster managed server is RUNNING");
 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/clusters/1/serverStartPolicy\",")
-        .append(" \"value\":  \"NEVER\"")
-        .append(" }]");
-    logger.info("Configured cluster shutdown patch string: {0}", patchStr);
+    patchServerStartPolicy("/spec/clusters/1/serverStartPolicy", "NEVER");
+    logger.info("Domain is patched to shutdown configured cluster");
 
-    patch = new V1Patch(new String(patchStr));
-    boolean crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(clusterShutdown) failed");
-
-    assertTrue(crdPatched, "patchDomainCustomResource(configclusterShutdown) failed");
-   
     checkPodDeleted(configServerPodName, domainUid, domainNamespace);
     logger.info("Config cluster shutdown success");
 
@@ -389,27 +333,11 @@ class ItServerStartPolicy {
         dynTs2.withTimeAtStartOfDay().isEqual(dynTs.withTimeAtStartOfDay()),
         "Dynamic managed server pod creation time must be same");
 
-    patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/clusters/1/serverStartPolicy\",")
-        .append(" \"value\":  \"IF_NEEDED\"")
-        .append(" }]");
-    logger.info("Cluster restart patch string: {0}", patchStr);
+    patchServerStartPolicy("/spec/clusters/1/serverStartPolicy", "IF_NEEDED");
+    logger.info("Domain is patched to start configured cluster");
 
-    patch = new V1Patch(new String(patchStr));
-    crdPatched = false;
-    crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(clusterRestart) failed");
-
-    assertTrue(crdPatched, "patchDomainCustomResource(clusterRestart) failed");
-    logger.info("Check configured cluster managed service {0} is created in namespace {1}",
-        configServerPodName, domainNamespace);
-    checkServiceExists(configServerPodName, domainNamespace);
-    logger.info("Wait for cluster server pod {0} to be ready in namespace {1}",
-        configServerPodName, domainNamespace);
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(configServerPodName, 
+              domainUid, domainNamespace);
     logger.info("Configured cluster restart success");
   }
 
@@ -432,24 +360,13 @@ class ItServerStartPolicy {
 
     DateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
 
-    checkServiceExists(dynamicServerPodName, domainNamespace);
-    checkPodReady(dynamicServerPodName, domainUid, domainNamespace);
-    logger.info("(BeforePatch) dynamic cluster Managed Server is RUNNING");
+    checkPodReadyAndServiceExists(dynamicServerPodName, 
+              domainUid, domainNamespace);
+    logger.info("(BeforePatch) dynamic cluster managed server is RUNNING");
 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/clusters/0/serverStartPolicy\",")
-        .append(" \"value\":  \"NEVER\"")
-        .append(" }]");
-    logger.info("Dynamic cluster shutdown patch string: {0}", patchStr);
+    patchServerStartPolicy("/spec/clusters/0/serverStartPolicy", "NEVER");
+    logger.info("Domain is patched to stop dynamic cluster");
 
-    patch = new V1Patch(new String(patchStr));
-    boolean crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(dynamicClusterShutdown) failed");
-    assertTrue(crdPatched, "patchDomainCustomResource(dynamicClusterShutdown) failed");
-   
     checkPodDeleted(dynamicServerPodName, domainUid, domainNamespace);
     logger.info("Dynamic cluster shutdown success");
 
@@ -460,24 +377,11 @@ class ItServerStartPolicy {
         cfgTs2.withTimeAtStartOfDay().isEqual(cfgTs.withTimeAtStartOfDay()),
         "Configured managed server pod creation time must be same");
 
-    patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/clusters/0/serverStartPolicy\",")
-        .append(" \"value\":  \"IF_NEEDED\"")
-        .append(" }]");
-    logger.info("Dynamic cluster restart patch string: {0}", patchStr);
+    patchServerStartPolicy("/spec/clusters/0/serverStartPolicy", "IF_NEEDED");
+    logger.info("Domain is patched to start dynamic cluster");
 
-    patch = new V1Patch(new String(patchStr));
-    crdPatched = false;
-    crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(dynamicClusterRestart) failed");
-    assertTrue(crdPatched, "patchDomainCustomResource(dynamicClusterRestart) failed");
-    logger.info("Wait for dynamic cluster server pod {0} to be ready in namespace {1}", domainNamespace);
-    checkServiceExists(dynamicServerPodName, domainNamespace);
-    checkPodReady(dynamicServerPodName, domainUid, domainNamespace);
-
+    checkPodReadyAndServiceExists(dynamicServerPodName, 
+              domainUid, domainNamespace);
     logger.info("Dynamic cluster restart success");
   }
 
@@ -499,20 +403,8 @@ class ItServerStartPolicy {
     String configServerPodName = domainUid + "-config-cluster-server1";
     String standaloneServerPodName = domainUid + "-standalone-managed";
 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/serverStartPolicy\",")
-        .append(" \"value\":  \"NEVER\"")
-        .append(" }]");
-    logger.info("Domain shutdown patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(domainShutdown) failed");
-    assertTrue(crdPatched, "patchDomainCustomResource(domainShutdown) failed");
-    logger.info("!!! Domain Resource patched for shutdown (NEVER) !!!");
+    patchServerStartPolicy("/spec/serverStartPolicy", "NEVER");
+    logger.info("Domain is patched to stop entire WebLogic domain");
    
     // make sure all the server pods are removed after patch
     checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
@@ -525,26 +417,11 @@ class ItServerStartPolicy {
 
     // Patch the Domain with serverStartPolicy set to ADMIN_ONLY
     // Here only Admin server pod should come up
-    patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/serverStartPolicy\",")
-        .append(" \"value\":  \"ADMIN_ONLY\"")
-        .append(" }]");
-    logger.info("Domain restart(adminonly) patch string: {0}", patchStr);
+    patchServerStartPolicy("/spec/serverStartPolicy", "ADMIN_ONLY");
+    logger.info("Domain is patched to start only administrative server");
 
-    patch = new V1Patch(new String(patchStr));
-    crdPatched = false;
-    crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(adminonly) failed");
-
-    assertTrue(crdPatched, "patchDomainCustomResource(adminonly) failed");
-    logger.info("!!! Domain Resource patched for shutdown (ADMIN_ONLY) !!!");
-
-    checkServiceExists(adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
+    checkPodReadyAndServiceExists(adminServerPodName, 
+             domainUid, domainNamespace);
     // make sure all other managed server pods are not provisioned 
     for (int i = 1; i <= replicaCount; i++) {
       checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
@@ -556,29 +433,19 @@ class ItServerStartPolicy {
 
     // Patch the Domain with serverStartPolicy set to IF_NEEDED
     // Here all the Servers should come up
-    patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/serverStartPolicy\",")
-        .append(" \"value\":  \"IF_NEEDED\"")
-        .append(" }]");
-    logger.info("Domain restart(if_needed) patch string: {0}", patchStr);
+    patchServerStartPolicy("/spec/serverStartPolicy", "IF_NEEDED");
+    logger.info("Domain is patched to start all servers in the domain");
 
-    patch = new V1Patch(new String(patchStr));
-    crdPatched = false;
-    crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(if_needed) failed");
-    assertTrue(crdPatched, "patchDomainCustomResource(if_needed) failed");
-    logger.info("!!! Domain Resource patched for shutdown (IF_NEEDED) !!!");
-    
     // check dynamic managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, 
+           domainUid, domainNamespace);
     }
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
-    checkPodReady(standaloneServerPodName, domainUid, domainNamespace);
+
+    checkPodReadyAndServiceExists(configServerPodName, 
+          domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(standaloneServerPodName, 
+          domainUid, domainNamespace);
     logger.info("!!! Domain restart (IF_NEEDED) success !!!");
   }
 
@@ -597,106 +464,23 @@ class ItServerStartPolicy {
 
   @Test
   @DisplayName("Start/stop config cluster managed server by updating serverStartPolicy to ALWAYS/IF_NEEDED")
-  public void testStartAlwaysConfigClusterManaged() {
+  public void testConfigClusterStartServerUsingAlways() {
     String serverPodName = domainUid + "-config-cluster-server2";
 
     // Make sure that managed server is not running 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/1/serverStartPolicy\",")
-        .append(" \"value\":  \"ALWAYS\"")
-        .append(" }]");
-    logger.info("Config cluster managed server patch string: {0}", patchStr);
+    patchServerStartPolicy(
+         "/spec/managedServers/1/serverStartPolicy", "ALWAYS");
+    logger.info("Domain is patched to start configured cluster managed server");
 
-    patch = new V1Patch(new String(patchStr));
-    boolean crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedShutdown) failed");
-    assertTrue(crdPatched, "patchDomainCustomResource(managedShutdown) failed");
-    logger.info("!!! Domain Resource patched for config cluster managed server !!!");
-    checkServiceExists(serverPodName, domainNamespace);
-    checkPodReady(serverPodName, domainUid, domainNamespace);
-    logger.info("Configured cluster managed Server is RUNNING");
+    checkPodReadyAndServiceExists(serverPodName, 
+          domainUid, domainNamespace);
+    logger.info("Configured cluster managed server is RUNNING");
 
-    patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/1/serverStartPolicy\",")
-        .append(" \"value\":  \"IF_NEEDED\"")
-        .append(" }]");
-    logger.info("Managed restart patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    crdPatched = false;
-    crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedRestart) failed");
-
-    assertTrue(crdPatched, "patchDomainCustomResource(managedRestart) failed");
-    logger.info("!!! Domain resource patched for config cluster managed server shutdown !!!");
-
-    logger.info("Wait for managed server ${0} to be shutdown", serverPodName);
-    checkPodDeleted(serverPodName, domainUid, domainNamespace);
-    logger.info("Config cluster managed server shutdown success");
-  }
-
-  /**
-   * Add a second managed server (config-cluster-server2) in a configured 
-   * cluster with serverStartPolicy IF_NEEDED. 
-   * Initially, the server will not come up since the replica count is set to 1.
-   * Update the serverStartPolicy for config-cluster-server2 to ALWAYS
-   * by patching the resource definition with 
-   *  spec/managedServers/1/serverStartPolicy set to ALWAYS.
-   * Make sure that managed server config-cluster-server2 is up and running
-   * Stop the managed server by patching the resource definition 
-   *   with spec/managedServers/1/serverStartPolicy set to NEVER.
-   */
-
-  @Test
-  @DisplayName("Start/stop config cluster managed server by updating serverStartPolicy to ALWAYS/NEVER")
-  public void testStopNeverConfigClusterManaged() {
-    String serverPodName = domainUid + "-config-cluster-server2";
-
-    // Make sure that managed server is not running 
-    checkPodDeleted(serverPodName, domainUid, domainNamespace);
-
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/1/serverStartPolicy\",")
-        .append(" \"value\":  \"ALWAYS\"")
-        .append(" }]");
-    logger.info("Config cluster managed server patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedShutdown) failed");
-    assertTrue(crdPatched, "patchDomainCustomResource(managedShutdown) failed");
-    logger.info("!!! Domain Resource patched for config cluster managed server !!!");
-    checkServiceExists(serverPodName, domainNamespace);
-    checkPodReady(serverPodName, domainUid, domainNamespace);
-    logger.info("Configured cluster managed Server is RUNNING");
-
-    patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/1/serverStartPolicy\",")
-        .append(" \"value\":  \"NEVER\"")
-        .append(" }]");
-    logger.info("Managed restart patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    crdPatched = false;
-    crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedRestart) failed");
-
-    assertTrue(crdPatched, "patchDomainCustomResource(managedRestart) failed");
-    logger.info("!!! Domain resource patched for config cluster managed server shutdown !!!");
+    patchServerStartPolicy(
+         "/spec/managedServers/1/serverStartPolicy", "IF_NEEDED");
+    logger.info("Domain is patched to stop configured cluster managed server");
 
     logger.info("Wait for managed server ${0} to be shutdown", serverPodName);
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
@@ -718,106 +502,22 @@ class ItServerStartPolicy {
 
   @Test
   @DisplayName("Start/stop dynamic cluster managed server by updating serverStartPolicy to ALWAYS/IF_NEEDED")
-  public void testStartAlwaysDynamicClusterManaged() {
+  public void testDynamicClusterStartServerUsingAlways() {
     String serverPodName = domainUid + "-managed-server2";
 
     // Make sure that managed server is not running 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
+    
+    patchServerStartPolicy("/spec/managedServers/2/serverStartPolicy", 
+                           "ALWAYS");
+    logger.info("Domain resource patched to start the managed server");
+    checkPodReadyAndServiceExists(serverPodName, 
+          domainUid, domainNamespace);
+    logger.info("Config cluster managed server is RUNNING");
 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/2/serverStartPolicy\",")
-        .append(" \"value\":  \"ALWAYS\"")
-        .append(" }]");
-    logger.info("Config cluster managed server patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedShutdown) failed");
-    assertTrue(crdPatched, "patchDomainCustomResource(managedShutdown) failed");
-    logger.info("!!! Domain Resource patched for dynamic cluster managed server !!!");
-    checkServiceExists(serverPodName, domainNamespace);
-    checkPodReady(serverPodName, domainUid, domainNamespace);
-    logger.info("Config cluster Managed Server is RUNNING");
-
-    patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/2/serverStartPolicy\",")
-        .append(" \"value\":  \"IF_NEEDED\"")
-        .append(" }]");
-    logger.info("Managed restart patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    crdPatched = false;
-    crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedRestart) failed");
-
-    assertTrue(crdPatched, "patchDomainCustomResource(managedRestart) failed");
-    logger.info("!!! Domain resource patched for dynamic cluster managed server shutdown !!!");
-
-    logger.info("Wait for managed server ${0} to be shutdown", serverPodName);
-    checkPodDeleted(serverPodName, domainUid, domainNamespace);
-    logger.info("Dynamic cluster managed server shutdown success");
-  }
-
-  /**
-   * Add managed server configuration (managed-server2) to CRD in a dynamic 
-   * cluster with ServerStartPolicy IF_NEEDED. 
-   * So initially, the server will not come up since replica count is set to 1.
-   * Update the ServerStartPolicy for managed-server2 to ALWAYS
-   * by patching the resource definition with 
-   *  spec/managedServers/2/serverStartPolicy set to ALWAYS.
-   * Make sure that managed server managed-server2 is up and running
-   * Stop the managed server by patching the resource definition 
-   *   with spec/managedServers/2/serverStartPolicy set to NEVER
-   */
-
-  @Test
-  @DisplayName("Start/stop dynamic cluster managed server by updating serverStartPolicy to ALWAYS/NEVER")
-  public void testStopNeverDynamicClusterManaged() {
-    String serverPodName = domainUid + "-managed-server2";
-
-    // Make sure that managed server is not running 
-    checkPodDeleted(serverPodName, domainUid, domainNamespace);
-
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/2/serverStartPolicy\",")
-        .append(" \"value\":  \"ALWAYS\"")
-        .append(" }]");
-    logger.info("Config cluster managed server patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedShutdown) failed");
-    assertTrue(crdPatched, "patchDomainCustomResource(managedShutdown) failed");
-    logger.info("!!! Domain Resource patched for dynamic cluster managed server !!!");
-    checkServiceExists(serverPodName, domainNamespace);
-    checkPodReady(serverPodName, domainUid, domainNamespace);
-    logger.info("Config cluster Managed Server is RUNNING");
-
-    patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/2/serverStartPolicy\",")
-        .append(" \"value\":  \"NEVER\"")
-        .append(" }]");
-    logger.info("Managed restart patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    crdPatched = false;
-    crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedRestart) failed");
-
-    assertTrue(crdPatched, "patchDomainCustomResource(managedRestart) failed");
-    logger.info("!!! Domain resource patched for dynamic cluster managed server shutdown !!!");
+    patchServerStartPolicy("/spec/managedServers/2/serverStartPolicy", 
+                           "IF_NEEDED");
+    logger.info("Domain resource patched to shutdown the managed server");
 
     logger.info("Wait for managed server ${0} to be shutdown", serverPodName);
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
@@ -843,7 +543,7 @@ class ItServerStartPolicy {
    */
   @Test
   @DisplayName("Stop a running config cluster managed server and verify the replica count is maintained")
-  public void testStopConfigClusterReplicaManaged() {
+  public void testConfigClusterReplicaCountIsMaintained() {
     String serverPodName = domainUid + "-config-cluster-server1";
     String serverPodName2 = domainUid + "-config-cluster-server2";
 
@@ -851,52 +551,25 @@ class ItServerStartPolicy {
     checkPodDeleted(serverPodName2, domainUid, domainNamespace);
 
     // Patch(Shutdown) the config-cluster-server1 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/3/serverStartPolicy\",")
-        .append(" \"value\":  \"NEVER\"")
-        .append(" }]");
-    logger.info("Config cluster managed server patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedShutdown) failed");
-    assertTrue(crdPatched, "patchDomainCustomResource(managedShutdown) failed");
-    logger.info("!!! Domain Resource patched for config cluster managed server !!!");
+    patchServerStartPolicy(
+         "/spec/managedServers/3/serverStartPolicy", "NEVER");
+    logger.info("Domain is patched to shutdown cluster managed server");
 
     // Make sure config-cluster-server1 is deleted 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
     // Make sure  config-cluster-server2 is started 
-    checkServiceExists(serverPodName2, domainNamespace);
-    checkPodReady(serverPodName2, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(serverPodName2, domainUid, domainNamespace);
     logger.info("Configured cluster managed Server(2) is RUNNING");
 
     // Patch(start) the config-cluster-server1 
-    patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/3/serverStartPolicy\",")
-        .append(" \"value\":  \"IF_NEEDED\"")
-        .append(" }]");
-    logger.info("Managed restart patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    crdPatched = false;
-    crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedRestart) failed");
-
-    assertTrue(crdPatched, "patchDomainCustomResource(managedRestart) failed");
-    logger.info("!!! Domain resource patched for config cluster managed server shutdown !!!");
+    patchServerStartPolicy(
+         "/spec/managedServers/3/serverStartPolicy", "IF_NEEDED");
 
     // Make sure config-cluster-server2 is deleted 
     checkPodDeleted(serverPodName2, domainUid, domainNamespace);
 
     // Make sure config-cluster-server1 is re-started
-    checkServiceExists(serverPodName, domainNamespace);
-    checkPodReady(serverPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
   }
 
   /**
@@ -918,7 +591,7 @@ class ItServerStartPolicy {
    */
   @Test
   @DisplayName("Stop a running dynamic cluster managed server and verify the replica count ")
-  public void testStopDynamicClusterReplicaManaged() {
+  public void testDynamicClusterReplicaCountIsMaintained() {
     String serverPodName = domainUid + "-managed-server1";
     String serverPodName2 = domainUid + "-managed-server2";
 
@@ -926,51 +599,25 @@ class ItServerStartPolicy {
     checkPodDeleted(serverPodName2, domainUid, domainNamespace);
 
     // Patch(Shutdown) the managed-server1 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/4/serverStartPolicy\",")
-        .append(" \"value\":  \"NEVER\"")
-        .append(" }]");
-    logger.info("Dynamic cluster managed server patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedShutdown) failed");
-    assertTrue(crdPatched, "patchDomainCustomResource(managedShutdown) failed");
-    logger.info("!!! Domain Resource patched for dynamic cluster managed server !!!");
+    patchServerStartPolicy(
+         "/spec/managedServers/4/serverStartPolicy", "NEVER");
+    logger.info("Domain is patched to shutdown dynamic managed server");
 
     // Make sure maanged-server1 is deleted 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
-    checkServiceExists(serverPodName2, domainNamespace);
-    checkPodReady(serverPodName2, domainUid, domainNamespace);
-    logger.info("Dynamic cluster managed Server(2) is RUNNING");
+    checkPodReadyAndServiceExists(serverPodName2, domainUid, domainNamespace);
+    logger.info("Dynamic cluster managed server(2) is RUNNING");
 
     // Patch(start) the managed-server1 
-    patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/4/serverStartPolicy\",")
-        .append(" \"value\":  \"IF_NEEDED\"")
-        .append(" }]");
-    logger.info("Managed restart patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    crdPatched = false;
-    crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedRestart) failed");
-
-    assertTrue(crdPatched, "patchDomainCustomResource(managedRestart) failed");
-    logger.info("!!! Domain resource patched for dynamic cluster managed server shutdown !!!");
+    patchServerStartPolicy(
+         "/spec/managedServers/4/serverStartPolicy", "IF_NEEDED");
+    logger.info("Domain is patched to start dynamic managed server");
 
     // Make sure managed-server2 is deleted 
     checkPodDeleted(serverPodName2, domainUid, domainNamespace);
 
     // Make sure managed-server1 is re-started
-    checkServiceExists(serverPodName, domainNamespace);
-    checkPodReady(serverPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
   }
 
   /**
@@ -993,49 +640,24 @@ class ItServerStartPolicy {
     String configServerPodName = domainUid + "-standalone-managed";
 
     // Make sure that configured managed server is ready 
-    checkServiceExists(configServerPodName, domainNamespace);
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
-    logger.info("Configured Managed Server is RUNNING");
+    checkPodReadyAndServiceExists(configServerPodName, 
+            domainUid, domainNamespace);
+    logger.info("Configured managed server is RUNNING");
 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/0/serverStartPolicy\",")
-        .append(" \"value\":  \"NEVER\"")
-        .append(" }]");
-    logger.info("Managed Server shutdown patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedShutdown) failed");
-    assertTrue(crdPatched, "patchDomainCustomResource(managedShutdown) failed");
-    logger.info("!!! Domain Resource patched for managedShutdown !!!");
+    patchServerStartPolicy(
+         "/spec/managedServers/0/serverStartPolicy", "NEVER");
+    logger.info("Domain is patched to shutdown standalone managed server");
 
     checkPodDeleted(configServerPodName, domainUid, domainNamespace);
-    logger.info("Managed Server shutdown success");
+    logger.info("Configured managed server shutdown success");
 
-    patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/0/serverStartPolicy\",")
-        .append(" \"value\":  \"ALWAYS\"")
-        .append(" }]");
-    logger.info("Managed restart patch string: {0}", patchStr);
+    patchServerStartPolicy(
+         "/spec/managedServers/0/serverStartPolicy", "ALWAYS");
+    logger.info("Domain is patched to start standalone managed server");
 
-    patch = new V1Patch(new String(patchStr));
-    crdPatched = false;
-    crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedRestart) failed");
-
-    assertTrue(crdPatched, "patchDomainCustomResource(managedRestart) failed");
-    logger.info("!!! Domain Resource patched for managedRestart !!!");
-
-    logger.info("Wait for standalone managed server ${0} to be restarted", configServerPodName);
-    checkServiceExists(configServerPodName, domainNamespace);
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
-    logger.info("Managed Server restart success");
+    checkPodReadyAndServiceExists(configServerPodName, 
+            domainUid, domainNamespace);
+    logger.info("Configured managed server restart success");
   }
 
   /**
@@ -1058,49 +680,24 @@ class ItServerStartPolicy {
     String configServerPodName = domainUid + "-standalone-managed";
 
     // Make sure that configured managed server is ready 
-    checkServiceExists(configServerPodName, domainNamespace);
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
-    logger.info("Configured Managed Server is RUNNING");
+    checkPodReadyAndServiceExists(configServerPodName, 
+            domainUid, domainNamespace);
+    logger.info("Standalone managed server is RUNNING");
 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/0/serverStartPolicy\",")
-        .append(" \"value\":  \"NEVER\"")
-        .append(" }]");
-    logger.info("Managed Server shutdown patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedShutdown) failed");
-    assertTrue(crdPatched, "patchDomainCustomResource(managedShutdown) failed");
-    logger.info("!!! Domain Resource patched for managedShutdown !!!");
+    patchServerStartPolicy(
+         "/spec/managedServers/0/serverStartPolicy", "NEVER");
+    logger.info("Domain is patched to shutdown standalone managed server");
 
     checkPodDeleted(configServerPodName, domainUid, domainNamespace);
-    logger.info("Managed Server shutdown success");
+    logger.info("Standalone managed server shutdown success");
 
-    patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/managedServers/0/serverStartPolicy\",")
-        .append(" \"value\":  \"IF_NEEDED\"")
-        .append(" }]");
-    logger.info("Managed restart patch string: {0}", patchStr);
+    patchServerStartPolicy(
+         "/spec/managedServers/0/serverStartPolicy", "IF_NEEDED");
+    logger.info("Domain is patched to start standalone managed server");
 
-    patch = new V1Patch(new String(patchStr));
-    crdPatched = false;
-    crdPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(managedRestart) failed");
-
-    assertTrue(crdPatched, "patchDomainCustomResource(managedRestart) failed");
-    logger.info("!!! Domain Resource patched for managedRestart !!!");
-
-    logger.info("Wait for standalone managed server ${0} to be restarted", configServerPodName);
-    checkServiceExists(configServerPodName, domainNamespace);
-    checkPodReady(configServerPodName, domainUid, domainNamespace);
-    logger.info("Managed Server restart success");
+    checkPodReadyAndServiceExists(configServerPodName, 
+            domainUid, domainNamespace);
+    logger.info("Standalone managed server restart success");
   }
 
   // This method is needed in this test class, since the cleanup util
@@ -1253,6 +850,27 @@ class ItServerStartPolicy {
     } else {
       return false;
     }
+  }
+
+  public void patchServerStartPolicy(String patchPath, String policy) {
+
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"")
+        .append(patchPath)
+        .append("\",")
+        .append(" \"value\":  \"")
+        .append(policy)
+        .append("\"")
+        .append(" }]");
+
+    logger.info("The domain resource patch string: {0}", patchStr);
+    patch = new V1Patch(new String(patchStr));
+    boolean crdPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(managedShutdown) failed");
+    assertTrue(crdPatched, "patchDomainCustomResource failed");
   }
 
 }
