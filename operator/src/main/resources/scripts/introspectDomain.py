@@ -462,7 +462,7 @@ class TopologyGenerator(Generator):
              LISTEN_PORT_ENABLED: server.isListenPortEnabled(),
              SSL_LISTEN_PORT: sslListenPort,
              SSL_LISTEN_PORT_ENABLED: sslListenPortEnabled,
-             ADMIN_LISTEN_PORT: server.getAdministrationPort(),
+             ADMIN_LISTEN_PORT: getAdministrationPort(server, self.env.getDomain()),
              ADMIN_LISTEN_PORT_ENABLED: isAdministrationPortEnabledForServer(server, self.env.getDomain())
      }[clusterListenPortProperty]
 
@@ -484,7 +484,7 @@ class TopologyGenerator(Generator):
         if ssl is not None:
               sslListenPort = ssl.getListenPort()
               sslListenPortEnabled = ssl.isEnabled()
-        adminPort = server.getAdministrationPort()
+        adminPort = getAdministrationPort(server, self.env.getDomain())
         adminPortEnabled = isAdministrationPortEnabledForServer(server, self.env.getDomain())
         if firstServer is None:
           firstServer = server
@@ -670,10 +670,7 @@ class TopologyGenerator(Generator):
       self.writeln("  listenPort: " + str(server.getListenPort()))
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
     if isAdministrationPortEnabledForServer(server, self.env.getDomain(), is_server_template):
-      self.writeln("  adminPort: " + str(server.getAdministrationPort()))
-    else:
-      if isAdministrationPortEnabledForDomain(self.env.getDomain()):
-        self.writeln("  adminPort: " + str(self.env.getDomain().getAdministrationPort()))
+      self.writeln("  adminPort: " + str(getAdministrationPort(server, self.env.getDomain())))
     self.addSSL(server)
     self.addNetworkAccessPoints(server, is_server_template)
 
@@ -820,7 +817,7 @@ class TopologyGenerator(Generator):
       self.addIstioNetworkAccessPoint("tls-iiops", "iiops", ssl_listen_port, 0)
 
     if isAdministrationPortEnabledForServer(server, self.env.getDomain(), is_server_template):
-      self.addIstioNetworkAccessPoint("https-admin", "https", server.getAdministrationPort(), 0)
+      self.addIstioNetworkAccessPoint("https-admin", "https", getAdministrationPort(server, self.env.getDomain()), 0)
     return True
 
   def addIstioNetworkAccessPoint(self, name, protocol, listen_port, public_port):
@@ -1232,7 +1229,7 @@ class SitConfigGenerator(Generator):
 
     if isAdministrationPortEnabledForServer(server, self.env.getDomain()):
       self._writeIstioNAP(name='https-admin', server=server, listen_address=listen_address,
-                          listen_port=server.getAdministrationPort(), protocol='https', http_enabled="true")
+                          listen_port=getAdministrationPort(server, self.env.getDomain()), protocol='https', http_enabled="true")
 
 
   def customizeManagedIstioNetworkAccessPoint(self, listen_address, template):
@@ -1698,7 +1695,16 @@ def isAdministrationPortEnabledForServer(server, domain, isServerTemplate=False)
   cd(server.getName())
   if isSet('AdministrationPortEnabled'):
     administrationPortEnabled = server.isAdministrationPortEnabled()
+  else:
+    administrationPortEnabled = isAdministrationPortEnabledForDomain(domain)
   return administrationPortEnabled
+
+def getAdministrationPort(server, domain):
+  port = server.getAdministrationPort()
+  # In off-line WLST, the server's AdministrationPort default value is 0
+  if port == 0:
+    port = domain.getAdministrationPort()
+  return port
 
 def main(env):
   try:
