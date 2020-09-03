@@ -60,7 +60,7 @@
 #                  of WDT log files.
 #                  default:  /shared/wdt
 #   WDT_VERSION    WDT version to download.
-#                  default:  1.9.1
+#                  default:  1.9.5
 #
 #   DOMAIN_HOME_DIR  Target location for generated domain. 
 #
@@ -74,7 +74,7 @@ WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
 WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/shared/wdt}
-WDT_VERSION=${WDT_VERSION:-1.9.1}
+WDT_VERSION=${WDT_VERSION:-1.9.5}
 
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}
@@ -216,6 +216,8 @@ function run_wdt {
     echo @@ "Error:  WDT createDomain.sh failed." 
     return 1
   fi
+
+  chmod -R g+w $domain_home_dir || return 1
 
   echo @@ "Info:  WDT createDomain.sh succeeded."
   return 0
