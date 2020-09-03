@@ -419,7 +419,6 @@ public abstract class DomainTestBase {
 
   @Test
   public void whenNotSpecified_maxConcurrentShutdownFromDomain() {
-    configureCluster("cluster1");
     configureDomain(domain).withMaxConcurrentShutdown(2);
 
     assertThat(domain.getMaxConcurrentShutdown("cluster1"),

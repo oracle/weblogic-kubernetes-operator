@@ -976,13 +976,8 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   private int getMaxConcurrentShutdownFor(Cluster cluster) {
-    return hasMaxConcurrentShutdown(cluster)
-            ? cluster.getMaxConcurrentShutdown()
-            : getMaxClusterConcurrentShutdown();
-  }
-
-  private boolean hasMaxConcurrentShutdown(Cluster cluster) {
-    return cluster != null && cluster.getMaxConcurrentShutdown() != null;
+    return Optional.ofNullable(cluster).map(Cluster::getMaxConcurrentShutdown)
+            .orElse(getMaxClusterConcurrentShutdown());
   }
 
   public void setMaxClusterConcurrentShutdown(Integer maxClusterConcurrentShutdown) {

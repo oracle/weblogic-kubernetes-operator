@@ -59,6 +59,8 @@ public class ServerDownIteratorStepTest {
   private static final String MS2 = MS_PREFIX + "2";
   private static final String MS3 = MS_PREFIX + "3";
   private static final String MS4 = MS_PREFIX + "4";
+  private static final String MS5 = MS_PREFIX + "5";
+  private static final String MS6 = MS_PREFIX + "6";
   private static final int MAX_SERVERS = 5;
   private static final int PORT = 8001;
   private static final String[] MANAGED_SERVER_NAMES =
@@ -201,7 +203,7 @@ public class ServerDownIteratorStepTest {
   }
 
   @Test
-  public void withReplicaCountOf0AndConcurrencyOf1_clusteredServersShutdownConcurrently() {
+  public void whenClusterShutdown_concurrencySettingIsIgnored() {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(1).withReplicas(0);
     addWlsCluster(CLUSTER, PORT, MS1, MS2);
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
@@ -215,7 +217,7 @@ public class ServerDownIteratorStepTest {
   }
 
   @Test
-  public void withConcurrencyOf2AndReplicaCount1_3rdClusteredServerIsShutdownAfterPreviousPodTerminated() {
+  public void whenMaxConcurrentShutdownSet_limitNumberOfServersShuttingDownAtOnce() {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(2).withReplicas(1);
     addWlsCluster(CLUSTER, PORT, MS1, MS2, MS3, MS4);
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2,MS3,MS4);
@@ -231,17 +233,20 @@ public class ServerDownIteratorStepTest {
   }
 
   @Test
-  public void withConcurrencyOf2AndReplicaCount0_4clusteredServersShutdownConcurrently() {
-    configureCluster(CLUSTER).withMaxConcurrentShutdown(2).withReplicas(0);
-    addWlsCluster(CLUSTER, PORT, MS1, MS2, MS3, MS4);
-    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2,MS3,MS4);
+  public void withMultipleClusters_concurrencySettingIsIgnoredForShuttingDownClusterAndHonoredForShrinkingCluster() {
+    configureCluster(CLUSTER).withMaxConcurrentShutdown(1).withReplicas(0);
+    configureCluster(CLUSTER2).withMaxConcurrentShutdown(1).withReplicas(1);
+    addWlsCluster(CLUSTER, PORT, MS1, MS2, MS3);
+    addWlsCluster(CLUSTER2, PORT, MS4, MS5, MS6);
+    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2,MS3,MS4,MS5,MS6);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
     createShutdownInfos()
-            .forClusteredServers(CLUSTER,MS1, MS2, MS3, MS4)
+            .forClusteredServers(CLUSTER,MS1, MS2, MS3)
+            .forClusteredServers(CLUSTER2,MS4, MS5, MS6)
             .shutdown();
 
-    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS1, MS2, MS3, MS4));
+    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS1, MS2, MS3, MS6));
   }
 
   @Test
