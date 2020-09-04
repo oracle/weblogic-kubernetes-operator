@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
@@ -33,7 +34,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -52,10 +52,10 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
@@ -66,6 +66,7 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -278,15 +279,17 @@ class ItServerStartPolicy {
     logger.info("Administration server shutdown success");
 
     logger.info("Check managed server pods are not affected");
-    DateTime dynTs2 = getPodCreationTime(domainNamespace, dynamicServerPodName);
-    DateTime cfgTs2 = getPodCreationTime(domainNamespace, configServerPodName);
+    Callable<Boolean> isDynRestarted = 
+         assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName, 
+         domainNamespace, dynTs));
+    assertFalse(assertDoesNotThrow(() -> isDynRestarted.call().booleanValue()),
+         "Dynamic managed server pod must not be restated");
 
-    assertTrue(
-        dynTs2.withTimeAtStartOfDay().isEqual(dynTs.withTimeAtStartOfDay()), 
-        "Dynamic managed server pod creation time must be same");
-    assertTrue(
-        cfgTs2.withTimeAtStartOfDay().isEqual(cfgTs.withTimeAtStartOfDay()), 
-        "Configured managed server pod creation time must be same");
+    Callable<Boolean> isCfgRestarted = 
+         assertDoesNotThrow(() -> isPodRestarted(configServerPodName, 
+         domainNamespace, cfgTs));
+    assertFalse(assertDoesNotThrow(() -> isCfgRestarted.call().booleanValue()),
+         "Configured managed server pod must not be restated");
 
     patchServerStartPolicy("/spec/adminServer/serverStartPolicy", "IF_NEEDED");
     logger.info("Domain is patched to start administration server");
@@ -328,10 +331,12 @@ class ItServerStartPolicy {
 
     // check managed server from other cluster are not affected
     logger.info("Check dynamic managed server pods are not affected");
-    DateTime dynTs2 = getPodCreationTime(domainNamespace, dynamicServerPodName);
-    assertTrue(
-        dynTs2.withTimeAtStartOfDay().isEqual(dynTs.withTimeAtStartOfDay()),
-        "Dynamic managed server pod creation time must be same");
+    
+    Callable<Boolean> isDynRestarted = 
+         assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName, 
+         domainNamespace, dynTs));
+    assertFalse(assertDoesNotThrow(() -> isDynRestarted.call().booleanValue()),
+         "Dynamic managed server pod must not be restated");
 
     patchServerStartPolicy("/spec/clusters/1/serverStartPolicy", "IF_NEEDED");
     logger.info("Domain is patched to start configured cluster");
@@ -371,11 +376,11 @@ class ItServerStartPolicy {
     logger.info("Dynamic cluster shutdown success");
 
     // check managed server from other cluster are not affected
-    logger.info("Check configured managed server pods are not affected");
-    DateTime cfgTs2 = getPodCreationTime(domainNamespace, configServerPodName);
-    assertTrue(
-        cfgTs2.withTimeAtStartOfDay().isEqual(cfgTs.withTimeAtStartOfDay()),
-        "Configured managed server pod creation time must be same");
+    Callable<Boolean> isCfgRestarted = 
+         assertDoesNotThrow(() -> isPodRestarted(configServerPodName, 
+         domainNamespace, cfgTs));
+    assertFalse(assertDoesNotThrow(() -> isCfgRestarted.call().booleanValue()),
+         "Configured managed server pod must not be restated");
 
     patchServerStartPolicy("/spec/clusters/0/serverStartPolicy", "IF_NEEDED");
     logger.info("Domain is patched to start dynamic cluster");
@@ -680,35 +685,24 @@ class ItServerStartPolicy {
     String configServerPodName = domainUid + "-standalone-managed";
 
     // Make sure that configured managed server is ready 
-    checkPodReadyAndServiceExists(configServerPodName, 
-            domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(configServerPodName,
+        domainUid, domainNamespace);
     logger.info("Standalone managed server is RUNNING");
 
     patchServerStartPolicy(
-         "/spec/managedServers/0/serverStartPolicy", "NEVER");
+        "/spec/managedServers/0/serverStartPolicy", "NEVER");
     logger.info("Domain is patched to shutdown standalone managed server");
 
     checkPodDeleted(configServerPodName, domainUid, domainNamespace);
     logger.info("Standalone managed server shutdown success");
 
     patchServerStartPolicy(
-         "/spec/managedServers/0/serverStartPolicy", "IF_NEEDED");
+        "/spec/managedServers/0/serverStartPolicy", "IF_NEEDED");
     logger.info("Domain is patched to start standalone managed server");
 
-    checkPodReadyAndServiceExists(configServerPodName, 
-            domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(configServerPodName,
+        domainUid, domainNamespace);
     logger.info("Standalone managed server restart success");
-  }
-
-  // This method is needed in this test class, since the cleanup util
-  // won't clean up the images.
-  @AfterAll
-  void tearDown() {
-    // Delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
   }
 
   private static void createDomainSecret(String secretName, String username, String password, String domNamespace)
