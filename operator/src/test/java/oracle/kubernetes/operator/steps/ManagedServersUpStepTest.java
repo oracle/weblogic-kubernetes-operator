@@ -17,6 +17,7 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -487,7 +488,7 @@ public class ManagedServersUpStepTest {
   public void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
     addServer(domainPresenceInfo, "server1");
 
-    assertThat(createNextStep().getNext(), instanceOf(ServerDownIteratorStep.class));
+    assertThat(skipProgressingStep(createNextStep()), instanceOf(ServerDownIteratorStep.class));
   }
 
   @Test
@@ -497,7 +498,8 @@ public class ManagedServersUpStepTest {
     addServer(domainPresenceInfo, "server3");
     addServer(domainPresenceInfo, ADMIN);
 
-    assertStoppingServers(createNextStepWithout("server2"), "server1", "server3");
+    assertStoppingServers(skipProgressingStep(createNextStepWithout("server2")),
+            "server1", "server3");
   }
 
   @Test
@@ -509,7 +511,8 @@ public class ManagedServersUpStepTest {
     addServer(domainPresenceInfo, "server3");
     addServer(domainPresenceInfo, ADMIN);
 
-    assertStoppingServers(createNextStepWithout("server2"), "server1", "server3", ADMIN);
+    assertStoppingServers(skipProgressingStep(createNextStepWithout("server2")), "server1",
+            "server3", ADMIN);
   }
 
   @Test
@@ -599,8 +602,15 @@ public class ManagedServersUpStepTest {
     assertServersWillNotBeStarted();
   }
 
+  private static Step skipProgressingStep(Step step) {
+    if (step instanceof DomainStatusUpdater.ProgressingStep) {
+      return step.getNext();
+    }
+    return step;
+  }
+
   private void assertStoppingServers(Step step, String... servers) {
-    assertThat(((ServerDownIteratorStep) step.getNext()).getServersToStop(), containsInAnyOrder(servers));
+    assertThat(((ServerDownIteratorStep) step).getServersToStop(), containsInAnyOrder(servers));
   }
 
   private Step createNextStepWithout(String... serverNames) {
