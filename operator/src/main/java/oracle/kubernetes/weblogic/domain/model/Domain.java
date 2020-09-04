@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -33,6 +34,8 @@ import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
@@ -654,9 +657,37 @@ public class Domain {
     }
 
     private void checkValidMountPath(V1VolumeMount mount) {
-      if (!new File(mount.getMountPath()).isAbsolute()) {
+      if (!new File(mount.getMountPath()).isAbsolute()
+          && !skipValidation(mount.getMountPath())) {
         failures.add(DomainValidationMessages.badVolumeMountPath(mount));
       }
+    }
+
+    private boolean skipValidation(String mountPath) {
+      List<V1EnvVar> envVars = spec.getEnv();
+      Set<String> varNames = envVars.stream().map(V1EnvVar::getName).collect(toSet());
+      StringTokenizer nameList = new StringTokenizer(mountPath, "$(");
+      if (!nameList.hasMoreElements()) {
+        return false;
+      }
+      while (nameList.hasMoreElements()) {
+        String name = nameList.nextToken();
+        if (notValidEnvVarNames(varNames, name)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    private boolean notValidEnvVarNames(Set<String> varNames, String name) {
+      int index = name.indexOf(")");
+      if (index != -1) {
+        String str = name.substring(0, index);
+        if (varNames.contains(str) || ServerEnvVars.isReserved(str)) {
+          return false;
+        }
+      }
+      return true;
     }
 
     private void addUnmappedLogHome() {

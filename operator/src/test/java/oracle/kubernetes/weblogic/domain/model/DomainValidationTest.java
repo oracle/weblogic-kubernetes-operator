@@ -12,7 +12,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.Before;
@@ -33,6 +36,14 @@ public class DomainValidationTest {
   private static final String SECRET_NAME = "mysecret";
   private static final String OVERRIDES_CM_NAME_IMAGE = "overrides-cm-image";
   private static final String OVERRIDES_CM_NAME_MODEL = "overrides-cm-model";
+  private static final String ENV_NAME1 = "MY_ENV";
+  private static final String RAW_VALUE_1 = "123";
+  private static final String RAW_MOUNT_PATH_1 = "$(DOMAIN_HOME)/servers/$(SERVER_NAME)";
+  private static final String RAW_MOUNT_PATH_2 = "$(MY_ENV)/bin";
+  private static final String BAD_MOUNT_PATH_1 = "$DOMAIN_HOME/servers/$SERVER_NAME";
+  private static final String BAD_MOUNT_PATH_2 = "$(DOMAIN_HOME/servers/$(SERVER_NAME";
+  private static final String BAD_MOUNT_PATH_3 = "$()DOMAIN_HOME/servers/SERVER_NAME";
+
   private Domain domain = createTestDomain();
   private KubernetesResourceLookupStub resourceLookup = new KubernetesResourceLookupStub();
 
@@ -139,6 +150,63 @@ public class DomainValidationTest {
 
     assertThat(domain.getValidationFailures(resourceLookup),
                contains(stringContainsInOrder("log home", "/shared/logs/" + UID)));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMountsWithInvalidChar_1_reportError() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder(
+            "The mount path", BAD_MOUNT_PATH_1, "volume1", "of domain resource", "is not valid")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMountsWithInvalidChar_2_reportError() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("volume2", BAD_MOUNT_PATH_2);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder(
+            "The mount path", BAD_MOUNT_PATH_2, "volume2", "of domain resource", "is not valid")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMountsWithInvalidChar_3_reportError() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("volume3", BAD_MOUNT_PATH_3);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder(
+            "The mount path", BAD_MOUNT_PATH_3, "volume3", "of domain resource", "is not valid")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
+    V1EnvVar fieldRefEnvVar = createFieldRefEnvVar(ENV_NAME1, RAW_VALUE_1);
+    configureDomain(domain)
+        .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2).withEnvironmentVariable(fieldRefEnvVar);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMountsWithNonExistVariables_reportError() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder(
+            "The mount path", RAW_MOUNT_PATH_2, "volume1", "of domain resource", "is not valid")));
   }
 
   @Test
@@ -465,6 +533,11 @@ public class DomainValidationTest {
     assertThat(domain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
         "Istio is enabled and the domain resource specified to expose channel",
         "default")));
+  }
+
+  static V1EnvVar createFieldRefEnvVar(String name, String fieldPath) {
+    return new V1EnvVar().name(name).valueFrom(
+        new V1EnvVarSource().fieldRef(new V1ObjectFieldSelector().fieldPath(fieldPath)));
   }
 
   private DomainConfigurator configureDomain(Domain domain) {
