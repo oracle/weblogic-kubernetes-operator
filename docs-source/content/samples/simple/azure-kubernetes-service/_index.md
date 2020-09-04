@@ -118,8 +118,17 @@ Successful output will look like the following:
 
 ##### Oracle Container Registry
 
-You will need an Oracle account.  Follow the steps at [GET IMAGES](/weblogic-kubernetes-operator/quickstart/get-images/), accepting the license agreement for WebLogic Server in the process.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.3, but other
-versions may work as well.
+You will need an Oracle account.  The following steps will direct you to accept the license agreement for WebLogic Server.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.3, but other versions may work as well.
+
+1. Obtain the WebLogic Server image from the [Oracle Container Registry](https://container-registry.oracle.com/).
+
+   a. First time users, [follow these directions](/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/#obtaining-standard-images-from-the-oracle-container-registry).
+   
+   b. Find and then pull the WebLogic 12.2.1.3 install image:
+   
+      ```bash
+      $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.3
+      ```
 
 ##### Clone WebLogic Server Kubernetes Operator repository
 
