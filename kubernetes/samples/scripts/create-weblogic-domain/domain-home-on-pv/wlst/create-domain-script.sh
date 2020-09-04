@@ -10,6 +10,8 @@ export DOMAIN_HOME=${DOMAIN_HOME_DIR}
 # Create the domain
 wlst.sh -skipWLSModuleScanning ${CREATE_DOMAIN_SCRIPT_DIR}/create-domain.py
 
+chmod -R g+w $DOMAIN_HOME || return 1
+
 if [ "${ISTIO_ENABLED}" == "true" ]; then
   wlst.sh -skipWLSModuleScanning ${CREATE_DOMAIN_SCRIPT_DIR}/istio-fix-domain.py
 fi

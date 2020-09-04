@@ -3,8 +3,6 @@
 
 package oracle.kubernetes.operator.calls;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -12,6 +10,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -95,23 +94,11 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   }
 
   private static String accessContinue(Object result) {
-    String cont = "";
-    if (result != null) {
-      try {
-        Method m = result.getClass().getMethod("getMetadata");
-        Object meta = m.invoke(result);
-        if (meta instanceof V1ListMeta) {
-          return ((V1ListMeta) meta).getContinue();
-        }
-      } catch (NoSuchMethodException
-          | SecurityException
-          | IllegalAccessException
-          | IllegalArgumentException
-          | InvocationTargetException e) {
-        // no-op, no-log
-      }
-    }
-    return cont;
+    return Optional.ofNullable(result)
+        .filter(KubernetesListObject.class::isInstance)
+        .map(KubernetesListObject.class::cast)
+        .map(KubernetesListObject::getMetadata)
+        .map(V1ListMeta::getContinue).orElse(null);
   }
 
   @Override
