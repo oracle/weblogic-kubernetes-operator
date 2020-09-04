@@ -73,6 +73,7 @@ import okhttp3.internal.http2.StreamResetException;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
+import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.work.Component;
@@ -538,6 +539,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
         ResponseStep<T> next,
         RequestParams requestParams,
         CallFactory<T> factory,
+        RetryStrategy retryStrategy,
         ClientPool helper,
         int timeoutSeconds,
         int maxRetryCount,
