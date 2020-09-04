@@ -223,6 +223,7 @@ public class CallBuilder {
                   null,
                   null,
                   null,
+                  null,
                   pretty,
                   null,
                   null,
@@ -1220,7 +1221,6 @@ public class CallBuilder {
         .deleteCollectionNamespacedPodAsync(
             namespace,
             pretty,
-            allowWatchBookmarks,
             cont,
             dryRun,
             fieldSelector,
@@ -1231,7 +1231,6 @@ public class CallBuilder {
             propagationPolicy,
             resourceVersion,
             timeoutSeconds,
-            watch,
             deleteOptions,
             callback);
   }
@@ -1816,6 +1815,7 @@ public class CallBuilder {
       String namespace,
       String container,
       Boolean follow,
+      Boolean insecureSkipTLSVerifyBackend,
       Integer limitBytes,
       String pretty,
       Boolean previous,
@@ -1830,6 +1830,7 @@ public class CallBuilder {
             namespace,
             container,
             follow,
+            insecureSkipTLSVerifyBackend,
             limitBytes,
             pretty,
             previous,
