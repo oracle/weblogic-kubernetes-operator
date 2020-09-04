@@ -487,7 +487,7 @@ public class ManagedServersUpStepTest {
   public void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
     addServer(domainPresenceInfo, "server1");
 
-    assertThat(createNextStep(), instanceOf(ServerDownIteratorStep.class));
+    assertThat(createNextStep().getNext(), instanceOf(ServerDownIteratorStep.class));
   }
 
   @Test
@@ -600,7 +600,7 @@ public class ManagedServersUpStepTest {
   }
 
   private void assertStoppingServers(Step step, String... servers) {
-    assertThat(((ServerDownIteratorStep) step).getServersToStop(), containsInAnyOrder(servers));
+    assertThat(((ServerDownIteratorStep) step.getNext()).getServersToStop(), containsInAnyOrder(servers));
   }
 
   private Step createNextStepWithout(String... serverNames) {

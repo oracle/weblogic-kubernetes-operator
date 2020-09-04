@@ -33,6 +33,9 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStep;
+
 public class ManagedServersUpStep extends Step {
   static final String SERVERS_UP_MSG =
       "Running servers for domain with UID: {0}, running list: {1}";
@@ -65,7 +68,9 @@ public class ManagedServersUpStep extends Step {
     List<ServerShutdownInfo> serversToStop = getServersToStop(info, factory.shutdownInfos);
 
     if (!serversToStop.isEmpty()) {
-      insert(steps, new ServerDownIteratorStep(factory.shutdownInfos, null));
+      insert(steps,
+              Step.chain(createProgressingStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
+                      null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
     }
 
     return Step.chain(steps.toArray(new Step[0]));
