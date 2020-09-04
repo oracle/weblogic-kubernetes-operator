@@ -125,6 +125,20 @@ public class Pod {
   }
 
   /**
+   * Check a given pod is in initializing status.
+   *
+   * @param namespace name of the namespace in which to check the pod status
+   * @param domainUid UID of the WebLogic domain
+   * @param podName name of the pod
+   * @return true if pod is initializing otherwise false
+   */
+  public static Callable<Boolean> podInitializing(String namespace, String domainUid, String podName) {
+    return () -> {
+      return Kubernetes.isPodInitializing(namespace, domainUid, podName);
+    };
+  }
+
+  /**
    * Check a pod is in Terminating state.
    *
    * @param podName name of the pod for which to check for Terminating status

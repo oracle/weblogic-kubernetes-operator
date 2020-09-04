@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
@@ -29,6 +30,8 @@ import oracle.weblogic.kubernetes.assertions.impl.Traefik;
 import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import org.joda.time.DateTime;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
@@ -251,6 +254,18 @@ public class TestAssertions {
    */
   public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) {
     return Pod.podReady(namespace, domainUid, podName);
+  }
+
+  /**
+   * Check if a Kubernetes pod is in initializing state.
+   *
+   * @param podName   name of the pod to check for
+   * @param domainUid WebLogic domain uid in which the pod belongs
+   * @param namespace in which the pod is initializing
+   * @return true if the pod is initializing otherwise false
+   */
+  public static Callable<Boolean> podInitializing(String podName, String domainUid, String namespace) {
+    return Pod.podInitializing(namespace, domainUid, podName);
   }
 
   /**

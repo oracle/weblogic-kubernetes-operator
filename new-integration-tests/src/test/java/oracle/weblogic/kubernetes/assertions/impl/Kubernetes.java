@@ -132,6 +132,29 @@ public class Kubernetes {
   }
 
   /**
+   * Checks if a pod exists in a given namespace and in Running state.
+   * @param namespace in which to check for the pod running
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @return true if pod exists and running otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean isPodInitializing(String namespace, String domainUid, String podName) throws ApiException {
+    boolean status = false;
+    String labelSelector = null;
+    if (domainUid != null) {
+      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    }
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null) {
+      status = pod.getStatus().getPhase().equals("Init");
+    } else {
+      getLogger().info("Pod doesn't exist");
+    }
+    return status;
+  }
+
+  /**
 
    Checks if a pod is ready in a given namespace.
    @param namespace in which to check if the pod is ready

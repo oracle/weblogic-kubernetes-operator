@@ -179,6 +179,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRea
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podInitializing;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
@@ -1120,6 +1121,28 @@ public class CommonTestUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
+            String.format("podReady failed with ApiException for pod %s in namespace %s",
+                podName, domainNamespace)));
+  }
+
+  /**
+   * Checks that pod is initializing.
+   *
+   * @param podName pod name to check
+   * @param domainUid the label the pod is decorated with
+   * @param domainNamespace the domain namespace in which the domain exists
+   */
+  public static void checkPodInitializing(String podName, String domainUid, String domainNamespace) {
+    LoggingFacade logger = getLogger();
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be initializing in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podInitializing(podName, domainUid, domainNamespace),
             String.format("podReady failed with ApiException for pod %s in namespace %s",
                 podName, domainNamespace)));
   }
@@ -2672,5 +2695,4 @@ public class CommonTestUtils {
           return false;
         });
   }
-
 }
