@@ -34,6 +34,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
@@ -207,6 +208,15 @@ public class DomainSpec extends BaseConfiguration {
   )
   @Range(minimum = 0)
   private Integer maxClusterConcurrentStartup;
+
+  @Description(
+          "The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it "
+                  + "is being partially shut down by lowering its replica count. You can override this default on a "
+                  + "per cluster basis by setting the cluster's `maxConcurrentShutdown` field. A value of 0 means "
+                  + "there is no limit. Defaults to 1."
+  )
+  @Range(minimum = 0)
+  private Integer maxClusterConcurrentShutdown;
 
   /**
    * Whether the domain home is part of the image.
@@ -682,6 +692,11 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP);
   }
 
+  public Integer getMaxClusterConcurrentShutdown() {
+    return Optional.ofNullable(maxClusterConcurrentShutdown)
+            .orElse(DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN);
+  }
+
   @Nullable
   String getConfigOverrides() {
     return Optional.ofNullable(configuration).map(Configuration::getOverridesConfigMap).orElse(configOverrides);
@@ -816,7 +831,9 @@ public class DomainSpec extends BaseConfiguration {
             .append("logHomeEnabled", logHomeEnabled)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets);
+            .append("configOverrideSecrets", configOverrideSecrets)
+            .append("maxClusterConcurrentStartup",maxClusterConcurrentStartup)
+            .append("maxClusterConcurrentShutdown",maxClusterConcurrentShutdown);
 
     return builder.toString();
   }
@@ -847,7 +864,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(configOverrides)
             .append(configOverrideSecrets)
             .append(allowReplicasBelowMinDynClusterSize)
-            .append(maxClusterConcurrentStartup);
+            .append(maxClusterConcurrentStartup)
+            .append(maxClusterConcurrentShutdown);
 
     return builder.toHashCode();
   }
@@ -886,7 +904,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(isAllowReplicasBelowMinDynClusterSize(), rhs.isAllowReplicasBelowMinDynClusterSize())
-            .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup());
+            .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
+            .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown());
     return builder.isEquals();
   }
 
@@ -956,6 +975,15 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setMaxClusterConcurrentStartup(Integer maxClusterConcurrentStartup) {
     this.maxClusterConcurrentStartup = maxClusterConcurrentStartup;
+  }
+
+  private int getMaxConcurrentShutdownFor(Cluster cluster) {
+    return Optional.ofNullable(cluster).map(Cluster::getMaxConcurrentShutdown)
+            .orElse(getMaxClusterConcurrentShutdown());
+  }
+
+  public void setMaxClusterConcurrentShutdown(Integer maxClusterConcurrentShutdown) {
+    this.maxClusterConcurrentShutdown = maxClusterConcurrentShutdown;
   }
 
   public AdminServer getAdminServer() {
@@ -1031,6 +1059,11 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public int getMaxConcurrentStartup(String clusterName) {
       return getMaxConcurrentStartupFor(getCluster(clusterName));
+    }
+
+    @Override
+    public int getMaxConcurrentShutdown(String clusterName) {
+      return getMaxConcurrentShutdownFor(getCluster(clusterName));
     }
 
     private Cluster getOrCreateCluster(String clusterName) {
