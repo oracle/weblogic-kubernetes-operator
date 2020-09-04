@@ -89,10 +89,10 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   private Integer maxConcurrentStartup;
 
   @Description(
-          "The maximum WebLogic Server instances that will shutdown in parallel "
-                  + "for this cluster when it is being partially shutdown by lowering its replica count."
-                  + "A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown` "
-                  + "(which in turn defaults to 1)."
+          "The maximum number of WebLogic Server instances that will shut down in parallel "
+                  + "for this cluster when it is being partially shut down by lowering its replica count. "
+                  + "A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, "
+                  + "which defaults to 1."
   )
   @Range(minimum = 0)
   private Integer maxConcurrentShutdown;
@@ -217,6 +217,8 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append("clusterService", clusterService)
         .append("maxUnavailable", maxUnavailable)
         .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
+        .append("maxConcurrentStartup", maxConcurrentStartup)
+        .append("maxConcurrentShutdown", maxConcurrentShutdown)
         .toString();
   }
 

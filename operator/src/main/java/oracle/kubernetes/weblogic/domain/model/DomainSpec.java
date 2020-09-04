@@ -210,10 +210,10 @@ public class DomainSpec extends BaseConfiguration {
   private Integer maxClusterConcurrentStartup;
 
   @Description(
-          "The default maximum WebLogic Server instances that a cluster will shutdown in parallel when it is being "
-                  + "partially shutdown by lowering its replica count. You can override this default on a per cluster "
-                  + "basis by setting the cluster's `maxConcurrentShutdown` attribute. A value of 0 means there is "
-                  + "no limit. Defaults to 1"
+          "The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it "
+                  + "is being partially shut down by lowering its replica count. You can override this default on a per "
+                  + "cluster basis by setting the cluster's `maxConcurrentShutdown` field. A value of 0 means "
+                  + "there is no limit. Defaults to 1."
   )
   @Range(minimum = 0)
   private Integer maxClusterConcurrentShutdown;
@@ -831,7 +831,9 @@ public class DomainSpec extends BaseConfiguration {
             .append("logHomeEnabled", logHomeEnabled)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets);
+            .append("configOverrideSecrets", configOverrideSecrets)
+            .append("maxClusterConcurrentStartup",maxClusterConcurrentStartup)
+            .append("maxClusterConcurrentShutdown",maxClusterConcurrentShutdown);
 
     return builder.toString();
   }
