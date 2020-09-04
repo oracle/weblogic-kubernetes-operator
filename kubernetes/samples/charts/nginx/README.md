@@ -18,9 +18,9 @@ $ helm search repo ingress-nginx
 NAME               CHART VERSION APP VERSION	DESCRIPTION
 ingress-nginx/ingress-nginx	2.12.0       	0.34.1     	Ingress controller for Kubernetes using NGINX a...
 ```
-> **NOTE**: After updating the Helm repository, the NGINX version listed may be newer that the one appearing here. Please check with the NGINX site for the latest supported versions.
+> **NOTE**: After updating the Helm repository, the NGINX version listed may be newer than the one appearing here. Please check with the NGINX site for the latest supported versions.
 
-### 2. Install the NGINX operator
+### 2. Install the NGINX ingress controller
 
 > **NOTE**: The NGINX version used for the install should match the version found with `helm search`.
 
@@ -29,7 +29,7 @@ $ kubectl create namespace nginx
 $ helm install nginx-operator ingress-nginx/ingress-nginx --namespace nginx
 ```
 
-Wait until the NGINX operator is running.
+Wait until the NGINX ingress controller is running.
 ```
 $ kubectl get all --namespace nginx 
 NAME                                                           READY   STATUS    RESTARTS   AGE
@@ -60,7 +60,7 @@ Create two WebLogic domains:
 - Each domain has a WebLogic cluster `cluster-1` where each Managed Server listens on port `8001`.
 
 ### 2. Web request routing
-The following sections describe how to route an application web request to the WebLogic domain through a NGINX frontend.
+The following sections describe how to route an application web request to the WebLogic domain through a NGINX ingress controller.
 
 #### Host-based routing 
 This sample demonstrates how to access an application on two WebLogic domains using host-based routing. Install a host-based routing NGINX ingress.
@@ -88,7 +88,7 @@ $ kubectl -n weblogic-domain1 create secret tls domain1-tls-cert --key /tmp/tls1
 
 # create a TLS secret for domain2
 $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls2.key -out /tmp/tls2.crt -subj "/CN=domain2.org"
-$ kubectl -n weblogic-domain1 create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
+$ kubectl -n weblogic-domain2 create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
 # Deploy the TLS ingress controller.
 $ kubectl create -f samples/tls.yaml
 ingress.networking.k8s.io/domain1-ingress-tls created
@@ -114,7 +114,7 @@ resources:
      WebAppContainer:
          WeblogicPluginEnabled: true
 ```
-If you are using a WLST script to configure the domain, then the following modifications are needed to the respective PY script.
+If you are using a WLST script to configure the domain, then the following modifications are needed to the respective python script.
 ```
 # Configure the Administration Server
 cd('/Servers/AdminServer')

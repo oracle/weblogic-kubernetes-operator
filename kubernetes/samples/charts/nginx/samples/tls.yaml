@@ -1,15 +1,13 @@
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-apiVersion: voyager.appscode.com/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: voyager-ssl-1
+  name: nginx-ssl-1
   namespace: weblogic-domain1
   annotations:
-    ingress.appscode.com/type: 'NodePort'
-    ingress.appscode.com/stats: 'true'
-    ingress.appscode.com/affinity: 'cookie'
+    kubernetes.io/ingress.class: "nginx"
 spec:
   tls:
   - secretName: domain1-tls-cert
@@ -18,21 +16,18 @@ spec:
   rules:
   - host: domain1.org 
     http:
-      nodePort: '30305'
       paths:
       - backend:
           serviceName: domain1-cluster-cluster-1
           servicePort: '8001'
 ---
-apiVersion: voyager.appscode.com/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: voyager-ssl-2
+  name: nginx-ssl-2
   namespace: weblogic-domain2
   annotations:
-    ingress.appscode.com/type: 'NodePort'
-    ingress.appscode.com/stats: 'true'
-    ingress.appscode.com/affinity: 'cookie'
+    kubernetes.io/ingress.class: "nginx"
 spec:
   tls:
   - secretName: domain2-tls-cert
@@ -41,7 +36,6 @@ spec:
   rules:
   - host: domain2.org
     http:
-      nodePort: '30307'
       paths:
       - backend:
           serviceName: domain2-cluster-cluster-1
