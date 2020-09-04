@@ -472,7 +472,7 @@ Now that we have created the AKS cluster, installed the operator, and verified t
    The following is an example of successful output:
 
    ```bash
-   $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e foo@bar.com -p myDockerPassword -u myDockerUserId
+   $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e foo@bar.com -p oracleSsoPassword -u foo@bar.com
    secret/0730regcred created
    The secret 0730regcred has been successfully created in the default namespace.
    ```
