@@ -442,17 +442,6 @@
 
   <dependencyManagement>
     <dependencies>
-      <!-- Add direct bouncycastle dependency to override version from kubernetes/client-java until they update -->
-      <dependency>
-        <groupId>org.bouncycastle</groupId>
-        <artifactId>bcprov-ext-jdk15on</artifactId>
-        <version>1.64</version>
-      </dependency>
-      <dependency>
-        <groupId>org.bouncycastle</groupId>
-        <artifactId>bcpkix-jdk15on</artifactId>
-        <version>1.64</version>
-      </dependency>
       <dependency>
         <groupId>io.kubernetes</groupId>
         <artifactId>client-java</artifactId>
@@ -701,7 +690,7 @@
     <assertj.core.version>3.15.0</assertj.core.version>
     <commons.io.version>2.6</commons.io.version>
     <awaitility-version>4.0.2</awaitility-version>
-    <client-java-version>8.0.2</client-java-version>
+    <client-java-version>9.0.2</client-java-version>
     <junit.jupiter.version>5.6.0</junit.jupiter.version>
     <junit.vintage.version>5.6.0</junit.vintage.version>
     <junit.platform.version>1.6.0</junit.platform.version>
