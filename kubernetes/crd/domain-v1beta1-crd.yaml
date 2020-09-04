@@ -5115,11 +5115,11 @@ spec:
                           type: string
                         type: object
                   maxConcurrentShutdown:
-                    description: The maximum WebLogic Server instances that will shutdown
-                      in parallel for this cluster when it is being partially shutdown
-                      by lowering its replica count.A value of 0 means there is no
-                      limit. Defaults to `spec.maxClusterConcurrentShutdown` (which
-                      in turn defaults to 1).
+                    description: The maximum number of WebLogic Server instances that
+                      will shut down in parallel for this cluster when it is being
+                      partially shut down by lowering its replica count. A value of
+                      0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`,
+                      which defaults to 1.
                     type: number
                     minimum: 0.0
                   serverStartPolicy:
@@ -5195,11 +5195,11 @@ spec:
               minimum: 0.0
             maxClusterConcurrentShutdown:
               type: number
-              description: The default maximum WebLogic Server instances that a cluster
-                will shutdown in parallel when it is being partially shutdown by lowering
-                its replica count. You can override this default on a per cluster
-                basis by setting the cluster's `maxConcurrentShutdown` attribute.
-                A value of 0 means there is no limit. Defaults to 1
+              description: The default maximum number of WebLogic Server instances
+                that a cluster will shut down in parallel when it is being partially
+                shut down by lowering its replica count. You can override this default
+                on a per cluster basis by setting the cluster's `maxConcurrentShutdown`
+                field. A value of 0 means there is no limit. Defaults to 1.
               minimum: 0.0
             domainHomeInImage:
               type: boolean
