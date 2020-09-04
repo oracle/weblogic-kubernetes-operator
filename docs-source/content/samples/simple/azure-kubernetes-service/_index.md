@@ -500,9 +500,9 @@ Now that we have created the AKS cluster, installed the operator, and verified t
 
 3. We will use the `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume we created previously.
 
-   First, we need to set up the domain configuration for the WebLogic domain.  This step uses the configuration generated previously.
+   We need to set up the domain configuration for the WebLogic domain. This step uses the configuration generated previously.
 
-   Next, validate all the resources created above using script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/validate.sh`.
+   Validate all the resources created above using the script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/validate.sh`.
    
    Use the following commands to check if the resources are ready:
 
