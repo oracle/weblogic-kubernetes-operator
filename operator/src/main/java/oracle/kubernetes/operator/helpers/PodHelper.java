@@ -22,6 +22,7 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -610,9 +611,31 @@ public class PodHelper {
                   });
 
       V1DeleteOptions deleteOptions = new V1DeleteOptions().gracePeriodSeconds(gracePeriodSeconds);
-      return new CallBuilder()
-          .deletePodAsync(
-              name, namespace, domainUid, deleteOptions, new DefaultResponseStep<>(conflictStep, next));
+      DeletePodRetryStrategy retryStrategy = new DeletePodRetryStrategy(next);
+      return new CallBuilder().withRetryStrategy(retryStrategy)
+              .deletePodAsync(name, namespace, domainUid, deleteOptions, new DefaultResponseStep<>(conflictStep, next));
     }
   }
+
+  /* Retry strategy for delete pod which will not perform any retries */
+  private static final class DeletePodRetryStrategy implements RetryStrategy {
+    private long retryCount = 0;
+    private final Step retryStep;
+
+    DeletePodRetryStrategy(Step retryStep) {
+      this.retryStep = retryStep;
+    }
+
+    @Override
+    public NextAction doPotentialRetry(Step conflictStep, Packet packet, int statusCode) {
+      NextAction na = new NextAction();
+      na.invoke(retryStep, packet);
+      return na;
+    }
+
+    @Override
+    public void reset() {
+    }
+  }
+
 }
