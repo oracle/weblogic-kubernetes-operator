@@ -49,6 +49,7 @@ import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallWrapper;
 import oracle.kubernetes.operator.calls.CancellableCall;
 import oracle.kubernetes.operator.calls.RequestParams;
+import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.work.Step;
@@ -230,6 +231,8 @@ public class CallBuilder {
                   null,
                   null,
                   callback));
+
+  private RetryStrategy retryStrategy;
 
   private String fieldSelector;
   private String labelSelector;
@@ -514,6 +517,11 @@ public class CallBuilder {
 
   public CallBuilder withFieldSelector(String fieldSelector) {
     this.fieldSelector = fieldSelector;
+    return this;
+  }
+
+  public CallBuilder withRetryStrategy(RetryStrategy retryStrategy) {
+    this.retryStrategy = retryStrategy;
     return this;
   }
 
@@ -1186,7 +1194,8 @@ public class CallBuilder {
       V1DeleteOptions deleteOptions,
       ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid), deletePod);
+        responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid),
+            deletePod, retryStrategy);
   }
 
   private Call patchPodAsync(
@@ -1846,12 +1855,28 @@ public class CallBuilder {
         next,
         requestParams,
         factory,
+        null,
         helper,
         timeoutSeconds,
         maxRetryCount,
         fieldSelector,
         labelSelector,
         resourceVersion);
+  }
+
+  private <T> Step createRequestAsync(
+          ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, RetryStrategy retryStrategy) {
+    return STEP_FACTORY.createRequestAsync(
+            next,
+            requestParams,
+            factory,
+            retryStrategy,
+            helper,
+            timeoutSeconds,
+            maxRetryCount,
+            fieldSelector,
+            labelSelector,
+            resourceVersion);
   }
 
   private CancellableCall wrap(Call call) {
