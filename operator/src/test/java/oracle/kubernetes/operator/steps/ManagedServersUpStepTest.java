@@ -499,7 +499,7 @@ public class ManagedServersUpStepTest {
     addServer(domainPresenceInfo, ADMIN);
 
     assertStoppingServers(skipProgressingStep(createNextStepWithout("server2")),
-            "server1", "server3");
+        "server1", "server3");
   }
 
   @Test
@@ -512,7 +512,7 @@ public class ManagedServersUpStepTest {
     addServer(domainPresenceInfo, ADMIN);
 
     assertStoppingServers(skipProgressingStep(createNextStepWithout("server2")), "server1",
-            "server3", ADMIN);
+        "server3", ADMIN);
   }
 
   @Test

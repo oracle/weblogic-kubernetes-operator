@@ -19,6 +19,7 @@ import javax.validation.Valid;
 import com.google.common.base.Strings;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -37,7 +38,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
  */
-public class Domain {
+public class Domain implements KubernetesObject {
   /**
    * The pattern for computing the default shared logs directory.
    */

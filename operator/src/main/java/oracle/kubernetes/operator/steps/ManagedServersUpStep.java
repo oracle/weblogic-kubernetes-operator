@@ -69,8 +69,8 @@ public class ManagedServersUpStep extends Step {
 
     if (!serversToStop.isEmpty()) {
       insert(steps,
-              Step.chain(createProgressingStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
-                      null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
+          Step.chain(createProgressingStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
+          null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
     }
 
     return Step.chain(steps.toArray(new Step[0]));
