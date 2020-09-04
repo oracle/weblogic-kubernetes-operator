@@ -986,13 +986,13 @@ class ItMiiUpdateDomainConfig {
                                 .mountPath("/shared"))
                         .securityContext(new V1SecurityContext()
                             .runAsGroup(0L)
-                            .runAsUser(0L))) // mounted under /u01/shared inside pod
+                            .runAsUser(0L))) // mounted under /shared inside pod
                     .volumes(Arrays.asList(
                         new V1Volume()
                             .name(pvName)
                             .persistentVolumeClaim(
                                 new V1PersistentVolumeClaimVolumeSource()
-                                    .claimName(pvcName)))) //config map containing domain scripts
+                                    .claimName(pvcName))))
                     .imagePullSecrets(isUseSecret ? Arrays.asList(
                         new V1LocalObjectReference()
                             .name(OCR_SECRET_NAME))
