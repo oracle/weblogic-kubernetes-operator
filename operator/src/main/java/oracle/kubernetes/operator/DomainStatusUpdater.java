@@ -600,7 +600,7 @@ public class DomainStatusUpdater {
     }
   }
 
-  private static class ProgressingStep extends DomainStatusUpdaterStep {
+  public static class ProgressingStep extends DomainStatusUpdaterStep {
     private final String reason;
     private final boolean isPreserveAvailable;
 

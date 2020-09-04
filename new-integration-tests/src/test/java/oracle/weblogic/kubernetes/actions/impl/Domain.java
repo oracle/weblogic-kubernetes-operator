@@ -379,6 +379,8 @@ public class Domain {
     // create RBAC API objects for WLDF script
     logger.info("Creating RBAC API objects for WLDF script");
     if (!createRbacApiObjectsForWLDFScript(domainNamespace, opNamespace)) {
+      logger.info("failed to create RBAC objects for WLDF script in namespace {0} and {1}",
+          domainNamespace, opNamespace);
       return false;
     }
 
@@ -396,6 +398,7 @@ public class Domain {
     ExecResult result = exec(adminPod, null, true,
         "/bin/sh", "-c", "mkdir -p " + domainHomeLocation + "/bin/scripts");
     if (result.exitValue() != 0) {
+      logger.info("failed to create directory {0}/bin/scripts on admin server pod", domainHomeLocation);
       return false;
     }
 
@@ -405,10 +408,14 @@ public class Domain {
           Paths.get(PROJECT_ROOT + "/../src/scripts/scaling/scalingAction.sh"),
           Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"));
     } catch (ApiException apex) {
-      logger.severe("Got ApiException while copying file to admin pod {0}", apex.getResponseBody());
+      logger.severe("Got ApiException while copying file {0} to admin pod {1} in namespace {2}, exception: {3}",
+          PROJECT_ROOT + "/../src/scripts/scaling/scalingAction.sh", adminServerPodName, domainNamespace,
+          apex.getResponseBody());
       return false;
     } catch (IOException ioex) {
-      logger.severe("Got IOException while copying file to admin pod {0}", ioex.getStackTrace());
+      logger.severe("Got IOException while copying file {0} to admin pod {1} in namespace {2}, exception: {3}",
+          PROJECT_ROOT + "/../src/scripts/scaling/scalingAction.sh", adminServerPodName, domainNamespace,
+          ioex.getStackTrace());
       return false;
     }
 
@@ -416,6 +423,8 @@ public class Domain {
     result = exec(adminPod, null, true,
         "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh");
     if (result.exitValue() != 0) {
+      logger.info("failed to add execute mode for file {0} in admin server pod {1}",
+          domainHomeLocation + "/bin/scripts/scalingAction.sh", adminServerPodName);
       return false;
     }
 
@@ -430,10 +439,12 @@ public class Domain {
           Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
           Paths.get("/u01/oracle/callpyscript.sh"));
     } catch (ApiException apex) {
-      logger.severe("Got ApiException while copying file to admin pod {0}", apex.getResponseBody());
+      logger.severe("Got ApiException while copying file {0} to admin pod {1} in namespace {2}, exception: {3}",
+          RESOURCE_DIR + "/python-scripts/wldf.py", adminServerPodName, domainNamespace, apex.getResponseBody());
       return false;
     } catch (IOException ioex) {
-      logger.severe("Got IOException while copying file to admin pod {0}", ioex.getStackTrace());
+      logger.severe("Got IOException while copying file {0} to admin pod {1} in namespace {2}, exception: {3}",
+          RESOURCE_DIR + "/python-scripts/wldf.py", adminServerPodName, domainNamespace, ioex.getStackTrace());
       return false;
     }
 
@@ -441,6 +452,8 @@ public class Domain {
     result = exec(adminPod, null, true,
         "/bin/sh", "-c", "chmod +x /u01/oracle/callpyscript.sh");
     if (result.exitValue() != 0) {
+      logger.info("failed to add execute mode for file /u01/oracle/callpyscript.sh in admin pod {0}",
+          adminServerPodName);
       return false;
     }
 
@@ -476,6 +489,7 @@ public class Domain {
     logger.info("executing command {0} in admin server pod", command);
     result = exec(adminPod, null, true, "/bin/sh", "-c", command);
     if (result.exitValue() != 0) {
+      logger.info("failed to create WLDF policy rule and action");
       return false;
     }
 
@@ -527,6 +541,7 @@ public class Domain {
               .addVerbsItem("list"));
 
       if (!createClusterRole(v1ClusterRole)) {
+        logger.info("failed to create cluster role {0}", WLDF_CLUSTER_ROLE_NAME);
         return false;
       }
     }
@@ -552,6 +567,7 @@ public class Domain {
               .apiGroup(RBAC_API_GROUP));
 
       if (!createClusterRoleBinding(v1ClusterRoleBinding)) {
+        logger.info("failed to create cluster role binding {0}", clusterRoleBindingName);
         return false;
       }
     }
@@ -577,7 +593,10 @@ public class Domain {
               .name("cluster-admin")
               .apiGroup(RBAC_API_GROUP));
 
-      return createNamespacedRoleBinding(opNamespace, v1RoleBinding);
+      if (!createNamespacedRoleBinding(opNamespace, v1RoleBinding)) {
+        logger.info("failed to create role binding {0} in namespace {1}", roleBindingName, opNamespace);
+        return false;
+      }
     }
 
     return true;

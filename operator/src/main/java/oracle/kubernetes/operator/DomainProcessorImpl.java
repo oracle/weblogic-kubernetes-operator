@@ -66,13 +66,14 @@ import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.ServerHealth;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
-import static oracle.kubernetes.operator.DomainStatusUpdater.ADMIN_SERVER_STARTING_PROGRESS_REASON;
-import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
-import static oracle.kubernetes.operator.DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
 
 public class DomainProcessorImpl implements DomainProcessor {
@@ -213,8 +214,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static Step bringManagedServersUp(Step next) {
-    return DomainStatusUpdater.createProgressingStep(MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
-            new ManagedServersUpStep(next));
+    return new ManagedServersUpStep(next);
   }
 
   private FiberGate getMakeRightFiberGate(String ns) {
@@ -260,7 +260,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.getCurrentFibers().forEach(
                 (key, fiber) -> {
                   Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
-                    try (LoggingContext stack
+                    try (LoggingContext ignored
                              = LoggingContext.setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
                       LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getName());
                     }
@@ -519,7 +519,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                           }
                         });
               } catch (Throwable t) {
-                try (LoggingContext stack
+                try (LoggingContext ignored
                          = LoggingContext.setThreadContext()
                     .namespace(info.getNamespace()).domainUid(info.getDomainUid())) {
                   LOGGER.severe(MessageKeys.EXCEPTION, t);
@@ -551,6 +551,49 @@ public class DomainProcessorImpl implements DomainProcessor {
   @Override
   public MakeRightDomainOperation createMakeRightOperation(Domain liveDomain) {
     return createMakeRightOperation(new DomainPresenceInfo(liveDomain));
+  }
+
+  public Step createPopulatePacketServerMapsStep(oracle.kubernetes.operator.work.Step next) {
+    return new PopulatePacketServerMapsStep(next);
+  }
+
+  public static class PopulatePacketServerMapsStep extends Step {
+    public PopulatePacketServerMapsStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      populatePacketServerMapsFromDomain(packet);
+      return doNext(packet);
+    }
+
+    private void populatePacketServerMapsFromDomain(Packet packet) {
+      Map<String, ServerHealth> serverHealth = new ConcurrentHashMap<>();
+      Map<String, String> serverState = new ConcurrentHashMap<>();
+      Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getServers)
+          .ifPresent(servers -> servers.forEach(item -> addServerToMaps(serverHealth, serverState, item)));
+      if (!serverState.isEmpty()) {
+        packet.put(SERVER_STATE_MAP, serverState);
+      }
+      if (!serverHealth.isEmpty()) {
+        packet.put(SERVER_HEALTH_MAP, serverHealth);
+      }
+    }
+
+    private void addServerToMaps(Map<String, ServerHealth> serverHealthMap,
+                                 Map<String, String> serverStateMap, ServerStatus item) {
+      if (item.getHealth() != null) {
+        serverHealthMap.put(item.getServerName(), item.getHealth());
+      }
+      if (item.getState() != null) {
+        serverStateMap.put(item.getServerName(), item.getState());
+      }
+    }
+
   }
 
   /**
@@ -699,14 +742,19 @@ public class DomainProcessorImpl implements DomainProcessor {
               Component.createFor(liveInfo, delegate.getVersion(),
                   PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                   V1SubjectRulesReviewStatus.class, delegate.getSubjectRulesReviewStatus(getNamespace())));
-
       runDomainPlan(
             getDomain(),
             getDomainUid(),
             getNamespace(),
-            new StepAndPacket(createSteps(), packet),
+            createDomainPlanSteps(packet),
             deleting,
             willInterrupt);
+    }
+
+    private StepAndPacket createDomainPlanSteps(Packet packet) {
+      return new StepAndPacket(
+          createPopulatePacketServerMapsStep(createSteps()),
+          packet);
     }
 
     private Domain getDomain() {
@@ -849,7 +897,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                     () -> {
                       DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
                       if (existing != null) {
-                        try (LoggingContext stack =
+                        try (LoggingContext ignored =
                                  LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
                           existing.setPopulated(false);
                           // proceed only if we have not already retried max number of times
@@ -891,14 +939,12 @@ public class DomainProcessorImpl implements DomainProcessor {
         Step.chain(
             domainIntrospectionSteps(info),
             new DomainStatusStep(info, null),
-            DomainStatusUpdater.createProgressingStep(ADMIN_SERVER_STARTING_PROGRESS_REASON,true, null),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
 
     return Step.chain(
           createDomainUpInitialStep(info),
           ConfigMapHelper.readExistingIntrospectorConfigMap(info.getNamespace(), info.getDomainUid()),
-          DomainStatusUpdater.createProgressingStep(INSPECTING_DOMAIN_PROGRESS_REASON,true, null),
           DomainPresenceStep.createDomainPresenceStep(info.getDomain(), domainUpStrategy, managedServerStrategy));
   }
 

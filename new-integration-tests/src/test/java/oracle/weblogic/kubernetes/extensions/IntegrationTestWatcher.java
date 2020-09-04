@@ -359,6 +359,8 @@ public class IntegrationTestWatcher implements
     for (var namespace : namespaces) {
       LoggingUtil.collectLogs((String)namespace, resultDir.toString());
     }
+    // collect the logs in default namespace
+    LoggingUtil.collectLogs("default", resultDir.toString());
   }
 
   /**

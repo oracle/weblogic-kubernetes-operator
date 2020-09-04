@@ -172,4 +172,16 @@ public class Ingress {
 
     return ingressNames;
   }
+
+  /**
+   * Delete an ingress in the specified namespace.
+   *
+   * @param name  ingress name to be deleted
+   * @param namespace namespace in which the specified ingress exists
+   * @return true if deleting ingress succeed, false otherwise
+   * @throws ApiException if Kubernetes API client call fails
+   */
+  public static boolean deleteIngress(String name, String namespace) throws ApiException {
+    return Kubernetes.deleteIngress(name, namespace);
+  }
 }

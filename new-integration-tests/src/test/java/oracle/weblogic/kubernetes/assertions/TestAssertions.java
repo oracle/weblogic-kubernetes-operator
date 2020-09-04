@@ -8,7 +8,9 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
+import oracle.weblogic.kubernetes.assertions.impl.Apache;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
@@ -29,6 +31,8 @@ import oracle.weblogic.kubernetes.assertions.impl.Traefik;
 import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import org.joda.time.DateTime;
+
+import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
@@ -63,6 +67,16 @@ public class TestAssertions {
    */
   public static Callable<Boolean> isNginxReady(String namespace) {
     return Nginx.isReady(namespace);
+  }
+
+  /**
+   * Check if there are ready Apache pods in the specified namespace.
+   *
+   * @param namespace in which to check if Apache pods are in the ready state
+   * @return true if there are ready Apache pods in the specified namespace , false otherwise
+   */
+  public static Callable<Boolean> isApacheReady(String namespace) {
+    return Apache.isReady(namespace);
   }
 
   /**
@@ -128,7 +142,19 @@ public class TestAssertions {
    * @return true if domain object exists
    */
   public static Callable<Boolean> domainExists(String domainUid, String domainVersion, String namespace) {
-    return Domain.doesDomainExist(domainUid, domainVersion, namespace);
+    return () -> Domain.doesDomainExist(domainUid, domainVersion, namespace);
+  }
+
+  /**
+   * Check if a WebLogic custom resource domain object does not exist in specified namespace.
+   *
+   * @param domainUid ID of the domain
+   * @param domainVersion version of the domain resource definition
+   * @param namespace in which the domain custom resource object exists
+   * @return true if domain object exists
+   */
+  public static Callable<Boolean> domainDoesNotExist(String domainUid, String domainVersion, String namespace) {
+    return () -> !Domain.doesDomainExist(domainUid, domainVersion, namespace);
   }
 
   /**
@@ -473,6 +499,27 @@ public class TestAssertions {
   }
 
   /**
+   * Check Helm release status is deployed.
+   * @param releaseName release name which unique in a namespace
+   * @param namespace namespace name
+   * @param status expected helm release status
+   * @return true on success
+   */
+  public static boolean checkHelmReleaseStatus(String releaseName, String namespace, String status) {
+    return Helm.checkHelmReleaseStatus(releaseName, namespace, status);
+  }
+
+  /**
+   * Check Helm release status is deployed.
+   * @param releaseName release name which unique in a namespace
+   * @param namespace namespace name
+   * @return true on success
+   */
+  public static boolean isHelmReleaseFailed(String releaseName, String namespace) {
+    return Helm.isReleaseFailed(releaseName, namespace);
+  }
+
+  /**
    * Check if a pod is restarted based on podCreationTimestamp.
    *
    * @param podName the name of the pod to check for
@@ -596,5 +643,25 @@ public class TestAssertions {
    */
   public static boolean clusterRoleBindingExists(String clusterRoleBindingName) throws ApiException {
     return ClusterRoleBinding.clusterRoleBindingExists(clusterRoleBindingName);
+  }
+
+  /**
+   * Check whether the secret exists in the specified namespace.
+   *
+   * @param secretName name of the secret
+   * @param namespace namespace in which the secret exists
+   * @return true if secret exists, false otherwise
+   */
+  public static boolean secretExists(String secretName, String namespace) {
+    for (V1Secret secret : listSecrets(namespace).getItems()) {
+      if (secret.getMetadata() != null) {
+        String name = secret.getMetadata().getName();
+        if (name != null && name.equals(secretName)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 }
