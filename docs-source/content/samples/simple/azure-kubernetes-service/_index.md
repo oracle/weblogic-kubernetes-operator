@@ -466,7 +466,7 @@ Now that we have created the AKS cluster, installed the operator, and verified t
    $ export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
 
    #cd kubernetes/samples/scripts/create-kuberetes-secrets
-   $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e <foo@bar.com> -p <myDockerPassword> -u <myDockerUserId> -d container-registry.oracle.com
+   $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e <oracleSsoEmail> -p <oracleSsoPassword> -u <oracleSsoEmail> -d container-registry.oracle.com
    ```
 
    The following is an example of successful output:
