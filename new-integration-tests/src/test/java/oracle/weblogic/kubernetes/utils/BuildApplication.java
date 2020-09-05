@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -179,7 +180,7 @@ public class BuildApplication {
 
       Kubernetes.copyDirectoryFromPod(webLogicPod,
           Paths.get(APPLICATIONS_PATH, archiveDistDir).toString(), destArchiveBaseDir);
-    } catch (ApiException | IOException | InterruptedException ioex) {
+    } catch (ApiException | IOException | InterruptedException | CopyNotSupportedException ioex) {
       logger.info("Exception while copying file " + Paths.get(APPLICATIONS_PATH, archiveDistDir) + " from pod", ioex);
     }
 
