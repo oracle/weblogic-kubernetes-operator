@@ -66,7 +66,6 @@ public interface TestConstants {
 
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostName()));
-  public static final String GOOGLE_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
   public static final String RESULTS_ROOT = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/ittestsresults";
   public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
@@ -76,9 +75,10 @@ public interface TestConstants {
       System.getProperty("java.io.tmpdir") + "/ittestspvroot");
 
   // NGINX constants
+  public static final String NGINX_REPO_URL = "https://kubernetes.github.io/ingress-nginx";
   public static final String NGINX_RELEASE_NAME = "nginx-release" + BUILD_ID;
-  public static final String STABLE_REPO_NAME = "stable";
-  public static final String NGINX_CHART_NAME = "nginx-ingress";
+  public static final String NGINX_REPO_NAME = "ingress-nginx";
+  public static final String NGINX_CHART_NAME = "ingress-nginx";
 
   // Traefik constants
   public static final String TRAEFIK_REPO_URL = "https://containous.github.io/traefik-helm-chart";
