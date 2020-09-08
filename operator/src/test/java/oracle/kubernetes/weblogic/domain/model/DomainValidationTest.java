@@ -210,6 +210,51 @@ public class DomainValidationTest {
   }
 
   @Test
+  public void whenDomainAdminServerHasAdditionalVolumeMountsWithInvalidChar_reportError() {
+    configureDomain(domain)
+        .configureAdminServer()
+        .getAdminServer()
+        .addAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", BAD_MOUNT_PATH_1, 
+            "volume1", "of domain resource", "is not valid")));
+  }
+
+  @Test
+  public void whenDomainAdminServerHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
+    configureDomain(domain)
+        .configureAdminServer()
+        .getAdminServer()
+        .addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenDomainAdminServerHasAdditionalVolumeMountsWithNonExsitVariables_reportError() {
+    configureDomain(domain)
+        .configureAdminServer()
+        .getAdminServer()
+        .addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", "volume1", "of domain resource", "is not valid")));
+  }
+
+  @Test
+  public void whenDomainAdminServerHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
+    V1EnvVar fieldRefEnvVar = createFieldRefEnvVar(ENV_NAME1, RAW_VALUE_1);
+    configureDomain(domain)
+        .withEnvironmentVariable(fieldRefEnvVar)
+        .configureAdminServer()
+        .getAdminServer()
+        .addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
   public void whenNonReservedEnvironmentVariableSpecifiedAtDomainLevel_dontReportError() {
     configureDomain(domain).withEnvironmentVariable("testname", "testValue");
 

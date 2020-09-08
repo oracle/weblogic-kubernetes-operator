@@ -386,6 +386,10 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     public AdminService configureAdminService() {
       return adminServer.createAdminService();
     }
+
+    public AdminServer getAdminServer() { 
+      return adminServer; 
+    }
   }
 
   class ServerConfiguratorImpl implements ServerConfigurator {

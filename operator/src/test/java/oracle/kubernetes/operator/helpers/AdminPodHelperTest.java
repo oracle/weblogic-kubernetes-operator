@@ -56,6 +56,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   static final String RAW_VALUE_1 = "value-$(SERVER_NAME)";
   static final String END_VALUE_1 = "value-ADMIN_SERVER";
+  static final String RAW_MOUNT_PATH_1 = "$(DOMAIN_HOME)/servers/$(SERVER_NAME)";
+  static final String END_MOUNT_PATH_1 = "/u01/oracle/user_projects/domains/servers/ADMIN_SERVER";
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -320,6 +322,17 @@ public class AdminPodHelperTest extends PodHelperTestBase {
           hasItem(createFieldRefEnvVar("MY_NODE_IP", END_VALUE_1))
         )
     );
+  }
+
+  @Test
+  public void whenDomainAdminServerHasAdditionalVolumeMountsWithVariables_createAdminPodStartupWithSubstitutions() {
+    configureAdminServer()
+        .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
+
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", END_MOUNT_PATH_1)));
   }
 
   @Test
