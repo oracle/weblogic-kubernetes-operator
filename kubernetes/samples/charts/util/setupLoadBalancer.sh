@@ -3,14 +3,17 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # This script is to create or delete Ingress controllers. 
-# Currently the script supports two ingress controllers: Traefik and Voyager.
-# Usage $0 create|delete traefik|voyager traefik_version|voyager_version
+# Currently the script supports ingress controllers: Traefik, Voyager, and Nginx.
+# Usage $0 create|delete traefik|voyager|nginx traefik_version|voyager_version
 
 UTILDIR="$(dirname "$(readlink -f "$0")")"
 VNAME=voyager-operator  # release name for Voyager
 TNAME=traefik-operator  # release name for Traefik
+NNAME=nginx-operator    # release name for Nginx
+
 VSPACE=voyager          # namespace for Voyager
 TSPACE=traefik          # namespace for Traefik
+NSPACE=nginx            # namespace for Nginx
 
 # https://hub.helm.sh/charts/appscode/voyager
 # https://github.com/voyagermesh/voyager#supported-versions
@@ -184,8 +187,60 @@ function deleteTraefik() {
   fi
 }
 
+function deleteNginx() {
+  if [ "$(helm list --namespace $NSPACE | grep $NNAME |  wc -l)" = 1 ]; then
+    echo "Deleting Nginx operator." 
+    helm uninstall --namespace $NSPACE  $NNAME
+    kubectl delete ns ${NSPACE}
+    echo "Remove Nginx chart repository."
+    helm repo remove ingress-nginx
+  else
+    echo "Nginx operator has already been deleted." 
+  fi
+}
+
+function createNginx() {
+  createNameSpace $NSPACE
+  echo "Creating Nginx operator on namespace ${NSPACE}" 
+
+  if [ "$(helm search repo ingress-nginx | grep nginx | wc -l)" = 0 ]; then
+    echo "Add Nginx chart repository"
+    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+    helm repo update
+  else
+    echo "Nginx chart repository is already added."
+  fi
+
+  if [ "$(helm list --namespace $NNAME | grep $NNAME |  wc -l)" = 0 ]; then
+    echo "Installing Nginx operator."
+    helm install $NNAME ingress-nginx/ingress-nginx --namespace ${NSPACE}
+  else
+    echo "Nginx operator is already installed."
+    exit 0;
+  fi
+  echo
+
+  echo "Wait until Nginx operator pod is running."
+  max=20
+  count=0
+  tpod=$(kubectl get po -n ${NSPACE} --no-headers | awk '{print $1}')
+  while test $count -lt $max; do
+    if test "$(kubectl get po -n ${NSPACE} --no-headers | awk '{print $2}')" = 1/1; then
+      echo "Nginx operator pod is running now."
+      kubectl get pod/${tpod} -n ${NSPACE}
+      kubectl exec -it $tpod -n nginx -- /nginx-ingress-controller --version``
+      exit 0;
+    fi
+    count=`expr $count + 1`
+    sleep 2
+  done
+  echo "ERROR: Nginx operator pod failed to start."
+  kubectl describe pod/${tpod} -n ${NSPACE}
+  exit 1
+}
+
 function usage() {
-  echo "usage: $0 create|delete traefik|voyager [traefik version|voyager version]"
+  echo "usage: $0 create|delete traefik|voyager|nginx [traefik version|voyager version]"
   exit 1
 }
 
@@ -199,8 +254,8 @@ function main() {
     echo "[ERROR] The first parameter MUST be either create or delete "
     usage
   fi
-  if [ "$2" != traefik ] && [ "$2" != voyager ]; then
-    echo "[ERROR] The second  parameter MUST be either traefik or voyager "
+  if [ "$2" != traefik ] && [ "$2" != voyager ] && [ "$2" != nginx ]; then
+    echo "[ERROR] The second  parameter MUST be either traefik or voyager or inginx "
     usage
   fi
 
@@ -209,17 +264,22 @@ function main() {
       TraefikVersion="${3:-${DefaultTraefikVersion}}"
       echo "Selected Traefik version [$TraefikVersion]"
       createTraefik
-    else
+    elif [ "$2" = voyager ]; then
       VoyagerVersion="${3:-${DefaultVoyagerVersion}}"
       echo "Selected voyager version [$VoyagerVersion]"
       createVoyager
+    else
+      createNginx
     fi
   else
     if [ "$2" = traefik ]; then
       deleteTraefik
-    else
+    elif [ "$2" = voyager ]; then
       deleteVoyager
+    else
+      deleteNginx
     fi
+
   fi
 }
 
