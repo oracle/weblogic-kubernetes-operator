@@ -725,10 +725,6 @@ public class DomainProcessorImpl implements DomainProcessor {
               .map(Domain::getStatus)
               .map(o -> o.resetIntrospectJobFailureCount());
         }
-        if (currentIntrospectFailureRetryCount > 0) {
-          LOGGER.info("Retrying failed introspection job " + currentIntrospectFailureRetryCount + " of "
-              + DomainPresence.getDomainPresenceFailureRetryMaxCount());
-        }
 
         return true;
       }

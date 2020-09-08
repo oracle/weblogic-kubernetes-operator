@@ -48,8 +48,11 @@ public class DomainStatus {
   private String reason;
 
   @Description(
-      "The IntrospectorJobFailureCount is non-zero if introspector job has failed. Configure the maximum retry "
-          + "count using operator tuning parameter domainPresenceFailureRetryMaxCount.)")
+      "Non-zero if the introspector job fails for any reason. "
+          + "You can configure an introspector job retry limit for jobs that log script failures using "
+          + "the Operator tuning parameter 'domainPresenceFailureRetryMaxCount' (default 5). "
+          + "You cannot configure a limit for other types of failures, such as a Domain resource reference "
+          + "to an unknown secret name; in which case, the retries are unlimited.")
   @Range(minimum = 0)
   private Integer introspectJobFailureCount = new Integer(0);
 

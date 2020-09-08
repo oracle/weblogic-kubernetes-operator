@@ -1342,8 +1342,8 @@ window.onload = function() {
             "$ref": "#/definitions/ServerStatus"
           }
         },
-        "retryCount": {
-          "description": "Number of retries.",
+        "introspectJobFailureCount": {
+          "description": "Non-zero if the introspector job fails. You can configure an introspector job retry limit for failures that are specifically due to introspector script failures by using the operator tuning parameter\u0027domainPresenceFailureRetryMaxCount\u0027.  Note: This only applicable to a intropsector job failure results  from it\u0027s execution. Validation error of the domain resource YAML file that occurred before the  execution will not trigger the automatic retry.  Examples for validation error are missing kubernetes  secret for weblogic credentials, missing override configmap etc...",
           "type": "number",
           "minimum": 0.0
         },
