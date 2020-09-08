@@ -200,6 +200,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     steps.add(new BeforeAdminServiceStep(null));
     steps.add(PodHelper.createAdminPodStep(null));
 
+    // Reset introspection failure count if any
+    Optional.ofNullable(info)
+        .map(DomainPresenceInfo::getDomain)
+        .map(Domain::getStatus)
+        .ifPresent(a -> a.resetIntrospectJobFailureCount());
+
     Domain dom = info.getDomain();
     AdminServer adminServer = dom.getSpec().getAdminServer();
     AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
@@ -684,7 +690,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       int currentIntrospectFailureRetryCount = Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
-          .map(DomainStatus::getIntrospectJobFailureRetryCount)
+          .map(DomainStatus::getIntrospectJobFailureCount)
           .orElse(1);
 
       String existingError = Optional.ofNullable(liveInfo)
@@ -717,13 +723,13 @@ public class DomainProcessorImpl implements DomainProcessor {
           Optional.ofNullable(liveInfo)
               .map(DomainPresenceInfo::getDomain)
               .map(Domain::getStatus)
-              .map(o -> o.resetIntrospectJobFailureRetryCount());
+              .map(o -> o.resetIntrospectJobFailureCount());
         }
-
         if (currentIntrospectFailureRetryCount > 0) {
           LOGGER.info("Retrying failed introspection job " + currentIntrospectFailureRetryCount + " of "
               + DomainPresence.getDomainPresenceFailureRetryMaxCount());
         }
+
         return true;
       }
       cachedInfo.setDomain(getDomain());

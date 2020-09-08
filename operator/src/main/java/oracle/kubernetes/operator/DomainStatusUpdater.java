@@ -321,7 +321,7 @@ public class DomainStatusUpdater {
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(info.getValidationWarningsAsString());
         if (existingError != null) {
-          newStatus.incrementIntrospectJobFailureRetryCount();
+          newStatus.incrementIntrospectJobFailureCount();
         }
       }
       return newStatus;

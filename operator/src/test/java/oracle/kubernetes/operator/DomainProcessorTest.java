@@ -537,7 +537,7 @@ public class DomainProcessorTest {
     assertThat(job, notNullValue());
     job = null;
     DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(newDomain);
-    domainPresenceInfo.getDomain().getStatus().setMessage("MII Fatal Error: ECCC");
+    domainPresenceInfo.getDomain().getStatus().setMessage("FatalIntrospectorError: ECCC");
     domainPresenceInfo.getDomain().getSpec().setIntrospectVersion("NEWVERSION");
     MakeRightDomainOperation mk = processor.createMakeRightOperation(domainPresenceInfo).withExplicitRecheck();
     mk.execute();

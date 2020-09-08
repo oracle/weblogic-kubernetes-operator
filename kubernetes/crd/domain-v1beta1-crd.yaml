@@ -10071,6 +10071,12 @@ spec:
                   state:
                     description: Current state of this WebLogic Server instance.
                     type: string
+            introspectJobFailureCount:
+              type: number
+              description: The IntrospectorJobFailureCount is non-zero if introspector
+                job has failed. Configure the maximum retry count using operator tuning
+                parameter domainPresenceFailureRetryMaxCount.)
+              minimum: 0.0
             replicas:
               type: number
               description: The number of running cluster member Managed Servers in
@@ -10125,13 +10131,6 @@ spec:
               type: string
               description: A human readable message indicating details about why the
                 domain is in this condition.
-            introspectJobFailureRetryCount:
-              type: number
-              description: Number of retries for introspect job failure. If the introspect
-                job fails, it will retry based on the make-right interval (120s),
-                in each retry this will be incremented until it exceeded the DomainPresenceFailureRetryMaxCount
-                in the operator tuning parameter.
-              minimum: 0.0
             clusters:
               type: array
               description: Status of WebLogic clusters in this domain.

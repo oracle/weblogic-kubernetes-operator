@@ -421,8 +421,8 @@
             "$ref": "#/definitions/ServerStatus"
           }
         },
-        "retryCount": {
-          "description": "Number of retries.",
+        "introspectJobFailureCount": {
+          "description": "The IntrospectorJobFailureCount is non-zero if introspector job has failed. Configure the maximum retry count using operator tuning parameter domainPresenceFailureRetryMaxCount.)",
           "type": "number",
           "minimum": 0
         },

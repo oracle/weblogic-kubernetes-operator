@@ -48,11 +48,10 @@ public class DomainStatus {
   private String reason;
 
   @Description(
-      "Number of retries for introspect job failure. If the introspect job fails, it will retry based on the "
-          + "make-right interval (120s), in each retry this will be incremented until it exceeded the "
-          + "DomainPresenceFailureRetryMaxCount in the operator tuning parameter.")
+      "The IntrospectorJobFailureCount is non-zero if introspector job has failed. Configure the maximum retry "
+          + "count using operator tuning parameter domainPresenceFailureRetryMaxCount.)")
   @Range(minimum = 0)
-  private Integer introspectJobFailureRetryCount = new Integer(0);
+  private Integer introspectJobFailureCount = new Integer(0);
 
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
@@ -94,7 +93,7 @@ public class DomainStatus {
     clusters = that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList());
     startTime = that.startTime;
     replicas = that.replicas;
-    introspectJobFailureRetryCount = that.introspectJobFailureRetryCount;
+    introspectJobFailureCount = that.introspectJobFailureCount;
   }
 
   /**
@@ -285,41 +284,41 @@ public class DomainStatus {
   }
 
   /**
-   * The number of retries for an introspect job that fails.
+   * The number of times the introspect job failed.
    *
    * @return introspectJobFailureRetryCount
    */
-  public Integer getIntrospectJobFailureRetryCount() {
-    return this.introspectJobFailureRetryCount;
+  public Integer getIntrospectJobFailureCount() {
+    return this.introspectJobFailureCount;
   }
 
   /**
-   * increment the number of retries for introspect job failure.
+   * Increment the number of introspect job failure count.
    *
    * @return retryCount
    */
-  public Integer incrementIntrospectJobFailureRetryCount() {
-    return this.introspectJobFailureRetryCount = this.introspectJobFailureRetryCount.intValue() + 1;
+  public Integer incrementIntrospectJobFailureCount() {
+    return this.introspectJobFailureCount = this.introspectJobFailureCount.intValue() + 1;
   }
 
 
   /**
-   * Set the number of retries for introspect job failure to default (1).
+   * Reset the number of introspect job failure to default.
    *
    * @return this
    */
-  public DomainStatus resetIntrospectJobFailureRetryCount() {
-    this.introspectJobFailureRetryCount = 0;
+  public DomainStatus resetIntrospectJobFailureCount() {
+    this.introspectJobFailureCount = 0;
     return this;
   }
 
   /**
-   * Set the number of retries for introspect job failure and return the DomainStatus.
+   * Set the number of introspect job failure and return the DomainStatus.
    * @param retryCount retryCount
    * @return this
    */
-  public DomainStatus withIntrospectJobFailureRetryCount(Integer retryCount) {
-    this.introspectJobFailureRetryCount = retryCount;
+  public DomainStatus withIntrospectJobFailureCount(Integer retryCount) {
+    this.introspectJobFailureCount = retryCount;
     return this;
   }
 
@@ -478,7 +477,7 @@ public class DomainStatus {
         .append("servers", servers)
         .append("clusters", clusters)
         .append("startTime", startTime)
-        .append("introspectJobFailureRetryCount", introspectJobFailureRetryCount)
+        .append("introspectJobFailureRetryCount", introspectJobFailureCount)
         .toString();
   }
 
@@ -491,7 +490,7 @@ public class DomainStatus {
         .append(Domain.sortOrNull(clusters))
         .append(Domain.sortOrNull(conditions))
         .append(message)
-        .append(introspectJobFailureRetryCount)
+        .append(introspectJobFailureCount)
         .toHashCode();
   }
 
@@ -511,7 +510,7 @@ public class DomainStatus {
         .append(Domain.sortOrNull(clusters), Domain.sortOrNull(rhs.clusters))
         .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
         .append(message, rhs.message)
-        .append(introspectJobFailureRetryCount, rhs.introspectJobFailureRetryCount)
+        .append(introspectJobFailureCount, rhs.introspectJobFailureCount)
         .isEquals();
   }
 
@@ -519,7 +518,7 @@ public class DomainStatus {
         .withConstructor(DomainStatus::new)
         .withStringField("message", DomainStatus::getMessage)
         .withStringField("reason", DomainStatus::getReason)
-        .withIntegerField("introspectJobFailureRetryCount", DomainStatus::getIntrospectJobFailureRetryCount)
+        .withIntegerField("introspectJobFailureRetryCount", DomainStatus::getIntrospectJobFailureCount)
         .withIntegerField("replicas", DomainStatus::getReplicas)
         .withListField("conditions", DomainCondition.getObjectPatch(), DomainStatus::getConditions)
         .withListField("clusters", ClusterStatus.getObjectPatch(), DomainStatus::getClusters)
