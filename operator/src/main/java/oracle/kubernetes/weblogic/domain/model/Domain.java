@@ -658,6 +658,10 @@ public class Domain implements KubernetesObject {
       if (getSpec().getAdminServer() != null) {
         getSpec().getAdminServer().getAdditionalVolumeMounts().forEach(this::checkValidMountPath);
       }
+      if (getSpec().getClusters() != null) {
+        getSpec().getClusters().forEach(
+            cluster -> cluster.getAdditionalVolumeMounts().forEach(this::checkValidMountPath));
+      }
     }
 
     private void checkValidMountPath(V1VolumeMount mount) {

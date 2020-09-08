@@ -232,17 +232,6 @@ public class DomainValidationTest {
   }
 
   @Test
-  public void whenDomainAdminServerHasAdditionalVolumeMountsWithNonExsitVariables_reportError() {
-    configureDomain(domain)
-        .configureAdminServer()
-        .getAdminServer()
-        .addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
-
-    assertThat(domain.getValidationFailures(resourceLookup),
-        contains(stringContainsInOrder("The mount path", "volume1", "of domain resource", "is not valid")));
-  }
-
-  @Test
   public void whenDomainAdminServerHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
     V1EnvVar fieldRefEnvVar = createFieldRefEnvVar(ENV_NAME1, RAW_VALUE_1);
     configureDomain(domain)
@@ -252,6 +241,53 @@ public class DomainValidationTest {
         .addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenDomainAdminServerHasAdditionalVolumeMountsWithNonExsitVariables_reportError() {
+    configureDomain(domain)
+        .configureAdminServer()
+        .getAdminServer()
+        .addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", "volume1", "of domain resource", "is not valid")));
+  }
+  
+  @Test
+  public void whenClusterServerPodHasAdditionalVolumeMountsWithInvalidChar_reportError() {
+    configureDomain(domain)
+        .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);;
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", "of domain resource", "is not valid")));
+  }
+
+  @Test
+  public void whenClusterServerPodHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
+    configureDomain(domain)
+        .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenClusterServerPodHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
+    V1EnvVar fieldRefEnvVar = createFieldRefEnvVar(ENV_NAME1, RAW_VALUE_1);
+    configureDomain(domain)
+        .withEnvironmentVariable(fieldRefEnvVar)
+        .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);;
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenClusterServerPodHasAdditionalVolumeMountsWithNonExsitVariables_reportError() {
+    configureDomain(domain)
+        .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);;
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", "volume1", "of domain resource", "is not valid")));
   }
 
   @Test
