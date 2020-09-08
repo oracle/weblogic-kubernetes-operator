@@ -118,9 +118,62 @@ EOF
 
 } # end of function output_dryrun()
 
-if [ "$DRY_RUN" = "true" ]; then
+function output_dryrun_JRF() {
 
-  output_dryrun
+MODEL_YAML_FILES="$(ls $WORKDIR/$MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
+MODEL_ARCHIVE_FILES=$WORKDIR/$MODEL_DIR/archive.zip
+MODEL_VARIABLE_FILES="$(ls $WORKDIR/$MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
+
+cat << EOF
+
+dryrun:#!/bin/bash
+dryrun:# Use this script to build image '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'
+dryrun:# using the contents of '$WORKDIR/$MODEL_DIR'.
+dryrun:
+dryrun:set -eux
+dryrun:
+dryrun:rm -f $WORKDIR/$MODEL_DIR/archive.zip
+dryrun:cd $WORKDIR/$ARCHIVE_SOURCEDIR
+dryrun:zip -q -r $WORKDIR/$MODEL_DIR/archive.zip wlsdeploy
+dryrun:
+dryrun:cd $WORKDIR/model-images
+dryrun:unzip -o imagetool.zip
+dryrun:
+dryrun:mkdir -p $WORKDIR/model-images/imagetool/cache
+dryrun:export WLSIMG_CACHEDIR=$WORKDIR/model-images/imagetool/cache
+dryrun:
+dryrun:mkdir -p $WORKDIR/model-images/imagetool/bld
+dryrun:export WLSIMG_BLDDIR=$WORKDIR/model-images/imagetool/bld
+dryrun:
+dryrun:$IMGTOOL cache deleteEntry \\
+dryrun:  --key wdt_latest
+dryrun:
+dryrun:$IMGTOOL cache addInstaller \\
+dryrun:  --type wdt \\
+dryrun:  --version latest \\
+dryrun:  --path ${WORKDIR}/model-images/weblogic-deploy.zip
+dryrun:
+dryrun:$IMGTOOL update \\
+dryrun:  --tag $MODEL_IMAGE \\
+dryrun:  --fromImage $BASE_IMAGE \\
+dryrun:  ${MODEL_YAML_FILES:+--wdtModel ${MODEL_YAML_FILES}} \\
+dryrun:  ${MODEL_VARIABLE_FILES:+--wdtVariables ${MODEL_VARIABLE_FILES}} \\
+dryrun:  ${MODEL_ARCHIVE_FILES:+--wdtArchive ${MODEL_ARCHIVE_FILES}} \\
+dryrun:  --wdtModelOnly \\
+dryrun:  --wdtDomainType ${WDT_DOMAIN_TYPE}
+dryrun:
+dryrun:echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Seconds=\$SECONDS."
+
+EOF
+
+} # end of function output_dryrun_JRF()
+
+if [ "$DRY_RUN" = "true" ]; then
+  if [ "${WDT_DOMAIN_TYPE}" = "JRF"]; then
+    output_dryrun_JRF
+  else
+    output_dryrun
+  fi
   exit 0 # done with dry run
 
 else
@@ -147,7 +200,12 @@ else
 
   tmpfil="$WORKDIR/$(basename $0).$CURPID.$PPID.$SECONDS.$RANDOM.sh"
 
-  output_dryrun | grep "^dryrun:" | sed 's/^dryrun://' > $tmpfil
+  if [ "${WDT_DOMAIN_TYPE}" = "JRF"]; then
+    output_dryrun_JRF | grep "^dryrun:" | sed 's/^dryrun://' > $tmpfil
+  else
+    output_dryrun | grep "^dryrun:" | sed 's/^dryrun://' > $tmpfil
+  fi
+#  output_dryrun | grep "^dryrun:" | sed 's/^dryrun://' > $tmpfil
 
   chmod +x $tmpfil
 
