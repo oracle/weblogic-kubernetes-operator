@@ -146,6 +146,8 @@ class ItManagedCoherence {
         null, null, "builddir", domainNamespace);
     Path coherenceAppGarPath = Paths.get(distDir.toString(), COHERENCE_APP_NAME + ".gar");
     Path coherenceAppEarPath = Paths.get(distDir.toString(), COHERENCE_APP_NAME + ".ear");
+    assertTrue(coherenceAppGarPath.toFile().exists(), "Application archive is not available");
+    assertTrue(coherenceAppEarPath.toFile().exists(), "Application archive is not available");
     logger.info("Path of CoherenceApp EAR " + coherenceAppEarPath.toString());
     logger.info("Path of CoherenceApp GAR " + coherenceAppGarPath.toString());
   }
