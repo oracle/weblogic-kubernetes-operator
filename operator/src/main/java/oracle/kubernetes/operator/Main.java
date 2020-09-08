@@ -702,7 +702,7 @@ public class Main {
 
     @Override
     protected String getDetail() {
-      return String.join(",", domainNamespaces);
+      return Optional.ofNullable(domainNamespaces).map(d -> String.join(",", d)).orElse(null);
     }
 
     protected abstract Step action(String ns);

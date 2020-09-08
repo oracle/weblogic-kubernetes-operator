@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.ApiCallback;
@@ -134,7 +135,9 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         .filter(KubernetesListObject.class::isInstance)
         .map(KubernetesListObject.class::cast)
         .map(KubernetesListObject::getMetadata)
-        .map(V1ListMeta::getContinue).orElse(null);
+        .map(V1ListMeta::getContinue)
+        .filter(Predicate.not(String::isEmpty))
+        .orElse(null);
   }
 
   @Override
