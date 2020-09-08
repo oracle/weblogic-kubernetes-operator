@@ -208,13 +208,12 @@ public class Main {
 
       Step strategy = Step.chain(
           new InitializeNamespacesSecurityStep(configuredDomainNamespaces),
-          new NamespaceRulesReviewStep());
+          new NamespaceRulesReviewStep(),
+          CrdHelper.createDomainCrdStep(version, productVersion));
       if (!DomainNamespaceSelectionStrategy.Dedicated.equals(selectionStrategy)) {
         strategy = Step.chain(strategy, readExistingNamespaces(selectionStrategy, configuredDomainNamespaces, false));
       } else {
-        strategy = Step.chain(strategy, CrdHelper.createDomainCrdStep(
-                version, productVersion,
-                new StartNamespacesStep(configuredDomainNamespaces, false)));
+        strategy = Step.chain(strategy, new StartNamespacesStep(configuredDomainNamespaces, false));
       }
       runSteps(
           strategy,
@@ -323,14 +322,13 @@ public class Main {
 
     Step strategy = Step.chain(
         new InitializeNamespacesSecurityStep(configuredDomainNamespaces),
-        new NamespaceRulesReviewStep());
+        new NamespaceRulesReviewStep(),
+        CrdHelper.createDomainCrdStep(version, productVersion));
     if (!DomainNamespaceSelectionStrategy.Dedicated.equals(selectionStrategy)) {
       strategy = Step.chain(strategy, readExistingNamespaces(
               selectionStrategy, configuredDomainNamespaces, isFullRecheck));
     } else {
-      strategy = Step.chain(strategy, CrdHelper.createDomainCrdStep(
-          version, productVersion,
-          new StartNamespacesStep(configuredDomainNamespaces, isFullRecheck)));
+      strategy = Step.chain(strategy, new StartNamespacesStep(configuredDomainNamespaces, isFullRecheck));
     }
     return strategy;
   }
@@ -379,16 +377,14 @@ public class Main {
     }
     return builder.listNamespaceAsync(
       new ActionResponseStep<V1NamespaceList>(new NamespaceListAfterStep(selectionStrategy)) {
-        private Step createDomainCrdAndStartNamespaces(Collection<String> namespacesToStart, boolean isFullRecheck) {
-          return CrdHelper.createDomainCrdStep(
-              version, productVersion,
-              new StartNamespacesStep(namespacesToStart, isFullRecheck));
+        private Step startNamespaces(Collection<String> namespacesToStart, boolean isFullRecheck) {
+          return new StartNamespacesStep(namespacesToStart, isFullRecheck);
         }
 
         @Override
         protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1NamespaceList> callResponse) {
           return !selectionStrategy.isRequireList() && isNotAuthorizedOrForbidden(callResponse)
-                  ? doNext(createDomainCrdAndStartNamespaces(domainNamespaces, isFullRecheck), packet) :
+                  ? doNext(startNamespaces(domainNamespaces, isFullRecheck), packet) :
                   super.onFailureNoRetry(packet, callResponse);
         }
 
@@ -1068,7 +1064,7 @@ public class Main {
       Step strategy = null;
       if (!namespacesToStartNow.isEmpty()) {
         strategy = Step.chain(
-          createDomainCrdAndStartNamespaces(namespacesToStartNow, isFullRecheck),
+          startNamespaces(namespacesToStartNow, isFullRecheck),
           new CreateNamespaceWatcherStep(selectionStrategy, intialResourceVersion),
           getNext());
 
@@ -1077,8 +1073,7 @@ public class Main {
         }
       } else {
         strategy = Step.chain(
-          CrdHelper.createDomainCrdStep(version, productVersion,
-            new CreateNamespaceWatcherStep(selectionStrategy, intialResourceVersion)),
+          new CreateNamespaceWatcherStep(selectionStrategy, intialResourceVersion),
           getNext());
       }
 
@@ -1092,10 +1087,8 @@ public class Main {
       return doNext(strategy, packet);
     }
 
-    private Step createDomainCrdAndStartNamespaces(Collection<String> namespacesToStart, boolean isFullRecheck) {
-      return CrdHelper.createDomainCrdStep(
-          version, productVersion,
-            new StartNamespacesStep(namespacesToStart, isFullRecheck));
+    private Step startNamespaces(Collection<String> namespacesToStart, boolean isFullRecheck) {
+      return new StartNamespacesStep(namespacesToStart, isFullRecheck);
     }
 
     private String getInitialResourceVersion(V1NamespaceList result) {
