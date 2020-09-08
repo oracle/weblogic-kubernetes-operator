@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodInitializing;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
@@ -92,8 +93,6 @@ class ItInitContainers {
   private static String encryptionSecretName = "encryptionsecret";
   private static String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
-  // ingress host list
-  private List<String> ingressHostList;
   private static LoggingFacade logger = null;
   private static org.awaitility.core.ConditionFactory withStandardRetryPolicy =
       with().pollDelay(2, SECONDS)
@@ -208,7 +207,7 @@ class ItInitContainers {
     assertTrue(createVerifyDomain(domain2Namespace, domain2Uid, "adminServer"),
         "can't start or verify domain in namespace " + domain2Namespace);
 
-    //check if init container got executed
+    //check if init container got executed for admin server pod
     assertTrue(assertDoesNotThrow(() -> getPodLog(domain2Uid + "-admin-server", domain2Namespace,"busybox")
             .contains("Hi from AdminServer"),
         "failed to init busybox container command for admin server"));
@@ -326,7 +325,7 @@ class ItInitContainers {
       case "adminServer":
         domain.getSpec().getAdminServer().serverPod(new ServerPod()
             .addInitContainersItem(new V1Container()
-            .addCommandItem("echo").addArgsItem("Hi from AdminServer")
+            .addCommandItem("echo").addArgsItem("\"Hi from AdminServer\"")
             .name("busybox")
             .imagePullPolicy("IfNotPresent")
             .image("busybox")));
@@ -364,6 +363,9 @@ class ItInitContainers {
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
     String adminServerPodName = domainUid + adminServerPrefix;
+    //check if pod in init state
+    checkPodInitializing(adminServerPodName,domainUid, domainNamespace);
+
     // check that admin server pod exists in the domain namespace
     logger.info("Checking that admin server pod {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
@@ -383,7 +385,8 @@ class ItInitContainers {
     // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = domainUid + managedServerPrefix + i;
-
+      //check if pod in init state
+      checkPodInitializing(managedServerPodName,domainUid, domainNamespace);
       // check that the managed server pod exists
       logger.info("Checking that managed server pod {0} exists in namespace {1}",
           managedServerPodName, domainNamespace);
