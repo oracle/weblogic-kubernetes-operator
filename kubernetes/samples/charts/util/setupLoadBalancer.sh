@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # This script is to create or delete Ingress controllers. 
-# Currently the script supports ingress controllers: Traefik, Voyager and Nginx.
+# Currently the script supports ingress controllers: Traefik, Voyager, and Nginx.
 # Usage $0 create|delete traefik|voyager|nginx traefik_version|voyager_version
 
 UTILDIR="$(dirname "$(readlink -f "$0")")"
