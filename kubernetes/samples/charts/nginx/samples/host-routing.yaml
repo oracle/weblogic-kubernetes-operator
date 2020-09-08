@@ -1,0 +1,38 @@
+# Copyright (c) 2020 Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: domain1-ingress-host
+  annotations:
+    # use the shared ingress-nginx
+    kubernetes.io/ingress.class: "nginx"
+  namespace: weblogic-domain1
+spec:
+  rules:
+  - host: domain1.org
+    http:
+      paths:
+      - path: 
+        backend:
+          serviceName: domain1-cluster-cluster-1
+          servicePort: 8001
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: domain2-ingress-host
+  annotations:
+    # use the shared ingress-nginx
+    kubernetes.io/ingress.class: "nginx"
+  namespace: weblogic-domain2
+spec:
+  rules:
+  - host: domain2.org
+    http:
+      paths:
+      - path: 
+        backend:
+          serviceName: domain2-cluster-cluster-1
+          servicePort: 8001
