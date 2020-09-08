@@ -1,5 +1,5 @@
 # An ingress per domain chart
-This chart is for deploying an ingress resource in front of a WebLogic domain cluster. We support ingress types: Traefik, Voyager, and NGINX.
+This chart is for deploying an Ingress resource in front of a WebLogic domain cluster. We support ingress types: Traefik, Voyager, and NGINX.
 
 ## Prerequisites
 - Have Docker and a Kubernetes cluster running and have `kubectl` installed and configured.
@@ -17,7 +17,7 @@ $ cd kubernetes/samples/charts
 # Use helm to install the chart.  Use `--namespace` to specify the name of the WebLogic domain's namespace.
 $ helm install ingress-per-domain --name my-ingress --namespace my-domain-namespace --values values.yaml
 ```
-The ingress resource will be created in the same namespace as the WebLogic domain cluster.
+The Ingress resource will be created in the same namespace as the WebLogic domain cluster.
 
 Sample `values.yaml` file for the Traefik ingress:
 ```
