@@ -25,7 +25,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -33,18 +32,14 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodInitializing;
@@ -55,9 +50,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -65,11 +58,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
- * Simple JUnit test file used for testing operator usability.
- * Use Helm chart to install operator(s)
+ * Simple JUnit test file used for testing server's pod init containers feature.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test operator usability using Helm chart installation")
+@DisplayName("Test server's pod init container feature")
 @IntegrationTest
 class ItInitContainers {
 
@@ -82,9 +74,9 @@ class ItInitContainers {
 
   // domain constants
   private final String domain1Uid = "initcontainersdomain1";
-  private final String domain2Uid = "initcontainerusabdomain2";
-  private final String domain3Uid = "initcontainerusabdomain3";
-  private final String domain4Uid = "initcontainerusabdomain3";
+  private final String domain2Uid = "initcontainerdomain2";
+  private final String domain3Uid = "initcontainerdomain3";
+  private final String domain4Uid = "initcontainerdomain4";
   private final String clusterName = "cluster-1";
   private final int replicaCount = 2;
   private final String adminServerPrefix = "-" + ADMIN_SERVER_NAME_BASE;
@@ -94,13 +86,9 @@ class ItInitContainers {
   private static String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
   private static LoggingFacade logger = null;
-  private static org.awaitility.core.ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
 
   /**
-   * Get namespaces for operator, domain.
+   * Get namespaces for operator, domains.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
@@ -217,7 +205,7 @@ class ItInitContainers {
    * Add initContainers to adminServer and verify the managed server pods in cluster execute initContainer command
    * before starting the admin server pod.
    * Test fails if it cannot include the initContainers or
-   *                   weblogic server pod doesn't go through initialization and ready state
+   * weblogic server pods in the cluster don't go through initialization and ready state
    */
   @Test
   @DisplayName("Add initContainers to cluster1 and verify all managed server pods go through Init state ")
@@ -236,9 +224,9 @@ class ItInitContainers {
 
   /**
    * Add initContainers to managed-server1 and verify managed server pod executes initContainer command
-   * before starting the admin server pod.
-   * cannot be read or modified to include the initContainers or
-   * WebLogic server pod doesn't go through initialization and ready state
+   * before starting the managed server1 pod.
+   * Test fails if it can't include the initContainers or
+   * WebLogic managed server pod doesn't go through initialization and ready state
    */
   @Test
   @DisplayName("Add initContainers to managed-server1 and verify the pod goes through Init state ")
@@ -366,15 +354,15 @@ class ItInitContainers {
     //check if pod in init state
     checkPodInitializing(adminServerPodName,domainUid, domainNamespace);
 
-    // check that admin server pod exists in the domain namespace
-    logger.info("Checking that admin server pod {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
-
     // check that admin service exists in the domain namespace
     logger.info("Checking that admin service {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
     checkServiceExists(adminServerPodName, domainNamespace);
+
+    // check that admin server pod exists in the domain namespace
+    logger.info("Checking that admin server pod {0} exists in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodExists(adminServerPodName, domainUid, domainNamespace);
 
     // check that admin server pod is ready
     logger.info("Checking that admin server pod {0} is ready in namespace {1}",
@@ -387,57 +375,20 @@ class ItInitContainers {
       String managedServerPodName = domainUid + managedServerPrefix + i;
       //check if pod in init state
       checkPodInitializing(managedServerPodName,domainUid, domainNamespace);
-      // check that the managed server pod exists
-      logger.info("Checking that managed server pod {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodExists(managedServerPodName, domainUid, domainNamespace);
-
-
       // check that the managed server service exists in the domain namespace
       logger.info("Checking that managed server service {0} exists in namespace {1}",
           managedServerPodName, domainNamespace);
       checkServiceExists(managedServerPodName, domainNamespace);
+      // check that the managed server pod exists
+      logger.info("Checking that managed server pod {0} exists in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkPodExists(managedServerPodName, domainUid, domainNamespace);
 
       // check that the managed server pod is ready
       logger.info("Checking that managed server pod {0} is ready in namespace {1}",
           managedServerPodName, domainNamespace);
       checkPodReady(managedServerPodName, domainUid, domainNamespace);
 
-    }
-    //check the access to managed server mbean via rest api
-    checkManagedServerConfiguration(domainNamespace, domainUid);
-  }
-
-  /*
-   * Verify the server MBEAN configuration through rest API.
-   * @param managedServer name of the managed server
-   * @returns true if MBEAN is found otherwise false
-   **/
-  private boolean checkManagedServerConfiguration(String domainNamespace, String domainUid) {
-    ExecResult result = null;
-    String adminServerPodName = domainUid + adminServerPrefix;
-    String managedServer = "managed-server1";
-    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
-    StringBuffer checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-        .append("/management/tenant-monitoring/servers/")
-        .append(managedServer)
-        .append(" --silent --show-error ")
-        .append(" -o /dev/null")
-        .append(" -w %{http_code});")
-        .append("echo ${status}");
-    logger.info("checkManagedServerConfiguration: curl command {0}", new String(checkCluster));
-    try {
-      result = exec(new String(checkCluster), true);
-    } catch (Exception ex) {
-      logger.info("Exception in checkManagedServerConfiguration() {0}", ex);
-      return false;
-    }
-    logger.info("checkManagedServerConfiguration: curl command returned {0}", result.toString());
-    if (result.stdout().equals("200")) {
-      return true;
-    } else {
-      return false;
     }
   }
 }
