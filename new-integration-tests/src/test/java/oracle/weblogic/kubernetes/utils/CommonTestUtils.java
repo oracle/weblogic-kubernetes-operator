@@ -1202,6 +1202,24 @@ public class CommonTestUtils {
                                                             String domainNamespace,
                                                             String ingressName,
                                                             Map<String, Integer> clusterNameMSPortMap) {
+    return installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMSPortMap, null);
+  }
+
+  /**
+   * Create an ingress for the domain with domainUid in a given namespace and verify.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param ingressName name of ingress to be created in a given domain
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @param tlsSecret the secret name for TLS
+   * @return list of ingress hosts
+   */
+  public static List<String> installVoyagerIngressAndVerify(String domainUid,
+                                                            String domainNamespace,
+                                                            String ingressName,
+                                                            Map<String, Integer> clusterNameMSPortMap,
+                                                            String tlsSecret) {
     LoggingFacade logger = getLogger();
     final String voyagerIngressName = VOYAGER_CHART_NAME + "-" + ingressName;
     final String channelName = "tcp-80";
@@ -1217,7 +1235,7 @@ public class CommonTestUtils {
 
     // create an ingress in domain namespace
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true, null);
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true, tlsSecret);
 
     // wait until the Voyager ingress pod is ready.
     withStandardRetryPolicy

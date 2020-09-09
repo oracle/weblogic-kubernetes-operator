@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -74,7 +73,7 @@ import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.AfterAll;
+//import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -135,6 +134,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -152,7 +152,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -403,14 +402,17 @@ public class ItTwoDomainsLoadBalancers {
 
     // create TLS secret for https traffic
     for (String domainUid : domainUids) {
-      createCertKeyFiles(domainUid);
+      createCertKeyFiles(domainUid + "." + defaultNamespace + ".cluster-1.test");
       assertDoesNotThrow(() -> createSecretWithTLSCertKey(domainUid + "-tls-secret",
           defaultNamespace, tlsKeyFile, tlsCertFile));
     }
-    // create loadbalancing rules for Traefik, Voyager and Nginx
+    // create loadbalancing rules for Traefik, Voyager and NGINX
     createTraefikIngressRoutingRules();
-    createVoyagerIngressRoutingRules();
+
+    createVoyagerIngressHostRoutingRules(false);
     createNginxIngressHostRouting4TwoDomains(false);
+
+    createVoyagerIngressHostRoutingRules(true);
     createNginxIngressHostRouting4TwoDomains(true);
 
     // install and verify Apache
@@ -489,9 +491,29 @@ public class ItTwoDomainsLoadBalancers {
     // verify load balancing works when 2 domains are running in the same namespace
     logger.info("Verifying http traffic");
     for (String domainUid : domainUids) {
-      String ingressName = domainUid + "-ingress-host-routing";
-      verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".cluster-1.test",
-          "http", getVoyagerLbNodePort(ingressName),
+      String ingressName = domainUid + "-voyager-host-routing";
+      verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".voyager.nonssl.test",
+          "http", getVoyagerLbNodePort(ingressName, "tcp-80"),
+          replicaCount, true, "");
+    }
+  }
+
+  /**
+   * Test verifies multiple WebLogic domains can be loadbalanced by Voyager loadbalancer with host based routing rules.
+   * Accesses the clusterview application deployed in the WebLogic cluster through Voyager loadbalancer and verifies it
+   * is correctly routed to the specific domain cluster identified by the -H host header.
+   */
+  @Order(8)
+  @Test
+  @DisplayName("Loadbalance WebLogic cluster traffic through Voyager loadbalancer tcp-443 channel")
+  public void testVoyagerHostHttpsRoutingAcrossDomains() {
+
+    // verify load balancing works when 2 domains are running in the same namespace
+    logger.info("Verifying http traffic");
+    for (String domainUid : domainUids) {
+      String ingressName = domainUid + "-voyager-tls";
+      verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".voyager.ssl.test",
+          "https", getVoyagerLbNodePort(ingressName, "tcp-443"),
           replicaCount, true, "");
     }
   }
@@ -503,7 +525,7 @@ public class ItTwoDomainsLoadBalancers {
    * For details, please see
    * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/default-sample
    */
-  @Order(8)
+  @Order(9)
   @Test
   @DisplayName("verify Apache load balancer default sample through HTTP channel")
   public void testApacheDefaultSample() {
@@ -522,7 +544,7 @@ public class ItTwoDomainsLoadBalancers {
    * For more details, please check:
    * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/custom-sample
    */
-  @Order(9)
+  @Order(10)
   @Test
   @DisplayName("verify Apache load balancer custom sample through HTTP and HTTPS channel")
   public void testApacheCustomSample() {
@@ -546,7 +568,7 @@ public class ItTwoDomainsLoadBalancers {
    * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
-  @Order(10)
+  @Order(11)
   @Test
   @DisplayName("verify NGINX host routing with HTTP across two domains")
   public void testNginxHttpHostRoutingAcrossDomains() {
@@ -554,7 +576,7 @@ public class ItTwoDomainsLoadBalancers {
     // verify load balancing works when 2 domains are running in the same namespace
     logger.info("Verifying http traffic for NGINX load balancer");
     for (String domainUid : domainUids) {
-      verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".nonssl.test",
+      verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".nginx.nonssl.test",
           "http", getNginxLbNodePort("http"), replicaCount, true, "");
     }
   }
@@ -565,7 +587,7 @@ public class ItTwoDomainsLoadBalancers {
    * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
-  @Order(11)
+  @Order(12)
   @Test
   @DisplayName("verify NGINX host routing with HTTPS across two domains")
   public void testNginxHttpsHostRoutingAcrossDomains() {
@@ -573,7 +595,7 @@ public class ItTwoDomainsLoadBalancers {
     // verify load balancing works when 2 domains are running in the same namespace
     logger.info("Verifying https traffic for NGINX load balancer");
     for (String domainUid : domainUids) {
-      verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".ssl.test",
+      verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".nginx.ssl.test",
           "https", getNginxLbNodePort("https"), replicaCount, true, "");
     }
   }
@@ -581,7 +603,7 @@ public class ItTwoDomainsLoadBalancers {
   /**
    * Cleanup all the remaining artifacts in default namespace created by the test.
    */
-  @AfterAll
+  //@AfterAll
   public void tearDownAll() {
     // uninstall Traefik loadbalancer
     if (traefikHelmParams != null) {
@@ -881,7 +903,7 @@ public class ItTwoDomainsLoadBalancers {
                         .name("create-weblogic-domain-onpv-container")
                         .image(image)
                         .ports(Collections.singletonList(new V1ContainerPort()
-                            .containerPort(7001)))
+                            .containerPort(ADMIN_SERVER_PORT)))
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
                                 .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
@@ -931,8 +953,8 @@ public class ItTwoDomainsLoadBalancers {
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", ADMIN_SERVER_NAME_BASE);
-    p.setProperty("managed_server_port", "8001");
-    p.setProperty("admin_server_port", "7001");
+    p.setProperty("managed_server_port", "" + MANAGED_SERVER_PORT);
+    p.setProperty("admin_server_port", "" + ADMIN_SERVER_PORT);
     p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
@@ -1332,21 +1354,21 @@ public class ItTwoDomainsLoadBalancers {
     }
   }
 
-  private static void createCertKeyFiles(String domainUid) {
-    String cn = domainUid + "." + defaultNamespace + ".cluster-1.test";
+  private static void createCertKeyFiles(String cn) {
     assertDoesNotThrow(() -> {
       tlsKeyFile = Files.createTempFile("tls", ".key");
       tlsCertFile = Files.createTempFile("tls", ".crt");
-      ExecCommand.exec("openssl"
-              + " req -x509 "
-              + " -nodes "
-              + " -days 365 "
-              + " -newkey rsa:2048 "
-              + " -keyout " + tlsKeyFile
-              + " -out " + tlsCertFile
-              + " -subj /CN=" + cn,
-          true);
+      String command = "openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout " + tlsKeyFile
+          + " -out " + tlsCertFile + " -subj \"/CN=" + cn + "\"";
+      logger.info("Executing command: {0}", command);
+      ExecCommand.exec(command, true);
     });
+  }
+
+  private static void createSecretWithTLSCertKeyVoyager(String tlsSecretName) {
+    String command = "kubectl create secret tls " + tlsSecretName + " --key " + tlsKeyFile + " --cert " + tlsCertFile;
+    logger.info("Executing command: {0}", command);
+    assertDoesNotThrow(() -> ExecCommand.exec(command, true));
   }
 
   private void createTraefikIngressRoutingRules() {
@@ -1376,14 +1398,105 @@ public class ItTwoDomainsLoadBalancers {
     }
   }
 
-  private void createVoyagerIngressRoutingRules() {
+  private void createVoyagerIngressHostRoutingRules(boolean isTLS) {
     for (String domainUid : domainUids) {
-      String ingressName = domainUid + "-ingress-host-routing";
+      String ingressName;
+      if (isTLS) {
+        ingressName = domainUid + "-voyager-tls";
+      } else {
+        ingressName = domainUid + "-voyager-host-routing";
+      }
 
-      // create Voyager ingress resource
-      Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-      clusterNameMsPortMap.put(clusterName, MANAGED_SERVER_PORT);
-      installVoyagerIngressAndVerify(domainUid, defaultNamespace, ingressName, clusterNameMsPortMap);
+      // set the annotations for Voyager
+      HashMap<String, String> annotations = new HashMap<>();
+      annotations.put("ingress.appscode.com/type", "NodePort");
+      annotations.put("ingress.appscode.com/affinity", "cookie");
+      annotations.put("kubernetes.io/ingress.class", "voyager");
+
+      List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
+      List<NetworkingV1beta1IngressTLS> tlsList = new ArrayList<>();
+
+      NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
+          .path(null)
+          .backend(new NetworkingV1beta1IngressBackend()
+              .serviceName(domainUid + "-cluster-cluster-1")
+              .servicePort(new IntOrString(MANAGED_SERVER_PORT))
+          );
+
+      // set the ingress rule host
+      String ingressHost;
+      if (isTLS) {
+        ingressHost = domainUid + "." + defaultNamespace + ".voyager.ssl.test";
+      } else {
+        ingressHost = domainUid + "." + defaultNamespace + ".voyager.nonssl.test";
+      }
+      NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
+          .host(ingressHost)
+          .http(new NetworkingV1beta1HTTPIngressRuleValue()
+              .paths(Arrays.asList(httpIngressPath)));
+
+      ingressRules.add(ingressRule);
+
+      if (isTLS) {
+        String tlsSecretName = domainUid + "-voyager-tls-secret";
+        createCertKeyFiles(ingressHost);
+        //assertDoesNotThrow(() -> createSecretWithTLSCertKey(tlsSecretName, defaultNamespace, tlsKeyFile,
+        // tlsCertFile));
+        createSecretWithTLSCertKeyVoyager(tlsSecretName);
+        NetworkingV1beta1IngressTLS tls = new NetworkingV1beta1IngressTLS()
+            .addHostsItem(ingressHost)
+            .secretName(tlsSecretName);
+        tlsList.add(tls);
+      }
+
+      if (isTLS) {
+        assertDoesNotThrow(() -> createIngress(ingressName, defaultNamespace, annotations, ingressRules, tlsList));
+      } else {
+        assertDoesNotThrow(() -> createIngress(ingressName, defaultNamespace, annotations, ingressRules, null));
+      }
+
+      // wait until voyager ingress pod is ready
+      ConditionFactory withStandardRetryPolicy =
+          with().pollDelay(2, SECONDS)
+              .and().with().pollInterval(10, SECONDS)
+              .atMost(5, MINUTES).await();
+
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info(
+                  "Waiting for Voyager ingress to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+                  defaultNamespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(assertDoesNotThrow(() -> isVoyagerReady(defaultNamespace, ingressName),
+              "isVoyagerReady failed with ApiException"));
+
+      // check the ingress was found in the domain namespace
+      assertThat(assertDoesNotThrow(() -> listIngresses(defaultNamespace)))
+          .as(String.format("Test ingress %s was found in namespace %s", ingressName, defaultNamespace))
+          .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, defaultNamespace))
+          .contains(ingressName);
+
+      logger.info("ingress {0} was created in namespace {1}", ingressName, defaultNamespace);
+
+      // check the ingress is ready to route the app to the server pod
+      int httpNodeport = getVoyagerLbNodePort(ingressName, "tcp-80");
+      int httpsNodeport = getVoyagerLbNodePort(ingressName, "tcp-443");
+      if (httpNodeport != 0 && httpsNodeport != 0) {
+        String curlCmd;
+        if (isTLS) {
+          curlCmd = "curl -k --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+              + "' https://" + K8S_NODEPORT_HOST + ":" + httpsNodeport
+              + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+        } else {
+          curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+              + "' http://" + K8S_NODEPORT_HOST + ":" + httpNodeport
+              + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+        }
+
+        logger.info("Executing curl command {0}", curlCmd);
+        assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+      }
     }
   }
 
@@ -1415,9 +1528,9 @@ public class ItTwoDomainsLoadBalancers {
       // set the ingress rule host
       String ingressHost;
       if (isTLS) {
-        ingressHost = domainUid + "." + defaultNamespace + ".ssl.test";
+        ingressHost = domainUid + "." + defaultNamespace + ".nginx.ssl.test";
       } else {
-        ingressHost = domainUid + "." + defaultNamespace + ".nonssl.test";
+        ingressHost = domainUid + "." + defaultNamespace + ".nginx.nonssl.test";
       }
       NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
           .host(ingressHost)
@@ -1427,9 +1540,12 @@ public class ItTwoDomainsLoadBalancers {
       ingressRules.add(ingressRule);
 
       if (isTLS) {
+        String tlsSecretName = domainUid + "-nginx-tls-secret";
+        createCertKeyFiles(ingressHost);
+        assertDoesNotThrow(() -> createSecretWithTLSCertKey(tlsSecretName, defaultNamespace, tlsKeyFile, tlsCertFile));
         NetworkingV1beta1IngressTLS tls = new NetworkingV1beta1IngressTLS()
             .addHostsItem(ingressHost)
-            .secretName(domainUid + "-tls-secret");
+            .secretName(tlsSecretName);
         tlsList.add(tls);
       }
     }
@@ -1456,12 +1572,12 @@ public class ItTwoDomainsLoadBalancers {
         String ingressHost;
         String curlCmd;
         if (isTLS) {
-          ingressHost = domainUid + "." + defaultNamespace + ".ssl.test";
+          ingressHost = domainUid + "." + defaultNamespace + ".nginx.ssl.test";
           curlCmd = "curl -k --silent --show-error --noproxy '*' -H 'host: " + ingressHost
               + "' https://" + K8S_NODEPORT_HOST + ":" + httpsNodeport
               + "/weblogic/ready --write-out %{http_code} -o /dev/null";
         } else {
-          ingressHost = domainUid + "." + defaultNamespace + ".nonssl.test";
+          ingressHost = domainUid + "." + defaultNamespace + ".nginx.nonssl.test";
           curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
               + "' http://" + K8S_NODEPORT_HOST + ":" + httpNodeport
               + "/weblogic/ready --write-out %{http_code} -o /dev/null";
@@ -1473,10 +1589,15 @@ public class ItTwoDomainsLoadBalancers {
     }
   }
 
-  private static int getVoyagerLbNodePort(String ingressName) {
-    String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
-    String channelName = "tcp-80";
+  /**
+   * Get the Voyager ingress nodeport.
+   * @param ingressName name of the Voyager ingress
+   * @param channelName channel name of the Voyager ingress service, accept value: tcp-80 or tcp-443
+   * @return
+   */
+  private static int getVoyagerLbNodePort(String ingressName, String channelName) {
 
+    String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
     // get ingress service Nodeport
     int ingressServiceNodePort = assertDoesNotThrow(() ->
             getServiceNodePort(defaultNamespace, ingressServiceName, channelName),
