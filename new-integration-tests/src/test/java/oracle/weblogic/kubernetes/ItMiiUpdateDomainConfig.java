@@ -283,23 +283,25 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(1)
-  @DisplayName("Check the server logs are written on PV")
+  @DisplayName("Check the server logs are written on PV, look for string RUNNING in server log")
   public void testServerLogsAreOnPV() {
 
     // check server logs are written on PV
-    String command = "ls /shared/logs/" + adminServerName + ".log";
+    String command = "grep RUNNING /shared/logs/" + adminServerName + ".log";
     logger.info("Checking server logs are written on PV by running the command {0} on pod {1}, namespace {2}",
         command, adminServerPodName, domainNamespace);
     V1Pod adminPod = assertDoesNotThrow(() ->
             Kubernetes.getPod(domainNamespace, null, adminServerPodName),
         "Could not get the admin pod in namespace " + domainNamespace);
+
     ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
         "/bin/sh", "-c", command),
         String.format("Could not execute the command %s in pod %s, namespace %s",
             command, adminServerPodName, domainNamespace));
+
     assertTrue(result.exitValue() == 0,
-        String.format("Couldn't access the server log on PV, exitvalue is %s, stderr is %s, stdout is %s",
-            result.exitValue(), result.stderr(), result.stdout()));
+        String.format("Command %s failed with exitvalue is %s, stderr is %s, stdout is %s",
+            command, result.exitValue(), result.stderr(), result.stdout()));
 
   }
 
