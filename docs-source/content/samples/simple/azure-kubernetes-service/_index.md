@@ -24,27 +24,13 @@ AKS is a managed Kubernetes Service that lets you quickly deploy and manage Kube
 
 #### Prerequisites
 
-This sample assumes the following prerequisites.
+This sample assumes the following prerequisite environment setup.
 
-##### Environment for setup
-
-This sample assumes one of the following two execution environments:
-
-1. Run the commands on your local computer. This allows for the greatest flexibility while requiring some setup effort.
-1. Run the commands in the Azure Cloud Shell. Cloud Shell is a browser-based utility and runs on the Azure portal. This option may be best for users already familiar with the utility and Azure. It is also suitable for users wanting to avoid installing additional software on their local computer.
-
-* Local Environment Setup
-
-  * Operating System: Linux, UNIX, macOS or [WSL for Windows 10](https://docs.microsoft.com/windows/wsl/install-win10).
-  * [Git](https://git-scm.com/downloads), use `git --version` to test if `git` works.  This document was tested with version 2.17.1.
-  * [Azure CLI](https://docs.microsoft.com/cli/azure), use `az --version` to test if `az` works.  This document was tested with version 2.9.1.
-  * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/), use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.16.3.
-  * [helm](https://helm.sh/docs/intro/install/), version 3.1 and later, use `helm version` to check the `helm` version.  This document was tested with version v3.2.4.
-
-* Azure Cloud Shell
-
-  The Azure Cloud Shell already has the necessary prerequisites installed. 
-  To start the Azure Cloud Shell, please go to [Overview of Azure Cloud Shell](https://docs.microsoft.com/azure/cloud-shell/overview).
+* Operating System: Linux, UNIX, macOS or [WSL for Windows 10](https://docs.microsoft.com/windows/wsl/install-win10).
+* [Git](https://git-scm.com/downloads), use `git --version` to test if `git` works.  This document was tested with version 2.17.1.
+* [Azure CLI](https://docs.microsoft.com/cli/azure), use `az --version` to test if `az` works.  This document was tested with version 2.9.1.
+* [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/), use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.16.3.
+* [helm](https://helm.sh/docs/intro/install/), version 3.1 and later, use `helm version` to check the `helm` version.  This document was tested with version v3.2.4.
 
 ##### Create Service Principal for AKS
 
@@ -52,7 +38,7 @@ An AKS cluster requires either an [Azure Active Directory (AD) service principal
 
 We will use a service principal to create an AKS cluster. Follow the commands below to create a new service principal.
 
-If you run commands in your local environment, please run `az login` first. Skip that command if you run on the Azure Cloud Shell. Do set the subscription you want to work with. You can get a list of your subscriptions by running `az account list`.
+Please run `az login` first. Do set the subscription you want to work with. You can get a list of your subscriptions by running `az account list`.
 
 ```bash
 # Login
@@ -118,7 +104,7 @@ Successful output will look like the following:
 
 ##### Oracle Container Registry
 
-You will need an Oracle account.  The following steps will direct you to accept the license agreement for WebLogic Server.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.3, but other versions may work as well.
+You will need an Oracle account. The following steps will direct you to accept the license agreement for WebLogic Server.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.3, but other versions may work as well.
 
 1. Obtain the WebLogic Server image from the [Oracle Container Registry](https://container-registry.oracle.com/).
 
@@ -132,7 +118,7 @@ You will need an Oracle account.  The following steps will direct you to accept 
 
 ##### Clone WebLogic Server Kubernetes Operator repository
 
-Clone the [Oracle WebLogic Server Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.0.0.
+Clone the [Oracle WebLogic Server Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.0.0-wls-aks.
 
 ```bash
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
@@ -145,7 +131,7 @@ $ git checkout v3.0.0-wls-aks
 
 #### Create the AKS cluster
 
-This sample requires that you disable http-application-routing by default.  If you want to enable  http_application_routing, please follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
+This sample requires that you disable http-application-routing by default.  If you want to enable  http-application-routing, please follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
 
 Run the following commands to create the AKS cluster instance.
 
@@ -398,13 +384,9 @@ persistentvolumeclaim/0730-azurefile-1597391432   Bound    0730-azurefile-159739
 
 The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
-Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Please check the Helm version first if you are using the Azure Cloud Shell, and run the corresponding command. This sample was tested with v3.0.0.
+Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. The Operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Please install the Operator by running the corresponding command.
 
 ```bash
-# Check the helm version
-$ helm version
-
-# For Helm 3.x, run the following:
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
 $ helm repo update
 $ helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.0.0"
