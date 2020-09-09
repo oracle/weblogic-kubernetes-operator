@@ -115,11 +115,9 @@ public abstract class ResponseStep<T> extends Step {
    */
   protected final NextAction doContinueListOrNext(CallResponse<T> callResponse, Packet packet, Step next) {
     if (callResponse != null && accessContinue(callResponse.getResult()) != null) {
-      RetryStrategy retryStrategy = packet.getSpi(RetryStrategy.class);
-      if (retryStrategy != null) {
-        retryStrategy.reset();
-      }
-      return doNext(previousStep, packet);
+      // Since the continue value is present, invoking the original request will return
+      // the next window of data.
+      return resetResetAndReinvokeRequest(packet);
     }
     return doNext(next, packet);
   }
@@ -143,6 +141,20 @@ public abstract class ResponseStep<T> extends Step {
         callResponse.getStatusCode(),
         callResponse.getHeadersString());
     return null;
+  }
+
+  /**
+   * Resets any retry strategy, such as a failed retry count and invokes the request again. This
+   * will be useful for patterns such as list requests that include a "continue" value.
+   * @param packet Packet
+   * @return Next action for the original request
+   */
+  private NextAction resetResetAndReinvokeRequest(Packet packet) {
+    RetryStrategy retryStrategy = packet.getSpi(RetryStrategy.class);
+    if (retryStrategy != null) {
+      retryStrategy.reset();
+    }
+    return doNext(previousStep, packet);
   }
 
   /**
@@ -195,5 +207,4 @@ public abstract class ResponseStep<T> extends Step {
   public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
     throw new IllegalStateException("Must be overridden, if called");
   }
-
 }
