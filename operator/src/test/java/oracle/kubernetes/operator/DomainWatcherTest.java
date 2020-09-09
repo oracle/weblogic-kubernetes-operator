@@ -46,8 +46,8 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
   }
 
   @Test
-  public void bookmarkRequest_specifiesCurrentResourceVersion() {
-    DomainWatcher watcher = sendBookmarkRequest(INITIAL_RESOURCE_VERSION, BOOKMARK_RESOURCE_VERSION);
+  public void whenWatcherReceivesBookmarkEvent_updateResourceVersion() {
+    Watcher<?> watcher = sendBookmarkRequest(INITIAL_RESOURCE_VERSION, BOOKMARK_RESOURCE_VERSION);
 
     assertThat(watcher.getResourceVersion(), is(BOOKMARK_RESOURCE_VERSION));
   }

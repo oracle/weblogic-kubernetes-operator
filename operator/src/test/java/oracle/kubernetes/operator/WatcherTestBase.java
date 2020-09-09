@@ -105,10 +105,10 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     createAndRunWatcher(NAMESPACE, stopping, initialResourceVersion);
   }
 
-  DomainWatcher sendBookmarkRequest(BigInteger initialResourceVersion, String bookmarkResourceVersion) {
+  Watcher<?> sendBookmarkRequest(BigInteger initialResourceVersion, String bookmarkResourceVersion) {
     scheduleBookmarkResponse(createObjectWithMetaData(bookmarkResourceVersion));
 
-    return (DomainWatcher) createAndRunWatcher(NAMESPACE, stopping, initialResourceVersion);
+    return (Watcher) createAndRunWatcher(NAMESPACE, stopping, initialResourceVersion);
   }
 
   private Object createObjectWithMetaData() {
