@@ -298,10 +298,6 @@ class ItElasticLogging {
 
     // Verify that serverName:managed-server1 is filtered out
     // by checking the count of logs from serverName:managed-server1 is zero and no failures
-    // e.g. when running the query:
-    // curl -X GET http://elasticsearch.default.svc.cluster.local:9200/wls/_count?q=serverName:managed-server1
-    // Expected return result is:
-    // {"count":0,"_shards":{"total":5,"successful":5,"skipped":0,"failed":0}}
     regex = "(?m).*\\s*.*count\"\\s*:\\s*(\\d+),.*failed\"\\s*:\\s*(\\d+)";
     StringBuffer queryCriteriaBuff = new StringBuffer("/doc/_count?pretty")
         .append(" -H 'Content-Type: application/json'")
