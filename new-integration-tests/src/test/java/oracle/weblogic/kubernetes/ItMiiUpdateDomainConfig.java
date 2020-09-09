@@ -105,6 +105,7 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -298,9 +299,13 @@ class ItMiiUpdateDomainConfig {
         "/bin/sh", "-c", command),
         String.format("Could not execute the command %s in pod %s, namespace %s",
             command, adminServerPodName, domainNamespace));
+    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
+        command, result.exitValue(), result.stderr(), result.stdout());
 
-    assertTrue(result.exitValue() == 0,
-        String.format("Command %s failed with exitvalue is %s, stderr is %s, stdout is %s",
+    // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
+    // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
+    assertFalse(result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty(),
+        String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
             command, result.exitValue(), result.stderr(), result.stdout()));
 
   }
