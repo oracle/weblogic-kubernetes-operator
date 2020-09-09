@@ -28,9 +28,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -41,10 +39,8 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodInitializing;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
@@ -60,7 +56,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Simple JUnit test file used for testing server's pod init containers feature.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test server's pod init container feature")
 @IntegrationTest
 class ItInitContainers {
@@ -160,17 +155,17 @@ class ItInitContainers {
   /**
    * Add initContainers at domain spec level and verify the admin server pod executes initContainer command.
    * Test fails if domain crd can't add the initContainers or
-   * WebLogic server pod doesn't go through initialization and ready state
+   * WebLogic server pods don't go through initialization and ready state.
    */
   @Test
-  @DisplayName("Add initContainers at domain spec level and verify the admin server pod executes initContainer command "
-      + " and starts the admin server pod")
+  @DisplayName("Add initContainers at domain spec level and verify the server pods execute initContainer command "
+      + " and starts the server pod")
   public void testDomainInitContainer() {
     logger.info("Installing and verifying domain");
     assertTrue(createVerifyDomain(domain1Namespace, domain1Uid, "spec"),
         "can't start or verify domain in namespace " + domain1Namespace);
 
-    //check if init container got executed
+    //check if init container got executed in the server pods
     assertTrue(assertDoesNotThrow(() -> getPodLog(domain1Uid + "-admin-server", domain1Namespace,"busybox")
             .contains("Hi from Domain"),
         "failed to init busybox container command for admin server"));
@@ -187,7 +182,7 @@ class ItInitContainers {
    * Add initContainers to adminServer and verify the admin server pod executes initContainer command
    * and starts the admin server pod.
    * Test fails if domain crd can't add the initContainers or
-   * weblogic server pod doesn't go through initialization and ready state
+   * Weblogic Admin server pod doesn't go through initialization and ready state.
    */
   @Test
   @DisplayName("Add initContainers to adminServer and verify the admin server pod executes initContainer command ")
@@ -204,8 +199,8 @@ class ItInitContainers {
   /**
    * Add initContainers to adminServer and verify the managed server pods in cluster execute initContainer command
    * before starting the admin server pod.
-   * Test fails if it cannot include the initContainers or
-   * weblogic server pods in the cluster don't go through initialization and ready state
+   * Test fails if if domain crd can't add the initContainers or
+   * Weblogic server pods in the cluster don't go through initialization and ready state.
    */
   @Test
   @DisplayName("Add initContainers to cluster1 and verify all managed server pods go through Init state ")
@@ -225,8 +220,8 @@ class ItInitContainers {
   /**
    * Add initContainers to managed-server1 and verify managed server pod executes initContainer command
    * before starting the managed server1 pod.
-   * Test fails if it can't include the initContainers or
-   * WebLogic managed server pod doesn't go through initialization and ready state
+   * Test fails if domain crd can't add the initContainers or
+   * WebLogic managed server pod doesn't go through initialization and ready state.
    */
   @Test
   @DisplayName("Add initContainers to managed-server1 and verify the pod goes through Init state ")
@@ -354,40 +349,20 @@ class ItInitContainers {
     //check if pod in init state
     checkPodInitializing(adminServerPodName,domainUid, domainNamespace);
 
-    // check that admin service exists in the domain namespace
+    // check that admin service exists and pod is ready in the domain namespace
     logger.info("Checking that admin service {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check that admin server pod exists in the domain namespace
-    logger.info("Checking that admin server pod {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
-
-    // check that admin server pod is ready
-    logger.info("Checking that admin server pod {0} is ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = domainUid + managedServerPrefix + i;
       //check if pod in init state
       checkPodInitializing(managedServerPodName,domainUid, domainNamespace);
-      // check that the managed server service exists in the domain namespace
+      // check that the managed server service exists and pod is ready in the domain namespace
       logger.info("Checking that managed server service {0} exists in namespace {1}",
           managedServerPodName, domainNamespace);
-      checkServiceExists(managedServerPodName, domainNamespace);
-      // check that the managed server pod exists
-      logger.info("Checking that managed server pod {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodExists(managedServerPodName, domainUid, domainNamespace);
-
-      // check that the managed server pod is ready
-      logger.info("Checking that managed server pod {0} is ready in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodReady(managedServerPodName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
 
     }
   }
