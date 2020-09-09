@@ -93,6 +93,7 @@ Here are the steps for this use case:
      Now, you use the Image Tool to create an image named `model-in-image:WLS-v2` that's layered on a base WebLogic image. You've already set up this tool during the prerequisite steps.
 
      Run the following commands to create the model image and verify that it worked:
+     Note: If you are creating a WebLogic model-in-image, add --chown oracle:root to imagetool.sh command. When creating FMS images, do not use the --chown option.
 
      ```
      $ cd /tmp/mii-sample/model-images
@@ -103,7 +104,7 @@ Here are the steps for this use case:
        --wdtVariables  ./model-in-image__WLS-v2/model.10.properties \
        --wdtArchive    ./model-in-image__WLS-v2/archive.zip \
        --wdtModelOnly \
-       --wdtDomainType WLS
+       --wdtDomainType WLS 
      ```
 
      If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/simple/domains/model-in-image/prerequisites.md" >}}).
