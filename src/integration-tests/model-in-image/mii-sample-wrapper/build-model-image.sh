@@ -200,7 +200,7 @@ else
 
   tmpfil="$WORKDIR/$(basename $0).$CURPID.$PPID.$SECONDS.$RANDOM.sh"
 
-  if [ "${WDT_DOMAIN_TYPE}" = "JRF"]; then
+  if [ "${WDT_DOMAIN_TYPE}" = "JRF" ]; then
     output_dryrun_JRF | grep "^dryrun:" | sed 's/^dryrun://' > $tmpfil
   else
     output_dryrun | grep "^dryrun:" | sed 's/^dryrun://' > $tmpfil
