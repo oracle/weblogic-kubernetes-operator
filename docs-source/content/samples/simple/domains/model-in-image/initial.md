@@ -276,7 +276,7 @@ If you are taking the JRF path through the sample, then remove --chown oracle:ro
     --wdtVariables  ./model-in-image__WLS-v1/model.10.properties \
     --wdtArchive    ./model-in-image__WLS-v1/archive.zip \
     --wdtModelOnly \
-    --wdtDomainType WLS 
+    --wdtDomainType WLS \
     --chown oracle:root
   ```
 
