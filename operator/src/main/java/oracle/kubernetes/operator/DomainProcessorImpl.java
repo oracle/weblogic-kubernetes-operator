@@ -726,6 +726,12 @@ public class DomainProcessorImpl implements DomainProcessor {
               .map(o -> o.resetIntrospectJobFailureCount());
         }
 
+        if (currentIntrospectFailureRetryCount > 0) {
+          LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED_RETRY_COUNT, cachedInfo.getDomain().getDomainUid(),
+              currentIntrospectFailureRetryCount,
+              DomainPresence.getDomainPresenceFailureRetryMaxCount());
+        }
+
         return true;
       }
       cachedInfo.setDomain(getDomain());

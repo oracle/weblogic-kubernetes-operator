@@ -592,7 +592,8 @@ public class JobHelper {
           .orElse(0);
 
       if (currentIntrospectFailureRetryCount > 0) {
-        LOGGER.info(MessageKeys.CURRENT_INTROSPECTION_FAILURE_COUNT, currentIntrospectFailureRetryCount);
+        LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED, info.getDomain().getDomainUid(),
+            TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds);
       }
 
       return doNext(readDomainIntrospectorPod(domainUid, namespace, getNext()), packet);
