@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -23,6 +26,7 @@ import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.Shutdown;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -38,7 +42,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -48,7 +51,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -65,12 +68,17 @@ class ItPodsShutdownOption {
 
   // domain constants
   private static final String domainUid = "domain1";
+  private static final String adminServerName = "admin-server";
   private static final String clusterName = "cluster-1";
   private static final int replicaCount = 1;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static final String managedServer1Name = "managed-server1";
   private static LoggingFacade logger = null;
+
+  private static String miiImage;
+  private static String adminSecretName;
+  private static String encryptionSecretName;
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -94,8 +102,26 @@ class ItPodsShutdownOption {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    // create a basic model in image domain
-    createAndVerifyMiiDomain();
+    // get the pre-built image created by IntegrationTestWatcher
+    miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(miiImage);
+
+    // create docker registry secret to pull the image from registry
+    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    createDockerRegistrySecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Creating secret for admin credentials");
+    adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
+
+    // create encryption secret
+    logger.info("Creating encryption secret");
+    encryptionSecretName = "encryptionsecret";
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+
   }
 
   /**
@@ -125,14 +151,25 @@ class ItPodsShutdownOption {
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
   public void testShutdownProps() throws ApiException {
 
-    //scale the cluster to 2 managed servers
-    assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, 2)))
-        .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
-              clusterName, domainUid, domainNamespace)
-        .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} failed",
-              clusterName, domainUid, domainNamespace)
-        .isTrue();
-    assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
+
+    // create a basic model in image domain
+    Shutdown[] shutDownObjects = new Shutdown[3];
+    Shutdown admin = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(30L);
+    Shutdown cluster = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Graceful").timeoutSeconds(60L);
+    Shutdown ms = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Graceful").timeoutSeconds(40L);
+    shutDownObjects[0] = admin;
+    shutDownObjects[0] = cluster;
+    shutDownObjects[0] = ms;
+    Domain domain = buildDomainResource(shutDownObjects);
+    createVerifyDomain(domain);
+
+    verifyServerLog(adminServerName, new String[]
+        {"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=40"});
+    verifyServerLog(adminServerName, new String[]
+        {"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=40"});
+    verifyServerLog(adminServerName, new String[]
+        {"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=40"});
+
 
     assertTrue(verifyServerShutdownProp(adminServerPodName, domainNamespace, "Graceful", "40", "false"));
     assertTrue(verifyServerShutdownProp(managedServerPrefix + 1, domainNamespace, "Graceful", "100", "true"));
@@ -144,30 +181,8 @@ class ItPodsShutdownOption {
     }
   }
 
-  /**
-   * Create a model in image domain and verify the server pods are ready.
-   */
-  private static void createAndVerifyMiiDomain() {
 
-    // get the pre-built image created by IntegrationTestWatcher
-    String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
-
-    // create docker registry secret to pull the image from registry
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createDockerRegistrySecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Creating secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
-
-    // create encryption secret
-    logger.info("Creating encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+  private Domain buildDomainResource(Shutdown[] shutDownObject) {
 
     // create the domain CR
     Domain domain = new Domain()
@@ -200,18 +215,13 @@ class ItPodsShutdownOption {
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .serverPod(new ServerPod()
-                    .shutdown(new Shutdown()
-                        .shutdownType("Forced")
-                        .ignoreSessions(Boolean.TRUE)
-                        .timeoutSeconds(40L))))
+                    .shutdown(shutDownObject[0])))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING")
                 .serverPod(new ServerPod()
-                    .shutdown(new Shutdown()
-                        .timeoutSeconds(80L)
-                        .ignoreSessions(Boolean.TRUE))))
+                    .shutdown(shutDownObject[1])))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
@@ -219,9 +229,11 @@ class ItPodsShutdownOption {
             .addManagedServersItem(new ManagedServer()
                 .serverName(managedServer1Name)
                 .serverPod(new ServerPod()
-                    .shutdown(new Shutdown()
-                        .timeoutSeconds(100L)))));
+                    .shutdown(shutDownObject[2]))));
+    return domain;
+  }
 
+  private void createVerifyDomain(Domain domain) {
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
@@ -261,6 +273,7 @@ class ItPodsShutdownOption {
           managedServerPodName, domainNamespace);
       checkServiceExists(managedServerPodName, domainNamespace);
     }
+
   }
 
   /**
@@ -296,6 +309,23 @@ class ItPodsShutdownOption {
       found = true;
     }
     return found;
+  }
+
+  private void verifyServerLog(String serverName, String[] envVars) {
+    String logDir = "/u01/domains/" + domainUid + "/servers/" + serverName + "/logs";
+    assertDoesNotThrow(() -> {
+      Path destLogDir = Files.createDirectories(Paths.get(
+          TestConstants.RESULTS_ROOT, this.getClass().getSimpleName(), serverName));
+      deleteDirectory(destLogDir.toFile());
+      Files.createDirectories(destLogDir);
+      Kubernetes.copyDirectoryFromPod(TestActions.getPod(domainNamespace, null, domainUid + "-" + serverName),
+          Paths.get(logDir).toString(), destLogDir);
+      for (String envVar : envVars) {
+        assertTrue(Files.readString(
+            Paths.get(destLogDir.toString(), serverName, ".out"))
+            .contains(envVar));
+      }
+    });
   }
 
 }
