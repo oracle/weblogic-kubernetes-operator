@@ -111,6 +111,7 @@ public class Main {
   private static String principal;
   private static KubernetesVersion version = null;
   private static SemanticVersion productVersion = null;
+  private static Main main = new Main();
 
   private static TuningParameters tuningAndConfig() {
     return TuningParameters.getInstance();
@@ -410,6 +411,27 @@ public class Main {
     }
 
     return domainNamespaces;
+  }
+
+
+  ConfigMapWatcher getConfigMapWatcher(String namespace) {
+    return configMapWatchers.get(namespace);
+  }
+
+  DomainWatcher getDomainWatcher(String namespace) {
+    return domainWatchers.get(namespace);
+  }
+
+  EventWatcher getEventWatcher(String namespace) {
+    return eventWatchers.get(namespace);
+  }
+
+  PodWatcher getPodWatcher(String namespace) {
+    return podWatchers.get(namespace);
+  }
+
+  ServiceWatcher getServiceWatcher(String namespace) {
+    return serviceWatchers.get(namespace);
   }
 
   enum DomainNamespaceSelectionStrategy {

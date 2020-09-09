@@ -95,6 +95,19 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     assertThat(dp.getDomainPresenceInfos(), is(anEmptyMap()));
   }
 
+  @Test
+  public void whenPreexistingDomainExistsWithoutPodsOrServices_addToPresenceMap() {
+    Domain domain = createDomain(UID, NS);
+    testSupport.defineResources(domain);
+
+    DomainProcessorStub dp = createStub(DomainProcessorStub.class);
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+
+    readExistingResources();
+
+    assertThat(getDomainPresenceInfo(dp, UID).getDomain(), equalTo(domain));
+  }
+
   private void readExistingResources() {
     testSupport.runStepsToCompletion(Main.readExistingResources("operator", NS));
   }
@@ -109,6 +122,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withMetadata(
             new V1ObjectMeta()
                 .namespace(namespace)
+                .name(uid)
                 .resourceVersion("1")
                 .creationTimestamp(DateTime.now()));
   }

@@ -37,6 +37,7 @@ import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -71,6 +72,7 @@ public class MainTest extends ThreadFactoryTestBase {
   private static final V1Namespace NAMESPACE_OTHER2
           = new V1Namespace().metadata(new V1ObjectMeta().name(NS_OTHER2));
 
+  private final Main main = new Main();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
 
@@ -123,11 +125,11 @@ public class MainTest extends ThreadFactoryTestBase {
     Collection<String> domainNamespaces = Arrays.asList(NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3);
     testSupport.runSteps(Main.readExistingNamespaces(selectionStrategy, domainNamespaces, false));
 
-    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
                      hasEntry(is(NS_WEBLOGIC2), isNamespaceStarting()),
                      hasEntry(is(NS_WEBLOGIC3), isNamespaceStarting())));
+    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
   }
 
   @SuppressWarnings("unused")
@@ -163,11 +165,11 @@ public class MainTest extends ThreadFactoryTestBase {
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
     testSupport.runSteps(Main.readExistingNamespaces(selectionStrategy, null, false));
 
-    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
                      hasEntry(is(NS_WEBLOGIC2), isNamespaceStarting()),
                      hasEntry(is(NS_WEBLOGIC3), isNamespaceStarting())));
+    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
   }
 
   @Test
@@ -180,11 +182,11 @@ public class MainTest extends ThreadFactoryTestBase {
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
     testSupport.runSteps(Main.readExistingNamespaces(selectionStrategy, null, false));
 
-    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
                      hasEntry(is(NS_WEBLOGIC2), isNamespaceStarting()),
                      hasEntry(is(NS_WEBLOGIC3), isNamespaceStarting())));
+    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
   }
 
   @Test
@@ -283,5 +285,16 @@ public class MainTest extends ThreadFactoryTestBase {
       getDomainNamespaces.setAccessible(true);
     }
     return (Collection<String>) getDomainNamespaces.invoke(null, tnValue, namespace);
+  }
+
+  @Test
+  public void afterReadingExistingResourcesForNamespace_WatcheraAreDefined() {
+    testSupport.runSteps(main.readExistingResources("operator", NS));
+
+    assertThat(main.getConfigMapWatcher(NS), notNullValue());
+    assertThat(main.getDomainWatcher(NS), notNullValue());
+    assertThat(main.getEventWatcher(NS), notNullValue());
+    assertThat(main.getPodWatcher(NS), notNullValue());
+    assertThat(main.getServiceWatcher(NS), notNullValue());
   }
 }
