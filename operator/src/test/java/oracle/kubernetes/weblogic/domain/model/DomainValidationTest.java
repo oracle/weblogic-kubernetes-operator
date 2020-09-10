@@ -3,10 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.Before;
 import org.junit.Test;
