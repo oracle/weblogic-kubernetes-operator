@@ -147,7 +147,8 @@ metadata:
 spec:
   headers:
     customRequestHeaders:
-      Wl-Proxy-Ssl: "true"
+      WL-Proxy-SSL: "true"
+      X-Custom-Request-Header: ""
     sslRedirect: true
 ```
 ### 3. Create ingress resource
