@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.steps;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.models.V1ServiceList;
@@ -44,9 +46,12 @@ public class DeleteDomainStep extends Step {
             deleteServices(),
             ConfigMapHelper.deleteIntrospectorConfigMapStep(domainUid, namespace, getNext()));
     if (info != null) {
+      List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
+      info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList())
+              .forEach(s -> ssi.add(new DomainPresenceInfo.ServerShutdownInfo(s, null)));
       serverDownStep =
           new ServerDownIteratorStep(
-              info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList()),
+              ssi,
               serverDownStep);
     }
 

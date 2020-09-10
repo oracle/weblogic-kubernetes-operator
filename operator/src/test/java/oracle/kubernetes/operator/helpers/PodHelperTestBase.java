@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -61,6 +62,7 @@ import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -1456,4 +1458,38 @@ public abstract class PodHelperTestBase {
       return next;
     }
   }
+
+  public static class DelayedPodAwaiterStepFactory implements PodAwaiterStepFactory {
+    private final int delaySeconds;
+
+    public DelayedPodAwaiterStepFactory(int delaySeconds) {
+      this.delaySeconds = delaySeconds;
+    }
+
+    @Override
+    public Step waitForReady(V1Pod pod, Step next) {
+      return new DelayStep(next, delaySeconds);
+    }
+
+    @Override
+    public Step waitForDelete(V1Pod pod, Step next) {
+      return new DelayStep(next, delaySeconds);
+    }
+  }
+
+  private static class DelayStep extends Step {
+    private final int delay;
+    private final Step next;
+
+    DelayStep(Step next, int delay) {
+      this.delay = delay;
+      this.next = next;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doDelay(next, packet, delay, TimeUnit.SECONDS);
+    }
+  }
+
 }

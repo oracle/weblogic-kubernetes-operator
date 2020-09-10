@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -435,7 +436,7 @@ public class LoggingUtil {
         try {
           logger.info("Copying the contents of PV to {0}", destinationPath.toString());
           Kubernetes.copyDirectoryFromPod(pvPod, "/shared", destinationPath);
-        } catch (IOException | ApiException ex) {
+        } catch (IOException | ApiException | CopyNotSupportedException ex) {
           logger.warning(ex.getMessage());
         }
       };
