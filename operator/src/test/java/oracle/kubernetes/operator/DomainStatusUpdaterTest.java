@@ -71,6 +71,8 @@ public class DomainStatusUpdaterTest {
   private String reason = generator.getUniqueString();
   private RuntimeException failure = new RuntimeException(message);
   private String validationWarning = generator.getUniqueString();
+  private final DomainProcessorImpl processor =
+      new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
 
   /**
    * Setup test environment.
@@ -1013,12 +1015,57 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasAvailableCondition_failedStepRemovesIt() {
-    domain.getStatus().addCondition(new DomainCondition(Available));
+  public void whenPacketNotPopulatedBeforeUpdateServerStatus_resourceVersionUpdated() {
+    setupInitialServerStatus();
+    String cachedResourceVersion = getRecordedDomain().getMetadata().getResourceVersion();
 
-    testSupport.runSteps(DomainStatusUpdater.createFailedStep(failure, endStep));
+    // Clear the server maps in the packet, and run StatusUpdateStep, the domain resource
+    // version should be updated because server health information is removed from domain status.
+    clearPacketServerStatusMaps();
+    testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
 
-    assertThat(getRecordedDomain(), not(hasCondition(Available)));
+    assertThat(getRecordedDomain().getMetadata().getResourceVersion(), not(cachedResourceVersion));
+  }
+
+  @Test
+  public void whenPacketPopulatedBeforeUpdateServerStatus_resourceVersionNotUpdated() {
+    setupInitialServerStatus();
+    String cachedResourceVersion = getRecordedDomain().getMetadata().getResourceVersion();
+
+    // Clear the server maps in the packet, run StatusUpdateStep after running 
+    // PopulatePacketServerMapsStep, the domain resource version should NOT be updated because
+    // the server maps are populated in the packet with the existing server status
+    clearPacketServerStatusMaps();
+
+    testSupport.runSteps(
+        processor.createPopulatePacketServerMapsStep(
+            DomainStatusUpdater.createStatusUpdateStep(endStep)));
+
+    assertThat(getRecordedDomain().getMetadata().getResourceVersion(), equalTo(cachedResourceVersion));
+  }
+
+  private void setupInitialServerStatus() {
+    setClusterAndNodeName(getPod("server1"), "clusterA", "node1");
+    setClusterAndNodeName(getPod("server2"), "clusterB", "node2");
+
+    configSupport.addWlsCluster("clusterA", "server1");
+    configSupport.addWlsCluster("clusterB", "server2");
+    generateStartupInfos("server1", "server2");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    // Run StatusUpdateStep with server maps in the packet to set up the initial domain status
+    testSupport.addToPacket(
+        SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE, "server2", SHUTDOWN_STATE));
+    testSupport.addToPacket(
+        SERVER_HEALTH_MAP,
+        ImmutableMap.of("server1", overallHealth("health1"), "server2", overallHealth("health2")));
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
+  }
+
+  private void clearPacketServerStatusMaps() {
+    testSupport.addToPacket(SERVER_STATE_MAP, null);
+    testSupport.addToPacket(SERVER_HEALTH_MAP, null);
   }
 
   private Domain getRecordedDomain() {

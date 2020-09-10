@@ -88,6 +88,15 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Range(minimum = 0)
   private Integer maxConcurrentStartup;
 
+  @Description(
+          "The maximum number of WebLogic Server instances that will shut down in parallel "
+                  + "for this cluster when it is being partially shut down by lowering its replica count. "
+                  + "A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, "
+                  + "which defaults to 1."
+  )
+  @Range(minimum = 0)
+  private Integer maxConcurrentShutdown;
+
   protected Cluster getConfiguration() {
     Cluster configuration = new Cluster();
     configuration.fillInFrom(this);
@@ -137,6 +146,14 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
 
   public void setMaxConcurrentStartup(Integer value) {
     maxConcurrentStartup = value;
+  }
+
+  public Integer getMaxConcurrentShutdown() {
+    return maxConcurrentShutdown;
+  }
+
+  public void setMaxConcurrentShutdown(Integer value) {
+    maxConcurrentShutdown = value;
   }
 
   @Nullable
@@ -200,6 +217,8 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append("clusterService", clusterService)
         .append("maxUnavailable", maxUnavailable)
         .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
+        .append("maxConcurrentStartup", maxConcurrentStartup)
+        .append("maxConcurrentShutdown", maxConcurrentShutdown)
         .toString();
   }
 
@@ -224,6 +243,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(maxUnavailable, cluster.maxUnavailable)
         .append(allowReplicasBelowMinDynClusterSize, cluster.allowReplicasBelowMinDynClusterSize)
         .append(maxConcurrentStartup, cluster.maxConcurrentStartup)
+        .append(maxConcurrentShutdown, cluster.maxConcurrentShutdown)
         .isEquals();
   }
 
@@ -238,6 +258,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(maxUnavailable)
         .append(allowReplicasBelowMinDynClusterSize)
         .append(maxConcurrentStartup)
+        .append(maxConcurrentShutdown)
         .toHashCode();
   }
 
