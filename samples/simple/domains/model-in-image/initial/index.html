@@ -12,18 +12,18 @@
     <title>Initial use case :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1599051682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1599051682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1599051682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1599051682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1599051682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1599051682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1599051682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1599051682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1599051682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1599753403" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1599753403" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1599753403" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1599753403" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1599753403" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1599753403" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1599753403" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1599753403" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1599753403" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1599051682"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1599753403"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1599051682"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1599051682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1599753403"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1599753403"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1599051682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1599753403"></script>
 
     
   </div>
@@ -3254,6 +3254,10 @@ appDeployments:
 <p>If you don&rsquo;t see the <code>weblogic-deploy.zip</code> file, then you missed a step in the <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/prerequisites/">prerequisites</a>.</p>
 <p>Now, you use the Image Tool to create an image named <code>model-in-image:WLS-v1</code> that&rsquo;s layered on a base WebLogic image. You&rsquo;ve already set up this tool during the prerequisite steps.</p>
 <p>Run the following commands to create the model image and verify that it worked:</p>
+
+<div class="notices note" ><p>If you are taking the <code>JRF</code> path through the sample, then remove <code>--chown oracle:root</code> from the <code>imagetool.sh</code> command below.</p>
+</div>
+
 <pre><code>$ cd /tmp/mii-sample/model-images
 $ ./imagetool/bin/imagetool.sh update \
   --tag model-in-image:WLS-v1 \
@@ -3262,7 +3266,8 @@ $ ./imagetool/bin/imagetool.sh update \
   --wdtVariables  ./model-in-image__WLS-v1/model.10.properties \
   --wdtArchive    ./model-in-image__WLS-v1/archive.zip \
   --wdtModelOnly \
-  --wdtDomainType WLS
+  --wdtDomainType WLS \
+  --chown oracle:root
 </code></pre><p>If you don&rsquo;t see the <code>imagetool</code> directory, then you missed a step in the <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/prerequisites/">prerequisites</a>.</p>
 <p>This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:</p>
 <ul>
@@ -5912,19 +5917,19 @@ Found 0 local data sources:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1599051682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1599051682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1599051682"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1599051682"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1599051682"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1599051682"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1599753403"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1599753403"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1599753403"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1599753403"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1599753403"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1599753403"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1599051682"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1599051682"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1599051682"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1599753403"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1599753403"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1599753403"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1599051682" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1599051682"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1599753403" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1599753403"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
