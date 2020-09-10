@@ -16,6 +16,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -52,6 +53,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
+import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
@@ -71,6 +73,8 @@ import org.joda.time.DateTime;
 import static java.nio.file.Files.readString;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
@@ -145,6 +149,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageNam
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.installApache;
 import static oracle.weblogic.kubernetes.actions.TestActions.installElasticsearch;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installKibana;
@@ -166,6 +171,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNo
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isApacheReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isElkStackPodReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
@@ -179,10 +185,12 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRea
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podInitializing;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
@@ -334,6 +342,7 @@ public class CommonTestUtils {
                                                     boolean elkIntegrationEnabled,
                                                     String... domainNamespace) {
     LoggingFacade logger = getLogger();
+
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
     assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
@@ -341,6 +350,7 @@ public class CommonTestUtils {
             .namespace(opNamespace)
             .name(opServiceAccount))));
     logger.info("Created service account: {0}", opServiceAccount);
+
 
     // get operator image name
     String operatorImage = getOperatorImageName();
@@ -603,6 +613,182 @@ public class CommonTestUtils {
             "isVoyagerReady failed with ApiException"));
 
     return voyagerHelmParams;
+  }
+
+  /**
+   * Install Apache and wait up to five minutes until the Apache pod is ready.
+   *
+   * @param apacheNamespace the namespace in which the Apache will be installed
+   * @param image the image name of Apache webtier
+   * @param httpNodePort the http nodeport of Apache
+   * @param httpsNodePort the https nodeport of Apache
+   * @param domainUid the uid of the domain to which Apache will route the services
+   * @return the Apache Helm installation parameters
+   */
+  public static HelmParams installAndVerifyApache(String apacheNamespace,
+                                                  String image,
+                                                  int httpNodePort,
+                                                  int httpsNodePort,
+                                                  String domainUid) throws IOException {
+    return installAndVerifyApache(apacheNamespace, image, httpNodePort, httpsNodePort, domainUid,
+        null, null, null);
+  }
+
+  /**
+   * Install Apache and wait up to five minutes until the Apache pod is ready.
+   *
+   * @param apacheNamespace the namespace in which the Apache will be installed
+   * @param image the image name of Apache webtier
+   * @param httpNodePort the http nodeport of Apache
+   * @param httpsNodePort the https nodeport of Apache
+   * @param domainUid the uid of the domain to which Apache will route the services
+   * @param volumePath the path to put your own custom_mod_wl_apache.conf file
+   * @param virtualHostName the VirtualHostName of the Apache HTTP server which is used to enable custom SSL config
+   * @param clusterNamePortMap the map with clusterName as key and cluster port number as value
+   * @return the Apache Helm installation parameters
+   */
+  public static HelmParams installAndVerifyApache(String apacheNamespace,
+                                                  String image,
+                                                  int httpNodePort,
+                                                  int httpsNodePort,
+                                                  String domainUid,
+                                                  String volumePath,
+                                                  String virtualHostName,
+                                                  LinkedHashMap<String, String> clusterNamePortMap)
+      throws IOException {
+
+    LoggingFacade logger = getLogger();
+
+    // Create Docker registry secret in the apache namespace to pull the Apache webtier image from repository
+    if (!secretExists(REPO_SECRET_NAME, apacheNamespace)) {
+      logger.info("Creating Docker registry secret in namespace {0}", apacheNamespace);
+      createDockerRegistrySecret(apacheNamespace);
+    }
+
+    // map with secret
+    Map<String, Object> secretNameMap = new HashMap<>();
+    secretNameMap.put("name", REPO_SECRET_NAME);
+
+    // Helm install parameters
+    HelmParams apacheHelmParams = new HelmParams()
+        .releaseName(APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3))
+        .namespace(apacheNamespace)
+        .chartDir(APACHE_SAMPLE_CHART_DIR);
+
+    // Apache chart values to override
+    ApacheParams apacheParams = new ApacheParams()
+        .helmParams(apacheHelmParams)
+        .imagePullSecrets(secretNameMap)
+        .image(image)
+        .imagePullPolicy("Always")
+        .domainUID(domainUid);
+
+    if (httpNodePort >= 0 && httpsNodePort >= 0) {
+      apacheParams
+          .httpNodePort(httpNodePort)
+          .httpsNodePort(httpsNodePort);
+    }
+
+    if (volumePath != null && clusterNamePortMap != null) {
+      // create a custom Apache plugin configuration file named custom_mod_wl_apache.conf
+      // and put it under the directory specified in volumePath
+      // this file provides a custom Apache plugin configuration to fine tune the behavior of Apache
+      Path customConf = Paths.get(volumePath, "custom_mod_wl_apache.conf");
+      ArrayList<String> lines = new ArrayList<>();
+      lines.add("<IfModule mod_weblogic.c>");
+      lines.add("WebLogicHost ${WEBLOGIC_HOST}");
+      lines.add("WebLogicPort ${WEBLOGIC_PORT}");
+      lines.add("</IfModule>");
+
+      // Directive for weblogic admin Console deployed on Weblogic Admin Server
+      lines.add("<Location /console>");
+      lines.add("SetHandler weblogic-handler");
+      lines.add("WebLogicHost " + domainUid + "-admin-server");
+      lines.add("WebLogicPort ${WEBLOGIC_PORT}");
+      lines.add("</Location>");
+
+      // Directive for all application deployed on weblogic cluster with a prepath defined by LOCATION variable
+      // For example, if the LOCAITON is set to '/weblogic1', all applications deployed on the cluster can be accessed
+      // via http://myhost:myport/weblogic1/application_end_url
+      // where 'myhost' is the IP of the machine that runs the Apache web tier, and
+      //       'myport' is the port that the Apache web tier is publicly exposed to.
+      // Note that LOCATION cannot be set to '/' unless this is the only Location module configured.
+      // create a LOCATION variable for each domain cluster
+      int i = 1;
+      for (String clusterName : clusterNamePortMap.keySet()) {
+        lines.add("<Location /weblogic" + i + ">");
+        lines.add("WLSRequest On");
+        lines.add("WebLogicCluster " + clusterName + ":" + clusterNamePortMap.get(clusterName));
+        lines.add("PathTrim /weblogic" + i);
+        lines.add("</Location>");
+        i++;
+      }
+
+      try {
+        Files.write(customConf, lines);
+      } catch (IOException ioex) {
+        logger.info("Got IOException while write to a file");
+        throw ioex;
+      }
+
+      apacheParams.volumePath(volumePath);
+    }
+
+    if (virtualHostName != null) {
+      // create the certificate and private key
+      String certFile = RESULTS_ROOT + "/apache-sample.crt";
+      String keyFile = RESULTS_ROOT + "/apache-sample.key";
+
+      Map<String, String> envs = new HashMap<>();
+      envs.put("VIRTUAL_HOST_NAME", virtualHostName);
+      envs.put("SSL_CERT_FILE", certFile);
+      envs.put("SSL_CERT_KEY_FILE", keyFile);
+
+      String command = "sh ../kubernetes/samples/charts/apache-samples/custom-sample/certgen.sh";
+      CommandParams params = Command
+          .defaultCommandParams()
+          .command(command)
+          .env(envs)
+          .saveResults(true)
+          .redirect(true);
+
+      Command.withParams(params).execute();
+
+      String customCert = Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(certFile)));
+      String customKey = Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(keyFile)));
+
+      // set the Apache helm install parameters
+      apacheParams.virtualHostName(virtualHostName);
+      apacheParams.customCert(customCert);
+      apacheParams.customKey(customKey);
+    }
+
+    // install Apache
+    assertThat(installApache(apacheParams))
+        .as("Test Apache installation succeeds")
+        .withFailMessage("Apache installation is failed")
+        .isTrue();
+
+    // verify that Apache is installed
+    logger.info("Checking Apache release {0} status in namespace {1}",
+        APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace);
+    assertTrue(isHelmReleaseDeployed(APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace),
+        String.format("Apache release %s is not in deployed status in namespace %s",
+            APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace));
+    logger.info("Apache release {0} status is deployed in namespace {1}",
+        APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace);
+
+    // wait until the Apache pod is ready.
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info(
+                "Waiting for Apache to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+                apacheNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isApacheReady(apacheNamespace), "isApacheReady failed with ApiException"));
+
+    return apacheHelmParams;
   }
 
   /**
@@ -923,8 +1109,8 @@ public class CommonTestUtils {
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-            .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
-            .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
+            .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
+            .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
             .contains(ingressName);
 
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
@@ -982,8 +1168,8 @@ public class CommonTestUtils {
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-            .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
-            .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
+            .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
+            .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
             .contains(ingressName);
 
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
@@ -1050,8 +1236,8 @@ public class CommonTestUtils {
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-        .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
-        .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
+        .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
+        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
         .contains(ingressName);
 
     // get ingress service Nodeport
@@ -1118,6 +1304,28 @@ public class CommonTestUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
+            String.format("podReady failed with ApiException for pod %s in namespace %s",
+                podName, domainNamespace)));
+  }
+
+  /**
+   * Checks that pod is initializing.
+   *
+   * @param podName pod name to check
+   * @param domainUid the label the pod is decorated with
+   * @param domainNamespace the domain namespace in which the domain exists
+   */
+  public static void checkPodInitializing(String podName, String domainUid, String domainNamespace) {
+    LoggingFacade logger = getLogger();
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be initializing in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podInitializing(podName, domainUid, domainNamespace),
             String.format("podReady failed with ApiException for pod %s in namespace %s",
                 podName, domainNamespace)));
   }
@@ -1837,27 +2045,27 @@ public class CommonTestUtils {
     if (withRestApi) {
       assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApi(domainUid, clusterName,
           replicasAfterScale, externalRestHttpsPort, opNamespace, opServiceAccount)))
-          .as("Verify scaling cluster {0} of domain {1} in namespace {2} with REST API succeeds",
-              clusterName, domainUid, domainNamespace)
-          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} with REST API failed",
-              clusterName, domainUid, domainNamespace)
+          .as(String.format("Verify scaling cluster %s of domain %s in namespace %s with REST API succeeds",
+              clusterName, domainUid, domainNamespace))
+          .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s with REST API failed",
+              clusterName, domainUid, domainNamespace))
           .isTrue();
     } else if (withWLDF) {
       // scale the cluster using WLDF policy
       assertThat(assertDoesNotThrow(() -> scaleClusterWithWLDF(clusterName, domainUid, domainNamespace,
           domainHomeLocation, scalingAction, scalingSize, opNamespace, opServiceAccount, myWebAppName,
           curlCmdForWLDFApp)))
-          .as("Verify scaling cluster {0} of domain {1} in namespace {2} with WLDF policy succeeds",
-              clusterName, domainUid, domainNamespace)
-          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} with WLDF policy failed",
-              clusterName, domainUid, domainNamespace)
+          .as(String.format("Verify scaling cluster %s of domain %s in namespace %s with WLDF policy succeeds",
+              clusterName, domainUid, domainNamespace))
+          .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s with WLDF policy failed",
+              clusterName, domainUid, domainNamespace))
           .isTrue();
     } else {
       assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, replicasAfterScale)))
-          .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
-              clusterName, domainUid, domainNamespace)
-          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} failed",
-              clusterName, domainUid, domainNamespace)
+          .as(String.format("Verify scaling cluster %s of domain %s in namespace %s succeeds",
+              clusterName, domainUid, domainNamespace))
+          .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s failed",
+              clusterName, domainUid, domainNamespace))
           .isTrue();
     }
 
@@ -2280,7 +2488,7 @@ public class CommonTestUtils {
    * @param secretName name of the secret to be created
    * @return true if the command to create secret succeeds, false otherwise
    */
-  private static boolean createExternalRestIdentitySecret(String namespace, String secretName) {
+  public static boolean createExternalRestIdentitySecret(String namespace, String secretName) {
 
     StringBuffer command = new StringBuffer()
         .append(GEN_EXTERNAL_REST_IDENTITY_FILE);
@@ -2670,5 +2878,4 @@ public class CommonTestUtils {
           return false;
         });
   }
-
 }

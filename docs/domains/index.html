@@ -1038,6 +1038,11 @@ window.onload = function() {
           "description": "Customization affecting Kubernetes Service generated for this WebLogic cluster.",
           "$ref": "#/definitions/KubernetesResource"
         },
+        "maxConcurrentShutdown": {
+          "description": "The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1.",
+          "type": "number",
+          "minimum": 0.0
+        },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
           "type": "string",
@@ -1272,6 +1277,11 @@ window.onload = function() {
         },
         "replicas": {
           "description": "The default number of cluster member Managed Server instances to start for each WebLogic cluster in the domain configuration, unless `replicas` is specified for that cluster under the `clusters` field. For each cluster, the operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Servers from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Servers will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their entries under `managedServers`, then a cluster may have more cluster members running than its `replicas` count. Defaults to 0.",
+          "type": "number",
+          "minimum": 0.0
+        },
+        "maxClusterConcurrentShutdown": {
+          "description": "The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it is being partially shut down by lowering its replica count. You can override this default on a per cluster basis by setting the cluster\u0027s `maxConcurrentShutdown` field. A value of 0 means there is no limit. Defaults to 1.",
           "type": "number",
           "minimum": 0.0
         },

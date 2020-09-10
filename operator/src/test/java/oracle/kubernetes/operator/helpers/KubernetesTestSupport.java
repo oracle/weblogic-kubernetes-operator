@@ -73,6 +73,7 @@ import okhttp3.internal.http2.StreamResetException;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
+import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.work.Component;
@@ -538,6 +539,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
         ResponseStep<T> next,
         RequestParams requestParams,
         CallFactory<T> factory,
+        RetryStrategy retryStrategy,
         ClientPool helper,
         int timeoutSeconds,
         int maxRetryCount,
@@ -733,9 +735,21 @@ public class KubernetesTestSupport extends FiberTestSupport {
         throw new IllegalStateException();
       }
       copyResourceStatus(resource, current);
-
+      incrementResourceVersion(getMetadata(current));
       onUpdateActions.forEach(a -> a.accept(current));
       return current;
+    }
+
+    private void incrementResourceVersion(V1ObjectMeta metadata) {
+      metadata.setResourceVersion(incrementString(metadata.getResourceVersion()));
+    }
+
+    private String incrementString(String string) {
+      try {
+        return Integer.toString(Integer.parseInt(string) + 1);
+      } catch (NumberFormatException e) {
+        return "0";
+      }
     }
 
     private void copyResourceStatus(T fromResources, T toResource) {

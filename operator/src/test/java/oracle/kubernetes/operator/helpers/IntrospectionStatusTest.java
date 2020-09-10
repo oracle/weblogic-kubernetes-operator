@@ -28,7 +28,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -100,7 +99,6 @@ public class IntrospectionStatusTest {
   }
 
   @Test
-  @Ignore("Anil! - you need to fix this one")
   public void whenNewIntrospectorJobPodCreatedWithErrImagePullStatus_patchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
@@ -125,7 +123,6 @@ public class IntrospectionStatusTest {
   }
 
   @Test
-  @Ignore("Anil! - you need to fix this one")
   public void whenNewIntrospectorJobPodCreatedWithImagePullBackupStatus_patchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
