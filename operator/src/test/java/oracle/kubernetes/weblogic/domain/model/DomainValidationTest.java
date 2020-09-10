@@ -178,9 +178,9 @@ public class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   public void whenDomainHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
-    V1EnvVar fieldRefEnvVar = createFieldRefEnvVar(ENV_NAME1, RAW_VALUE_1);
     configureDomain(domain)
-        .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2).withEnvironmentVariable(fieldRefEnvVar);
+        .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
+        .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -219,9 +219,8 @@ public class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   public void whenDomainAdminServerHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
-    V1EnvVar fieldRefEnvVar = createFieldRefEnvVar(ENV_NAME1, RAW_VALUE_1);
     configureDomain(domain)
-        .withEnvironmentVariable(fieldRefEnvVar)
+        .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
         .configureAdminServer()
         .getAdminServer()
         .addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
@@ -259,9 +258,8 @@ public class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   public void whenClusterServerPodHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
-    V1EnvVar fieldRefEnvVar = createFieldRefEnvVar(ENV_NAME1, RAW_VALUE_1);
     configureDomain(domain)
-        .withEnvironmentVariable(fieldRefEnvVar)
+        .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
         .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -600,11 +598,6 @@ public class DomainValidationTest extends DomainValidationBaseTest {
     assertThat(domain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
         "Istio is enabled and the domain resource specified to expose channel",
         "default")));
-  }
-
-  static V1EnvVar createFieldRefEnvVar(String name, String fieldPath) {
-    return new V1EnvVar().name(name).valueFrom(
-        new V1EnvVarSource().fieldRef(new V1ObjectFieldSelector().fieldPath(fieldPath)));
   }
 
   private DomainConfigurator configureDomain(Domain domain) {

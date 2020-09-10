@@ -696,18 +696,18 @@ public class Domain implements KubernetesObject {
         return false;
       }
       while (nameList.hasMoreElements()) {
-        String name = nameList.nextToken();
-        if (notValidEnvVarNames(varNames, name)) {
+        String token = nameList.nextToken();
+        if (noMatchingEnvVarName(varNames, token)) {
           return false;
         }
       }
       return true;
     }
 
-    private boolean notValidEnvVarNames(Set<String> varNames, String name) {
-      int index = name.indexOf(")");
+    private boolean noMatchingEnvVarName(Set<String> varNames, String token) {
+      int index = token.indexOf(")");
       if (index != -1) {
-        String str = name.substring(0, index);
+        String str = token.substring(0, index);
         // IntrospectorJobEnvVars.isReserved() checks env vars in ServerEnvVars too
         if (varNames.contains(str) || IntrospectorJobEnvVars.isReserved(str)) {
           return false;

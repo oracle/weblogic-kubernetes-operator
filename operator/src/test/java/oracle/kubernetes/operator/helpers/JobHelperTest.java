@@ -63,8 +63,6 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecu
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecretKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
-import static oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest.KubernetesResourceType.ConfigMap;
-import static oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest.KubernetesResourceType.Secret;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.allOf;
@@ -453,14 +451,14 @@ public class JobHelperTest extends DomainValidationBaseTest {
     runCreateJob();
     assertThat(
         job.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts(),
-        hasVolumeMount("volume2", "/source-test-domain"));
+        hasVolumeMount("volume2", "/source-" + UID));
   }
 
   @Test
   public void whenDomainHasAdditionalVolumesWithVariablesValue_dontReportValidationError() {
-    resourceLookup.defineResource(SECRET_NAME, Secret, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, ConfigMap, NS);
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
 
     configureDomain()
         .withEnvironmentVariable(ENV_NAME1, GOOD_MY_ENV_VALUE)
@@ -476,9 +474,9 @@ public class JobHelperTest extends DomainValidationBaseTest {
 
   @Test
   public void whenDomainHasAdditionalVolumesWithVariablesInvalidValue_reportValidationError() {
-    resourceLookup.defineResource(SECRET_NAME, Secret, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, ConfigMap, NS);
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
 
     V1EnvVar envVar = new V1EnvVar().name(ENV_NAME1).value(BAD_MY_ENV_VALUE);
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
