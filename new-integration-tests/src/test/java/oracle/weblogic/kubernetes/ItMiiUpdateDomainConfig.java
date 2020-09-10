@@ -16,12 +16,22 @@ import java.util.logging.Level;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -33,14 +43,13 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -58,15 +67,21 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -74,9 +89,14 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExi
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainWithNewSecretAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOCRRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -85,11 +105,16 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * This test class verifies the following scenerios
+ * This test class verifies the following scenarios
+ *
+ * <p>testServerLogsAreOnPV
+ * domain logHome is on PV, check server logs are on PV
  *
  * <p>testMiiCheckSystemResources
  *  Check the System Resources in a pre-configured ConfigMap
@@ -118,21 +143,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test add SystemResources, Clusters to model in image domain")
+@DisplayName("Test logHome on PV, add SystemResources, Clusters to model in image domain")
 @IntegrationTest
 class ItMiiUpdateDomainConfig {
 
-  private static HelmParams opHelmParams = null;
-  private static V1ServiceAccount serviceAccount = null;
-  private String serviceAccountName = null;
   private static String opNamespace = null;
-  private static String operatorImage = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static String dockerConfigJson = "";
-
+  private static String wlsBaseImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
+  private static boolean isUseSecret = true;
   private static int replicaCount = 2;
   private static final String domainUid = "mii-add-config";
+  private static String pvName = domainUid + "-pv"; // name of the persistent volume
+  private static String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
   private StringBuffer curlString = null;
 
   private StringBuffer checkCluster = null;
@@ -142,6 +165,8 @@ class ItMiiUpdateDomainConfig {
 
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
+  private final String adminServerName = "admin-server";
+
   private static LoggingFacade logger = null;
 
   /**
@@ -199,6 +224,24 @@ class ItMiiUpdateDomainConfig {
         configMapName, domainUid, domainNamespace,
         Arrays.asList("model.sysresources.yaml"));
 
+    //determine if the tests are running in Kind cluster. if true use images from Kind registry
+    if (KIND_REPO != null) {
+      String kindRepoImage = KIND_REPO + wlsBaseImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      logger.info("Using image {0}", kindRepoImage);
+      wlsBaseImage = kindRepoImage;
+      isUseSecret = false;
+    } else {
+      // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+      createOCRRepoSecret(domainNamespace);
+    }
+
+    // create PV, PVC for logs
+    createPV(pvName, domainUid, ItMiiUpdateDomainConfig.class.getSimpleName());
+    createPVC(pvName, pvcName, domainUid, domainNamespace);
+
+    // create job to change permissions on PV hostPath
+    createJobToChangePermissionsOnPvHostPath(pvName, pvcName, domainNamespace);
+
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
         REPO_SECRET_NAME, encryptionSecretName,
@@ -224,27 +267,47 @@ class ItMiiUpdateDomainConfig {
   @BeforeEach
   public void beforeEach() {
 
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+    logger.info("Check admin service and pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
-    // check managed server pods are ready
+    // check managed server services and pods are ready
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+      logger.info("Wait for managed server services and pods are created in namespace {0}",
+          domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
+  }
 
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
+  /**
+   * Check server logs are written on PV.
+   */
+  @Test
+  @Order(1)
+  @DisplayName("Check the server logs are written on PV, look for string RUNNING in server log")
+  public void testServerLogsAreOnPV() {
+
+    // check server logs are written on PV
+    String command = "grep RUNNING /shared/logs/" + adminServerName + ".log";
+    logger.info("Checking server logs are written on PV by running the command {0} on pod {1}, namespace {2}",
+        command, adminServerPodName, domainNamespace);
+    V1Pod adminPod = assertDoesNotThrow(() ->
+            Kubernetes.getPod(domainNamespace, null, adminServerPodName),
+        "Could not get the admin pod in namespace " + domainNamespace);
+
+    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
+        "/bin/sh", "-c", command),
+        String.format("Could not execute the command %s in pod %s, namespace %s",
+            command, adminServerPodName, domainNamespace));
+    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
+        command, result.exitValue(), result.stderr(), result.stdout());
+
+    // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
+    // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
+    assertFalse(result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty(),
+        String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
+            command, result.exitValue(), result.stderr(), result.stdout()));
+
   }
 
   /**
@@ -256,7 +319,7 @@ class ItMiiUpdateDomainConfig {
    * using the public nodeport of the administration server.
    */
   @Test
-  @Order(1)
+  @Order(2)
   @DisplayName("Verify the pre-configured SystemResources in a model-in-image domain")
   public void testMiiCheckSystemResources() {
 
@@ -293,7 +356,7 @@ class ItMiiUpdateDomainConfig {
    * Verify SystemResources are deleted from the domain.
    */
   @Test
-  @Order(2)
+  @Order(3)
   @DisplayName("Delete SystemResources from a model-in-image domain")
   public void testMiiDeleteSystemResources() {
 
@@ -356,7 +419,7 @@ class ItMiiUpdateDomainConfig {
    * Verify SystemResource configurations using Rest API call to admin server.
    */
   @Test
-  @Order(3)
+  @Order(4)
   @DisplayName("Add New JDBC/JMS SystemResources to a model-in-image domain")
   public void testMiiAddSystemResources() {
 
@@ -422,7 +485,7 @@ class ItMiiUpdateDomainConfig {
    * the spec level replica count to zero(default).
    */
   @Test
-  @Order(4)
+  @Order(5)
   @DisplayName("Add a dynamic cluster to a model-in-image domain with default replica count")
   public void testMiiAddDynmicClusteriWithNoReplica() {
 
@@ -484,7 +547,7 @@ class ItMiiUpdateDomainConfig {
    * Verify servers from new cluster are in running state.
    */
   @Test
-  @Order(5)
+  @Order(6)
   @DisplayName("Add a dynamic cluster to model-in-image domain with non-zero replica count")
   public void testMiiAddDynamicCluster() {
 
@@ -563,7 +626,7 @@ class ItMiiUpdateDomainConfig {
    * Verify servers from new cluster are in running state.
    */
   @Test
-  @Order(6)
+  @Order(7)
   @DisplayName("Add a configured cluster to a model-in-image domain")
   public void testMiiAddConfiguredCluster() {
 
@@ -638,7 +701,7 @@ class ItMiiUpdateDomainConfig {
    * WebLogic RESTful Management Services.
    */
   @Test
-  @Order(7)
+  @Order(8)
   @DisplayName("Change the WebLogic Admin credential in model-in-image domain")
   public void testMiiUpdateWebLogicCredential() {
     final boolean VALID = true;
@@ -695,16 +758,6 @@ class ItMiiUpdateDomainConfig {
         domainUid, domainNamespace);
   }
 
-  // This method is needed in this test class, since the cleanup util
-  // won't cleanup the images.
-  @AfterAll
-  void tearDown() {
-    // Delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
-  }
 
   private static void createDatabaseSecret(
         String secretName, String username, String password, 
@@ -758,6 +811,8 @@ class ItMiiUpdateDomainConfig {
                             .name(adminSecretName)
                             .namespace(domNamespace))
                     .includeServerOutInPodLog(true)
+                    .logHomeEnabled(Boolean.TRUE)
+                    .logHome("/shared/logs")
                     .serverStartPolicy("IF_NEEDED")
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()
@@ -765,7 +820,14 @@ class ItMiiUpdateDomainConfig {
                                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                             .addEnvItem(new V1EnvVar()
                                     .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                            .addVolumesItem(new V1Volume()
+                                    .name(pvName)
+                                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                                        .claimName(pvcName)))
+                            .addVolumeMountsItem(new V1VolumeMount()
+                                .mountPath("/shared")
+                                .name(pvName)))
                     .adminServer(new AdminServer()
                             .serverStartState("RUNNING")
                             .adminService(new AdminService()
@@ -905,6 +967,67 @@ class ItMiiUpdateDomainConfig {
       return null;
     }
     return result;
+  }
+
+  private static void createJobToChangePermissionsOnPvHostPath(String pvName, String pvcName, String namespace) {
+    logger.info("Running Kubernetes job to create domain");
+    V1Job jobBody = new V1Job()
+        .metadata(
+            new V1ObjectMeta()
+                .name("change-permissions-onpv-job-" + pvName) // name of the job
+                .namespace(namespace))
+        .spec(new V1JobSpec()
+            .backoffLimit(0) // try only once
+            .template(new V1PodTemplateSpec()
+                .spec(new V1PodSpec()
+                    .restartPolicy("Never")
+                    .addContainersItem(new V1Container()
+                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
+                        .image(wlsBaseImage)
+                        .addCommandItem("/bin/sh")
+                        .addArgsItem("-c")
+                        .addArgsItem("chown -R 1000:1000 /shared")
+                        .addVolumeMountsItem(
+                            new V1VolumeMount()
+                                .name(pvName)
+                                .mountPath("/shared"))
+                        .securityContext(new V1SecurityContext()
+                            .runAsGroup(0L)
+                            .runAsUser(0L))) // mounted under /shared inside pod
+                    .volumes(Arrays.asList(
+                        new V1Volume()
+                            .name(pvName)
+                            .persistentVolumeClaim(
+                                new V1PersistentVolumeClaimVolumeSource()
+                                    .claimName(pvcName))))
+                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                        new V1LocalObjectReference()
+                            .name(OCR_SECRET_NAME))
+                        : null))));
+
+    String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
+
+    // check job status and fail test if the job failed
+    V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
+        "Getting the job failed");
+    if (job != null) {
+      V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
+          v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
+          .findAny()
+          .orElse(null);
+      if (jobCondition != null) {
+        logger.severe("Job {0} failed to change permissions on PV hostpath", jobName);
+        List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
+            namespace, "job-name=" + jobName).getItems(),
+            "Listing pods failed");
+        if (!pods.isEmpty()) {
+          String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
+              "Failed to get pod log");
+          logger.severe(podLog);
+          fail("Change permissions on PV hostpath job failed");
+        }
+      }
+    }
   }
 
 }
