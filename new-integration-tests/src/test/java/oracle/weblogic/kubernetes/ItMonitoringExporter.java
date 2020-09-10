@@ -281,7 +281,7 @@ class ItMonitoringExporter {
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-    String nginxServiceName = nginxHelmParams.getReleaseName() + "-nginx-ingress-controller";
+    String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
     logger.info("NGINX service name: {0}", nginxServiceName);
     nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
     nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
@@ -1537,7 +1537,6 @@ class ItMonitoringExporter {
             + ADMIN_USERNAME_DEFAULT
             + ":"
             + ADMIN_PASSWORD_DEFAULT
-            //+ "@" + domainUid + "-managed-server1:%s/%s", protocol, port, uri);
             + "@" + domainUid + "-managed-server1:%s/%s", protocol, port, uri);
     logger.info("accessing managed server exporter via " + command);
 
