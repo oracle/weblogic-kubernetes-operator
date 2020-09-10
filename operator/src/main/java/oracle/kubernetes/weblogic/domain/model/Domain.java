@@ -24,6 +24,7 @@ import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
@@ -595,6 +596,10 @@ public class Domain implements KubernetesObject {
     return new Validator().getValidationFailures(kubernetesResources);
   }
 
+  public List<String> getAdditionalValidationFailures(V1PodSpec podSpec) {
+    return new Validator().getAdditionalValidationFailures(podSpec);
+  }
+
   class Validator {
     private final List<String> failures = new ArrayList<>();
     private final Set<String> clusterNames = new HashSet<>();
@@ -611,6 +616,11 @@ public class Domain implements KubernetesObject {
       addMissingModelConfigMap(kubernetesResources);
       verifyIstioExposingDefaultChannel();
 
+      return failures;
+    }
+
+    public List<String> getAdditionalValidationFailures(V1PodSpec podSpec) {
+      addInvalidMountPathsForPodSpec(podSpec);
       return failures;
     }
 
@@ -664,6 +674,13 @@ public class Domain implements KubernetesObject {
       }
     }
 
+    private void addInvalidMountPathsForPodSpec(V1PodSpec podSpec) {
+      podSpec.getContainers()
+          .forEach(container ->
+              Optional.ofNullable(container.getVolumeMounts())
+                  .ifPresent(volumes -> volumes.forEach(this::checkValidMountPath)));
+    }
+
     private void checkValidMountPath(V1VolumeMount mount) {
       if (!new File(mount.getMountPath()).isAbsolute()
           && !skipValidation(mount.getMountPath())) {
@@ -691,7 +708,8 @@ public class Domain implements KubernetesObject {
       int index = name.indexOf(")");
       if (index != -1) {
         String str = name.substring(0, index);
-        if (varNames.contains(str) || ServerEnvVars.isReserved(str)) {
+        // IntrospectorJobEnvVars.isReserved() checks env vars in ServerEnvVars too
+        if (varNames.contains(str) || IntrospectorJobEnvVars.isReserved(str)) {
           return false;
         }
       }

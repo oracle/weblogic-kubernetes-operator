@@ -29,7 +29,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   public DomainCommonConfigurator() {
   }
 
-  DomainCommonConfigurator(@Nonnull Domain domain) {
+  public DomainCommonConfigurator(@Nonnull Domain domain) {
     super(domain);
     setApiVersion(domain);
   }

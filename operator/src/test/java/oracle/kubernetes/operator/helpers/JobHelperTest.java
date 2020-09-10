@@ -42,18 +42,19 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVarRegEx;
+import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAffinity;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createConfigMapKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createContainer;
@@ -62,6 +63,8 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecu
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecretKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
+import static oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest.KubernetesResourceType.ConfigMap;
+import static oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest.KubernetesResourceType.Secret;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.allOf;
@@ -75,10 +78,12 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class JobHelperTest {
-
+public class JobHelperTest extends DomainValidationBaseTest {
+  public static final String UID = "test-domain";
+  public static final String NS = "namespace";
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
+
   /** 
    * OEVN is the name of an env var that contains a comma-separated list of oper supplied env var names.
    * It's used by the Model in Image introspector job to detect env var differences from the last
@@ -439,6 +444,55 @@ public class JobHelperTest {
 
     assertThat(
         getConfiguredDomainSpec(domainConfigurator).getEnv(), hasEnvVar("item1", RAW_VALUE_1));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithVariables_createIntrospectorPodWithSubstitutions() {
+    configureDomain()
+        .withAdditionalVolumeMount("volume2", "/source-$(DOMAIN_UID)");
+    runCreateJob();
+    assertThat(
+        job.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts(),
+        hasVolumeMount("volume2", "/source-test-domain"));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithVariablesValue_dontReportValidationError() {
+    resourceLookup.defineResource(SECRET_NAME, Secret, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, ConfigMap, NS);
+
+    configureDomain()
+        .withEnvironmentVariable(ENV_NAME1, GOOD_MY_ENV_VALUE)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+
+    runCreateJob();
+
+    assertThat(job.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts(),
+            hasVolumeMount("volume1", END_VOLUME_MOUNT_PATH_1));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithVariablesInvalidValue_reportValidationError() {
+    resourceLookup.defineResource(SECRET_NAME, Secret, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, ConfigMap, NS);
+
+    V1EnvVar envVar = new V1EnvVar().name(ENV_NAME1).value(BAD_MY_ENV_VALUE);
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
+
+    configureDomain()
+        .withEnvironmentVariable(ENV_NAME1, BAD_MY_ENV_VALUE)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+
+    runCreateJob();
+
+    assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), org.hamcrest.Matchers.is(true));
+    assertThat(job, is(nullValue()));
   }
 
   @Test

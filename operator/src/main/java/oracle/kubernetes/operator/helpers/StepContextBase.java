@@ -121,7 +121,7 @@ public abstract class StepContextBase implements StepContextConstants {
   private String translate(final Map<String, String> substitutionVariables, String rawValue, boolean requiresDns1123) {
     String result = rawValue;
     for (Map.Entry<String, String> entry : substitutionVariables.entrySet()) {
-      if (result != null && entry.getValue() != null) {
+      if (result != null && result.contains("$(") && entry.getValue() != null) {
         result = result.replace(String.format("$(%s)", entry.getKey()),
             requiresDns1123 ? LegalNames.toDns1123LegalName(entry.getValue()) : entry.getValue());
       }
