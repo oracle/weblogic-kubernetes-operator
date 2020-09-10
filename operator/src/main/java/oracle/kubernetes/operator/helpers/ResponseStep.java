@@ -121,7 +121,7 @@ public abstract class ResponseStep<T> extends Step {
       packet.put(CONTINUE, cont);
       // Since the continue value is present, invoking the original request will return
       // the next window of data.
-      return resetResetAndReinvokeRequest(packet);
+      return resetRetryStrategyAndReinvokeRequest(packet);
     }
     return doNext(next, packet);
   }
@@ -153,7 +153,7 @@ public abstract class ResponseStep<T> extends Step {
    * @param packet Packet
    * @return Next action for the original request
    */
-  private NextAction resetResetAndReinvokeRequest(Packet packet) {
+  private NextAction resetRetryStrategyAndReinvokeRequest(Packet packet) {
     RetryStrategy retryStrategy = packet.getSpi(RetryStrategy.class);
     if (retryStrategy != null) {
       retryStrategy.reset();
