@@ -137,6 +137,7 @@ metadata:
     nginx.ingress.kubernetes.io/configuration-snippet: |
       more_set_input_headers "X-Forwarded-Proto: https";
       more_set_input_headers "WL-Proxy-SSL: true";
+      proxy_set_header HEADER "";
     nginx.ingress.kubernetes.io/ingress.allow-http: "false"
 spec:
   tls:
