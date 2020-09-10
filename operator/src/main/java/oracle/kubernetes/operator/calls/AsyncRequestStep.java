@@ -40,6 +40,8 @@ import static oracle.kubernetes.operator.logging.MessageKeys.ASYNC_SUCCESS;
  */
 public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   public static final String RESPONSE_COMPONENT_NAME = "response";
+  public static final String CONTINUE = "continue";
+
   private static final Random R = new Random();
   private static final int HIGH = 200;
   private static final int LOW = 10;
@@ -253,13 +255,13 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
 
     // clear out earlier results
-    String cont = null;
+    String cont = (String) packet.remove(CONTINUE);
     RetryStrategy retry = null;
     Component oldResponse = packet.getComponents().remove(RESPONSE_COMPONENT_NAME);
     if (oldResponse != null) {
       @SuppressWarnings("unchecked")
       CallResponse<T> old = oldResponse.getSpi(CallResponse.class);
-      if (old != null && old.getResult() != null) {
+      if (cont != null && old != null && old.getResult() != null) {
         // called again, access continue value, if available
         cont = accessContinue(old.getResult());
       }

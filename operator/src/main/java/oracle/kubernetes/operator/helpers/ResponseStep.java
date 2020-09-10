@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.accessContinue;
 
 /**
@@ -69,6 +70,7 @@ public abstract class ResponseStep<T> extends Step {
     }
 
     if (previousStep != nextAction.getNext()) { // not a retry, clear out old response
+      packet.remove(CONTINUE);
       packet.getComponents().remove(AsyncRequestStep.RESPONSE_COMPONENT_NAME);
     }
 
@@ -114,7 +116,9 @@ public abstract class ResponseStep<T> extends Step {
    * @return Next action for list continue
    */
   protected final NextAction doContinueListOrNext(CallResponse<T> callResponse, Packet packet, Step next) {
-    if (callResponse != null && accessContinue(callResponse.getResult()) != null) {
+    String cont = accessContinue(callResponse.getResult());
+    if (callResponse != null && cont != null) {
+      packet.put(CONTINUE, cont);
       // Since the continue value is present, invoking the original request will return
       // the next window of data.
       return resetResetAndReinvokeRequest(packet);
