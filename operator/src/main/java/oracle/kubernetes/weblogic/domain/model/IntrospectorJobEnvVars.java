@@ -35,7 +35,6 @@ public class IntrospectorJobEnvVars {
    */
   public static final String OPSS_WALLETFILE_SECRET_NAME = "OPSS_WALLETFILE_SECRET_NAME";
 
-
   /**
    * The credentials used by the introspection job - wdt encryption passphrase.
    */
@@ -45,7 +44,6 @@ public class IntrospectorJobEnvVars {
    * The credentials used by the introspection job - runtime encryption secret name.
    */
   public static final String RUNTIME_ENCRYPTION_SECRET_NAME = "RUNTIME_ENCRYPTION_SECRET_NAME";
-
 
   /**
    * The domain source type.

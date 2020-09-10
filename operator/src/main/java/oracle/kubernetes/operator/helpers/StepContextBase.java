@@ -18,17 +18,18 @@ import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public abstract class StepContextBase implements StepContextConstants {
+  private static final String TOKEN_MARKER = "$(";
   protected final DomainPresenceInfo info;
 
   StepContextBase(DomainPresenceInfo info) {
     this.info = info;
   }
 
-  protected <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj) {
+  <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj) {
     return doDeepSubstitution(substitutionVariables, obj, false);
   }
 
-  protected <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj, boolean requiresDns1123) {
+  private <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj, boolean requiresDns1123) {
     if (obj instanceof String) {
       return (T) translate(substitutionVariables, (String) obj, requiresDns1123);
     } else if (obj instanceof List) {
@@ -74,7 +75,7 @@ public abstract class StepContextBase implements StepContextConstants {
     return obj;
   }
 
-  boolean isDns1123Required(Method method) {
+  private boolean isDns1123Required(Method method) {
     // value requires to be in DNS1123 if the value is for a name, which is assumed to be
     // name for a kubernetes object
     return LegalNames.isDns1123Required(method.getName().substring(3));
@@ -121,8 +122,8 @@ public abstract class StepContextBase implements StepContextConstants {
   private String translate(final Map<String, String> substitutionVariables, String rawValue, boolean requiresDns1123) {
     String result = rawValue;
     for (Map.Entry<String, String> entry : substitutionVariables.entrySet()) {
-      if (result != null && result.contains("$(") && entry.getValue() != null) {
-        result = result.replace(String.format("$(%s)", entry.getKey()),
+      if (result != null && result.contains(TOKEN_MARKER) && entry.getValue() != null) {
+        result = result.replace(String.format("%s%s)", TOKEN_MARKER, entry.getKey()),
             requiresDns1123 ? LegalNames.toDns1123LegalName(entry.getValue()) : entry.getValue());
       }
     }

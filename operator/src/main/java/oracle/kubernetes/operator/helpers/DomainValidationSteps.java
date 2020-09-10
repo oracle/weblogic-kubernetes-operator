@@ -108,7 +108,7 @@ public class DomainValidationSteps {
   static class DomainAdditionalValidationStep extends Step {
     V1PodSpec podSpec;
 
-    public DomainAdditionalValidationStep(V1PodSpec podSpec) {
+    DomainAdditionalValidationStep(V1PodSpec podSpec) {
       this.podSpec = podSpec;
     }
 

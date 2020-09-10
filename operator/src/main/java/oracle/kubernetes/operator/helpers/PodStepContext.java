@@ -286,7 +286,6 @@ public abstract class PodStepContext extends BasePodStepContext {
   /**
    * Creates the specified new pod and performs any additional needed processing.
    *
-   *
    * @param next the next step to perform after the pod creation is complete.
    * @return a step to be scheduled.
    */
