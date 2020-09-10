@@ -133,6 +133,43 @@ public class Kubernetes {
   }
 
   /**
+   * Checks if a pod exists in a given namespace and in Running state.
+   * @param namespace in which to check for the pod running
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @return true if pod exists and running otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean isPodInitializing(String namespace, String domainUid, String podName) throws ApiException {
+    final LoggingFacade logger = getLogger();
+    boolean status = false;
+    V1Pod pod = getPod(namespace, null, podName);
+    if (pod != null) {
+      if (pod.getStatus() != null
+          && pod.getStatus().getConditions() != null
+          && pod.getStatus().getConditions().stream() != null) {
+        // get the podCondition with the 'Ready' type field
+        V1PodCondition v1PodInitializedCondition = pod.getStatus().getConditions().stream()
+            .filter(v1PodCondition -> "Initialized".equals(v1PodCondition.getType()))
+            .findAny()
+            .orElse(null);
+
+        if (v1PodInitializedCondition != null && v1PodInitializedCondition.getStatus() != null) {
+          status = v1PodInitializedCondition.getStatus().equalsIgnoreCase("true");
+          if (status) {
+            logger.info("Pod {0} is Initialized in namespace {1}", podName, namespace);
+          }
+        }
+      } else {
+        logger.info("pod {0} status or condition is null in namespace {1}", podName, namespace);
+      }
+    } else {
+      logger.info("Pod {0} does not exist in namespace {1}", podName, namespace);
+    }
+    return status;
+  }
+
+  /**
 
    Checks if a pod is ready in a given namespace.
    @param namespace in which to check if the pod is ready
