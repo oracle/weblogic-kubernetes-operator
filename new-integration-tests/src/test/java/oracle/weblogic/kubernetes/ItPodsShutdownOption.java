@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -129,7 +130,7 @@ class ItPodsShutdownOption {
     encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
-        String yamlString = "topology:\n"
+    String yamlString = "topology:\n"
         + "  Server:\n"
         + "    'independent-ms-1':\n"
         + "      ListenPort: '8001'\n"
