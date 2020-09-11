@@ -3,20 +3,15 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
@@ -28,7 +23,6 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.Shutdown;
 import oracle.weblogic.kubernetes.actions.TestActions;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -45,8 +39,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
-import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -57,7 +49,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -323,57 +314,6 @@ class ItPodsShutdownOption {
 
   }
 
-  /**
-   * Verify the server pod Shutdown properties.
-   * @param podName the name of the server pod
-   * @param domainNS the namespace where the server pod exist
-   * @param props the shutdown properties
-   */
-  private static boolean verifyServerShutdownProp(
-      String podName,
-      String domainNS,
-      String... props) throws io.kubernetes.client.openapi.ApiException {
-
-    V1Pod serverPod = Kubernetes.getPod(domainNS, null, podName);
-    assertNotNull(serverPod,"The server pod does not exist in namespace " + domainNS);
-    List<V1EnvVar> envVars = Objects.requireNonNull(serverPod.getSpec()).getContainers().get(0).getEnv();
-
-    boolean found = false;
-    HashMap<String, Boolean> propFound = new HashMap<String, Boolean>();
-    for (String prop : props) {
-      for (var envVar : envVars) {
-        if (envVar.getName().contains("SHUTDOWN")) {
-          if (envVar.getValue() != null && envVar.getValue().contains(prop)) {
-            logger.info("For pod {0} SHUTDOWN option {1} has value {2} ",
-                podName, envVar.getName(),  envVar.getValue());
-            logger.info("Property with value " + prop + " has found");
-            propFound.put(prop, true);
-          }
-        }
-      }
-    }
-    if (props.length == propFound.size()) {
-      found = true;
-    }
-    return found;
-  }
-
-  private void verifyServerLog(String serverName, String[] envVars) {
-    String logDir = "/u01/domains/" + domainUid + "/servers/" + serverName + "/logs";
-    assertDoesNotThrow(() -> {
-      Path destLogDir = Files.createDirectories(Paths.get(
-          TestConstants.RESULTS_ROOT, this.getClass().getSimpleName(), serverName));
-      deleteDirectory(destLogDir.toFile());
-      Files.createDirectories(destLogDir);
-      Kubernetes.copyDirectoryFromPod(TestActions.getPod(domainNamespace, null, domainUid + "-" + serverName),
-          Paths.get(logDir).toString(), destLogDir);
-      for (String envVar : envVars) {
-        assertTrue(Files.readString(
-            Paths.get(destLogDir.toString(), logDir, serverName + ".out"))
-            .contains(envVar));
-      }
-    });
-  }
 
   private void verifyServerLog(String namespace, String podName, String[] envVars) throws ApiException {
     String podLog = TestActions.getPodLog(podName, namespace);
@@ -402,41 +342,6 @@ class ItPodsShutdownOption {
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
-  }
-
-
-  //restart pods by manipulating the serverStartPolicy to NEVER and IF_NEEDED
-  private void restartDomain() {
-    logger.info("Restarting domain {0}", domainNamespace);
-    shutdownDomain(domainUid, domainNamespace);
-
-    logger.info("Checking for admin server pod shutdown");
-    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
-    logger.info("Checking managed server pods were shutdown");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace);
-    }
-
-    startDomain(domainUid, domainNamespace);
-
-
-    // verify the admin server service created
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    logger.info("Checking for admin server pod readiness");
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // verify managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
-    }
-
-    logger.info("Checking for managed servers pod readiness");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
-    }
   }
 
 }
