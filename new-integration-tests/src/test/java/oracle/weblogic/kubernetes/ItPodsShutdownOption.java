@@ -11,9 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-
-import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -47,7 +44,9 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -86,6 +85,7 @@ class ItPodsShutdownOption {
   private static String miiImage;
   private static String adminSecretName;
   private static String encryptionSecretName;
+  private static String cmName = "configuredcluster";
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -128,6 +128,19 @@ class ItPodsShutdownOption {
     logger.info("Creating encryption secret");
     encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+
+        String yamlString = "topology:\n"
+        + "  Server:\n"
+        + "    'independent-ms-1':\n"
+        + "      ListenPort: '8001'\n"
+        + "    'independent-ms-2':\n"
+        + "      ListenPort: '8001'\n"
+        + "    'config-server3':\n"
+        + "      Cluster: 'ConfigCluster'\n"
+        + "      ListenPort: '8001'";
+
+
+    createClusterConfigMap(cmName, yamlString);
 
   }
 
@@ -172,18 +185,8 @@ class ItPodsShutdownOption {
     Domain domain = buildDomainResource(shutDownObjects);
     createVerifyDomain(domain);
 
-    String yamlString = "topology:\n"
-        + "  Server:\n"
-        + "    'independent-ms-1':\n"
-        + "      ListenPort: '8001'\n"
-        + "    'independent-ms-2':\n"
-        + "      ListenPort: '8001'\n"
-        + "    'config-server3':\n"
-        + "      Cluster: 'ConfigCluster'\n"
-        + "      ListenPort: '8001'";
 
-    String cmName = "configured.cluster";
-    createClusterConfigMap(cmName, yamlString);
+    /*
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"add\",")
@@ -197,6 +200,7 @@ class ItPodsShutdownOption {
         -> patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(configMap)  failed ");
     assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+    */
 
 
     verifyServerLog(domainNamespace, adminServerPodName,
@@ -260,6 +264,7 @@ class ItPodsShutdownOption {
                     .shutdown(shutDownObject[1])))
             .configuration(new Configuration()
                 .model(new Model()
+                    .configMap(cmName)
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName)))
             .addManagedServersItem(new ManagedServer()
@@ -378,7 +383,7 @@ class ItPodsShutdownOption {
   }
 
   // Crate a ConfigMap with a model file to add a new WebLogic cluster
-  private void createClusterConfigMap(String configMapName, String model) {
+  private static void createClusterConfigMap(String configMapName, String model) {
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
     Map<String, String> data = new HashMap<>();
@@ -397,6 +402,40 @@ class ItPodsShutdownOption {
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
   }
 
+
+  //restart pods by manipulating the serverStartPolicy to NEVER and IF_NEEDED
+  private void restartDomain() {
+    logger.info("Restarting domain {0}", domainNamespace);
+    shutdownDomain(domainUid, domainNamespace);
+
+    logger.info("Checking for admin server pod shutdown");
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
+    logger.info("Checking managed server pods were shutdown");
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+    }
+
+    startDomain(domainUid, domainNamespace);
+
+
+    // verify the admin server service created
+    checkServiceExists(adminServerPodName, domainNamespace);
+
+    logger.info("Checking for admin server pod readiness");
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    // verify managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
+    }
+
+    logger.info("Checking for managed servers pod readiness");
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+    }
+  }
 
 }
 
