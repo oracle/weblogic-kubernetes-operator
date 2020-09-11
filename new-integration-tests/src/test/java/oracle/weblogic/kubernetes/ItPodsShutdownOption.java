@@ -142,8 +142,8 @@ class ItPodsShutdownOption {
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
     checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace);
     checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace);
-    checkPodDoesNotExist(indManagedServerName2, domainUid, domainNamespace);
-    //checkPodDoesNotExist(indManagedServerName1, domainUid, domainNamespace);
+    checkPodDoesNotExist(indManagedServerPodName1, domainUid, domainNamespace);
+    checkPodDoesNotExist(indManagedServerPodName2, domainUid, domainNamespace);
   }
 
   /**
