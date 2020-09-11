@@ -49,6 +49,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
@@ -77,8 +79,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class JobHelperTest extends DomainValidationBaseTest {
-  public static final String UID = "test-domain";
-  public static final String NS = "namespace";
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
 

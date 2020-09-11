@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -32,12 +32,12 @@ public class DomainValidationBaseTest {
    *  Types of Kubernetes resources which can be looked up on a domain.
    *
    */
-  public enum KubernetesResourceType {
+  protected enum KubernetesResourceType {
     Secret, ConfigMap
   }
 
   @SuppressWarnings("SameParameterValue")
-  public static class KubernetesResourceLookupStub implements KubernetesResourceLookup {
+  protected static class KubernetesResourceLookupStub implements KubernetesResourceLookup {
     private Map<KubernetesResourceType, List<V1ObjectMeta>> definedResources = new ConcurrentHashMap<>();
 
     List<V1ObjectMeta> getResourceList(KubernetesResourceType type) {

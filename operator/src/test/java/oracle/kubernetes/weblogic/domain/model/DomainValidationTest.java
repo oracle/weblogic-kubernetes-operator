@@ -183,7 +183,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumeMountsWithNonExistVariables_reportError() {
+  public void whenDomainHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
     configureDomain(domain)
         .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 
@@ -226,7 +226,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainAdminServerHasAdditionalVolumeMountsWithNonExsitVariables_reportError() {
+  public void whenDomainAdminServerHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
     configureDomain(domain)
         .configureAdminServer()
         .getAdminServer()
@@ -263,7 +263,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenClusterServerPodHasAdditionalVolumeMountsWithNonExsitVariables_reportError() {
+  public void whenClusterServerPodHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
     configureDomain(domain)
         .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 

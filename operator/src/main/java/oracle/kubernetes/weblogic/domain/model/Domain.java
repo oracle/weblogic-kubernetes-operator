@@ -44,12 +44,12 @@ import static java.util.stream.Collectors.toSet;
  */
 public class Domain implements KubernetesObject {
   /**
-   * The starting marker of a token that needs to be substituted with a matching env var
+   * The starting marker of a token that needs to be substituted with a matching env var.
    */
   public static final String TOKEN_START_MARKER = "$(";
 
   /**
-   * The ending marker of a token that needs to be substituted with a matching env var
+   * The ending marker of a token that needs to be substituted with a matching env var.
    */
   public static final String TOKEN_END_MARKER = ")";
 
@@ -695,7 +695,7 @@ public class Domain implements KubernetesObject {
     }
 
     private void checkValidMountPath(V1VolumeMount mount) {
-      if (skipValidation(mount.getMountPath())) return;
+      if (skipValidation(mount.getMountPath())) { return; }
 
       if (!new File(mount.getMountPath()).isAbsolute()) {
         failures.add(DomainValidationMessages.badVolumeMountPath(mount));

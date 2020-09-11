@@ -397,7 +397,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithCustomVariablesInvalidValue_reportValidationError() {
+  public void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_reportValidationError() {
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
 
