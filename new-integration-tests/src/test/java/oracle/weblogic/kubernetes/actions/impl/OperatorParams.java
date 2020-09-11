@@ -27,6 +27,7 @@ public class OperatorParams {
   private static final String ELASTICSEARCH_PORT = "elasticSearchPort";
   private static final String JAVA_LOGGING_LEVEL = "javaLoggingLevel";
   private static final String LOGSTASH_IMAGE = "logStashImage";
+  private static final String DOMAIN_NAMESPACE_SELECTION_STRATEGY = "domainNamespaceSelectionStrategy";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -43,6 +44,7 @@ public class OperatorParams {
   private int elasticSearchPort;
   private String javaLoggingLevel;
   private String logStashImage;
+  private String domainNamespaceSelectionStrategy;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -114,6 +116,11 @@ public class OperatorParams {
     return this;
   }
 
+  public OperatorParams domainNamespaceSelectionStrategy(String domainNamespaceSelectionStrategy) {
+    this.domainNamespaceSelectionStrategy = domainNamespaceSelectionStrategy;
+    return this;
+  }
+
   public String getServiceAccount() {
     return serviceAccount;
   }
@@ -150,6 +157,9 @@ public class OperatorParams {
     }
     if (logStashImage != null) {
       values.put(LOGSTASH_IMAGE, logStashImage);
+    }
+    if (domainNamespaceSelectionStrategy != null) {
+      values.put(DOMAIN_NAMESPACE_SELECTION_STRATEGY, domainNamespaceSelectionStrategy);
     }
     values.values().removeIf(Objects::isNull);
     return values;
