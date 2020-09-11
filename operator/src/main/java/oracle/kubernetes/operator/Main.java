@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.openapi.models.V1ListMeta;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -411,6 +413,12 @@ public class Main {
     }
 
     return domainNamespaces;
+  }
+
+  private void startPodWatcher(V1PodList result, String ns) {
+    if (!podWatchers.containsKey(ns)) {
+      podWatchers.put(ns, createPodWatcher(ns, getInitialResourceVersion(result)));
+    }
   }
 
 
@@ -1009,15 +1017,14 @@ public class Main {
         }
       }
 
-      if (!podWatchers.containsKey(ns)) {
-        podWatchers.put(ns, createPodWatcher(ns, getInitialResourceVersion(result)));
-      }
+      main.startPodWatcher(result, ns);
       return doNext(packet);
     }
 
-    private String getInitialResourceVersion(V1PodList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
+  }
+
+  private static String getInitialResourceVersion(KubernetesListObject list) {
+    return Optional.ofNullable(list).map(KubernetesListObject::getMetadata).map(V1ListMeta::getResourceVersion).orElse("");
   }
 
   private static class NamespaceListStep extends ResponseStep<V1NamespaceList> {
