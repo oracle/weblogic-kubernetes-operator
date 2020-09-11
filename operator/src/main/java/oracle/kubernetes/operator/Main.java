@@ -3,9 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.common.KubernetesObject;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,17 +34,19 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
-import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -386,10 +385,7 @@ public class Main {
   }
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
-    return new ConfigMapAfterStep(
-        ns,
-        tuningAndConfig().getWatchTuning()
-    );
+    return new ConfigMapAfterStep(ns);
   }
 
   /**
@@ -416,13 +412,25 @@ public class Main {
     return domainNamespaces;
   }
 
-  private void startServiceWatcher(String initialResourceVersion, String ns) {
+  private void startEventWatcher(String ns, String initialResourceVersion) {
+    if (!eventWatchers.containsKey(ns)) {
+      eventWatchers.put(ns, createEventWatcher(ns, initialResourceVersion));
+    }
+  }
+
+  private void startConfigMapWatcher(String ns, String initialResourceVersion) {
+    if (!configMapWatchers.containsKey(ns)) {
+      configMapWatchers.put(ns, createConfigMapWatcher(ns, initialResourceVersion));
+    }
+  }
+
+  private void startServiceWatcher(String ns, String initialResourceVersion) {
     if (!serviceWatchers.containsKey(ns)) {
       serviceWatchers.put(ns, createServiceWatcher(ns, initialResourceVersion));
     }
   }
 
-  private void startDomainWatcher(String initialResourceVersion, String ns) {
+  private void startDomainWatcher(String ns, String initialResourceVersion) {
     if (!domainWatchers.containsKey(ns)) {
       domainWatchers.put(ns, createDomainWatcher(ns, initialResourceVersion));
     }
@@ -702,7 +710,7 @@ public class Main {
   }
 
   private static Step getScriptCreationSteps(String ns) {
-    try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+    try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns)) {
       return Step.chain(
           ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns), createConfigMapStep(ns));
     }
@@ -904,7 +912,7 @@ public class Main {
                     return v;
                   });
           info.setPopulated(true);
-          try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
+          try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
             dp.createMakeRightOperation(info).withExplicitRecheck().execute();
           }
         }
@@ -916,13 +924,13 @@ public class Main {
               // This is a stranded DomainPresenceInfo.
               info.setDeleting(true);
               info.setPopulated(true);
-              try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns).domainUid(uid)) {
+              try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns).domainUid(uid)) {
                 dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
               }
             }
           });
 
-      main.startDomainWatcher(getInitialResourceVersion(callResponse.getResult()), ns);
+      main.startDomainWatcher(ns, getInitialResourceVersion(callResponse.getResult()));
       return doNext(packet);
     }
 
@@ -961,7 +969,7 @@ public class Main {
       }
 
       String initialResourceVersion = getInitialResourceVersion(result);
-      main.startServiceWatcher(initialResourceVersion, ns);
+      main.startServiceWatcher(ns, initialResourceVersion);
       return doNext(packet);
     }
   }
@@ -982,17 +990,8 @@ public class Main {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1EventList> callResponse) {
-      V1EventList result = callResponse.getResult();
-      // don't bother processing pre-existing events
-
-      if (!eventWatchers.containsKey(ns)) {
-        eventWatchers.put(ns, createEventWatcher(ns, getInitialResourceVersion(result)));
-      }
+      main.startEventWatcher(ns, getInitialResourceVersion(callResponse.getResult()));
       return doNext(packet);
-    }
-
-    private String getInitialResourceVersion(V1EventList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
     }
   }
 
@@ -1093,14 +1092,14 @@ public class Main {
         namespacesToStart = new TreeSet<>(configuredDomainNamespaces);
         for (String ns : configuredDomainNamespaces) {
           if (!nsList.contains(ns)) {
-            try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+            try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns)) {
               LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, ns);
             }
             namespacesToStart.remove(ns);
           }
         }
       }
-      Step strategy = null;
+      Step strategy;
       if (!namespacesToStart.isEmpty()) {
         strategy = Step.chain(createDomainCrdAndStartNamespaces(namespacesToStart, isFullRecheck),
           new CreateNamespaceWatcherStep(selectionStrategy, intialResourceVersion));
@@ -1134,10 +1133,6 @@ public class Main {
             new StartNamespacesStep(namespacesToStart, isFullRecheck));
     }
 
-    private String getInitialResourceVersion(V1NamespaceList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
-    
     private List<String> getExistingNamespaces(V1NamespaceList result) {
       List<String> namespaces = new ArrayList<>();
       if (result != null) {
@@ -1244,31 +1239,22 @@ public class Main {
 
   public static class ConfigMapAfterStep extends Step {
     private final String ns;
-    private final WatchTuning tuning;
 
     /**
      * Construct config map after step.
      * @param ns namespace
-     * @param tuning tuning
      */
-    public ConfigMapAfterStep(
-        String ns,
-        WatchTuning tuning) {
+    public ConfigMapAfterStep(String ns) {
       this.ns = ns;
-      this.tuning = tuning;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       V1ConfigMap result = (V1ConfigMap) packet.get(ProcessingConstants.SCRIPT_CONFIG_MAP);
-      Main main = Main.main;
-      String initialResourceVersion = getInitialResourceVersion(result);
-      String ns = this.ns;
-      if (!main.configMapWatchers.containsKey(ns)) {
-        main.configMapWatchers.put(ns, createConfigMapWatcher(ns, initialResourceVersion));
-      }
+      main.startConfigMapWatcher(ns, getInitialResourceVersion(result));
       return doNext(packet);
     }
 
   }
+
 }
