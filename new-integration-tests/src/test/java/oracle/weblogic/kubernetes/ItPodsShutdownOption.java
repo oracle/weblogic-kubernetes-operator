@@ -322,7 +322,7 @@ class ItPodsShutdownOption {
           Paths.get(logDir).toString(), destLogDir);
       for (String envVar : envVars) {
         assertTrue(Files.readString(
-            Paths.get(destLogDir.toString(), serverName, ".out"))
+            Paths.get(destLogDir.toString(), logDir, serverName + ".out"))
             .contains(envVar));
       }
     });
