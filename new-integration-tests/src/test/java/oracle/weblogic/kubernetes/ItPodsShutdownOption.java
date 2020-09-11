@@ -135,10 +135,7 @@ class ItPodsShutdownOption {
         + "    'independent-ms-1':\n"
         + "      ListenPort: '8001'\n"
         + "    'independent-ms-2':\n"
-        + "      ListenPort: '8001'\n"
-        + "    'config-server3':\n"
-        + "      Cluster: 'ConfigCluster'\n"
-        + "      ListenPort: '8001'";
+        + "      ListenPort: '8001'\n";
 
 
     createClusterConfigMap(cmName, yamlString);
