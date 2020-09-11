@@ -32,6 +32,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -78,8 +79,10 @@ class ItPodsShutdownOption {
   private static final int replicaCount = 2;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private static final String indManagedServerName1 = "independent-ms-1";
-  private static final String indManagedServerName2 = "independent-ms-2";
+  private static final String indManagedServerName1 = "ms-1";
+  private static final String indManagedServerPodName1 = domainUid + "-" + indManagedServerName1;
+  private static final String indManagedServerName2 = "ms-2";
+  private static final String indManagedServerPodName2 = domainUid + "-" + indManagedServerName2;
   private static LoggingFacade logger = null;
 
   private static String miiImage;
@@ -131,42 +134,33 @@ class ItPodsShutdownOption {
 
     String yamlString = "topology:\n"
         + "  Server:\n"
-        + "    'independent-ms-1':\n"
+        + "    'ms-1':\n"
         + "      ListenPort: '8001'\n"
-        + "    'independent-ms-2':\n"
-        + "      ListenPort: '8001'\n";
+        + "    'ms-2':\n"
+        + "      ListenPort: '9001'\n";
 
 
     createClusterConfigMap(cmName, yamlString);
 
   }
 
+  @AfterEach
+  public static void afterEach() {
+    TestActions.deleteDomainCustomResource(domainUid, domainNamespace);
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
+    checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace);
+    checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace);
+    checkPodDoesNotExist(indManagedServerName1, domainUid, domainNamespace);
+    //checkPodDoesNotExist(indManagedServerName2, domainUid, domainNamespace);
+  }
+
   /**
-   * This test is to verify different shutdown options specified at different scopes in Domain Resource Definition.
-   * Refer to section "Shutdown options" of Documentation link:
-   * https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/
-   * step 1: Startup a WebLogic domain with one cluster that initially has one running managed server. The shutdown
-   * option is configured as follows:
-   * domain: SHUTDOWN_TYPE -> Graceful.
-   * adminServer: SHUTDOWN_TYPE -> Forced.
-   *              SHUTDOWN_IGNORE_SESSIONS -> true.
-   *              SHUTDOWN_TIMEOUT -> 40.
-   * cluster: SHUTDOWN_IGNORE_SESSIONS -> true.
-   *          SHUTDOWN_TIMEOUT -> 80.
-   * managedServer1: SHUTDOWN_TIMEOUT -> 100.
-   * step2: Scale cluster with two managed servers.
-   * step 3: Verify shutdown properties of admin server, managedServer1 and newly scaled up managedServer2.
-   * Domain level "Graceful" SHUTDOWN_TYPE overrides server level setting and is used for all servers.
-   * So adminServer has "Graceful" SHUTDOWN_TYPE, default "false" SHUTDOWN_IGNORE_SESSIONS and
-   * configured "40" SHUTDOWN_TIMEOUT.
-   * Managed level setting overrides cluster level setting so managedServer1 has configured "100"
-   * SHUTDOWN_TIMEOUT, cluster level "true" SHUTDOWN_IGNORE_SESSIONS  "true" and "Graceful" SHUTDOWN_TYPE.
-   * Newly scaled up managedServer2 takes setting from combination of domain level and cluster level
-   * with "Graceful" SHUTDOWN_TYPE, "true" SHUTDOWN_IGNORE_SESSIONS and default "30" SHUTDOWN_TIMEOUT
+   * Add shutdown properties at all levels and verify.
+   * @throws ApiException when getting log fails
    */
   @Test
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
-  public void testShutdownProps() throws ApiException {
+  public void testShutdownPropsAllLevels() throws ApiException {
 
 
     // create a basic model in image domain
@@ -188,6 +182,43 @@ class ItPodsShutdownOption {
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 2,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
+    verifyServerLog(domainNamespace, indManagedServerName1,
+        new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Forced", "SHUTDOWN_TIMEOUT=45"});
+  }
+
+  /**
+   * This test is to verify different shutdown options specified at different scopes in Domain Resource Definition.
+   */
+  @Test
+  @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
+  public void testShutdownPropsEnvOverride() throws ApiException {
+
+
+    // create a basic model in image domain
+    Shutdown[] shutDownObjects = new Shutdown[4];
+    Shutdown admin = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(40L);
+    Shutdown cluster = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(60L);
+    Shutdown ms1 = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(120L);
+    Shutdown ms2 = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(45L);
+    shutDownObjects[0] = admin;
+    shutDownObjects[1] = cluster;
+    shutDownObjects[2] = ms1;
+    shutDownObjects[3] = ms2;
+    Domain domain = buildDomainResource(shutDownObjects);
+    domain.spec().serverPod()
+        .addEnvItem(new V1EnvVar()
+            .name("SHUTDOWN_TYPE")
+            .value("Graceful"));
+    createVerifyDomain(domain);
+
+    verifyServerLog(domainNamespace, adminServerPodName,
+        new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=40"});
+    verifyServerLog(domainNamespace, managedServerPodNamePrefix + 1,
+        new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
+    verifyServerLog(domainNamespace, managedServerPodNamePrefix + 2,
+        new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
+    verifyServerLog(domainNamespace, indManagedServerName1,
+        new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=45"});
   }
 
 
@@ -217,10 +248,7 @@ class ItPodsShutdownOption {
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .addEnvItem(new V1EnvVar()
-                    .name("SHUTDOWN_TYPE")
-                    .value("Graceful")))
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .serverPod(new ServerPod()
