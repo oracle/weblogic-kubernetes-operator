@@ -142,8 +142,8 @@ class ItPodsShutdownOption {
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
     checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace);
     checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace);
-    checkPodDoesNotExist(indManagedServerName1, domainUid, domainNamespace);
-    //checkPodDoesNotExist(indManagedServerName2, domainUid, domainNamespace);
+    checkPodDoesNotExist(indManagedServerName2, domainUid, domainNamespace);
+    //checkPodDoesNotExist(indManagedServerName1, domainUid, domainNamespace);
   }
 
   /**
@@ -174,7 +174,7 @@ class ItPodsShutdownOption {
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 2,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
-    verifyServerLog(domainNamespace, indManagedServerName1,
+    verifyServerLog(domainNamespace, indManagedServerName2,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Forced", "SHUTDOWN_TIMEOUT=45"});
   }
 
@@ -296,20 +296,31 @@ class ItPodsShutdownOption {
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPodNamePrefix + i;
 
-      // check that the managed server pod exists in the domain namespace
-      logger.info("Checking that managed server pod {0} exists in namespace {1}",
+      // check that the managed server service exists in the domain namespace
+      logger.info("Checking that managed server service {0} exists in namespace {1}",
           managedServerPodName, domainNamespace);
-      checkPodExists(managedServerPodName, domainUid, domainNamespace);
+      checkServiceExists(managedServerPodName, domainNamespace);
 
       // check that the managed server pod is ready
       logger.info("Checking that managed server pod {0} is ready in namespace {1}",
           managedServerPodName, domainNamespace);
       checkPodReady(managedServerPodName, domainUid, domainNamespace);
 
+    }
+
+    // check for independent managed server pods existence in the domain namespace
+    for (String podName : new String[]{ /*indManagedServerPodName1,*/indManagedServerPodName2}) {
+
       // check that the managed server service exists in the domain namespace
       logger.info("Checking that managed server service {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkServiceExists(managedServerPodName, domainNamespace);
+          podName, domainNamespace);
+      checkServiceExists(podName, domainNamespace);
+
+      // check that the managed server pod is ready
+      logger.info("Checking that managed server pod {0} is ready in namespace {1}",
+          podName, domainNamespace);
+      checkPodReady(podName, domainUid, domainNamespace);
+
     }
 
   }
