@@ -160,7 +160,7 @@ class ItPodsShutdownOption {
 
 
     // create a basic model in image domain
-    Shutdown[] shutDownObjects = new Shutdown[3];
+    Shutdown[] shutDownObjects = new Shutdown[4];
     Shutdown admin = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(40L);
     Shutdown cluster = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(60L);
     Shutdown ms1 = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(120L);
@@ -263,12 +263,12 @@ class ItPodsShutdownOption {
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName)))
             .addManagedServersItem(new ManagedServer()
-                .serverStartPolicy("Always")
+                .serverStartPolicy("ALWAYS")
                 .serverName(indManagedServerName1)
                 .serverPod(new ServerPod()
                     .shutdown(shutDownObject[2])))
             .addManagedServersItem(new ManagedServer()
-                .serverStartPolicy("Always")
+                .serverStartPolicy("ALWAYS")
                 .serverName(indManagedServerName2)
                 .serverPod(new ServerPod()
                     .shutdown(shutDownObject[3]))));
