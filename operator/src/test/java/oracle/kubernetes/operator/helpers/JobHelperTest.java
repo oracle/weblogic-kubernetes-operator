@@ -445,7 +445,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithVariables_createIntrospectorPodWithSubstitutions() {
+  public void whenDomainHasAdditionalVolumesWithReservedVariables_createIntrospectorPodWithSubstitutions() {
     configureDomain()
         .withAdditionalVolumeMount("volume2", "/source-$(DOMAIN_UID)");
     runCreateJob();
@@ -455,7 +455,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithVariablesValue_dontReportValidationError() {
+  public void whenDomainHasAdditionalVolumesWithCustomVariables_createIntrospectorPodWithSubstitutions() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
@@ -473,7 +473,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithVariablesInvalidValue_reportValidationError() {
+  public void whenDomainHasAdditionalVolumesWithCustomVariablesInvalidValue_reportValidationError() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);

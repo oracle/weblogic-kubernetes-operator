@@ -333,17 +333,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainAdminServerHasAdditionalVolumeMountsWithVariables_createAdminPodStartupWithSubstitutions() {
-    configureAdminServer()
-        .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
-
-    assertThat(
-        getCreatedPodSpecContainer().getVolumeMounts(),
-        allOf(
-            hasVolumeMount("volume1", END_MOUNT_PATH_1)));
-  }
-
-  @Test
   public void whenDomainHasValueFromEnvironmentItemsWithVariables_createPodShouldNotChangeTheirValues()
       throws Exception {
     V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", RAW_VALUE_1);
@@ -366,7 +355,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainAdminServerHasAdditionalVolumesWithVariables_createManagedPodWithSubstitutions() {
+  public void whenAdminServerHasAdditionalVolumesWithReservedVariables_createAdminPodStartupWithSubstitutions() {
     configureAdminServer()
         .withAdditionalVolume("volume1", "/source-$(SERVER_NAME)")
         .withAdditionalVolume("volume2", "/source-$(DOMAIN_NAME)");
@@ -379,7 +368,18 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithVariablesValue_dontReportValidationError() {
+  public void whenAdminServerHasAdditionalVolumeMountsWithReservedVariables_createAdminPodStartupWithSubstitutions() {
+    configureAdminServer()
+        .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
+
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", END_MOUNT_PATH_1)));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithCustomVariables_createAdminPodStartupWithSubstitutions() {
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
 
@@ -397,7 +397,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithVariablesInvalidValue_reportValidationError() {
+  public void whenDomainHasAdditionalVolumesWithCustomVariablesInvalidValue_reportValidationError() {
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
 

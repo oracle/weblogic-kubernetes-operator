@@ -203,7 +203,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasAdditionalVolumesWithVariables_createManagedPodWithSubstitutions() {
+  public void whenClusterHasAdditionalVolumesWithReservedVariables_createManagedPodWithSubstitutions() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
@@ -218,7 +218,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithVariables_createManagedPodWithSubstitutions() {
+  public void whenDomainHasAdditionalVolumesWithReservedVariables_createManagedPodWithSubstitutions() {
     getConfigurator()
         .withAdditionalVolume("volume1", "/source-$(SERVER_NAME)")
         .withAdditionalVolume("volume2", "/source-$(DOMAIN_NAME)");
@@ -231,7 +231,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithVariablesValue_dontReportValidationError() {
+  public void whenDomainHasAdditionalVolumesWithCustomVariables_createManagedPodWithSubstitutions() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
@@ -253,7 +253,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithVariablesInvalidValue_reportValidationError() {
+  public void whenDomainHasAdditionalVolumesWithCustomVariablesInvalidValue_reportValidationError() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);

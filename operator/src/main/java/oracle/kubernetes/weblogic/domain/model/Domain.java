@@ -44,6 +44,16 @@ import static java.util.stream.Collectors.toSet;
  */
 public class Domain implements KubernetesObject {
   /**
+   * The starting marker of a token that needs to be substituted with a matching env var
+   */
+  public static final String TOKEN_START_MARKER = "$(";
+
+  /**
+   * The ending marker of a token that needs to be substituted with a matching env var
+   */
+  public static final String TOKEN_END_MARKER = ")";
+
+  /**
    * The pattern for computing the default shared logs directory.
    */
   private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
@@ -685,8 +695,9 @@ public class Domain implements KubernetesObject {
     }
 
     private void checkValidMountPath(V1VolumeMount mount) {
-      if (!new File(mount.getMountPath()).isAbsolute()
-          && !skipValidation(mount.getMountPath())) {
+      if (skipValidation(mount.getMountPath())) return;
+
+      if (!new File(mount.getMountPath()).isAbsolute()) {
         failures.add(DomainValidationMessages.badVolumeMountPath(mount));
       }
     }
@@ -694,7 +705,7 @@ public class Domain implements KubernetesObject {
     private boolean skipValidation(String mountPath) {
       List<V1EnvVar> envVars = spec.getEnv();
       Set<String> varNames = envVars.stream().map(V1EnvVar::getName).collect(toSet());
-      StringTokenizer nameList = new StringTokenizer(mountPath, "$(");
+      StringTokenizer nameList = new StringTokenizer(mountPath, TOKEN_START_MARKER);
       if (!nameList.hasMoreElements()) {
         return false;
       }
@@ -708,7 +719,7 @@ public class Domain implements KubernetesObject {
     }
 
     private boolean noMatchingEnvVarName(Set<String> varNames, String token) {
-      int index = token.indexOf(")");
+      int index = token.indexOf(TOKEN_END_MARKER);
       if (index != -1) {
         String str = token.substring(0, index);
         // IntrospectorJobEnvVars.isReserved() checks env vars in ServerEnvVars too

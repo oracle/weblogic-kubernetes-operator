@@ -17,8 +17,9 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
+import static oracle.kubernetes.weblogic.domain.model.Domain.TOKEN_END_MARKER;
+
 public abstract class StepContextBase implements StepContextConstants {
-  private static final String TOKEN_MARKER = "$(";
   protected final DomainPresenceInfo info;
 
   StepContextBase(DomainPresenceInfo info) {
@@ -122,8 +123,8 @@ public abstract class StepContextBase implements StepContextConstants {
   private String translate(final Map<String, String> substitutionVariables, String rawValue, boolean requiresDns1123) {
     String result = rawValue;
     for (Map.Entry<String, String> entry : substitutionVariables.entrySet()) {
-      if (result != null && result.contains(TOKEN_MARKER) && entry.getValue() != null) {
-        result = result.replace(String.format("%s%s)", TOKEN_MARKER, entry.getKey()),
+      if (result != null && result.contains(Domain.TOKEN_START_MARKER) && entry.getValue() != null) {
+        result = result.replace(String.format("%s%s%s", Domain.TOKEN_START_MARKER, entry.getKey(), TOKEN_END_MARKER),
             requiresDns1123 ? LegalNames.toDns1123LegalName(entry.getValue()) : entry.getValue());
       }
     }
