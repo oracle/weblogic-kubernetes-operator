@@ -77,6 +77,23 @@ $ export LB_PORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-con
 $ curl -H 'host: domain1.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 $ curl -H 'host: domain2.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 ```
+
+#### Path-based routing 
+This sample demonstrates how to access an application on two WebLogic domains using path-based routing. Install a path-based routing ingress controller.
+```
+$ kubectl create -f samples/path-routing.yaml
+ingress.extensions/domain1-ingress-path created
+ingress.extensions/domain2-ingress-path created
+```
+Now you can send requests to different WebLogic domains with the unique NGINX entry point of different paths, as defined in the route section of the `path-routing.yaml` file.
+
+```
+# Get the ingress controller web port
+$ export LB_PORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+$ curl http://${HOSTNAME}:${LB_PORT}/domain1/testwebapp/
+$ curl http://${HOSTNAME}:${LB_PORT}/domain2/testwebapp/
+```
+
 #### Host-based secured routing
 This sample demonstrates how to access an application on two WebLogic domains using an HTTPS endpoint. Install a TLS-enabled ingress controller.
 
