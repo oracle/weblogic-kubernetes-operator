@@ -3,6 +3,9 @@
 
 package oracle.kubernetes.operator;
 
+import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,6 +47,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -64,7 +68,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
-import oracle.kubernetes.operator.steps.ConfigMapAfterStep;
+import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -385,9 +389,7 @@ public class Main {
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
     return new ConfigMapAfterStep(
         ns,
-        configMapWatchers,
         tuningAndConfig().getWatchTuning(),
-        isNamespaceStopping(ns),
         processor::dispatchConfigMapWatch);
   }
 
@@ -1028,6 +1030,10 @@ public class Main {
     return Optional.ofNullable(list).map(KubernetesListObject::getMetadata).map(V1ListMeta::getResourceVersion).orElse("");
   }
 
+  private static String getInitialResourceVersion(KubernetesObject list) {
+    return Optional.ofNullable(list).map(KubernetesObject::getMetadata).map(V1ObjectMeta::getResourceVersion).orElse("");
+  }
+
   private static class NamespaceListStep extends ResponseStep<V1NamespaceList> {
     private final DomainNamespaceSelectionStrategy selectionStrategy;
     private final Collection<String> configuredDomainNamespaces;
@@ -1224,6 +1230,46 @@ public class Main {
     public ScheduledFuture<?> scheduleWithFixedDelay(
         Runnable command, long initialDelay, long delay, TimeUnit unit) {
       return Main.engine.getExecutor().scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    }
+  }
+
+  public static class ConfigMapAfterStep extends Step {
+    private final String ns;
+    private final WatchTuning tuning;
+    private final WatchListener<V1ConfigMap> listener;
+
+    /**
+     * Construct config map after step.
+     * @param ns namespace
+     * @param tuning tuning
+     * @param listener listener
+     */
+    public ConfigMapAfterStep(
+        String ns,
+        WatchTuning tuning,
+        WatchListener<V1ConfigMap> listener) {
+      this.ns = ns;
+      this.tuning = tuning;
+      this.listener = listener;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      V1ConfigMap result = (V1ConfigMap) packet.get(ProcessingConstants.SCRIPT_CONFIG_MAP);
+      Main main = Main.main;
+      String initialResourceVersion = getInitialResourceVersion(result);
+      if (!main.configMapWatchers.containsKey(ns)) {
+        main.configMapWatchers.put(ns, createConfigMapWatcher(ns, initialResourceVersion));
+      }
+      return doNext(packet);
+    }
+
+    private ConfigMapWatcher createConfigMapWatcher(String namespace, String initialResourceVersion) {
+      ThreadFactory factory =
+          ContainerResolver.getInstance().getContainer().getSpi(ThreadFactory.class);
+
+      return ConfigMapWatcher.create(
+          factory, namespace, initialResourceVersion, tuning, listener, isNamespaceStopping(namespace));
     }
   }
 }
