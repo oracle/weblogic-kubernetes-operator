@@ -8,10 +8,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -42,6 +46,8 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
+import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -73,7 +79,8 @@ class ItPodsShutdownOption {
   private static final int replicaCount = 2;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private static final String managedServer1Name = "managed-server1";
+  private static final String indManagedServerName1 = "independent-ms-1";
+  private static final String indManagedServerName2 = "independent-ms-2";
   private static LoggingFacade logger = null;
 
   private static String miiImage;
@@ -156,18 +163,47 @@ class ItPodsShutdownOption {
     Shutdown[] shutDownObjects = new Shutdown[3];
     Shutdown admin = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(40L);
     Shutdown cluster = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(60L);
-    Shutdown ms = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(120L);
+    Shutdown ms1 = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(120L);
+    Shutdown ms2 = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(45L);
     shutDownObjects[0] = admin;
     shutDownObjects[1] = cluster;
-    shutDownObjects[2] = ms;
+    shutDownObjects[2] = ms1;
+    shutDownObjects[3] = ms2;
     Domain domain = buildDomainResource(shutDownObjects);
     createVerifyDomain(domain);
 
-    verifyServerLog(adminServerPodName, domainNamespace,
+    String yamlString = "topology:\n"
+        + "  Server:\n"
+        + "    'independent-ms-1':\n"
+        + "      ListenPort: '8001'\n"
+        + "    'independent-ms-2':\n"
+        + "      ListenPort: '8001'\n"
+        + "    'config-server3':\n"
+        + "      Cluster: 'ConfigCluster'\n"
+        + "      ListenPort: '8001'";
+
+    String cmName = "configured.cluster";
+    createClusterConfigMap(cmName, yamlString);
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"add\",")
+        .append(" \"path\": \"/spec/configuration/model/configMap\",")
+        .append(" \"value\":  \"" + cmName + "\"")
+        .append(" }]");
+    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+    boolean cmPatched = assertDoesNotThrow(()
+        -> patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(configMap)  failed ");
+    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+
+
+    verifyServerLog(domainNamespace, adminServerPodName,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Forced", "SHUTDOWN_TIMEOUT=40"});
-    verifyServerLog(managedServerPodNamePrefix + 1, domainNamespace,
+    verifyServerLog(domainNamespace, managedServerPodNamePrefix + 1,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
-    verifyServerLog(managedServerPodNamePrefix + 2, domainNamespace,
+    verifyServerLog(domainNamespace, managedServerPodNamePrefix + 2,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
 
 
@@ -227,9 +263,15 @@ class ItPodsShutdownOption {
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName)))
             .addManagedServersItem(new ManagedServer()
-                .serverName(managedServer1Name)
+                .serverStartPolicy("Always")
+                .serverName(indManagedServerName1)
                 .serverPod(new ServerPod()
-                    .shutdown(shutDownObject[2]))));
+                    .shutdown(shutDownObject[2])))
+            .addManagedServersItem(new ManagedServer()
+                .serverStartPolicy("Always")
+                .serverName(indManagedServerName2)
+                .serverPod(new ServerPod()
+                    .shutdown(shutDownObject[3]))));
     return domain;
   }
 
@@ -335,6 +377,25 @@ class ItPodsShutdownOption {
     }
   }
 
+  // Crate a ConfigMap with a model file to add a new WebLogic cluster
+  private void createClusterConfigMap(String configMapName, String model) {
+    Map<String, String> labels = new HashMap<>();
+    labels.put("weblogic.domainUid", domainUid);
+    Map<String, String> data = new HashMap<>();
+    data.put(configMapName, model);
+
+    V1ObjectMeta meta = new V1ObjectMeta()
+        .labels(labels)
+        .name(configMapName)
+        .namespace(domainNamespace);
+    V1ConfigMap configMap = new V1ConfigMap()
+        .data(data)
+        .metadata(meta);
+
+    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
+        String.format("Can't create ConfigMap %s", configMapName));
+    assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
+  }
 
 
 }
