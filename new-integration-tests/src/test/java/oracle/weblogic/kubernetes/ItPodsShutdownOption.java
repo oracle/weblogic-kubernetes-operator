@@ -70,9 +70,9 @@ class ItPodsShutdownOption {
   private static final String domainUid = "domain1";
   private static final String adminServerName = "admin-server";
   private static final String clusterName = "cluster-1";
-  private static final int replicaCount = 1;
+  private static final int replicaCount = 2;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-  private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+  private static final String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static final String managedServer1Name = "managed-server1";
   private static LoggingFacade logger = null;
 
@@ -154,26 +154,26 @@ class ItPodsShutdownOption {
 
     // create a basic model in image domain
     Shutdown[] shutDownObjects = new Shutdown[3];
-    Shutdown admin = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(30L);
-    Shutdown cluster = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Graceful").timeoutSeconds(60L);
-    Shutdown ms = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Graceful").timeoutSeconds(40L);
+    Shutdown admin = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(40L);
+    Shutdown cluster = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(60L);
+    Shutdown ms = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(120L);
     shutDownObjects[0] = admin;
-    shutDownObjects[0] = cluster;
-    shutDownObjects[0] = ms;
+    shutDownObjects[1] = cluster;
+    shutDownObjects[2] = ms;
     Domain domain = buildDomainResource(shutDownObjects);
     createVerifyDomain(domain);
 
-    verifyServerLog(adminServerName, new String[]
-        {"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=40"});
-    verifyServerLog(adminServerName, new String[]
-        {"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=40"});
-    verifyServerLog(adminServerName, new String[]
-        {"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=40"});
+    verifyServerLog(adminServerPodName, domainNamespace,
+        new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Forced", "SHUTDOWN_TIMEOUT=40"});
+    verifyServerLog(managedServerPodNamePrefix + 1, domainNamespace,
+        new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
+    verifyServerLog(managedServerPodNamePrefix + 2, domainNamespace,
+        new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
 
 
     assertTrue(verifyServerShutdownProp(adminServerPodName, domainNamespace, "Graceful", "40", "false"));
-    assertTrue(verifyServerShutdownProp(managedServerPrefix + 1, domainNamespace, "Graceful", "100", "true"));
-    assertTrue(verifyServerShutdownProp(managedServerPrefix + 2, domainNamespace, "Graceful", "30", "true"));
+    assertTrue(verifyServerShutdownProp(managedServerPodNamePrefix + 1, domainNamespace, "Graceful", "100", "true"));
+    assertTrue(verifyServerShutdownProp(managedServerPodNamePrefix + 2, domainNamespace, "Graceful", "30", "true"));
     try {
       TimeUnit.MINUTES.sleep(30);
     } catch (InterruptedException ex) {
@@ -256,7 +256,7 @@ class ItPodsShutdownOption {
 
     // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
-      String managedServerPodName = managedServerPrefix + i;
+      String managedServerPodName = managedServerPodNamePrefix + i;
 
       // check that the managed server pod exists in the domain namespace
       logger.info("Checking that managed server pod {0} exists in namespace {1}",
@@ -327,6 +327,15 @@ class ItPodsShutdownOption {
       }
     });
   }
+
+  private void verifyServerLog(String namespace, String podName, String[] envVars) throws ApiException {
+    String podLog = TestActions.getPodLog(podName, namespace);
+    for (String envVar : envVars) {
+      assertTrue(podLog.contains(envVar));
+    }
+  }
+
+
 
 }
 
