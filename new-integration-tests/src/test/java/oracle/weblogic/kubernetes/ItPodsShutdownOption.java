@@ -388,7 +388,7 @@ class ItPodsShutdownOption {
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
     Map<String, String> data = new HashMap<>();
-    data.put(configMapName, model);
+    data.put("configured-cluster.yaml", model);
 
     V1ObjectMeta meta = new V1ObjectMeta()
         .labels(labels)
