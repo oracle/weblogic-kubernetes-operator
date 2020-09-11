@@ -68,7 +68,6 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
-import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -389,8 +388,8 @@ public class Main {
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
     return new ConfigMapAfterStep(
         ns,
-        tuningAndConfig().getWatchTuning(),
-        processor::dispatchConfigMapWatch);
+        tuningAndConfig().getWatchTuning()
+    );
   }
 
   /**
@@ -605,6 +604,16 @@ public class Main {
         tuningAndConfig().getWatchTuning(),
         processor::dispatchServiceWatch,
         isNamespaceStopping(ns));
+  }
+
+  private static ConfigMapWatcher createConfigMapWatcher(String namespace, String initialResourceVersion) {
+    return ConfigMapWatcher.create(
+        threadFactory,
+        namespace,
+        initialResourceVersion,
+        tuningAndConfig().getWatchTuning(),
+        processor::dispatchConfigMapWatch,
+        isNamespaceStopping(namespace));
   }
 
   private static DomainWatcher createDomainWatcher(String ns, String initialResourceVersion) {
@@ -1236,21 +1245,17 @@ public class Main {
   public static class ConfigMapAfterStep extends Step {
     private final String ns;
     private final WatchTuning tuning;
-    private final WatchListener<V1ConfigMap> listener;
 
     /**
      * Construct config map after step.
      * @param ns namespace
      * @param tuning tuning
-     * @param listener listener
      */
     public ConfigMapAfterStep(
         String ns,
-        WatchTuning tuning,
-        WatchListener<V1ConfigMap> listener) {
+        WatchTuning tuning) {
       this.ns = ns;
       this.tuning = tuning;
-      this.listener = listener;
     }
 
     @Override
@@ -1258,18 +1263,12 @@ public class Main {
       V1ConfigMap result = (V1ConfigMap) packet.get(ProcessingConstants.SCRIPT_CONFIG_MAP);
       Main main = Main.main;
       String initialResourceVersion = getInitialResourceVersion(result);
+      String ns = this.ns;
       if (!main.configMapWatchers.containsKey(ns)) {
         main.configMapWatchers.put(ns, createConfigMapWatcher(ns, initialResourceVersion));
       }
       return doNext(packet);
     }
 
-    private ConfigMapWatcher createConfigMapWatcher(String namespace, String initialResourceVersion) {
-      ThreadFactory factory =
-          ContainerResolver.getInstance().getContainer().getSpi(ThreadFactory.class);
-
-      return ConfigMapWatcher.create(
-          factory, namespace, initialResourceVersion, tuning, listener, isNamespaceStopping(namespace));
-    }
   }
 }
