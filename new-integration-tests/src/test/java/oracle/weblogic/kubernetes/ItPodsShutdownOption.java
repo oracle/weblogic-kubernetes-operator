@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -183,40 +182,12 @@ class ItPodsShutdownOption {
     Domain domain = buildDomainResource(shutDownObjects);
     createVerifyDomain(domain);
 
-
-    /*
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"add\",")
-        .append(" \"path\": \"/spec/configuration/model/configMap\",")
-        .append(" \"value\":  \"" + cmName + "\"")
-        .append(" }]");
-    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
-
-    V1Patch patch = new V1Patch(new String(patchStr));
-    boolean cmPatched = assertDoesNotThrow(()
-        -> patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(configMap)  failed ");
-    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
-    */
-
-
     verifyServerLog(domainNamespace, adminServerPodName,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Forced", "SHUTDOWN_TIMEOUT=40"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 1,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 2,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
-
-
-    assertTrue(verifyServerShutdownProp(adminServerPodName, domainNamespace, "Graceful", "40", "false"));
-    assertTrue(verifyServerShutdownProp(managedServerPodNamePrefix + 1, domainNamespace, "Graceful", "100", "true"));
-    assertTrue(verifyServerShutdownProp(managedServerPodNamePrefix + 2, domainNamespace, "Graceful", "30", "true"));
-    try {
-      TimeUnit.MINUTES.sleep(30);
-    } catch (InterruptedException ex) {
-      //
-    }
   }
 
 
@@ -266,11 +237,13 @@ class ItPodsShutdownOption {
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName)))
             .addManagedServersItem(new ManagedServer()
+                .serverStartState("RUNNING")
                 .serverStartPolicy("ALWAYS")
                 .serverName(indManagedServerName1)
                 .serverPod(new ServerPod()
                     .shutdown(shutDownObject[2])))
             .addManagedServersItem(new ManagedServer()
+                .serverStartState("RUNNING")
                 .serverStartPolicy("ALWAYS")
                 .serverName(indManagedServerName2)
                 .serverPod(new ServerPod()
