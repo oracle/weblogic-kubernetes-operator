@@ -3,8 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.common.KubernetesListObject;
-import io.kubernetes.client.openapi.models.V1ListMeta;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +33,9 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.models.V1EventList;
+import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -415,9 +415,21 @@ public class Main {
     return domainNamespaces;
   }
 
-  private void startPodWatcher(V1PodList result, String ns) {
+  private void startServiceWatcher(String initialResourceVersion, String ns) {
+    if (!serviceWatchers.containsKey(ns)) {
+      serviceWatchers.put(ns, createServiceWatcher(ns, initialResourceVersion));
+    }
+  }
+
+  private void startDomainWatcher(String initialResourceVersion, String ns) {
+    if (!domainWatchers.containsKey(ns)) {
+      domainWatchers.put(ns, createDomainWatcher(ns, initialResourceVersion));
+    }
+  }
+
+  private void startPodWatcher(String ns, String initialResourceVersion) {
     if (!podWatchers.containsKey(ns)) {
-      podWatchers.put(ns, createPodWatcher(ns, getInitialResourceVersion(result)));
+      podWatchers.put(ns, createPodWatcher(ns, initialResourceVersion));
     }
   }
 
@@ -725,7 +737,7 @@ public class Main {
         Collection<StepAndPacket> startDetails = new ArrayList<>();
 
         for (String ns : domainNamespaces) {
-          try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+          try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns)) {
             startDetails.add(new StepAndPacket(action(ns), packet.clone()));
           }
         }
@@ -899,16 +911,10 @@ public class Main {
             }
           });
 
-      if (!domainWatchers.containsKey(ns)) {
-        domainWatchers.put(
-            ns, createDomainWatcher(ns, getResourceVersion(callResponse.getResult())));
-      }
+      main.startDomainWatcher(getInitialResourceVersion(callResponse.getResult()), ns);
       return doNext(packet);
     }
 
-    String getResourceVersion(DomainList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
   }
 
   private static class ServiceListStep extends ResponseStep<V1ServiceList> {
@@ -943,14 +949,9 @@ public class Main {
         }
       }
 
-      if (!serviceWatchers.containsKey(ns)) {
-        serviceWatchers.put(ns, createServiceWatcher(ns, getInitialResourceVersion(result)));
-      }
+      String initialResourceVersion = getInitialResourceVersion(result);
+      main.startServiceWatcher(initialResourceVersion, ns);
       return doNext(packet);
-    }
-
-    private String getInitialResourceVersion(V1ServiceList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
     }
   }
 
@@ -1017,7 +1018,7 @@ public class Main {
         }
       }
 
-      main.startPodWatcher(result, ns);
+      main.startPodWatcher(ns, getInitialResourceVersion(result));
       return doNext(packet);
     }
 
