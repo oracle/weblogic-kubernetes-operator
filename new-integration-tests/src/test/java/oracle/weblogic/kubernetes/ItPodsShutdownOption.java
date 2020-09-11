@@ -135,7 +135,7 @@ class ItPodsShutdownOption {
     String yamlString = "topology:\n"
         + "  Server:\n"
         + "    'ms-1':\n"
-        + "      ListenPort: '8001'\n"
+        + "      ListenPort: '10001'\n"
         + "    'ms-2':\n"
         + "      ListenPort: '9001'\n";
 
@@ -145,7 +145,8 @@ class ItPodsShutdownOption {
   }
 
   @AfterEach
-  public static void afterEach() {
+  public void afterEach() {
+    logger.info("Deleting the domain resource");
     TestActions.deleteDomainCustomResource(domainUid, domainNamespace);
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
     checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace);
@@ -377,7 +378,9 @@ class ItPodsShutdownOption {
   private void verifyServerLog(String namespace, String podName, String[] envVars) throws ApiException {
     String podLog = TestActions.getPodLog(podName, namespace);
     for (String envVar : envVars) {
+      logger.info("Checking Pod {0} for server startup property {1}", podName, envVar);
       assertTrue(podLog.contains(envVar));
+      logger.info("Pod {0} contains the property {1} in server startup env", podName, envVar);
     }
   }
 
