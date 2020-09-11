@@ -695,7 +695,9 @@ public class Domain implements KubernetesObject {
     }
 
     private void checkValidMountPath(V1VolumeMount mount) {
-      if (skipValidation(mount.getMountPath())) { return; }
+      if (skipValidation(mount.getMountPath())) {
+        return;
+      }
 
       if (!new File(mount.getMountPath()).isAbsolute()) {
         failures.add(DomainValidationMessages.badVolumeMountPath(mount));
