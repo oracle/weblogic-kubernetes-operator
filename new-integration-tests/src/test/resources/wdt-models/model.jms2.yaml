@@ -6,6 +6,8 @@ resources:
            Target: 'cluster-1'
     JMSServer:
         TestClusterJmsServer2:
+          JmsMessageLogFile:
+            FileName: "@@ENV:LOG_HOME@@/jms_messages.log"
             ProductionPausedAtStartup: false
             ConsumptionPausedAtStartup: false
             Target: 'cluster-1'

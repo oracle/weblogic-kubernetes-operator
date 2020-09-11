@@ -287,27 +287,8 @@ class ItMiiUpdateDomainConfig {
   @DisplayName("Check the server logs are written on PV, look for string RUNNING in server log")
   public void testServerLogsAreOnPV() {
 
-    // check server logs are written on PV
-    String command = "grep RUNNING /shared/logs/" + adminServerName + ".log";
-    logger.info("Checking server logs are written on PV by running the command {0} on pod {1}, namespace {2}",
-        command, adminServerPodName, domainNamespace);
-    V1Pod adminPod = assertDoesNotThrow(() ->
-            Kubernetes.getPod(domainNamespace, null, adminServerPodName),
-        "Could not get the admin pod in namespace " + domainNamespace);
-
-    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
-        "/bin/sh", "-c", command),
-        String.format("Could not execute the command %s in pod %s, namespace %s",
-            command, adminServerPodName, domainNamespace));
-    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
-        command, result.exitValue(), result.stderr(), result.stdout());
-
-    // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
-    // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
-    assertFalse(result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty(),
-        String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
-            command, result.exitValue(), result.stderr(), result.stdout()));
-
+    // check server logs are written on PV and look for string RUNNING in log
+    checkLogsOnPV("grep RUNNING /shared/logs/" + adminServerName + ".log", adminServerPodName);
   }
 
   /**
@@ -411,12 +392,13 @@ class ItMiiUpdateDomainConfig {
 
   /**
    * Start a WebLogic domain using model-in-image.
-   * Create a configmap with sparse JDBC/JMS model files.
+   * Create a configmap with sparse JDBC/JMS model files using LOG_HOME(which is on PV) ENV var for JMS Server log file.
    * Patch the domain resource with the configmap.
    * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * for all the server pods before and after rolling restart.
    * Verify SystemResource configurations using Rest API call to admin server.
+   * Verify JMS Server logs are written on PV.
    */
   @Test
   @Order(4)
@@ -474,6 +456,9 @@ class ItMiiUpdateDomainConfig {
     assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
           "TestClusterJmsModule2", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
+
+    // check JMS logs are written on PV
+    checkLogsOnPV("ls -ltr /shared/logs/*jms_messages.log", managedServerPrefix + "1");
   }
 
   /**
@@ -1028,6 +1013,29 @@ class ItMiiUpdateDomainConfig {
         }
       }
     }
+  }
+
+  private void checkLogsOnPV(String commandToExecuteInsidePod, String podName) {
+    logger.info("Checking logs are written on PV by running the command {0} on pod {1}, namespace {2}",
+        commandToExecuteInsidePod, podName, domainNamespace);
+    V1Pod serverPod = assertDoesNotThrow(() ->
+            Kubernetes.getPod(domainNamespace, null, podName),
+        String.format("Could not get the server Pod {0} in namespace {1}",
+            podName, domainNamespace));
+
+    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(serverPod, null, true,
+        "/bin/sh", "-c", commandToExecuteInsidePod),
+        String.format("Could not execute the command %s in pod %s, namespace %s",
+            commandToExecuteInsidePod, podName, domainNamespace));
+    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
+        commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
+
+    // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
+    // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
+    assertFalse(result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty(),
+        String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
+            commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout()));
+
   }
 
 }
