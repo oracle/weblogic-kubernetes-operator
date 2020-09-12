@@ -40,7 +40,6 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
@@ -64,16 +63,18 @@ class ItPodsShutdownOption {
   private static String domainNamespace = null;
 
   // domain constants
-  private static final String domainUid = "domain1";
-  private static final String adminServerName = "admin-server";
-  private static final String clusterName = "cluster-1";
-  private static final int replicaCount = 2;
-  private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-  private static final String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private static final String indManagedServerName1 = "ms-1";
-  private static final String indManagedServerPodName1 = domainUid + "-" + indManagedServerName1;
-  private static final String indManagedServerName2 = "ms-2";
-  private static final String indManagedServerPodName2 = domainUid + "-" + indManagedServerName2;
+  private static String domainUid = "domain1";
+  private static String adminServerName = "admin-server";
+  private static String clusterName = "cluster-1";
+  private static int replicaCount = 2;
+  private static String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+  private static String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+
+  private static String indManagedServerName1 = "ms-1";
+  private static String indManagedServerPodName1 = domainUid + "-" + indManagedServerName1;
+  private static String indManagedServerName2 = "ms-2";
+  private static String indManagedServerPodName2 = domainUid + "-" + indManagedServerName2;
+
   private static LoggingFacade logger = null;
 
   private static String miiImage;
@@ -82,10 +83,12 @@ class ItPodsShutdownOption {
   private static String cmName = "configuredcluster";
 
   /**
-   * Get namespaces for operator and WebLogic domain.
+   * 1. Get namespaces for operator and WebLogic domain.
+   * 2. Push MII image to registry.
+   * 3. Create WebLogic credential secret and encryption secret.
+   * 4. Create configmap for independent managed server additions.
    *
-   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   *                   JUnit engine parameter resolution mechanism
+   * @param namespaces list of namespaces injected by JUnit
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
@@ -123,18 +126,20 @@ class ItPodsShutdownOption {
     encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
-    String yamlString = "topology:\n"
-        + "  Server:\n"
-        + "    'ms-1':\n"
-        + "      ListenPort: '10001'\n"
-        + "    'ms-2':\n"
-        + "      ListenPort: '9001'\n";
+    String yamlString = "topology:"
+        + "  Server:"
+        + "    'ms-1':"
+        + "      ListenPort: '10001'"
+        + "    'ms-2':"
+        + "      ListenPort: '9001'";
 
-
-    createClusterConfigMap(cmName, yamlString);
+    createModelConfigMap(cmName, yamlString);
 
   }
 
+  /**
+   * Delete the domain created by each test for the next test to start over.
+   */
   @AfterEach
   public void afterEach() {
     logger.info("Deleting the domain resource");
@@ -148,6 +153,10 @@ class ItPodsShutdownOption {
 
   /**
    * Add shutdown properties at all levels and verify.
+   * 1. Creates shutdown object for admin server, cluster and managed servers.
+   * 2. Creates domain resource with the above shutdown objects.
+   * 3. After all the pods are started, verifies the server.out for each server to see whether the nodemanager env
+   * is set with those property values according to the precedence levels.
    * @throws ApiException when getting log fails
    */
   @Test
@@ -155,7 +164,7 @@ class ItPodsShutdownOption {
   public void testShutdownPropsAllLevels() throws ApiException {
 
 
-    // create a basic model in image domain
+    // create Shitdown objects for each server and cluster
     Shutdown[] shutDownObjects = new Shutdown[4];
     Shutdown admin = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(40L);
     Shutdown cluster = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(60L);
@@ -165,9 +174,11 @@ class ItPodsShutdownOption {
     shutDownObjects[1] = cluster;
     shutDownObjects[2] = ms1;
     shutDownObjects[3] = ms2;
+    // create domain custom resource and verify all the pods came up
     Domain domain = buildDomainResource(shutDownObjects);
     createVerifyDomain(domain);
 
+    // get pod logs each server which contains server.out file logs and verify values set above are present in the log
     verifyServerLog(domainNamespace, adminServerPodName,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Forced", "SHUTDOWN_TIMEOUT=40"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 1,
@@ -179,14 +190,22 @@ class ItPodsShutdownOption {
   }
 
   /**
-   * This test is to verify different shutdown options specified at different scopes in Domain Resource Definition.
+   * Add shutdown properties at all levels and override the shutdowntype property for all servers with a env item.
+   * 1. Creates shutdown object for admin server, cluster and managed servers.
+   * 2. Sets shutdowntype as Graceful as the env item at domain level.
+   * 3. Creates domain resource with the above shutdown objects.
+   * 4. After all the pods are started, verifies the server.out for each server to see whether the nodemanager env
+   * is set with those property values according to the precedence levels.
+   * 5. The shutdowntype for all servers should be Graceful regardless of what is set at the server/cluster level
+   * because env has higher priority than server/cluster specific values.
+   * @throws ApiException when getting log fails
    */
   @Test
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
   public void testShutdownPropsEnvOverride() throws ApiException {
 
 
-    // create a basic model in image domain
+    // create Shitdown objects for each server and cluster
     Shutdown[] shutDownObjects = new Shutdown[4];
     Shutdown admin = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(40L);
     Shutdown cluster = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(60L);
@@ -196,6 +215,7 @@ class ItPodsShutdownOption {
     shutDownObjects[1] = cluster;
     shutDownObjects[2] = ms1;
     shutDownObjects[3] = ms2;
+    // create domain custom resource and verify all the pods came up
     Domain domain = buildDomainResource(shutDownObjects);
     domain.spec().serverPod()
         .addEnvItem(new V1EnvVar()
@@ -203,6 +223,8 @@ class ItPodsShutdownOption {
             .value("Graceful"));
     createVerifyDomain(domain);
 
+    // get pod logs each server which contains server.out file logs and verify values set above are present in the log
+    // except shutdowntype rest of the values should match with abobe shutdown object values
     verifyServerLog(domainNamespace, adminServerPodName,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=40"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 1,
@@ -214,9 +236,9 @@ class ItPodsShutdownOption {
   }
 
 
+  // create custom domain resource with different shutdownobject values for adminserver/cluster/independent ms
   private Domain buildDomainResource(Shutdown[] shutDownObject) {
-
-    // create the domain CR
+    logger.info("Creating domain custom resource");
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
@@ -271,28 +293,23 @@ class ItPodsShutdownOption {
     return domain;
   }
 
+  // create domain resource and verify all the server pods are ready
   private void createVerifyDomain(Domain domain) {
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
-    // check that admin server pod exists in the domain namespace
-    logger.info("Checking that admin server pod {0} exists in namespace {1}",
+    // check that admin service exists in the domain namespace
+    logger.info("Checking that admin service {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
 
     // check that admin server pod is ready
     logger.info("Checking that admin server pod {0} is ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
-    // check that admin service exists in the domain namespace
-    logger.info("Checking that admin service {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPodNamePrefix + i;
 
@@ -305,12 +322,11 @@ class ItPodsShutdownOption {
       logger.info("Checking that managed server pod {0} is ready in namespace {1}",
           managedServerPodName, domainNamespace);
       checkPodReady(managedServerPodName, domainUid, domainNamespace);
-
     }
 
     // check for independent managed server pods existence in the domain namespace
+    //TODO - only one of the independent managed server is coming up, bug???
     for (String podName : new String[]{ /*indManagedServerPodName1,*/indManagedServerPodName2}) {
-
       // check that the managed server service exists in the domain namespace
       logger.info("Checking that managed server service {0} exists in namespace {1}",
           podName, domainNamespace);
@@ -320,12 +336,12 @@ class ItPodsShutdownOption {
       logger.info("Checking that managed server pod {0} is ready in namespace {1}",
           podName, domainNamespace);
       checkPodReady(podName, domainUid, domainNamespace);
-
     }
 
   }
 
 
+  // get pod log which includes the server.out logs and verify the messages contain the set shutdown properties
   private void verifyServerLog(String namespace, String podName, String[] envVars) throws ApiException {
     String podLog = TestActions.getPodLog(podName, namespace);
     for (String envVar : envVars) {
@@ -335,24 +351,23 @@ class ItPodsShutdownOption {
     }
   }
 
-  // Crate a ConfigMap with a model file to add a new WebLogic cluster
-  private static void createClusterConfigMap(String configMapName, String model) {
+  // Crate a ConfigMap with a model to add a 2 independent managed servers
+  private static void createModelConfigMap(String configMapName, String model) {
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
     Map<String, String> data = new HashMap<>();
     data.put("configured-cluster.yaml", model);
 
-    V1ObjectMeta meta = new V1ObjectMeta()
-        .labels(labels)
-        .name(configMapName)
-        .namespace(domainNamespace);
     V1ConfigMap configMap = new V1ConfigMap()
         .data(data)
-        .metadata(meta);
+        .metadata(new V1ObjectMeta()
+            .labels(labels)
+            .name(configMapName)
+            .namespace(domainNamespace));
 
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Can't create ConfigMap %s", configMapName));
-    assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
+    assertTrue(cmCreated, String.format("createConfigMap failed %s", configMapName));
   }
 
 }
