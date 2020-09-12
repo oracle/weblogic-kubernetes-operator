@@ -120,7 +120,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *  Check the System Resources in a pre-configured ConfigMap
  *
  * <p>testMiiDeleteSystemResources
- *  Delete System Resources defined in a WebLogic domain
+ *  Delete System Resources defined in a WebLogic domain 
  *
  * <p>testMiiAddSystemResources
  *  Add new System Resources to a running WebLogic domain
@@ -131,14 +131,14 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>testMiiAddDynamicCluster
  *  Add a new dynamic WebLogic cluster to a running domain with non-zero Replica
- *  count so that required number of managed servers(s) on new cluster get
- *  activated after rolling restart.
+ *  count so that required number of managed servers(s) on new cluster get  
+ *  activated after rolling restart. 
  *
  * <p>testMiiAddConfiguredCluster
- *  Add a new configured WebLogic cluster to a running domain
+ *  Add a new configured WebLogic cluster to a running domain 
  *
  * <p>testMiiUpdateWebLogicCredential
- *  Update the administrative credential of a running domain by updating the
+ *  Update the administrative credential of a running domain by updating the 
  *  secret and activating a rolling restart.
  */
 
@@ -311,11 +311,11 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Create a WebLogic domain with a defined configmap in configuration/model
+   * Create a WebLogic domain with a defined configmap in configuration/model 
    * section of the domain resource.
-   * The configmap has multiple sparse WDT model files that define
+   * The configmap has multiple sparse WDT model files that define 
    * a JDBCSystemResource, a JMSSystemResource and a WLDFSystemResource.
-   * Verify all the SystemResource configurations using the rest API call
+   * Verify all the SystemResource configurations using the rest API call 
    * using the public nodeport of the administration server.
    */
   @Test
@@ -323,15 +323,15 @@ class ItMiiUpdateDomainConfig {
   @DisplayName("Verify the pre-configured SystemResources in a model-in-image domain")
   public void testMiiCheckSystemResources() {
 
-    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources",
+    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
         "TestDataSource", "200"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");
 
-    assertTrue(checkSystemResourceConfiguration("JMSSystemResources",
+    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
         "TestClusterJmsModule", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
 
-    assertTrue(checkSystemResourceConfiguration("WLDFSystemResources",
+    assertTrue(checkSystemResourceConfiguration("WLDFSystemResources", 
         "TestWldfModule", "200"), "WLDFSystemResources not found");
     logger.info("Found the WLDFSystemResource configuration");
 
@@ -390,7 +390,7 @@ class ItMiiUpdateDomainConfig {
 
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
-
+    
     assertTrue(assertDoesNotThrow(
         () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
          "More than one pod was restarted at same time"),
@@ -402,10 +402,10 @@ class ItMiiUpdateDomainConfig {
           managedServerPrefix + i, domainNamespace);
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
-
-    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources",
+   
+    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
          "TestDataSource", "404"), "JDBCSystemResource should be deleted");
-    assertTrue(checkSystemResourceConfiguration("JMSSystemResources",
+    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
          "TestClusterJmsModule", "404"), "JMSSystemResources should be deleted");
   }
 
@@ -454,7 +454,7 @@ class ItMiiUpdateDomainConfig {
 
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
-
+    
     assertTrue(assertDoesNotThrow(
         () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
          "More than one pod was restarted at same time"),
@@ -467,11 +467,11 @@ class ItMiiUpdateDomainConfig {
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
 
-    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources",
+    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
           "TestDataSource2", "200"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");
 
-    assertTrue(checkSystemResourceConfiguration("JMSSystemResources",
+    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
           "TestClusterJmsModule2", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
   }
@@ -481,7 +481,7 @@ class ItMiiUpdateDomainConfig {
    * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * before and after rolling restart.
-   * Verify servers from new cluster are not in running state, because
+   * Verify servers from new cluster are not in running state, because 
    * the spec level replica count to zero(default).
    */
   @Test
@@ -696,8 +696,8 @@ class ItMiiUpdateDomainConfig {
    * Start a WebLogic domain with model-in-imge.
    * Patch the domain CRD with a new credentials secret.
    * Update domainRestartVersion to trigger a rolling restart of server pods.
-   * make sure all the server pods are re-started in a rolling fashion.
-   * Check the validity of new credentials by accessing
+   * make sure all the server pods are re-started in a rolling fashion. 
+   * Check the validity of new credentials by accessing 
    * WebLogic RESTful Management Services.
    */
   @Test
@@ -760,7 +760,7 @@ class ItMiiUpdateDomainConfig {
 
 
   private static void createDatabaseSecret(
-        String secretName, String username, String password,
+        String secretName, String username, String password, 
         String dburl, String domNamespace) throws ApiException {
     Map<String, String> secretMap = new HashMap();
     secretMap.put("username", username);
@@ -790,7 +790,7 @@ class ItMiiUpdateDomainConfig {
 
   private static void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName,
+      String repoSecretName, String encryptionSecretName, 
       int replicaCount, String configmapName, String dbSecretName) {
     List<String> securityList = new ArrayList<>();
     securityList.add(dbSecretName);
@@ -925,7 +925,7 @@ class ItMiiUpdateDomainConfig {
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
   }
 
-  private boolean checkSystemResourceConfiguration(String resourcesType,
+  private boolean checkSystemResourceConfiguration(String resourcesType, 
          String resourcesName, String expectedStatusCode) {
 
     int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
