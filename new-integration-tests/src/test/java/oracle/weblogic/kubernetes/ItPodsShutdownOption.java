@@ -126,12 +126,12 @@ class ItPodsShutdownOption {
     encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
-    String yamlString = "topology:"
-        + "  Server:"
-        + "    'ms-1':"
-        + "      ListenPort: '10001'"
-        + "    'ms-2':"
-        + "      ListenPort: '9001'";
+    String yamlString = "topology:\n"
+        + "  Server:\n"
+        + "    'ms-1':\n"
+        + "      ListenPort: '10001'\n"
+        + "    'ms-2':\n"
+        + "      ListenPort: '9001'\n";
 
     createModelConfigMap(cmName, yamlString);
 
