@@ -174,7 +174,7 @@ class ItPodsShutdownOption {
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 2,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
-    verifyServerLog(domainNamespace, indManagedServerName2,
+    verifyServerLog(domainNamespace, indManagedServerPodName2,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Forced", "SHUTDOWN_TIMEOUT=45"});
   }
 
@@ -209,7 +209,7 @@ class ItPodsShutdownOption {
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 2,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
-    verifyServerLog(domainNamespace, indManagedServerName1,
+    verifyServerLog(domainNamespace, indManagedServerPodName2,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=45"});
   }
 
