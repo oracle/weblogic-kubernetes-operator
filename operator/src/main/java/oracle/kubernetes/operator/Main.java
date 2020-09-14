@@ -917,17 +917,10 @@ public class Main {
       if (callResponse.getResult() != null) {
         for (Domain dom : callResponse.getResult().getItems()) {
           String domainUid = dom.getDomainUid();
+          String ns = dom.getNamespace();
           domainUids.add(domainUid);
-          DomainPresenceInfo info =
-              dpis.domainPresenceInfoMap.compute(
-                  domainUid,
-                  (k, v) -> {
-                    if (v == null) {
-                      return new DomainPresenceInfo(dom);
-                    }
-                    v.setDomain(dom);
-                    return v;
-                  });
+          DomainPresenceInfo info = dpis.getDomainPresenceInfo(ns, domainUid);
+          info.setDomain(dom);
           info.setPopulated(true);
           try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
             dp.createMakeRightOperation(info).withExplicitRecheck().execute();
@@ -935,20 +928,19 @@ public class Main {
         }
       }
 
-      dpis.domainPresenceInfoMap.forEach(
-          (uid, info) -> {
-            if (!domainUids.contains(uid)) {
-              // This is a stranded DomainPresenceInfo.
-              info.setDeleting(true);
-              info.setPopulated(true);
-              try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns).domainUid(uid)) {
-                dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
-              }
-            }
-          });
+      Set<DomainPresenceInfo> strandedInfos = dpis.getStrandedDomainPresenceInfos(domainUids);
+      strandedInfos.forEach(dpi -> removeStrandedDomainPresenceInfo(dp, dpi));
 
       main.startDomainWatcher(ns, getInitialResourceVersion(callResponse.getResult()));
       return doContinueListOrNext(callResponse, packet);
+    }
+
+    private void removeStrandedDomainPresenceInfo(DomainProcessor dp, DomainPresenceInfo info) {
+      info.setDeleting(true);
+      info.setPopulated(true);
+      try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(info.getNamespace()).domainUid(info.getDomainUid())) {
+        dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
+      }
     }
 
   }
@@ -974,12 +966,12 @@ public class Main {
       @SuppressWarnings("unchecked")
       DomainPresenceInfos dpis = (DomainPresenceInfos) packet.get(DPI_MAP);
 
+      String ns = this.ns;
       if (result != null) {
         for (V1Service service : result.getItems()) {
           String domainUid = ServiceHelper.getServiceDomainUid(service);
           if (domainUid != null) {
-            DomainPresenceInfo info =
-                dpis.domainPresenceInfoMap.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(ns, domainUid));
+            DomainPresenceInfo info = dpis.getDomainPresenceInfo(ns, domainUid);
             ServiceHelper.addToPresence(info, service);
           }
         }
@@ -1023,8 +1015,7 @@ public class Main {
           String domainUid = PodHelper.getPodDomainUid(pod);
           String serverName = PodHelper.getPodServerName(pod);
           if (domainUid != null && serverName != null) {
-            DomainPresenceInfo info =
-                dpis.domainPresenceInfoMap.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(ns, domainUid));
+            DomainPresenceInfo info = dpis.getDomainPresenceInfo(ns, domainUid);
             info.setServerPod(serverName, pod);
           }
         }
@@ -1289,7 +1280,19 @@ public class Main {
   }
 
   private static class DomainPresenceInfos {
-    Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
+    private Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
+
+    private Set<DomainPresenceInfo> getStrandedDomainPresenceInfos(Set<String> foundDomainUids) {
+      return domainPresenceInfoMap.values().stream().filter(dpi -> isStranded(foundDomainUids, dpi)).collect(Collectors.toSet());
+    }
+
+    private boolean isStranded(Set<String> foundDomainUids, DomainPresenceInfo dpi) {
+      return !foundDomainUids.contains(dpi.getDomainUid());
+    }
+
+    private DomainPresenceInfo getDomainPresenceInfo(String ns, String domainUid) {
+      return domainPresenceInfoMap.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(ns, domainUid));
+    }
   }
 
 }
