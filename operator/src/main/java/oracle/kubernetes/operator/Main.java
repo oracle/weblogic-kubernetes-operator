@@ -68,6 +68,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.ActionResponseStep;
+import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -885,7 +886,7 @@ public class Main {
     @SuppressWarnings("rawtypes")
     @Override
     public NextAction apply(Packet packet) {
-      packet.put(DPI_MAP, new ConcurrentHashMap());
+      packet.put(DPI_MAP, new DomainPresenceInfos());
       return doNext(packet);
     }
   }
@@ -907,7 +908,7 @@ public class Main {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
       @SuppressWarnings("unchecked")
-      Map<String, DomainPresenceInfo> dpis = (Map<String, DomainPresenceInfo>) packet.get(DPI_MAP);
+      DomainPresenceInfos dpis = (DomainPresenceInfos) packet.get(DPI_MAP);
 
       DomainProcessor x = packet.getSpi(DomainProcessor.class);
       DomainProcessor dp = x != null ? x : processor;
@@ -918,7 +919,7 @@ public class Main {
           String domainUid = dom.getDomainUid();
           domainUids.add(domainUid);
           DomainPresenceInfo info =
-              dpis.compute(
+              dpis.domainPresenceInfoMap.compute(
                   domainUid,
                   (k, v) -> {
                     if (v == null) {
@@ -934,7 +935,7 @@ public class Main {
         }
       }
 
-      dpis.forEach(
+      dpis.domainPresenceInfoMap.forEach(
           (uid, info) -> {
             if (!domainUids.contains(uid)) {
               // This is a stranded DomainPresenceInfo.
@@ -971,14 +972,14 @@ public class Main {
       V1ServiceList result = callResponse.getResult();
 
       @SuppressWarnings("unchecked")
-      Map<String, DomainPresenceInfo> dpis = (Map<String, DomainPresenceInfo>) packet.get(DPI_MAP);
+      DomainPresenceInfos dpis = (DomainPresenceInfos) packet.get(DPI_MAP);
 
       if (result != null) {
         for (V1Service service : result.getItems()) {
           String domainUid = ServiceHelper.getServiceDomainUid(service);
           if (domainUid != null) {
             DomainPresenceInfo info =
-                dpis.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(ns, domainUid));
+                dpis.domainPresenceInfoMap.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(ns, domainUid));
             ServiceHelper.addToPresence(info, service);
           }
         }
@@ -989,18 +990,11 @@ public class Main {
     }
   }
 
-  private static class EventListStep extends ResponseStep<V1EventList> {
+  private static class EventListStep extends DefaultResponseStep<V1EventList> {
     private final String ns;
 
     EventListStep(String ns) {
       this.ns = ns;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1EventList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
     }
 
     @Override
@@ -1010,7 +1004,7 @@ public class Main {
     }
   }
 
-  private static class PodListStep extends ResponseStep<V1PodList> {
+  private static class PodListStep extends DefaultResponseStep<V1PodList> {
     private final String ns;
 
     PodListStep(String ns) {
@@ -1018,18 +1012,11 @@ public class Main {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1PodList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
       V1PodList result = callResponse.getResult();
 
       @SuppressWarnings("unchecked")
-      Map<String, DomainPresenceInfo> dpis = (Map<String, DomainPresenceInfo>) packet.get(DPI_MAP);
+      DomainPresenceInfos dpis = (DomainPresenceInfos) packet.get(DPI_MAP);
 
       if (result != null) {
         for (V1Pod pod : result.getItems()) {
@@ -1037,7 +1024,7 @@ public class Main {
           String serverName = PodHelper.getPodServerName(pod);
           if (domainUid != null && serverName != null) {
             DomainPresenceInfo info =
-                dpis.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(ns, domainUid));
+                dpis.domainPresenceInfoMap.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(ns, domainUid));
             info.setServerPod(serverName, pod);
           }
         }
@@ -1299,6 +1286,10 @@ public class Main {
       return doNext(packet);
     }
 
+  }
+
+  private static class DomainPresenceInfos {
+    Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
   }
 
 }
