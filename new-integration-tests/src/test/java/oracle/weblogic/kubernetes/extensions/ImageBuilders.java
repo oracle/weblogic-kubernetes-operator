@@ -25,9 +25,12 @@ import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_NAME;
@@ -76,6 +79,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
@@ -92,6 +96,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
   private static Collection<String> pushedImages = new ArrayList<>();
 
+  ConditionFactory withStandardRetryPolicy
+      = with().pollDelay(0, SECONDS)
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(30, MINUTES).await();
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -171,6 +179,17 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           }
         }
 
+        // docker login to OCR if OCR_USERNAME and OCR_PASSWORD is provided in env var
+        if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
+          withStandardRetryPolicy
+              .conditionEvaluationListener(
+                  condition -> logger.info("Waiting for docker login to be successful"
+                          + "(elapsed time {0} ms, remaining time {1} ms)",
+                      condition.getElapsedTimeInMS(),
+                      condition.getRemainingTimeInMS()))
+              .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
+        }
+
         // The following code is for pulling WLS images if running tests in Kind cluster
         if (KIND_REPO != null) {
           // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
@@ -185,8 +204,21 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           images.add(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG);
           images.add(JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG);
           images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
+          /*
+          for (String image : images) {
+            withStandardRetryPolicy
+                .conditionEvaluationListener(
+                    condition -> logger.info("Waiting for pullImageFromOcrAndPushToKind for image {0} to be successful"
+                            + "(elapsed time {1} ms, remaining time {2} ms)", image,
+                        condition.getElapsedTimeInMS(),
+                        condition.getRemainingTimeInMS()))
+                .until(pullImageFromOcrAndPushToKind(image)
+                );
+          }
 
-          assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
+          */
+
+          //assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
           pullImageFromOcrAndPushToKind(images);
         }
         logger.info("Installing istio before any test suites are run");
