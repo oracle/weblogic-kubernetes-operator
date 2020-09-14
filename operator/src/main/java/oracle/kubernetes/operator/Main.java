@@ -46,6 +46,7 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
+import io.kubernetes.client.proto.V1;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
@@ -891,18 +892,11 @@ public class Main {
     }
   }
 
-  private static class DomainListStep extends ResponseStep<DomainList> {
+  private static class DomainListStep extends DefaultResponseStep<DomainList> {
     private final String ns;
 
     DomainListStep(String ns) {
       this.ns = ns;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<DomainList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
     }
 
     @Override
@@ -945,7 +939,7 @@ public class Main {
 
   }
 
-  private static class ServiceListStep extends ResponseStep<V1ServiceList> {
+  private static class ServiceListStep extends DefaultResponseStep<V1ServiceList> {
     private final String ns;
 
     ServiceListStep(String ns) {
@@ -953,32 +947,23 @@ public class Main {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1ServiceList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
+    public NextAction onSuccess(Packet packet, CallResponse<V1ServiceList> callResponse) {
+
+      getItems(callResponse.getResult()).forEach(item -> processItem(packet, ns, item));
+      main.startServiceWatcher(ns, getInitialResourceVersion(callResponse.getResult()));
+      return doContinueListOrNext(callResponse, packet);
     }
 
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1ServiceList> callResponse) {
-      V1ServiceList result = callResponse.getResult();
+    private List<V1Service> getItems(V1ServiceList result) {
+      return Optional.ofNullable(result).map(V1ServiceList::getItems).orElse(Collections.emptyList());
+    }
 
-      @SuppressWarnings("unchecked")
-      DomainPresenceInfos dpis = (DomainPresenceInfos) packet.get(DPI_MAP);
-
-      String ns = this.ns;
-      if (result != null) {
-        for (V1Service service : result.getItems()) {
-          String domainUid = ServiceHelper.getServiceDomainUid(service);
-          if (domainUid != null) {
-            DomainPresenceInfo info = dpis.getDomainPresenceInfo(ns, domainUid);
-            ServiceHelper.addToPresence(info, service);
-          }
-        }
+    private void processItem(Packet packet, String ns, V1Service service) {
+      String domainUid = ServiceHelper.getServiceDomainUid(service);
+      if (domainUid != null) {
+        DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP)).getDomainPresenceInfo(ns, domainUid);
+        ServiceHelper.addToPresence(info, service);
       }
-
-      main.startServiceWatcher(ns, getInitialResourceVersion(result));
-      return doContinueListOrNext(callResponse, packet);
     }
   }
 
