@@ -140,6 +140,8 @@ set('WeblogicPluginEnabled',true)
 ```
 ### 2. Update the frontendRules section ingress resource
 Replace the string `weblogic-domain` with namespace of the WebLogic domain, the string `domain1` with domain UID and the string `adminserver` with name of the Administration Server in the WebLogic domain.
+
+**NOTE**: If you also have HTTP coming into ingress you will want to make sure that you remove any incoming WL-Proxy-SSL header. This protects you from a malicious user sending in a request and tricking WebLogic into thinking it's secure when it wasn't. Add the following rules in the Voyager ingress configuration to block any WL-Proxy headers coming from the client.
 ```
 apiVersion: voyager.appscode.com/v1beta1
 kind: Ingress
