@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -70,6 +71,7 @@ import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import okhttp3.internal.http2.ErrorCode;
 import okhttp3.internal.http2.StreamResetException;
+import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -121,7 +123,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
         = Pattern.compile("(" + PATH_PATTERN + ")(" + OP_PATTERN + ")(" + VALUE_PATTERN + ")");
 
   private static final RequestParams REQUEST_PARAMS
-      = new RequestParams("testcall", "junit", "testName", "body");
+      = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
 
   private final Map<String, DataRepository<?>> repositories = new HashMap<>();
   private final Map<Class<?>, String> dataTypes = new HashMap<>();
@@ -438,7 +440,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
     list {
       @Override
       <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
-        return callContext.listResources(dataRepository);
+        return callContext.listResources(
+                callContext.getLimit(),
+                callContext.getContinue(), dataRepository);
       }
     },
     patch {
@@ -589,6 +593,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     private final Map<String, T> data = new HashMap<>();
     private final Class<?> resourceType;
     private Function<List<T>, Object> listFactory;
+    private Map<String, List<T>> continuations = new HashMap<>();
     private List<Consumer<T>> onCreateActions = new ArrayList<>();
     private List<Consumer<T>> onUpdateActions = new ArrayList<>();
     private Method getStatusMethod;
@@ -656,12 +661,44 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return resource;
     }
 
-    Object listResources(String namespace, String fieldSelector, String... labelSelectors) {
+    Object listResources(String namespace, Integer limit, String cont, String fieldSelector, String... labelSelectors) {
       if (listFactory == null) {
         throw new UnsupportedOperationException("list operation not supported");
       }
 
-      return listFactory.apply(getResources(fieldSelector, labelSelectors));
+      List<T> resources;
+      if (cont != null) {
+        resources = continuations.remove(cont);
+      } else {
+        resources = getResources(namespace, fieldSelector, labelSelectors);
+      }
+
+      if (limit == null || limit > resources.size()) {
+        return listFactory.apply(resources);
+      }
+
+      Object list = listFactory.apply(resources.subList(0, limit));
+      cont = UUID.randomUUID().toString();
+      continuations.put(cont, resources.subList(limit, resources.size()));
+      try {
+        Method m = list.getClass().getMethod("getMetadata");
+        Object meta = m.invoke(list);
+        if (meta instanceof V1ListMeta) {
+          ((V1ListMeta) meta).setContinue(cont);
+        }
+      } catch (NoSuchMethodException
+              | SecurityException
+              | IllegalAccessException
+              | IllegalArgumentException
+              | InvocationTargetException e) {
+        // no-op, no-log
+      }
+
+      return list;
+    }
+
+    List<T> getResources(String namespace, String fieldSelector, String... labelSelectors) {
+      return getResources(fieldSelector, labelSelectors);
     }
 
     List<T> getResources(String fieldSelector, String... labelSelectors) {
@@ -890,12 +927,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
   private class NamespacedDataRepository<T> extends DataRepository<T> {
     private final Map<String, DataRepository<T>> repositories = new HashMap<>();
     private final Class<?> resourceType;
-    private final Function<List<T>, Object> listFactory;
 
     NamespacedDataRepository(Class<?> resourceType, Function<List<T>, Object> listFactory) {
-      super(resourceType);
+      super(resourceType, listFactory);
       this.resourceType = resourceType;
-      this.listFactory = listFactory;
     }
 
     @Override
@@ -943,8 +978,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     @Override
-    Object listResources(String namespace, String fieldSelector, String... labelSelectors) {
-      return listFactory.apply(inNamespace(namespace).getResources(fieldSelector, labelSelectors));
+    List<T> getResources(String namespace, String fieldSelector, String... labelSelectors) {
+      return inNamespace(namespace).getResources(fieldSelector, labelSelectors);
     }
 
     @Override
@@ -963,6 +998,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     private final String[] labelSelector;
     private String resourceType;
     private Operation operation;
+    private String cont = null;
 
     CallContext(RequestParams requestParams) {
       this(requestParams, null, null);
@@ -974,6 +1010,19 @@ public class KubernetesTestSupport extends FiberTestSupport {
       this.labelSelector = labelSelector == null ? null : labelSelector.split(",");
 
       parseCallName(requestParams.call);
+    }
+
+    public void setContinue(String cont) {
+      this.cont = cont;
+    }
+
+    public String getContinue() {
+      return cont;
+    }
+
+    public Integer getLimit() {
+      return Optional.ofNullable(requestParams)
+          .map(RequestParams::getCallParams).map(CallParams::getLimit).orElse(null);
     }
 
     private void parseCallName(String callName) {
@@ -1041,8 +1090,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
           requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
     }
 
-    private <T> Object listResources(DataRepository<T> dataRepository) {
-      return dataRepository.listResources(requestParams.namespace, fieldSelector, labelSelector);
+    private <T> Object listResources(Integer limit, String cont, DataRepository<T> dataRepository) {
+      return dataRepository.listResources(requestParams.namespace, limit, cont, fieldSelector, labelSelector);
     }
 
     private <T> T readResource(DataRepository<T> dataRepository) {
@@ -1058,15 +1107,28 @@ public class KubernetesTestSupport extends FiberTestSupport {
     private final CallContext callContext;
 
     SimulatedResponseStep(
-        Step next, RequestParams requestParams, String fieldSelector, String labelSelector) {
+        ResponseStep next, RequestParams requestParams, String fieldSelector, String labelSelector) {
       super(next);
       callContext = new CallContext(requestParams, fieldSelector, labelSelector);
+      if (next != null) {
+        next.setPrevious(this);
+      }
     }
 
     @Override
     public NextAction apply(Packet packet) {
       numCalls++;
       try {
+        Component oldResponse = packet.getComponents().remove(RESPONSE_COMPONENT_NAME);
+        if (oldResponse != null) {
+          @SuppressWarnings("unchecked")
+          CallResponse<?> old = oldResponse.getSpi(CallResponse.class);
+          if (old != null && old.getResult() != null) {
+            // called again, access continue value, if available
+            callContext.setContinue(accessContinue(old.getResult()));
+          }
+        }
+
         Object callResult = callContext.execute();
         CallResponse<Object> callResponse = createResponse(callResult);
         packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(callResponse));
@@ -1081,6 +1143,31 @@ public class KubernetesTestSupport extends FiberTestSupport {
       }
 
       return doNext(packet);
+    }
+
+    /**
+     * Access continue field, if any, from list metadata.
+     * @param result Kubernetes list result
+     * @return Continue value
+     */
+    private String accessContinue(Object result) {
+      String cont = "";
+      if (result != null) {
+        try {
+          Method m = result.getClass().getMethod("getMetadata");
+          Object meta = m.invoke(result);
+          if (meta instanceof V1ListMeta) {
+            return ((V1ListMeta) meta).getContinue();
+          }
+        } catch (NoSuchMethodException
+                | SecurityException
+                | IllegalAccessException
+                | IllegalArgumentException
+                | InvocationTargetException e) {
+          // no-op, no-log
+        }
+      }
+      return cont;
     }
 
     private <T> CallResponse<T> createResponse(T callResult) {

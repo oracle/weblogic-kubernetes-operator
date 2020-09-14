@@ -44,15 +44,19 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   private BigInteger resourceVersion = INITIAL_RESOURCE_VERSION;
 
   private V1ObjectMeta createMetaData() {
-    return createMetaData("test", NAMESPACE);
+    return createMetaData(getNextResourceVersion());
+  }
+
+  private V1ObjectMeta createMetaData(String resourceVersion) {
+    return createMetaData("test", NAMESPACE, resourceVersion);
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1ObjectMeta createMetaData(String name, String namespace) {
+  private V1ObjectMeta createMetaData(String name, String namespace, String resourceVersion) {
     return new V1ObjectMeta()
         .name(name)
         .namespace(namespace)
-        .resourceVersion(getNextResourceVersion());
+        .resourceVersion(resourceVersion);
   }
 
   @Override
@@ -101,8 +105,18 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     createAndRunWatcher(NAMESPACE, stopping, initialResourceVersion);
   }
 
+  Watcher<?> sendBookmarkRequest(BigInteger initialResourceVersion, String bookmarkResourceVersion) {
+    scheduleBookmarkResponse(createObjectWithMetaData(bookmarkResourceVersion));
+
+    return (Watcher) createAndRunWatcher(NAMESPACE, stopping, initialResourceVersion);
+  }
+
   private Object createObjectWithMetaData() {
     return createObjectWithMetaData(createMetaData());
+  }
+
+  private Object createObjectWithMetaData(String resourceVersion) {
+    return createObjectWithMetaData(createMetaData(resourceVersion));
   }
 
   protected abstract <T> T createObjectWithMetaData(V1ObjectMeta metaData);
@@ -116,6 +130,10 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
 
   private <T> Watch.Response<T> createAddResponse(T object) {
     return WatchEvent.createAddedEvent(object).toWatchResponse();
+  }
+
+  private <T> Watch.Response<T> createBookmarkResponse(T object) {
+    return WatchEvent.createBookmarkEvent(object).toWatchResponse();
   }
 
   private <T> Watch.Response<T> createModifyResponse(T object) {
@@ -223,6 +241,10 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     StubWatchFactory.addCallResponses(createAddResponse(object));
   }
 
+  void scheduleBookmarkResponse(Object object) {
+    StubWatchFactory.addCallResponses(createBookmarkResponse(object));
+  }
+
   private void scheduleDeleteResponse(Object object) {
     StubWatchFactory.addCallResponses(createDeleteResponse(object));
   }
@@ -233,9 +255,10 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     return res;
   }
 
-  private void createAndRunWatcher(String nameSpace, AtomicBoolean stopping, BigInteger resourceVersion) {
+  private Watcher<?> createAndRunWatcher(String nameSpace, AtomicBoolean stopping, BigInteger resourceVersion) {
     Watcher<?> watcher = createWatcher(nameSpace, stopping, resourceVersion);
     watcher.waitForExit();
+    return watcher;
   }
 
   protected abstract Watcher<?> createWatcher(String ns, AtomicBoolean stopping, BigInteger rv);
