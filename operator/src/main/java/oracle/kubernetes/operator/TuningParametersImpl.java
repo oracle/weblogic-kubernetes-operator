@@ -59,7 +59,7 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
 
     CallBuilderTuning callBuilder =
         new CallBuilderTuning(
-            (int) readTuningParameter("callRequestLimit", 500),
+            (int) readTuningParameter("callRequestLimit", 50),
             (int) readTuningParameter("callMaxRetryCount", 5),
             (int) readTuningParameter("callTimeoutSeconds", 10));
 
