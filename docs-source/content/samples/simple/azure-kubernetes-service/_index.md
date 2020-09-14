@@ -26,7 +26,7 @@ AKS is a managed Kubernetes Service that lets you quickly deploy and manage Kube
 
 This sample assumes the following prerequisite environment setup.
 
-* Operating System: Linux, UNIX, macOS or [WSL for Windows 10](https://docs.microsoft.com/windows/wsl/install-win10).
+* Operating System: GNU/Linux, macOS or [WSL for Windows 10](https://docs.microsoft.com/windows/wsl/install-win10).
 * [Git](https://git-scm.com/downloads), use `git --version` to test if `git` works.  This document was tested with version 2.17.1.
 * [Azure CLI](https://docs.microsoft.com/cli/azure), use `az --version` to test if `az` works.  This document was tested with version 2.9.1.
 * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/), use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.16.3.
