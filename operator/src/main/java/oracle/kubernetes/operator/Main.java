@@ -36,6 +36,7 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1Namespace;
@@ -897,7 +898,7 @@ public class Main {
       this.namespace = namespace;
     }
 
-    abstract void processItem(Packet packet, R item);
+    void processItem(Packet packet, R item) {};
 
     public String getNamespace() {
       return namespace;
@@ -910,11 +911,10 @@ public class Main {
 
   }
 
-  private static class DomainListStep extends DefaultResponseStep<DomainList> {
-    private final String ns;
+  private static class DomainListStep extends ListResponseStep<Domain, DomainList> {
 
     DomainListStep(String ns) {
-      this.ns = ns;
+      super(ns);
     }
 
     @Override
@@ -926,11 +926,11 @@ public class Main {
       Set<DomainPresenceInfo> strandedInfos = ((DomainPresenceInfos) packet.get(DPI_MAP)).getStrandedDomainPresenceInfos(foundDomainIds);
       strandedInfos.forEach(dpi -> removeStrandedDomainPresenceInfo(getProcessor(packet), dpi));
 
-      main.startDomainWatcher(ns, getInitialResourceVersion(callResponse.getResult()));
+      main.startDomainWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
       return doContinueListOrNext(callResponse, packet);
     }
 
-    private void processItem(Packet packet, Domain dom) {
+    void processItem(Packet packet, Domain dom) {
       String domainUid = dom.getDomainUid();
       String ns = dom.getNamespace();
       DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP)).getDomainPresenceInfo(ns, domainUid);
@@ -939,10 +939,6 @@ public class Main {
       try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
         getProcessor(packet).createMakeRightOperation(info).withExplicitRecheck().execute();
       }
-    }
-
-    private List<Domain> getItems(DomainList result) {
-      return Optional.ofNullable(result).map(DomainList::getItems).orElse(Collections.emptyList());
     }
 
     private static DomainProcessor getProcessor(Packet packet) {
@@ -981,47 +977,45 @@ public class Main {
     }
   }
 
-  private static class EventListStep extends DefaultResponseStep<V1EventList> {
-    private final String ns;
-
+  private static class EventListStep extends ListResponseStep<V1Event, V1EventList> {
     EventListStep(String ns) {
-      this.ns = ns;
+      super(ns);
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1EventList> callResponse) {
-      main.startEventWatcher(ns, getInitialResourceVersion(callResponse.getResult()));
+
+      startWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
       return doContinueListOrNext(callResponse, packet);
+    }
+
+    void startWatcher(String namespace, String initialResourceVersion) {
+      main.startEventWatcher(namespace, initialResourceVersion);
     }
   }
 
-  private static class PodListStep extends DefaultResponseStep<V1PodList> {
-    private final String ns;
+  private static class PodListStep extends ListResponseStep<V1Pod, V1PodList> {
 
     PodListStep(String ns) {
-      this.ns = ns;
+      super(ns);
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
 
       getItems(callResponse.getResult()).forEach(item -> processItem(packet, item));
-      main.startPodWatcher(ns, getInitialResourceVersion(callResponse.getResult()));
+      main.startPodWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
       return doContinueListOrNext(callResponse, packet);
     }
 
-    private void processItem(Packet packet, V1Pod pod) {
+    void processItem(Packet packet, V1Pod pod) {
       String domainUid = PodHelper.getPodDomainUid(pod);
       String serverName = PodHelper.getPodServerName(pod);
       if (domainUid != null && serverName != null) {
         DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP))
-            .getDomainPresenceInfo(ns, domainUid);
+            .getDomainPresenceInfo(getNamespace(), domainUid);
         info.setServerPod(serverName, pod);
       }
-    }
-
-    private List<V1Pod> getItems(V1PodList result) {
-      return Optional.ofNullable(result).map(V1PodList::getItems).orElse(Collections.emptyList());
     }
 
   }
