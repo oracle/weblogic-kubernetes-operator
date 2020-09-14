@@ -25,7 +25,8 @@ LOCAL_PRIM_DOMAIN_TAR="/tmp/prim_domain.tar"
 NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 RUNTIME_ENCRYPTION_SECRET_PASSWORD="/weblogic-operator/model-runtime-secret/password"
-OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
+# we export the opss password file location because it's also used by introspectDomain.py
+export OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
 OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
 IMG_MODELS_HOME="${WDT_MODEL_HOME:-/u01/wdt/models}"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
@@ -238,17 +239,11 @@ function buildWDTParams_MD5() {
     model_list="-model_file ${model_list}"
   fi
 
-  if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
-    if [ ! -f "${OPSS_KEY_PASSPHRASE}" ] ; then
-      trace SEVERE "Domain Source Type is 'FromModel' and domain type JRF which requires specifying a " \
-         "walletPasswordSecret in your domain resource and deploying this secret with a 'walletPassword' key, " \
-         " but the secret does not have this key."
-      exit 1
-    else
-      # TBD code review comment: pass credentials via filename instead of risking putting them in an env var
-      # Set it for introspectDomain.py to use
-      export OPSS_PASSPHRASE=$(cat ${OPSS_KEY_PASSPHRASE})
-    fi
+  if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] && [ ! -f "${OPSS_KEY_PASSPHRASE}" ] ; then
+    trace SEVERE "Domain Source Type is 'FromModel' and domain type JRF which requires specifying a " \
+       "walletPasswordSecret in your domain resource and deploying this secret with a 'walletPassword' key, " \
+       " but the secret does not have this key."
+    exit 1
   fi
 
   #  We cannot strictly run create domain for JRF type because it's tied to a database schema
@@ -256,10 +251,10 @@ function buildWDTParams_MD5() {
   #
   opss_wallet=$(get_opss_key_wallet)
   if [ -f "${opss_wallet}" ] ; then
-      trace "keeping rcu schema"
-      mkdir -p /tmp/opsswallet
-      base64 -d  ${opss_wallet} > /tmp/opsswallet/ewallet.p12
-      OPSS_FLAGS="-opss_wallet /tmp/opsswallet -opss_wallet_passphrase ${OPSS_PASSPHRASE}"
+    trace "A wallet file was passed in using walletFileSecret, so we're using an existing rcu schema."
+    mkdir -p /tmp/opsswallet
+    base64 -d  ${opss_wallet} > /tmp/opsswallet/ewallet.p12
+    OPSS_FLAGS="-opss_wallet /tmp/opsswallet"
   else
     OPSS_FLAGS=""
   fi
@@ -671,9 +666,19 @@ function wdtCreatePrimordialDomain() {
 
   export __WLSDEPLOY_STORE_MODEL__=1
 
-  ${WDT_BINDIR}/createDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}  ${UPDATE_RCUPWD_FLAG}  \
-    > ${WDT_OUTPUT}
+  local wdtArgs=""
+  wdtArgs+=" -oracle_home ${ORACLE_HOME}"
+  wdtArgs+=" -domain_home ${DOMAIN_HOME}" 
+  wdtArgs+=" ${model_list} ${archive_list} ${variable_list}"
+  wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
+  wdtArgs+=" ${OPSS_FLAGS}"
+  wdtArgs+=" ${UPDATE_RCUPWD_FLAG}"
+
+  if [ "-z ${OPSS_FLAGS}" ]; then
+    ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT}
+  else
+    cat ${OPSS_KEY_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT}
+  fi
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Create Domain Failed, ret=${ret}:"
