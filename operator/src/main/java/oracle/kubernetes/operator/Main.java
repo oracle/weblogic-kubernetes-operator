@@ -990,24 +990,24 @@ public class Main {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-      V1PodList result = callResponse.getResult();
 
-      @SuppressWarnings("unchecked")
-      DomainPresenceInfos dpis = (DomainPresenceInfos) packet.get(DPI_MAP);
-
-      if (result != null) {
-        for (V1Pod pod : result.getItems()) {
-          String domainUid = PodHelper.getPodDomainUid(pod);
-          String serverName = PodHelper.getPodServerName(pod);
-          if (domainUid != null && serverName != null) {
-            DomainPresenceInfo info = dpis.getDomainPresenceInfo(ns, domainUid);
-            info.setServerPod(serverName, pod);
-          }
-        }
-      }
-
-      main.startPodWatcher(ns, getInitialResourceVersion(result));
+      getItems(callResponse.getResult()).forEach(item -> processItem(packet, item));
+      main.startPodWatcher(ns, getInitialResourceVersion(callResponse.getResult()));
       return doContinueListOrNext(callResponse, packet);
+    }
+
+    private void processItem(Packet packet, V1Pod pod) {
+      String domainUid = PodHelper.getPodDomainUid(pod);
+      String serverName = PodHelper.getPodServerName(pod);
+      if (domainUid != null && serverName != null) {
+        DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP))
+            .getDomainPresenceInfo(ns, domainUid);
+        info.setServerPod(serverName, pod);
+      }
+    }
+
+    private List<V1Pod> getItems(V1PodList result) {
+      return Optional.ofNullable(result).map(V1PodList::getItems).orElse(Collections.emptyList());
     }
 
   }
