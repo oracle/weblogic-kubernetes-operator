@@ -62,6 +62,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
+import oracle.kubernetes.operator.steps.ActionResponseStep;
 import oracle.kubernetes.operator.steps.ConfigMapAfterStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
@@ -207,13 +208,12 @@ public class Main {
 
       Step strategy = Step.chain(
           new InitializeNamespacesSecurityStep(configuredDomainNamespaces),
-          new NamespaceRulesReviewStep());
+          new NamespaceRulesReviewStep(),
+          CrdHelper.createDomainCrdStep(version, productVersion));
       if (!DomainNamespaceSelectionStrategy.Dedicated.equals(selectionStrategy)) {
         strategy = Step.chain(strategy, readExistingNamespaces(selectionStrategy, configuredDomainNamespaces, false));
       } else {
-        strategy = Step.chain(strategy, CrdHelper.createDomainCrdStep(
-                version, productVersion,
-                new StartNamespacesStep(configuredDomainNamespaces, false)));
+        strategy = Step.chain(strategy, new StartNamespacesStep(configuredDomainNamespaces, false));
       }
       runSteps(
           strategy,
@@ -322,14 +322,13 @@ public class Main {
 
     Step strategy = Step.chain(
         new InitializeNamespacesSecurityStep(configuredDomainNamespaces),
-        new NamespaceRulesReviewStep());
+        new NamespaceRulesReviewStep(),
+        CrdHelper.createDomainCrdStep(version, productVersion));
     if (!DomainNamespaceSelectionStrategy.Dedicated.equals(selectionStrategy)) {
       strategy = Step.chain(strategy, readExistingNamespaces(
               selectionStrategy, configuredDomainNamespaces, isFullRecheck));
     } else {
-      strategy = Step.chain(strategy, CrdHelper.createDomainCrdStep(
-          version, productVersion,
-          new StartNamespacesStep(configuredDomainNamespaces, isFullRecheck)));
+      strategy = Step.chain(strategy, new StartNamespacesStep(configuredDomainNamespaces, isFullRecheck));
     }
     return strategy;
   }
@@ -369,14 +368,31 @@ public class Main {
   }
 
   static Step readExistingNamespaces(DomainNamespaceSelectionStrategy selectionStrategy,
-                                             Collection<String> domainNamespaces,
-                                             boolean isFullRecheck) {
+                                     Collection<String> domainNamespaces,
+                                     boolean isFullRecheck) {
     CallBuilder builder = new CallBuilder();
     String selector = selectionStrategy.getLabelSelector();
     if (selector != null) {
       builder.withLabelSelectors(selector);
     }
-    return builder.listNamespaceAsync(new NamespaceListStep(selectionStrategy, domainNamespaces, isFullRecheck));
+    return builder.listNamespaceAsync(
+      new ActionResponseStep<V1NamespaceList>(new NamespaceListAfterStep(selectionStrategy)) {
+        private Step startNamespaces(Collection<String> namespacesToStart, boolean isFullRecheck) {
+          return new StartNamespacesStep(namespacesToStart, isFullRecheck);
+        }
+
+        @Override
+        protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1NamespaceList> callResponse) {
+          return !selectionStrategy.isRequireList() && isNotAuthorizedOrForbidden(callResponse)
+                  ? doNext(startNamespaces(domainNamespaces, isFullRecheck), packet) :
+                  super.onFailureNoRetry(packet, callResponse);
+        }
+
+        @Override
+        public Step createSuccessStep(V1NamespaceList result, Step next) {
+          return new NamespaceListStep(result, selectionStrategy, domainNamespaces, isFullRecheck, next);
+        }
+      });
   }
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
@@ -682,7 +698,7 @@ public class Main {
 
     @Override
     protected String getDetail() {
-      return String.join(",", domainNamespaces);
+      return Optional.ofNullable(domainNamespaces).map(d -> String.join(",", d)).orElse(null);
     }
 
     protected abstract Step action(String ns);
@@ -873,7 +889,8 @@ public class Main {
         domainWatchers.put(
             ns, createDomainWatcher(ns, getResourceVersion(callResponse.getResult())));
       }
-      return doNext(packet);
+
+      return doContinueListOrNext(callResponse, packet);
     }
 
     String getResourceVersion(DomainList result) {
@@ -916,7 +933,8 @@ public class Main {
       if (!serviceWatchers.containsKey(ns)) {
         serviceWatchers.put(ns, createServiceWatcher(ns, getInitialResourceVersion(result)));
       }
-      return doNext(packet);
+
+      return doContinueListOrNext(callResponse, packet);
     }
 
     private String getInitialResourceVersion(V1ServiceList result) {
@@ -946,7 +964,8 @@ public class Main {
       if (!eventWatchers.containsKey(ns)) {
         eventWatchers.put(ns, createEventWatcher(ns, getInitialResourceVersion(result)));
       }
-      return doNext(packet);
+
+      return doContinueListOrNext(callResponse, packet);
     }
 
     private String getInitialResourceVersion(V1EventList result) {
@@ -990,7 +1009,8 @@ public class Main {
       if (!podWatchers.containsKey(ns)) {
         podWatchers.put(ns, createPodWatcher(ns, getInitialResourceVersion(result)));
       }
-      return doNext(packet);
+
+      return doContinueListOrNext(callResponse, packet);
     }
 
     private String getInitialResourceVersion(V1PodList result) {
@@ -998,95 +1018,77 @@ public class Main {
     }
   }
 
-  private static class NamespaceListStep extends ResponseStep<V1NamespaceList> {
+  private static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
+
+  private static class NamespaceListStep extends Step {
+    private final V1NamespaceList list;
     private final DomainNamespaceSelectionStrategy selectionStrategy;
     private final Collection<String> configuredDomainNamespaces;
     private final boolean isFullRecheck;
 
-    NamespaceListStep(DomainNamespaceSelectionStrategy selectionStrategy,
-                      Collection<String> configuredDomainNamespaces,
-                      boolean isFullRecheck) {
+    NamespaceListStep(V1NamespaceList list,
+            DomainNamespaceSelectionStrategy selectionStrategy,
+            Collection<String> configuredDomainNamespaces,
+            boolean isFullRecheck,
+            Step next) {
+      super(next);
+      this.list = list;
       this.selectionStrategy = selectionStrategy;
       this.configuredDomainNamespaces = configuredDomainNamespaces;
       this.isFullRecheck = isFullRecheck;
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1NamespaceList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1NamespaceList> callResponse) {
-      return !selectionStrategy.isRequireList() && isNotAuthorizedOrForbidden(callResponse)
-          ? doNext(createDomainCrdAndStartNamespaces(configuredDomainNamespaces, isFullRecheck), packet) :
-            super.onFailureNoRetry(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
-      V1NamespaceList result = callResponse.getResult();
+    public NextAction apply(Packet packet) {
       // don't bother processing pre-existing events
-      String intialResourceVersion = getInitialResourceVersion(result);
-      List<String> nsList = getExistingNamespaces(result);
+      String intialResourceVersion = getInitialResourceVersion(list);
+      List<String> nsPossiblyPartialList = getExistingNamespaces(list);
       
-      Set<String> namespacesToStart;
+      Set<String> namespacesToStartNow;
       if (selectionStrategy.isRequireList()) {
-        namespacesToStart = new TreeSet<>(nsList);
+        namespacesToStartNow = new TreeSet<>(nsPossiblyPartialList);
         String regexp = selectionStrategy.getRegExp();
         if (regexp != null) {
           try {
-            namespacesToStart = namespacesToStart.stream().filter(
+            namespacesToStartNow = namespacesToStartNow.stream().filter(
                     Pattern.compile(regexp).asPredicate()).collect(Collectors.toSet());
           } catch (PatternSyntaxException pse) {
             LOGGER.severe(MessageKeys.EXCEPTION, pse);
           }
         }
       } else {
-        namespacesToStart = new TreeSet<>(configuredDomainNamespaces);
-        for (String ns : configuredDomainNamespaces) {
-          if (!nsList.contains(ns)) {
-            try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
-              LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, ns);
-            }
-            namespacesToStart.remove(ns);
-          }
-        }
+        namespacesToStartNow = new TreeSet<>(configuredDomainNamespaces);
+        namespacesToStartNow.retainAll(nsPossiblyPartialList);
       }
+
       Step strategy = null;
-      if (!namespacesToStart.isEmpty()) {
-        strategy = Step.chain(createDomainCrdAndStartNamespaces(namespacesToStart, isFullRecheck),
-          new CreateNamespaceWatcherStep(selectionStrategy, intialResourceVersion));
+      if (!namespacesToStartNow.isEmpty()) {
+        strategy = Step.chain(
+          startNamespaces(namespacesToStartNow, isFullRecheck),
+          new CreateNamespaceWatcherStep(selectionStrategy, intialResourceVersion),
+          getNext());
 
         if (configuredDomainNamespaces == null) {
-          strategy = new InitializeNamespacesSecurityStep(namespacesToStart, strategy);
+          strategy = new InitializeNamespacesSecurityStep(namespacesToStartNow, strategy);
         }
       } else {
-        strategy = CrdHelper.createDomainCrdStep(
-          version, productVersion,
-            new CreateNamespaceWatcherStep(selectionStrategy, intialResourceVersion));
+        strategy = Step.chain(
+          new CreateNamespaceWatcherStep(selectionStrategy, intialResourceVersion),
+          getNext());
       }
 
-      // Check for namespaces that are removed from the operator's
-      // domainNamespaces list, or that are deleted from the Kubernetes cluster.
-      Set<String> namespacesToStop = new TreeSet<>(namespaceStoppingMap.keySet());
-      for (String ns : namespacesToStart) {
-        // the active namespaces are the ones that will not be stopped
-        if (delegate.isNamespaceRunning(ns)) {
-          namespacesToStop.remove(ns);
-        }
+      Collection<String> allDomainNamespaces = (Collection<String>) packet.get(ALL_DOMAIN_NAMESPACES);
+      if (allDomainNamespaces == null) {
+        allDomainNamespaces = new HashSet<>();
+        packet.put(ALL_DOMAIN_NAMESPACES, allDomainNamespaces);
       }
-      stopNamespaces(namespacesToStart, namespacesToStop);
+      allDomainNamespaces.addAll(namespacesToStartNow);
 
       return doNext(strategy, packet);
     }
-    
-    private Step createDomainCrdAndStartNamespaces(Collection<String> namespacesToStart, boolean isFullRecheck) {
-      return CrdHelper.createDomainCrdStep(
-          version, productVersion,
-            new StartNamespacesStep(namespacesToStart, isFullRecheck));
+
+    private Step startNamespaces(Collection<String> namespacesToStart, boolean isFullRecheck) {
+      return new StartNamespacesStep(namespacesToStart, isFullRecheck);
     }
 
     private String getInitialResourceVersion(V1NamespaceList result) {
@@ -1103,7 +1105,48 @@ public class Main {
       return namespaces;
     }
   }
-  
+
+  private static class NamespaceListAfterStep extends Step {
+    private final DomainNamespaceSelectionStrategy selectionStrategy;
+
+    public NamespaceListAfterStep(DomainNamespaceSelectionStrategy selectionStrategy) {
+      this.selectionStrategy = selectionStrategy;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      Collection<String> allDomainNamespaces = (Collection<String>) packet.get(ALL_DOMAIN_NAMESPACES);
+      if (allDomainNamespaces == null) {
+        allDomainNamespaces = new HashSet<>();
+      }
+
+      Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredList();
+      if (configuredDomainNamespaces != null) {
+        for (String ns : configuredDomainNamespaces) {
+          if (!allDomainNamespaces.contains(ns)) {
+            try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+              LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, ns);
+            }
+          }
+        }
+      }
+
+      // Check for namespaces that are removed from the operator's
+      // domainNamespaces list, or that are deleted from the Kubernetes cluster.
+      Set<String> namespacesToStop = new TreeSet<>(namespaceStoppingMap.keySet());
+      for (String ns : allDomainNamespaces) {
+        // the active namespaces are the ones that will not be stopped
+        if (delegate.isNamespaceRunning(ns)) {
+          namespacesToStop.remove(ns);
+        }
+      }
+
+      stopNamespaces(allDomainNamespaces, namespacesToStop);
+
+      return doNext(packet);
+    }
+  }
+
   private static class CreateNamespaceWatcherStep extends Step {
     private final DomainNamespaceSelectionStrategy selectionStrategy;
     private final String initialResourceVersion;
