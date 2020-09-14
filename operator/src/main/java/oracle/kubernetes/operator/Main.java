@@ -46,7 +46,6 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
-import io.kubernetes.client.proto.V1;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
@@ -59,7 +58,6 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
@@ -892,6 +890,26 @@ public class Main {
     }
   }
 
+  private abstract static class ListResponseStep<R extends KubernetesObject,L extends KubernetesListObject> extends  DefaultResponseStep<L> {
+    private final String namespace;
+
+    ListResponseStep(String namespace) {
+      this.namespace = namespace;
+    }
+
+    abstract void processItem(Packet packet, R item);
+
+    public String getNamespace() {
+      return namespace;
+    }
+
+    @SuppressWarnings("unchecked")
+    List<R> getItems(L result) {
+      return (List<R>) Optional.ofNullable(result).map(KubernetesListObject::getItems).orElse(Collections.emptyList());
+    }
+
+  }
+
   private static class DomainListStep extends DefaultResponseStep<DomainList> {
     private final String ns;
 
@@ -901,32 +919,34 @@ public class Main {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
-      @SuppressWarnings("unchecked")
-      DomainPresenceInfos dpis = (DomainPresenceInfos) packet.get(DPI_MAP);
 
-      DomainProcessor x = packet.getSpi(DomainProcessor.class);
-      DomainProcessor dp = x != null ? x : processor;
+      getItems(callResponse.getResult()).forEach(domain -> processItem(packet, domain));
 
-      Set<String> domainUids = new HashSet<>();
-      if (callResponse.getResult() != null) {
-        for (Domain dom : callResponse.getResult().getItems()) {
-          String domainUid = dom.getDomainUid();
-          String ns = dom.getNamespace();
-          domainUids.add(domainUid);
-          DomainPresenceInfo info = dpis.getDomainPresenceInfo(ns, domainUid);
-          info.setDomain(dom);
-          info.setPopulated(true);
-          try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
-            dp.createMakeRightOperation(info).withExplicitRecheck().execute();
-          }
-        }
-      }
-
-      Set<DomainPresenceInfo> strandedInfos = dpis.getStrandedDomainPresenceInfos(domainUids);
-      strandedInfos.forEach(dpi -> removeStrandedDomainPresenceInfo(dp, dpi));
+      Set<String> foundDomainIds = getItems(callResponse.getResult()).stream().map(Domain::getDomainUid).collect(Collectors.toSet());
+      Set<DomainPresenceInfo> strandedInfos = ((DomainPresenceInfos) packet.get(DPI_MAP)).getStrandedDomainPresenceInfos(foundDomainIds);
+      strandedInfos.forEach(dpi -> removeStrandedDomainPresenceInfo(getProcessor(packet), dpi));
 
       main.startDomainWatcher(ns, getInitialResourceVersion(callResponse.getResult()));
       return doContinueListOrNext(callResponse, packet);
+    }
+
+    private void processItem(Packet packet, Domain dom) {
+      String domainUid = dom.getDomainUid();
+      String ns = dom.getNamespace();
+      DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP)).getDomainPresenceInfo(ns, domainUid);
+      info.setDomain(dom);
+      info.setPopulated(true);
+      try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
+        getProcessor(packet).createMakeRightOperation(info).withExplicitRecheck().execute();
+      }
+    }
+
+    private List<Domain> getItems(DomainList result) {
+      return Optional.ofNullable(result).map(DomainList::getItems).orElse(Collections.emptyList());
+    }
+
+    private static DomainProcessor getProcessor(Packet packet) {
+      return Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
     }
 
     private void removeStrandedDomainPresenceInfo(DomainProcessor dp, DomainPresenceInfo info) {
@@ -939,29 +959,23 @@ public class Main {
 
   }
 
-  private static class ServiceListStep extends DefaultResponseStep<V1ServiceList> {
-    private final String ns;
-
+  private static class ServiceListStep extends ListResponseStep<V1Service, V1ServiceList> {
     ServiceListStep(String ns) {
-      this.ns = ns;
+      super(ns);
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ServiceList> callResponse) {
 
-      getItems(callResponse.getResult()).forEach(item -> processItem(packet, ns, item));
-      main.startServiceWatcher(ns, getInitialResourceVersion(callResponse.getResult()));
+      getItems(callResponse.getResult()).forEach(item -> processItem(packet, item));
+      main.startServiceWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
       return doContinueListOrNext(callResponse, packet);
     }
 
-    private List<V1Service> getItems(V1ServiceList result) {
-      return Optional.ofNullable(result).map(V1ServiceList::getItems).orElse(Collections.emptyList());
-    }
-
-    private void processItem(Packet packet, String ns, V1Service service) {
+    void processItem(Packet packet, V1Service service) {
       String domainUid = ServiceHelper.getServiceDomainUid(service);
       if (domainUid != null) {
-        DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP)).getDomainPresenceInfo(ns, domainUid);
+        DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP)).getDomainPresenceInfo(getNamespace(), domainUid);
         ServiceHelper.addToPresence(info, service);
       }
     }
