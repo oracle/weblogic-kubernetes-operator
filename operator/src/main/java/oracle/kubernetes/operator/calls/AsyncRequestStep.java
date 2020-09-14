@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.ApiCallback;
@@ -39,6 +40,8 @@ import static oracle.kubernetes.operator.logging.MessageKeys.ASYNC_SUCCESS;
  */
 public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   public static final String RESPONSE_COMPONENT_NAME = "response";
+  public static final String CONTINUE = "continue";
+
   private static final Random R = new Random();
   private static final int HIGH = 200;
   private static final int LOW = 10;
@@ -124,12 +127,19 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     next.setPrevious(this);
   }
 
-  private static String accessContinue(Object result) {
+  /**
+   * Access continue field, if any, from list metadata.
+   * @param result Kubernetes list result
+   * @return Continue value
+   */
+  public static String accessContinue(Object result) {
     return Optional.ofNullable(result)
         .filter(KubernetesListObject.class::isInstance)
         .map(KubernetesListObject.class::cast)
         .map(KubernetesListObject::getMetadata)
-        .map(V1ListMeta::getContinue).orElse(null);
+        .map(V1ListMeta::getContinue)
+        .filter(Predicate.not(String::isEmpty))
+        .orElse(null);
   }
 
   @Override
@@ -245,13 +255,13 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
 
     // clear out earlier results
-    String cont = null;
+    String cont = (String) packet.remove(CONTINUE);
     RetryStrategy retry = null;
     Component oldResponse = packet.getComponents().remove(RESPONSE_COMPONENT_NAME);
     if (oldResponse != null) {
       @SuppressWarnings("unchecked")
       CallResponse<T> old = oldResponse.getSpi(CallResponse.class);
-      if (old != null && old.getResult() != null) {
+      if (cont != null && old != null && old.getResult() != null) {
         // called again, access continue value, if available
         cont = accessContinue(old.getResult());
       }
