@@ -1050,11 +1050,17 @@ public class Main {
   }
 
   private static String getInitialResourceVersion(KubernetesListObject list) {
-    return Optional.ofNullable(list).map(KubernetesListObject::getMetadata).map(V1ListMeta::getResourceVersion).orElse("");
+    return Optional.ofNullable(list)
+          .map(KubernetesListObject::getMetadata)
+          .map(V1ListMeta::getResourceVersion)
+          .orElse("");
   }
 
   private static String getInitialResourceVersion(KubernetesObject list) {
-    return Optional.ofNullable(list).map(KubernetesObject::getMetadata).map(V1ObjectMeta::getResourceVersion).orElse("");
+    return Optional.ofNullable(list)
+          .map(KubernetesObject::getMetadata)
+          .map(V1ObjectMeta::getResourceVersion)
+          .orElse("");
   }
 
   private static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
