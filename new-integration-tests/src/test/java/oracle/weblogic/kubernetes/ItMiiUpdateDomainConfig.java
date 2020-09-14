@@ -372,10 +372,8 @@ class ItMiiUpdateDomainConfig {
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
     
-    assertTrue(assertDoesNotThrow(
-        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
-         "More than one pod was restarted at same time"),
-        "Rolling restart failed");
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+                "Rolling restart failed");
 
     // Even if pods are created, need the service to created
     for (int i = 1; i <= replicaCount; i++) {
@@ -437,10 +435,8 @@ class ItMiiUpdateDomainConfig {
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
     
-    assertTrue(assertDoesNotThrow(
-        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
-         "More than one pod was restarted at same time"),
-        "Rolling restart failed");
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+         "Rolling restart failed");
 
     // Even if pods are created, need the service to created
     for (int i = 1; i <= replicaCount; i++) {
@@ -458,7 +454,7 @@ class ItMiiUpdateDomainConfig {
     logger.info("Found the JMSSystemResource configuration");
 
     // check JMS logs are written on PV
-    // checkLogsOnPV("ls -ltr /shared/logs/*jms_messages.log", managedServerPrefix + "1");
+    checkLogsOnPV("ls -ltr /shared/logs/*jms_messages.log", managedServerPrefix + "1");
   }
 
   /**
@@ -506,9 +502,7 @@ class ItMiiUpdateDomainConfig {
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
 
-    assertTrue(assertDoesNotThrow(
-        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
-         "More than one pod was restarted at same time"),
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 
     // The ServerNamePrefix for the new configured cluster is config-server
@@ -584,9 +578,7 @@ class ItMiiUpdateDomainConfig {
     // Check if the admin server pod has been restarted
     // by comparing the PodCreationTime before and after rolling restart
 
-    assertTrue(assertDoesNotThrow(
-        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
-         "More than one pod was restarted at same time"),
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 
     // The ServerNamePrefix for the new dynamic cluster is dynamic-server
@@ -661,9 +653,7 @@ class ItMiiUpdateDomainConfig {
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
 
-    assertTrue(assertDoesNotThrow(
-        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
-         "More than one pod was restarted at same time"),
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 
     // The ServerNamePrefix for the new configured cluster is config-server
@@ -729,9 +719,7 @@ class ItMiiUpdateDomainConfig {
     logger.info("Wait for domain {0} admin server pod {1} in namespace {2} to be restarted",
         domainUid, adminServerPodName, domainNamespace);
 
-    assertTrue(assertDoesNotThrow(
-        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
-         "More than one pod was restarted at same time"),
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 
     // check if the new credentials are valid and the old credentials are not valid any more

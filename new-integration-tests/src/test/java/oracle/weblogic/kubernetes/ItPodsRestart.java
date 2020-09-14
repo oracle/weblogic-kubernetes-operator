@@ -97,7 +97,7 @@ class ItPodsRestart {
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    String opNamespace = namespaces.get(0);
+    final String opNamespace = namespaces.get(0);
 
     // get a unique domain namespace
     logger.info("Getting a unique namespace for WebLogic domain");
@@ -215,9 +215,7 @@ class ItPodsRestart {
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(
-        () -> verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
-        "More than one pod was restarted at same time"),
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
   }
@@ -272,9 +270,7 @@ class ItPodsRestart {
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(
-        () -> verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
-        "More than one pod was restarted at same time"),
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
   }
@@ -340,9 +336,7 @@ class ItPodsRestart {
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(
-        () -> verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
-        "More than one pod was restarted at same time"),
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
   }
@@ -407,9 +401,7 @@ class ItPodsRestart {
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(
-        () -> verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
-        "More than one pod was restarted at same time"),
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
   }
@@ -465,9 +457,7 @@ class ItPodsRestart {
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(
-        () -> verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
-        "More than one pod was restarted at same time"),
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
   }
