@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.extensions;
 
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
@@ -95,11 +97,12 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   private static String wdtBasicImage;
 
   private static Collection<String> pushedImages = new ArrayList<>();
+  private static boolean isInitializationSuccessful = false;
 
   ConditionFactory withStandardRetryPolicy
       = with().pollDelay(0, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(30, MINUTES).await();
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(30, MINUTES).await();
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -130,23 +133,70 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         operatorImage = Operator.getImageName();
         logger.info("Operator image name {0}", operatorImage);
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
-        assertTrue(Operator.buildImage(operatorImage));
+        assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
+
+        // docker login to OCR if OCR_USERNAME and OCR_PASSWORD is provided in env var
+        if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
+          withStandardRetryPolicy
+              .conditionEvaluationListener(
+                  condition -> logger.info("Waiting for docker login to be successful"
+                          + "(elapsed time {0} ms, remaining time {1} ms)",
+                      condition.getElapsedTimeInMS(),
+                      condition.getRemainingTimeInMS()))
+              .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
+        }
+
+        // The following code is for pulling WLS images if running tests in Kind cluster
+        if (KIND_REPO != null) {
+          // The kind clusters can't pull images from OCR using the image pull secret.
+          // It may be a containerd bug. We are going to workaround this issue.
+          // The workaround will be to:
+          //   1. docker login
+          //   2. docker pull
+          //   3. docker tag with the KIND_REPO value
+          //   4. docker push this new image name
+          //   5. use this image name to create the domain resource
+          Collection<String> images = new ArrayList<>();
+          images.add(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG);
+          images.add(JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG);
+          images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
+
+          for (String image : images) {
+            withStandardRetryPolicy
+                .conditionEvaluationListener(
+                    condition -> logger.info("Waiting for pullImageFromOcrAndPushToKind for image {0} to be successful"
+                            + "(elapsed time {1} ms, remaining time {2} ms)", image,
+                        condition.getElapsedTimeInMS(),
+                        condition.getRemainingTimeInMS()))
+                .until(pullImageFromOcrAndPushToKind(image)
+                );
+          }
+        }
 
         if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
           // build MII basic image
           miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-          assertTrue(createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
-              null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
-              String.format("Failed to create the image %s using WebLogic Image Tool",
-                  miiBasicImage));
+          withStandardRetryPolicy
+              .conditionEvaluationListener(
+                  condition -> logger.info("Waiting for createBasicImage to be successful"
+                      + "(elapsed time {0} ms, remaining time {1} ms)",
+                      condition.getElapsedTimeInMS(),
+                      condition.getRemainingTimeInMS()))
+              .until(createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
+                  null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE)
+              );
 
           // build basic wdt-domain-in-image image
           wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
-          assertTrue(createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
-              WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
-              String.format("Failed to create the image %s using WebLogic Image Tool",
-                  wdtBasicImage));
-
+          withStandardRetryPolicy
+              .conditionEvaluationListener(
+                  condition -> logger.info("Waiting for createBasicImage to be successful"
+                      + "(elapsed time {0} ms, remaining time {1} ms)",
+                      condition.getElapsedTimeInMS(),
+                      condition.getRemainingTimeInMS()))
+              .until(createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
+                  WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE)
+              );
 
           /* Check image exists using docker images | grep image tag.
            * Tag name is unique as it contains date and timestamp.
@@ -162,65 +212,42 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
           if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
             logger.info("docker login");
-            assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
-          }
-        }
-        // push the image
-        if (!REPO_NAME.isEmpty()) {
-          logger.info("docker push image {0} to {1}", operatorImage, REPO_NAME);
-          assertTrue(dockerPush(operatorImage), String.format("docker push failed for image %s", operatorImage));
-
-          if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
-            logger.info("docker push mii basic image {0} to registry", miiBasicImage);
-            assertTrue(dockerPush(miiBasicImage), String.format("docker push failed for image %s", miiBasicImage));
-
-            logger.info("docker push wdt basic domain in image {0} to registry", wdtBasicImage);
-            assertTrue(dockerPush(wdtBasicImage), String.format("docker push failed for image %s", wdtBasicImage));
-          }
-        }
-
-        // docker login to OCR if OCR_USERNAME and OCR_PASSWORD is provided in env var
-        if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-          withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Waiting for docker login to be successful"
-                          + "(elapsed time {0} ms, remaining time {1} ms)",
-                      condition.getElapsedTimeInMS(),
-                      condition.getRemainingTimeInMS()))
-              .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
-        }
-
-        // The following code is for pulling WLS images if running tests in Kind cluster
-        if (KIND_REPO != null) {
-          // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
-          // is some evidence it may be a containerd bug. Therefore, we are going to "give up" and workaround the issue.
-          // The workaround will be to:
-          //   1. docker login
-          //   2. docker pull
-          //   3. docker tag with the KIND_REPO value
-          //   4. docker push this new image name
-          //   5. use this image name to create the domain resource
-          Collection<String> images = new ArrayList<>();
-          images.add(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG);
-          images.add(JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG);
-          images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
-          /*
-          for (String image : images) {
             withStandardRetryPolicy
                 .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for pullImageFromOcrAndPushToKind for image {0} to be successful"
-                            + "(elapsed time {1} ms, remaining time {2} ms)", image,
+                    condition -> logger.info("Waiting for docker login to be successful"
+                        + "(elapsed time {0} ms, remaining time {1} ms)",
                         condition.getElapsedTimeInMS(),
                         condition.getRemainingTimeInMS()))
-                .until(pullImageFromOcrAndPushToKind(image)
-                );
+                .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
+          }
+        }
+
+        // push the images to repo
+        if (!REPO_NAME.isEmpty()) {
+
+          List<String> images = new ArrayList<>();
+          images.add(operatorImage);
+          // add images only if SKIP_BASIC_IMAGE_BUILD is not set
+          if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
+            images.add(miiBasicImage);
+            images.add(wdtBasicImage);
           }
 
-          */
-
-          //assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
-          pullImageFromOcrAndPushToKind(images);
+          for (String image : images) {
+            logger.info("docker push image {0} to {1}", image, REPO_NAME);
+            withStandardRetryPolicy
+                .conditionEvaluationListener(
+                    condition -> logger.info("Waiting for docker push for image {0} to be successful"
+                        + "(elapsed time {1} ms, remaining time {2} ms)",
+                        image,
+                        condition.getElapsedTimeInMS(),
+                        condition.getRemainingTimeInMS()))
+                .until(() -> dockerPush(image));
+          }
         }
+
+        // set initialization success to true, not counting the istio installation as not all tests use istio
+        isInitializationSuccessful = true;
         logger.info("Installing istio before any test suites are run");
         installIstio();
       } finally {
@@ -238,6 +265,12 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         throw new IllegalStateException(e);
       }
     }
+
+    // check initialization is already done and is not successful
+    assertTrue(started.get() && isInitializationSuccessful,
+        "Initialization(pull images from OCR or login/push to OCIR) failed, "
+        + "check the actual error or stack trace in the first test that failed in the test suite");
+
   }
 
   /**
@@ -388,77 +421,77 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
    * @param domainType domain type to be built
    * @return true if image is created successfully
    */
-  private boolean createBasicImage(String imageName, String imageTag, String modelFile, String varFile,
-                                   String appName, String domainType) {
-    LoggingFacade logger = getLogger();
-    final String image = imageName + ":" + imageTag;
 
-    // build the model file list
-    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
+  public Callable<Boolean> createBasicImage(String imageName, String imageTag, String modelFile, String varFile,
+      String appName, String domainType) {
+    return (() -> {
+      LoggingFacade logger = getLogger();
+      final String image = imageName + ":" + imageTag;
 
-    // build an application archive using what is in resources/apps/APP_NAME
-    logger.info("Build an application archive using resources/apps/{0}", appName);
-    assertTrue(buildAppArchive(defaultAppParams()
-        .srcDirList(Collections.singletonList(appName))),
-        String.format("Failed to create app archive for %s", appName));
+      // build the model file list
+      final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
 
-    // build the archive list
-    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
-    final List<String> archiveList = Collections.singletonList(zipFile);
+      // build an application archive using what is in resources/apps/APP_NAME
+      logger.info("Build an application archive using resources/apps/{0}", appName);
+      assertTrue(buildAppArchive(defaultAppParams()
+          .srcDirList(Collections.singletonList(appName))),
+          String.format("Failed to create app archive for %s", appName));
 
-    // Set additional environment variables for WIT
-    checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap<>();
-    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
+      // build the archive list
+      String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+      final List<String> archiveList = Collections.singletonList(zipFile);
 
-    // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
-    // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
-    // the next JDK 14 versions are released.
-    String witJavaHome = System.getenv("WIT_JAVA_HOME");
-    if (witJavaHome != null) {
-      env.put("JAVA_HOME", witJavaHome);
-    }
+      // Set additional environment variables for WIT
+      checkDirectory(WIT_BUILD_DIR);
+      Map<String, String> env = new HashMap<>();
+      env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
-    // build an image using WebLogic Image Tool
-    boolean imageCreation = false;
-    logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
-    if (domainType.equalsIgnoreCase("wdt")) {
-      final List<String> modelVarList = Collections.singletonList(MODEL_DIR + "/" + varFile);
-      imageCreation = createImage(
-          defaultWitParams()
-              .modelImageName(imageName)
-              .modelImageTag(WDT_BASIC_IMAGE_TAG)
-              .modelFiles(modelList)
-              .modelArchiveFiles(archiveList)
-              .modelVariableFiles(modelVarList)
-              .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
-              .wdtOperation("CREATE")
-              .wdtVersion(WDT_VERSION)
-              .env(env)
-              .redirect(true));
-    } else if (domainType.equalsIgnoreCase("mii")) {
-      imageCreation = createImage(
-        defaultWitParams()
-            .modelImageName(imageName)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
-            .modelFiles(modelList)
-            .modelArchiveFiles(archiveList)
-            .wdtModelOnly(true)
-            .wdtVersion(WDT_VERSION)
-            .env(env)
-            .redirect(true));
-    }
-    return imageCreation;
+      // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
+      // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
+      // the next JDK 14 versions are released.
+      String witJavaHome = System.getenv("WIT_JAVA_HOME");
+      if (witJavaHome != null) {
+        env.put("JAVA_HOME", witJavaHome);
+      }
+
+      // build an image using WebLogic Image Tool
+      boolean imageCreation = false;
+      logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
+      if (domainType.equalsIgnoreCase("wdt")) {
+        final List<String> modelVarList = Collections.singletonList(MODEL_DIR + "/" + varFile);
+        imageCreation = createImage(
+            defaultWitParams()
+                .modelImageName(imageName)
+                .modelImageTag(WDT_BASIC_IMAGE_TAG)
+                .modelFiles(modelList)
+                .modelArchiveFiles(archiveList)
+                .modelVariableFiles(modelVarList)
+                .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
+                .wdtOperation("CREATE")
+                .wdtVersion(WDT_VERSION)
+                .env(env)
+                .redirect(true));
+      } else if (domainType.equalsIgnoreCase("mii")) {
+        imageCreation = createImage(
+            defaultWitParams()
+                .modelImageName(imageName)
+                .modelImageTag(MII_BASIC_IMAGE_TAG)
+                .modelFiles(modelList)
+                .modelArchiveFiles(archiveList)
+                .wdtModelOnly(true)
+                .wdtVersion(WDT_VERSION)
+                .env(env)
+                .redirect(true));
+      }
+      return imageCreation;
+    });
   }
 
-  private void pullImageFromOcrAndPushToKind(Collection<String> imagesList) {
-    for (String image : imagesList) {
-      assertTrue(dockerPull(image), String.format("docker pull failed for image %s", image));
+  private Callable<Boolean> pullImageFromOcrAndPushToKind(String image) {
+    return (() -> {
       String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      assertTrue(dockerTag(image, kindRepoImage),
-          String.format("docker tag failed for images %s, %s", image, kindRepoImage));
-      assertTrue(dockerPush(kindRepoImage), String.format("docker push failed for image %s", kindRepoImage));
-    }
+      return dockerPull(image) && dockerTag(image, kindRepoImage) && dockerPush(kindRepoImage);
+    });
   }
 
 }
