@@ -916,7 +916,8 @@ public class DomainProcessorImpl implements DomainProcessor {
           }
         }
       }
-      return doNext(packet);
+
+      return doContinueListOrNext(callResponse, packet);
     }
   }
 
@@ -972,7 +973,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         }
       }
 
-      return doNext(packet);
+      return doContinueListOrNext(callResponse, packet);
     }
   }
 
