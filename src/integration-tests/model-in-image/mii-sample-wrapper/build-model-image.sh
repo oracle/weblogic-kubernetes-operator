@@ -112,8 +112,8 @@ dryrun:  ${MODEL_YAML_FILES:+--wdtModel ${MODEL_YAML_FILES}} \\
 dryrun:  ${MODEL_VARIABLE_FILES:+--wdtVariables ${MODEL_VARIABLE_FILES}} \\
 dryrun:  ${MODEL_ARCHIVE_FILES:+--wdtArchive ${MODEL_ARCHIVE_FILES}} \\
 dryrun:  --wdtModelOnly \\
-dryrun:  --wdtDomainType ${WDT_DOMAIN_TYPE} \\
-dryrun:  --chown oracle:root
+dryrun:  ${CHOWN_ROOT:+${CHOWN_ROOT}} \\
+dryrun:  --wdtDomainType ${WDT_DOMAIN_TYPE}
 dryrun:
 dryrun:echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Seconds=\$SECONDS."
 
@@ -165,4 +165,3 @@ else
   echo "@@ Info: Done!"
 
 fi
-
