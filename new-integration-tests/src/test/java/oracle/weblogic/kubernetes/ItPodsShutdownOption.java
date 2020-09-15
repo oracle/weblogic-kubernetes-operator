@@ -235,7 +235,7 @@ class ItPodsShutdownOption {
 
 
     // create Shitdown objects for each server and cluster
-    Shutdown[] shutDownObjects = new Shutdown[4];
+    Shutdown[] shutDownObjects = new Shutdown[5];
     Shutdown dom = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(30L);
     Shutdown admin = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(40L);
     Shutdown cluster = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(60L);
