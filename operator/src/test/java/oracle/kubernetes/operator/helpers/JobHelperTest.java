@@ -473,7 +473,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithCustomVariablesInvalidValue_reportValidationError() {
+  public void whenDomainHasAdditionalVolumesWithCustomVariablesInvalidValue_jobNotCreated() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
