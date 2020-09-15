@@ -341,7 +341,7 @@ public class Main {
 
   static Step readExistingResources(String operatorNamespace, String ns) {
     return Step.chain(
-        new ReadExistingResourcesBeforeStep(),
+        new ReadExistingResourcesBeforeStep(ns),
         ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
         createConfigMapStep(ns),
         readExistingPods(ns),
@@ -884,10 +884,19 @@ public class Main {
   }
 
   private static class ReadExistingResourcesBeforeStep extends Step {
-    @SuppressWarnings("rawtypes")
+    private String namespace;
+
+    /**
+     * Create a step with no next step.
+     */
+    public ReadExistingResourcesBeforeStep(
+        String namespace) {
+      this.namespace = namespace;
+    }
+
     @Override
     public NextAction apply(Packet packet) {
-      packet.put(DPI_MAP, new DomainPresenceInfos());
+      packet.put(DPI_MAP, new DomainPresenceInfos(namespace));
       return doNext(packet);
     }
   }
@@ -935,7 +944,8 @@ public class Main {
     void processItem(Packet packet, Domain dom) {
       String domainUid = dom.getDomainUid();
       String ns = dom.getNamespace();
-      DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP)).getDomainPresenceInfo(ns, domainUid);
+      DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP)).getDomainPresenceInfo(
+          domainUid);
       info.setDomain(dom);
       info.setPopulated(true);
       try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
@@ -945,14 +955,6 @@ public class Main {
 
     private static DomainProcessor getProcessor(Packet packet) {
       return Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
-    }
-
-    private void removeStrandedDomainPresenceInfo(DomainProcessor dp, DomainPresenceInfo info) {
-      info.setDeleting(true);
-      info.setPopulated(true);
-      try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(info.getNamespace()).domainUid(info.getDomainUid())) {
-        dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
-      }
     }
 
   }
@@ -993,7 +995,8 @@ public class Main {
     void processItem(Packet packet, V1Service service) {
       String domainUid = ServiceHelper.getServiceDomainUid(service);
       if (domainUid != null) {
-        DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP)).getDomainPresenceInfo(getNamespace(), domainUid);
+        DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP)).getDomainPresenceInfo(
+            domainUid);
         ServiceHelper.addToPresence(info, service);
       }
     }
@@ -1027,7 +1030,7 @@ public class Main {
       String serverName = PodHelper.getPodServerName(pod);
       if (domainUid != null && serverName != null) {
         DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP))
-            .getDomainPresenceInfo(getNamespace(), domainUid);
+            .getDomainPresenceInfo(domainUid);
         info.setServerPod(serverName, pod);
       }
     }
@@ -1287,18 +1290,19 @@ public class Main {
   }
 
   private static class DomainPresenceInfos {
+    private String namespace;
     private Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
+
+    public DomainPresenceInfos(String namespace) {
+      this.namespace = namespace;
+    }
 
     private Set<DomainPresenceInfo> getStrandedDomainPresenceInfos() {
       return domainPresenceInfoMap.values().stream().filter(dpi -> dpi.getDomain() == null).collect(Collectors.toSet());
     }
 
-    private boolean isStranded(Set<String> foundDomainUids, DomainPresenceInfo dpi) {
-      return !foundDomainUids.contains(dpi.getDomainUid());
-    }
-
-    private DomainPresenceInfo getDomainPresenceInfo(String ns, String domainUid) {
-      return domainPresenceInfoMap.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(ns, domainUid));
+    private DomainPresenceInfo getDomainPresenceInfo(String domainUid) {
+      return domainPresenceInfoMap.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(namespace, domainUid));
     }
   }
 
