@@ -40,12 +40,10 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -108,9 +106,6 @@ class ItPodsShutdownOption {
 
     // get the pre-built image created by IntegrationTestWatcher
     miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
 
     // create docker registry secret to pull the image from registry
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
@@ -178,7 +173,7 @@ class ItPodsShutdownOption {
   public void testShutdownPropsAllLevels() throws ApiException {
 
 
-    // create Shitdown objects for each server and cluster
+    // create Shutdown objects for each server and cluster
     Shutdown[] shutDownObjects = new Shutdown[5];
     Shutdown dom = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(30L);
     Shutdown admin = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(40L);
@@ -234,7 +229,7 @@ class ItPodsShutdownOption {
   public void testShutdownPropsEnvOverride() throws ApiException {
 
 
-    // create Shitdown objects for each server and cluster
+    // create Shutdown objects for each server and cluster
     Shutdown[] shutDownObjects = new Shutdown[5];
     Shutdown dom = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(30L);
     Shutdown admin = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(40L);
@@ -332,52 +327,37 @@ class ItPodsShutdownOption {
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
-    // check that admin service exists in the domain namespace
-    logger.info("Checking that admin service {0} exists in namespace {1}",
+    // check that admin service/pod exists in the domain namespace
+    logger.info("Checking that admin service/pod {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check that admin server pod is ready
-    logger.info("Checking that admin server pod {0} is ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPodNamePrefix + i;
 
-      // check that the managed server service exists in the domain namespace
-      logger.info("Checking that managed server service {0} exists in namespace {1}",
+      // check that ms service/pod exists in the domain namespace
+      logger.info("Checking that clustered ms service/pod {0} exists in namespace {1}",
           managedServerPodName, domainNamespace);
-      checkServiceExists(managedServerPodName, domainNamespace);
-
-      // check that the managed server pod is ready
-      logger.info("Checking that managed server pod {0} is ready in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodReady(managedServerPodName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
 
     // check for independent managed server pods existence in the domain namespace
     for (String podName : new String[]{indManagedServerPodName2}) {
-      // check that the managed server service exists in the domain namespace
-      logger.info("Checking that managed server service {0} exists in namespace {1}",
+      // check that ms service/pod exists in the domain namespace
+      logger.info("Checking that independent ms service/pod {0} exists in namespace {1}",
           podName, domainNamespace);
-      checkServiceExists(podName, domainNamespace);
-
-      // check that the managed server pod is ready
-      logger.info("Checking that managed server pod {0} is ready in namespace {1}",
-          podName, domainNamespace);
-      checkPodReady(podName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(podName, domainUid, domainNamespace);
     }
 
   }
 
 
   // get pod log which includes the server.out logs and verify the messages contain the set shutdown properties
-  private void verifyServerLog(String namespace, String podName, String[] envVars) throws ApiException {
-    String podLog = TestActions.getPodLog(podName, namespace);
+  private void verifyServerLog(String namespace, String podName, String[] envVars) {
+    String podLog = assertDoesNotThrow(() -> TestActions.getPodLog(podName, namespace));
     for (String envVar : envVars) {
       logger.info("Checking Pod {0} for server startup property {1}", podName, envVar);
-      assertTrue(podLog.contains(envVar));
+      assertTrue(podLog.contains(envVar), "Server log doesn't contain the " + envVar);
       logger.info("Pod {0} contains the property {1} in server startup env", podName, envVar);
     }
   }
@@ -387,7 +367,7 @@ class ItPodsShutdownOption {
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
     Map<String, String> data = new HashMap<>();
-    data.put("configured-cluster.yaml", model);
+    data.put("independent-ms.yaml", model);
 
     V1ConfigMap configMap = new V1ConfigMap()
         .data(data)
