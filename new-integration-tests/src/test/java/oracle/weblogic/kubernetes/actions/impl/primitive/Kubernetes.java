@@ -43,6 +43,7 @@ import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.openapi.models.V1ClusterRoleList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentList;
@@ -75,6 +76,7 @@ import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.util.ClientBuilder;
+import io.kubernetes.client.util.PatchUtils;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -143,8 +145,8 @@ public class Kubernetes {
       initializeGenericKubernetesApiClients();
       // create standard, reusable retry/backoff policy
       withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+              .and().with().pollInterval(10, SECONDS)
+              .atMost(5, MINUTES).await();
     } catch (IOException ioex) {
       throw new ExceptionInInitializerError(ioex);
     }
@@ -156,134 +158,134 @@ public class Kubernetes {
   private static void initializeGenericKubernetesApiClients() {
     // Invocation parameters aren't changing so create them as statics
     configMapClient =
-        new GenericKubernetesApi<>(
-            V1ConfigMap.class,  // the api type class
-            V1ConfigMapList.class, // the api list type class
-            "", // the api group
-            "v1", // the api version
-            "configmaps", // the resource plural
-            apiClient //the api client
-        );
+            new GenericKubernetesApi<>(
+                    V1ConfigMap.class,  // the api type class
+                    V1ConfigMapList.class, // the api list type class
+                    "", // the api group
+                    "v1", // the api version
+                    "configmaps", // the resource plural
+                    apiClient //the api client
+            );
 
     crdClient =
-        new GenericKubernetesApi<>(
-            Domain.class,  // the api type class
-            DomainList.class, // the api list type class
-            DOMAIN_GROUP, // the api group
-            DOMAIN_VERSION, // the api version
-            DOMAIN_PLURAL, // the resource plural
-            apiClient //the api client
-        );
+            new GenericKubernetesApi<>(
+                    Domain.class,  // the api type class
+                    DomainList.class, // the api list type class
+                    DOMAIN_GROUP, // the api group
+                    DOMAIN_VERSION, // the api version
+                    DOMAIN_PLURAL, // the resource plural
+                    apiClient //the api client
+            );
 
     deploymentClient =
-        new GenericKubernetesApi<>(
-            V1Deployment.class,  // the api type class
-            V1DeploymentList.class, // the api list type class
-            "", // the api group
-            "v1", // the api version
-            "deployments", // the resource plural
-            apiClient //the api client
-        );
+            new GenericKubernetesApi<>(
+                    V1Deployment.class,  // the api type class
+                    V1DeploymentList.class, // the api list type class
+                    "", // the api group
+                    "v1", // the api version
+                    "deployments", // the resource plural
+                    apiClient //the api client
+            );
 
     jobClient =
-        new GenericKubernetesApi<>(
-            V1Job.class,  // the api type class
-            V1JobList.class, // the api list type class
-            "", // the api group
-            "v1", // the api version
-            "jobs", // the resource plural
-            apiClient //the api client
-        );
+            new GenericKubernetesApi<>(
+                    V1Job.class,  // the api type class
+                    V1JobList.class, // the api list type class
+                    "batch", // the api group
+                    "v1", // the api version
+                    "jobs", // the resource plural
+                    apiClient //the api client
+            );
 
     namespaceClient =
-        new GenericKubernetesApi<>(
-            V1Namespace.class, // the api type class
-            V1NamespaceList.class, // the api list type class
-            "", // the api group
-            "v1", // the api version
-            "namespaces", // the resource plural
-            apiClient //the api client
-        );
+            new GenericKubernetesApi<>(
+                    V1Namespace.class, // the api type class
+                    V1NamespaceList.class, // the api list type class
+                    "", // the api group
+                    "v1", // the api version
+                    "namespaces", // the resource plural
+                    apiClient //the api client
+            );
 
     podClient =
-        new GenericKubernetesApi<>(
-            V1Pod.class,  // the api type class
-            V1PodList.class, // the api list type class
-            "", // the api group
-            "v1", // the api version
-            "pods", // the resource plural
-            apiClient //the api client
-        );
+            new GenericKubernetesApi<>(
+                    V1Pod.class,  // the api type class
+                    V1PodList.class, // the api list type class
+                    "", // the api group
+                    "v1", // the api version
+                    "pods", // the resource plural
+                    apiClient //the api client
+            );
 
     pvClient =
-        new GenericKubernetesApi<>(
-            V1PersistentVolume.class,  // the api type class
-            V1PersistentVolumeList.class, // the api list type class
-            "", // the api group
-            "v1", // the api version
-            "persistentvolumes", // the resource plural
-            apiClient //the api client
-        );
+            new GenericKubernetesApi<>(
+                    V1PersistentVolume.class,  // the api type class
+                    V1PersistentVolumeList.class, // the api list type class
+                    "", // the api group
+                    "v1", // the api version
+                    "persistentvolumes", // the resource plural
+                    apiClient //the api client
+            );
 
     pvcClient =
-        new GenericKubernetesApi<>(
-            V1PersistentVolumeClaim.class,  // the api type class
-            V1PersistentVolumeClaimList.class, // the api list type class
-            "", // the api group
-            "v1", // the api version
-            "persistentvolumeclaims", // the resource plural
-            apiClient //the api client
-        );
+            new GenericKubernetesApi<>(
+                    V1PersistentVolumeClaim.class,  // the api type class
+                    V1PersistentVolumeClaimList.class, // the api list type class
+                    "", // the api group
+                    "v1", // the api version
+                    "persistentvolumeclaims", // the resource plural
+                    apiClient //the api client
+            );
 
     rsClient =
-        new GenericKubernetesApi<>(
-            V1ReplicaSet.class, // the api type class
-            V1ReplicaSetList.class, // the api list type class
-            "", // the api group
-            "v1", // the api version
-            "replicasets", // the resource plural
-            apiClient //the api client
-        );
+            new GenericKubernetesApi<>(
+                    V1ReplicaSet.class, // the api type class
+                    V1ReplicaSetList.class, // the api list type class
+                    "", // the api group
+                    "v1", // the api version
+                    "replicasets", // the resource plural
+                    apiClient //the api client
+            );
 
     roleBindingClient =
-        new GenericKubernetesApi<>(
-            V1ClusterRoleBinding.class, // the api type class
-            V1ClusterRoleBindingList.class, // the api list type class
-            "rbac.authorization.k8s.io", // the api group
-            "v1", // the api version
-            "clusterrolebindings", // the resource plural
-            apiClient //the api client
-        );
+            new GenericKubernetesApi<>(
+                    V1ClusterRoleBinding.class, // the api type class
+                    V1ClusterRoleBindingList.class, // the api list type class
+                    "rbac.authorization.k8s.io", // the api group
+                    "v1", // the api version
+                    "clusterrolebindings", // the resource plural
+                    apiClient //the api client
+            );
 
     secretClient =
-        new GenericKubernetesApi<>(
-            V1Secret.class,  // the api type class
-            V1SecretList.class, // the api list type class
-            "", // the api group
-            "v1", // the api version
-            "secrets", // the resource plural
-            apiClient //the api client
-        );
+            new GenericKubernetesApi<>(
+                    V1Secret.class,  // the api type class
+                    V1SecretList.class, // the api list type class
+                    "", // the api group
+                    "v1", // the api version
+                    "secrets", // the resource plural
+                    apiClient //the api client
+            );
 
     serviceClient =
-        new GenericKubernetesApi<>(
-            V1Service.class,  // the api type class
-            V1ServiceList.class, // the api list type class
-            "", // the api group
-            "v1", // the api version
-            "services", // the resource plural
-            apiClient //the api client
-        );
+            new GenericKubernetesApi<>(
+                    V1Service.class,  // the api type class
+                    V1ServiceList.class, // the api list type class
+                    "", // the api group
+                    "v1", // the api version
+                    "services", // the resource plural
+                    apiClient //the api client
+            );
 
     serviceAccountClient =
-        new GenericKubernetesApi<>(
-            V1ServiceAccount.class,  // the api type class
-            V1ServiceAccountList.class, // the api list type class
-            "", // the api group
-            "v1", // the api version
-            "serviceaccounts", // the resource plural
-            apiClient //the api client
-        );
+            new GenericKubernetesApi<>(
+                    V1ServiceAccount.class,  // the api type class
+                    V1ServiceAccountList.class, // the api list type class
+                    "", // the api group
+                    "v1", // the api version
+                    "serviceaccounts", // the resource plural
+                    apiClient //the api client
+            );
     deleteOptions = new DeleteOptions();
     deleteOptions.setGracePeriodSeconds(0L);
     deleteOptions.setPropagationPolicy(FOREGROUND);
@@ -304,11 +306,11 @@ public class Kubernetes {
     try {
       AppsV1Api apiInstance = new AppsV1Api(apiClient);
       V1Deployment createdDeployment = apiInstance.createNamespacedDeployment(
-          namespace, // String | namespace in which to create job
-          deployment, // V1Deployment | body of the V1Deployment containing deployment data
-          PRETTY, // String | pretty print output.
-          null, // String | dry run or permanent change
-          null // String | field manager who is making the change
+              namespace, // String | namespace in which to create job
+              deployment, // V1Deployment | body of the V1Deployment containing deployment data
+              PRETTY, // String | pretty print output.
+              null, // String | dry run or permanent change
+              null // String | field manager who is making the change
       );
       if (createdDeployment != null) {
         status = true;
@@ -332,17 +334,18 @@ public class Kubernetes {
     try {
       AppsV1Api apiInstance = new AppsV1Api(apiClient);
       deployments = apiInstance.listNamespacedDeployment(
-          namespace, // String | namespace.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
+              namespace, // String | namespace.
+              PRETTY, // String | If 'true', then the output is pretty printed.
+              ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+              null, // String | The continue option should be set when retrieving more results from the server.
+              null, // String | A selector to restrict the list of returned objects by their fields.
+              null, // String | A selector to restrict the list of returned objects by their labels.
+              null, // Integer | limit is a maximum number of responses to return for a list call.
+              RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+              TIMEOUT_SECONDS, // Integer | Timeout for the list call.
+              Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
+
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -362,14 +365,14 @@ public class Kubernetes {
     try {
       AppsV1Api apiInstance = new AppsV1Api(apiClient);
       apiInstance.deleteNamespacedDeployment(
-          name, // String | deployment object name.
-          namespace, // String | namespace in which the deployment exists.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
+              name, // String | deployment object name.
+              namespace, // String | namespace in which the deployment exists.
+              PRETTY, // String | If 'true', then the output is pretty printed.
+              null, // String | When present, indicates that modifications should not be persisted.
+              GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+              null, // Boolean | Deprecated: use the PropagationPolicy.
+              FOREGROUND, // String | Whether and how garbage collection will be performed.
+              null // V1DeleteOptions.
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -405,16 +408,16 @@ public class Kubernetes {
     String log = null;
     try {
       log = coreV1Api.readNamespacedPodLog(
-          name, // name of the Pod
-          namespace, // name of the Namespace
-          container, // container for which to stream logs
-          null, //  Boolean Follow the log stream of the pod
-          null, // number of bytes to read from the server before terminating the log output
-          PRETTY, // pretty print output
-          null, // Boolean, Return previous terminated container logs
-          null, // relative time (seconds) before the current time from which to show logs
-          null, // number of lines from the end of the logs to show
-          null // Boolean, add timestamp at the beginning of every line of log output
+              name, // name of the Pod
+              namespace, // name of the Namespace
+              container, // container for which to stream logs
+              null, //  Boolean Follow the log stream of the pod
+              null, // number of bytes to read from the server before terminating the log output
+              PRETTY, // pretty print output
+              null, // Boolean, Return previous terminated container logs
+              null, // relative time (seconds) before the current time from which to show logs
+              null, // number of lines from the end of the logs to show
+              null // Boolean, add timestamp at the beginning of every line of log output
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -455,14 +458,14 @@ public class Kubernetes {
 
     if (!response.isSuccess()) {
       getLogger().warning("Failed to delete pod '" + name + "' from namespace: "
-          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+              + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       getLogger().info(
-          "Received after-deletion status of the requested object, will be deleting "
-              + "pod in background!");
+              "Received after-deletion status of the requested object, will be deleting "
+                      + "pod in background!");
     }
 
     return true;
@@ -480,7 +483,7 @@ public class Kubernetes {
   public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
     V1PodList pods = listPods(namespace, labelSelector);
     for (var pod : pods.getItems()) {
-      if (podName.equals(pod.getMetadata().getName())) {
+      if (pod.getMetadata().getName().contains(podName)) {
         return pod;
       }
     }
@@ -511,7 +514,7 @@ public class Kubernetes {
    * @throws ApiException if Kubernetes client API call fail
    */
   public static DateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
-      throws ApiException {
+          throws ApiException {
 
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null && pod.getMetadata() != null) {
@@ -532,8 +535,8 @@ public class Kubernetes {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static int getContainerRestartCount(
-      String namespace, String labelSelector, String podName, String containerName)
-      throws ApiException {
+          String namespace, String labelSelector, String podName, String containerName)
+          throws ApiException {
 
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null && pod.getStatus() != null) {
@@ -548,15 +551,45 @@ public class Kubernetes {
           }
         }
         getLogger().severe("Container {0} status doesn't exist or pod's container statuses is empty in namespace {1}",
-            containerName, namespace);
+                containerName, namespace);
       }
     } else {
       getLogger().severe("Pod {0} doesn't exist or pod status is null in namespace {1}",
-          podName, namespace);
+              podName, namespace);
     }
     return 0;
   }
 
+  /**
+   * Get the container's image in the pod.
+   * @param namespace name of the pod's namespace
+   * @param labelSelector in the format "weblogic.operatorName in (%s)"
+   * @param podName name of the pod
+   * @param containerName name of the container, null if there is only one container
+   * @return image used for the container
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getContainerImage(String namespace, String podName,
+                                         String labelSelector, String containerName) throws ApiException {
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null) {
+      List<V1Container> containerList = pod.getSpec().getContainers();
+      if (containerName == null && containerList.size() >= 1) {
+        return containerList.get(0).getImage();
+      } else {
+        for (V1Container container : containerList) {
+          if (containerName.equals(container.getName())) {
+            return container.getImage();
+          }
+        }
+        getLogger().info("Container {0} doesn't exist in pod {1} namespace {2}",
+                containerName, podName, namespace);
+      }
+    } else {
+      getLogger().severe("Pod " + podName + " doesn't exist in namespace " + namespace);
+    }
+    return null;
+  }
 
   /**
    * Get the weblogic.domainRestartVersion label from a given pod.
@@ -568,7 +601,7 @@ public class Kubernetes {
    * @throws ApiException when there is error in querying the cluster
    */
   public static String getPodRestartVersion(String namespace, String labelSelector, String podName)
-      throws ApiException {
+          throws ApiException {
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null) {
       // return the value of the weblogic.domainRestartVersion label
@@ -591,7 +624,7 @@ public class Kubernetes {
     V1PodList v1PodList = null;
     try {
       v1PodList
-          = coreV1Api.listNamespacedPod(
+              = coreV1Api.listNamespacedPod(
               namespace, // namespace in which to look for the pods.
               Boolean.FALSE.toString(), // pretty print output.
               Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -602,7 +635,7 @@ public class Kubernetes {
               null, // shows changes that occur after that particular version of a resource.
               null, // Timeout for the list/watch call.
               Boolean.FALSE // Watch for changes to the described resources.
-          );
+      );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -619,7 +652,7 @@ public class Kubernetes {
    * @throws ApiException when pod interaction fails
    */
   public static void copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
-      throws IOException, ApiException {
+          throws IOException, ApiException {
     Copy copy = new Copy();
     copy.copyDirectoryFromPod(pod, srcPath, destination);
   }
@@ -635,8 +668,8 @@ public class Kubernetes {
    * @throws ApiException when pod interaction fails
    */
   public static void copyFileToPod(
-      String namespace, String pod, String container, Path srcPath, Path destPath)
-      throws IOException, ApiException {
+          String namespace, String pod, String container, Path srcPath, Path destPath)
+          throws IOException, ApiException {
     Copy copy = new Copy(apiClient);
     copy.copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
@@ -655,10 +688,10 @@ public class Kubernetes {
 
     try {
       coreV1Api.createNamespace(
-          namespace, // name of the Namespace
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null // name associated with the actor or entity that is making these changes
+              namespace, // name of the Namespace
+              PRETTY, // pretty print output
+              null, // indicates that modifications should not be persisted
+              null // name associated with the actor or entity that is making these changes
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -678,16 +711,16 @@ public class Kubernetes {
   public static boolean createNamespace(V1Namespace namespace) throws ApiException {
     if (namespace == null) {
       throw new IllegalArgumentException(
-          "Parameter 'namespace' cannot be null when calling createNamespace()");
+              "Parameter 'namespace' cannot be null when calling createNamespace()");
     }
 
     V1Namespace ns = null;
     try {
       ns = coreV1Api.createNamespace(
-          namespace, // V1Namespace configuration data object
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null // name associated with the actor or entity that is making these changes
+              namespace, // V1Namespace configuration data object
+              PRETTY, // pretty print output
+              null, // indicates that modifications should not be persisted
+              null // name associated with the actor or entity that is making these changes
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -707,11 +740,11 @@ public class Kubernetes {
 
     try {
       coreV1Api.replaceNamespace(
-          ns.getMetadata().getName(), // name of the namespace
-          ns, // V1Namespace object body
-          PRETTY, // pretty print the output
-          null, // dry run or changes need to be permanent
-          null // field manager
+              ns.getMetadata().getName(), // name of the namespace
+              ns, // V1Namespace object body
+              PRETTY, // pretty print the output
+              null, // dry run or changes need to be permanent
+              null // field manager
       );
     } catch (ApiException ex) {
       getLogger().severe(ex.getResponseBody());
@@ -729,15 +762,15 @@ public class Kubernetes {
     V1NamespaceList namespaceList;
     try {
       namespaceList = coreV1Api.listNamespace(
-          PRETTY, // pretty print output
-          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
-          null, // set when retrieving more results from the server
-          null, // selector to restrict the list of returned objects by their fields
-          null, // selector to restrict the list of returned objects by their labels
-          null, // maximum number of responses to return for a list call
-          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
-          TIMEOUT_SECONDS, // Timeout for the list/watch call
-          false // Watch for changes to the described resources
+              PRETTY, // pretty print output
+              ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+              null, // set when retrieving more results from the server
+              null, // selector to restrict the list of returned objects by their fields
+              null, // selector to restrict the list of returned objects by their labels
+              null, // maximum number of responses to return for a list call
+              RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+              TIMEOUT_SECONDS, // Timeout for the list/watch call
+              false // Watch for changes to the described resources
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -760,15 +793,15 @@ public class Kubernetes {
     V1NamespaceList namespaceList;
     try {
       namespaceList = coreV1Api.listNamespace(
-          PRETTY, // pretty print output
-          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
-          null, // set when retrieving more results from the server
-          null, // selector to restrict the list of returned objects by their fields
-          null, // selector to restrict the list of returned objects by their labels
-          null, // maximum number of responses to return for a list call
-          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
-          TIMEOUT_SECONDS, // Timeout for the list/watch call
-          false // Watch for changes to the described resources
+              PRETTY, // pretty print output
+              ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+              null, // set when retrieving more results from the server
+              null, // selector to restrict the list of returned objects by their fields
+              null, // selector to restrict the list of returned objects by their labels
+              null, // maximum number of responses to return for a list call
+              RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+              TIMEOUT_SECONDS, // Timeout for the list/watch call
+              false // Watch for changes to the described resources
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -797,21 +830,21 @@ public class Kubernetes {
         return false;
       } else {
         getLogger().warning("Failed to delete namespace: "
-            + name + " with HTTP status code: " + response.getHttpStatusCode());
+                + name + " with HTTP status code: " + response.getHttpStatusCode());
         return false;
       }
     }
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> getLogger().info("Waiting for namespace {0} to be deleted "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                name,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
+          condition -> getLogger().info("Waiting for namespace {0} to be deleted "
+            + "(elapsed time {1}ms, remaining time {2}ms)",
+          name,
+          condition.getElapsedTimeInMS(),
+          condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> namespaceDeleted(name),
-            String.format("namespaceExists failed with ApiException for namespace %s",
-                name)));
+          String.format("namespaceExists failed with ApiException for namespace %s",
+          name)));
 
     return true;
   }
@@ -842,16 +875,16 @@ public class Kubernetes {
     List<V1Event> events = null;
     try {
       V1EventList list = coreV1Api.listNamespacedEvent(
-          namespace, // String | namespace.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
+              namespace, // String | namespace.
+              PRETTY, // String | If 'true', then the output is pretty printed.
+              ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+              null, // String | The continue option should be set when retrieving more results from the server.
+              null, // String | A selector to restrict the list of returned objects by their fields.
+              null, // String | A selector to restrict the list of returned objects by their labels.
+              null, // Integer | limit is a maximum number of responses to return for a list call.
+              RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+              TIMEOUT_SECONDS, // Integer | Timeout for the list call.
+              Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
       events = list.getItems();
       events.sort(Comparator.comparing(e -> e.getMetadata().getCreationTimestamp()));
@@ -874,17 +907,17 @@ public class Kubernetes {
   public static boolean createDomainCustomResource(Domain domain) throws ApiException {
     if (domain == null) {
       throw new IllegalArgumentException(
-          "Parameter 'domain' cannot be null when calling createDomainCustomResource()");
+              "Parameter 'domain' cannot be null when calling createDomainCustomResource()");
     }
 
     if (domain.metadata() == null) {
       throw new IllegalArgumentException(
-          "'metadata' field of the parameter 'domain' cannot be null when calling createDomainCustomResource()");
+              "'metadata' field of the parameter 'domain' cannot be null when calling createDomainCustomResource()");
     }
 
     if (domain.metadata().getNamespace() == null) {
       throw new IllegalArgumentException(
-          "'namespace' field in the metadata cannot be null when calling createDomainCustomResource()");
+              "'namespace' field in the metadata cannot be null when calling createDomainCustomResource()");
     }
 
     String namespace = domain.metadata().getNamespace();
@@ -894,14 +927,14 @@ public class Kubernetes {
     Object response;
     try {
       response = customObjectsApi.createNamespacedCustomObject(
-          DOMAIN_GROUP, // custom resource's group name
-          DOMAIN_VERSION, // //custom resource's version
-          namespace, // custom resource's namespace
-          DOMAIN_PLURAL, // custom resource's plural name
-          json, // JSON schema of the Resource to create
-          null, // pretty print output
-          null, // dry run
-          null // field manager
+              DOMAIN_GROUP, // custom resource's group name
+              DOMAIN_VERSION, // //custom resource's version
+              namespace, // custom resource's namespace
+              DOMAIN_PLURAL, // custom resource's plural name
+              json, // JSON schema of the Resource to create
+              null, // pretty print output
+              null, // dry run
+              null // field manager
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -935,15 +968,15 @@ public class Kubernetes {
 
     if (!response.isSuccess()) {
       getLogger().warning(
-          "Failed to delete Domain Custom Resource '" + domainUid + "' from namespace: "
-          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+              "Failed to delete Domain Custom Resource '" + domainUid + "' from namespace: "
+                      + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       getLogger().info(
-          "Received after-deletion status of the requested object, will be deleting "
-          + "domain custom resource in background!");
+              "Received after-deletion status of the requested object, will be deleting "
+                      + "domain custom resource in background!");
     }
 
     return true;
@@ -958,15 +991,15 @@ public class Kubernetes {
    * @throws ApiException if Kubernetes request fails
    */
   public static Domain getDomainCustomResource(String domainUid, String namespace)
-      throws ApiException {
+          throws ApiException {
     Object domain;
     try {
       domain = customObjectsApi.getNamespacedCustomObject(
-          DOMAIN_GROUP, // custom resource's group name
-          DOMAIN_VERSION, // //custom resource's version
-          namespace, // custom resource's namespace
-          DOMAIN_PLURAL, // custom resource's plural name
-          domainUid // custom object's name
+              DOMAIN_GROUP, // custom resource's group name
+              DOMAIN_VERSION, // //custom resource's version
+              namespace, // custom resource's namespace
+              DOMAIN_PLURAL, // custom resource's plural name
+              domainUid // custom object's name
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -996,12 +1029,12 @@ public class Kubernetes {
    * @return true if patch is successful otherwise false
    */
   public static boolean patchCustomResourceDomainJsonPatch(String domainUid, String namespace,
-      String patchString) {
+                                                           String patchString) {
     return patchDomainCustomResource(
-        domainUid, // name of custom resource domain
-        namespace, // name of namespace
-        new V1Patch(patchString), // patch data
-        V1Patch.PATCH_FORMAT_JSON_PATCH // "application/json-patch+json" patch format
+            domainUid, // name of custom resource domain
+            namespace, // name of namespace
+            new V1Patch(patchString), // patch data
+            V1Patch.PATCH_FORMAT_JSON_PATCH // "application/json-patch+json" patch format
     );
   }
 
@@ -1020,12 +1053,12 @@ public class Kubernetes {
    * @return true if patch is successful otherwise false
    */
   public static boolean patchCustomResourceDomainJsonMergePatch(String domainUid, String namespace,
-      String patchString) {
+                                                                String patchString) {
     return patchDomainCustomResource(
-        domainUid, // name of custom resource domain
-        namespace, // name of namespace
-        new V1Patch(patchString), // patch data
-        V1Patch.PATCH_FORMAT_JSON_MERGE_PATCH // "application/merge-patch+json" patch format
+            domainUid, // name of custom resource domain
+            namespace, // name of namespace
+            new V1Patch(patchString), // patch data
+            V1Patch.PATCH_FORMAT_JSON_MERGE_PATCH // "application/merge-patch+json" patch format
     );
   }
 
@@ -1040,23 +1073,60 @@ public class Kubernetes {
    * @return true if successful, false otherwise
    */
   public static boolean patchDomainCustomResource(String domainUid, String namespace,
-      V1Patch patch, String patchFormat) {
+                                                  V1Patch patch, String patchFormat) {
 
     // GenericKubernetesApi uses CustomObjectsApi calls
     KubernetesApiResponse<Domain> response = crdClient.patch(
-        namespace, // name of namespace
-        domainUid, // name of custom resource domain
-        patchFormat, // "application/json-patch+json" or "application/merge-patch+json"
-        patch // patch data
+            namespace, // name of namespace
+            domainUid, // name of custom resource domain
+            patchFormat, // "application/json-patch+json" or "application/merge-patch+json"
+            patch // patch data
     );
 
     if (!response.isSuccess()) {
       getLogger().warning(
-          "Failed to patch " + domainUid + " in namespace " + namespace + " using patch format: "
-              + patchFormat);
+              "Failed to patch " + domainUid + " in namespace " + namespace + " using patch format: "
+                      + patchFormat);
       return false;
     }
 
+    return true;
+  }
+
+  /**
+   * Patch the Deployment.
+   *
+   * @param deploymentName name of the deployment
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *     "application/json-patch+json", "application/merge-patch+json",
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchDeployment(String deploymentName, String namespace,
+                                        V1Patch patch, String patchFormat) {
+
+    AppsV1Api apiInstance = new AppsV1Api(apiClient);
+    try {
+      PatchUtils.patch(
+          V1Deployment.class,
+          () ->
+            apiInstance.patchNamespacedDeploymentCall(
+              deploymentName,
+              namespace,
+              patch,
+              null,
+              null,
+              null, // field-manager is optional
+              null,
+              null),
+              patchFormat,
+              apiClient);
+    } catch (ApiException apiex) {
+      getLogger().warning("Exception while patching the deployment {0} in namespace {1} : {2} ",
+              deploymentName, namespace, apiex);
+      return false;
+    }
     return true;
   }
 
@@ -1101,17 +1171,17 @@ public class Kubernetes {
   public static boolean createConfigMap(V1ConfigMap configMap) throws ApiException {
     if (configMap == null) {
       throw new IllegalArgumentException(
-          "Parameter 'configMap' cannot be null when calling createConfigMap()");
+              "Parameter 'configMap' cannot be null when calling createConfigMap()");
     }
 
     if (configMap.getMetadata() == null) {
       throw new IllegalArgumentException(
-          "'metadata' field of the parameter 'configMap' cannot be null when calling createConfigMap()");
+              "'metadata' field of the parameter 'configMap' cannot be null when calling createConfigMap()");
     }
 
     if (configMap.getMetadata().getNamespace() == null) {
       throw new IllegalArgumentException(
-          "'namespace' field in the metadata cannot be null when calling createConfigMap()");
+              "'namespace' field in the metadata cannot be null when calling createConfigMap()");
     }
 
     String namespace = configMap.getMetadata().getNamespace();
@@ -1119,11 +1189,11 @@ public class Kubernetes {
     V1ConfigMap cm;
     try {
       cm = coreV1Api.createNamespacedConfigMap(
-          namespace, // config map's namespace
-          configMap, // config map configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null // name associated with the actor or entity that is making these changes
+              namespace, // config map's namespace
+              configMap, // config map configuration data
+              PRETTY, // pretty print output
+              null, // indicates that modifications should not be persisted
+              null // name associated with the actor or entity that is making these changes
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1191,16 +1261,16 @@ public class Kubernetes {
     V1ConfigMapList configMapList;
     try {
       configMapList = coreV1Api.listNamespacedConfigMap(
-          namespace, // config map's namespace
-          PRETTY, // pretty print output
-          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
-          null, // set when retrieving more results from the server
-          null, // selector to restrict the list of returned objects by their fields
-          null, // selector to restrict the list of returned objects by their labels
-          null, // maximum number of responses to return for a list call
-          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
-          TIMEOUT_SECONDS, // Timeout for the list/watch call
-          false // Watch for changes to the described resources
+              namespace, // config map's namespace
+              PRETTY, // pretty print output
+              ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+              null, // set when retrieving more results from the server
+              null, // selector to restrict the list of returned objects by their fields
+              null, // selector to restrict the list of returned objects by their labels
+              null, // maximum number of responses to return for a list call
+              RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+              TIMEOUT_SECONDS, // Timeout for the list/watch call
+              false // Watch for changes to the described resources
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1222,14 +1292,14 @@ public class Kubernetes {
     KubernetesApiResponse<V1ConfigMap> response = configMapClient.delete(namespace, name, deleteOptions);
     if (!response.isSuccess()) {
       getLogger().warning("Failed to delete config map '" + name + "' from namespace: "
-          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+              + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       getLogger().info(
-          "Received after-deletion status of the requested object, will be deleting "
-          + "config map in background!");
+              "Received after-deletion status of the requested object, will be deleting "
+                      + "config map in background!");
     }
 
     return true;
@@ -1246,17 +1316,17 @@ public class Kubernetes {
   public static boolean createSecret(V1Secret secret) throws ApiException {
     if (secret == null) {
       throw new IllegalArgumentException(
-          "Parameter 'secret' cannot be null when calling createSecret()");
+              "Parameter 'secret' cannot be null when calling createSecret()");
     }
 
     if (secret.getMetadata() == null) {
       throw new IllegalArgumentException(
-          "'metadata' field of the parameter 'secret' cannot be null when calling createSecret()");
+              "'metadata' field of the parameter 'secret' cannot be null when calling createSecret()");
     }
 
     if (secret.getMetadata().getNamespace() == null) {
       throw new IllegalArgumentException(
-          "'namespace' field in the metadata cannot be null when calling createSecret()");
+              "'namespace' field in the metadata cannot be null when calling createSecret()");
     }
 
     String namespace = secret.getMetadata().getNamespace();
@@ -1264,11 +1334,11 @@ public class Kubernetes {
     V1Secret v1Secret;
     try {
       v1Secret = coreV1Api.createNamespacedSecret(
-          namespace, // name of the Namespace
-          secret, // secret configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+              namespace, // name of the Namespace
+              secret, // secret configuration data
+              PRETTY, // pretty print output
+              null, // indicates that modifications should not be persisted
+              null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1291,14 +1361,14 @@ public class Kubernetes {
 
     if (!response.isSuccess()) {
       getLogger().warning("Failed to delete secret '" + name + "' from namespace: "
-          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+              + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       getLogger().info(
-          "Received after-deletion status of the requested object, will be deleting "
-          + "secret in background!");
+              "Received after-deletion status of the requested object, will be deleting "
+                      + "secret in background!");
     }
 
     return true;
@@ -1330,16 +1400,16 @@ public class Kubernetes {
   public static boolean createPv(V1PersistentVolume persistentVolume) throws ApiException {
     if (persistentVolume == null) {
       throw new IllegalArgumentException(
-          "Parameter 'persistentVolume' cannot be null when calling createPv()");
+              "Parameter 'persistentVolume' cannot be null when calling createPv()");
     }
 
     V1PersistentVolume pv;
     try {
       pv = coreV1Api.createPersistentVolume(
-          persistentVolume, // persistent volume configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+              persistentVolume, // persistent volume configuration data
+              PRETTY, // pretty print output
+              null, // indicates that modifications should not be persisted
+              null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1353,24 +1423,24 @@ public class Kubernetes {
    * Create a Kubernetes Persistent Volume Claim.
    *
    * @param persistentVolumeClaim V1PersistentVolumeClaim object containing Kubernetes persistent volume claim
-    configuration data
+  configuration data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createPvc(V1PersistentVolumeClaim persistentVolumeClaim) throws ApiException {
     if (persistentVolumeClaim == null) {
       throw new IllegalArgumentException(
-          "Parameter 'persistentVolume' cannot be null when calling createPvc()");
+              "Parameter 'persistentVolume' cannot be null when calling createPvc()");
     }
 
     if (persistentVolumeClaim.getMetadata() == null) {
       throw new IllegalArgumentException(
-          "'metadata' field of the parameter 'persistentVolumeClaim' cannot be null when calling createPvc()");
+              "'metadata' field of the parameter 'persistentVolumeClaim' cannot be null when calling createPvc()");
     }
 
     if (persistentVolumeClaim.getMetadata().getNamespace() == null) {
       throw new IllegalArgumentException(
-          "'namespace' field in the metadata cannot be null when calling createPvc()");
+              "'namespace' field in the metadata cannot be null when calling createPvc()");
     }
 
     String namespace = persistentVolumeClaim.getMetadata().getNamespace();
@@ -1378,11 +1448,11 @@ public class Kubernetes {
     V1PersistentVolumeClaim pvc;
     try {
       pvc = coreV1Api.createNamespacedPersistentVolumeClaim(
-          namespace, // name of the Namespace
-          persistentVolumeClaim, // persistent volume claim configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+              namespace, // name of the Namespace
+              persistentVolumeClaim, // persistent volume claim configuration data
+              PRETTY, // pretty print output
+              null, // indicates that modifications should not be persisted
+              null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1404,14 +1474,14 @@ public class Kubernetes {
 
     if (!response.isSuccess()) {
       getLogger().warning("Failed to delete persistent volume '" + name + "' "
-          + "with HTTP status code: " + response.getHttpStatusCode());
+              + "with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       getLogger().info(
-          "Received after-deletion status of the requested object, will be deleting "
-          + "persistent volume in background!");
+              "Received after-deletion status of the requested object, will be deleting "
+                      + "persistent volume in background!");
     }
 
     return true;
@@ -1430,15 +1500,15 @@ public class Kubernetes {
 
     if (!response.isSuccess()) {
       getLogger().warning(
-          "Failed to delete persistent volume claim '" + name + "' from namespace: "
-          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+              "Failed to delete persistent volume claim '" + name + "' from namespace: "
+                      + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       getLogger().info(
-          "Received after-deletion status of the requested object, will be deleting "
-          + "persistent volume claim in background!");
+              "Received after-deletion status of the requested object, will be deleting "
+                      + "persistent volume claim in background!");
     }
 
     return true;
@@ -1454,7 +1524,7 @@ public class Kubernetes {
       return list.getObject();
     } else {
       getLogger().warning("Failed to list Persistent Volumes,"
-          + " status code {0}", list.getHttpStatusCode());
+              + " status code {0}", list.getHttpStatusCode());
       return null;
     }
   }
@@ -1469,15 +1539,15 @@ public class Kubernetes {
     V1PersistentVolumeList listPersistentVolume;
     try {
       listPersistentVolume = coreV1Api.listPersistentVolume(
-          PRETTY, // pretty print output
-          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
-          null, // set when retrieving more results from the server
-          null, // selector to restrict the list of returned objects by their fields
-          labels, // selector to restrict the list of returned objects by their labels
-          null, // maximum number of responses to return for a list call
-          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
-          TIMEOUT_SECONDS, // Timeout for the list/watch call
-          false // Watch for changes to the described resources
+              PRETTY, // pretty print output
+              ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+              null, // set when retrieving more results from the server
+              null, // selector to restrict the list of returned objects by their fields
+              labels, // selector to restrict the list of returned objects by their labels
+              null, // maximum number of responses to return for a list call
+              RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+              TIMEOUT_SECONDS, // Timeout for the list/watch call
+              false // Watch for changes to the described resources
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1497,7 +1567,7 @@ public class Kubernetes {
       return list.getObject();
     } else {
       getLogger().warning("Failed to list Persistent Volumes claims,"
-          + " status code {0}", list.getHttpStatusCode());
+              + " status code {0}", list.getHttpStatusCode());
       return null;
     }
   }
@@ -1511,31 +1581,31 @@ public class Kubernetes {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static V1ServiceAccount createServiceAccount(V1ServiceAccount serviceAccount)
-      throws ApiException {
+          throws ApiException {
     if (serviceAccount == null) {
       throw new IllegalArgumentException(
-          "Parameter 'serviceAccount' cannot be null when calling createServiceAccount()");
+              "Parameter 'serviceAccount' cannot be null when calling createServiceAccount()");
     }
 
     if (serviceAccount.getMetadata() == null) {
       throw new IllegalArgumentException(
-          "'metadata' field of the parameter 'serviceAccount' cannot be null when calling createServiceAccount()");
+              "'metadata' field of the parameter 'serviceAccount' cannot be null when calling createServiceAccount()");
     }
 
     if (serviceAccount.getMetadata().getNamespace() == null) {
       throw new IllegalArgumentException(
-          "'namespace' field in the metadata cannot be null when calling createServiceAccount()");
+              "'namespace' field in the metadata cannot be null when calling createServiceAccount()");
     }
 
     String namespace = serviceAccount.getMetadata().getNamespace();
 
     try {
       serviceAccount = coreV1Api.createNamespacedServiceAccount(
-          namespace, // name of the Namespace
-          serviceAccount, // service account configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+              namespace, // name of the Namespace
+              serviceAccount, // service account configuration data
+              PRETTY, // pretty print output
+              null, // indicates that modifications should not be persisted
+              null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1558,17 +1628,17 @@ public class Kubernetes {
 
     if (!response.isSuccess()) {
       getLogger().warning("Failed to delete Service Account '" + name + "' from namespace: "
-          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+              + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       getLogger().info(
-          "Received after-deletion status of the requested object, will be deleting "
-          + "service account in background!");
+              "Received after-deletion status of the requested object, will be deleting "
+                      + "service account in background!");
       V1ServiceAccount serviceAccount = (V1ServiceAccount) response.getObject();
       getLogger().info(
-          "Deleting Service Account " + serviceAccount.getMetadata().getName() + " in background.");
+              "Deleting Service Account " + serviceAccount.getMetadata().getName() + " in background.");
     }
 
     return true;
@@ -1601,17 +1671,17 @@ public class Kubernetes {
   public static boolean createService(V1Service service) throws ApiException {
     if (service == null) {
       throw new IllegalArgumentException(
-          "Parameter 'service' cannot be null when calling createService()");
+              "Parameter 'service' cannot be null when calling createService()");
     }
 
     if (service.getMetadata() == null) {
       throw new IllegalArgumentException(
-          "'metadata' field of the parameter 'service' cannot be null when calling createService()");
+              "'metadata' field of the parameter 'service' cannot be null when calling createService()");
     }
 
     if (service.getMetadata().getNamespace() == null) {
       throw new IllegalArgumentException(
-          "'namespace' field in the metadata cannot be null when calling createService()");
+              "'namespace' field in the metadata cannot be null when calling createService()");
     }
 
     String namespace = service.getMetadata().getNamespace();
@@ -1619,11 +1689,11 @@ public class Kubernetes {
     V1Service svc;
     try {
       svc = coreV1Api.createNamespacedService(
-          namespace, // name of the Namespace
-          service, // service configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+              namespace, // name of the Namespace
+              service, // service configuration data
+              PRETTY, // pretty print output
+              null, // indicates that modifications should not be persisted
+              null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1646,14 +1716,14 @@ public class Kubernetes {
 
     if (!response.isSuccess()) {
       getLogger().warning("Failed to delete Service '" + name + "' from namespace: "
-          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+              + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       getLogger().info(
-          "Received after-deletion status of the requested object, will be deleting "
-          + "service in background!");
+              "Received after-deletion status of the requested object, will be deleting "
+                      + "service in background!");
     }
 
     return true;
@@ -1691,9 +1761,26 @@ public class Kubernetes {
     if (service != null) {
       V1ServicePort port = service.getSpec().getPorts().stream().filter(
           v1ServicePort -> v1ServicePort.getName().equalsIgnoreCase(channelName))
-          .findAny().orElse(null);
+            .findAny().orElse(null);
       if (port != null) {
         return port.getNodePort();
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * Get port of a namespaced service.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @return node port if service found otherwise -1
+   */
+  public static Integer getServiceNodePort(String namespace, String serviceName) {
+    List<V1Service> services = listServices(namespace).getItems();
+    for (V1Service service : services) {
+      if (service.getMetadata().getName().startsWith(serviceName)) {
+        return service.getSpec().getPorts().get(0).getNodePort();
       }
     }
     return -1;
@@ -1712,7 +1799,7 @@ public class Kubernetes {
     if (service != null) {
       V1ServicePort port = service.getSpec().getPorts().stream().filter(
           v1ServicePort -> v1ServicePort.getName().equalsIgnoreCase(channelName))
-          .findAny().orElse(null);
+            .findAny().orElse(null);
       if (port != null) {
         return port.getPort();
       }
@@ -1733,7 +1820,7 @@ public class Kubernetes {
       return list.getObject();
     } else {
       getLogger().warning("Failed to list services in namespace {0}, status code {1}",
-          namespace, list.getHttpStatusCode());
+              namespace, list.getHttpStatusCode());
       return null;
     }
   }
@@ -1751,11 +1838,11 @@ public class Kubernetes {
     try {
       BatchV1Api apiInstance = new BatchV1Api(apiClient);
       V1Job createdJob = apiInstance.createNamespacedJob(
-          namespace, // String | namespace in which to create job
-          jobBody, // V1Job | body of the V1Job containing job data
-          PRETTY, // String | pretty print output.
-          null, // String | dry run or permanent change
-          null // String | field manager who is making the change
+              namespace, // String | namespace in which to create job
+              jobBody, // V1Job | body of the V1Job containing job data
+              PRETTY, // String | pretty print output.
+              null, // String | dry run or permanent change
+              null // String | field manager who is making the change
       );
       if (createdJob != null) {
         name = createdJob.getMetadata().getName();
@@ -1775,23 +1862,22 @@ public class Kubernetes {
    * @return true if delete was successful
    * @throws ApiException when deletion of job fails
    */
-  public static boolean deleteJob(String namespace, String name) throws ApiException {
-    try {
-      BatchV1Api apiInstance = new BatchV1Api(apiClient);
-      apiInstance.deleteNamespacedJob(
-          name, // String | name of the job.
-          namespace, // String | name of the namespace.
-          PRETTY, // String | pretty print output.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
-      );
-    } catch (ApiException apex) {
-      getLogger().warning(apex.getResponseBody());
-      throw apex;
+  public static boolean deleteJob(String namespace, String name) {
+
+    KubernetesApiResponse<V1Job> response = jobClient.delete(namespace, name);
+
+    if (!response.isSuccess()) {
+      getLogger().warning("Failed to delete job '" + name + "' from namespace: "
+              + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+      return false;
     }
+
+    if (response.getObject() != null) {
+      getLogger().info(
+              "Received after-deletion status of the requested object, will be deleting "
+                      + "job in background!");
+    }
+
     return true;
   }
 
@@ -1807,16 +1893,16 @@ public class Kubernetes {
     try {
       BatchV1Api apiInstance = new BatchV1Api(apiClient);
       list = apiInstance.listNamespacedJob(
-          namespace, // String | name of the namespace.
-          PRETTY, // String | pretty print output.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources
+              namespace, // String | name of the namespace.
+              PRETTY, // String | pretty print output.
+              ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+              null, // String | The continue option should be set when retrieving more results from the server.
+              null, // String | A selector to restrict the list of returned objects by their fields.
+              null, // String | A selector to restrict the list of returned objects by their labels.
+              null, // Integer | limit is a maximum number of responses to return for a list call.
+              RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+              TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
+              Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -1860,14 +1946,14 @@ public class Kubernetes {
     try {
       AppsV1Api apiInstance = new AppsV1Api(apiClient);
       apiInstance.deleteNamespacedReplicaSet(
-          name, // String | name of the replica set.
-          namespace, // String | name of the namespace.
-          PRETTY, // String | pretty print output.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
+              name, // String | name of the replica set.
+              namespace, // String | name of the namespace.
+              PRETTY, // String | pretty print output.
+              null, // String | When present, indicates that modifications should not be persisted.
+              GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+              null, // Boolean | Deprecated: use the PropagationPolicy.
+              FOREGROUND, // String | Whether and how garbage collection will be performed.
+              null // V1DeleteOptions.
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -1887,16 +1973,16 @@ public class Kubernetes {
     try {
       AppsV1Api apiInstance = new AppsV1Api(apiClient);
       V1ReplicaSetList list = apiInstance.listNamespacedReplicaSet(
-          namespace, // String | namespace.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
+              namespace, // String | namespace.
+              PRETTY, // String | If 'true', then the output is pretty printed.
+              ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+              null, // String | The continue option should be set when retrieving more results from the server.
+              null, // String | A selector to restrict the list of returned objects by their fields.
+              null, // String | A selector to restrict the list of returned objects by their labels.
+              null, // Integer | limit is a maximum number of responses to return for a list call.
+              RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+              TIMEOUT_SECONDS, // Integer | Timeout for the list call.
+              Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
       return list;
     } catch (ApiException apex) {
@@ -1916,10 +2002,10 @@ public class Kubernetes {
   public static boolean createClusterRole(V1ClusterRole clusterRole) throws ApiException {
     try {
       V1ClusterRole cr = rbacAuthApi.createClusterRole(
-          clusterRole, // cluster role configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+              clusterRole, // cluster role configuration data
+              PRETTY, // pretty print output
+              null, // indicates that modifications should not be persisted
+              null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1937,13 +2023,13 @@ public class Kubernetes {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createClusterRoleBinding(V1ClusterRoleBinding clusterRoleBinding)
-      throws ApiException {
+          throws ApiException {
     try {
       V1ClusterRoleBinding crb = rbacAuthApi.createClusterRoleBinding(
-          clusterRoleBinding, // role binding configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+              clusterRoleBinding, // role binding configuration data
+              PRETTY, // pretty print output
+              null, // indicates that modifications should not be persisted
+              null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1964,11 +2050,11 @@ public class Kubernetes {
   public static boolean createNamespacedRoleBinding(String namespace, V1RoleBinding roleBinding) throws ApiException {
     try {
       V1RoleBinding crb = rbacAuthApi.createNamespacedRoleBinding(
-          namespace, // namespace where this role binding is created
-          roleBinding, // role binding configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+              namespace, // namespace where this role binding is created
+              roleBinding, // role binding configuration data
+              PRETTY, // pretty print output
+              null, // indicates that modifications should not be persisted
+              null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1989,15 +2075,15 @@ public class Kubernetes {
 
     if (!response.isSuccess()) {
       getLogger().warning(
-          "Failed to delete Cluster Role Binding '" + name + " with HTTP status code: " + response
-              .getHttpStatusCode());
+              "Failed to delete Cluster Role Binding '" + name + " with HTTP status code: " + response
+                      .getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       getLogger().info(
-          "Received after-deletion status of the requested object, will be deleting "
-              + "Cluster Role Binding " + name + " in background!");
+              "Received after-deletion status of the requested object, will be deleting "
+                      + "Cluster Role Binding " + name + " in background!");
     }
 
     return true;
@@ -2014,15 +2100,15 @@ public class Kubernetes {
     V1RoleBindingList roleBindings;
     try {
       roleBindings = rbacAuthApi.listRoleBindingForAllNamespaces(
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          labelSelector, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          PRETTY, // String | If true, then the output is pretty printed.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources
+              ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+              null, // String | The continue option should be set when retrieving more results from the server.
+              null, // String | A selector to restrict the list of returned objects by their fields.
+              labelSelector, // String | A selector to restrict the list of returned objects by their labels.
+              null, // Integer | limit is a maximum number of responses to return for a list call.
+              PRETTY, // String | If true, then the output is pretty printed.
+              RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+              TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
+              Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -2042,15 +2128,15 @@ public class Kubernetes {
     V1ClusterRoleBindingList clusterRoleBindingList;
     try {
       clusterRoleBindingList = rbacAuthApi.listClusterRoleBinding(
-          PRETTY, // String | If true, then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          labelSelector, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources
+              PRETTY, // String | If true, then the output is pretty printed.
+              ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+              null, // String | The continue option should be set when retrieving more results from the server.
+              null, // String | A selector to restrict the list of returned objects by their fields.
+              labelSelector, // String | A selector to restrict the list of returned objects by their labels.
+              null, // Integer | limit is a maximum number of responses to return for a list call.
+              RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+              TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
+              Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -2068,17 +2154,17 @@ public class Kubernetes {
    * @throws ApiException when delete rolebinding fails
    */
   public static boolean deleteNamespacedRoleBinding(String namespace, String name)
-      throws ApiException {
+          throws ApiException {
     try {
       rbacAuthApi.deleteNamespacedRoleBinding(
-          name, // String | name of the job.
-          namespace, // String | name of the namespace.
-          PRETTY, // String | pretty print output.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
+              name, // String | name of the job.
+              namespace, // String | name of the namespace.
+              PRETTY, // String | pretty print output.
+              null, // String | When present, indicates that modifications should not be persisted.
+              GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+              null, // Boolean | Deprecated: use the PropagationPolicy.
+              FOREGROUND, // String | Whether and how garbage collection will be performed.
+              null // V1DeleteOptions.
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -2095,20 +2181,20 @@ public class Kubernetes {
    * @throws ApiException when listing fails
    */
   public static V1RoleBindingList listNamespacedRoleBinding(String namespace)
-      throws ApiException {
+          throws ApiException {
     V1RoleBindingList roleBindings;
     try {
       roleBindings = rbacAuthApi.listNamespacedRoleBinding(
-          namespace, // String | namespace.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
+              namespace, // String | namespace.
+              PRETTY, // String | If 'true', then the output is pretty printed.
+              ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+              null, // String | The continue option should be set when retrieving more results from the server.
+              null, // String | A selector to restrict the list of returned objects by their fields.
+              null, // String | A selector to restrict the list of returned objects by their labels.
+              null, // Integer | limit is a maximum number of responses to return for a list call.
+              RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+              TIMEOUT_SECONDS, // Integer | Timeout for the list call.
+              Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -2128,13 +2214,13 @@ public class Kubernetes {
   public static boolean deleteClusterRole(String name) throws ApiException {
     try {
       rbacAuthApi.deleteClusterRole(
-          name, // String | name of the role.
-          PRETTY, // String | pretty print output.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
+              name, // String | name of the role.
+              PRETTY, // String | pretty print output.
+              null, // String | When present, indicates that modifications should not be persisted.
+              GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+              null, // Boolean | Deprecated: use the PropagationPolicy.
+              FOREGROUND, // String | Whether and how garbage collection will be performed.
+              null // V1DeleteOptions.
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -2155,15 +2241,15 @@ public class Kubernetes {
     V1ClusterRoleList roles;
     try {
       roles = rbacAuthApi.listClusterRole(
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          labelSelector, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
+              PRETTY, // String | If 'true', then the output is pretty printed.
+              ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+              null, // String | The continue option should be set when retrieving more results from the server.
+              null, // String | A selector to restrict the list of returned objects by their fields.
+              labelSelector, // String | A selector to restrict the list of returned objects by their labels.
+              null, // Integer | limit is a maximum number of responses to return for a list call.
+              RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+              TIMEOUT_SECONDS, // Integer | Timeout for the list call.
+              Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -2183,14 +2269,14 @@ public class Kubernetes {
   public static boolean deleteNamespacedRole(String namespace, String name) throws ApiException {
     try {
       rbacAuthApi.deleteNamespacedRole(
-          name, // String | name of the job.
-          namespace, // String | name of the namespace.
-          PRETTY, // String | pretty print output.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
+              name, // String | name of the job.
+              namespace, // String | name of the namespace.
+              PRETTY, // String | pretty print output.
+              null, // String | When present, indicates that modifications should not be persisted.
+              GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+              null, // Boolean | Deprecated: use the PropagationPolicy.
+              FOREGROUND, // String | Whether and how garbage collection will be performed.
+              null // V1DeleteOptions.
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -2210,16 +2296,16 @@ public class Kubernetes {
     V1RoleList roles;
     try {
       roles = rbacAuthApi.listNamespacedRole(
-          namespace, // String | namespace.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
-          Boolean.FALSE // Boolean | Watch for changes to the described resources.
+              namespace, // String | namespace.
+              PRETTY, // String | If 'true', then the output is pretty printed.
+              ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+              null, // String | The continue option should be set when retrieving more results from the server.
+              null, // String | A selector to restrict the list of returned objects by their fields.
+              null, // String | A selector to restrict the list of returned objects by their labels.
+              null, // Integer | limit is a maximum number of responses to return for a list call.
+              RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+              TIMEOUT_SECONDS, // Integer | Timeout for the list call.
+              Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -2240,22 +2326,51 @@ public class Kubernetes {
     try {
       NetworkingV1beta1Api apiInstance = new NetworkingV1beta1Api(apiClient);
       ingressList = apiInstance.listNamespacedIngress(
-          namespace, // namespace
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
-          null, // String | The continue option should be set when retrieving more results from the server.
-          null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
-          null, // Integer | limit is a maximum number of responses to return for a list call.
-          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
-          TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
-          ALLOW_WATCH_BOOKMARKS // Boolean | Watch for changes to the described resources.
+              namespace, // namespace
+              PRETTY, // String | If 'true', then the output is pretty printed.
+              ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+              null, // String | The continue option should be set when retrieving more results from the server.
+              null, // String | A selector to restrict the list of returned objects by their fields.
+              null, // String | A selector to restrict the list of returned objects by their labels.
+              null, // Integer | limit is a maximum number of responses to return for a list call.
+              RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+              TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
+              ALLOW_WATCH_BOOKMARKS // Boolean | Watch for changes to the described resources.
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return ingressList;
+  }
+
+  /**
+   * Delete an ingress in the specified namespace.
+   *
+   * @param name  ingress name to be deleted
+   * @param namespace namespace in which the specified ingress exists
+   * @return true if deleting ingress succeed, false otherwise
+   * @throws ApiException if Kubernetes API client call fails
+   */
+  public static boolean deleteIngress(String name, String namespace) throws ApiException {
+    try {
+      NetworkingV1beta1Api apiInstance = new NetworkingV1beta1Api(apiClient);
+      apiInstance.deleteNamespacedIngress(
+              name, // ingress name
+              namespace, // namespace
+              PRETTY, // String | If 'true', then the output is pretty printed.
+              null, // String | dry run or permanent change
+              GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+              null, // Boolean | Deprecated: use the PropagationPolicy.
+              BACKGROUND, // String | Whether and how garbage collection will be performed.
+              null // V1DeleteOptions.
+      );
+    } catch (ApiException apex) {
+      getLogger().warning(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
   }
 
   /**
@@ -2267,10 +2382,10 @@ public class Kubernetes {
    * @throws ApiException when get fails
    */
   public static NetworkingV1beta1Ingress getNamespacedIngress(String namespace, String name)
-      throws ApiException {
+          throws ApiException {
     try {
       for (NetworkingV1beta1Ingress item
-          : listNamespacedIngresses(namespace).getItems()) {
+              : listNamespacedIngresses(namespace).getItems()) {
         if (name.equals(item.getMetadata().getName())) {
           return item;
         }
@@ -2298,57 +2413,76 @@ public class Kubernetes {
    * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static ExecResult exec(V1Pod pod, String containerName, boolean redirectToStdout,
-      String... command)
-      throws IOException, ApiException, InterruptedException {
+                                String... command)
+          throws IOException, ApiException, InterruptedException {
 
     // Execute command using Kubernetes API
     KubernetesExec kubernetesExec = createKubernetesExec(pod, containerName);
     final Process proc = kubernetesExec.exec(command);
 
+    // If redirect enabled, copy stdout and stderr to corresponding Outputstream
     final CopyingOutputStream copyOut =
-        redirectToStdout ? new CopyingOutputStream(System.out) : new CopyingOutputStream(null);
+            redirectToStdout ? new CopyingOutputStream(System.out) : new CopyingOutputStream(null);
+    final CopyingOutputStream copyErr =
+            redirectToStdout ? new CopyingOutputStream(System.err) : new CopyingOutputStream(null);
 
     // Start a thread to begin reading the output stream of the command
-    Thread out = null;
     try {
-      out =
-          new Thread(
-              () -> {
-                try {
-                  ByteStreams.copy(proc.getInputStream(), copyOut);
-                } catch (IOException ex) {
-                  // "Pipe broken" is expected when process is finished so don't log
-                  if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
-                    getLogger().warning("Exception reading from input stream.", ex);
-                  }
-                }
-              });
+      Thread out = createStreamReader(proc.getInputStream(), copyOut,
+              "Exception reading from stdout input stream.");
       out.start();
+
+      // Start a thread to begin reading the error stream of the command
+      Thread err = createStreamReader(proc.getErrorStream(), copyErr,
+              "Exception reading from stderr input stream.");
+      err.start();
 
       // wait for the process, which represents the executing command, to terminate
       proc.waitFor();
 
-      // wait for reading thread to finish any remaining output
+      // wait for stdout reading thread to finish any remaining output
       out.join();
+
+      // wait for stderr reading thread to finish any remaining output
+      err.join();
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());
 
       // Read from process's stderr, if data available
-      String stderr = null;
-      try {
-        stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
-      } catch (IllegalStateException e) {
-        // IllegalStateException thrown when stream is already closed, ignore since there is
-        // nothing to read
+      String stderr = readExecCmdData(copyErr.getInputStream());;
+
+      ExecResult result = new ExecResult(proc.exitValue(), stdout, stderr);
+      getLogger().fine("result from exec command: " + result);
+
+      if (result.exitValue() != 0) {
+        getLogger().info("result.exitValue={0}", result.exitValue());
+        getLogger().info("result.stdout={0}", result.stdout());
+        getLogger().info("result.stderr={0}", result.stderr());
       }
 
-      return new ExecResult(proc.exitValue(), stdout, stderr);
+      return result;
     } finally {
       if (proc != null) {
         proc.destroy();
       }
     }
+  }
+
+  private static Thread createStreamReader(InputStream inputStream, CopyingOutputStream copyOut,
+                                           String s) {
+    return
+            new Thread(
+                () -> {
+                  try {
+                    ByteStreams.copy(inputStream, copyOut);
+                  } catch (IOException ex) {
+                    // "Pipe broken" is expected when process is finished so don't log
+                    if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
+                      getLogger().warning(s, ex);
+                    }
+                  }
+                });
   }
 
   /**
@@ -2361,10 +2495,10 @@ public class Kubernetes {
    */
   public static KubernetesExec createKubernetesExec(V1Pod pod, String containerName) {
     return new KubernetesExec()
-        .apiClient(apiClient) // the Kubernetes api client to dispatch the "exec" command
-        .pod(pod) // The pod where the command is to be run
-        .containerName(containerName) // the container in which the command is to be run
-        .passStdinAsStream(); // pass a stdin stream into the container
+            .apiClient(apiClient) // the Kubernetes api client to dispatch the "exec" command
+            .pod(pod) // The pod where the command is to be run
+            .containerName(containerName) // the container in which the command is to be run
+            .passStdinAsStream(); // pass a stdin stream into the container
   }
 
   /**
@@ -2376,16 +2510,16 @@ public class Kubernetes {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static NetworkingV1beta1Ingress createIngress(String namespace, NetworkingV1beta1Ingress ingressBody)
-      throws ApiException {
+          throws ApiException {
     NetworkingV1beta1Ingress ingress;
     try {
       NetworkingV1beta1Api apiInstance = new NetworkingV1beta1Api(apiClient);
       ingress = apiInstance.createNamespacedIngress(
-          namespace, //namespace
-          ingressBody, // NetworkingV1beta1Ingress object, representing the ingress details
-          PRETTY, // pretty print output
-          null, // when present, indicates that modifications should not be persisted
-          null // a name associated with the actor or entity that is making these changes
+              namespace, //namespace
+              ingressBody, // NetworkingV1beta1Ingress object, representing the ingress details
+              PRETTY, // pretty print output
+              null, // when present, indicates that modifications should not be persisted
+              null // a name associated with the actor or entity that is making these changes
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -2400,7 +2534,7 @@ public class Kubernetes {
   private static String readExecCmdData(InputStream is) {
     StringBuilder sb = new StringBuilder();
     try (BufferedReader reader = new BufferedReader(
-        new InputStreamReader(is, Charsets.UTF_8))) {
+            new InputStreamReader(is, Charsets.UTF_8))) {
       int c = 0;
       while ((c = reader.read()) != -1) {
         sb.append((char) c);
