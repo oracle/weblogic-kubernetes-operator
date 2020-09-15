@@ -51,7 +51,6 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.CrdHelper;
@@ -95,7 +94,6 @@ public class Main {
   private static final ThreadFactory threadFactory = new WrappedThreadFactory();
   private static final ScheduledExecutorService wrappedExecutorService =
       Engine.wrappedExecutorService("operator", container);
-  private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
   private static Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
   private static Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
   private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
@@ -150,8 +148,7 @@ public class Main {
                 TuningParameters.class,
                 tuningAndConfig(),
                 ThreadFactory.class,
-                threadFactory,
-                callBuilderFactory));
+                threadFactory));
   }
 
   /**
@@ -340,20 +337,35 @@ public class Main {
   }
 
   static Step readExistingResources(String operatorNamespace, String ns) {
+    DomainPresenceInfos dpis = new DomainPresenceInfos(ns);
+    dpis.addListener(new DomainPresenceInfos.Listener() {
+      @Override
+      public void listRead(DomainPresenceInfos.ResourceType resourceType, String resourceVersion) {
+        switch (resourceType) {
+          case PODS:
+            main.startPodWatcher(ns, resourceVersion);
+            break;
+          case SERVICES:
+            main.startServiceWatcher(ns, resourceVersion);
+            break;
+          case DOMAINS:
+            main.startDomainWatcher(ns, resourceVersion);
+            break;
+        }
+      }
+    });
+
     return Step.chain(
-        new ReadExistingResourcesBeforeStep(ns),
         ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
         createConfigMapStep(ns),
-        readExistingPods(ns),
         readExistingEvents(ns),
-        readExistingServices(ns),
-        readExistingDomains(ns),
+        dpis.createSteps(),
         new DomainResourcesStep());
   }
 
   private static Step readExistingDomains(String ns) {
     LOGGER.fine(MessageKeys.LISTING_DOMAINS);
-    return callBuilderFactory.create().listDomainAsync(ns, new DomainListStep(ns));
+    return new CallBuilder().listDomainAsync(ns, new DomainListStep(ns));
   }
 
   private static Step readExistingServices(String ns) {
@@ -929,7 +941,7 @@ public class Main {
     abstract void startWatcher(String namespace, String initialResourceVersion);
   }
 
-  private static class DomainListStep extends ListResponseStep<Domain, DomainList> {
+  private static class DomainListStep extends DomainResourceResponseStep<Domain, DomainList> {
 
     DomainListStep(String ns) {
       super(ns);
@@ -944,8 +956,7 @@ public class Main {
     void processItem(Packet packet, Domain dom) {
       String domainUid = dom.getDomainUid();
       String ns = dom.getNamespace();
-      DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP)).getDomainPresenceInfo(
-          domainUid);
+      DomainPresenceInfo info = getDomainPresenceInfos(packet).getDomainPresenceInfo(domainUid);
       info.setDomain(dom);
       info.setPopulated(true);
       try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
@@ -981,7 +992,23 @@ public class Main {
     }
   }
 
-  private static class ServiceListStep extends ListResponseStep<V1Service, V1ServiceList> {
+  abstract static class DomainResourceResponseStep<R extends KubernetesObject,L extends KubernetesListObject> extends ListResponseStep<R, L> {
+    public DomainResourceResponseStep(String namespace) {
+      super(namespace);
+    }
+
+    @Override
+    abstract void startWatcher(String namespace, String initialResourceVersion);
+
+    @Override
+    abstract void processItem(Packet packet, R service);
+
+    DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
+      return (DomainPresenceInfos) packet.get(DPI_MAP);
+    }
+  }
+
+  private static class ServiceListStep extends DomainResourceResponseStep<V1Service, V1ServiceList> {
     ServiceListStep(String ns) {
       super(ns);
     }
@@ -995,11 +1022,12 @@ public class Main {
     void processItem(Packet packet, V1Service service) {
       String domainUid = ServiceHelper.getServiceDomainUid(service);
       if (domainUid != null) {
-        DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP)).getDomainPresenceInfo(
+        DomainPresenceInfo info = getDomainPresenceInfos(packet).getDomainPresenceInfo(
             domainUid);
         ServiceHelper.addToPresence(info, service);
       }
     }
+
   }
 
   private static class EventListStep extends ListResponseStep<V1Event, V1EventList> {
@@ -1013,7 +1041,7 @@ public class Main {
     }
   }
 
-  private static class PodListStep extends ListResponseStep<V1Pod, V1PodList> {
+  private static class PodListStep extends DomainResourceResponseStep<V1Pod, V1PodList> {
 
     PodListStep(String ns) {
       super(ns);
@@ -1029,8 +1057,7 @@ public class Main {
       String domainUid = PodHelper.getPodDomainUid(pod);
       String serverName = PodHelper.getPodServerName(pod);
       if (domainUid != null && serverName != null) {
-        DomainPresenceInfo info = ((DomainPresenceInfos) packet.get(DPI_MAP))
-            .getDomainPresenceInfo(domainUid);
+        DomainPresenceInfo info = getDomainPresenceInfos(packet).getDomainPresenceInfo(domainUid);
         info.setServerPod(serverName, pod);
       }
     }
@@ -1292,9 +1319,20 @@ public class Main {
   private static class DomainPresenceInfos {
     private String namespace;
     private Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
+    private List<Listener> listeners = new ArrayList<>();
+
+    enum ResourceType {PODS, SERVICES, DOMAINS}
+
+    interface Listener {
+      void listRead(final ResourceType resourceType, final String resourceVersion);
+    }
 
     public DomainPresenceInfos(String namespace) {
       this.namespace = namespace;
+    }
+
+    void addListener(Listener listener) {
+      listeners.add(listener);
     }
 
     private Set<DomainPresenceInfo> getStrandedDomainPresenceInfos() {
@@ -1303,6 +1341,22 @@ public class Main {
 
     private DomainPresenceInfo getDomainPresenceInfo(String domainUid) {
       return domainPresenceInfoMap.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(namespace, domainUid));
+    }
+
+    private void callback(ResourceType resourceType, String resourceVersion) {
+      listeners.forEach(listener -> listener.listRead(resourceType, resourceVersion));
+    }
+
+    /**
+     * Return a set of steps that will populate the packet with the instances.
+     * @return
+     */
+    private Step createSteps() {
+      return Step.chain(
+          new ReadExistingResourcesBeforeStep(namespace),
+          readExistingPods(namespace),
+          readExistingServices(namespace),
+          readExistingDomains(namespace));
     }
   }
 
