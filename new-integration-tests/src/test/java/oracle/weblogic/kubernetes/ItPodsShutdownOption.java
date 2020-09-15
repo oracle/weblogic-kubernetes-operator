@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -166,7 +165,6 @@ class ItPodsShutdownOption {
    * the logs and determine the outcome of the test.
    *
    *<p>This use case shows how to add shutdown options at domain and how to override them at server level.
-   * @throws ApiException when getting log fails
    */
   @Test
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
@@ -221,8 +219,6 @@ class ItPodsShutdownOption {
    * The test verifies the logs and determine the outcome of the test.
    *
    *<p>This use case shows how to add shutdown options at domain and how to override them using ENV variable.
-   *
-   * @throws ApiException when getting log fails
    */
   @Test
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
