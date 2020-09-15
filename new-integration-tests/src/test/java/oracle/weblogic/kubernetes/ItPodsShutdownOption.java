@@ -170,7 +170,7 @@ class ItPodsShutdownOption {
    */
   @Test
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
-  public void testShutdownPropsAllLevels() throws ApiException {
+  public void testShutdownPropsAllLevels() {
 
 
     // create Shutdown objects for each server and cluster
@@ -226,7 +226,7 @@ class ItPodsShutdownOption {
    */
   @Test
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
-  public void testShutdownPropsEnvOverride() throws ApiException {
+  public void testShutdownPropsEnvOverride() {
 
 
     // create Shutdown objects for each server and cluster
