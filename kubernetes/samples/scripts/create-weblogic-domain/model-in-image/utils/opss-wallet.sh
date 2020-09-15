@@ -40,7 +40,6 @@ cat << EOF
 
     -s                  Save an OPSS wallet file from an introspector
                         configmap to a file. (See also '-wf'.)
-                        Default is 'DOMAIN_UID-opss-walletfile-secret'.
 
     -r                  Restore an OPSS wallet file to a Kubernetes secret.
                         (See also '-wf' and '-ws').

@@ -203,7 +203,7 @@ class OfflineWlstEnv(object):
         # Only export if it is not there already (i.e. have not been copied from the secrets
         if not os.path.exists('/tmp/opsswallet/ewallet.p12'):
           opss_passphrase_file = self.getEnv('OPSS_KEY_PASSPHRASE')
-          opss_passphrase = self.env.readFile(opss_passphrase_file)
+          opss_passphrase = self.readFile(opss_passphrase_file).strip()
           os.mkdir('/tmp/opsswallet')
           exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml', \
                               keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)

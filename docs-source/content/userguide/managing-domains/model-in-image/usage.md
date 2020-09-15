@@ -182,7 +182,7 @@ For a domain that has been started by Model in Image, the operator will copy the
   ```
 - Option 2
 
-  Alternatively, you can use the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -s` command to export the wallet file (pass `-?` to this script's command-line arguments and defaults).
+  Alternatively, you can use the `./kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/opss-wallet.sh -s` command to export the wallet file (pass `-?` to this script's command-line arguments and defaults).
 
 {{% notice tip %}}
 Always back up your wallet file to a safe location that can be retrieved later. In addition, save your OPSS key password.
@@ -206,7 +206,7 @@ To reuse the wallet:
       label secret MY_DOMAIN_UID-my-opss-wallet-file-secret \
       weblogic.domainUID=sample-domain1
     ```
-    Alternatively, you can use the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -r` command to deploy a local wallet file as a secret (pass `-?` to get this script's command-line arguments and defaults).
+    Alternatively, you can use the `./kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/opss-wallet.sh -r` command to deploy a local wallet file as a secret (pass `-?` to get this script's command-line arguments and defaults).
   - Make sure that your Domain YAML file `configuration.opss.walletPasswordSecret` field names the OPSS password Secret, and make sure that your Domain YAML file `configuration.opss.walletFileSecret` field names the OPSS wallet file secret.
 
 

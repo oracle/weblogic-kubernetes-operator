@@ -674,16 +674,46 @@ function wdtCreatePrimordialDomain() {
   wdtArgs+=" ${OPSS_FLAGS}"
   wdtArgs+=" ${UPDATE_RCUPWD_FLAG}"
 
-  if [ "-z ${OPSS_FLAGS}" ]; then
-    ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT}
+  trace "About to call '${WDT_BINDIR}/createDomain.sh ${wdtArgs}'."
+
+  if [ -z "${OPSS_FLAGS}" ]; then
+
+    # We get here for WLS domains, and for the JRF 'first time' case
+
+    # JRF wallet generation note:
+    #  If this is JRF, the unset OPSS_FLAGS indicates no wallet file was specified
+    #  via spec.configuration.opss.walletFileSecret and so we assume that
+    #  this is the first time this domain started for this RCU database.
+    #  We also assume that 'createDomain.sh' will setup new RCU tables for the domain
+    #  in the database, and that there's no need to pass the wallet password
+    #  to createDomain.sh. The 'introspectDomain.py' script, which runs later,
+    #  will create a wallet file so that an administrator can retrieve the file
+    #  from the introspector's output configmap and save it for reuse.
+
+    ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
+
   else
-    cat ${OPSS_KEY_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT}
+
+    # We get here only for JRF domain 'second time' (or more) case.
+
+    # JRF wallet reuse note:
+    #  The set OPSS_FLAGS indicates a wallet file was specified
+    #  via spec.configuration.opss.walletFileSecret on the domain resource.
+    #  So we assume that this domain already
+    #  has its RCU tables and the wallet file will give us access to them.
+
+    echo $(cat ${OPSS_KEY_PASSPHRASE}) | \
+      ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
+
   fi
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Create Domain Failed, ret=${ret}:"
     cat ${WDT_OUTPUT}
     exitOrLoop
+  else
+    trace "WDT Create Domain Succeeded, ret=${ret}:"
+    cat ${WDT_OUTPUT}
   fi
 
   # restore trap
