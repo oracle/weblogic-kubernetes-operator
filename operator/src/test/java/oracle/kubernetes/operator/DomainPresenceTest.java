@@ -247,9 +247,9 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     assertThat(testSupport.getResources(KubernetesTestSupport.SERVICE), empty());
   }
 
-  @Test @Ignore
+  @Test
   public void dontRemoveNonStrandedResources() {
-    IntStream.range(1, 2* CALL_REQUEST_LIMIT).boxed().map(i -> "UID" + i).forEach(uid -> createDomain(uid, NS));
+    IntStream.range(1, 2* CALL_REQUEST_LIMIT).boxed().map(i -> "UID" + i).map(uid -> createDomain(uid, NS)).forEach(testSupport::defineResources);
     V1Service service1 = createServerService("UID1", NS, "admin");
     V1Service service2 = createServerService("UID" + (2*CALL_REQUEST_LIMIT-1), NS, "admin");
     testSupport.defineResources(service1, service2);

@@ -347,7 +347,8 @@ public class Main {
         readExistingPods(ns),
         readExistingEvents(ns),
         readExistingServices(ns),
-        readExistingDomains(ns));
+        readExistingDomains(ns),
+        new DomainResourcesStep());
   }
 
   private static Step readExistingDomains(String ns) {
@@ -926,19 +927,6 @@ public class Main {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
-
-      getItems(callResponse.getResult()).forEach(domain -> processItem(packet, domain));
-
-      Set<String> foundDomainIds = getItems(callResponse.getResult()).stream().map(Domain::getDomainUid).collect(Collectors.toSet());
-      Set<DomainPresenceInfo> strandedInfos = ((DomainPresenceInfos) packet.get(DPI_MAP)).getStrandedDomainPresenceInfos(foundDomainIds);
-      strandedInfos.forEach(dpi -> removeStrandedDomainPresenceInfo(getProcessor(packet), dpi));
-
-      startWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
-      return doContinueListOrNext(callResponse, packet);
-    }
-
-    @Override
     void startWatcher(String namespace, String initialResourceVersion) {
       main.startDomainWatcher(namespace, initialResourceVersion);
     }
@@ -969,6 +957,28 @@ public class Main {
 
   }
 
+  private static class DomainResourcesStep extends Step {
+
+    @Override
+    public NextAction apply(Packet packet) {
+      Set<DomainPresenceInfo> strandedInfos = ((DomainPresenceInfos) packet.get(DPI_MAP)).getStrandedDomainPresenceInfos();
+      strandedInfos.forEach(dpi -> removeStrandedDomainPresenceInfo(getProcessor(packet), dpi));
+      return doNext(packet);
+     }
+
+    private void removeStrandedDomainPresenceInfo(DomainProcessor dp, DomainPresenceInfo info) {
+      info.setDeleting(true);
+      info.setPopulated(true);
+      try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(info.getNamespace()).domainUid(info.getDomainUid())) {
+        dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
+      }
+    }
+
+    private static DomainProcessor getProcessor(Packet packet) {
+      return Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
+    }
+  }
+
   private static class ServiceListStep extends ListResponseStep<V1Service, V1ServiceList> {
     ServiceListStep(String ns) {
       super(ns);
@@ -995,13 +1005,6 @@ public class Main {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1EventList> callResponse) {
-      getItems(callResponse.getResult()).forEach(item -> processItem(packet, item));
-      startWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
-      return doContinueListOrNext(callResponse, packet);
-    }
-
-    @Override
     void startWatcher(String namespace, String initialResourceVersion) {
       main.startEventWatcher(namespace, initialResourceVersion);
     }
@@ -1011,13 +1014,6 @@ public class Main {
 
     PodListStep(String ns) {
       super(ns);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-      getItems(callResponse.getResult()).forEach(item -> processItem(packet, item));
-      startWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
-      return doContinueListOrNext(callResponse, packet);
     }
 
     @Override
@@ -1293,8 +1289,8 @@ public class Main {
   private static class DomainPresenceInfos {
     private Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
 
-    private Set<DomainPresenceInfo> getStrandedDomainPresenceInfos(Set<String> foundDomainUids) {
-      return domainPresenceInfoMap.values().stream().filter(dpi -> isStranded(foundDomainUids, dpi)).collect(Collectors.toSet());
+    private Set<DomainPresenceInfo> getStrandedDomainPresenceInfos() {
+      return domainPresenceInfoMap.values().stream().filter(dpi -> dpi.getDomain() == null).collect(Collectors.toSet());
     }
 
     private boolean isStranded(Set<String> foundDomainUids, DomainPresenceInfo dpi) {
