@@ -338,20 +338,19 @@ public class Main {
 
   static Step readExistingResources(String operatorNamespace, String ns) {
     DomainPresenceInfos dpis = new DomainPresenceInfos(ns);
-    dpis.addListener(new DomainPresenceInfos.Listener() {
-      @Override
-      public void listRead(DomainPresenceInfos.ResourceType resourceType, String resourceVersion) {
-        switch (resourceType) {
-          case PODS:
-            main.startPodWatcher(ns, resourceVersion);
-            break;
-          case SERVICES:
-            main.startServiceWatcher(ns, resourceVersion);
-            break;
-          case DOMAINS:
-            main.startDomainWatcher(ns, resourceVersion);
-            break;
-        }
+    dpis.addListener((resourceType, resourceVersion) -> {
+      switch (resourceType) {
+        case PODS:
+          main.startPodWatcher(ns, resourceVersion);
+          break;
+        case SERVICES:
+          main.startServiceWatcher(ns, resourceVersion);
+          break;
+        case DOMAINS:
+          main.startDomainWatcher(ns, resourceVersion);
+          break;
+        default:
+          // do nothing
       }
     });
 
@@ -913,7 +912,8 @@ public class Main {
     }
   }
 
-  private abstract static class ListResponseStep<R extends KubernetesObject,L extends KubernetesListObject> extends  DefaultResponseStep<L> {
+  private abstract static class ListResponseStep<R extends KubernetesObject,L extends KubernetesListObject>
+        extends DefaultResponseStep<L> {
     private final String namespace;
 
     ListResponseStep(String namespace) {
@@ -927,7 +927,8 @@ public class Main {
       return doContinueListOrNext(callResponse, packet);
     }
 
-    void processItem(Packet packet, R item) {};
+    void processItem(Packet packet, R item) {
+    }
 
     public String getNamespace() {
       return namespace;
@@ -953,15 +954,11 @@ public class Main {
     }
 
     @Override
-    void processItem(Packet packet, Domain dom) {
-      String domainUid = dom.getDomainUid();
-      String ns = dom.getNamespace();
-      DomainPresenceInfo info = getDomainPresenceInfos(packet).getDomainPresenceInfo(domainUid);
-      info.setDomain(dom);
+    void processItem(Packet packet, Domain domain) {
+      DomainPresenceInfo info = getDomainPresenceInfos(packet).getDomainPresenceInfo(domain.getDomainUid());
+      info.setDomain(domain);
       info.setPopulated(true);
-      try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
-        getProcessor(packet).createMakeRightOperation(info).withExplicitRecheck().execute();
-      }
+      getProcessor(packet).createMakeRightOperation(info).withExplicitRecheck().execute();
     }
 
     private static DomainProcessor getProcessor(Packet packet) {
@@ -974,17 +971,21 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      Set<DomainPresenceInfo> strandedInfos = ((DomainPresenceInfos) packet.get(DPI_MAP)).getStrandedDomainPresenceInfos();
-      strandedInfos.forEach(dpi -> removeStrandedDomainPresenceInfo(getProcessor(packet), dpi));
+      getDomainPresenceInfos(packet)
+            .getStrandedDomainPresenceInfos()
+            .forEach(info -> removeStrandedDomainPresenceInfo(getProcessor(packet), info));
+
       return doNext(packet);
-     }
+    }
+
+    private DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
+      return (DomainPresenceInfos) packet.get(DPI_MAP);
+    }
 
     private void removeStrandedDomainPresenceInfo(DomainProcessor dp, DomainPresenceInfo info) {
       info.setDeleting(true);
       info.setPopulated(true);
-      try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(info.getNamespace()).domainUid(info.getDomainUid())) {
-        dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
-      }
+      dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
     }
 
     private static DomainProcessor getProcessor(Packet packet) {
@@ -992,7 +993,8 @@ public class Main {
     }
   }
 
-  abstract static class DomainResourceResponseStep<R extends KubernetesObject,L extends KubernetesListObject> extends ListResponseStep<R, L> {
+  abstract static class DomainResourceResponseStep<R extends KubernetesObject,L
+        extends KubernetesListObject> extends ListResponseStep<R, L> {
     public DomainResourceResponseStep(String namespace) {
       super(namespace);
     }
@@ -1321,7 +1323,8 @@ public class Main {
     private Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
     private List<Listener> listeners = new ArrayList<>();
 
-    enum ResourceType {PODS, SERVICES, DOMAINS}
+    enum ResourceType { PODS, SERVICES, DOMAINS
+    }
 
     interface Listener {
       void listRead(final ResourceType resourceType, final String resourceVersion);

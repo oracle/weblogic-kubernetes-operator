@@ -657,14 +657,16 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public void execute() {
-      if (!delegate.isNamespaceRunning(getNamespace())) {
-        return;
-      }
+      try (LoggingContext ignored = LoggingContext.setThreadContext().presenceInfo(liveInfo)) {
+        if (!delegate.isNamespaceRunning(getNamespace())) {
+          return;
+        }
 
-      if (isShouldContinue()) {
-        internalMakeRightDomainPresence();
-      } else {
-        LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
+        if (isShouldContinue()) {
+          internalMakeRightDomainPresence();
+        } else {
+          LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
+        }
       }
     }
 

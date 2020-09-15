@@ -33,12 +33,12 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.CALL_REQUEST_LIMIT;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.both;
@@ -54,6 +54,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private static final String NS = "default";
   private static final String UID = "UID1";
+  private static final int LAST_DOMAIN_NUM = 2 * CALL_REQUEST_LIMIT - 1;
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -244,21 +245,29 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
     readExistingResources();
 
-    assertThat(testSupport.getResources(KubernetesTestSupport.SERVICE), empty());
+    assertThat(testSupport.getResources(SERVICE), empty());
   }
 
   @Test
   public void dontRemoveNonStrandedResources() {
-    IntStream.range(1, 2* CALL_REQUEST_LIMIT).boxed().map(i -> "UID" + i).map(uid -> createDomain(uid, NS)).forEach(testSupport::defineResources);
+    createDomains(LAST_DOMAIN_NUM);
     V1Service service1 = createServerService("UID1", NS, "admin");
-    V1Service service2 = createServerService("UID" + (2*CALL_REQUEST_LIMIT-1), NS, "admin");
+    V1Service service2 = createServerService("UID" + LAST_DOMAIN_NUM, NS, "admin");
     testSupport.defineResources(service1, service2);
 
     namespaceStoppingMap.get(NS).set(false);
 
     readExistingResources();
 
-    assertThat(testSupport.getResources(KubernetesTestSupport.SERVICE), both(hasItem(service1)).and(hasItem(service2)));
+    assertThat(testSupport.getResources(SERVICE), both(hasItem(service1)).and(hasItem(service2)));
+  }
+
+  private void createDomains(int lastDomainNum) {
+    IntStream.rangeClosed(1, lastDomainNum)
+          .boxed()
+          .map(i -> "UID" + i)
+          .map(uid -> createDomain(uid, NS))
+          .forEach(testSupport::defineResources);
   }
 
   public abstract static class DomainProcessorStub implements DomainProcessor {
