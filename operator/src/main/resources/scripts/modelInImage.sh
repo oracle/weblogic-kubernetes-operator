@@ -682,13 +682,17 @@ function wdtCreatePrimordialDomain() {
 
     # JRF wallet generation note:
     #  If this is JRF, the unset OPSS_FLAGS indicates no wallet file was specified
-    #  via spec.configuration.opss.walletFileSecret and so we assume that
-    #  this is the first time this domain started for this RCU database.
-    #  We also assume that 'createDomain.sh' will setup new RCU tables for the domain
-    #  in the database, and that there's no need to pass the wallet password
-    #  to createDomain.sh. The 'introspectDomain.py' script, which runs later,
-    #  will create a wallet file so that an administrator can retrieve the file
-    #  from the introspector's output configmap and save it for reuse.
+    #  via spec.configuration.opss.walletFileSecret and so we assume that this is
+    #  the first time this domain started for this RCU database. We also assume 
+    #  that 'createDomain.sh' will perform the one time initialization of the 
+    #  empty RCU schema for the domain in the database (where the empty schema
+    #  itself must be setup external to the Operator by calling 'create_rcu_schema.sh'
+    #  or similar prior to deploying the domain for the first time).
+    #
+    #  The 'introspectDomain.py' script, which runs later, will create a wallet
+    #  file using the spec.configuration.opss.walletPasswordSecret as its passphrase
+    #  so that an administrator can then retrieve the file from the introspector's
+    #  output configmap and save it for reuse.
 
     ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
 
