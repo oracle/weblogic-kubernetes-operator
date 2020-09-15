@@ -11,7 +11,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 /**
- * A step which will delete each entry in the specified collection. It does so by chaining back to
+ * A step which will perform an action on each entry in the specified collection. It does so by chaining back to
  * itself in the response step, in order to process the next entry in the iterator.
  */
 public abstract class AbstractListStep<T> extends Step {
@@ -25,11 +25,11 @@ public abstract class AbstractListStep<T> extends Step {
   @Override
   public NextAction apply(Packet packet) {
     if (it.hasNext()) {
-      return doNext(createDeleteStep(it.next()), packet);
+      return doNext(createActionStep(it.next()), packet);
     } else {
       return doNext(packet);
     }
   }
 
-  abstract Step createDeleteStep(T item);
+  abstract Step createActionStep(T item);
 }

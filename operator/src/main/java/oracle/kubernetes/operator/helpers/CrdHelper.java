@@ -103,6 +103,10 @@ public class CrdHelper {
     }
   }
 
+  public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion) {
+    return new CrdStep(version, productVersion);
+  }
+
   /**
    * Factory for {@link Step} that creates Domain CRD.
    *
@@ -150,6 +154,10 @@ public class CrdHelper {
 
   static class CrdStep extends Step {
     final CrdContext context;
+
+    CrdStep(KubernetesVersion version, SemanticVersion productVersion) {
+      context = new CrdContext(version, productVersion, this);
+    }
 
     CrdStep(KubernetesVersion version, SemanticVersion productVersion, Step next) {
       super(next);

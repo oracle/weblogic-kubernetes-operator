@@ -93,6 +93,11 @@ abstract class Watcher<T> {
     }
   }
 
+  // for test
+  String getResourceVersion() {
+    return resourceVersion;
+  }
+
   /**
    * Sets the listener for watch events.
    *
