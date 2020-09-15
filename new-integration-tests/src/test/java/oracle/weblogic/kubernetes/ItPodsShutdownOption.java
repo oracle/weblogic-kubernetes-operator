@@ -152,11 +152,25 @@ class ItPodsShutdownOption {
   }
 
   /**
-   * Add shutdown properties at all levels and verify.
-   * 1. Creates shutdown object for admin server, cluster and managed servers.
-   * 2. Creates domain resource with the above shutdown objects.
-   * 3. After all the pods are started, verifies the server.out for each server to see whether the nodemanager env
-   * is set with those property values according to the precedence levels.
+   * Add shutdown options for servers at all levels: domain, admin server, cluster and managed server levels.
+   * Verify individual specific level options takes precedence.
+   *
+   *<p>Domain level shutdown option which is applicable for all servers in the domain
+   *      shutdownType - Forced , timeoutSeconds - 30 secs, ignoreSessions - true
+   * Admin server level shutdown option applicable only to the admin server
+   *      shutdownType - Forced , timeoutSeconds - 40 secs, ignoreSessions - true
+   * Cluster level shutdown option applicable only to the clustered instances
+   *      shutdownType - Graceful , timeoutSeconds - 60 secs, ignoreSessions - false
+   * Managed server server level shutdown option applicable only to the independent managed servers
+   *      shutdownType - Forced , timeoutSeconds - 45 secs, ignoreSessions - true
+   *
+   *<p>Since the shutdown options are provided at all levels the domain level shutdown options has no effect on the
+   * admin server, cluster, or managed server options. All of those entities use their own shutdown options.
+   *
+   *<p>When server pods starts up the server.out log will show the options applied to the servers. The test verifies
+   * the logs and determine the outcome of the test.
+   *
+   *<p>This use case shows how to add shutdown options at domain and how to override them at server level.
    * @throws ApiException when getting log fails
    */
   @Test
@@ -165,15 +179,17 @@ class ItPodsShutdownOption {
 
 
     // create Shitdown objects for each server and cluster
-    Shutdown[] shutDownObjects = new Shutdown[4];
+    Shutdown[] shutDownObjects = new Shutdown[5];
+    Shutdown dom = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(30L);
     Shutdown admin = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(40L);
     Shutdown cluster = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(60L);
     Shutdown ms1 = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(120L);
     Shutdown ms2 = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(45L);
-    shutDownObjects[0] = admin;
-    shutDownObjects[1] = cluster;
-    shutDownObjects[2] = ms1;
-    shutDownObjects[3] = ms2;
+    shutDownObjects[0] = dom;
+    shutDownObjects[1] = admin;
+    shutDownObjects[2] = cluster;
+    shutDownObjects[3] = ms1;
+    shutDownObjects[4] = ms2;
     // create domain custom resource and verify all the pods came up
     Domain domain = buildDomainResource(shutDownObjects);
     createVerifyDomain(domain);
@@ -190,14 +206,27 @@ class ItPodsShutdownOption {
   }
 
   /**
-   * Add shutdown properties at all levels and override the shutdowntype property for all servers with a env item.
-   * 1. Creates shutdown object for admin server, cluster and managed servers.
-   * 2. Sets shutdowntype as Graceful as the env item at domain level.
-   * 3. Creates domain resource with the above shutdown objects.
-   * 4. After all the pods are started, verifies the server.out for each server to see whether the nodemanager env
-   * is set with those property values according to the precedence levels.
-   * 5. The shutdowntype for all servers should be Graceful regardless of what is set at the server/cluster level
-   * because env has higher priority than server/cluster specific values.
+   * Add shutdown options for servers at all levels: domain, admin server, cluster and managed server levels
+   * and override all those options with a domain level ENV variables. Verify the domain level options takes precedence.
+   *
+   *<p>Domain level shutdown option which is applicable for all servers in the domain
+   *      shutdownType - Forced , timeoutSeconds - 30 secs, ignoreSessions - true
+   * Admin server level shutdown option applicable only to the admin server
+   *      shutdownType - Forced , timeoutSeconds - 40 secs, ignoreSessions - true
+   * Cluster level shutdown option applicable only to the clustered instances
+   *      shutdownType - Graceful , timeoutSeconds - 60 secs, ignoreSessions - false
+   * Managed server server level shutdown option applicable only to the independent managed servers
+   *      shutdownType - Forced , timeoutSeconds - 45 secs, ignoreSessions - true
+   *
+   *<p>After creating the above options override the shutdownType for all servers using a ENV level value - Forced
+   * Now shutdownType for all servers are overridden with Forced as the shutdown option but rest of the properties
+   * are applied as set in the individual server levels.
+   *
+   *<p>When server pods starts up the server.out log will show the shutdown options applied to the servers.
+   * The test verifies the logs and determine the outcome of the test.
+   *
+   *<p>This use case shows how to add shutdown options at domain and how to override them using ENV variable.
+   *
    * @throws ApiException when getting log fails
    */
   @Test
@@ -207,14 +236,16 @@ class ItPodsShutdownOption {
 
     // create Shitdown objects for each server and cluster
     Shutdown[] shutDownObjects = new Shutdown[4];
+    Shutdown dom = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(30L);
     Shutdown admin = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(40L);
     Shutdown cluster = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(60L);
     Shutdown ms1 = new Shutdown().ignoreSessions(Boolean.FALSE).shutdownType("Graceful").timeoutSeconds(120L);
     Shutdown ms2 = new Shutdown().ignoreSessions(Boolean.TRUE).shutdownType("Forced").timeoutSeconds(45L);
-    shutDownObjects[0] = admin;
-    shutDownObjects[1] = cluster;
-    shutDownObjects[2] = ms1;
-    shutDownObjects[3] = ms2;
+    shutDownObjects[0] = dom;
+    shutDownObjects[1] = admin;
+    shutDownObjects[2] = cluster;
+    shutDownObjects[3] = ms1;
+    shutDownObjects[4] = ms2;
     // create domain custom resource and verify all the pods came up
     Domain domain = buildDomainResource(shutDownObjects);
     domain.spec().serverPod()
@@ -257,6 +288,7 @@ class ItPodsShutdownOption {
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod()
+                .shutdown(shutDownObject[0])
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
@@ -266,13 +298,13 @@ class ItPodsShutdownOption {
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .serverPod(new ServerPod()
-                    .shutdown(shutDownObject[0])))
+                    .shutdown(shutDownObject[1])))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING")
                 .serverPod(new ServerPod()
-                    .shutdown(shutDownObject[1])))
+                    .shutdown(shutDownObject[2])))
             .configuration(new Configuration()
                 .model(new Model()
                     .configMap(cmName)
@@ -283,13 +315,13 @@ class ItPodsShutdownOption {
                 .serverStartPolicy("ALWAYS")
                 .serverName(indManagedServerName1)
                 .serverPod(new ServerPod()
-                    .shutdown(shutDownObject[2])))
+                    .shutdown(shutDownObject[3])))
             .addManagedServersItem(new ManagedServer()
                 .serverStartState("RUNNING")
                 .serverStartPolicy("ALWAYS")
                 .serverName(indManagedServerName2)
                 .serverPod(new ServerPod()
-                    .shutdown(shutDownObject[3]))));
+                    .shutdown(shutDownObject[4]))));
     return domain;
   }
 
@@ -325,8 +357,7 @@ class ItPodsShutdownOption {
     }
 
     // check for independent managed server pods existence in the domain namespace
-    //TODO - only one of the independent managed server is coming up, bug???
-    for (String podName : new String[]{ /*indManagedServerPodName1,*/indManagedServerPodName2}) {
+    for (String podName : new String[]{indManagedServerPodName2}) {
       // check that the managed server service exists in the domain namespace
       logger.info("Checking that managed server service {0} exists in namespace {1}",
           podName, domainNamespace);
