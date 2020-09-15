@@ -3,15 +3,15 @@
 
 package oracle.kubernetes.operator.calls;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
+import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -40,6 +40,8 @@ import static oracle.kubernetes.operator.logging.MessageKeys.ASYNC_SUCCESS;
  */
 public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   public static final String RESPONSE_COMPONENT_NAME = "response";
+  public static final String CONTINUE = "continue";
+
   private static final Random R = new Random();
   private static final int HIGH = 200;
   private static final int LOW = 10;
@@ -51,6 +53,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   private final RequestParams requestParams;
   private final CallFactory<T> factory;
   private final int maxRetryCount;
+  private final RetryStrategy customRetryStrategy;
   private final String fieldSelector;
   private final String labelSelector;
   private final String resourceVersion;
@@ -79,10 +82,40 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       String fieldSelector,
       String labelSelector,
       String resourceVersion) {
+    this(next, requestParams, factory, null, helper, timeoutSeconds, maxRetryCount,
+            fieldSelector, labelSelector, resourceVersion);
+  }
+
+  /**
+   * Construct async step.
+   *
+   * @param next Next
+   * @param requestParams Request parameters
+   * @param factory Factory
+   * @param customRetryStrategy Custom retry strategy
+   * @param helper Client pool
+   * @param timeoutSeconds Timeout
+   * @param maxRetryCount Max retry count
+   * @param fieldSelector Field selector
+   * @param labelSelector Label selector
+   * @param resourceVersion Resource version
+   */
+  public AsyncRequestStep(
+          ResponseStep<T> next,
+          RequestParams requestParams,
+          CallFactory<T> factory,
+          RetryStrategy customRetryStrategy,
+          ClientPool helper,
+          int timeoutSeconds,
+          int maxRetryCount,
+          String fieldSelector,
+          String labelSelector,
+          String resourceVersion) {
     super(next);
     this.helper = helper;
     this.requestParams = requestParams;
     this.factory = factory;
+    this.customRetryStrategy = customRetryStrategy;
     this.timeoutSeconds = timeoutSeconds;
     this.maxRetryCount = maxRetryCount;
     this.fieldSelector = fieldSelector;
@@ -94,24 +127,19 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     next.setPrevious(this);
   }
 
-  private static String accessContinue(Object result) {
-    String cont = "";
-    if (result != null) {
-      try {
-        Method m = result.getClass().getMethod("getMetadata");
-        Object meta = m.invoke(result);
-        if (meta instanceof V1ListMeta) {
-          return ((V1ListMeta) meta).getContinue();
-        }
-      } catch (NoSuchMethodException
-          | SecurityException
-          | IllegalAccessException
-          | IllegalArgumentException
-          | InvocationTargetException e) {
-        // no-op, no-log
-      }
-    }
-    return cont;
+  /**
+   * Access continue field, if any, from list metadata.
+   * @param result Kubernetes list result
+   * @return Continue value
+   */
+  public static String accessContinue(Object result) {
+    return Optional.ofNullable(result)
+        .filter(KubernetesListObject.class::isInstance)
+        .map(KubernetesListObject.class::cast)
+        .map(KubernetesListObject::getMetadata)
+        .map(V1ListMeta::getContinue)
+        .filter(Predicate.not(String::isEmpty))
+        .orElse(null);
   }
 
   @Override
@@ -227,18 +255,21 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
 
     // clear out earlier results
-    String cont = null;
+    String cont = (String) packet.remove(CONTINUE);
     RetryStrategy retry = null;
     Component oldResponse = packet.getComponents().remove(RESPONSE_COMPONENT_NAME);
     if (oldResponse != null) {
       @SuppressWarnings("unchecked")
       CallResponse<T> old = oldResponse.getSpi(CallResponse.class);
-      if (old != null && old.getResult() != null) {
+      if (cont != null && old != null && old.getResult() != null) {
         // called again, access continue value, if available
         cont = accessContinue(old.getResult());
       }
 
       retry = oldResponse.getSpi(RetryStrategy.class);
+    }
+    if ((retry == null) && (customRetryStrategy != null)) {
+      retry = customRetryStrategy;
     }
 
     if (LOGGER.isFinerEnabled()) {
