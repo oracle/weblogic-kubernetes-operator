@@ -898,6 +898,13 @@ public class Main {
       this.namespace = namespace;
     }
 
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<L> callResponse) {
+      getItems(callResponse.getResult()).forEach(item -> processItem(packet, item));
+      startWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
+      return doContinueListOrNext(callResponse, packet);
+    }
+
     void processItem(Packet packet, R item) {};
 
     public String getNamespace() {
@@ -909,6 +916,7 @@ public class Main {
       return (List<R>) Optional.ofNullable(result).map(KubernetesListObject::getItems).orElse(Collections.emptyList());
     }
 
+    abstract void startWatcher(String namespace, String initialResourceVersion);
   }
 
   private static class DomainListStep extends ListResponseStep<Domain, DomainList> {
@@ -926,10 +934,16 @@ public class Main {
       Set<DomainPresenceInfo> strandedInfos = ((DomainPresenceInfos) packet.get(DPI_MAP)).getStrandedDomainPresenceInfos(foundDomainIds);
       strandedInfos.forEach(dpi -> removeStrandedDomainPresenceInfo(getProcessor(packet), dpi));
 
-      main.startDomainWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
+      startWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
       return doContinueListOrNext(callResponse, packet);
     }
 
+    @Override
+    void startWatcher(String namespace, String initialResourceVersion) {
+      main.startDomainWatcher(namespace, initialResourceVersion);
+    }
+
+    @Override
     void processItem(Packet packet, Domain dom) {
       String domainUid = dom.getDomainUid();
       String ns = dom.getNamespace();
@@ -961,13 +975,11 @@ public class Main {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1ServiceList> callResponse) {
-
-      getItems(callResponse.getResult()).forEach(item -> processItem(packet, item));
-      main.startServiceWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
-      return doContinueListOrNext(callResponse, packet);
+    void startWatcher(String namespace, String initialResourceVersion) {
+      main.startServiceWatcher(namespace, initialResourceVersion);
     }
 
+    @Override
     void processItem(Packet packet, V1Service service) {
       String domainUid = ServiceHelper.getServiceDomainUid(service);
       if (domainUid != null) {
@@ -984,11 +996,12 @@ public class Main {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1EventList> callResponse) {
-
+      getItems(callResponse.getResult()).forEach(item -> processItem(packet, item));
       startWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
       return doContinueListOrNext(callResponse, packet);
     }
 
+    @Override
     void startWatcher(String namespace, String initialResourceVersion) {
       main.startEventWatcher(namespace, initialResourceVersion);
     }
@@ -1002,12 +1015,17 @@ public class Main {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-
       getItems(callResponse.getResult()).forEach(item -> processItem(packet, item));
-      main.startPodWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
+      startWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
       return doContinueListOrNext(callResponse, packet);
     }
 
+    @Override
+    void startWatcher(String namespace, String initialResourceVersion) {
+      main.startPodWatcher(namespace, initialResourceVersion);
+    }
+
+    @Override
     void processItem(Packet packet, V1Pod pod) {
       String domainUid = PodHelper.getPodDomainUid(pod);
       String serverName = PodHelper.getPodServerName(pod);
