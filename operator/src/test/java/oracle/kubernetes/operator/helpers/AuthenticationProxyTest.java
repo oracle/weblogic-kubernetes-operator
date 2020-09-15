@@ -65,7 +65,6 @@ public class AuthenticationProxyTest {
         Scope scope,
         String namespaceName) {
       this.scope = scope;
-      System.out.println("AuthorizationProxyStub.check scope: " + scope);
       return true;
     }
   }
