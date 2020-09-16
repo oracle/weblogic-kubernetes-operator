@@ -25,7 +25,7 @@ domainNamespaces:
   - "default"
 
 # image specifies the docker image containing the operator code.
-image: "oracle/weblogic-kubernetes-operator:3.0.1"
+image: "oracle/weblogic-kubernetes-operator:3.0.2"
 
 # imagePullPolicy specifies the image pull policy for the operator docker image.
 imagePullPolicy: "IfNotPresent"
@@ -64,7 +64,14 @@ externalRestHttpsPort: 31001
 # kubernetes/samples/scripts/rest/generate-external-rest-identity.sh
 #externalRestIdentitySecret: 
 
-# remoteDebugNodePortEnabled specifies whether or not the operator will start a Java remote debug server on the
+# javaLoggingLevel specifies the Java logging level for the operator.
+# Valid values are: "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
+javaLoggingLevel: "INFO"
+
+# Values related to debugging the operator.
+# Customers should not need to use the following properties
+
+# remoteDebugNodePortEnabled specifies whether or not the operator will provide a Java remote debug interface on the
 # provided port. If the 'suspendOnDebugStartup' property is specified, the operator will suspend execution
 # until a remote debugger has attached.
 # The 'internalDebugHttpPort' property controls the port number inside the Kubernetes
