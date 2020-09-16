@@ -6,7 +6,7 @@ draft: false
 
 ### Releases
 
-| Date | Version | Introduces backward incompatibilities? | Changes |
+| Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
 | September 15, 2020 | v3.0.2 | no | This release contains several fixes, including improvements to log rotation and a fix that avoids unnecessarily updating the domain status. |
 | August 13, 2020 | v3.0.1 | no | Fixed an issue preventing the REST interface from working after a Helm upgrade. Helm 3.1.3+ now required. |
