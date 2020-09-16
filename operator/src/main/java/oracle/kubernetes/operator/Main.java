@@ -929,9 +929,6 @@ public class Main {
 
     abstract void processList(Packet packet, L list);
 
-    void processItem(Packet packet, R item) {
-    }
-
     public String getNamespace() {
       return namespace;
     }
@@ -955,7 +952,6 @@ public class Main {
       main.startDomainWatcher(namespace, initialResourceVersion);
     }
 
-    @Override
     void processItem(Packet packet, Domain domain) {
       DomainPresenceInfos domainPresenceInfos = getDomainPresenceInfos(packet);
       DomainPresenceInfo info = domainPresenceInfos.getDomainPresenceInfo(domain.getDomainUid());
@@ -1024,16 +1020,6 @@ public class Main {
       main.startServiceWatcher(namespace, initialResourceVersion);
     }
 
-    @Override
-    void processItem(Packet packet, V1Service service) {
-      String domainUid = ServiceHelper.getServiceDomainUid(service);
-      if (domainUid != null) {
-        DomainPresenceInfo info = getDomainPresenceInfos(packet).getDomainPresenceInfo(
-            domainUid);
-        ServiceHelper.addToPresence(info, service);
-      }
-    }
-
     DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
       return (DomainPresenceInfos) packet.get(DPI_MAP);
     }
@@ -1041,7 +1027,7 @@ public class Main {
     @Override
     void processList(Packet packet, V1ServiceList list) {
       BiConsumer<Packet, V1ServiceList> processItems
-              = (packet1, l) ->  getItems(l).forEach(item -> processItem(packet, item));
+              = (packet1, l) ->  getItems(l).forEach(item -> getDomainPresenceInfos(packet).addService(item));
       BiConsumer<Packet, V1ServiceList> startWatcher
               = (packet1, l) -> main.startServiceWatcher(getNamespace(), getInitialResourceVersion(l));
 
@@ -1080,16 +1066,6 @@ public class Main {
       main.startPodWatcher(namespace, initialResourceVersion);
     }
 
-    @Override
-    void processItem(Packet packet, V1Pod pod) {
-      String domainUid = PodHelper.getPodDomainUid(pod);
-      String serverName = PodHelper.getPodServerName(pod);
-      if (domainUid != null && serverName != null) {
-        DomainPresenceInfo info = getDomainPresenceInfos(packet).getDomainPresenceInfo(domainUid);
-        info.setServerPod(serverName, pod);
-      }
-    }
-
     DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
       return (DomainPresenceInfos) packet.get(DPI_MAP);
     }
@@ -1097,7 +1073,7 @@ public class Main {
     @Override
     void processList(Packet packet, V1PodList list) {
       BiConsumer<Packet, V1PodList> processItems
-          = (packet1, podList) ->  getItems(podList).forEach(item -> processItem(packet, item));
+          = (packet1, podList) ->  getItems(podList).forEach(item -> getDomainPresenceInfos(packet).addPod(item));
       BiConsumer<Packet, V1PodList> startWatcher
           = (packet1, podList) -> main.startPodWatcher(getNamespace(), getInitialResourceVersion(podList));
 
@@ -1362,6 +1338,23 @@ public class Main {
     private String namespace;
     private Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
     private List<Listener> listeners = new ArrayList<>();
+
+    private void addPod(V1Pod pod) {
+      String domainUid = PodHelper.getPodDomainUid(pod);
+      String serverName = PodHelper.getPodServerName(pod);
+      if (domainUid != null && serverName != null) {
+        DomainPresenceInfo info = getDomainPresenceInfo(domainUid);
+        info.setServerPod(serverName, pod);
+      }
+    }
+
+    private void addService(V1Service service) {
+      String domainUid = ServiceHelper.getServiceDomainUid(service);
+      if (domainUid != null) {
+        DomainPresenceInfo info = getDomainPresenceInfo(domainUid);
+        ServiceHelper.addToPresence(info, service);
+      }
+    }
 
     enum ResourceType { PODS, SERVICES, DOMAINS
     }
