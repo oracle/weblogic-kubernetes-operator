@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -337,29 +338,44 @@ public class Main {
     return strategy;
   }
 
+  static class NamespaceResources {
+    private final List<NamespaceResourceProcessor> processors = new ArrayList<>();
+
+    void addProcessor(NamespaceResourceProcessor processor) {
+      processors.add(processor);
+    }
+
+//    Step createListStep() {
+//      List<Step> steps = new ArrayList<>();
+//      List<BiConsumer<Packet, DomainList>> consumers = processors.stream().map(NamespaceResourceProcessor::getDomainListProcessing).collect(
+//          Collectors.toList());
+//      if (!consumers.isEmpty()) {
+//        steps.add(new)
+//      }
+//    }
+  }
+
+  static abstract class NamespaceResourceProcessor {
+
+    abstract BiConsumer<Packet, DomainList> getDomainListProcessing();
+  }
+
   static Step readExistingResources(String operatorNamespace, String ns) {
-    DomainPresenceInfos dpis = new DomainPresenceInfos(ns);
-    dpis.addListener((resourceType, resourceVersion) -> {
-      switch (resourceType) {
-        case PODS:
-          main.startPodWatcher(ns, resourceVersion);
-          break;
-        case SERVICES:
-          main.startServiceWatcher(ns, resourceVersion);
-          break;
-        case DOMAINS:
-          main.startDomainWatcher(ns, resourceVersion);
-          break;
-        default:
-          // do nothing
+    NamespaceResources resources = new NamespaceResources();
+    resources.addProcessor(new NamespaceResourceProcessor() {
+      @Override
+      BiConsumer<Packet, DomainList> getDomainListProcessing() {
+        return (p, l) -> main.startDomainWatcher(ns, getInitialResourceVersion(l));
       }
     });
-
     return Step.chain(
         ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
         createConfigMapStep(ns),
         readExistingEvents(ns),
-        dpis.createSteps(),
+        new ReadExistingResourcesBeforeStep(ns),
+        readExistingPods(ns),
+        readExistingServices(ns),
+        readExistingDomains(ns),
         new DomainResourcesStep());
   }
 
@@ -938,38 +954,32 @@ public class Main {
       return (List<R>) Optional.ofNullable(result).map(KubernetesListObject::getItems).orElse(Collections.emptyList());
     }
 
-    abstract void startWatcher(String namespace, String initialResourceVersion);
   }
 
   private static class DomainListStep extends ListResponseStep<Domain, DomainList> {
 
+    private List<BiConsumer<Packet, DomainList>> processors;
+
     DomainListStep(String ns) {
+      this(ns, Arrays.asList(
+          (p, l) ->  main.startDomainWatcher(ns, getInitialResourceVersion(l)),
+          (p, l) -> getDomainPresenceInfos(p).addDomainList(l)));
+    }
+
+    DomainListStep(String ns, List<BiConsumer<Packet, DomainList>> processors) {
       super(ns);
+      this.processors = processors;
     }
 
-    @Override
-    void startWatcher(String namespace, String initialResourceVersion) {
-      main.startDomainWatcher(namespace, initialResourceVersion);
-    }
-
-    void processItem(Packet packet, Domain domain) {
-      DomainPresenceInfos domainPresenceInfos = getDomainPresenceInfos(packet);
-      DomainPresenceInfo info = domainPresenceInfos.getDomainPresenceInfo(domain.getDomainUid());
-      info.setDomain(domain);
-    }
-
-    private static DomainProcessor getProcessor(Packet packet) {
-      return Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
-    }
-
-    DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
+    static DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
       return (DomainPresenceInfos) packet.get(DPI_MAP);
     }
 
     @Override
     void processList(Packet packet, DomainList list) {
       BiConsumer<Packet, DomainList> processItems
-            = (packet1, domainList) ->  getItems(domainList).forEach(item -> processItem(packet, item));
+            = (packet1, domainList) ->  getItems(domainList).forEach(
+          item -> getDomainPresenceInfos(packet).addDomain(item));
       BiConsumer<Packet, DomainList> startWatcher
             = (packet1, domainList) -> main.startDomainWatcher(getNamespace(), getInitialResourceVersion(domainList));
 
@@ -1015,11 +1025,6 @@ public class Main {
       super(ns);
     }
 
-    @Override
-    void startWatcher(String namespace, String initialResourceVersion) {
-      main.startServiceWatcher(namespace, initialResourceVersion);
-    }
-
     DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
       return (DomainPresenceInfos) packet.get(DPI_MAP);
     }
@@ -1043,11 +1048,6 @@ public class Main {
     }
 
     @Override
-    void startWatcher(String namespace, String initialResourceVersion) {
-      main.startEventWatcher(namespace, initialResourceVersion);
-    }
-
-    @Override
     void processList(Packet packet, V1EventList list) {
       BiConsumer<Packet, V1EventList> startWatcher
           = (packet1, eventList) -> main.startEventWatcher(getNamespace(), getInitialResourceVersion(eventList));
@@ -1059,11 +1059,6 @@ public class Main {
 
     PodListStep(String ns) {
       super(ns);
-    }
-
-    @Override
-    void startWatcher(String namespace, String initialResourceVersion) {
-      main.startPodWatcher(namespace, initialResourceVersion);
     }
 
     DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
@@ -1339,6 +1334,15 @@ public class Main {
     private Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
     private List<Listener> listeners = new ArrayList<>();
 
+    private void addDomainList(DomainList list) {
+      list.getItems().forEach(this::addDomain);
+    }
+
+    private void addDomain(Domain domain) {
+      DomainPresenceInfo info = getDomainPresenceInfo(domain.getDomainUid());
+      info.setDomain(domain);
+    }
+
     private void addPod(V1Pod pod) {
       String domainUid = PodHelper.getPodDomainUid(pod);
       String serverName = PodHelper.getPodServerName(pod);
@@ -1395,17 +1399,6 @@ public class Main {
       listeners.forEach(listener -> listener.listRead(resourceType, resourceVersion));
     }
 
-    /**
-     * Return a set of steps that will populate the packet with the instances.
-     * @return
-     */
-    private Step createSteps() {
-      return Step.chain(
-          new ReadExistingResourcesBeforeStep(namespace),
-          readExistingPods(namespace),
-          readExistingServices(namespace),
-          readExistingDomains(namespace));
-    }
   }
 
 }
