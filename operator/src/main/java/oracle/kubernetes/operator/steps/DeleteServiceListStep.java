@@ -23,7 +23,7 @@ public class DeleteServiceListStep extends AbstractListStep<V1Service> {
     super(c, next);
   }
 
-  Step createDeleteStep(V1Service service) {
+  Step createActionStep(V1Service service) {
     V1ObjectMeta meta = service.getMetadata();
     V1DeleteOptions deleteOptions = new V1DeleteOptions();
     return new CallBuilder()

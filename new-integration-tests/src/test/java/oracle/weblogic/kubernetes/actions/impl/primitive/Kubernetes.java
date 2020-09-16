@@ -23,9 +23,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import io.kubernetes.client.Copy;
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.extended.generic.GenericKubernetesApi;
-import io.kubernetes.client.extended.generic.KubernetesApiResponse;
-import io.kubernetes.client.extended.generic.options.DeleteOptions;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
@@ -77,6 +74,10 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.PatchUtils;
+import io.kubernetes.client.util.exception.CopyNotSupportedException;
+import io.kubernetes.client.util.generic.GenericKubernetesApi;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import io.kubernetes.client.util.generic.options.DeleteOptions;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -412,6 +413,7 @@ public class Kubernetes {
           namespace, // name of the Namespace
           container, // container for which to stream logs
           null, //  Boolean Follow the log stream of the pod
+          null, // skip TLS verification of backend
           null, // number of bytes to read from the server before terminating the log output
           PRETTY, // pretty print output
           null, // Boolean, Return previous terminated container logs
@@ -652,7 +654,7 @@ public class Kubernetes {
    * @throws ApiException when pod interaction fails
    */
   public static void copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
-      throws IOException, ApiException {
+      throws IOException, ApiException, CopyNotSupportedException {
     Copy copy = new Copy();
     copy.copyDirectoryFromPod(pod, srcPath, destination);
   }

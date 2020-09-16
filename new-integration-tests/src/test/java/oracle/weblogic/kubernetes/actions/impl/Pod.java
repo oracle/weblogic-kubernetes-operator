@@ -51,6 +51,19 @@ public class Pod {
   }
 
   /**
+   * Get a pod's log for specific container.
+   *
+   * @param podName   name of the pod
+   * @param namespace name of the namespace
+   * @param container name of the container
+   * @return log as a String
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getPodLog(String podName, String namespace, String container) throws ApiException {
+    return Kubernetes.getPodLog(podName, namespace, container);
+  }
+
+  /**
    * Get the creationTimestamp for a given pod with following parameters.
    *
    * @param namespace     namespace in which to check for the pod existence
