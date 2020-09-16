@@ -37,7 +37,10 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
@@ -175,6 +178,23 @@ public class KubernetesTestSupportTest {
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
     assertThat(getCreationTimestamp(updatedDomain), equalTo(getCreationTimestamp(originalDomain)));
+  }
+
+  @Test
+  public void afterDomainStatusReplaced_resourceVersionIsIncremented() {
+    Domain originalDomain = createDomain(NS, "domain1");
+    testSupport.defineResources(originalDomain);
+    originalDomain.getMetadata().setResourceVersion("123");
+
+    Step steps = new CallBuilder()
+        .replaceDomainStatusAsync("domain1", NS,
+            createDomain(NS, "domain1")
+                .withStatus(new DomainStatus().addCondition(new DomainCondition(DomainConditionType.Progressing))),
+            null);
+    testSupport.runSteps(steps);
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
+    assertThat(updatedDomain.getMetadata().getResourceVersion(), equalTo("124"));
   }
 
   @Test
@@ -356,7 +376,7 @@ public class KubernetesTestSupportTest {
   }
 
   private Domain createDomain(String namespace, String name) {
-    return new Domain().withMetadata(new V1ObjectMeta().name(name).namespace(namespace));
+    return new Domain().withMetadata(new V1ObjectMeta().name(name).namespace(namespace)).withStatus(new DomainStatus());
   }
 
   @Test
