@@ -37,6 +37,10 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<Watch.Response<?>> {
     return new EventMatcher("MODIFIED", object);
   }
 
+  public static EventMatcher bookmarkEvent(Object object) {
+    return new EventMatcher("BOOKMARK", object);
+  }
+
   public static EventMatcher errorEvent(int expectedStatusCode) {
     return new EventMatcher("ERROR", expectedStatusCode);
   }

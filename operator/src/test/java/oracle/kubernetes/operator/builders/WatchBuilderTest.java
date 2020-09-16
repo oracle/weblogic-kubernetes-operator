@@ -31,6 +31,7 @@ import static java.net.HttpURLConnection.HTTP_ENTITY_TOO_LARGE;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.builders.EventMatcher.addEvent;
+import static oracle.kubernetes.operator.builders.EventMatcher.bookmarkEvent;
 import static oracle.kubernetes.operator.builders.EventMatcher.deleteEvent;
 import static oracle.kubernetes.operator.builders.EventMatcher.errorEvent;
 import static oracle.kubernetes.operator.builders.EventMatcher.modifyEvent;
@@ -52,6 +53,7 @@ public class WatchBuilderTest {
   private static final String API_VERSION = "weblogic.oracle/" + KubernetesConstants.DOMAIN_VERSION;
   private static final String NAMESPACE = "testspace";
   private static final int INITIAL_RESOURCE_VERSION = 123;
+  private static final String BOOKMARK_RESOURCE_VERSION = "456";
   private int resourceVersion = INITIAL_RESOURCE_VERSION;
   private final List<Memento> mementos = new ArrayList<>();
 
@@ -82,6 +84,20 @@ public class WatchBuilderTest {
     assertThat(domainWatch, contains(addEvent(domain)));
   }
 
+  @Test
+  public void whenDomainWatchReceivesBookmarkResponse_updateResourceVersion() throws Exception {
+    Domain domain =
+            new Domain()
+                    .withApiVersion(API_VERSION)
+                    .withKind("Domain")
+                    .withMetadata(createMetaData("domain1", NAMESPACE, BOOKMARK_RESOURCE_VERSION));
+    StubWatchFactory.addCallResponses(createBookmarkResponse(domain));
+
+    Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
+
+    assertThat(domainWatch, contains(bookmarkEvent(domain)));
+  }
+
   private <T> Watch.Response<T> createAddResponse(T object) {
     return WatchEvent.createAddedEvent(object).toWatchResponse();
   }
@@ -92,6 +108,10 @@ public class WatchBuilderTest {
 
   private <T> Watch.Response<T> createDeleteResponse(T object) {
     return WatchEvent.createDeleteEvent(object).toWatchResponse();
+  }
+
+  private <T> Watch.Response<T> createBookmarkResponse(T object) {
+    return WatchEvent.createBookmarkEvent(object).toWatchResponse();
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -208,10 +228,14 @@ public class WatchBuilderTest {
 
   @SuppressWarnings("SameParameterValue")
   private V1ObjectMeta createMetaData(String name, String namespace) {
+    return createMetaData(name, namespace, getNextResourceVersion());
+  }
+
+  private V1ObjectMeta createMetaData(String name, String namespace, String resourceVersion) {
     return new V1ObjectMeta()
         .name(name)
         .namespace(namespace)
-        .resourceVersion(getNextResourceVersion());
+        .resourceVersion(resourceVersion);
   }
 
   private String getNextResourceVersion() {
