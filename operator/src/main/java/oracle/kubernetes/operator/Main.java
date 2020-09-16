@@ -957,10 +957,9 @@ public class Main {
 
     @Override
     void processItem(Packet packet, Domain domain) {
-      DomainPresenceInfo info = getDomainPresenceInfos(packet).getDomainPresenceInfo(domain.getDomainUid());
+      DomainPresenceInfos domainPresenceInfos = getDomainPresenceInfos(packet);
+      DomainPresenceInfo info = domainPresenceInfos.getDomainPresenceInfo(domain.getDomainUid());
       info.setDomain(domain);
-      info.setPopulated(true);
-      getProcessor(packet).createMakeRightOperation(info).withExplicitRecheck().execute();
     }
 
     private static DomainProcessor getProcessor(Packet packet) {
@@ -990,7 +989,9 @@ public class Main {
       getDomainPresenceInfos(packet)
             .getStrandedDomainPresenceInfos()
             .forEach(info -> removeStrandedDomainPresenceInfo(getProcessor(packet), info));
-
+      getDomainPresenceInfos(packet)
+              .getActiveDomainPresenceInfos()
+              .forEach(info -> activateDomain(getProcessor(packet), info));
       return doNext(packet);
     }
 
@@ -1002,6 +1003,10 @@ public class Main {
       info.setDeleting(true);
       info.setPopulated(true);
       dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
+    }
+    private void activateDomain(DomainProcessor dp, DomainPresenceInfo info) {
+      info.setPopulated(true);
+      dp.createMakeRightOperation(info).withExplicitRecheck().execute();
     }
 
     private static DomainProcessor getProcessor(Packet packet) {
@@ -1035,8 +1040,14 @@ public class Main {
 
     @Override
     void processList(Packet packet, V1ServiceList list) {
-      getItems(list).forEach(item -> processItem(packet, item));
-      startWatcher(getNamespace(), getInitialResourceVersion(list));
+      BiConsumer<Packet, V1ServiceList> processItems
+              = (packet1, l) ->  getItems(l).forEach(item -> processItem(packet, item));
+      BiConsumer<Packet, V1ServiceList> startWatcher
+              = (packet1, l) -> main.startServiceWatcher(getNamespace(), getInitialResourceVersion(l));
+
+      processItems.accept(packet, list);
+      startWatcher.accept(packet, list);
+
     }
   }
 
@@ -1368,7 +1379,19 @@ public class Main {
     }
 
     private Set<DomainPresenceInfo> getStrandedDomainPresenceInfos() {
-      return domainPresenceInfoMap.values().stream().filter(dpi -> dpi.getDomain() == null).collect(Collectors.toSet());
+      return domainPresenceInfoMap.values().stream().filter(this::isStranded).collect(Collectors.toSet());
+    }
+
+    private boolean isStranded(DomainPresenceInfo dpi) {
+      return dpi.getDomain() == null;
+    }
+
+    private Set<DomainPresenceInfo> getActiveDomainPresenceInfos() {
+      return domainPresenceInfoMap.values().stream().filter(this::isActive).collect(Collectors.toSet());
+    }
+
+    private boolean isActive(DomainPresenceInfo dpi) {
+      return dpi.getDomain() != null;
     }
 
     private DomainPresenceInfo getDomainPresenceInfo(String domainUid) {
