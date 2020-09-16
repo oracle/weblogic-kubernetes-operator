@@ -24,7 +24,7 @@ subjects:
   namespace: {{ .Release.Namespace | quote }}
   apiGroup: ""
 roleRef:
-  {{- if (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
+  {{- if (or .dedicated (eq (default .domainNamespaceSelectionStrategy "List") "Dedicated")) }}
   kind: "Role"
   name: "weblogic-operator-role-namespace"
   {{- else }}

@@ -3,14 +3,14 @@
 
 {{- define "operator.operatorClusterRoleDomainAdmin" }}
 ---
-{{- if (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
+{{- if (or .dedicated (eq (default .domainNamespaceSelectionStrategy "List") "Dedicated")) }}
 kind: "Role"
 {{- else }}
 kind: "ClusterRole"
 {{- end }}
 apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
-  {{- if (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
+  {{- if (or .dedicated (eq (default .domainNamespaceSelectionStrategy "List") "Dedicated")) }}
   name: "weblogic-operator-role-domain-admin"
   namespace: {{ .Release.Namespace | quote }}
   {{- else }}

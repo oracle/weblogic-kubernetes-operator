@@ -32,11 +32,11 @@
 {{-   end -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "enableClusterRoleBinding") -}}
-{{- if and .enableClusterRoleBinding (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
+{{- if and .enableClusterRoleBinding (or .dedicated (eq (default .domainNamespaceSelectionStrategy "List") "Dedicated")) -}}
 {{-   $errorMsg := "The enableClusterRoleBinding value may not be true when either dedicated is true or domainNamespaceSelectionStrategy is Dedicated" -}}
 {{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
 {{- end -}}
-{{- if eq $scope.domainNamespaceSelectionStrategy "List" -}}
+{{- if eq (default $scope.domainNamespaceSelectionStrategy "List") "List" -}}
 {{-     $ignore := include "utils.verifyStringList" (list $scope "domainNamespaces") -}}
 {{- end -}}
 {{- if include "utils.verifyBoolean" (list $scope "elkIntegrationEnabled") -}}
@@ -47,11 +47,15 @@
 {{-   end -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "dedicated") -}}
-{{- $ignore := include "utils.verifyEnum" (list $scope "domainNamespaceSelectionStrategy" (list "List" "LabelSelector" "RegExp" "Dedicated")) -}}
-{{- if eq $scope.domainNamespaceSelectionStrategy "LabelSelector" -}}
+{{- if hasKey $scope "dedicated" -}}
+{{-   $ignore := include "utils.verifyOptionalEnum" (list $scope "domainNamespaceSelectionStrategy" (list "List" "LabelSelector" "RegExp" "Dedicated")) -}}
+{{- else -}}
+{{-   $ignore := include "utils.verifyEnum" (list $scope "domainNamespaceSelectionStrategy" (list "List" "LabelSelector" "RegExp" "Dedicated")) -}}
+{{- end -}}
+{{- if eq (default $scope.domainNamespaceSelectionStrategy "List") "LabelSelector" -}}
 {{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceLabelSelector") -}}
 {{- end -}}
-{{- if eq $scope.domainNamespaceSelectionStrategy "RegExp" -}}
+{{- if eq (default $scope.domainNamespaceSelectionStrategy "List") "RegExp" -}}
 {{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceRegExp") -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
