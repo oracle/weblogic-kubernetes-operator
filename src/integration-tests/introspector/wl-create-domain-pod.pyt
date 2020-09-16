@@ -36,8 +36,13 @@ readTemplate("/u01/oracle/wlserver/common/templates/wls/wls.jar")
 
 set('Name', '${DOMAIN_NAME}')
 setOption('DomainName', '${DOMAIN_NAME}')
+
+#cd('/')
 #create('${DOMAIN_NAME}','Log')
 #cd('/Log/${DOMAIN_NAME}');
+#set('FileMinSize', 1)
+#set('FileCount', 2)
+#set('RotateLogOnStartup', 'true')
 
 # Configure the Administration Server
 # ===================================
@@ -80,10 +85,13 @@ ssl = create('${ADMIN_NAME}','SSL')
 cd('/Servers/${ADMIN_NAME}/SSL/${ADMIN_NAME}')
 set('Enabled', 'true')
 
-#cd('/Servers/${ADMIN_NAME}')
-#create('${ADMIN_NAME}', 'Log')
-#cd('/Servers/${ADMIN_NAME}/Log/${ADMIN_NAME}')
-#set('FileName', '${LOG_HOME}/${ADMIN_NAME}.log')
+# cd('/Servers/${ADMIN_NAME}')
+# create('${ADMIN_NAME}', 'Log')
+# cd('/Servers/${ADMIN_NAME}/Log/${ADMIN_NAME}')
+# set('FileMinSize', 2)
+# set('FileCount', 2)
+# set('RotateLogOnStartup', 'true')
+## set('FileName', '${LOG_HOME}/${ADMIN_NAME}.log')
 
 
 # Set the admin user's username and password
@@ -260,9 +268,17 @@ if '${CLUSTER_TYPE}' == "CONFIGURED":
     set('RetryIntervalBeforeMSIMode', 1)
     set('Cluster', '${CLUSTER_NAME}')
 
+    #cd('/Servers/%s/' % name )
     #create(name,'Log')
     #cd('/Servers/%s/Log/%s' % (name, name))
-    #set('FileName', '${LOG_HOME}/%s.log' % name)
+    #set('FileMinSize', 3)
+    #set('FileCount', 3)
+    #set('RotateLogOnStartup', 'true')
+    ## set('FileName', '${LOG_HOME}/%s.log' % name)
+   
+    # HTTP access log 
+    # cd('/Servers/'+serverName1+'/WebServer/'+serverName1+'/WebServerLog/'+serverName1)
+
 else:
   print('Configuring Dynamic Cluster %s' % '${CLUSTER_NAME}')
 
@@ -274,6 +290,15 @@ else:
   cmo.setListenPort(${MANAGED_SERVER_PORT})
   #cmo.setListenAddress('${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE}${id}') # subst-ignore-missing
   cmo.setCluster(cl)
+
+  # cd('/ServerTemplates/%s' % templateName)
+  # create(templateName,'Log')
+  # cd('/ServerTemplates/%s/Log/%s' % (templateName, templateName))
+  # set('FileMinSize', 3)
+  # set('FileCount', 3)
+  # set('RotateLogOnStartup', 'true')
+
+
   print('Done setting attributes for Server Template: %s' % templateName);
 
   templateName = '${CLUSTER_NAME}' + "-template-dummy1"

@@ -37,6 +37,7 @@ import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -65,6 +66,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progre
 @SuppressWarnings("WeakerAccess")
 public class DomainStatusUpdater {
   public static final String INSPECTING_DOMAIN_PROGRESS_REASON = "InspectingDomainPresence";
+  public static final String ADMIN_SERVER_STARTING_PROGRESS_REASON = "AdminServerStarting";
   public static final String MANAGED_SERVERS_STARTING_PROGRESS_REASON = "ManagedServersStarting";
   public static final String SERVERS_READY_REASON = "ServersReady";
   public static final String ALL_STOPPED_AVAILABLE_REASON = "AllServersStopped";
@@ -97,7 +99,21 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createProgressingStep(String reason, boolean isPreserveAvailable, Step next) {
-    return new ProgressingStep(reason, isPreserveAvailable, next);
+    return new ProgressingStep(null, reason, isPreserveAvailable, next);
+  }
+
+  /**
+   * Asynchronous step to set Domain condition to Progressing.
+   *
+   * @param info Domain presence info
+   * @param reason Progressing reason
+   * @param isPreserveAvailable true, if existing Available=True condition should be preserved
+   * @param next Next step
+   * @return Step
+   */
+  public static Step createProgressingStep(DomainPresenceInfo info, String reason, boolean isPreserveAvailable,
+                                           Step next) {
+    return new ProgressingStep(info, reason, isPreserveAvailable, next);
   }
 
   /**
@@ -148,7 +164,8 @@ public class DomainStatusUpdater {
    * @return Step
    */
   static Step createFailedStep(Throwable throwable, Step next) {
-    return createFailedStep("Exception", throwable.getMessage(), next);
+    return throwable.getMessage() == null ? createFailedStep("Exception", throwable.toString(), next)
+        : createFailedStep("Exception", throwable.getMessage(), next);
   }
 
   /**
@@ -160,10 +177,24 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createFailedStep(String reason, String message, Step next) {
-    return new FailedStep(reason, message, next);
+    return new FailedStep(null, reason, message, next);
+  }
+
+  /**
+   * Asynchronous step to set Domain condition to Failed.
+   *
+   * @param info Domain presence info
+   * @param reason the reason for the failure
+   * @param message a fuller description of the problem
+   * @param next Next step
+   * @return Step
+   */
+  public static Step createFailedStep(DomainPresenceInfo info, String reason, String message, Step next) {
+    return new FailedStep(info, reason, message, next);
   }
 
   abstract static class DomainStatusUpdaterStep extends Step {
+    private DomainPresenceInfo info = null;
 
     DomainStatusUpdaterStep(Step next) {
       super(next);
@@ -177,6 +208,14 @@ public class DomainStatusUpdater {
 
     @Override
     public NextAction apply(Packet packet) {
+      if ((packet.getSpi(DomainPresenceInfo.class) == null)
+          && (info != null)) {
+        packet
+            .getComponents()
+            .put(
+              ProcessingConstants.DOMAIN_COMPONENT_NAME,
+              Component.createFor(info));
+      }
       DomainStatusUpdaterContext context = createContext(packet);
       DomainStatus newStatus = context.getNewStatus();
 
@@ -552,12 +591,13 @@ public class DomainStatusUpdater {
     }
   }
 
-  private static class ProgressingStep extends DomainStatusUpdaterStep {
+  public static class ProgressingStep extends DomainStatusUpdaterStep {
     private final String reason;
     private final boolean isPreserveAvailable;
 
-    private ProgressingStep(String reason, boolean isPreserveAvailable, Step next) {
+    private ProgressingStep(DomainPresenceInfo info, String reason, boolean isPreserveAvailable, Step next) {
       super(next);
+      super.info = info;
       this.reason = reason;
       this.isPreserveAvailable = isPreserveAvailable;
     }
@@ -602,8 +642,9 @@ public class DomainStatusUpdater {
     private final String reason;
     private final String message;
 
-    private FailedStep(String reason, String message, Step next) {
+    private FailedStep(DomainPresenceInfo info, String reason, String message, Step next) {
       super(next);
+      super.info = info;
       this.reason = reason;
       this.message = message;
     }

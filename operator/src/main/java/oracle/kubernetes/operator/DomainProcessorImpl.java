@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -34,7 +35,6 @@ import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.DomainStatusPatch;
 import oracle.kubernetes.operator.helpers.DomainValidationSteps;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
@@ -64,11 +64,17 @@ import oracle.kubernetes.weblogic.domain.model.AdminServer;
 import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.ServerHealth;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
-import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
+import static oracle.kubernetes.operator.DomainStatusUpdater.ADMIN_SERVER_STARTING_PROGRESS_REASON;
+import static oracle.kubernetes.operator.DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
 
 public class DomainProcessorImpl implements DomainProcessor {
@@ -209,7 +215,8 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static Step bringManagedServersUp(Step next) {
-    return new ManagedServersUpStep(next);
+    return DomainStatusUpdater.createProgressingStep(MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
+            new ManagedServersUpStep(next));
   }
 
   private FiberGate getMakeRightFiberGate(String ns) {
@@ -253,7 +260,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.getCurrentFibers().forEach(
                 (key, fiber) -> {
                   Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
-                    try (LoggingContext stack
+                    try (LoggingContext ignored
                              = LoggingContext.setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
                       LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getName());
                     }
@@ -341,7 +348,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     switch (watchType) {
       case "ADDED":
       case "MODIFIED":
-        new DomainStatusUpdate(info.getDomain(), pod, domainUid).invoke();
+        PodWatcher.PodStatus podStatus = PodWatcher.getPodStatus(pod);
+        new DomainStatusUpdate(pod, domainUid, delegate, info, podStatus).invoke();
         break;
       default:
     }
@@ -511,7 +519,11 @@ public class DomainProcessorImpl implements DomainProcessor {
                           }
                         });
               } catch (Throwable t) {
-                LOGGER.severe(MessageKeys.EXCEPTION, t);
+                try (LoggingContext ignored
+                         = LoggingContext.setThreadContext()
+                    .namespace(info.getNamespace()).domainUid(info.getDomainUid())) {
+                  LOGGER.severe(MessageKeys.EXCEPTION, t);
+                }
               }
             },
             main.initialShortDelay,
@@ -539,6 +551,49 @@ public class DomainProcessorImpl implements DomainProcessor {
   @Override
   public MakeRightDomainOperation createMakeRightOperation(Domain liveDomain) {
     return createMakeRightOperation(new DomainPresenceInfo(liveDomain));
+  }
+
+  public Step createPopulatePacketServerMapsStep(oracle.kubernetes.operator.work.Step next) {
+    return new PopulatePacketServerMapsStep(next);
+  }
+
+  public static class PopulatePacketServerMapsStep extends Step {
+    public PopulatePacketServerMapsStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      populatePacketServerMapsFromDomain(packet);
+      return doNext(packet);
+    }
+
+    private void populatePacketServerMapsFromDomain(Packet packet) {
+      Map<String, ServerHealth> serverHealth = new ConcurrentHashMap<>();
+      Map<String, String> serverState = new ConcurrentHashMap<>();
+      Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getServers)
+          .ifPresent(servers -> servers.forEach(item -> addServerToMaps(serverHealth, serverState, item)));
+      if (!serverState.isEmpty()) {
+        packet.put(SERVER_STATE_MAP, serverState);
+      }
+      if (!serverHealth.isEmpty()) {
+        packet.put(SERVER_HEALTH_MAP, serverHealth);
+      }
+    }
+
+    private void addServerToMaps(Map<String, ServerHealth> serverHealthMap,
+                                 Map<String, String> serverStateMap, ServerStatus item) {
+      if (item.getHealth() != null) {
+        serverHealthMap.put(item.getServerName(), item.getHealth());
+      }
+      if (item.getState() != null) {
+        serverStateMap.put(item.getServerName(), item.getState());
+      }
+    }
+
   }
 
   /**
@@ -648,14 +703,19 @@ public class DomainProcessorImpl implements DomainProcessor {
               Component.createFor(liveInfo, delegate.getVersion(),
                   PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                   V1SubjectRulesReviewStatus.class, delegate.getSubjectRulesReviewStatus(getNamespace())));
-
       runDomainPlan(
             getDomain(),
             getDomainUid(),
             getNamespace(),
-            new StepAndPacket(createSteps(), packet),
+            createDomainPlanSteps(packet),
             deleting,
             willInterrupt);
+    }
+
+    private StepAndPacket createDomainPlanSteps(Packet packet) {
+      return new StepAndPacket(
+          createPopulatePacketServerMapsStep(createSteps()),
+          packet);
     }
 
     private Domain getDomain() {
@@ -748,7 +808,8 @@ public class DomainProcessorImpl implements DomainProcessor {
                     () -> {
                       DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
                       if (existing != null) {
-                        try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+                        try (LoggingContext ignored =
+                                 LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
                           existing.setPopulated(false);
                           // proceed only if we have not already retried max number of times
                           int retryCount = existing.incrementAndGetFailureCount();
@@ -783,20 +844,19 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   Step createDomainUpPlan(DomainPresenceInfo info) {
-    Step managedServerStrategy =
-        bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(new TailStep()));
+    Step managedServerStrategy = bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(new TailStep()));
 
     Step domainUpStrategy =
         Step.chain(
             domainIntrospectionSteps(info),
             new DomainStatusStep(info, null),
+            DomainStatusUpdater.createProgressingStep(ADMIN_SERVER_STARTING_PROGRESS_REASON,true, null),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
 
     return Step.chain(
           createDomainUpInitialStep(info),
           ConfigMapHelper.readExistingIntrospectorConfigMap(info.getNamespace(), info.getDomainUid()),
-          DomainStatusUpdater.createProgressingStep(INSPECTING_DOMAIN_PROGRESS_REASON,true, null),
           DomainPresenceStep.createDomainPresenceStep(info.getDomain(), domainUpStrategy, managedServerStrategy));
   }
 
@@ -974,40 +1034,85 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static class DomainStatusUpdate {
-    private final Domain domain;
     private final V1Pod pod;
     private final String domainUid;
+    private DomainProcessorDelegate delegate = null;
+    private DomainPresenceInfo info = null;
+    private PodWatcher.PodStatus podStatus;
 
-    DomainStatusUpdate(Domain domain, V1Pod pod, String domainUid) {
-      this.domain = domain;
+    DomainStatusUpdate(V1Pod pod, String domainUid, DomainProcessorDelegate delegate,
+                       DomainPresenceInfo info, PodWatcher.PodStatus podStatus) {
       this.pod = pod;
       this.domainUid = domainUid;
+      this.delegate = delegate;
+      this.info = info;
+      this.podStatus = podStatus;
     }
 
-    public void invoke() {
-      Optional.ofNullable(getMatchingContainerStatus())
-            .map(V1ContainerStatus::getState)
-            .map(V1ContainerState::getWaiting)
-            .ifPresent(waiting -> updateStatus(waiting.getReason(), waiting.getMessage()));
-    }
-
-    private void updateStatus(String reason, String message) {
-      if (reason == null || message == null) {
-        return;
+    private void invoke() {
+      switch (podStatus) {
+        case PHASE_FAILED:
+          delegate.runSteps(
+                  DomainStatusUpdater.createFailedStep(
+                          info, pod.getStatus().getReason(), pod.getStatus().getMessage(), null));
+          break;
+        case WAITING_NON_NULL_MESSAGE:
+          Optional.ofNullable(getMatchingContainerStatus())
+                  .map(V1ContainerStatus::getState)
+                  .map(V1ContainerState::getWaiting)
+                  .ifPresent(waiting ->
+                    delegate.runSteps(
+                            DomainStatusUpdater.createFailedStep(
+                                    info, waiting.getReason(), waiting.getMessage(), null)));
+          break;
+        case TERMINATED_ERROR_REASON:
+          Optional.ofNullable(getMatchingContainerStatus())
+                  .map(V1ContainerStatus::getState)
+                  .map(V1ContainerState::getTerminated)
+                  .ifPresent(terminated -> delegate.runSteps(
+                          DomainStatusUpdater.createFailedStep(
+                                  info, terminated.getReason(), terminated.getMessage(), null)));
+          break;
+        case UNSCHEDULABLE:
+          Optional.ofNullable(getMatchingPodCondition())
+                  .ifPresent(condition ->
+                          delegate.runSteps(
+                                  DomainStatusUpdater.createFailedStep(
+                                          info, condition.getReason(), condition.getMessage(), null)));
+          break;
+        case SUCCESS:
+          Optional.ofNullable(getMatchingContainerStatus())
+                  .map(V1ContainerStatus::getState)
+                  .map(V1ContainerState::getWaiting)
+                  .ifPresent(waiting ->
+                          delegate.runSteps(
+                                  DomainStatusUpdater.createProgressingStep(
+                                          info, waiting.getReason(), false, null)));
+          break;
+        default:
       }
-      
-      DomainStatusPatch.updateSynchronously(domain, reason, message);
     }
 
     private V1ContainerStatus getMatchingContainerStatus() {
       return Optional.ofNullable(pod.getStatus())
-            .map(V1PodStatus::getContainerStatuses)
-            .flatMap(this::getMatchingContainerStatus)
-            .orElse(null);
+              .map(V1PodStatus::getContainerStatuses)
+              .flatMap(this::getMatchingContainerStatus)
+              .orElse(null);
     }
 
     private Optional<V1ContainerStatus> getMatchingContainerStatus(Collection<V1ContainerStatus> statuses) {
       return statuses.stream().filter(this::hasInstrospectorJobName).findFirst();
+    }
+
+    private V1PodCondition getMatchingPodCondition() {
+      return Optional.ofNullable(pod.getStatus())
+              .map(V1PodStatus::getConditions)
+              .flatMap(this::getPodCondition)
+              .orElse(null);
+    }
+
+    private Optional<V1PodCondition> getPodCondition(Collection<V1PodCondition> conditions) {
+      return conditions.stream().findFirst();
     }
 
     private boolean hasInstrospectorJobName(V1ContainerStatus s) {

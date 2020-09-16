@@ -13,6 +13,7 @@ description: "Important considerations for WebLogic domains in Kubernetes."
 * [About the Domain resource](#about-the-domain-resource)
 * [Managing life cycle operations](#managing-life-cycle-operations)
 * [Scaling clusters](#scaling-clusters)
+* [Log files](#log-files)
 
 #### Important considerations for WebLogic domains in Kubernetes
 
@@ -32,9 +33,10 @@ Be aware of the following important considerations for WebLogic domains running 
   [WebLogic domain in Docker image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
   {{% /notice %}}
 
-* _Log File Locations:_ The operator can automatically override WebLogic domain and server log locations using
-  configuration overrides.  This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
+* _Log File Locations:_ The operator can automatically override WebLogic Server, domain, and introspector log locations.
+  This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
   and `domainHomeSourceType` is set to `PersistentVolume`.  When overriding, the log location will be the location specified by the `logHome` setting.
+  For additional log file tuning information, see [Log files](#log-files).
 
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
   SSL, admin, or custom channel listen addresses (using situational configuration overrides).  These will become `domainUID` followed by a
@@ -132,3 +134,65 @@ The operator let's you initiate scaling of clusters in various ways:
 * [Using the operator's REST APIs]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#calling-the-operators-rest-scale-api" >}})
 * [Using WLDF policies]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api" >}})
 * [Using a Prometheus action]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api" >}})
+
+### Log files
+
+The operator can automatically override WebLogic Server, domain, and introspector `.log` and `.out` locations.
+This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
+and `domainHomeSourceType` is set to `PersistentVolume`.  When overriding, the log location will be the location specified by the `logHome` setting.
+
+If you want to fine tune the `.log` and `.out` rotation behavior for WebLogic Servers and domains, then
+you can update the related `Log MBean` in your WebLogic configuration. Alternatively, for WebLogic
+Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
+
+- Here are some WLST offline examples for creating and accessing commonly tuned Log MBeans:
+
+  ```bash
+  # domain log
+  cd('/')
+  create(dname,'Log')
+  cd('/Log/' + dname);
+  
+  # configured server log for a server named 'sname'
+  cd('/Servers/' + sname)
+  create(sname, 'Log')
+  cd('/Servers/' + sname + '/Log/' + sname)
+  
+  # templated (dynamic) server log for a template named 'tname'
+  cd('/ServerTemplates/' + tname)
+  create(tname,'Log')
+  cd('/ServerTemplates/' + tname + '/Log/' + tname)
+  ```
+
+- Here is sample WLST offline code for commonly tuned Log MBean attributes:
+
+  ```bash
+  # minimum log file size before rotation in kilobytes
+  set('FileMinSize', 1000)
+  
+  # maximum number of rotated files
+  set('FileCount', 10)
+  
+  # set to true to rotate file every time on startup (instead of append)
+  set('RotateLogOnStartup', 'true')
+  ```
+
+- Here are the defaults for commonly tuned Log MBean attributes:
+
+  | Log MBean Attribute | Production Mode Default | Development Mode Default |
+  | --------- | ----------------------- | ------------------------ |
+  | FileMinSize (in kilobytes) | 5000 | 500 |
+  | FileCount | 100 | 7 |
+  | RotateLogOnStartup | false | true |
+
+- For WebLogic Server `.log` and `.out` files (including both dynamic and configured servers), you can alternatively
+set logging attributes using system properties that start with `weblogic.log.`
+and that end with the corresponding Log MBean attribute name. 
+
+  For example, you can include `-Dweblogic.log.FileMinSize=1000 -Dweblogic.log.FileCount=10 -Dweblogic.log.RotateLogOnStartup=true` in `domain.spec.serverPod.env.name.JAVA_OPTIONS` to set the behavior for all WebLogic Servers in your domain. For information about setting `JAVA_OPTIONS`, see [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md#jvm-memory-and-java-option-environment-variables" >}}).
+
+{{% notice warning %}}
+Kubernetes stores pod logs on each of its nodes, and, depending on the Kubernetes implementation, extra steps may be necessary to limit their disk space usage.
+For more information, see [Kubernetes Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/).
+{{% /notice %}}
+ 

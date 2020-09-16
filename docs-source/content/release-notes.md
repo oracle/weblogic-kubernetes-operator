@@ -4,10 +4,11 @@ date: 2019-03-15T11:25:28-04:00
 draft: false
 ---
 
-### Recent changes
+### Releases
 
-| Date | Version | Introduces backward incompatibilities | Change |
+| Date | Version | Introduces backward incompatibilities? | Changes |
 | --- | --- | --- | --- |
+| September 15, 2020 | v3.0.2 | no | This release contains several fixes, including improvements to log rotation and a fix that avoids unnecessarily updating the domain status. |
 | August 13, 2020 | v3.0.1 | no | Fixed an issue preventing the REST interface from working after a Helm upgrade. Helm 3.1.3+ now required. |
 | July 17, 2020 | v3.0.0 | yes | Adds Model in Image feature and support for applying topology and configuration override changes without downtime. Removal of support for Helm 2.x. Operator performance improvements to manage many domains in the same Kubernetes cluster. |
 | June 22, 2020 | v2.6.0 | no | Kubernetes 1.16, 1.17, and 1.18 support. Removal of support for Kubernetes 1.13 and earlier. This release can be run in the same cluster with operators of either 2.5.0 and below, or with 3.x providing an upgrade path. Certified support of Oracle Linux Cloud Native Environment (OLCNE) 1.1 with Kubernetes 1.17.0.
@@ -25,6 +26,22 @@ draft: false
 | May 7, 2018 | v1.0  | no | Added support for dynamic clusters, the Apache HTTP Server, the Voyager Ingress Controller, and for PV in NFS storage for multi-node environments.
 | April 4, 2018 | 0.2 | yes | Many Kubernetes artifact names and labels have changed. Also, the names of generated YAML files for creating a domain's PV and PVC have changed.  Because of these changes, customers must recreate their operators and domains.
 | March 20, 2018 |  | yes | Several files and input parameters have been renamed.  This affects how operators and domains are created.  It also changes generated Kubernetes artifacts, therefore customers must recreate their operators and domains.
+
+### Change log
+
+#### Operator 3.0.2
+
+* Removed unnecessary duplicated parameter in initialize-internal-operator-identity.sh script ([#1867](https://github.com/oracle/weblogic-kubernetes-operator/pull/1867)).
+* Support nodeAffinity and nodeSelector for the operator in its Helm chart ([#1869](https://github.com/oracle/weblogic-kubernetes-operator/pull/1869)).
+* Log file rotation enhancements and documentation ([#1872](https://github.com/oracle/weblogic-kubernetes-operator/pull/1872), [#1827](https://github.com/oracle/weblogic-kubernetes-operator/pull/1827)).
+* Production support for the NGINX ingress controller ([#1878](https://github.com/oracle/weblogic-kubernetes-operator/pull/1878)).
+* Prevent unnecessary changes to Domain status that were causing churn to the resourceVersion ([#1879](https://github.com/oracle/weblogic-kubernetes-operator/pull/1879)).
+* Better reflect introspector status in the Domain status ([#1832](https://github.com/oracle/weblogic-kubernetes-operator/pull/1832)).
+* Create each pod after any previous pods have been scheduled to allow for correct anti-affinity behavior ([#1855](https://github.com/oracle/weblogic-kubernetes-operator/pull/1855)).
+
+#### Operator 3.0.1
+
+* Resolved an issue where a Helm upgrade was incorrectly removing the operator's private key thereby disabling the operator's REST interface ([#1846](https://github.com/oracle/weblogic-kubernetes-operator/pull/1846)).
 
 ### Known issues
 
