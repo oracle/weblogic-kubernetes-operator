@@ -68,6 +68,7 @@ Information about how to install and configure these to load balance WebLogic cl
 
  - [Traefik guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md)
  - [Voyager guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/voyager/README.md)
+ - [NGINX guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/nginx/README.md)
 
  {{% notice note %}}
  For production environments, we recommend Traefik (2.2.1 or later), Apache, NGINX, or Voyager ingress controllers, or the load balancer provided by your cloud provider.
