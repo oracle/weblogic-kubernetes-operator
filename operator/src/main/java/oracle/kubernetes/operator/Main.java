@@ -922,10 +922,11 @@ public class Main {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<L> callResponse) {
-      getItems(callResponse.getResult()).forEach(item -> processItem(packet, item));
-      startWatcher(getNamespace(), getInitialResourceVersion(callResponse.getResult()));
+      processList(packet, callResponse.getResult());
       return doContinueListOrNext(callResponse, packet);
     }
+
+    abstract void processList(Packet packet, L list);
 
     void processItem(Packet packet, R item) {
     }
@@ -942,7 +943,7 @@ public class Main {
     abstract void startWatcher(String namespace, String initialResourceVersion);
   }
 
-  private static class DomainListStep extends DomainResourceResponseStep<Domain, DomainList> {
+  private static class DomainListStep extends ListResponseStep<Domain, DomainList> {
 
     DomainListStep(String ns) {
       super(ns);
@@ -965,6 +966,15 @@ public class Main {
       return Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
     }
 
+    DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
+      return (DomainPresenceInfos) packet.get(DPI_MAP);
+    }
+
+    @Override
+    void processList(Packet packet, DomainList list) {
+      getItems(list).forEach(item -> processItem(packet, item));
+      startWatcher(getNamespace(), getInitialResourceVersion(list));
+    }
   }
 
   private static class DomainResourcesStep extends Step {
@@ -993,24 +1003,7 @@ public class Main {
     }
   }
 
-  abstract static class DomainResourceResponseStep<R extends KubernetesObject,L
-        extends KubernetesListObject> extends ListResponseStep<R, L> {
-    public DomainResourceResponseStep(String namespace) {
-      super(namespace);
-    }
-
-    @Override
-    abstract void startWatcher(String namespace, String initialResourceVersion);
-
-    @Override
-    abstract void processItem(Packet packet, R service);
-
-    DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
-      return (DomainPresenceInfos) packet.get(DPI_MAP);
-    }
-  }
-
-  private static class ServiceListStep extends DomainResourceResponseStep<V1Service, V1ServiceList> {
+  private static class ServiceListStep extends ListResponseStep<V1Service, V1ServiceList> {
     ServiceListStep(String ns) {
       super(ns);
     }
@@ -1030,6 +1023,15 @@ public class Main {
       }
     }
 
+    DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
+      return (DomainPresenceInfos) packet.get(DPI_MAP);
+    }
+
+    @Override
+    void processList(Packet packet, V1ServiceList list) {
+      getItems(list).forEach(item -> processItem(packet, item));
+      startWatcher(getNamespace(), getInitialResourceVersion(list));
+    }
   }
 
   private static class EventListStep extends ListResponseStep<V1Event, V1EventList> {
@@ -1041,9 +1043,15 @@ public class Main {
     void startWatcher(String namespace, String initialResourceVersion) {
       main.startEventWatcher(namespace, initialResourceVersion);
     }
+
+    @Override
+    void processList(Packet packet, V1EventList list) {
+      getItems(list).forEach(item -> processItem(packet, item));
+      startWatcher(getNamespace(), getInitialResourceVersion(list));
+    }
   }
 
-  private static class PodListStep extends DomainResourceResponseStep<V1Pod, V1PodList> {
+  private static class PodListStep extends ListResponseStep<V1Pod, V1PodList> {
 
     PodListStep(String ns) {
       super(ns);
@@ -1064,6 +1072,15 @@ public class Main {
       }
     }
 
+    DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
+      return (DomainPresenceInfos) packet.get(DPI_MAP);
+    }
+
+    @Override
+    void processList(Packet packet, V1PodList list) {
+      getItems(list).forEach(item -> processItem(packet, item));
+      startWatcher(getNamespace(), getInitialResourceVersion(list));
+    }
   }
 
   private static String getInitialResourceVersion(KubernetesListObject list) {
