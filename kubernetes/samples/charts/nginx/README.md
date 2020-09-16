@@ -143,7 +143,7 @@ set('WeblogicPluginEnabled',true)
 ### 2. Create NGINX ingress resource with custom annotation values
 Save the below configuration as `nginx-tls-console.yaml` and replace the string `weblogic-domain` with the namespace of the WebLogic domain, the string `domain1` with the domain UID, and the string `adminserver` with the name of the Administration Server in the WebLogic domain.
 
-**NOTE**: If you also have HTTP coming into ingress you will want to make sure that you remove any incoming WL-Proxy-SSL header. This protects you from a malicious user sending in a request and tricking WebLogic into thinking it's secure when it wasn't. Add the following annotations in the Nginx ingress configuration to block any WL-Proxy headers coming from the client. In the following example the ingress resource will eliminate client header `WL-Proxy-Client-IP`.
+**NOTE**:If you also have HTTP requests coming into an ingress, make sure that you remove any incoming `WL-Proxy-SSL` header. This protects you from a malicious user sending in a request to appear to WebLogic as secure when it isn't. Add the following annotations in the NGINX ingress configuration to block `WL-Proxy` headers coming from the client. In the following example, the ingress resource will eliminate the client header `WL-Proxy-Client-IP`.
 
 ```
 apiVersion: extensions/v1beta1
