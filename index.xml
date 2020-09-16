@@ -212,7 +212,7 @@ One of the operator&amp;rsquo;s most important jobs is to start and stop WebLogi
       <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/</guid>
-      <description>Use this document to create your own Domain resource, which can be used to configure the operation of your WebLogic Server domain. The Domain resource does not replace the traditional domain configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain. For instance, the domain configuration will still specify deployed applications, data sources, and most other details about the domain while the Domain resource will specify the number of cluster members currently running or the persistent volumes that will be mounted into the containers running WebLogic Server instances.</description>
+      <description>Contents  Overview Prerequisites Deploying domain resource YAML files Domain resource custom resource definition (CRD) Domain resource attribute references Using kubectl explain Domain spec elements JVM memory and Java option environment variables Pod generation  Overview Use this document to create your own Domain resource, which can be used to configure the operation of your WebLogic Server domain. The Domain resource does not replace the traditional domain configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain.</description>
     </item>
     
     <item>
@@ -365,7 +365,7 @@ The Oracle Database Docker images are only supported for non-production use. For
       <description>Get these images and put them into your local registry.   If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store, and accept the license agreement for the WebLogic Server image.
   Log in to the Docker store from your Docker client:
 $ docker login   Pull the operator image:
-$ docker pull oracle/weblogic-kubernetes-operator:3.0.1   Pull the Traefik load balancer image:</description>
+$ docker pull oracle/weblogic-kubernetes-operator:3.0.2   Pull the Traefik load balancer image:</description>
     </item>
     
     <item>
@@ -731,8 +731,7 @@ Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to p
       <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/external-clients/</guid>
-      <description>Approaches There are two supported approaches for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster: Load balancer tunneling and Kubernetes NodePorts.
-This FAQ is for remote EJB and JMS clients - not JTA clients. The operator does not currently support external WebLogic JTA access to a WebLogic cluster, because external JTA access requires each server in the cluster to be individually addressable by the client, but this conflicts with the current operator requirement that a network channel in a cluster have the same port across all servers in the cluster.</description>
+      <description>Contents  Overview Load balancer tunneling Kubernetes NodePorts Adding a WebLogic custom channel  When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes   Setting up a NodePort  Getting started Sample NodePort resource Table of NodePort attributes   Security notes Enabling unknown host access  When is it necessary to enable unknown host access? How to enable unknown host access   Optional reading  Overview When WebLogic clients and servers are external to Kubernetes, and you want to give them access to Kubernetes hosted WebLogic cluster EJBs and JMS, there are two supported approaches:</description>
     </item>
     
     <item>
@@ -801,7 +800,7 @@ Check the introspector job If your introspector job failed, then examine the kub
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Recent changes    Date Version Introduces backward incompatibilities Change     August 13, 2020 v3.0.1 no Fixed an issue preventing the REST interface from working after a Helm upgrade. Helm 3.1.3+ now required.   July 17, 2020 v3.0.0 yes Adds Model in Image feature and support for applying topology and configuration override changes without downtime. Removal of support for Helm 2.x. Operator performance improvements to manage many domains in the same Kubernetes cluster.</description>
+      <description>Releases    Date Version Introduces backward incompatibilities? Changes     September 15, 2020 v3.0.2 no This release contains several fixes, including improvements to log rotation and a fix that avoids unnecessarily updating the domain status.   August 13, 2020 v3.0.1 no Fixed an issue preventing the REST interface from working after a Helm upgrade. Helm 3.1.3+ now required.   July 17, 2020 v3.0.0 yes Adds Model in Image feature and support for applying topology and configuration override changes without downtime.</description>
     </item>
     
   </channel>

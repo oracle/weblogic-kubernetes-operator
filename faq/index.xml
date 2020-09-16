@@ -118,8 +118,7 @@ OKE Kubernetes worker nodes typically do not have public IP addresses. This mean
       <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/external-clients/</guid>
-      <description>Approaches There are two supported approaches for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster: Load balancer tunneling and Kubernetes NodePorts.
-This FAQ is for remote EJB and JMS clients - not JTA clients. The operator does not currently support external WebLogic JTA access to a WebLogic cluster, because external JTA access requires each server in the cluster to be individually addressable by the client, but this conflicts with the current operator requirement that a network channel in a cluster have the same port across all servers in the cluster.</description>
+      <description>Contents  Overview Load balancer tunneling Kubernetes NodePorts Adding a WebLogic custom channel  When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes   Setting up a NodePort  Getting started Sample NodePort resource Table of NodePort attributes   Security notes Enabling unknown host access  When is it necessary to enable unknown host access? How to enable unknown host access   Optional reading  Overview When WebLogic clients and servers are external to Kubernetes, and you want to give them access to Kubernetes hosted WebLogic cluster EJBs and JMS, there are two supported approaches:</description>
     </item>
     
     <item>
