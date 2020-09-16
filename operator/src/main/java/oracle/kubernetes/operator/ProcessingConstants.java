@@ -37,7 +37,6 @@ public interface ProcessingConstants {
   String INTROSPECTOR_JOB_FAILURE_LOGGED = "introspectorJobfailureLogged";
 
   String WAIT_FOR_POD_READY = "waitForPodReady";
-  String MAX_CONCURRENCY = "MaxConcurrency";
 
   /** Key to an object of type MakeRightDomainOperation. */
   String MAKE_RIGHT_DOMAIN_OPERATION = "makeRightOp";
