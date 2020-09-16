@@ -322,7 +322,19 @@ public abstract class PodStepContext extends BasePodStepContext {
     return createPodAsync(replaceResponse(next));
   }
 
+  /**
+   * Creates a Progressing step before an action step.
+   *
+   * @param actionStep the step to perform after the ProgressingStep.
+   * @return a step to be scheduled.
+   */
+  abstract Step createProgressingStep(Step actionStep);
+
   private Step patchCurrentPod(V1Pod currentPod, Step next) {
+    return createProgressingStep(patchPod(currentPod, next));
+  }
+
+  protected Step patchPod(V1Pod currentPod, Step next) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
 
     KubernetesUtils.addPatches(
@@ -331,7 +343,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
 
     return new CallBuilder()
-        .patchPodAsync(getPodName(), getNamespace(),
+            .patchPodAsync(getPodName(), getNamespace(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 

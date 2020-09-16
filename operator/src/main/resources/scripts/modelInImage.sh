@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script contains the all the function of model in image
-# It is used by introspectDomain.sh job and starServer.sh
+# It is used by introspectDomain.sh job and startServer.sh
 
 source ${SCRIPTPATH}/utils.sh
 
@@ -532,8 +532,8 @@ function diff_model() {
     org.python.util.jython \
     ${SCRIPTPATH}/model_diff.py $1 $2 > ${WDT_OUTPUT} 2>&1
   if [ $? -ne 0 ] ; then
-    trace SEVERE "Failed to compare models. Check logs for error."
-    trace SEVERE "$(cat ${WDT_OUTPUT})"
+    trace SEVERE "Failed to compare models. Check logs for error. Comparison output:"
+    cat ${WDT_OUTPUT}
     exitOrLoop
   fi
   trace "Exiting diff_model"
@@ -648,11 +648,8 @@ function generateMergedModel() {
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT}
   ret=$?
   if [ $ret -ne 0 ]; then
-    trace SEVERE "WDT Failed: Validate Model Failed "
-    if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
-      cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_validateDomain.log
-    fi
-    trace SEVERE "$(cat ${WDT_OUTPUT})"
+    trace SEVERE "WDT Failed: Validate Model Failed:"
+    cat ${WDT_OUTPUT}
     exitOrLoop
   fi
 
@@ -679,11 +676,8 @@ function wdtCreatePrimordialDomain() {
     > ${WDT_OUTPUT}
   ret=$?
   if [ $ret -ne 0 ]; then
-    trace SEVERE "WDT Create Domain Failed ${ret}"
-    if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
-      cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
-    fi
-    trace SEVERE "$(cat ${WDT_OUTPUT})"
+    trace SEVERE "WDT Create Domain Failed, ret=${ret}:"
+    cat ${WDT_OUTPUT}
     exitOrLoop
   fi
 
@@ -712,11 +706,8 @@ function wdtUpdateModelDomain() {
   ret=$?
 
   if [ $ret -ne 0 ]; then
-    trace SEVERE "WDT Update Domain Failed "
-    if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
-      cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_updateDomain.log
-    fi
-    trace SEVERE "$(cat ${WDT_OUTPUT})"
+    trace SEVERE "WDT Update Domain Failed:"
+    cat ${WDT_OUTPUT}
     exitOrLoop
   fi
 
@@ -788,8 +779,8 @@ function encrypt_decrypt_model() {
     trace SEVERE "Fatal Error: Failed to $1 domain model. This error is irrecoverable.  Check to see if the secret " \
     "described in the configuration.model.runtimeEncryptionSecret domain resource field has been changed since the " \
     "creation of the domain. You can either reset the password to the original one and try again or delete "\
-    "and recreate the domain."
-    trace SEVERE "$(cat ${WDT_OUTPUT})"
+    "and recreate the domain. Failure output:"
+    cat ${WDT_OUTPUT}
     exitOrLoop
   fi
 
@@ -829,8 +820,8 @@ function encrypt_decrypt_domain_secret() {
     trace SEVERE "Fatal Error: Failed to $1 domain secret. This error is irrecoverable.  Check to see if the secret " \
     "described in the configuration.model.runtimeEncryptionSecret domain resource field has been changed since the " \
     "creation of the domain. You can either reset the password to the original one and try again or delete "\
-    "and recreate the domain."
-    trace SEVERE "$(cat ${WDT_OUTPUT})"
+    "and recreate the domain. Failure output:"
+    cat ${WDT_OUTPUT}
     exitOrLoop
   fi
 

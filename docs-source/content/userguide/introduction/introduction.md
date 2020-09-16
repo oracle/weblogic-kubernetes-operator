@@ -16,7 +16,7 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Operator prerequisites
 
-For the current production release 3.0.1:
+For the current production release 3.0.2:
 
 * Kubernetes 1.14.8+, 1.15.7+, 1.16.0+, 1.17.0+, and 1.18.0+ (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`) *or* OpenShift SDN on OpenShift 4.3 systems.

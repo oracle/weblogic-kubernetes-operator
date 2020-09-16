@@ -752,7 +752,9 @@ public class Main {
                     return v;
                   });
           info.setPopulated(true);
-          dp.createMakeRightOperation(info).withExplicitRecheck().execute();
+          try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
+            dp.createMakeRightOperation(info).withExplicitRecheck().execute();
+          }
         }
       }
 
