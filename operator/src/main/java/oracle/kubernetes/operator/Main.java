@@ -1052,8 +1052,9 @@ public class Main {
 
     @Override
     void processList(Packet packet, V1EventList list) {
-      getItems(list).forEach(item -> processItem(packet, item));
-      startWatcher(getNamespace(), getInitialResourceVersion(list));
+      BiConsumer<Packet, V1EventList> startWatcher
+          = (packet1, eventList) -> main.startEventWatcher(getNamespace(), getInitialResourceVersion(eventList));
+      startWatcher.accept(packet, list);
     }
   }
 
@@ -1084,8 +1085,13 @@ public class Main {
 
     @Override
     void processList(Packet packet, V1PodList list) {
-      getItems(list).forEach(item -> processItem(packet, item));
-      startWatcher(getNamespace(), getInitialResourceVersion(list));
+      BiConsumer<Packet, V1PodList> processItems
+          = (packet1, podList) ->  getItems(podList).forEach(item -> processItem(packet, item));
+      BiConsumer<Packet, V1PodList> startWatcher
+          = (packet1, podList) -> main.startPodWatcher(getNamespace(), getInitialResourceVersion(podList));
+
+      processItems.accept(packet, list);
+      startWatcher.accept(packet, list);
     }
   }
 
