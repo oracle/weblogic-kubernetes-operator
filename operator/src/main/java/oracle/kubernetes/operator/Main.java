@@ -27,6 +27,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -972,8 +973,13 @@ public class Main {
 
     @Override
     void processList(Packet packet, DomainList list) {
-      getItems(list).forEach(item -> processItem(packet, item));
-      startWatcher(getNamespace(), getInitialResourceVersion(list));
+      BiConsumer<Packet, DomainList> processItems
+            = (packet1, domainList) ->  getItems(domainList).forEach(item -> processItem(packet, item));
+      BiConsumer<Packet, DomainList> startWatcher
+            = (packet1, domainList) -> main.startDomainWatcher(getNamespace(), getInitialResourceVersion(domainList));
+
+      processItems.accept(packet, list);
+      startWatcher.accept(packet, list);
     }
   }
 
