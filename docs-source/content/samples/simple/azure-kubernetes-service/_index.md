@@ -930,9 +930,9 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
    Check the deploy log and find the failure details with `kubectl describe pod podname`.
    Please go to 1. Getting pod error details.
 
-   * **Process of starting the Administration Server is still running**
+   * **Process of starting the servers is still running**
 
-   Check with `kubectl get svc` and if domain1-admin-server is not listed,
+   Check with `kubectl get svc` and if domain1-admin-server, domain1-managed-server1 and domain1-managed-server2 are not listed,
    we need to wait some more for the Administration Server to start.
 
    The following output is an example of when the Administration Server has started.
@@ -949,6 +949,55 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
    domain1-managed-server2            ClusterIP      None          <none>          8001/TCP             1s
    internal-weblogic-operator-svc     ClusterIP      10.0.1.23     <none>          8082/TCP             9m59s
    kubernetes                         ClusterIP      10.0.0.1      <none>          443/TCP              16m
+   ```
+
+   If the WLS Administration Console is still not available, use `kubectl describe domain` to check domain status.
+
+   ```bash
+   $ kubectl describe domain domain1
+   ```
+
+   Make sure the status of cluster-1 is `ServersReady` and `Available`. Stauts of admin-server, managed-server1 and managed-server2 are `RUNNING`.
+
+   ```yaml
+   Status:
+    Clusters:
+      Cluster Name:      cluster-1
+      Maximum Replicas:  5
+      Minimum Replicas:  1
+      Ready Replicas:    2
+      Replicas:          2
+      Replicas Goal:     2
+    Conditions:
+      Last Transition Time:  2020-07-06T05:39:32.539Z
+      Reason:                ServersReady
+      Status:                True
+      Type:                  Available
+    Replicas:                2
+    Servers:
+      Desired State:  RUNNING
+      Node Name:      aks-nodepool1-11471722-vmss000001
+      Server Name:    admin-server
+      State:          RUNNING
+      Cluster Name:   cluster-1
+      Desired State:  RUNNING
+      Node Name:      aks-nodepool1-11471722-vmss000001
+      Server Name:    managed-server1
+      State:          RUNNING
+      Cluster Name:   cluster-1
+      Desired State:  RUNNING
+      Node Name:      aks-nodepool1-11471722-vmss000001
+      Server Name:    managed-server2
+      State:          RUNNING
+      Cluster Name:   cluster-1
+      Desired State:  SHUTDOWN
+      Server Name:    managed-server3
+      Cluster Name:   cluster-1
+      Desired State:  SHUTDOWN
+      Server Name:    managed-server4
+      Cluster Name:   cluster-1
+      Desired State:  SHUTDOWN
+      Server Name:    managed-server5
    ```
 
 3. **Domain debugging**
