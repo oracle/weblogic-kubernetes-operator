@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.68.3" />
-    <meta name="description" content="Load balancer sample scripts.">
+    <meta name="description" content="Ingress controllers and load balancer sample scripts.">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
@@ -12,18 +12,18 @@
     <title>Ingress :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1600354288" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1600354288" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1600354288" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1600354288" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1600354288" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1600354288" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1600354288" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1600354288" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1600354288" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1600355788" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1600355788" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1600355788" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1600355788" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1600355788" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1600355788" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1600355788" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1600355788" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1600355788" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1600354288"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1600355788"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1600354288"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1600354288"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1600355788"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1600355788"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1600354288"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1600355788"></script>
 
     
   </div>
@@ -2956,27 +2956,19 @@
 
 
 
-	<p>The Oracle WebLogic Server Kubernetes Operator supports three load balancers: Traefik, Voyager, and Apache. We provide samples that demonstrate how to install and configure each one. The samples are located in following folders:</p>
+	<p>The Oracle WebLogic Server Kubernetes Operator supports NGINX, Traefik, Voyager, and Apache. We provide samples that demonstrate how to install and configure each one.</p>
+
+<div class="notices note" ><p>For production environments, we recommend NGINX, Voyager, Traefik (2.2.1 or later) ingress controllers, Apache, or the load balancer provided by your cloud provider.</p>
+</div>
+
+<p>The samples are located in following folders:</p>
 <ul>
-<li>
-<p><a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md">Traefik</a>
-<em>Traefik is recommended for development and test environments only.  For production environments, we recommend Apache or Voyager ingress controllers, or the load balancer provided by your cloud provider.</em></p>
-</li>
-<li>
-<p><a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/voyager/README.md">Voyager</a></p>
-</li>
-<li>
-<p>Apache-samples/<a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/apache-samples/custom-sample/README.md">custom-sample</a></p>
-</li>
-<li>
-<p>Apache-samples/<a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/apache-samples/default-sample/README.md">default-sample</a></p>
-</li>
-<li>
-<p><a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/ingress-per-domain/README.md">Ingress-per-domain</a></p>
-</li>
-<li>
-<p><a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/apache-webtier/README.md">Apache-webtier</a></p>
-</li>
+<li><a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md">Traefik</a></li>
+<li><a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/voyager/README.md">Voyager</a></li>
+<li>Apache-samples/<a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/apache-samples/custom-sample/README.md">custom-sample</a></li>
+<li>Apache-samples/<a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/apache-samples/default-sample/README.md">default-sample</a></li>
+<li><a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/ingress-per-domain/README.md">Ingress-per-domain</a></li>
+<li><a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/apache-webtier/README.md">Apache-webtier</a></li>
 </ul>
 
 <div class="notices note" ><p>The Apache-webtier script contains a Helm chart that is used in the Apache samples.</p>
@@ -5023,19 +5015,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1600354288"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1600354288"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1600354288"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1600354288"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1600354288"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1600354288"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1600355788"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1600355788"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1600355788"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1600355788"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1600355788"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1600355788"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1600354288"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1600354288"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1600354288"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1600355788"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1600355788"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1600355788"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1600354288" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1600354288"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1600355788" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1600355788"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
