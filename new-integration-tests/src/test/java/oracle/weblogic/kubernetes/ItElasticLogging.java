@@ -298,13 +298,14 @@ class ItElasticLogging {
 
     // Verify that serverName:managed-server1 is filtered out
     // by checking the count of logs from serverName:managed-server1 is zero and no failures
-    // e.g. when running the query:
-    // curl -X GET http://elasticsearch.default.svc.cluster.local:9200/wls/_count?q=serverName:managed-server1
-    // Expected return result is:
-    // {"count":0,"_shards":{"total":5,"successful":5,"skipped":0,"failed":0}}
-    regex = ".*count\":(\\d+),.*failed\":(\\d+)";
-    String filteredServer = managedServerFilter.split("-")[1];
-    queryCriteria = "/_count?q=serverName:" + filteredServer;
+    regex = "(?m).*\\s*.*count\"\\s*:\\s*(\\d+),.*failed\"\\s*:\\s*(\\d+)";
+    StringBuffer queryCriteriaBuff = new StringBuffer("/doc/_count?pretty")
+        .append(" -H 'Content-Type: application/json'")
+        .append(" -d'{\"query\":{\"query_string\":{\"query\":\"")
+        .append(managedServerFilter)
+        .append("\",\"fields\":[\"serverName\"],\"default_operator\": \"AND\"}}}'");
+
+    queryCriteria = queryCriteriaBuff.toString();
     verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, true, "notExist");
 
     logger.info("Query WebLogic log info succeeded");
@@ -457,7 +458,7 @@ class ItElasticLogging {
     int failedCount = -1;
     String hits = "";
     String results = execSearchQuery(queryCriteria, index);
-    Pattern pattern = Pattern.compile(regex);
+    Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
     Matcher matcher = pattern.matcher(results);
     if (matcher.find()) {
       count = Integer.parseInt(matcher.group(1));
