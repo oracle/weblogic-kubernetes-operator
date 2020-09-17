@@ -112,7 +112,7 @@ class ItDedicatedMode {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domain2Namespace = namespaces.get(1);
 
-    logger.info("Installing and verifying operator");
+    // Variables for Operator
     opServiceAccount = opNamespace + "-sa";
     opHelmParams =
         new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
@@ -128,16 +128,15 @@ class ItDedicatedMode {
    * Set "dedicated" to true and set the domainNamespaces to something that does not contain the operator's namespace,
    * make sure that the domains in the operator's target namespaces do not come up
    * because when dedicated is set to true, the operator's domainNamespaces value is ignored.
-   * 1) Create CRD.
-   * 2) Install an Operator with namespace=op-ns, domainNamespaces=wls-ns
+   * 1) Install an Operator with namespace=op-ns, domainNamespaces=wls-ns
    *    and domainNamespaceSelectionStrategy=Dedicated.
-   * 3) Verify the Operator is up and running.
-   * 4) Create WebLogic Domain its namespace=wls-ns.
-   * 5) Verify that domain whose namespace = wls-ns does not come up.
+   * 2) Verify the Operator is up and running.
+   * 3) Create WebLogic Domain its namespace=wls-ns.
+   * 4) Verify that domain whose namespace = wls-ns does not come up.
    */
   @Test
   @Order(1)
-  @DisplayName("Set dedicated to true and verify that a domains not deployed in operator's namespace doesn't come up")
+  @DisplayName("Set dedicated to true and verify that a domain not deployed in operator's namespace doesn't come up")
   public void testDedicatedModeDiffNamespace() {
     // install and verify operator
     logger.info("Installing and verifying operator");
@@ -149,24 +148,13 @@ class ItDedicatedMode {
     logger.info("Creating and verifying model in image domain");
     createDomain(domain2Namespace);
 
-    try {
-      Thread.sleep(30 * 1000);
-    } catch (Exception ex) {
-      //ignore
-    }
-
     verifyDomainNotRunning(domain2Namespace);
   }
 
   /**
    * Set "dedicated" to true, make sure that the domains deployed in the operator's namespace come up.
-   * 1) Create a namespace (e.g. op-wls-ns) that is used b y both Operator and WebLogic domain.
-   * 2) Create CRD.
-   * 3) Install an Operator with namespace=op-wls-ns, domainNamespaces=op-wls-ns
-   *    and domainNamespaceSelectionStrategy=Dedicated.
-   * 4) Verify the Operator is up and running.
-   * 5) Create WebLogic Domain its namespace=op-wls-ns.
-   * 6) Verify that the WebLogic domain whose namespace = op-wls-ns comes up.
+   * 1) Using the Operator's namespace, op-wls-ns, create a WebLogic Domain
+   * 2) Verify that the WebLogic domain whose namespace = op-wls-ns comes up.
    */
   @Test
   @Order(2)
