@@ -527,10 +527,6 @@ public class Main {
     return strategy;
   }
 
-  public static String getOperatorNamespace() {
-    return operatorNamespace;
-  }
-
   public static boolean isDedicated() {
     return DomainNamespaceSelectionStrategy.Dedicated.equals(getDomainNamespaceSelectionStrategy());
   }
