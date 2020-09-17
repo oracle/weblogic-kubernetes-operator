@@ -943,13 +943,13 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
    kubernetes                         ClusterIP      10.0.0.1      <none>          443/TCP              16m
    ```
 
-   If the WLS Administration Console is still not available, use `kubectl describe domain` to check domain status.
+   If services are up but the WLS Administration Console is still not available, use `kubectl describe domain` to check domain status.
 
    ```bash
    $ kubectl describe domain domain1
    ```
 
-   Make sure the status of cluster-1 is `ServersReady` and `Available`. Stauts of admin-server, managed-server1 and managed-server2 are `RUNNING`.
+   Make sure the status of cluster-1 is `ServersReady` and `Available`. The status of admin-server, managed-server1 and managed-server2 should be `RUNNING`. Otherwise, the cluster is likely still in the process of being fully ready.
 
    ```yaml
    Status:
