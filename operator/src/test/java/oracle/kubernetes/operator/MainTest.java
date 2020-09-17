@@ -78,9 +78,9 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Before
   public void setUp() throws Exception {
+    mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
-    mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(StubWatchFactory.install());
     mementos.add(StaticStubSupport.install(Main.class, "version", new KubernetesVersion(1, 16)));
     mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "INSTANCE", this));
@@ -289,7 +289,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void afterReadingExistingResourcesForNamespace_WatcheraAreDefined() {
-    testSupport.runSteps(main.readExistingResources("operator", NS));
+    testSupport.runSteps(main.readExistingResources(NS));
 
     assertThat(main.getConfigMapWatcher(NS), notNullValue());
     assertThat(main.getDomainWatcher(NS), notNullValue());

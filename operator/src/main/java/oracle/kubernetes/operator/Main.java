@@ -9,7 +9,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -28,7 +27,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -38,15 +37,12 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
@@ -56,12 +52,9 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.CrdHelper;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
-import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
-import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -69,7 +62,6 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.ActionResponseStep;
-import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -81,7 +73,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
@@ -110,8 +101,6 @@ public class Main {
       new AtomicReference<>(DateTime.now());
   private static final DomainProcessorDelegateImpl delegate = new DomainProcessorDelegateImpl();
   private static final DomainProcessor processor = new DomainProcessorImpl(delegate);
-  private static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
-      "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
   private static final Semaphore shutdownSignal = new Semaphore(0);
   private static final Engine engine = new Engine(wrappedExecutorService);
   private static String principal;
@@ -338,68 +327,41 @@ public class Main {
     return strategy;
   }
 
-  static class NamespaceResources {
-    private final List<NamespaceResourceProcessor> processors = new ArrayList<>();
-
-    void addProcessor(NamespaceResourceProcessor processor) {
-      processors.add(processor);
-    }
-
-//    Step createListStep() {
-//      List<Step> steps = new ArrayList<>();
-//      List<BiConsumer<Packet, DomainList>> consumers = processors.stream().map(NamespaceResourceProcessor::getDomainListProcessing).collect(
-//          Collectors.toList());
-//      if (!consumers.isEmpty()) {
-//        steps.add(new)
-//      }
-//    }
-  }
-
-  static abstract class NamespaceResourceProcessor {
-
-    abstract BiConsumer<Packet, DomainList> getDomainListProcessing();
-  }
-
-  static Step readExistingResources(String operatorNamespace, String ns) {
-    NamespaceResources resources = new NamespaceResources();
-    resources.addProcessor(new NamespaceResourceProcessor() {
+  static Step readExistingResources(String ns) {
+    NamespacedResources resources = new NamespacedResources(operatorNamespace, ns, null);
+    DomainResourcesValidation dpis = new DomainResourcesValidation(ns, processor);
+    resources.addProcessor(dpis.getProcessors());
+    resources.addProcessor(new NamespacedResources.Processors() {
       @Override
-      BiConsumer<Packet, DomainList> getDomainListProcessing() {
-        return (p, l) -> main.startDomainWatcher(ns, getInitialResourceVersion(l));
+      Consumer<Packet> getConfigMapProcessing() {
+        return p -> main.startConfigMapWatcher(ns, getInitialResourceVersion(getScriptConfigMap(p)));
+      }
+
+      private V1ConfigMap getScriptConfigMap(Packet packet) {
+        return (V1ConfigMap) packet.get(ProcessingConstants.SCRIPT_CONFIG_MAP);
+      }
+
+      @Override
+      Consumer<V1EventList> getEventListProcessing() {
+        return l -> main.startEventWatcher(ns, getInitialResourceVersion(l));
+      }
+
+      @Override
+      Consumer<V1PodList> getPodListProcessing() {
+        return l -> main.startPodWatcher(ns, getInitialResourceVersion(l));
+      }
+
+      @Override
+      Consumer<V1ServiceList> getServiceListProcessing() {
+        return l -> main.startServiceWatcher(ns, getInitialResourceVersion(l));
+      }
+
+      @Override
+      Consumer<DomainList> getDomainListProcessing() {
+        return l -> main.startDomainWatcher(ns, getInitialResourceVersion(l));
       }
     });
-    return Step.chain(
-        ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
-        createConfigMapStep(ns),
-        readExistingEvents(ns),
-        new ReadExistingResourcesBeforeStep(ns),
-        readExistingPods(ns),
-        readExistingServices(ns),
-        readExistingDomains(ns),
-        new DomainResourcesStep());
-  }
-
-  private static Step readExistingDomains(String ns) {
-    LOGGER.fine(MessageKeys.LISTING_DOMAINS);
-    return new CallBuilder().listDomainAsync(ns, new DomainListStep(ns));
-  }
-
-  private static Step readExistingServices(String ns) {
-    return new CallBuilder()
-        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .listServiceAsync(ns, new ServiceListStep(ns));
-  }
-
-  private static Step readExistingEvents(String ns) {
-    return new CallBuilder()
-        .withFieldSelector(Main.READINESS_PROBE_FAILURE_EVENT_FILTER)
-        .listEventAsync(ns, new EventListStep(ns));
-  }
-
-  private static Step readExistingPods(String ns) {
-    return new CallBuilder()
-        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .listPodAsync(ns, new PodListStep(ns));
+    return resources.createListSteps();
   }
 
   static Step readExistingNamespaces(DomainNamespaceSelectionStrategy selectionStrategy,
@@ -411,7 +373,7 @@ public class Main {
       builder.withLabelSelectors(selector);
     }
     return builder.listNamespaceAsync(
-      new ActionResponseStep<V1NamespaceList>(new NamespaceListAfterStep(selectionStrategy)) {
+      new ActionResponseStep<>(new NamespaceListAfterStep(selectionStrategy)) {
         private Step startNamespaces(Collection<String> namespacesToStart, boolean isFullRecheck) {
           return new StartNamespacesStep(namespacesToStart, isFullRecheck);
         }
@@ -633,7 +595,7 @@ public class Main {
     return EventWatcher.create(
         threadFactory,
         ns,
-        READINESS_PROBE_FAILURE_EVENT_FILTER,
+        ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER,
         initialResourceVersion,
         tuningAndConfig().getWatchTuning(),
         processor::dispatchEventWatch,
@@ -825,7 +787,7 @@ public class Main {
       return Step.chain(
           new NamespaceRulesReviewStep(ns),
           new StartNamespaceBeforeStep(ns, isFullRecheck),
-          readExistingResources(operatorNamespace, ns));
+          readExistingResources(ns));
     }
   }
 
@@ -911,171 +873,6 @@ public class Main {
     }
   }
 
-  private static class ReadExistingResourcesBeforeStep extends Step {
-    private String namespace;
-
-    /**
-     * Create a step with no next step.
-     */
-    public ReadExistingResourcesBeforeStep(
-        String namespace) {
-      this.namespace = namespace;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      packet.put(DPI_MAP, new DomainPresenceInfos(namespace));
-      return doNext(packet);
-    }
-  }
-
-  private abstract static class ListResponseStep<R extends KubernetesObject,L extends KubernetesListObject>
-        extends DefaultResponseStep<L> {
-    private final String namespace;
-
-    ListResponseStep(String namespace) {
-      this.namespace = namespace;
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<L> callResponse) {
-      processList(packet, callResponse.getResult());
-      return doContinueListOrNext(callResponse, packet);
-    }
-
-    abstract void processList(Packet packet, L list);
-
-    public String getNamespace() {
-      return namespace;
-    }
-
-    @SuppressWarnings("unchecked")
-    List<R> getItems(L result) {
-      return (List<R>) Optional.ofNullable(result).map(KubernetesListObject::getItems).orElse(Collections.emptyList());
-    }
-
-  }
-
-  private static class DomainListStep extends ListResponseStep<Domain, DomainList> {
-
-    private List<BiConsumer<Packet, DomainList>> processors;
-
-    DomainListStep(String ns) {
-      this(ns, Arrays.asList(
-          (p, l) ->  main.startDomainWatcher(ns, getInitialResourceVersion(l)),
-          (p, l) -> getDomainPresenceInfos(p).addDomainList(l)));
-    }
-
-    DomainListStep(String ns, List<BiConsumer<Packet, DomainList>> processors) {
-      super(ns);
-      this.processors = processors;
-    }
-
-    static DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
-      return (DomainPresenceInfos) packet.get(DPI_MAP);
-    }
-
-    @Override
-    void processList(Packet packet, DomainList list) {
-      BiConsumer<Packet, DomainList> processItems
-            = (packet1, domainList) ->  getItems(domainList).forEach(
-          item -> getDomainPresenceInfos(packet).addDomain(item));
-      BiConsumer<Packet, DomainList> startWatcher
-            = (packet1, domainList) -> main.startDomainWatcher(getNamespace(), getInitialResourceVersion(domainList));
-
-      processItems.accept(packet, list);
-      startWatcher.accept(packet, list);
-    }
-  }
-
-  private static class DomainResourcesStep extends Step {
-
-    @Override
-    public NextAction apply(Packet packet) {
-      getDomainPresenceInfos(packet)
-            .getStrandedDomainPresenceInfos()
-            .forEach(info -> removeStrandedDomainPresenceInfo(getProcessor(packet), info));
-      getDomainPresenceInfos(packet)
-              .getActiveDomainPresenceInfos()
-              .forEach(info -> activateDomain(getProcessor(packet), info));
-      return doNext(packet);
-    }
-
-    private DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
-      return (DomainPresenceInfos) packet.get(DPI_MAP);
-    }
-
-    private void removeStrandedDomainPresenceInfo(DomainProcessor dp, DomainPresenceInfo info) {
-      info.setDeleting(true);
-      info.setPopulated(true);
-      dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
-    }
-    private void activateDomain(DomainProcessor dp, DomainPresenceInfo info) {
-      info.setPopulated(true);
-      dp.createMakeRightOperation(info).withExplicitRecheck().execute();
-    }
-
-    private static DomainProcessor getProcessor(Packet packet) {
-      return Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
-    }
-  }
-
-  private static class ServiceListStep extends ListResponseStep<V1Service, V1ServiceList> {
-    ServiceListStep(String ns) {
-      super(ns);
-    }
-
-    DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
-      return (DomainPresenceInfos) packet.get(DPI_MAP);
-    }
-
-    @Override
-    void processList(Packet packet, V1ServiceList list) {
-      BiConsumer<Packet, V1ServiceList> processItems
-              = (packet1, l) ->  getItems(l).forEach(item -> getDomainPresenceInfos(packet).addService(item));
-      BiConsumer<Packet, V1ServiceList> startWatcher
-              = (packet1, l) -> main.startServiceWatcher(getNamespace(), getInitialResourceVersion(l));
-
-      processItems.accept(packet, list);
-      startWatcher.accept(packet, list);
-
-    }
-  }
-
-  private static class EventListStep extends ListResponseStep<V1Event, V1EventList> {
-    EventListStep(String ns) {
-      super(ns);
-    }
-
-    @Override
-    void processList(Packet packet, V1EventList list) {
-      BiConsumer<Packet, V1EventList> startWatcher
-          = (packet1, eventList) -> main.startEventWatcher(getNamespace(), getInitialResourceVersion(eventList));
-      startWatcher.accept(packet, list);
-    }
-  }
-
-  private static class PodListStep extends ListResponseStep<V1Pod, V1PodList> {
-
-    PodListStep(String ns) {
-      super(ns);
-    }
-
-    DomainPresenceInfos getDomainPresenceInfos(Packet packet) {
-      return (DomainPresenceInfos) packet.get(DPI_MAP);
-    }
-
-    @Override
-    void processList(Packet packet, V1PodList list) {
-      BiConsumer<Packet, V1PodList> processItems
-          = (packet1, podList) ->  getItems(podList).forEach(item -> getDomainPresenceInfos(packet).addPod(item));
-      BiConsumer<Packet, V1PodList> startWatcher
-          = (packet1, podList) -> main.startPodWatcher(getNamespace(), getInitialResourceVersion(podList));
-
-      processItems.accept(packet, list);
-      startWatcher.accept(packet, list);
-    }
-  }
 
   private static String getInitialResourceVersion(KubernetesListObject list) {
     return Optional.ofNullable(list)
@@ -1084,8 +881,8 @@ public class Main {
           .orElse("");
   }
 
-  private static String getInitialResourceVersion(KubernetesObject list) {
-    return Optional.ofNullable(list)
+  private static String getInitialResourceVersion(KubernetesObject resource) {
+    return Optional.ofNullable(resource)
           .map(KubernetesObject::getMetadata)
           .map(V1ObjectMeta::getResourceVersion)
           .orElse("");
@@ -1310,93 +1107,28 @@ public class Main {
   }
 
   public static class ConfigMapAfterStep extends Step {
-    private final String ns;
+    private List<Consumer<Packet>> processors;
 
     /**
      * Construct config map after step.
      * @param ns namespace
      */
-    public ConfigMapAfterStep(String ns) {
-      this.ns = ns;
+    ConfigMapAfterStep(String ns) {
+      this(Collections.singletonList(packet -> main.startConfigMapWatcher(ns, getInitialResourceVersion(getScriptConfigMap(packet)))));
+    }
+
+    public ConfigMapAfterStep(List<Consumer<Packet>> processors) {
+      this.processors = processors;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      V1ConfigMap result = (V1ConfigMap) packet.get(ProcessingConstants.SCRIPT_CONFIG_MAP);
-      main.startConfigMapWatcher(ns, getInitialResourceVersion(result));
+      processors.forEach(p -> p.accept(packet));
       return doNext(packet);
     }
 
-  }
-
-  private static class DomainPresenceInfos {
-    private String namespace;
-    private Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
-    private List<Listener> listeners = new ArrayList<>();
-
-    private void addDomainList(DomainList list) {
-      list.getItems().forEach(this::addDomain);
-    }
-
-    private void addDomain(Domain domain) {
-      DomainPresenceInfo info = getDomainPresenceInfo(domain.getDomainUid());
-      info.setDomain(domain);
-    }
-
-    private void addPod(V1Pod pod) {
-      String domainUid = PodHelper.getPodDomainUid(pod);
-      String serverName = PodHelper.getPodServerName(pod);
-      if (domainUid != null && serverName != null) {
-        DomainPresenceInfo info = getDomainPresenceInfo(domainUid);
-        info.setServerPod(serverName, pod);
-      }
-    }
-
-    private void addService(V1Service service) {
-      String domainUid = ServiceHelper.getServiceDomainUid(service);
-      if (domainUid != null) {
-        DomainPresenceInfo info = getDomainPresenceInfo(domainUid);
-        ServiceHelper.addToPresence(info, service);
-      }
-    }
-
-    enum ResourceType { PODS, SERVICES, DOMAINS
-    }
-
-    interface Listener {
-      void listRead(final ResourceType resourceType, final String resourceVersion);
-    }
-
-    public DomainPresenceInfos(String namespace) {
-      this.namespace = namespace;
-    }
-
-    void addListener(Listener listener) {
-      listeners.add(listener);
-    }
-
-    private Set<DomainPresenceInfo> getStrandedDomainPresenceInfos() {
-      return domainPresenceInfoMap.values().stream().filter(this::isStranded).collect(Collectors.toSet());
-    }
-
-    private boolean isStranded(DomainPresenceInfo dpi) {
-      return dpi.getDomain() == null;
-    }
-
-    private Set<DomainPresenceInfo> getActiveDomainPresenceInfos() {
-      return domainPresenceInfoMap.values().stream().filter(this::isActive).collect(Collectors.toSet());
-    }
-
-    private boolean isActive(DomainPresenceInfo dpi) {
-      return dpi.getDomain() != null;
-    }
-
-    private DomainPresenceInfo getDomainPresenceInfo(String domainUid) {
-      return domainPresenceInfoMap.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(namespace, domainUid));
-    }
-
-    private void callback(ResourceType resourceType, String resourceVersion) {
-      listeners.forEach(listener -> listener.listRead(resourceType, resourceVersion));
+    private static V1ConfigMap getScriptConfigMap(Packet packet) {
+      return (V1ConfigMap) packet.get(ProcessingConstants.SCRIPT_CONFIG_MAP);
     }
 
   }
