@@ -100,10 +100,10 @@ The operator automatically updates the `status` section of a deploy domain resou
 
 Here are some references you can use for the fields in these sections:
 
-- See [Domain spec elements](domain-spec-elements) in this doc.
+- See [Domain spec elements](#domain-spec-elements) in this doc.
 - See [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md).
 - Swagger documentation is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
-- Use [kubectl explain](leveraging--kubectl-explain-) from the command line.
+- Use [kubectl explain](#leveraging--kubectl-explain-) from the command line.
 
 #### Using `kubectl explain`
 
@@ -201,7 +201,7 @@ Sub-sections related to the Administration Server, specific clusters, or specifi
 The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverService` are repeated under `adminServer` and under each entry of `clusters` or `managedServers`.  The values directly under `spec`, set the defaults for the entire domain.  The values under a specific entry under `clusters`, set the defaults for cluster members of that cluster.  The values under `adminServer` or an entry under `managedServers`, set the values for that specific server.  Values from the domain scope and values from the cluster (for cluster members) are merged with or overridden by the setting for the specific server depending on the element.  See [Startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}) for details about `serverStartPolicy` combinations.
 
 {{% notice note %}}
-For additional domain resource attribute reference material, see [Domain resource attribute references](domain-resource-attribute-references).
+For additional domain resource attribute reference material, see [Domain resource attribute references](#domain-resource-attribute-references).
 {{% /notice %}}
 
 ### JVM memory and Java option environment variables
