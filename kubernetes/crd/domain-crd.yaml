@@ -5127,6 +5127,14 @@ spec:
                           additionalProperties:
                             type: string
                           type: object
+                    maxConcurrentShutdown:
+                      description: The maximum number of WebLogic Server instances
+                        that will shut down in parallel for this cluster when it is
+                        being partially shut down by lowering its replica count. A
+                        value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`,
+                        which defaults to 1.
+                      type: number
+                      minimum: 0.0
                     serverStartPolicy:
                       description: 'The strategy for deciding whether to start a WebLogic
                         Server instance. Legal values are NEVER, or IF_NEEDED. Defaults
@@ -5199,6 +5207,14 @@ spec:
                   are started because of their entries under `managedServers`, then
                   a cluster may have more cluster members running than its `replicas`
                   count. Defaults to 0.
+                minimum: 0.0
+              maxClusterConcurrentShutdown:
+                type: number
+                description: The default maximum number of WebLogic Server instances
+                  that a cluster will shut down in parallel when it is being partially
+                  shut down by lowering its replica count. You can override this default
+                  on a per cluster basis by setting the cluster's `maxConcurrentShutdown`
+                  field. A value of 0 means there is no limit. Defaults to 1.
                 minimum: 0.0
               domainHomeInImage:
                 type: boolean
