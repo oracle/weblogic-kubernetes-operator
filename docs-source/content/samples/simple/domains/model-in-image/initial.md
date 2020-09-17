@@ -263,6 +263,9 @@ Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` tha
 
 Run the following commands to create the model image and verify that it worked:
 
+{{% notice note %}}
+If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below. 
+{{% /notice %}}
   ```
   $ cd /tmp/mii-sample/model-images
   $ ./imagetool/bin/imagetool.sh update \
@@ -272,7 +275,8 @@ Run the following commands to create the model image and verify that it worked:
     --wdtVariables  ./model-in-image__WLS-v1/model.10.properties \
     --wdtArchive    ./model-in-image__WLS-v1/archive.zip \
     --wdtModelOnly \
-    --wdtDomainType WLS
+    --wdtDomainType WLS \
+    --chown oracle:root
   ```
 
 If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/simple/domains/model-in-image/prerequisites.md" >}}).
