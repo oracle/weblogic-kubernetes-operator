@@ -300,9 +300,7 @@ public class ItOperatorRestart {
     logger.info("Wait for domain {0} server pods in namespace {1} to be restarted",
         domainUid, domainNamespace);
 
-    assertTrue(assertDoesNotThrow(
-        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
-        "More than one pod was restarted at same time"),
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 
     for (int i = 1; i <= replicaCount; i++) {

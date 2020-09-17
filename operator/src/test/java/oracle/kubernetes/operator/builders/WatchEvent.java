@@ -49,6 +49,10 @@ public class WatchEvent<T> {
     return new WatchEvent<>("DELETED", object);
   }
 
+  public static <S> WatchEvent<S> createBookmarkEvent(S object) {
+    return new WatchEvent<>("BOOKMARK", object);
+  }
+
   public static <S> WatchEvent<S> createErrorEventWithoutStatus() {
     return new WatchEvent<>(null);
   }

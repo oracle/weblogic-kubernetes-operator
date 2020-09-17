@@ -384,8 +384,6 @@ class ItCoherenceTests {
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.info("New restart version : {0}", newRestartVersion);
 
-    assertTrue(assertDoesNotThrow(
-        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
-            "More than one pod was restarted at same time"), "Rolling restart failed");
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace), "Rolling restart failed");
   }
 }

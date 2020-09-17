@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -23,6 +24,7 @@ import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
@@ -35,10 +37,22 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static java.util.stream.Collectors.toSet;
+
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
  */
 public class Domain implements KubernetesObject {
+  /**
+   * The starting marker of a token that needs to be substituted with a matching env var.
+   */
+  public static final String TOKEN_START_MARKER = "$(";
+
+  /**
+   * The ending marker of a token that needs to be substituted with a matching env var.
+   */
+  public static final String TOKEN_END_MARKER = ")";
+
   /**
    * The pattern for computing the default shared logs directory.
    */
@@ -595,6 +609,10 @@ public class Domain implements KubernetesObject {
     return new Validator().getValidationFailures(kubernetesResources);
   }
 
+  public List<String> getAdditionalValidationFailures(V1PodSpec podSpec) {
+    return new Validator().getAdditionalValidationFailures(podSpec);
+  }
+
   class Validator {
     private final List<String> failures = new ArrayList<>();
     private final Set<String> clusterNames = new HashSet<>();
@@ -611,6 +629,11 @@ public class Domain implements KubernetesObject {
       addMissingModelConfigMap(kubernetesResources);
       verifyIstioExposingDefaultChannel();
 
+      return failures;
+    }
+
+    public List<String> getAdditionalValidationFailures(V1PodSpec podSpec) {
+      addInvalidMountPathsForPodSpec(podSpec);
       return failures;
     }
 
@@ -655,12 +678,58 @@ public class Domain implements KubernetesObject {
 
     private void addInvalidMountPaths() {
       getSpec().getAdditionalVolumeMounts().forEach(this::checkValidMountPath);
+      if (getSpec().getAdminServer() != null) {
+        getSpec().getAdminServer().getAdditionalVolumeMounts().forEach(this::checkValidMountPath);
+      }
+      if (getSpec().getClusters() != null) {
+        getSpec().getClusters().forEach(
+            cluster -> cluster.getAdditionalVolumeMounts().forEach(this::checkValidMountPath));
+      }
+    }
+
+    private void addInvalidMountPathsForPodSpec(V1PodSpec podSpec) {
+      podSpec.getContainers()
+          .forEach(container ->
+              Optional.ofNullable(container.getVolumeMounts())
+                  .ifPresent(volumes -> volumes.forEach(this::checkValidMountPath)));
     }
 
     private void checkValidMountPath(V1VolumeMount mount) {
+      if (skipValidation(mount.getMountPath())) {
+        return;
+      }
+
       if (!new File(mount.getMountPath()).isAbsolute()) {
         failures.add(DomainValidationMessages.badVolumeMountPath(mount));
       }
+    }
+
+    private boolean skipValidation(String mountPath) {
+      List<V1EnvVar> envVars = spec.getEnv();
+      Set<String> varNames = envVars.stream().map(V1EnvVar::getName).collect(toSet());
+      StringTokenizer nameList = new StringTokenizer(mountPath, TOKEN_START_MARKER);
+      if (!nameList.hasMoreElements()) {
+        return false;
+      }
+      while (nameList.hasMoreElements()) {
+        String token = nameList.nextToken();
+        if (noMatchingEnvVarName(varNames, token)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    private boolean noMatchingEnvVarName(Set<String> varNames, String token) {
+      int index = token.indexOf(TOKEN_END_MARKER);
+      if (index != -1) {
+        String str = token.substring(0, index);
+        // IntrospectorJobEnvVars.isReserved() checks env vars in ServerEnvVars too
+        if (varNames.contains(str) || IntrospectorJobEnvVars.isReserved(str)) {
+          return false;
+        }
+      }
+      return true;
     }
 
     private void addUnmappedLogHome() {

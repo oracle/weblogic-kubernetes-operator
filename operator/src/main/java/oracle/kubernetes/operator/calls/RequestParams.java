@@ -16,7 +16,7 @@ public final class RequestParams {
   public final String name;
   public final Object body;
   public String domainUid;
-  private CallParams callParams;
+  public CallParams callParams;
 
   /**
    * Construct request params.
@@ -25,7 +25,7 @@ public final class RequestParams {
    * @param name name
    * @param body body
    */
-  public RequestParams(String call, String namespace, String name, Object body) {
+  private RequestParams(String call, String namespace, String name, Object body) {
     this.call = call;
     this.namespace = namespace;
     this.name = name;
@@ -61,6 +61,10 @@ public final class RequestParams {
 
   public String getLabelSelector() {
     return callParams.getLabelSelector();
+  }
+
+  public CallParams getCallParams() {
+    return callParams;
   }
 
   public String toString() {

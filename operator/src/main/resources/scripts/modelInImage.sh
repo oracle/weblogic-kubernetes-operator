@@ -671,11 +671,36 @@ function wdtCreatePrimordialDomain() {
 
   export __WLSDEPLOY_STORE_MODEL__=1
 
+  if [ "JRF" == "$WDT_DOMAIN_TYPE" ] ; then
+    if [ -z "${OPSS_FLAGS}" ] ; then
+      trace INFO "An OPSS wallet was not supplied for the Model in Image JRF domain in its " \
+        "'spec.configuration.opss.walletFileSecret' attribute; therefore, it's assumed that this is the first time " \
+        "the OPSS RCU database is being accessed by the domain, so a schema and a wallet file will be created. " \
+        "Consult the Model in Image documentation for instructions about preserving the OPSS wallet file."
+    else
+      trace "Creating JRF Primordial Domain"
+    fi
+  fi
   ${WDT_BINDIR}/createDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
   ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}  ${UPDATE_RCUPWD_FLAG}  \
     > ${WDT_OUTPUT}
   ret=$?
   if [ $ret -ne 0 ]; then
+    #
+    # FatalIntrospectorError is detected by DomainProcessorImpl.isShouldContinue
+    # If it is detected then it will stop the periodic retry
+    # We need to prevent retries with a "MII Fatal Error" because JRF without the OPSS_FLAGS indicates
+    # a likely attempt to initialize the RCU DB schema for this domain, and we don't want to retry when this fails
+    # without admin intervention (retrying can compound the problem and obscure the original issue).
+    #
+    if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] ; then
+      trace SEVERE "FatalIntrospectorError: WDT Create Primordial Domain Failed ${ret}"
+    else
+      trace SEVERE "WDT Create Primordial Domain Failed ${ret}"
+    fi
+    if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
+      cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
+    fi
     trace SEVERE "WDT Create Domain Failed, ret=${ret}:"
     cat ${WDT_OUTPUT}
     exitOrLoop

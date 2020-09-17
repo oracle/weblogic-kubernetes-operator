@@ -35,7 +35,6 @@ public class IntrospectorJobEnvVars {
    */
   public static final String OPSS_WALLETFILE_SECRET_NAME = "OPSS_WALLETFILE_SECRET_NAME";
 
-
   /**
    * The credentials used by the introspection job - wdt encryption passphrase.
    */
@@ -45,7 +44,6 @@ public class IntrospectorJobEnvVars {
    * The credentials used by the introspection job - runtime encryption secret name.
    */
   public static final String RUNTIME_ENCRYPTION_SECRET_NAME = "RUNTIME_ENCRYPTION_SECRET_NAME";
-
 
   /**
    * The domain source type.
@@ -83,5 +81,8 @@ public class IntrospectorJobEnvVars {
     return ServerEnvVars.isReserved(name) || RESERVED_NAMES.contains(name);
   }
 
-  private static final List<String> RESERVED_NAMES = Arrays.asList(NAMESPACE, INTROSPECT_HOME, CREDENTIALS_SECRET_NAME);
+  private static final List<String> RESERVED_NAMES = Arrays.asList(
+      NAMESPACE, INTROSPECT_HOME, CREDENTIALS_SECRET_NAME, OPSS_KEY_SECRET_NAME, OPSS_WALLETFILE_SECRET_NAME,
+      RUNTIME_ENCRYPTION_SECRET_NAME, WDT_DOMAIN_TYPE, DOMAIN_SOURCE_TYPE, ISTIO_ENABLED, ISTIO_READINESS_PORT,
+      ISTIO_POD_NAMESPACE, WDT_MODEL_HOME);
 }

@@ -530,8 +530,8 @@ public class KubernetesTestSupportTest {
     TestResponseStep<V1ConfigMap> endStep = new TestResponseStep<>();
     Packet packet = testSupport.runSteps(new CallBuilder().readConfigMapAsync("", "", "", endStep));
 
-    assertThat(packet.getSpi(CallResponse.class).getStatusCode(), equalTo(CallBuilder.NOT_FOUND));
-    assertThat(packet.getSpi(CallResponse.class).getE(), notNullValue());
+    assertThat(endStep.callResponse.getStatusCode(), equalTo(CallBuilder.NOT_FOUND));
+    assertThat(endStep.callResponse.getE(), notNullValue());
   }
 
   @Test
