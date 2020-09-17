@@ -15,7 +15,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class Pod {
 
@@ -48,8 +47,7 @@ public class Pod {
           namespace,
           condition.getElapsedTimeInMS(),
           condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> podRestarted(entry.getKey(), pods, maxUnavailable, namespace),
-              String.format("pod %s didn't restart in namespace %s", entry.getKey(), namespace)));
+          .until(podRestarted(entry.getKey(), pods, maxUnavailable, namespace));
 
       // check pods are in ready status
       retry
@@ -60,8 +58,7 @@ public class Pod {
           namespace,
           condition.getElapsedTimeInMS(),
           condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> podReady(namespace, null, entry.getKey()),
-              String.format("pod %s didn't become ready in namespace %s", entry.getKey(), namespace)));
+          .until(podReady(namespace, null, entry.getKey()));
     }
 
     return true;

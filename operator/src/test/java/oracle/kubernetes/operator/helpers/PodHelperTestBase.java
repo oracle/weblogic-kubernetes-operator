@@ -72,6 +72,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.junit.After;
 import org.junit.Before;
@@ -126,7 +127,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue", "ConstantConditions", "OctalInteger", "unchecked"})
-public abstract class PodHelperTestBase {
+public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   static final String NS = "namespace";
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
@@ -236,7 +237,11 @@ public abstract class PodHelperTestBase {
 
   private String[] getMessageKeys() {
     return new String[] {
-      getCreatedMessageKey(), getExistsMessageKey(), getPatchedMessageKey(), getReplacedMessageKey()
+      getCreatedMessageKey(),
+        getExistsMessageKey(),
+        getPatchedMessageKey(),
+        getReplacedMessageKey(),
+        getDomainValidationFailedKey()
     };
   }
 
@@ -1022,6 +1027,8 @@ public abstract class PodHelperTestBase {
   abstract String getPatchedMessageKey();
 
   abstract String getReplacedMessageKey();
+
+  abstract String getDomainValidationFailedKey();
 
   abstract V1Pod createTestPodModel();
 
