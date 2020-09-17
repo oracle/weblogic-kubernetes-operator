@@ -3,10 +3,13 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import oracle.kubernetes.weblogic.domain.model.AdminServer;
 import oracle.kubernetes.weblogic.domain.model.AdminService;
 
 @SuppressWarnings("UnusedReturnValue")
 public interface AdminServerConfigurator extends ServerConfigurator {
 
   AdminService configureAdminService();
+
+  AdminServer getAdminServer();
 }
