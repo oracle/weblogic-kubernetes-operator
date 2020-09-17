@@ -346,6 +346,8 @@ public class JobHelper {
 
         return doNext(
             Step.chain(
+                DomainValidationSteps.createAdditionalDomainValidationSteps(
+                    context.getJobModel().getSpec().getTemplate().getSpec()),
                 createProgressingStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
                 context.createNewJob(null),
                 readDomainIntrospectorPodLogStep(null),
