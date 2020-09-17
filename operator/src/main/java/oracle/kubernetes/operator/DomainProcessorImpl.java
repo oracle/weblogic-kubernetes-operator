@@ -394,7 +394,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         case "DELETED":
           delegate.runSteps(
               ConfigMapHelper.createScriptConfigMapStep(
-                  delegate.getOperatorNamespace(), c.getMetadata().getNamespace()));
+                    c.getMetadata().getNamespace()));
           break;
 
         case "ERROR":
@@ -912,7 +912,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private Step getRecordExistingResourcesSteps() {
-      NamespacedResources resources = new NamespacedResources(null, info.getNamespace(), info.getDomainUid());
+      NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid());
 
       resources.addProcessor(new NamespacedResources.Processors() {
         @Override

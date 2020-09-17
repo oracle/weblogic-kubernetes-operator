@@ -1,5 +1,5 @@
-// Copyright 2020, Oracle Corporation and/or its affiliates.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -27,9 +27,9 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
  * that any domains which are found have the proper pods and services.
  */
 class DomainResourcesValidation {
-  private String namespace;
-  private DomainProcessor processor;
-  private Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
+  private final String namespace;
+  private final DomainProcessor processor;
+  private final Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
 
   DomainResourcesValidation(String namespace, DomainProcessor processor) {
     this.namespace = namespace;

@@ -1,5 +1,5 @@
-// Copyright 2020, Oracle Corporation and/or its affiliates.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -29,13 +29,12 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
  * A Class to manage listing Kubernetes resources associated with a namespace and doing processing on them.
  */
 class NamespacedResources {
-  private String operatorNamespace;
-  private String namespace;
-  private String domainUid;
+
+  private final String namespace;
+  private final String domainUid;
   private final List<Processors> processors = new ArrayList<>();
 
-  NamespacedResources(String operatorNamespace, String namespace, String domainUid) {
-    this.operatorNamespace = operatorNamespace;
+  NamespacedResources(String namespace, String domainUid) {
     this.namespace = namespace;
     this.domainUid = domainUid;
   }
@@ -58,7 +57,7 @@ class NamespacedResources {
   /**
    * A class which describes some processing to be performed on the resources as they are read.
    */
-  static abstract class Processors {
+  abstract static class Processors {
 
     /**
      * Return the processing to be performed on the script config map. May be null.
@@ -109,7 +108,7 @@ class NamespacedResources {
 
   private Step createConfigMapSteps(List<Consumer<Packet>> processing) {
     return Step.chain(
-          ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, namespace),
+          ConfigMapHelper.createScriptConfigMapStep(namespace),
           new Main.ConfigMapAfterStep(processing)
     );
   }
@@ -157,7 +156,7 @@ class NamespacedResources {
   }
 
   private <L extends KubernetesListObject>
-  Optional<List<Consumer<L>>> getListProcessing(Function<Processors, Consumer<L>> method) {
+        Optional<List<Consumer<L>>> getListProcessing(Function<Processors, Consumer<L>> method) {
     return nullIfEmpty(processors.stream().map(method).filter(Objects::nonNull).collect(Collectors.toList()));
   }
 
@@ -173,13 +172,13 @@ class NamespacedResources {
   class CompletionStep extends Step {
     @Override
     public NextAction apply(Packet packet) {
-      processors.forEach(p-> p.completeProcessing(packet));
+      processors.forEach(p -> p.completeProcessing(packet));
       return doNext(packet);
     }
   }
 
   private static class ListResponseStep<L extends KubernetesListObject> extends DefaultResponseStep<L> {
-    private List<Consumer<L>> processors;
+    private final List<Consumer<L>> processors;
 
     ListResponseStep(List<Consumer<L>> processors) {
       this.processors = processors;
