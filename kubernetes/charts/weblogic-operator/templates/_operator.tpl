@@ -4,7 +4,7 @@
 {{- define "operator.operator" -}}
 {{- include "operator.operatorClusterRoleGeneral" . }}
 {{- include "operator.operatorClusterRoleNamespace" . }}
-{{- if not (or .dedicated (eq (default .domainNamespaceSelectionStrategy "List") "Dedicated")) }}
+{{- if not (or .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated")) }}
 {{-   include "operator.operatorClusterRoleNonResource" . }}
 {{- end }}
 {{- include "operator.operatorClusterRoleOperatorAdmin" . }}
@@ -12,7 +12,7 @@
 {{- include "operator.clusterRoleBindingGeneral" . }}
 {{- include "operator.clusterRoleBindingAuthDelegator" . }}
 {{- include "operator.clusterRoleBindingDiscovery" . }}
-{{- if not (or .dedicated (eq (default .domainNamespaceSelectionStrategy "List") "Dedicated")) }}
+{{- if not (or .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated")) }}
 {{-   include "operator.clusterRoleBindingNonResource" . }}
 {{- end }}
 {{- include "operator.operatorRole" . }}
