@@ -84,7 +84,7 @@ public class DomainValidationStepTest {
 
   @Test
   public void whenDomainIsValid_runNextStep() {
-    testSupport.runStepsToCompletion(domainValidationSteps);
+    testSupport.runSteps(domainValidationSteps);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
@@ -94,7 +94,7 @@ public class DomainValidationStepTest {
     consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     defineDuplicateServerNames();
 
-    testSupport.runStepsToCompletion(domainValidationSteps);
+    testSupport.runSteps(domainValidationSteps);
 
     assertThat(terminalStep.wasRun(), is(false));
   }
@@ -104,7 +104,7 @@ public class DomainValidationStepTest {
     consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     defineDuplicateServerNames();
 
-    testSupport.runStepsToCompletion(domainValidationSteps);
+    testSupport.runSteps(domainValidationSteps);
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
@@ -115,7 +115,7 @@ public class DomainValidationStepTest {
   public void whenDomainIsNotValid_logSevereMessage() {
     defineDuplicateServerNames();
 
-    testSupport.runStepsToCompletion(domainValidationSteps);
+    testSupport.runSteps(domainValidationSteps);
 
     assertThat(logRecords, containsSevere(DOMAIN_VALIDATION_FAILED));
   }
@@ -138,7 +138,7 @@ public class DomainValidationStepTest {
     consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name").namespace("ns"));
 
-    testSupport.runStepsToCompletion(domainValidationSteps);
+    testSupport.runSteps(domainValidationSteps);
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
@@ -150,7 +150,7 @@ public class DomainValidationStepTest {
     consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name").namespace("ns"));
 
-    testSupport.runStepsToCompletion(domainValidationSteps);
+    testSupport.runSteps(domainValidationSteps);
 
     assertThat(terminalStep.wasRun(), is(false));
   }
@@ -160,7 +160,7 @@ public class DomainValidationStepTest {
     domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name"));
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("name").namespace(NS)));
 
-    testSupport.runStepsToCompletion(domainValidationSteps);
+    testSupport.runSteps(domainValidationSteps);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
@@ -170,7 +170,7 @@ public class DomainValidationStepTest {
     domain.getSpec().withCluster(createCluster("no-such-cluster"));
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
-    testSupport.runStepsToCompletion(topologyValidationStep);
+    testSupport.runSteps(topologyValidationStep);
 
     assertThat(logRecords, containsWarning(MessageKeys.NO_CLUSTER_IN_DOMAIN));
     assertThat(info.getValidationWarningsAsString(),
@@ -182,7 +182,7 @@ public class DomainValidationStepTest {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("no-such-server"));
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
-    testSupport.runStepsToCompletion(topologyValidationStep);
+    testSupport.runSteps(topologyValidationStep);
 
     assertThat(logRecords, containsWarning(MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN));
     assertThat(info.getValidationWarningsAsString(),
