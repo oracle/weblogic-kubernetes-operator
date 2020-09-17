@@ -267,7 +267,9 @@ public abstract class PodStepContext extends BasePodStepContext {
    * @return a step to be scheduled.
    */
   Step verifyPod(Step next) {
-    return new VerifyPodStep(next);
+    return Step.chain(
+        DomainValidationSteps.createAdditionalDomainValidationSteps(podModel.getSpec()),
+        new VerifyPodStep(next));
   }
 
   /**
