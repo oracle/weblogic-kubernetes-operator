@@ -18,6 +18,10 @@ public class Model {
   @ApiModelProperty("WDT config map name.")
   private String configMap;
 
+  @ApiModelProperty("Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.")
+  private String modelHome;
+
+
   @ApiModelProperty(
       "Runtime encryption secret. Required when domainHomeSourceType is set to FromModel.")
   private String runtimeEncryptionSecret;
@@ -73,12 +77,26 @@ public class Model {
     this.runtimeEncryptionSecret = runtimeEncryptionSecret;
   }
 
+  String getModelHome() {
+    return modelHome;
+  }
+
+  void setModelHome(String modelHome) {
+    this.modelHome = modelHome;
+  }
+
+  public Model withModelHome(String modelHome) {
+    this.modelHome = modelHome;
+    return this;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .append("domainType", domainType)
             .append("configMap", configMap)
+            .append("modelHome", modelHome)
             .append("runtimeEncryptionSecret", runtimeEncryptionSecret);
 
     return builder.toString();
@@ -87,7 +105,7 @@ public class Model {
   @Override
   public int hashCode() {
     HashCodeBuilder builder =
-        new HashCodeBuilder().append(domainType).append(configMap).append(runtimeEncryptionSecret);
+        new HashCodeBuilder().append(domainType).append(configMap).append(modelHome).append(runtimeEncryptionSecret);
 
     return builder.toHashCode();
   }
@@ -106,6 +124,7 @@ public class Model {
         new EqualsBuilder()
             .append(domainType, rhs.domainType)
             .append(configMap, rhs.configMap)
+            .append(modelHome,rhs.modelHome)
             .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret);
 
     return builder.isEquals();
