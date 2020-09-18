@@ -46,8 +46,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccoun
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -59,13 +58,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Integration test cases for "Dedicated" namespace scenarios
- * 1. Set "dedicated" to true, verify that the domains deployed in the operator's namespace come up.
- * 2. Set "dedicated" to true, verify that the domains not deployed in the operator's namespace does not come up.
- * 3. Scale the cluster with "dedicated" set to true
- * 4. Negative tests
- *    1) The CRD is not present or is deleted, verify that Operator fails with error
- *    2) The CRD is present but is a lower than expected version, verify that Operator fails with error
+ * The current class verifies various use cases related to domainNamespaceSelectionStrategy.
+ * For more detail regarding the feature, please refer to
+ * https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/docs-source/content/
+ * userguide/managing-operators/using-the-operator/using-helm.md#overall-operator-information.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test Operator and WebLogic domain with Dedicated set to true")
@@ -125,14 +121,15 @@ class ItDedicatedMode {
   }
 
   /**
-   * Set "dedicated" to true and set the domainNamespaces to something that does not contain the operator's namespace,
-   * make sure that the domains in the operator's target namespaces do not come up
-   * because when dedicated is set to true, the operator's domainNamespaces value is ignored.
-   * 1) Install an Operator with namespace=op-ns, domainNamespaces=wls-ns
-   *    and domainNamespaceSelectionStrategy=Dedicated.
-   * 2) Verify the Operator is up and running.
-   * 3) Create WebLogic Domain its namespace=wls-ns.
-   * 4) Verify that domain whose namespace = wls-ns does not come up.
+   * When installing the Operator via helm install,
+   * set Helm parameter domainNamespaceSelectionStrategy to Dedicated and
+   * set domainNamespaces to something that is different from the operator's namespace.
+   * Make sure that the domains is not in the operator's target namespaces do not come up.
+   *   Install an Operator with a namespace and set domainNamespaces in a different namespace
+   *     from the Operator's namespace, also set domainNamespaceSelectionStrategy to Dedicated.
+   *   Verify the Operator is up and running.
+   *   Create WebLogic Domain in a namespace that is different from the Operator's namespace.
+   *   Verify that the domain does not come up.
    */
   @Test
   @Order(1)
@@ -147,14 +144,16 @@ class ItDedicatedMode {
     // create and verify the domain
     logger.info("Creating and verifying model in image domain");
     createDomain(domain2Namespace);
-
     verifyDomainNotRunning(domain2Namespace);
   }
 
   /**
-   * Set "dedicated" to true, make sure that the domains deployed in the operator's namespace come up.
-   * 1) Using the Operator's namespace, op-wls-ns, create a WebLogic Domain
-   * 2) Verify that the WebLogic domain whose namespace = op-wls-ns comes up.
+   * When installing the Operator via helm install, set Helm parameter
+   * domainNamespaceSelectionStrategy to Dedicated. Make sure that the domains
+   * in the operator's target namespaces comes up.
+   *   Operator is installed in the test case testDedicatedModeDiffNamespace.
+   *   Create a WebLogic Domain with the same namespace as Operator's namespace.
+   *   Verify that the WebLogic domain whose namespace is same as Operator's namespace comes up.
    */
   @Test
   @Order(2)
@@ -167,7 +166,8 @@ class ItDedicatedMode {
   }
 
   /**
-   * Scale up cluster-1 in domain1Namespace and verify it succeeds.
+   * Test that when domainNamespaceSelectionStrategy is set to Dedicated ,
+   * scaling up cluster-1 in domain1Namespace succeeds.
    */
   @Test
   @Order(3)
@@ -187,7 +187,7 @@ class ItDedicatedMode {
 
   /**
    * Test when a CRD with a lower than expected version is present,
-   * Operator fails with error if it has not permission to overwrite the CRD.
+   * Operator fails with error if it has no permission to overwrite the CRD.
    */
   @Test
   @Order(4)
@@ -225,7 +225,7 @@ class ItDedicatedMode {
 
   /**
    * Test when she CRD is not present or is deleted,
-   * Operator fails with error if it has not permission to create the CRD.
+   * Operator fails with error if it has no permission to create the CRD.
    */
   @Test
   @Order(5)
@@ -330,29 +330,19 @@ class ItDedicatedMode {
   }
 
   private void verifyDomainRunning(String domainNamespace) {
-    // check that admin service exists in the domain namespace
-    logger.info("Checking that admin service {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check that admin server pod is ready
+    // check that admin server pod is ready and the service exists in the domain namespace
     logger.info("Checking that admin server pod {0} is ready in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPodPrefix + i;
 
-      // check that the managed server service exists in the domain namespace
-      logger.info("Checking that managed server service {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkServiceExists(managedServerPodName, domainNamespace);
-
-      // check that the managed server pod is ready
+      // check that the managed server pod is ready and the service exists in the domain namespace
       logger.info("Checking that managed server pod {0} is ready in namespace {1}",
           managedServerPodName, domainNamespace);
-      checkPodReady(managedServerPodName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
   }
 
