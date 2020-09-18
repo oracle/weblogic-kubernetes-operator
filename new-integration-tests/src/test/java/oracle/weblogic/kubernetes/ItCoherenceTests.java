@@ -26,8 +26,6 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
@@ -35,7 +33,6 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -143,11 +140,8 @@ class ItCoherenceTests {
    * Test rolling restart of Coherence managed servers and verify
    * that data are not lost during a domain restart.
    */
-  @Disabled
   @Test
   @DisplayName("Create domain with a Coherence cluster using WDT and test rolling restart")
-  @Slow
-  @MustNotRunInParallel
   public void testCohernceServerRollingRestart() {
     final String successMarker = "CACHE-SUCCESS";
 
@@ -390,8 +384,6 @@ class ItCoherenceTests {
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.info("New restart version : {0}", newRestartVersion);
 
-    assertTrue(assertDoesNotThrow(
-        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
-            "More than one pod was restarted at same time"), "Rolling restart failed");
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace), "Rolling restart failed");
   }
 }

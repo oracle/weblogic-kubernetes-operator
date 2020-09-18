@@ -3,10 +3,11 @@
 
 package oracle.kubernetes.operator.steps;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -44,9 +45,12 @@ public class DeleteDomainStep extends Step {
             deleteServices(),
             ConfigMapHelper.deleteIntrospectorConfigMapStep(domainUid, namespace, getNext()));
     if (info != null) {
+      List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
+      info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList())
+              .forEach(s -> ssi.add(new DomainPresenceInfo.ServerShutdownInfo(s, null)));
       serverDownStep =
           new ServerDownIteratorStep(
-              info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList()),
+              ssi,
               serverDownStep);
     }
 
@@ -59,7 +63,7 @@ public class DeleteDomainStep extends Step {
         .listServiceAsync(
             namespace,
             new ActionResponseStep<V1ServiceList>() {
-              Step createSuccessStep(V1ServiceList result, Step next) {
+              public Step createSuccessStep(V1ServiceList result, Step next) {
                 return new DeleteServiceListStep(result.getItems(), next);
               }
             });
@@ -71,21 +75,4 @@ public class DeleteDomainStep extends Step {
         .deleteCollectionPodAsync(namespace, new DefaultResponseStep<>(null));
   }
 
-  /**
-   * A response step which treats a NOT_FOUND status as success with a null result. On success with
-   * a non-null response, runs a specified new step before continuing the step chain.
-   */
-  abstract static class ActionResponseStep<T> extends DefaultResponseStep<T> {
-    ActionResponseStep() {
-    }
-
-    abstract Step createSuccessStep(T result, Step next);
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
-      return callResponse.getResult() == null
-          ? doNext(packet)
-          : doNext(createSuccessStep(callResponse.getResult(), getNext()), packet);
-    }
-  }
 }

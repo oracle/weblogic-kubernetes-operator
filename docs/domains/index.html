@@ -1038,6 +1038,11 @@ window.onload = function() {
           "description": "Customization affecting Kubernetes Service generated for this WebLogic cluster.",
           "$ref": "#/definitions/KubernetesResource"
         },
+        "maxConcurrentShutdown": {
+          "description": "The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1.",
+          "type": "number",
+          "minimum": 0.0
+        },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
           "type": "string",
@@ -1283,6 +1288,11 @@ window.onload = function() {
           "type": "number",
           "minimum": 0.0
         },
+        "maxClusterConcurrentShutdown": {
+          "description": "The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it is being partially shut down by lowering its replica count. You can override this default on a per cluster basis by setting the cluster\u0027s `maxConcurrentShutdown` field. A value of 0 means there is no limit. Defaults to 1.",
+          "type": "number",
+          "minimum": 0.0
+        },
         "domainHomeInImage": {
           "deprecated": "true",
           "description": "Deprecated. Use `domainHomeSourceType` instead. Ignored if `domainHomeSourceType` is specified. True indicates that the domain home file system is present in the container image specified by the image field. False indicates that the domain home file system is located on a persistent volume. Defaults to unset.",
@@ -1349,6 +1359,11 @@ window.onload = function() {
           "items": {
             "$ref": "#/definitions/ServerStatus"
           }
+        },
+        "introspectJobFailureCount": {
+          "description": "Non-zero if the introspector job fails for any reason. You can configure an introspector job retry limit for jobs that log script failures using the Operator tuning parameter \u0027domainPresenceFailureRetryMaxCount\u0027 (default 5). You cannot configure a limit for other types of failures, such as a Domain resource reference to an unknown secret name; in which case, the retries are unlimited.",
+          "type": "number",
+          "minimum": 0.0
         },
         "replicas": {
           "description": "The number of running cluster member Managed Servers in the WebLogic cluster if there is exactly one cluster defined in the domain configuration and where the `replicas` field is set at the `spec` level rather than for the specific cluster under `clusters`. This field is provided to support use of Kubernetes scaling for this limited use case.",

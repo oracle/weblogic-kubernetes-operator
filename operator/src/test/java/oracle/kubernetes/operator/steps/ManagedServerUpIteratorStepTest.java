@@ -241,7 +241,7 @@ public class ManagedServerUpIteratorStepTest {
     assertThat(MS2 + " pod", domainPresenceInfo.getServerPod(MS2), notNullValue());
     assertThat(MS3 + " pod", domainPresenceInfo.getServerPod(MS3), nullValue());
     schedulePod(MS2, "Node2");
-    testSupport.setTime(100, TimeUnit.MILLISECONDS);
+    testSupport.setTime(200, TimeUnit.MILLISECONDS);
     assertThat(MS3 + " pod", domainPresenceInfo.getServerPod(MS3), nullValue());
     makePodReady(MS1);
     testSupport.setTime(10, TimeUnit.SECONDS);
@@ -249,7 +249,7 @@ public class ManagedServerUpIteratorStepTest {
     assertThat(MS4 + " pod", domainPresenceInfo.getServerPod(MS4), nullValue());
     makePodReady(MS2);
     schedulePod(MS3, "Node3");
-    testSupport.setTime(10, TimeUnit.SECONDS);
+    testSupport.setTime(20, TimeUnit.SECONDS);
     assertThat(MS4 + " pod", domainPresenceInfo.getServerPod(MS4), notNullValue());
   }
 

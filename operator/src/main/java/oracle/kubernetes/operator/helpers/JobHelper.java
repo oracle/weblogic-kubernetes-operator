@@ -40,11 +40,14 @@ import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
+import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 
@@ -344,10 +347,14 @@ public class JobHelper {
         packet.putIfAbsent(START_TIME, System.currentTimeMillis());
 
         return doNext(
-              context.createNewJob(
-                    readDomainIntrospectorPodLogStep(
-                          deleteDomainIntrospectorJobStep(
-                                ConfigMapHelper.createIntrospectorConfigMapStep(getNext())))),
+            Step.chain(
+                DomainValidationSteps.createAdditionalDomainValidationSteps(
+                    context.getJobModel().getSpec().getTemplate().getSpec()),
+                createProgressingStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
+                context.createNewJob(null),
+                readDomainIntrospectorPodLogStep(null),
+                deleteDomainIntrospectorJobStep(null),
+                ConfigMapHelper.createIntrospectorConfigMapStep(getNext())),
               packet);
       }
 
@@ -582,6 +589,17 @@ public class JobHelper {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String domainUid = info.getDomain().getDomainUid();
       String namespace = info.getNamespace();
+      Integer currentIntrospectFailureRetryCount = Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getIntrospectJobFailureCount)
+          .orElse(0);
+
+      if (currentIntrospectFailureRetryCount > 0) {
+        LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED, info.getDomain().getDomainUid(),
+            TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds,
+            currentIntrospectFailureRetryCount);
+      }
 
       return doNext(readDomainIntrospectorPod(domainUid, namespace, getNext()), packet);
     }
@@ -617,7 +635,7 @@ public class JobHelper {
             .findFirst()
             .ifPresent(name -> recordJobPodName(packet, name));
 
-      return doNext(packet);
+      return doContinueListOrNext(callResponse, packet);
     }
 
     private String getName(V1Pod pod) {

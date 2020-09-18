@@ -95,7 +95,8 @@ public class WebLogicImageTool {
         + " update "
         + " --tag " + params.modelImageName() + ":" + params.modelImageTag()
         + " --fromImage " + params.baseImageName() + ":" + params.baseImageTag()
-        + " --wdtDomainType " + params.domainType();
+        + " --wdtDomainType " + params.domainType()
+        + " --chown oracle:root";
 
     if (params.wdtModelOnly()) {
       command += " --wdtModelOnly ";
@@ -117,6 +118,14 @@ public class WebLogicImageTool {
 
     if (params.wdtOperation() != null) {
       command += " --wdtOperation " + params.wdtOperation();
+    }
+
+    if (params.additionalBuildCommands() != null) {
+      command += " --additionalBuildCommands " + params.additionalBuildCommands();
+    }
+
+    if (params.additionalBuildFiles() != null) {
+      command += " --additionalBuildFiles " + params.additionalBuildFiles();
     }
 
     return command;

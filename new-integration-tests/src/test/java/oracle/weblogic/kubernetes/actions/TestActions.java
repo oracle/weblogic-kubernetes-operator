@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -25,6 +26,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.weblogic.domain.DomainList;
+import oracle.weblogic.kubernetes.actions.impl.Apache;
+import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
 import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRole;
@@ -66,6 +69,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.joda.time.DateTime;
 
+import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
+import static oracle.weblogic.kubernetes.actions.impl.Operator.stop;
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -136,6 +141,24 @@ public class TestActions {
    */
   public static String getOperatorContainerImageName(String namespace) throws ApiException {
     return Operator.getOperatorContainerImage(namespace);
+  }
+
+  /**
+   * Stop operator by changing the replica in the operator deployment to 0.
+   * @param namespace namespace of the operator
+   * @return true on success
+   */
+  public static boolean stopOperator(String namespace) {
+    return stop(namespace);
+  }
+
+  /**
+   * Start operator by changing the replica in the operator deployment to 1.
+   * @param namespace namespace of the operator
+   * @return true on success
+   */
+  public static boolean startOperator(String namespace) {
+    return start(namespace);
   }
 
   // ----------------------   domain  -----------------------------------
@@ -364,6 +387,16 @@ public class TestActions {
     return Traefik.install(params);
   }
 
+  /**
+   * Install Apache ingress controller.
+   *
+   * @param params the parameters to Helm install command, such as release name, namespace, repo url,
+   *               repo name and chart name
+   * @return true on success, false otherwise
+   */
+  public static boolean installApache(ApacheParams params) {
+    return Apache.install(params);
+  }
 
   /**
    * Upgrade NGINX release.
@@ -383,6 +416,16 @@ public class TestActions {
    */
   public static boolean upgradeVoyager(VoyagerParams params) {
     return Voyager.upgrade(params);
+  }
+
+  /**
+   * Upgrade Apache release.
+   *
+   * @param params the parameters to Helm upgrade command, such as release name and http/https nodeport
+   * @return true on success, false otherwise
+   */
+  public static boolean upgradeApache(ApacheParams params) {
+    return Apache.upgrade(params);
   }
 
   /**
@@ -413,6 +456,16 @@ public class TestActions {
    */
   public static boolean uninstallVoyager(HelmParams params) {
     return Voyager.uninstall(params);
+  }
+
+  /**
+   * Uninstall the Apache release.
+   *
+   * @param params the parameters to Helm uninstall command, such as release name and namespace
+   * @return true on success, false otherwise
+   */
+  public static boolean uninstallApache(HelmParams params) {
+    return Apache.uninstall(params);
   }
 
   /**
@@ -480,6 +533,18 @@ public class TestActions {
    */
   public static List<String> listIngresses(String namespace) throws ApiException {
     return Ingress.listIngresses(namespace);
+  }
+
+  /**
+   * Delete an ingress in the specified namespace.
+   *
+   * @param name  ingress name to be deleted
+   * @param namespace namespace in which the specified ingress exists
+   * @return true if deleting ingress succeed, false otherwise
+   * @throws ApiException if Kubernetes API client call fails
+   */
+  public static boolean deleteIngress(String name, String namespace) throws ApiException {
+    return Ingress.deleteIngress(name, namespace);
   }
 
   // -------------------------  namespaces -------------------------------
@@ -715,7 +780,6 @@ public class TestActions {
   public static int getServiceNodePort(String namespace, String serviceName, String channelName) {
     return Service.getServiceNodePort(namespace, serviceName, channelName);
   }
-
 
   /**
    * Get node port of a namespaced service.
@@ -1029,6 +1093,29 @@ public class TestActions {
     return Job.getJob(jobName, namespace);
   }
 
+  /**
+   * Delete a job.
+   *
+   * @param jobName name of the job
+   * @param namespace name of the namespace
+   * @return true if delete was successful
+   * @throws ApiException when deletion of job fails
+   */
+  public static boolean deleteJob(String jobName, String namespace) throws ApiException {
+    return Job.deleteJob(jobName, namespace);
+  }
+
+  /**
+   * List jobs in the given namespace.
+   *
+   * @param namespace in which to list the jobs
+   * @return V1JobList list of {@link V1Job} from Kubernetes cluster
+   * @throws ApiException when list fails
+   */
+  public static V1JobList listJobs(String namespace) throws ApiException {
+    return Job.listJobs(namespace);
+  }
+
   // ----------------------   pod  ---------------------------------
 
   /**
@@ -1081,6 +1168,19 @@ public class TestActions {
    **/
   public static String getPodLog(String podName, String namespace) throws ApiException {
     return Pod.getPodLog(podName, namespace);
+  }
+
+  /**
+   * Get a pod's log.
+   *
+   * @param podName name of the pod
+   * @param namespace name of the namespace
+   * @param container name of the container
+   * @return log as a String
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static String getPodLog(String podName, String namespace, String container) throws ApiException {
+    return Pod.getPodLog(podName, namespace, container);
   }
 
   /**
@@ -1306,6 +1406,22 @@ public class TestActions {
     return LoggingExporter.verifyLoggingExporterReady(namespace, labelSelector, index);
   }
 
+  // --------------------------- WebLogic Logging Exporter---------------------------------
+  /**
+   * Install WebLogic Logging Exporter.
+   *
+   * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
+   * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
+   * @param wlsLoggingExporterArchiveLoc the directory where WebLogic Logging Exporter jar files store
+   * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
+   */
+  public static boolean installWlsLoggingExporter(String filter,
+                                                  String wlsLoggingExporterYamlFileLoc,
+                                                  String wlsLoggingExporterArchiveLoc) {
+    return LoggingExporter.installWlsLoggingExporter(filter,
+        wlsLoggingExporterYamlFileLoc, wlsLoggingExporterArchiveLoc);
+  }
+
   /**
    * Patch the domain resource with a new restartVersion.
    *
@@ -1350,5 +1466,14 @@ public class TestActions {
    */
   public static String getOperatorPodName(String release, String namespace) throws ApiException {
     return Kubernetes.getOperatorPodName(release, namespace);
+  }
+
+  /**
+   * Append the helmValues to the given string buffer.
+   * @param helmValues hash map with key, value pairs
+   * @return string with chart helmValues
+   */
+  public static String helmValuesToString(Map<String, Object> helmValues) {
+    return Helm.valuesToString(helmValues);
   }
 }

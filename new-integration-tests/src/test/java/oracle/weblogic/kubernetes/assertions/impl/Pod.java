@@ -15,7 +15,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class Pod {
 
@@ -48,8 +47,7 @@ public class Pod {
           namespace,
           condition.getElapsedTimeInMS(),
           condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> podRestarted(entry.getKey(), pods, maxUnavailable, namespace),
-              String.format("pod %s didn't restart in namespace %s", entry.getKey(), namespace)));
+          .until(podRestarted(entry.getKey(), pods, maxUnavailable, namespace));
 
       // check pods are in ready status
       retry
@@ -60,8 +58,7 @@ public class Pod {
           namespace,
           condition.getElapsedTimeInMS(),
           condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> podReady(namespace, null, entry.getKey()),
-              String.format("pod %s didn't become ready in namespace %s", entry.getKey(), namespace)));
+          .until(podReady(namespace, null, entry.getKey()));
     }
 
     return true;
@@ -121,6 +118,20 @@ public class Pod {
   public static Callable<Boolean> podReady(String namespace, String domainUid, String podName) {
     return () -> {
       return Kubernetes.isPodReady(namespace, domainUid, podName);
+    };
+  }
+
+  /**
+   * Check a given pod is in initializing status.
+   *
+   * @param namespace name of the namespace in which to check the pod status
+   * @param domainUid UID of the WebLogic domain
+   * @param podName name of the pod
+   * @return true if pod is initializing otherwise false
+   */
+  public static Callable<Boolean> podInitializing(String namespace, String domainUid, String podName) {
+    return () -> {
+      return Kubernetes.isPodInitializing(namespace, domainUid, podName);
     };
   }
 

@@ -23,9 +23,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import io.kubernetes.client.Copy;
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.extended.generic.GenericKubernetesApi;
-import io.kubernetes.client.extended.generic.KubernetesApiResponse;
-import io.kubernetes.client.extended.generic.options.DeleteOptions;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
@@ -76,6 +73,11 @@ import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.util.ClientBuilder;
+import io.kubernetes.client.util.PatchUtils;
+import io.kubernetes.client.util.exception.CopyNotSupportedException;
+import io.kubernetes.client.util.generic.GenericKubernetesApi;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import io.kubernetes.client.util.generic.options.DeleteOptions;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -190,7 +192,7 @@ public class Kubernetes {
         new GenericKubernetesApi<>(
             V1Job.class,  // the api type class
             V1JobList.class, // the api list type class
-            "", // the api group
+            "batch", // the api group
             "v1", // the api version
             "jobs", // the resource plural
             apiClient //the api client
@@ -344,6 +346,7 @@ public class Kubernetes {
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
+
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
@@ -410,6 +413,7 @@ public class Kubernetes {
           namespace, // name of the Namespace
           container, // container for which to stream logs
           null, //  Boolean Follow the log stream of the pod
+          null, // skip TLS verification of backend
           null, // number of bytes to read from the server before terminating the log output
           PRETTY, // pretty print output
           null, // Boolean, Return previous terminated container logs
@@ -650,7 +654,7 @@ public class Kubernetes {
    * @throws ApiException when pod interaction fails
    */
   public static void copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
-      throws IOException, ApiException {
+      throws IOException, ApiException, CopyNotSupportedException {
     Copy copy = new Copy();
     copy.copyDirectoryFromPod(pod, srcPath, destination);
   }
@@ -1088,6 +1092,43 @@ public class Kubernetes {
       return false;
     }
 
+    return true;
+  }
+
+  /**
+   * Patch the Deployment.
+   *
+   * @param deploymentName name of the deployment
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *     "application/json-patch+json", "application/merge-patch+json",
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchDeployment(String deploymentName, String namespace,
+                                        V1Patch patch, String patchFormat) {
+
+    AppsV1Api apiInstance = new AppsV1Api(apiClient);
+    try {
+      PatchUtils.patch(
+          V1Deployment.class,
+          () ->
+              apiInstance.patchNamespacedDeploymentCall(
+                  deploymentName,
+                  namespace,
+                  patch,
+                  null,
+                  null,
+                  null, // field-manager is optional
+                  null,
+                  null),
+          patchFormat,
+          apiClient);
+    } catch (ApiException apiex) {
+      getLogger().warning("Exception while patching the deployment {0} in namespace {1} : {2} ",
+          deploymentName, namespace, apiex);
+      return false;
+    }
     return true;
   }
 
@@ -1823,23 +1864,22 @@ public class Kubernetes {
    * @return true if delete was successful
    * @throws ApiException when deletion of job fails
    */
-  public static boolean deleteJob(String namespace, String name) throws ApiException {
-    try {
-      BatchV1Api apiInstance = new BatchV1Api(apiClient);
-      apiInstance.deleteNamespacedJob(
-          name, // String | name of the job.
-          namespace, // String | name of the namespace.
-          PRETTY, // String | pretty print output.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
-      );
-    } catch (ApiException apex) {
-      getLogger().warning(apex.getResponseBody());
-      throw apex;
+  public static boolean deleteJob(String namespace, String name) {
+
+    KubernetesApiResponse<V1Job> response = jobClient.delete(namespace, name);
+
+    if (!response.isSuccess()) {
+      getLogger().warning("Failed to delete job '" + name + "' from namespace: "
+          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+      return false;
     }
+
+    if (response.getObject() != null) {
+      getLogger().info(
+          "Received after-deletion status of the requested object, will be deleting "
+              + "job in background!");
+    }
+
     return true;
   }
 
@@ -2307,6 +2347,35 @@ public class Kubernetes {
   }
 
   /**
+   * Delete an ingress in the specified namespace.
+   *
+   * @param name  ingress name to be deleted
+   * @param namespace namespace in which the specified ingress exists
+   * @return true if deleting ingress succeed, false otherwise
+   * @throws ApiException if Kubernetes API client call fails
+   */
+  public static boolean deleteIngress(String name, String namespace) throws ApiException {
+    try {
+      NetworkingV1beta1Api apiInstance = new NetworkingV1beta1Api(apiClient);
+      apiInstance.deleteNamespacedIngress(
+          name, // ingress name
+          namespace, // namespace
+          PRETTY, // String | If 'true', then the output is pretty printed.
+          null, // String | dry run or permanent change
+          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
+          null, // Boolean | Deprecated: use the PropagationPolicy.
+          BACKGROUND, // String | Whether and how garbage collection will be performed.
+          null // V1DeleteOptions.
+      );
+    } catch (ApiException apex) {
+      getLogger().warning(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
    * Get Ingress in the given namespace by name.
    *
    * @param namespace name of the namespace
@@ -2387,6 +2456,13 @@ public class Kubernetes {
 
       ExecResult result = new ExecResult(proc.exitValue(), stdout, stderr);
       getLogger().fine("result from exec command: " + result);
+
+      if (result.exitValue() != 0) {
+        getLogger().info("result.exitValue={0}", result.exitValue());
+        getLogger().info("result.stdout={0}", result.stdout());
+        getLogger().info("result.stderr={0}", result.stderr());
+      }
+
       return result;
     } finally {
       if (proc != null) {

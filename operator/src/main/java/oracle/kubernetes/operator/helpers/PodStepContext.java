@@ -268,7 +268,9 @@ public abstract class PodStepContext extends BasePodStepContext {
    * @return a step to be scheduled.
    */
   Step verifyPod(Step next) {
-    return new VerifyPodStep(next);
+    return Step.chain(
+        DomainValidationSteps.createAdditionalDomainValidationSteps(podModel.getSpec()),
+        new VerifyPodStep(next));
   }
 
   /**
@@ -323,14 +325,26 @@ public abstract class PodStepContext extends BasePodStepContext {
     return createPodAsync(replaceResponse(next));
   }
 
+  /**
+   * Creates a Progressing step before an action step.
+   *
+   * @param actionStep the step to perform after the ProgressingStep.
+   * @return a step to be scheduled.
+   */
+  abstract Step createProgressingStep(Step actionStep);
+
   private Step patchCurrentPod(V1Pod currentPod, Step next) {
+    return createProgressingStep(patchPod(currentPod, next));
+  }
+
+  protected Step patchPod(V1Pod currentPod, Step next) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     KubernetesUtils.addPatches(
         patchBuilder, "/metadata/labels/", getLabels(currentPod), getPodLabels());
     KubernetesUtils.addPatches(
         patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
     return new CallBuilder()
-        .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
+            .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 
