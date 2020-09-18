@@ -149,8 +149,8 @@ class ItDedicatedMode {
 
   /**
    * When installing the Operator via helm install, set Helm parameter
-   * domainNamespaceSelectionStrategy to Dedicated. Make sure that the domains
-   * in the operator's target namespaces comes up.
+   * domainNamespaceSelectionStrategy to Dedicated.
+   * Make sure that the domains in the operator's target namespaces comes up.
    *   Operator is installed in the test case testDedicatedModeDiffNamespace.
    *   Create a WebLogic Domain with the same namespace as Operator's namespace.
    *   Verify that the WebLogic domain whose namespace is same as Operator's namespace comes up.
@@ -166,7 +166,7 @@ class ItDedicatedMode {
   }
 
   /**
-   * Test that when domainNamespaceSelectionStrategy is set to Dedicated ,
+   * Test that when domainNamespaceSelectionStrategy is set to Dedicated,
    * scaling up cluster-1 in domain1Namespace succeeds.
    */
   @Test
