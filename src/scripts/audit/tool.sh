@@ -9,10 +9,10 @@ source ${scriptDir}/utility.sh
 
 function usage {
   echo "usage: ${script} [-i] [-s] [-w] [-h]"
-  echo "  -i File containing list of images to scan in format [Repository]:[Tag]@[Hash]. Defaults to all images on current machine."
+  echo "  -i File containing list of images to scan in [Repository]:[Tag]@[Hash] format."
   echo "  -k File containing Kubernetes Node information in json format (output of 'kubectl get nodes -o json')."
   echo "  -w Working directory for the generated files. Defaults to '$scriptDir/work' dir."
-  echo "  -s Silent mode, informational messages are written to log file."
+  echo "  -s Silent mode."
   echo "  -h Help"
   exit 1
 }
@@ -60,8 +60,7 @@ function validateJqAvailable {
 }
 
 #
-# Function to perform validations, read image and artifact files, 
-# initialize workspace dir and generate report header
+# Function to perform validations, read files and initialize workspace
 #
 function initialize {
 
@@ -85,7 +84,7 @@ function initialize {
 
   failIfValidationErrors
 
-  # Read or create image list
+  # Read or create image file
   if [ -z "$imageFile" ]; then
     echo "Scanning all images on current machine, use '-i' option if you want to scan specific set of images."
     imageFile=$(docker images --format "{{.Repository}}:{{.Tag}}@{{.Digest}}" | grep -v "<none>:<none>")
@@ -94,7 +93,7 @@ function initialize {
     imageFile=${images[@]}
   fi
 
-  # Read artifacts list
+  # Read artifacts file
   IFS=$'\n' read -d '' -r -a artifacts < "$artifactsFile"
   artifactsFile=${artifacts[@]}
 
@@ -105,6 +104,9 @@ function initialize {
   
 }
 
+#
+# Initialize workspace dir and generate report header
+#
 function initWorkDir {
   workDir="$scriptDir/work"
   rm -fr "${workDir}"
@@ -116,10 +118,9 @@ function initWorkDir {
 
 
 #
-# Read file containing image list and process each image
+# Read image list, verify hash, scan image and search for artifact
 #
 function readImageListAndProcess {
-  local nodeName=""
 
   for image in ${imageFile}
   do
@@ -134,25 +135,28 @@ function readImageListAndProcess {
     elif [ ${result} == "hashVerificationFailed" ]; then
         warning "Hash verification failed for ${image}."
         continue;
-    else
-        nodeName="${result}"
     fi
 
     imageId=$(getImageId "${imageRepoTag}")
     if [ -n "$imageId" ]; then
-      info "Scanning image ${imageRepoTag} "
       imageDir="${workDir}/${imageId}"
       mkdir -p "${imageDir}"
+
+      info "Scanning image ${imageRepoTag} "
+
       saveImageAndExtractLayers "${imageId}" "${imageDir}"
-      searchArtifactInImage "${imageId}" "${imageDir}" "${nodeName}"
-      cleanUpDockerImage "${imageId}"
+      searchArtifactInImage "${imageId}" "${imageDir}" "${result}"
+      cleanUpImage "${imageId}"
     fi 
   done
 }
 
+#
+# Verify image hash and get node names using Kubernetes Node information file
+#
 function verifyHashAndGetNodeNames {
   local imageRepository=$1
-  local imageSha256=$2
+  local imageHash=$2
   hashVerificationFailed=false
   imageNode=""
   if [ -z "${kubernetesFile}" ]; then
@@ -168,10 +172,10 @@ function verifyHashAndGetNodeNames {
     imageHashInK8sFile=$(echo $image | cut -d'@' -f2)
     if [ "${imageRepoInK8sFile}" == "${imageRepository}" ]; then
       imageNode+="${nodeName},"
-      if [[ -z ${imageSha256} || ${imageSha256} == "<none>" ]]; then
+      if [[ -z ${imageHash} || ${imageHash} == "<none>" ]]; then
         break
       fi
-      if [ ${imageHashInK8sFile} != ${imageSha256} ]; then
+      if [ ${imageHashInK8sFile} != ${imageHash} ]; then
           hashVerificationFailed=true
       fi
     fi
@@ -186,23 +190,6 @@ function verifyHashAndGetNodeNames {
   fi
 }
 
-function getImageId {
-  local imageRepoTag=$1
-
-  imageId=$(docker images --format "{{.ID}}" "$imageRepoTag")
-  if [ -z "${imageId}" ]; then
-    repository=$(echo $imageRepoTag | cut -d':' -f1)
-    tag=$(echo $imageRepoTag | cut -d':' -f2)
-    imageId=$(docker images | awk '{print $1,$2,$3}' | grep "${repository} " | grep "${tag}" | awk '{print $3}')
-
-  fi
-  echo "$imageId"
-}
-
-function cleanUpDockerImage {
-  local imageDir=$1
-  rm -rf "${imageDir}"
-}
 
 function saveImageAndExtractLayers {
   local image=$1
@@ -224,18 +211,18 @@ function searchArtifactInImage {
   do
       find "${imageDir}" -name '*.tar' | while read layer
       do
-          searchArtifactInLayer "${image}" "${layer}" "${artifact}" "${nodeName}"
+          searchArtifactInLayers "${image}" "${layer}" "${artifact}" "${nodeName}"
       done
   done
 }
 
-function searchArtifactInLayer {
+function searchArtifactInLayers {
   local image=$1
   local layer=$2
   local artifact=$3 
   local nodeName=$4
 
-  tar -tf "${layer}" |grep -q "${artifact}"
+  tar -tf "${layer}" | grep -q "${artifact}"
   if [ $? -eq 0 ]; then
     imageName=$(docker images --format "{{.Repository}}:{{.Tag}} {{.ID}}" | grep "${image}" |awk '{print $1}')
     imageDetail=$(docker images --digests |grep ${image})
@@ -248,13 +235,6 @@ function searchArtifactInLayer {
   fi
 }
 
-function generateReportHeader {
-  if [ -z "${kubernetesFile}" ]; then
-    awk 'BEGIN {printf "%s,%s,%s\n","Respository", "Tag", "Digest"}' >> "${reportFile}"
-  else 
-    awk 'BEGIN {printf "%s|%s|%s|%s\n","Node","Respository", "Tag", "Digest"}' >> "${reportFile}"
-  fi
-}
 
 function runTool {
   initialize

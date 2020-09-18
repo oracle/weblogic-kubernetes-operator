@@ -57,3 +57,35 @@ function printReport {
     echo "No matching images found."
   fi
 }
+
+#
+# Get image id using repository and tag
+#
+function getImageId {
+  local imageRepoTag=$1
+
+  imageId=$(docker images --format "{{.ID}}" "$imageRepoTag")
+  if [ -z "${imageId}" ]; then
+    repository=$(echo $imageRepoTag | cut -d':' -f1)
+    tag=$(echo $imageRepoTag | cut -d':' -f2)
+    imageId=$(docker images | awk '{print $1,$2,$3}' | grep "${repository} " | grep "${tag}" | awk '{print $3}')
+
+  fi
+  echo "$imageId"
+}
+
+#
+# cleanup image directory 
+#
+function cleanUpImage {
+  local imageDir=$1
+  rm -rf "${imageDir}"
+}
+
+function generateReportHeader {
+  if [ -z "${kubernetesFile}" ]; then
+    awk 'BEGIN {printf "%s,%s,%s\n","Respository", "Tag", "Digest"}' >> "${reportFile}"
+  else 
+    awk 'BEGIN {printf "%s|%s|%s|%s\n","Node","Respository", "Tag", "Digest"}' >> "${reportFile}"
+  fi
+}
