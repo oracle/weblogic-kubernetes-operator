@@ -52,7 +52,11 @@ function printReport {
     echo "==============================" | tee -a "${logFile}"
     echo "    Matching Image Details    " | tee -a "${logFile}"
     echo "==============================" | tee -a "${logFile}"
-    cat "${reportFile}" | column -t -s ',' |  tee -a "${logFile}"
+    if [ -z "${kubernetesFile}" ]; then
+      cat "${reportFile}" | column -t -s ',' |  tee -a "${logFile}"
+    else
+      cat "${reportFile}" | column -t -s '|' |  tee -a "${logFile}"
+    fi
   else 
     echo "No matching images found."
   fi
