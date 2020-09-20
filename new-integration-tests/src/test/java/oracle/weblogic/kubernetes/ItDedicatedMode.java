@@ -122,18 +122,20 @@ class ItDedicatedMode {
 
   /**
    * When installing the Operator via helm install,
-   * set Helm parameter domainNamespaceSelectionStrategy to Dedicated and
+   * set the Operator Helm Chart parameter domainNamespaceSelectionStrategy to Dedicated and
    * set domainNamespaces to something that is different from the operator's namespace.
    * Make sure that the domains is not in the operator's target namespaces do not come up.
    *   Install an Operator with a namespace and set domainNamespaces in a different namespace
-   *     from the Operator's namespace, also set domainNamespaceSelectionStrategy to Dedicated.
+   *     from the Operator's namespace, also set domainNamespaceSelectionStrategy to Dedicated
+   *     for the Operator Helm Chart.
    *   Verify the Operator is up and running.
    *   Create WebLogic Domain in a namespace that is different from the Operator's namespace.
    *   Verify that the domain does not come up.
    */
   @Test
   @Order(1)
-  @DisplayName("Set dedicated to true and verify that a domain not deployed in operator's namespace doesn't come up")
+  @DisplayName("Set domainNamespaceSelectionStrategy to Dedicated for the Operator Helm Chart and "
+      + "verify that a domain not deployed in operator's namespace doesn't come up")
   public void testDedicatedModeDiffNamespace() {
     // install and verify operator
     logger.info("Installing and verifying operator");
@@ -148,8 +150,8 @@ class ItDedicatedMode {
   }
 
   /**
-   * When installing the Operator via helm install, set Helm parameter
-   * domainNamespaceSelectionStrategy to Dedicated.
+   * When installing the Operator via helm install,
+   * set domainNamespaceSelectionStrategy to Dedicated for the Operator Helm Chart.
    * Make sure that the domains in the operator's target namespaces comes up.
    *   Operator is installed in the test case testDedicatedModeDiffNamespace.
    *   Create a WebLogic Domain with the same namespace as Operator's namespace.
@@ -157,7 +159,8 @@ class ItDedicatedMode {
    */
   @Test
   @Order(2)
-  @DisplayName("Set dedicated to true and verify that the domain deployed in the operator's namespace comes up")
+  @DisplayName("Set domainNamespaceSelectionStrategy to Dedicated for the Operator Helm Chart and "
+      + "verify that the domain deployed in the operator's namespace comes up")
   public void testDedicatedModeSameNamespace() {
     // create and verify the domain
     logger.info("Creating and verifying model in image domain");
@@ -166,7 +169,7 @@ class ItDedicatedMode {
   }
 
   /**
-   * Test that when domainNamespaceSelectionStrategy is set to Dedicated,
+   * Test that when domainNamespaceSelectionStrategy is set to Dedicated for the Operator Helm Chart,
    * scaling up cluster-1 in domain1Namespace succeeds.
    */
   @Test
@@ -186,8 +189,9 @@ class ItDedicatedMode {
   }
 
   /**
-   * Test when a CRD with a lower than expected version is present,
-   * Operator fails with error if it has no permission to overwrite the CRD.
+   * Test when domainNamespaceSelectionStrategy is set to Dedicated for the Operator Helm Chart and
+   * the CRD with a lower than expected version is present, Operator fails with error
+   * if it has no permission to overwrite the CRD.
    */
   @Test
   @Order(4)
@@ -224,8 +228,8 @@ class ItDedicatedMode {
   }
 
   /**
-   * Test when she CRD is not present or is deleted,
-   * Operator fails with error if it has no permission to create the CRD.
+   * Test when domainNamespaceSelectionStrategy is set to Dedicated for the Operator Helm Chart and
+   * the CRD is not present or is deleted, Operator fails with error if it has no permission to create the CRD.
    */
   @Test
   @Order(5)
