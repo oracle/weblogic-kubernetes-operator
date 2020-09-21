@@ -124,7 +124,7 @@ class ItDedicatedMode {
    * When installing the Operator via helm install,
    * set the Operator Helm Chart parameter domainNamespaceSelectionStrategy to Dedicated and
    * set domainNamespaces to something that is different from the operator's namespace.
-   * Make sure that the domains is not in the operator's target namespaces do not come up.
+   * Make sure that the domain which is not in the operator's target namespaces do not come up.
    *   Install an Operator with a namespace and set domainNamespaces in a different namespace
    *     from the Operator's namespace, also set domainNamespaceSelectionStrategy to Dedicated
    *     for the Operator Helm Chart.

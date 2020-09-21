@@ -399,11 +399,7 @@ public class CommonTestUtils {
         .serviceAccount(opServiceAccount);
 
     if (domainNamespaceSelectionStrategy != null) {
-      opParams = new OperatorParams()
-          .helmParams(opHelmParams)
-          .imagePullSecrets(secretNameMap)
-          .domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy)
-          .serviceAccount(opServiceAccount);
+      opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
     }
 
     // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
