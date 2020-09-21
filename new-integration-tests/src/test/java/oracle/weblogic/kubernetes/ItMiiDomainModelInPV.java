@@ -80,6 +80,7 @@ import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test is to verify shutdown rules when shutdown properties are defined at different levels (domain, cluster,
@@ -202,8 +203,8 @@ public class ItMiiDomainModelInPV {
           clusterViewAppPath,
           Paths.get("shared", "clusterview.war"));
     } catch (ApiException | IOException ioex) {
-      logger.info("Exception while copying file "
-          + MODEL_DIR + "/" + modelFile + " to pod", ioex);
+      logger.info("Exception while copying file model file or application archive");
+      fail("Failed to add model file or application archive to PV");
     }
 
   }
