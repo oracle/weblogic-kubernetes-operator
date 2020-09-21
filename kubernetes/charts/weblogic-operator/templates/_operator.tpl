@@ -22,7 +22,9 @@
 {{- include "operator.operatorDeployment" . }}
 {{- include "operator.operatorInternalService" . }}
 {{- include "operator.operatorExternalService" . }}
-{{- if not .enableClusterRoleBinding }}
+{{- if .enableClusterRoleBinding }}
+{{-   include "operator.operatorRoleBindingNamespace" . }}
+{{- else }}
 {{-   include "operator.domainNamespaces" . }}
 {{- end }}
 {{- end }}
