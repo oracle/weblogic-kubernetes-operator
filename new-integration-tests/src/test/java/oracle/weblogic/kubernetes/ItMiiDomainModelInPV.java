@@ -108,7 +108,7 @@ public class ItMiiDomainModelInPV {
   private static String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
   private static Path clusterViewAppPath;
-  private static String modelFile = "modelinpv-with-war";
+  private static String modelFile = "modelinpv-with-war.yaml";
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
