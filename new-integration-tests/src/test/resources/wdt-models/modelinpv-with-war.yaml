@@ -28,6 +28,6 @@ topology:
 appDeployments:
     Application:
         myear:
-            SourcePath: "/shared/clusterview.war"
+            SourcePath: "/shared/applications/clusterview.war"
             ModuleType: war
             Target: 'cluster-1'

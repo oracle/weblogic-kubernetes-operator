@@ -33,6 +33,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -194,14 +195,16 @@ public class ItMiiDomainModelInPV {
     assertTrue(clusterViewAppPath.toFile().exists(), "Application archive is not available");
 
     V1Pod webLogicPod = setupPVPod(domainNamespace);
+    assertDoesNotThrow(() -> Exec.exec(webLogicPod, null, false, "mkdir /shared/applications"));
+    assertDoesNotThrow(() -> Exec.exec(webLogicPod, null, false, "mkdir /shared/model"));
     try {
       //copy the model file to PV using the temp pod - we don't have access to PVROOT in Jenkins env
       Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
           Paths.get(MODEL_DIR, modelFile),
-          Paths.get("shared", modelFile));
+          Paths.get("shared", "model", modelFile));
       Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
           clusterViewAppPath,
-          Paths.get("shared", "clusterview.war"));
+          Paths.get("shared", "applications", "clusterview.war"));
     } catch (ApiException | IOException ioex) {
       logger.info("Exception while copying file model file or application archive");
       fail("Failed to add model file or application archive to PV");
@@ -288,7 +291,7 @@ public class ItMiiDomainModelInPV {
                 .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
-                    .withModelHome("/shared")
+                    .withModelHome("/shared/model")
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
     return domain;
