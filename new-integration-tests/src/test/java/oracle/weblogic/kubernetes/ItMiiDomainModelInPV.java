@@ -273,7 +273,7 @@ public class ItMiiDomainModelInPV {
                 .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
-                    .withModelHome("/shared/model-singleclusterdomain-sampleapp-wls.yaml")
+                    .withModelHome("/shared")
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
     return domain;
