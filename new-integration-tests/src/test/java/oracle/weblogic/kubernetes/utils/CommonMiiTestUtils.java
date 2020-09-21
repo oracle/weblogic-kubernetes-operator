@@ -12,7 +12,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -42,7 +41,7 @@ public class CommonMiiTestUtils {
   ) {
     LoggingFacade logger = getLogger();
     logger.info("Create the repo secret {0} to pull the image", REPO_SECRET_NAME);
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
+    assertDoesNotThrow(() -> CommonTestUtils.createOcirRepoSecret(domainNamespace),
             String.format("createSecret failed for %s", REPO_SECRET_NAME));
 
     // create secret for admin credentials

@@ -22,7 +22,6 @@ import java.util.logging.Handler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
@@ -33,10 +32,11 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYPE;
@@ -58,14 +58,14 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -135,17 +135,28 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
         assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
 
-        // docker login to OCR if OCR_USERNAME and OCR_PASSWORD is provided in env var
-        if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-          withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Waiting for docker login to be successful"
-                          + "(elapsed time {0} ms, remaining time {1} ms)",
-                      condition.getElapsedTimeInMS(),
-                      condition.getRemainingTimeInMS()))
-              .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
+        // docker login to OCR or OCIR if OCR_USERNAME and OCR_PASSWORD is provided in env var
+        if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+          if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
+            withStandardRetryPolicy
+                .conditionEvaluationListener(
+                    condition -> logger.info("Waiting for docker login to OCR to be successful"
+                            + "(elapsed time {0} ms, remaining time {1} ms)",
+                        condition.getElapsedTimeInMS(),
+                        condition.getRemainingTimeInMS()))
+                .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
+          }
+        } else if (BASE_IMAGES_REPO.equals(REPO_REGISTRY)) {
+          if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+            withStandardRetryPolicy
+                .conditionEvaluationListener(
+                    condition -> logger.info("Waiting for docker login to OCIR to be successful"
+                            + "(elapsed time {0} ms, remaining time {1} ms)",
+                        condition.getElapsedTimeInMS(),
+                        condition.getRemainingTimeInMS()))
+                .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
+          }
         }
-
         // The following code is for pulling WLS images if running tests in Kind cluster
         if (KIND_REPO != null) {
           // The kind clusters can't pull images from OCR using the image pull secret.
@@ -157,18 +168,18 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           //   4. docker push this new image name
           //   5. use this image name to create the domain resource
           Collection<String> images = new ArrayList<>();
-          images.add(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG);
-          images.add(JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG);
+          images.add(WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG);
+          images.add(FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG);
           images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
 
           for (String image : images) {
             withStandardRetryPolicy
                 .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for pullImageFromOcrAndPushToKind for image {0} to be successful"
-                            + "(elapsed time {1} ms, remaining time {2} ms)", image,
+                    condition -> logger.info("Waiting for pullImageFromOcrOrOcirAndPushToKind for image {0} to be "
+                            + "successful (elapsed time {1} ms, remaining time {2} ms)", image,
                         condition.getElapsedTimeInMS(),
                         condition.getRemainingTimeInMS()))
-                .until(pullImageFromOcrAndPushToKind(image)
+                .until(pullImageFromOcrOrOcirAndPushToKind(image)
                 );
           }
         }
@@ -487,9 +498,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     });
   }
 
-  private Callable<Boolean> pullImageFromOcrAndPushToKind(String image) {
+  private Callable<Boolean> pullImageFromOcrOrOcirAndPushToKind(String image) {
     return (() -> {
-      String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + 1);
       return dockerPull(image) && dockerTag(image, kindRepoImage) && dockerPush(kindRepoImage);
     });
   }

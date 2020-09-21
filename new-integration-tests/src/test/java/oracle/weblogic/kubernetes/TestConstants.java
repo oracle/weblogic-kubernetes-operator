@@ -20,7 +20,7 @@ public interface TestConstants {
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
   public static final String WLS_DOMAIN_TYPE = "WLS";
   public static final String WLS_DEFAULT_CHANNEL_NAME = "default";
-  public static final String DEFAULT_WLS_IMAGE_TAGS = "12.2.1.4, 14.1.1.0-11";
+  public static final String DEFAULT_WLS_IMAGE_TAGS = "12.2.1.3, 12.2.1.4, 14.1.1.0-11";
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
@@ -35,7 +35,7 @@ public interface TestConstants {
   public static final String REPO_SECRET_NAME = "ocir-secret";
   public static final String REPO_REGISTRY = Optional.ofNullable(System.getenv("REPO_REGISTRY"))
       .orElse(REPO_DUMMY_VALUE);
-  public static final String REPO_DEFAULT = "phx.ocir.io/weblogick8s/";
+  public static final String REPO_DEFAULT = "phx.ocir.io";
   public static final String KIND_REPO = System.getenv("KIND_REPO");
   public static final String REPO_NAME = Optional.ofNullable(KIND_REPO)
       .orElse(!REPO_REGISTRY.equals(REPO_DUMMY_VALUE) ? REPO_DEFAULT : "");
@@ -57,6 +57,35 @@ public interface TestConstants {
       .orElse(REPO_DUMMY_VALUE);
   public static final String OCR_EMAIL = Optional.ofNullable(System.getenv("OCR_EMAIL"))
       .orElse(REPO_DUMMY_VALUE);
+
+  // base images
+  public static final String BASE_IMAGES_REPO = Optional.ofNullable(System.getenv("BASE_IMAGES_REPO"))
+      .orElse(REPO_DEFAULT);
+  public static final String BASE_IMAGES_REPO_SECRET =
+      BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_SECRET_NAME : REPO_SECRET_NAME;
+  public static final String OCIR_WEBLOGIC_IMAGE_NAME = "weblogick8s/test-images/weblogic";
+  public static final String OCIR_WEBLOGIC_IMAGE_TAG = "12.2.1.4";
+  public static final String OCIR_FMWINFRA_IMAGE_NAME = "weblogick8s/test-images/fmw-infrastructure";
+  public static final String OCIR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
+  public static final String OCIR_DB_IMAGE_NAME = "weblogick8s/test-images/database/enterprise";
+  public static final String OCIR_DB_IMAGE_TAG = "12.2.0.1-slim";
+
+  // base image names with default values using OCIR images if env var are not provided
+  public static final String WEBLOGIC_IMAGE_NAME
+          = BASE_IMAGES_REPO + "/" + Optional.ofNullable(System.getenv("WEBLOGIC_IMAGE_NAME"))
+      .orElse(OCIR_WEBLOGIC_IMAGE_NAME);
+  public static final String WEBLOGIC_IMAGE_TAG = Optional.ofNullable(System.getenv("WEBLOGIC_IMAGE_TAG"))
+      .orElse(OCIR_WEBLOGIC_IMAGE_TAG);
+  public static final String FMWINFRA_IMAGE_NAME
+      = BASE_IMAGES_REPO + "/" + Optional.ofNullable(System.getenv("FMWINFRA_IMAGE_NAME"))
+      .orElse(OCIR_FMWINFRA_IMAGE_NAME);
+  public static final String FMWINFRA_IMAGE_TAG = Optional.ofNullable(System.getenv("FMWINFRA_IMAGE_TAG"))
+      .orElse(OCIR_FMWINFRA_IMAGE_TAG);
+  public static final String DB_IMAGE_NAME
+      = BASE_IMAGES_REPO + "/" + Optional.ofNullable(System.getenv("DB_IMAGE_NAME"))
+      .orElse(OCIR_DB_IMAGE_NAME);
+  public static final String DB_IMAGE_TAG = Optional.ofNullable(System.getenv("DB_IMAGE_TAG"))
+      .orElse(OCIR_DB_IMAGE_TAG);
 
   // jenkins constants
   public static final String BUILD_ID = Optional.ofNullable(System.getenv("BUILD_ID"))
@@ -177,12 +206,6 @@ public interface TestConstants {
   public static final String GEN_EXTERNAL_REST_IDENTITY_FILE =
       PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
-
-  // JRF constants
-  public static final String JRF_BASE_IMAGE_NAME = OCR_REGISTRY + "/middleware/fmw-infrastructure";
-  public static final String JRF_BASE_IMAGE_TAG = "12.2.1.4";
-  public static final String DB_IMAGE_NAME = OCR_REGISTRY + "/database/enterprise";
-  public static final String DB_IMAGE_TAG = "12.2.0.1-slim";
 
   // istio constants
   public static final String ISTIO_VERSION = "1.5.4";

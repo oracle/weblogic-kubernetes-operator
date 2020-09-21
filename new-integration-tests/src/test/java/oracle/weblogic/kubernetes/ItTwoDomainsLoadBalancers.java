@@ -86,6 +86,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -100,10 +102,10 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteIngress;
@@ -135,7 +137,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOCRRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
@@ -171,7 +174,7 @@ public class ItTwoDomainsLoadBalancers {
 
   private static boolean isUseSecret = true;
   private static String defaultNamespace = "default";
-  private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
+  private static String image = WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
   private static String domain1Uid = null;
   private static String domain2Uid = null;
   private static String domain1Namespace = null;
@@ -665,7 +668,11 @@ public class ItTwoDomainsLoadBalancers {
 
       if (isUseSecret) {
         // create pull secrets for WebLogic image
-        createOCRRepoSecret(domainNamespaces.get(i));
+        if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+          createOcrRepoSecret(domainNamespaces.get(i));
+        } else {
+          createOcirRepoSecret(domainNamespaces.get(i));
+        }
       }
 
       t3ChannelPort = getNextFreePort(32001, 32700);
@@ -1080,7 +1087,7 @@ public class ItTwoDomainsLoadBalancers {
             .image(image)
             .imagePullSecrets(isUseSecret ? Collections.singletonList(
                 new V1LocalObjectReference()
-                    .name(OCR_SECRET_NAME))
+                    .name(BASE_IMAGES_REPO_SECRET))
                 : null)
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
@@ -1134,7 +1141,7 @@ public class ItTwoDomainsLoadBalancers {
 
     if (isUseSecret) {
       // create pull secrets for WebLogic image
-      createOCRRepoSecret(defaultNamespace);
+      createOcrRepoSecret(defaultNamespace);
     }
 
     // create WebLogic credentials secret

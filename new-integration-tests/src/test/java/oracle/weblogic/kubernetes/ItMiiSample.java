@@ -25,8 +25,8 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
@@ -263,14 +263,14 @@ public class ItMiiSample {
     String dbImageName = (KIND_REPO != null
         ? KIND_REPO + DB_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : DB_IMAGE_NAME);
     String jrfBaseImageName = (KIND_REPO != null
-        ? KIND_REPO + JRF_BASE_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : JRF_BASE_IMAGE_NAME);
+        ? KIND_REPO + FMWINFRA_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : FMWINFRA_IMAGE_NAME);
 
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
     envMap.put("DB_IMAGE_NAME", dbImageName);
     envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
     envMap.put("DB_NODE_PORT", "none");
     envMap.put("BASE_IMAGE_NAME", jrfBaseImageName);
-    envMap.put("BASE_IMAGE_TAG", JRF_BASE_IMAGE_TAG);
+    envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
     envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
     envMap.put("DB_NAMESPACE", dbNamespace);
     envMap.put("DB_IMAGE_PULL_SECRET", OCR_SECRET_NAME); //ocr secret

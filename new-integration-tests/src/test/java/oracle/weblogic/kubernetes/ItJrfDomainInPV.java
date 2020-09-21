@@ -41,23 +41,22 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -86,7 +85,7 @@ public class ItJrfDomainInPV {
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
 
   private static String dbUrl = null;
-  private static String fmwImage = JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG;
+  private static String fmwImage = FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG;
   private static String dbImage = DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
   private static boolean isUseSecret = true;
   private static LoggingFacade logger = null;
@@ -128,10 +127,10 @@ public class ItJrfDomainInPV {
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
-      dbImage = KIND_REPO + DB_IMAGE_NAME.substring(OCR_REGISTRY.length() + 1)
+      dbImage = KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1)
           + ":" + DB_IMAGE_TAG;
-      fmwImage = KIND_REPO + JRF_BASE_IMAGE_NAME.substring(OCR_REGISTRY.length() + 1)
-          + ":" + JRF_BASE_IMAGE_TAG;
+      fmwImage = KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1)
+          + ":" + FMWINFRA_IMAGE_TAG;
       isUseSecret = false;
     }
 
@@ -171,8 +170,11 @@ public class ItJrfDomainInPV {
 
     // create pull secrets for jrfDomainNamespace when running in non Kind Kubernetes cluster
     if (isUseSecret) {
-      createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, jrfDomainNamespace);
+      if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+        createOcrRepoSecret(jrfDomainNamespace);
+      } else {
+        createOcirRepoSecret(jrfDomainNamespace);
+      }
     }
 
     // create JRF domain credential secret
@@ -239,7 +241,7 @@ public class ItJrfDomainInPV {
             .imagePullPolicy("IfNotPresent")
             .imagePullSecrets(isUseSecret ? Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(OCR_SECRET_NAME))
+                    .name(BASE_IMAGES_REPO_SECRET))
                 : null)
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)

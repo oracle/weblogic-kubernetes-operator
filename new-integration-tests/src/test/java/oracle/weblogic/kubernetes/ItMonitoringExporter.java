@@ -82,6 +82,7 @@ import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.TestUtils;
@@ -113,13 +114,13 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
@@ -1358,8 +1359,8 @@ class ItMonitoringExporter {
             modelList,
             appList,
             propertyList,
-            WLS_BASE_IMAGE_NAME,
-            WLS_BASE_IMAGE_TAG,
+            WEBLOGIC_IMAGE_NAME,
+            WEBLOGIC_IMAGE_TAG,
             WLS,
             false,
             domain2Uid, true);
@@ -1378,7 +1379,7 @@ class ItMonitoringExporter {
                                             int replicaCount) {
     // create docker registry secret to pull the image from registry
     logger.info("Create docker registry secret in namespace {0}", namespace);
-    assertDoesNotThrow(() -> createDockerRegistrySecret(namespace),
+    assertDoesNotThrow(() -> CommonTestUtils.createOcirRepoSecret(namespace),
         String.format("create Docker Registry Secret failed for %s", REPO_SECRET_NAME));
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");

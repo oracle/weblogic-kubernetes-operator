@@ -121,13 +121,13 @@ import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.archiveApp;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildCoherenceArchive;
@@ -359,7 +359,7 @@ public class CommonTestUtils {
 
     // Create Docker registry secret in the operator namespace to pull the image from repository
     logger.info("Creating Docker registry secret in namespace {0}", opNamespace);
-    createDockerRegistrySecret(opNamespace);
+    createOcirRepoSecret(opNamespace);
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
@@ -662,7 +662,7 @@ public class CommonTestUtils {
     // Create Docker registry secret in the apache namespace to pull the Apache webtier image from repository
     if (!secretExists(REPO_SECRET_NAME, apacheNamespace)) {
       logger.info("Creating Docker registry secret in namespace {0}", apacheNamespace);
-      createDockerRegistrySecret(apacheNamespace);
+      createOcirRepoSecret(apacheNamespace);
     }
 
     // map with secret
@@ -1451,7 +1451,7 @@ public class CommonTestUtils {
                                                 String wdtModelFile,
                                                 String appName) {
     return createMiiImageAndVerify(miiImageNameBase, wdtModelFile, appName,
-        WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS);
+        WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS);
   }
 
   /**
@@ -1474,8 +1474,8 @@ public class CommonTestUtils {
     final List<String> appSrcDirList = Collections.singletonList(appName);
 
     return createImageAndVerify(
-        miiImageNameBase, modelList, appSrcDirList, null, WLS_BASE_IMAGE_NAME,
-        WLS_BASE_IMAGE_TAG, WLS, true, null, false,
+        miiImageNameBase, modelList, appSrcDirList, null, WEBLOGIC_IMAGE_NAME,
+        WEBLOGIC_IMAGE_TAG, WLS, true, null, false,
         additionalBuildCommands, additionalBuildFilesVarargs);
   }
 
@@ -1516,7 +1516,7 @@ public class CommonTestUtils {
                                                 List<String> wdtModelList,
                                                 List<String> appSrcDirList) {
     return createMiiImageAndVerify(
-        miiImageNameBase, wdtModelList, appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS, true);
+        miiImageNameBase, wdtModelList, appSrcDirList, WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS, true);
 
   }
 
@@ -1568,8 +1568,8 @@ public class CommonTestUtils {
     final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
 
     return createImageAndVerify(
-      imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
-      WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
+      imageNameBase, wdtModelList, appSrcDirList, modelPropList, WEBLOGIC_IMAGE_NAME,
+        WEBLOGIC_IMAGE_TAG, WLS, false, domainHome, false);
   }
 
   /**
@@ -1592,8 +1592,8 @@ public class CommonTestUtils {
     final List<String> modelPropList = Collections.singletonList(MODEL_DIR + "/" + modelPropFile);
 
     return createImageAndVerify(
-            imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
-            WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
+            imageNameBase, wdtModelList, appSrcDirList, modelPropList, WEBLOGIC_IMAGE_NAME,
+        WEBLOGIC_IMAGE_TAG, WLS, false, domainHome, false);
   }
 
   /**
@@ -1803,7 +1803,7 @@ public class CommonTestUtils {
    *
    * @param namespace namespace in which the secret will be created
    */
-  public static void createOCRRepoSecret(String namespace) {
+  public static void createOcrRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
     logger.info("Creating image pull secret in namespace {0}", namespace);
     createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
@@ -1815,7 +1815,7 @@ public class CommonTestUtils {
    *
    * @param namespace the namespace in which the secret will be created
    */
-  public static void createDockerRegistrySecret(String namespace) {
+  public static void createOcirRepoSecret(String namespace) {
     createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
         REPO_REGISTRY, REPO_SECRET_NAME, namespace);
   }
