@@ -24,6 +24,9 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.concurrent.Callable;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -38,6 +41,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.awaitility.core.ConditionFactory;
 import org.awaitility.core.ConditionTimeoutException;
@@ -47,8 +51,11 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
@@ -66,6 +73,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -79,15 +87,15 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * This test is to verify shutdown rules when shutdown properties are defined at different levels (domain, cluster,
- * adminServer and managedServer level).
+ * This tests in this class verify creating a domain from model and application archive files stored in the persistent
+ * volume.
  */
-@DisplayName("Verify shutdown rules when shutdown properties are defined at different levels")
+@DisplayName("Verify MII domain can be created from model file in PV location")
 @IntegrationTest
 public class ItMiiDomainModelInPV {
 
@@ -121,8 +129,14 @@ public class ItMiiDomainModelInPV {
   private static LoggingFacade logger = null;
 
   /**
-   * 1. Get namespaces for operator and WebLogic domain. 2. Push MII image to registry. 3. Create WebLogic credential
-   * secret and encryption secret. 4. Create configmap for independent managed server additions.
+   * 1. Get namespaces for operator and WebLogic domain.
+   * 2. Create operator.
+   * 3. Build a MII with no domain and push it
+   * to repository.
+   * 4. Create WebLogic credential and model encryption secrets
+   * 5. Create PV and PVC to store model and
+   * application files.
+   * 6. Copy the files to model and application files to PV.
    *
    * @param namespaces list of namespaces injected by JUnit
    */
@@ -142,34 +156,11 @@ public class ItMiiDomainModelInPV {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    // build a new MII image with no domain
     miiImageTag = TestUtils.getDateAndTimeStamp();
     miiImage = MII_BASIC_IMAGE_NAME + ":" + miiImageTag;
 
-    buildMIIWithEmptyDomain();
-
-    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-      logger.info("docker login");
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for docker login to be successful"
-                  + "(elapsed time {0} ms, remaining time {1} ms)",
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
-    }
-
-    // push the images to repo
-    logger.info("docker push image {0} to {1}", miiImage, REPO_NAME);
-    if (!REPO_NAME.isEmpty()) {
-      withStandardRetryPolicy
-          .conditionEvaluationListener(condition -> logger.info("Waiting for docker push for image {0} to be successful"
-          + "(elapsed time {1} ms, remaining time {2} ms)",
-          miiImage,
-          condition.getElapsedTimeInMS(),
-          condition.getRemainingTimeInMS()))
-          .until(() -> dockerPush(miiImage));
-    }
+    // build a new MII image with no domain
+    buildMIIandPushToRepo();
 
     // create docker registry secret to pull the image from registry
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
@@ -180,11 +171,12 @@ public class ItMiiDomainModelInPV {
     adminSecretName = "weblogic-credentials";
     createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
 
-    // create encryption secret
+    // create model encryption secret
     logger.info("Creating encryption secret");
     encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
+    // create the PV and PVC to store application and model files
     createPV(pvName, domainUid, "ItMiiDomainModelInPV");
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
@@ -195,57 +187,64 @@ public class ItMiiDomainModelInPV {
     assertTrue(clusterViewAppPath.toFile().exists(), "Application archive is not available");
 
     V1Pod webLogicPod = setupPVPod(domainNamespace);
-    assertDoesNotThrow(() -> Exec.exec(webLogicPod, null, false, "/bin/sh", "-c", "mkdir /shared/applications"));
-    assertDoesNotThrow(() -> Exec.exec(webLogicPod, null, false, "/bin/sh", "-c", "mkdir /shared/model"));
+
+    try {
+      logger.info("Creating directory {0} in PV", "/shared/applications");
+      Exec.exec(webLogicPod, null, false, "/bin/sh", "-c", "mkdir /shared/applications");
+    } catch (IOException | ApiException | InterruptedException ex) {
+      logger.warning(ex.getMessage());
+    }
+    try {
+      logger.info("Creating directory {0} in PV", "/shared/model");
+      Exec.exec(webLogicPod, null, false, "/bin/sh", "-c", "mkdir /shared/model");
+    } catch (IOException | ApiException | InterruptedException ex) {
+      logger.warning(ex.getMessage());
+    }
+
     try {
       //copy the model file to PV using the temp pod - we don't have access to PVROOT in Jenkins env
+      logger.info("Copying model file {0} to pv directory {1}",
+          Paths.get(MODEL_DIR, modelFile).toString(), "/shared/model");
       Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
-          Paths.get(MODEL_DIR, modelFile),
-          Paths.get("shared", "model", modelFile));
+          Paths.get(MODEL_DIR, modelFile), Paths.get("shared", "model", modelFile));
+    } catch (IOException | ApiException ex) {
+      logger.warning(ex.getMessage());
+    }
+    try {
+      logger.info("Copying application file {0} to pv directory {1}",
+          clusterViewAppPath.toString(), "/shared/applications");
       Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
-          clusterViewAppPath,
-          Paths.get("shared", "applications", "clusterview.war"));
-    } catch (ApiException | IOException ioex) {
-      logger.info("Exception while copying file model file or application archive");
-      fail("Failed to add model file or application archive to PV");
+          clusterViewAppPath, Paths.get("shared", "applications", "clusterview.war"));
+    } catch (IOException | ApiException ex) {
+      logger.warning(ex.getMessage());
     }
 
   }
 
-  private static void buildMIIWithEmptyDomain() {
-    Path emptyModelFile = Paths.get(TestConstants.RESULTS_ROOT, "miitemp", "empty-wdt-model.yaml");
-    assertDoesNotThrow(() -> Files.createDirectories(emptyModelFile.getParent()));
-    emptyModelFile.toFile().delete();
-    assertTrue(assertDoesNotThrow(() -> emptyModelFile.toFile().createNewFile()));
-    final List<String> modelList = Collections.singletonList(emptyModelFile.toString());
-    // Set additional environment variables for WIT
-    checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap<>();
-    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
-    createImage(defaultWitParams()
-        .modelImageName(MII_BASIC_IMAGE_NAME)
-        .modelImageTag(miiImageTag)
-        .modelFiles(modelList)
-        .wdtModelOnly(true)
-        .wdtVersion(WDT_VERSION)
-        .env(env)
-        .redirect(true));
-  }
-
   /**
-   * Add shutdown options for servers at all levels: domain, admin server, cluster and managed server levels. Verify
-   * individual specific level options takes precedence.
+   * Test domain creation from model file stored in PV.
+   * 1. Create the domain custom resource using mii with no domain and specifying a PV location for modelHome
+   * 2. Verify the domain creation is successful and application is accessible.
    */
   @Test
-  @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
-  public void testShutdownPropsAllLevels() {
+  @DisplayName("Create MII domain with model and application file from PV")
+  public void testCreateDomainWithModelInPV() {
 
     // create domain custom resource and verify all the pods came up
     Domain domain = buildDomainResource();
     createVerifyDomain(domain);
+
+    List<String> managedServerNames = new ArrayList<String>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
+    }
+
+    //verify admin server accessibility and the health of cluster members
+    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
+
   }
 
-  // create custom domain resource with different shutdownobject values for adminserver/cluster/independent ms
+  // create custom domain resource with model file in modelHome
   private Domain buildDomainResource() {
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
@@ -320,6 +319,40 @@ public class ItMiiDomainModelInPV {
 
   }
 
+  private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
+      String user, String password) {
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Checking the health of servers in cluster");
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort
+        + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
+
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> logger.info("Verifying the health of all cluster members"
+            + "(elapsed time {0} ms, remaining time {1} ms)",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until((Callable<Boolean>) () -> {
+          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
+          assertEquals(200, response.statusCode(), "Status code not equals to 200");
+          boolean health = true;
+          for (String managedServer : managedServerNames) {
+            health = health && response.body().contains(managedServer + ":HEALTH_OK");
+            if (health) {
+              logger.info(managedServer + " is healthy");
+            } else {
+              logger.info(managedServer + " health is not OK or server not found");
+            }
+          }
+          return health;
+        });
+  }
+
+  // setup a temporary to access PV location to store model and application files
   private static V1Pod setupPVPod(String namespace) {
 
     // Create the temporary pod with oraclelinux image
@@ -364,5 +397,51 @@ public class ItMiiDomainModelInPV {
     }
 
     return pvPod;
+  }
+
+  // create a model in image with no domain
+  // push the image to repo
+  private static void buildMIIandPushToRepo() {
+    Path emptyModelFile = Paths.get(TestConstants.RESULTS_ROOT, "miitemp", "empty-wdt-model.yaml");
+    assertDoesNotThrow(() -> Files.createDirectories(emptyModelFile.getParent()));
+    emptyModelFile.toFile().delete();
+    assertTrue(assertDoesNotThrow(() -> emptyModelFile.toFile().createNewFile()));
+    final List<String> modelList = Collections.singletonList(emptyModelFile.toString());
+    // Set additional environment variables for WIT
+    checkDirectory(WIT_BUILD_DIR);
+    Map<String, String> env = new HashMap<>();
+    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
+    createImage(defaultWitParams()
+        .modelImageName(MII_BASIC_IMAGE_NAME)
+        .modelImageTag(miiImageTag)
+        .modelFiles(modelList)
+        .wdtModelOnly(true)
+        .wdtVersion(WDT_VERSION)
+        .env(env)
+        .redirect(true));
+
+    // login to docker
+    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+      logger.info("docker login");
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for docker login to be successful"
+                  + "(elapsed time {0} ms, remaining time {1} ms)",
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
+    }
+
+    // push the image to repo
+    if (!REPO_NAME.isEmpty()) {
+      logger.info("docker push image {0} to {1}", miiImage, REPO_NAME);
+      withStandardRetryPolicy
+          .conditionEvaluationListener(condition -> logger.info("Waiting for docker push for image {0} to be successful"
+          + "(elapsed time {1} ms, remaining time {2} ms)",
+          miiImage,
+          condition.getElapsedTimeInMS(),
+          condition.getRemainingTimeInMS()))
+          .until(() -> dockerPush(miiImage));
+    }
   }
 }
