@@ -58,8 +58,12 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -68,6 +72,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -145,13 +150,25 @@ public class ItMiiDomainModelInPV {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    buildMIIDomainWithEmptyDomain();
-
-    // get the pre-built image created by IntegrationTestWatcher
+    // build a new MII image with no domain
     miiImageTag = TestUtils.getDateAndTimeStamp();
     miiImage = MII_BASIC_IMAGE_NAME + ":" + miiImageTag;
 
+    buildMIIWithEmptyDomain();
+
+    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+      logger.info("docker login");
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for docker login to be successful"
+                  + "(elapsed time {0} ms, remaining time {1} ms)",
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
+    }
+
     // push the images to repo
+    logger.info("docker push image {0} to {1}", miiImage, REPO_NAME);
     if (!REPO_NAME.isEmpty()) {
       withStandardRetryPolicy
           .conditionEvaluationListener(condition -> logger.info("Waiting for docker push for image {0} to be successful"
@@ -179,9 +196,9 @@ public class ItMiiDomainModelInPV {
     createPV(pvName, domainUid, "ItMiiDomainModelInPV");
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
-    V1Pod webLogicPod = setupWebLogicPod(domainNamespace, "");
+    V1Pod webLogicPod = setupWebLogicPod(domainNamespace);
     try {
-      //copy the zip file to /u01 location inside pod
+      //copy the model file to PV using the temp pod - we don't have access to PVROOT in Jenkins env
       Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
           Paths.get(MODEL_DIR + "/wdt-models/model-singleclusterdomain-sampleapp-wls.yaml"),
           Paths.get("shared", "model-singleclusterdomain-sampleapp-wls.yaml"));
@@ -192,7 +209,7 @@ public class ItMiiDomainModelInPV {
 
   }
 
-  private static void buildMIIDomainWithEmptyDomain() {
+  private static void buildMIIWithEmptyDomain() {
     Path emptyModelFile = Paths.get(TestConstants.RESULTS_ROOT, "miitemp", "empty-wdt-model.yaml");
     assertDoesNotThrow(() -> Files.createDirectories(emptyModelFile.getParent()));
     emptyModelFile.toFile().delete();
@@ -221,12 +238,12 @@ public class ItMiiDomainModelInPV {
   public void testShutdownPropsAllLevels() {
 
     // create domain custom resource and verify all the pods came up
-    Domain domain = buildDomainResource("/pvroot/modelfile");
+    Domain domain = buildDomainResource();
     createVerifyDomain(domain);
   }
 
   // create custom domain resource with different shutdownobject values for adminserver/cluster/independent ms
-  private Domain buildDomainResource(String modelHome) {
+  private Domain buildDomainResource() {
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -300,7 +317,7 @@ public class ItMiiDomainModelInPV {
 
   }
 
-  private static V1Pod setupWebLogicPod(String namespace, String pvName) {
+  private static V1Pod setupWebLogicPod(String namespace) {
     verifyDefaultTokenExists();
     setImage(namespace);
 
