@@ -64,12 +64,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test class verifies the `default-admin` service is provisioned when 
- * a channel called `default-admin` is added to domain custom resource 
- * definition and `AdministrationPortEnabled` is set to true.
+ * a channel called `default-admin` is added to domain resource and 
+ * `AdministrationPortEnabled` is set to true.
  */
-
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test secure nodePort service through admin port and default-admin channel in domain CRD in a mii domain")
+@DisplayName("Test secure nodePort service through admin port and default-admin channel in a mii domain")
 @IntegrationTest
 class ItSecureAdminNodePort {
 
@@ -93,7 +92,7 @@ class ItSecureAdminNodePort {
 
   /**
    * Install Operator.
-   * Create domain resource definition.
+   * Create domain resource.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    JUnit engine parameter resolution mechanism
    */
@@ -106,11 +105,11 @@ class ItSecureAdminNodePort {
         .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
-    logger.info("Creating unique namespace for Operator");
+    logger.info("Assigning unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    logger.info("Creating unique namespace for Domain");
+    logger.info("Assigning unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
@@ -190,7 +189,7 @@ class ItSecureAdminNodePort {
 
   /**
    * Create a WebLogic domain with `AdministrationPortEnabled: true`.
-   * Create a domain CRD with a channel with the name `default-admin`.
+   * Create a domain custom resource with a channel with the name `default-admin`.
    * Make sure an external NodePort service is created in domain namespace.
    * Make sure WebLogic console is accessible through the `default-admin` service.  
    * Make sure WebLogic console is not accessible through the `default` service.  

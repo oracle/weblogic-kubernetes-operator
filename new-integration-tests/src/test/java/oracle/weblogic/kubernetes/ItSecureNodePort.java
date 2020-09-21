@@ -63,12 +63,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test class verifies the `default-secure` service is provisioned when 
- * a channel called `default-secure` is added to domain custom resource 
- * definition and SSL is enabled in WebLogic configuration.
+ * a channel called `default-secure` is added to domain resource 
+ * and SSL is enabled in WebLogic configuration.
  */
-
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test secure nodePort service through SSL port and default-secure channel in domain CRD in a mii domain")
+@DisplayName("Test secure nodePort service through SSL port and default-secure channel in a mii domain")
 @IntegrationTest
 class ItSecureNodePort {
 
@@ -92,7 +91,7 @@ class ItSecureNodePort {
 
   /**
    * Install Operator.
-   * Create domain resource definition.
+   * Create domain resource.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    JUnit engine parameter resolution mechanism
    */
@@ -105,11 +104,11 @@ class ItSecureNodePort {
         .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
-    logger.info("Creating unique namespace for Operator");
+    logger.info("Assigning unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    logger.info("Creating unique namespace for Domain");
+    logger.info("Assigning unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
@@ -191,7 +190,7 @@ class ItSecureNodePort {
 
   /**
    * Create a WebLogic domain with SSL enabled in WebLogic configuration.
-   * Create a domain CRD with a channel with the name `default-secure`.
+   * Create a domain resource with a channel with the name `default-secure`.
    * Make sure an external NodePort service is created in domain namespace.
    * Make sure WebLogic console is accessible through the `default-secure` service. 
    * Make sure WebLogic console is accessible through the `default` service.  
