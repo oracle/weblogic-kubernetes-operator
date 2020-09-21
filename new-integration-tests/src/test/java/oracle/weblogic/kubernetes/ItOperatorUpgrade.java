@@ -42,11 +42,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
-import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
@@ -251,20 +248,6 @@ public class ItOperatorUpgrade {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkCrdVersion());
-
-    // restart domain for 2.5.0 for scaling to work, see OWLS-83813
-    if (operatorVersion.equals("2.5.0")) {
-      shutdownDomain(domainUid, domainNamespace);
-      logger.info("Checking for admin server pod shutdown");
-      checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
-      logger.info("Checking managed server pods were shutdown");
-      for (int i = 1; i <= replicaCount; i++) {
-        checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace);
-      }
-
-      startDomain(domainUid, domainNamespace);
-      checkDomainStarted(domainUid, domainNamespace);
-    }
 
     int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
     assertTrue(externalRestHttpsPort != -1,
