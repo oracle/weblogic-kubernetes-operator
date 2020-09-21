@@ -21,8 +21,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -39,7 +37,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.awaitility.core.ConditionFactory;
 import org.awaitility.core.ConditionTimeoutException;
@@ -51,14 +48,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
@@ -69,13 +60,10 @@ import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
@@ -113,8 +101,6 @@ public class ItMiiDomainModelInPV {
   private static String miiImageTag;
   private static String adminSecretName;
   private static String encryptionSecretName;
-
-  private static boolean isUseSecret;
 
   private static String pvName = domainUid + "-pv"; // name of the persistent volume
   private static String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
@@ -360,34 +346,5 @@ public class ItMiiDomainModelInPV {
     }
 
     return pvPod;
-  }
-
-  private static void setImage(String namespace) {
-    //determine if the tests are running in Kind cluster.
-    //if true use images from Kind registry
-    String ocrImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
-    if (KIND_REPO != null) {
-      miiImage = KIND_REPO + ocrImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      isUseSecret = false;
-    } else {
-      // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-      wlsImage = ocrImage;
-      boolean secretExists = false;
-      V1SecretList listSecrets = listSecrets(namespace);
-      if (null != listSecrets) {
-        for (V1Secret item : listSecrets.getItems()) {
-          if (item.getMetadata().getName().equals(OCR_SECRET_NAME)) {
-            secretExists = true;
-            break;
-          }
-        }
-      }
-      if (!secretExists) {
-        CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-            OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
-      }
-      isUseSecret = true;
-    }
-    logger.info("Using image {0}", miiImage);
   }
 }
