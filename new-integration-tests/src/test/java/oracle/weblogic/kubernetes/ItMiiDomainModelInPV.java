@@ -57,6 +57,7 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
@@ -65,6 +66,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -104,6 +106,9 @@ public class ItMiiDomainModelInPV {
 
   private static String pvName = domainUid + "-pv"; // name of the persistent volume
   private static String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+
+  private static Path clusterViewAppPath;
+  private static String modelFile = "modelinpv-with-war";
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -181,15 +186,24 @@ public class ItMiiDomainModelInPV {
     createPV(pvName, domainUid, "ItMiiDomainModelInPV");
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
+    // build the clusterview application
+    Path distDir = buildApplication(Paths.get(APP_DIR, "clusterview"),
+        null, null, "dist", domainNamespace);
+    clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
+    assertTrue(clusterViewAppPath.toFile().exists(), "Application archive is not available");
+
     V1Pod webLogicPod = setupPVPod(domainNamespace);
     try {
       //copy the model file to PV using the temp pod - we don't have access to PVROOT in Jenkins env
       Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
-          Paths.get(MODEL_DIR, "model-singleclusterdomain-sampleapp-wls.yaml"),
-          Paths.get("shared", "model-singleclusterdomain-sampleapp-wls.yaml"));
+          Paths.get(MODEL_DIR, modelFile),
+          Paths.get("shared", modelFile));
+      Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
+          clusterViewAppPath,
+          Paths.get("shared", "clusterview.war"));
     } catch (ApiException | IOException ioex) {
       logger.info("Exception while copying file "
-          + MODEL_DIR + "/model-singleclusterdomain-sampleapp-wls.yaml" + " to pod", ioex);
+          + MODEL_DIR + "/" + modelFile + " to pod", ioex);
     }
 
   }
