@@ -113,7 +113,7 @@ function initWorkDir {
   mkdir -p "${workDir}"
   reportFile="${workDir}/report.txt"
   logFile=${workDir}/tool.log
-  info "Log for this run can be found in ${logFile}"
+  echo "Log for this run can be found in ${logFile}"
 }
 
 
@@ -146,8 +146,10 @@ function readImageListAndProcess {
 
       saveImageAndExtractLayers "${imageId}" "${imageDir}"
       searchArtifactInImage "${imageId}" "${imageDir}" "${result}"
-      cleanUpImage "${imageId}"
-    fi 
+      cleanUpImage "${imageDir}"
+    else
+      warning "Image id ${imageId} is null"
+    fi
   done
 }
 
