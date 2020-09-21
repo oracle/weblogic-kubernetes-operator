@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.wlsconfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -237,12 +238,7 @@ public class WlsDynamicServersConfig {
    * @return minimum size of the dynamic cluster
    */
   public Integer getMinDynamicClusterSize() {
-    // avoid a NPE when upgrading an active 2.5.0 operator because minDynamicClusterSize 
-    // does not exist in Operator 2.5.0 release
-    if (minDynamicClusterSize == null) {
-      minDynamicClusterSize = Integer.valueOf(-1);
-    }
-    return minDynamicClusterSize;
+    return Optional.ofNullable(minDynamicClusterSize).orElse(-1);
   }
 
   public void setMinDynamicClusterSize(Integer minDynamicClusterSize) {
