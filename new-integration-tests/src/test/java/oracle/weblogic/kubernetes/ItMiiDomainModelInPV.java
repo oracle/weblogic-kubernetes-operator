@@ -42,6 +42,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.awaitility.core.ConditionFactory;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -83,7 +84,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyDefaultTokenExists;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -111,7 +111,6 @@ public class ItMiiDomainModelInPV {
 
   private static String miiImage;
   private static String miiImageTag;
-  private static String wlsImage;
   private static String adminSecretName;
   private static String encryptionSecretName;
 
@@ -196,7 +195,7 @@ public class ItMiiDomainModelInPV {
     createPV(pvName, domainUid, "ItMiiDomainModelInPV");
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
-    V1Pod webLogicPod = setupWebLogicPod(domainNamespace);
+    V1Pod webLogicPod = setupPVPod(domainNamespace);
     try {
       //copy the model file to PV using the temp pod - we don't have access to PVROOT in Jenkins env
       Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
@@ -317,43 +316,50 @@ public class ItMiiDomainModelInPV {
 
   }
 
-  private static V1Pod setupWebLogicPod(String namespace) {
-    verifyDefaultTokenExists();
-    setImage(namespace);
+  private static V1Pod setupPVPod(String namespace) {
 
-    final String podName = "weblogic-build-pod-" + namespace;
+    // Create the temporary pod with oraclelinux image
+    // oraclelinux:7-slim is not useful, missing tar utility
+    final String podName = "pv-pod-" + namespace;
     V1Pod podBody = new V1Pod()
         .spec(new V1PodSpec()
-            .containers(Arrays.asList(new V1Container()
-                .name("weblogic-container")
-                .image(wlsImage)
-                .imagePullPolicy("IfNotPresent")
-                .addCommandItem("sleep")
-                .addArgsItem("600")
-                .volumeMounts(Arrays.asList(
-                    new V1VolumeMount()
-                        .name(pvName) // mount the persistent volume to /shared inside the pod
-                        .mountPath("/shared")))))
-            .imagePullSecrets(isUseSecret
-                ? Arrays.asList(new V1LocalObjectReference()
-                    .name(OCR_SECRET_NAME))
-                : null)) // the persistent volume claim used by the test
+            .containers(Arrays.asList(
+                new V1Container()
+                    .name("pv-container")
+                    .image("oraclelinux:7")
+                    .imagePullPolicy("IfNotPresent")
+                    .volumeMounts(Arrays.asList(
+                        new V1VolumeMount()
+                            .name(pvName) // mount the persistent volume to /shared inside the pod
+                            .mountPath("/shared")))
+                    .addCommandItem("tailf")
+                    .addArgsItem("/dev/null")))
+            .volumes(Arrays.asList(
+                new V1Volume()
+                    .name(pvName) // the persistent volume that needs to be archived
+                    .persistentVolumeClaim(
+                        new V1PersistentVolumeClaimVolumeSource()
+                            .claimName(pvcName))))) // the persistent volume claim used by the test
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
         .kind("Pod");
-    V1Pod wlsPod = assertDoesNotThrow(() -> Kubernetes.createPod(namespace, podBody));
+    V1Pod pvPod = assertDoesNotThrow(() -> Kubernetes.createPod(namespace, podBody));
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
-                + "(elapsed time {2} , remaining time {3}",
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(podReady(podName, null, namespace));
+    try {
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
+                  + "(elapsed time {2} , remaining time {3}",
+                  podName,
+                  namespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(podReady(podName, null, namespace));
+    } catch (ConditionTimeoutException ex) {
+      logger.warning("Condition not met", ex);
+    }
 
-    return wlsPod;
+    return pvPod;
   }
 
   private static void setImage(String namespace) {
