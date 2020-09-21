@@ -30,4 +30,4 @@ appDeployments:
         myear:
             SourcePath: "/shared/applications/clusterview.war"
             ModuleType: war
-            Target: 'cluster-1'
+            Target: 'admin-server,cluster-1'
