@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.work;
 
 import java.util.ArrayDeque;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
@@ -14,7 +13,6 @@ import java.util.TreeSet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -151,11 +149,6 @@ public class FiberTestSupport {
     return this;
   }
 
-  public <T> FiberTestSupport addContainerComponent(String key, Class<T> aaClass, T component) {
-    container.getComponents().put(key, Component.createFor(aaClass, component));
-    return this;
-  }
-
   /**
    * Returns true if the specified action indicates that the fiber should be suspended.
    * @param nextAction the action to check
@@ -192,24 +185,6 @@ public class FiberTestSupport {
   public Packet runSteps(StepFactory factory, Step nextStep) {
     fiber = engine.createFiber();
     fiber.start(factory.createStepList(nextStep), packet, completionCallback);
-    return packet;
-  }
-
-  /**
-   * Starts a unit-test fiber with the specified step and runs until the fiber is done.
-   *
-   * @param step the first step to run
-   */
-  public Packet runStepsToCompletion(Step step) {
-    fiber = engine.createFiber();
-    fiber.start(step, packet, completionCallback);
-
-    // Wait for fiber to finish
-    try {
-      fiber.get();
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
     return packet;
   }
 
@@ -256,7 +231,7 @@ public class FiberTestSupport {
     @Nonnull
     public ScheduledFuture<?> schedule(
         @Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
-      scheduledItems.add(new ScheduledItem(unit.toMillis(delay), command));
+      scheduledItems.add(new ScheduledItem(currentTime + unit.toMillis(delay), command));
       runNextRunnable();
       return createStub(ScheduledFuture.class);
     }
@@ -307,17 +282,20 @@ public class FiberTestSupport {
             "Attempt to move clock backwards from " + currentTime + " to " + newTime);
       }
 
-      List<ScheduledItem> itemsToRun = getItemsToRunByMsec(newTime);
-      scheduledItems.removeAll(itemsToRun);
-      itemsToRun.forEach(item -> execute(item.runnable));
-      itemsToRun.stream().filter(ScheduledItem::isReschedulable).forEach(scheduledItems::add);
+      while (!scheduledItems.isEmpty() && scheduledItems.first().atTime <= newTime) {
+        executeAsScheduled(scheduledItems.first());
+      }
 
       currentTime = newTime;
     }
 
-    @Nonnull
-    private List<ScheduledItem> getItemsToRunByMsec(long newTime) {
-      return scheduledItems.stream().filter(item -> item.shouldRunBy(newTime)).collect(Collectors.toList());
+    private void executeAsScheduled(ScheduledItem item) {
+      scheduledItems.remove(item);
+      currentTime = item.atTime;
+      execute(item.runnable);
+      if (item.isReschedulable()) {
+        scheduledItems.add(item.rescheduled());
+      }
     }
 
     /**
@@ -348,11 +326,6 @@ public class FiberTestSupport {
       // Return true if the item should be rescheduled after it is run.
       private boolean isReschedulable() {
         return rescheduled() != null;
-      }
-
-      // Return true if the item is intended to run at or before the specified time in msec.
-      private boolean shouldRunBy(long newTime) {
-        return atTime <= newTime;
       }
 
       @Override

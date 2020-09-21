@@ -29,7 +29,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   public DomainCommonConfigurator() {
   }
 
-  DomainCommonConfigurator(@Nonnull Domain domain) {
+  public DomainCommonConfigurator(@Nonnull Domain domain) {
     super(domain);
     setApiVersion(domain);
   }
@@ -385,6 +385,10 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public AdminService configureAdminService() {
       return adminServer.createAdminService();
+    }
+
+    public AdminServer getAdminServer() { 
+      return adminServer; 
     }
   }
 
