@@ -185,11 +185,11 @@ public class ItMiiDomainModelInPV {
     try {
       //copy the model file to PV using the temp pod - we don't have access to PVROOT in Jenkins env
       Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
-          Paths.get(MODEL_DIR + "/wdt-models/model-singleclusterdomain-sampleapp-wls.yaml"),
+          Paths.get(MODEL_DIR, "model-singleclusterdomain-sampleapp-wls.yaml"),
           Paths.get("shared", "model-singleclusterdomain-sampleapp-wls.yaml"));
     } catch (ApiException | IOException ioex) {
       logger.info("Exception while copying file "
-          + MODEL_DIR + "/wdt-models/model-singleclusterdomain-sampleapp-wls.yaml" + " to pod", ioex);
+          + MODEL_DIR + "/model-singleclusterdomain-sampleapp-wls.yaml" + " to pod", ioex);
     }
 
   }
