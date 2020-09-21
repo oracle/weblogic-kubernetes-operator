@@ -13,7 +13,7 @@ data:
     {{- end }}
   {{- end }}
   serviceaccount: {{ .serviceAccount | quote }}
-  domainNamespaceSelectionStrategy: {{ .domainNamespaceSelectionStrategy | quote }}
+  domainNamespaceSelectionStrategy: {{ (default "List" .domainNamespaceSelectionStrategy) | quote }}
   domainNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
   {{- if .dedicated }}
   dedicated: {{ .dedicated | quote }}

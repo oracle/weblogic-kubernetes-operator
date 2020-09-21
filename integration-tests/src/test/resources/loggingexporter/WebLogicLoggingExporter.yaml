@@ -1,6 +1,0 @@
-publishHost:  "elasticsearch.default.svc.cluster.local"
-publishPort:  9200
-domainUID:  domainonpvwlst
-weblogicLoggingExporterEnabled: true
-weblogicLoggingIndexName:  wls
-weblogicLoggingExporterSeverity:  Notice
