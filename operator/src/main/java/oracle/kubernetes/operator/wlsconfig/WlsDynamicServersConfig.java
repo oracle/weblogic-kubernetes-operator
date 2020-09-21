@@ -237,6 +237,11 @@ public class WlsDynamicServersConfig {
    * @return minimum size of the dynamic cluster
    */
   public Integer getMinDynamicClusterSize() {
+    // avoid a NPE when upgrading an active 2.5.0 operator because minDynamicClusterSize 
+    // does not exist in Operator 2.5.0 release
+    if (minDynamicClusterSize == null) {
+      minDynamicClusterSize = Integer.valueOf(-1);
+    }
     return minDynamicClusterSize;
   }
 
