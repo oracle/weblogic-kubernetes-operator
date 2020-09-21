@@ -195,8 +195,8 @@ public class ItMiiDomainModelInPV {
     assertTrue(clusterViewAppPath.toFile().exists(), "Application archive is not available");
 
     V1Pod webLogicPod = setupPVPod(domainNamespace);
-    assertDoesNotThrow(() -> Exec.exec(webLogicPod, null, false, "mkdir /shared/applications"));
-    assertDoesNotThrow(() -> Exec.exec(webLogicPod, null, false, "mkdir /shared/model"));
+    assertDoesNotThrow(() -> Exec.exec(webLogicPod, null, false, "/bin/sh", "-c", "mkdir /shared/applications"));
+    assertDoesNotThrow(() -> Exec.exec(webLogicPod, null, false, "/bin/sh", "-c", "mkdir /shared/model"));
     try {
       //copy the model file to PV using the temp pod - we don't have access to PVROOT in Jenkins env
       Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
