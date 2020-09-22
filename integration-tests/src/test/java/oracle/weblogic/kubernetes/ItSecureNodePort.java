@@ -7,12 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
@@ -36,6 +34,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -47,12 +47,12 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOCRRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -63,8 +63,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test class verifies the `default-secure` service is provisioned when 
- * a channel called `default-secure` is added to domain resource 
- * and SSL is enabled in WebLogic configuration.
+ * a channel called `default-secure` is added to domain resource and 
+ * SSL is enabled in WebLogic configuration.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test secure nodePort service through SSL port and default-secure channel in a mii domain")
@@ -122,16 +122,14 @@ class ItSecureNodePort {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,"weblogic",
-            "welcome1", domainNamespace),
-            String.format("createSecret failed for %s", adminSecretName));
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, 
-            "weblogicenc", "weblogicenc", domainNamespace),
-             String.format("createSecret failed for %s", encryptionSecretName));
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
+            "weblogicenc", "weblogicenc");
 
     String configMapName = "default-secure-configmap";
     String yamlString = "topology:\n"
@@ -204,32 +202,19 @@ class ItSecureNodePort {
     String curlCmd = "curl -sk --show-error --noproxy '*' "
         + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
         + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
-    logger.info("Executing defaukt-admin nodeport curl command {0}", curlCmd);
+    logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
     logger.info("WebLogic console is accessible thru default-secure service");
-
+    
     int nodePort = getServiceNodePort(
            domainNamespace, adminServerPodName + "-external", "default");
     logger.info("Found the default service nodePort {0}", nodePort);
-    curlCmd = "curl -s --show-error --noproxy '*' "
+    String curlCmd2 = "curl -s --show-error --noproxy '*' "
         + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
         + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
     logger.info("Executing default nodeport curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd, 5));
+    assertTrue(callWebAppAndWaitTillReady(curlCmd2, 5));
     logger.info("WebLogic console is accessible thru default service");
-  }
-
-  private static void createDomainSecret(String secretName, String username, String password, String domNamespace)
-          throws ApiException {
-    Map<String, String> secretMap = new HashMap();
-    secretMap.put("username", username);
-    secretMap.put("password", password);
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-            .metadata(new V1ObjectMeta()
-                    .name(secretName)
-                    .namespace(domNamespace))
-            .stringData(secretMap)), "Create secret failed with ApiException");
-    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
   }
 
   private static void createDomainResource(
@@ -290,7 +275,7 @@ class ItSecureNodePort {
                     + "for %s in namespace %s", domainUid, domNamespace));
   }
 
-  // Crate a ConfigMap with a model to add a 2 independent managed servers
+  // create a ConfigMap with a model that enable SSL on the Administration server
   private static void createModelConfigMap(String configMapName, String model) {
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
