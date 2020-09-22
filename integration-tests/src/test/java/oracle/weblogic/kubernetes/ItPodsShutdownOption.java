@@ -338,7 +338,7 @@ class ItPodsShutdownOption {
     }
 
     // check for independent managed server pods existence in the domain namespace
-    for (String podName : new String[]{indManagedServerPodName2}) {
+    for (String podName : new String[]{indManagedServerPodName1, indManagedServerPodName2}) {
       // check that ms service/pod exists in the domain namespace
       logger.info("Checking that independent ms service/pod {0} exists in namespace {1}",
           podName, domainNamespace);
