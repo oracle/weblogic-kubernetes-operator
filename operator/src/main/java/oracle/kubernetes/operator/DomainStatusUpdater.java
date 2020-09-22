@@ -312,8 +312,17 @@ public class DomainStatusUpdater {
     DomainStatus getNewStatus() {
       DomainStatus newStatus = cloneStatus();
       modifyStatus(newStatus);
+      String existingError = Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getMessage)
+          .orElse(null);
+
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(info.getValidationWarningsAsString());
+        if (existingError != null) {
+          newStatus.incrementIntrospectJobFailureCount();
+        }
       }
       return newStatus;
     }

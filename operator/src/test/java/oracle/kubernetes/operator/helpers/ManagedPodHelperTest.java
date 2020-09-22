@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.work.FiberTestSupport;
@@ -27,6 +28,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
@@ -38,11 +41,14 @@ import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_PATCHED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.contains;
@@ -95,6 +101,11 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   @Override
   String getReplacedMessageKey() {
     return MANAGED_POD_REPLACED;
+  }
+
+  @Override
+  String getDomainValidationFailedKey() {
+    return DOMAIN_VALIDATION_FAILED;
   }
 
   @Override
@@ -192,7 +203,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasAdditionalVolumesWithVariables_createManagedPodWithSubstitutions() {
+  public void whenClusterHasAdditionalVolumesWithReservedVariables_createManagedPodWithSubstitutions() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
@@ -204,6 +215,66 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
         allOf(
             hasVolume("volume1", "/source-" + SERVER_NAME),
             hasVolume("volume2", "/source-domain1")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithReservedVariables_createManagedPodWithSubstitutions() {
+    getConfigurator()
+        .withAdditionalVolume("volume1", "/source-$(SERVER_NAME)")
+        .withAdditionalVolume("volume2", "/source-$(DOMAIN_NAME)");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(
+            hasVolume("volume1", "/source-" + SERVER_NAME),
+            hasVolume("volume2", "/source-domain1")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithCustomVariables_createManagedPodWithSubstitutions() {
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+
+    V1EnvVar envVar = new V1EnvVar().name(ENV_NAME1).value(GOOD_MY_ENV_VALUE);
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
+
+    getConfigurator()
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+
+    testSupport.runSteps(PodHelper.createManagedPodStep(terminalStep));
+
+    assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(false));
+    assertThat(logRecords, containsInfo(getCreatedMessageKey()));
+    assertThat(getCreatedPod().getSpec().getContainers().get(0).getVolumeMounts(),
+        hasVolumeMount("volume1", END_VOLUME_MOUNT_PATH_1));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_reportValidationError() {
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+
+    V1EnvVar envVar = new V1EnvVar().name(ENV_NAME1).value(BAD_MY_ENV_VALUE);
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
+
+    getConfigurator()
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+
+    testSupport.runSteps(PodHelper.createManagedPodStep(terminalStep));
+
+    assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(true));
+    assertThat(getDomain().getStatus().getReason(), is(DomainStatusUpdater.BAD_DOMAIN));
+    assertThat(logRecords, containsSevere(getDomainValidationFailedKey()));
+  }
+
+  private DomainConfigurator configureDomain(Domain domain) {
+    return new DomainCommonConfigurator(domain);
   }
 
   @Test
