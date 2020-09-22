@@ -6,12 +6,14 @@ resources:
            Target: 'cluster-1'
     JMSServer:
         TestClusterJmsServer2:
-            ProductionPausedAtStartup: false
-            ConsumptionPausedAtStartup: false
-            Target: 'cluster-1'
-            PersistentStore: 'TestClusterFileStore2'
-            InsertionPausedAtStartup: false
-            MessageCompressionOptions: GZIP_DEFAULT_COMPRESSION
+          JmsMessageLogFile:
+            FileName: "@@ENV:LOG_HOME@@/jms_messages.log"
+          ProductionPausedAtStartup: false
+          ConsumptionPausedAtStartup: false
+          Target: 'cluster-1'
+          PersistentStore: 'TestClusterFileStore2'
+          InsertionPausedAtStartup: false
+          MessageCompressionOptions: GZIP_DEFAULT_COMPRESSION
 
     JMSSystemResource:
         TestClusterJmsModule2:

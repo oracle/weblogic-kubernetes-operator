@@ -96,7 +96,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   private void readExistingResources() {
-    testSupport.runStepsToCompletion(Main.readExistingResources("operator", NS));
+    testSupport.runSteps(Main.readExistingResources("operator", NS));
   }
 
   private void addDomainResource(String uid, String namespace) {
