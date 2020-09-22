@@ -41,6 +41,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomai
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.checkPodRestartVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
@@ -289,10 +290,11 @@ public class ItOperatorRestart {
         replicaCount,
         adminSecretName);
 
-    // wait till rolling restart has started by checking admin server pod is deleted
-    logger.info("Waiting for rolling restart to start by checking {0} pod is deleted in namespace {0}",
+    // wait till rolling restart has started by checking admin server pod has restarted
+    logger.info("Waiting for rolling restart to start by checking {0} pod is restarted in namespace {0}",
         adminServerPodName, domainNamespace);
-    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
+    checkPodRestarted(domainUid, domainNamespace, adminServerPodName,
+        adminPodCreationTime);
 
     logger.info("Delete the operator pod in namespace {0} and wait for it to be restarted", opNamespace);
     restartOperatorAndVerify();
