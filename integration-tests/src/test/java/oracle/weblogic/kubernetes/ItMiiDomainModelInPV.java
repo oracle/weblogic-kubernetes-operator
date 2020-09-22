@@ -238,6 +238,14 @@ public class ItMiiDomainModelInPV {
         REPO_SECRET_NAME, encryptionSecretName, replicaCount, clusterName
     );
     domainCR.spec().configuration().model().withModelHome("/shared/model");
+    domainCR.spec().serverPod()
+        .addVolumesItem(new V1Volume()
+            .name(pvName)
+            .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                .claimName(pvcName)))
+        .addVolumeMountsItem(new V1VolumeMount()
+            .mountPath("/shared")
+            .name(pvName));
     return domainCR;
   }
 
