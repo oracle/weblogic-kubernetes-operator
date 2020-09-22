@@ -79,6 +79,7 @@ public interface TestConstants {
   public static final String NGINX_RELEASE_NAME = "nginx-release" + BUILD_ID;
   public static final String NGINX_REPO_NAME = "ingress-nginx";
   public static final String NGINX_CHART_NAME = "ingress-nginx";
+  public static final String NGINX_CHART_VERSION = "2.16.0";
 
   // Traefik constants
   public static final String TRAEFIK_REPO_URL = "https://containous.github.io/traefik-helm-chart";

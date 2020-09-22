@@ -94,6 +94,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
@@ -510,6 +511,22 @@ public class CommonTestUtils {
   public static HelmParams installAndVerifyNginx(String nginxNamespace,
                                                  int nodeportshttp,
                                                  int nodeportshttps) {
+    return installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps, NGINX_CHART_VERSION);
+  }
+
+  /**
+   * Install NGINX and wait up to five minutes until the NGINX pod is ready.
+   *
+   * @param nginxNamespace the namespace in which the NGINX will be installed
+   * @param nodeportshttp the http nodeport of NGINX
+   * @param nodeportshttps the https nodeport of NGINX
+   * @param chartVersion the chart version of NGINX
+   * @return the NGINX Helm installation parameters
+   */
+  public static HelmParams installAndVerifyNginx(String nginxNamespace,
+                                                 int nodeportshttp,
+                                                 int nodeportshttps,
+                                                 String chartVersion) {
     LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
@@ -518,6 +535,10 @@ public class CommonTestUtils {
         .repoUrl(NGINX_REPO_URL)
         .repoName(NGINX_REPO_NAME)
         .chartName(NGINX_CHART_NAME);
+
+    if (chartVersion != null) {
+      nginxHelmParams.chartVersion(chartVersion);
+    }
 
     // NGINX chart values to override
     NginxParams nginxParams = new NginxParams()
