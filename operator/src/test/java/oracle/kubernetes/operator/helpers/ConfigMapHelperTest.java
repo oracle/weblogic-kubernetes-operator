@@ -32,6 +32,7 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SCRIPT_CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.CM_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CM_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.CM_REPLACED;
@@ -67,7 +68,6 @@ public class ConfigMapHelperTest {
     "encryption_util.py"
   };
   private static final String DOMAIN_NS = "namespace";
-  private static final String OPERATOR_NS = "operator";
 
   private static final String ADDITIONAL_NAME = "additional.sh";
   private static final String[] PARTIAL_SCRIPT_NAMES = {"livenessProbe.sh", ADDITIONAL_NAME};
@@ -104,7 +104,7 @@ public class ConfigMapHelperTest {
     return new V1ObjectMeta()
         .name(SCRIPT_CONFIG_MAP_NAME)
         .namespace(DOMAIN_NS)
-        .putLabelsItem(LabelConstants.OPERATORNAME_LABEL, OPERATOR_NS)
+        .putLabelsItem(LabelConstants.OPERATORNAME_LABEL, getOperatorNamespace())
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
 
@@ -139,7 +139,7 @@ public class ConfigMapHelperTest {
   public void whenUnableToReadConfigMap_reportFailure() {
     testSupport.failOnResource(CONFIG_MAP, SCRIPT_CONFIG_MAP_NAME, DOMAIN_NS, 401);
 
-    Step scriptConfigMapStep = ConfigMapHelper.createScriptConfigMapStep(OPERATOR_NS, DOMAIN_NS);
+    Step scriptConfigMapStep = ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS);
     testSupport.runSteps(scriptConfigMapStep);
 
     testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
@@ -147,7 +147,7 @@ public class ConfigMapHelperTest {
 
   @Test
   public void whenNoConfigMap_createIt() {
-    testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(OPERATOR_NS, DOMAIN_NS));
+    testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS));
 
     assertThat(testSupport.getResources(CONFIG_MAP), notNullValue());
     assertThat(logRecords, containsInfo(CM_CREATED));
@@ -158,7 +158,7 @@ public class ConfigMapHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CONFIG_MAP, SCRIPT_CONFIG_MAP_NAME, DOMAIN_NS, 401);
 
-    Step scriptConfigMapStep = ConfigMapHelper.createScriptConfigMapStep(OPERATOR_NS, DOMAIN_NS);
+    Step scriptConfigMapStep = ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS);
     testSupport.runSteps(scriptConfigMapStep);
 
     testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
@@ -169,7 +169,7 @@ public class ConfigMapHelperTest {
   public void whenMatchingConfigMapExists_addToPacket() {
     testSupport.defineResources(defaultConfigMap);
 
-    Packet packet = testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(OPERATOR_NS, DOMAIN_NS));
+    Packet packet = testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS));
 
     assertThat(logRecords, containsFine(CM_EXISTS));
     assertThat(packet, hasEntry(SCRIPT_CONFIG_MAP, defaultConfigMap));
@@ -179,7 +179,7 @@ public class ConfigMapHelperTest {
   public void whenExistingConfigMapIsMissingData_replaceIt() {
     testSupport.defineResources(defineConfigMap(PARTIAL_SCRIPT_NAMES));
 
-    testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(OPERATOR_NS, DOMAIN_NS));
+    testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS));
 
     assertThat(logRecords, containsInfo(CM_REPLACED));
     assertThat(getScriptConfigKeys(), containsInAnyOrder(COMBINED_SCRIPT_NAMES));
@@ -209,7 +209,7 @@ public class ConfigMapHelperTest {
   public void whenExistingConfigMapHasExtraData_dontRemoveIt() {
     testSupport.defineResources(defineConfigMap(PARTIAL_SCRIPT_NAMES));
 
-    testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(OPERATOR_NS, DOMAIN_NS));
+    testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS));
 
     assertThat(logRecords, containsInfo(CM_REPLACED));
     assertThat(getScriptConfigKeys(), hasItem(ADDITIONAL_NAME));
