@@ -28,7 +28,6 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -368,7 +367,7 @@ public class KubernetesTestSupportTest {
     V1Pod pod3 = createPod("ns3", "another");
     testSupport.defineResources(pod1, pod2, pod3);
 
-    TestResponseStep<V1Status> responseStep = new TestResponseStep<>();
+    TestResponseStep<V1Pod> responseStep = new TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().deletePodAsync("mycrd", "ns2", "", null, responseStep));
 
     assertThat(testSupport.getResources(POD), containsInAnyOrder(pod1, pod3));
@@ -378,7 +377,7 @@ public class KubernetesTestSupportTest {
   public void whenHttpErrorAssociatedWithResource_callResponseIsError() {
     testSupport.failOnResource(POD, "pod1", "ns2", HTTP_BAD_REQUEST);
 
-    TestResponseStep<V1Status> responseStep = new TestResponseStep<>();
+    TestResponseStep<V1Pod> responseStep = new TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().deletePodAsync("pod1", "ns2", "", null, responseStep));
 
     testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
@@ -389,7 +388,7 @@ public class KubernetesTestSupportTest {
   public void whenHttpErrorNotAssociatedWithResource_ignoreIt() {
     testSupport.failOnResource(POD, "pod1", "ns2", HTTP_BAD_REQUEST);
 
-    TestResponseStep<V1Status> responseStep = new TestResponseStep<>();
+    TestResponseStep<V1Pod> responseStep = new TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().deletePodAsync("pod2", "ns2", "", null, responseStep));
   }
 
