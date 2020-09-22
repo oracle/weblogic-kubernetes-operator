@@ -114,6 +114,7 @@ public class CommonMiiTestUtils {
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
    * @param replicaCount number of managed servers to start
+   * @param clusterName name of the cluster to add in domain
    * @return domain object of the domain resource
    */
   public static Domain createDomainResource(
