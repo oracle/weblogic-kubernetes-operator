@@ -317,6 +317,8 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                          fsGroupChangePolicy:
+                            type: string
                           supplementalGroups:
                             type: array
                             items:
@@ -2828,6 +2830,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                            fsGroupChangePolicy:
+                              type: string
                             supplementalGroups:
                               type: array
                               items:
@@ -5347,6 +5351,8 @@ spec:
                             type: string
                           gmsaCredentialSpecName:
                             type: string
+                      fsGroupChangePolicy:
+                        type: string
                       supplementalGroups:
                         type: array
                         items:
@@ -7744,6 +7750,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                            fsGroupChangePolicy:
+                              type: string
                             supplementalGroups:
                               type: array
                               items:
@@ -10111,6 +10119,15 @@ spec:
                     state:
                       description: Current state of this WebLogic Server instance.
                       type: string
+              introspectJobFailureCount:
+                type: number
+                description: Non-zero if the introspector job fails for any reason.
+                  You can configure an introspector job retry limit for jobs that
+                  log script failures using the Operator tuning parameter 'domainPresenceFailureRetryMaxCount'
+                  (default 5). You cannot configure a limit for other types of failures,
+                  such as a Domain resource reference to an unknown secret name; in
+                  which case, the retries are unlimited.
+                minimum: 0.0
               replicas:
                 type: number
                 description: The number of running cluster member Managed Servers

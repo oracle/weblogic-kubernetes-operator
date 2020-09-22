@@ -47,6 +47,15 @@ public class DomainStatus {
       "A brief CamelCase message indicating details about why the domain is in this state.")
   private String reason;
 
+  @Description(
+      "Non-zero if the introspector job fails for any reason. "
+          + "You can configure an introspector job retry limit for jobs that log script failures using "
+          + "the Operator tuning parameter 'domainPresenceFailureRetryMaxCount' (default 5). "
+          + "You cannot configure a limit for other types of failures, such as a Domain resource reference "
+          + "to an unknown secret name; in which case, the retries are unlimited.")
+  @Range(minimum = 0)
+  private Integer introspectJobFailureCount = new Integer(0);
+
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
   // sorted list of ServerStatus
@@ -87,6 +96,7 @@ public class DomainStatus {
     clusters = that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList());
     startTime = that.startTime;
     replicas = that.replicas;
+    introspectJobFailureCount = that.introspectJobFailureCount;
   }
 
   /**
@@ -277,6 +287,45 @@ public class DomainStatus {
   }
 
   /**
+   * The number of times the introspect job failed.
+   *
+   * @return introspectJobFailureRetryCount
+   */
+  public Integer getIntrospectJobFailureCount() {
+    return this.introspectJobFailureCount;
+  }
+
+  /**
+   * Increment the number of introspect job failure count.
+   *
+   * @return retryCount
+   */
+  public Integer incrementIntrospectJobFailureCount() {
+    return this.introspectJobFailureCount = this.introspectJobFailureCount.intValue() + 1;
+  }
+
+
+  /**
+   * Reset the number of introspect job failure to default.
+   *
+   * @return this
+   */
+  public DomainStatus resetIntrospectJobFailureCount() {
+    this.introspectJobFailureCount = 0;
+    return this;
+  }
+
+  /**
+   * Set the number of introspect job failure and return the DomainStatus.
+   * @param retryCount retryCount
+   * @return this
+   */
+  public DomainStatus withIntrospectJobFailureCount(Integer retryCount) {
+    this.introspectJobFailureCount = retryCount;
+    return this;
+  }
+
+  /**
    * Status of WebLogic Servers in this domain.
    *
    * @return a sorted list of ServerStatus containing status of WebLogic Servers in this domain
@@ -431,6 +480,7 @@ public class DomainStatus {
         .append("servers", servers)
         .append("clusters", clusters)
         .append("startTime", startTime)
+        .append("introspectJobFailureRetryCount", introspectJobFailureCount)
         .toString();
   }
 
@@ -443,6 +493,7 @@ public class DomainStatus {
         .append(Domain.sortOrNull(clusters))
         .append(Domain.sortOrNull(conditions))
         .append(message)
+        .append(introspectJobFailureCount)
         .toHashCode();
   }
 
@@ -462,6 +513,7 @@ public class DomainStatus {
         .append(Domain.sortOrNull(clusters), Domain.sortOrNull(rhs.clusters))
         .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
         .append(message, rhs.message)
+        .append(introspectJobFailureCount, rhs.introspectJobFailureCount)
         .isEquals();
   }
 
@@ -469,6 +521,7 @@ public class DomainStatus {
         .withConstructor(DomainStatus::new)
         .withStringField("message", DomainStatus::getMessage)
         .withStringField("reason", DomainStatus::getReason)
+        .withIntegerField("introspectJobFailureRetryCount", DomainStatus::getIntrospectJobFailureCount)
         .withIntegerField("replicas", DomainStatus::getReplicas)
         .withListField("conditions", DomainCondition.getObjectPatch(), DomainStatus::getConditions)
         .withListField("clusters", ClusterStatus.getObjectPatch(), DomainStatus::getClusters)

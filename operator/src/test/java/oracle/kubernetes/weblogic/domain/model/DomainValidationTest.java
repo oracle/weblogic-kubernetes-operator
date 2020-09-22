@@ -3,17 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,13 +18,17 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class DomainValidationTest {
+public class DomainValidationTest extends DomainValidationBaseTest {
 
-  private static final String SECRET_NAME = "mysecret";
-  private static final String OVERRIDES_CM_NAME_IMAGE = "overrides-cm-image";
-  private static final String OVERRIDES_CM_NAME_MODEL = "overrides-cm-model";
+  private static final String ENV_NAME1 = "MY_ENV";
+  private static final String RAW_VALUE_1 = "123";
+  private static final String RAW_MOUNT_PATH_1 = "$(DOMAIN_HOME)/servers/$(SERVER_NAME)";
+  private static final String RAW_MOUNT_PATH_2 = "$(MY_ENV)/bin";
+  private static final String BAD_MOUNT_PATH_1 = "$DOMAIN_HOME/servers/$SERVER_NAME";
+  private static final String BAD_MOUNT_PATH_2 = "$(DOMAIN_HOME/servers/$(SERVER_NAME";
+  private static final String BAD_MOUNT_PATH_3 = "$()DOMAIN_HOME/servers/SERVER_NAME";
+
   private Domain domain = createTestDomain();
-  private KubernetesResourceLookupStub resourceLookup = new KubernetesResourceLookupStub();
 
   /**
    * Setup test.
@@ -139,6 +133,142 @@ public class DomainValidationTest {
 
     assertThat(domain.getValidationFailures(resourceLookup),
                contains(stringContainsInOrder("log home", "/shared/logs/" + UID)));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMountsWithInvalidChar_1_reportError() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder(
+            "The mount path", BAD_MOUNT_PATH_1, "volume1", "of domain resource", "is not valid")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMountsWithInvalidChar_2_reportError() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("volume2", BAD_MOUNT_PATH_2);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder(
+            "The mount path", BAD_MOUNT_PATH_2, "volume2", "of domain resource", "is not valid")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMountsWithInvalidChar_3_reportError() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("volume3", BAD_MOUNT_PATH_3);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder(
+            "The mount path", BAD_MOUNT_PATH_3, "volume3", "of domain resource", "is not valid")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
+    configureDomain(domain)
+        .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
+        .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder(
+            "The mount path", RAW_MOUNT_PATH_2, "volume1", "of domain resource", "is not valid")));
+  }
+
+  @Test
+  public void whenDomainAdminServerHasAdditionalVolumeMountsWithInvalidChar_reportError() {
+    configureDomain(domain)
+        .configureAdminServer()
+        .getAdminServer()
+        .addAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", BAD_MOUNT_PATH_1, 
+            "volume1", "of domain resource", "is not valid")));
+  }
+
+  @Test
+  public void whenDomainAdminServerHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
+    configureDomain(domain)
+        .configureAdminServer()
+        .getAdminServer()
+        .addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenDomainAdminServerHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
+    configureDomain(domain)
+        .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
+        .configureAdminServer()
+        .getAdminServer()
+        .addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenDomainAdminServerHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
+    configureDomain(domain)
+        .configureAdminServer()
+        .getAdminServer()
+        .addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", "volume1", "of domain resource", "is not valid")));
+  }
+  
+  @Test
+  public void whenClusterServerPodHasAdditionalVolumeMountsWithInvalidChar_reportError() {
+    configureDomain(domain)
+        .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", "of domain resource", "is not valid")));
+  }
+
+  @Test
+  public void whenClusterServerPodHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
+    configureDomain(domain)
+        .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenClusterServerPodHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
+    configureDomain(domain)
+        .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
+        .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenClusterServerPodHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
+    configureDomain(domain)
+        .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", "volume1", "of domain resource", "is not valid")));
   }
 
   @Test
@@ -469,53 +599,5 @@ public class DomainValidationTest {
 
   private DomainConfigurator configureDomain(Domain domain) {
     return new DomainCommonConfigurator(domain);
-  }
-
-  /**
-   *  Types of Kubernetes resources which can be looked up on a domain.
-   *   
-   */
-  public enum KubernetesResourceType {
-    Secret, ConfigMap
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private class KubernetesResourceLookupStub implements KubernetesResourceLookup {
-    private Map<KubernetesResourceType, List<V1ObjectMeta>> definedResources = new ConcurrentHashMap<>();
-
-    private List<V1ObjectMeta> getResourceList(KubernetesResourceType type) {
-      return definedResources.computeIfAbsent(type, (key) -> new ArrayList<>());
-    }
-
-    void undefineResource(String name, KubernetesResourceType type, String namespace) {
-      for (Iterator<V1ObjectMeta> each = getResourceList(type).iterator(); each.hasNext();) {
-        if (hasSpecification(each.next(), name, namespace)) {
-          each.remove();
-        }
-      }
-    }
-
-    void defineResource(String name, KubernetesResourceType type, String namespace) {
-      Optional.ofNullable(getResourceList(type)).orElse(Collections.emptyList())
-          .add(new V1ObjectMeta().name(name).namespace(namespace));
-    }
-
-    @Override
-    public boolean isSecretExists(String name, String namespace) {
-      return isResourceExists(name, KubernetesResourceType.Secret, namespace);
-    }
-
-    @Override
-    public boolean isConfigMapExists(String name, String namespace) {
-      return isResourceExists(name, KubernetesResourceType.ConfigMap, namespace);
-    }
-
-    private boolean isResourceExists(String name, KubernetesResourceType type, String namespace) {
-      return getResourceList(type).stream().anyMatch(m -> hasSpecification(m, name, namespace));
-    }
-
-    boolean hasSpecification(V1ObjectMeta m, String name, String namespace) {
-      return Objects.equals(name, m.getName()) && Objects.equals(namespace, m.getNamespace());
-    }
   }
 }

@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -27,35 +26,35 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EventList;
+import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
-import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.CrdHelper;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
+import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
-import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.helpers.NamespaceHelper;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
-import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -63,7 +62,6 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.ActionResponseStep;
-import oracle.kubernetes.operator.steps.ConfigMapAfterStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -75,10 +73,11 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
+
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
@@ -90,7 +89,6 @@ public class Main {
   private static final ThreadFactory threadFactory = new WrappedThreadFactory();
   private static final ScheduledExecutorService wrappedExecutorService =
       Engine.wrappedExecutorService("operator", container);
-  private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
   private static Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
   private static Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
   private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
@@ -99,19 +97,16 @@ public class Main {
   private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
   private static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
   private static NamespaceWatcher namespaceWatcher = null;
-  private static Function<String,String> getHelmVariable = System::getenv;
-  private static final String operatorNamespace = computeOperatorNamespace();
   private static final AtomicReference<DateTime> lastFullRecheck =
       new AtomicReference<>(DateTime.now());
   private static final DomainProcessorDelegateImpl delegate = new DomainProcessorDelegateImpl();
   private static final DomainProcessor processor = new DomainProcessorImpl(delegate);
-  private static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
-      "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
   private static final Semaphore shutdownSignal = new Semaphore(0);
   private static final Engine engine = new Engine(wrappedExecutorService);
   private static String principal;
   private static KubernetesVersion version = null;
   private static SemanticVersion productVersion = null;
+  private static Main main = new Main();
 
   private static TuningParameters tuningAndConfig() {
     return TuningParameters.getInstance();
@@ -144,8 +139,7 @@ public class Main {
                 TuningParameters.class,
                 tuningAndConfig(),
                 ThreadFactory.class,
-                threadFactory,
-                callBuilderFactory));
+                threadFactory));
   }
 
   /**
@@ -190,14 +184,14 @@ public class Main {
   private static void begin() {
     String serviceAccountName =
         Optional.ofNullable(tuningAndConfig().get("serviceaccount")).orElse("default");
-    principal = "system:serviceaccount:" + operatorNamespace + ":" + serviceAccountName;
+    principal = "system:serviceaccount:" + getOperatorNamespace() + ":" + serviceAccountName;
 
-    LOGGER.info(MessageKeys.OP_CONFIG_NAMESPACE, operatorNamespace);
+    LOGGER.info(MessageKeys.OP_CONFIG_NAMESPACE, getOperatorNamespace());
     JobWatcher.defineFactory(
         threadFactory, tuningAndConfig().getWatchTuning(), Main::isNamespaceStopping);
 
     DomainNamespaceSelectionStrategy selectionStrategy = getDomainNamespaceSelectionStrategy();
-    Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredList();
+    Collection<String> configuredDomainNamespaces = selectionStrategy.getDomainNamespaces();
     if (configuredDomainNamespaces != null) {
       LOGGER.info(MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES, StringUtils.join(configuredDomainNamespaces, ", "));
     }
@@ -310,7 +304,7 @@ public class Main {
 
   static Step createDomainRecheckSteps(DateTime now) {
     DomainNamespaceSelectionStrategy selectionStrategy = getDomainNamespaceSelectionStrategy();
-    Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredList();
+    Collection<String> configuredDomainNamespaces = selectionStrategy.getDomainNamespaces();
 
     int recheckInterval = tuningAndConfig().getMainTuning().domainPresenceRecheckIntervalSeconds;
     boolean isFullRecheck = false;
@@ -333,38 +327,41 @@ public class Main {
     return strategy;
   }
 
-  static Step readExistingResources(String operatorNamespace, String ns) {
-    return Step.chain(
-        new ReadExistingResourcesBeforeStep(),
-        ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
-        createConfigMapStep(ns),
-        readExistingPods(ns),
-        readExistingEvents(ns),
-        readExistingServices(ns),
-        readExistingDomains(ns));
-  }
+  static Step readExistingResources(String ns) {
+    NamespacedResources resources = new NamespacedResources(ns, null);
+    DomainResourcesValidation dpis = new DomainResourcesValidation(ns, processor);
+    resources.addProcessor(dpis.getProcessors());
+    resources.addProcessor(new NamespacedResources.Processors() {
+      @Override
+      Consumer<Packet> getConfigMapProcessing() {
+        return p -> main.startConfigMapWatcher(ns, getResourceVersion(getScriptConfigMap(p)));
+      }
 
-  private static Step readExistingDomains(String ns) {
-    LOGGER.fine(MessageKeys.LISTING_DOMAINS);
-    return callBuilderFactory.create().listDomainAsync(ns, new DomainListStep(ns));
-  }
+      private V1ConfigMap getScriptConfigMap(Packet packet) {
+        return (V1ConfigMap) packet.get(ProcessingConstants.SCRIPT_CONFIG_MAP);
+      }
 
-  private static Step readExistingServices(String ns) {
-    return new CallBuilder()
-        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .listServiceAsync(ns, new ServiceListStep(ns));
-  }
+      @Override
+      Consumer<V1EventList> getEventListProcessing() {
+        return l -> main.startEventWatcher(ns, getResourceVersion(l));
+      }
 
-  private static Step readExistingEvents(String ns) {
-    return new CallBuilder()
-        .withFieldSelector(Main.READINESS_PROBE_FAILURE_EVENT_FILTER)
-        .listEventAsync(ns, new EventListStep(ns));
-  }
+      @Override
+      Consumer<V1PodList> getPodListProcessing() {
+        return l -> main.startPodWatcher(ns, getResourceVersion(l));
+      }
 
-  private static Step readExistingPods(String ns) {
-    return new CallBuilder()
-        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .listPodAsync(ns, new PodListStep(ns));
+      @Override
+      Consumer<V1ServiceList> getServiceListProcessing() {
+        return l -> main.startServiceWatcher(ns, getResourceVersion(l));
+      }
+
+      @Override
+      Consumer<DomainList> getDomainListProcessing() {
+        return l -> main.startDomainWatcher(ns, getResourceVersion(l));
+      }
+    });
+    return resources.createListSteps();
   }
 
   static Step readExistingNamespaces(DomainNamespaceSelectionStrategy selectionStrategy,
@@ -376,7 +373,7 @@ public class Main {
       builder.withLabelSelectors(selector);
     }
     return builder.listNamespaceAsync(
-      new ActionResponseStep<V1NamespaceList>(new NamespaceListAfterStep(selectionStrategy)) {
+      new ActionResponseStep<>(new NamespaceListAfterStep(selectionStrategy)) {
         private Step startNamespaces(Collection<String> namespacesToStart, boolean isFullRecheck) {
           return new StartNamespacesStep(namespacesToStart, isFullRecheck);
         }
@@ -396,45 +393,78 @@ public class Main {
   }
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
-    return new ConfigMapAfterStep(
-        ns,
-        configMapWatchers,
-        tuningAndConfig().getWatchTuning(),
-        isNamespaceStopping(ns),
-        processor::dispatchConfigMapWatch);
+    return new ConfigMapAfterStep(ns);
   }
 
-  /**
-   * Obtain the list of domain namespaces.
-   *
-   * @return the collection of domain namespace names
-   */
-  @SuppressWarnings("SameParameterValue")
-  private static Collection<String> getDomainNamespacesList(String tnValue, String namespace) {
-    Collection<String> domainNamespaces = new ArrayList<>();
-
-    if (tnValue != null) {
-      StringTokenizer st = new StringTokenizer(tnValue, ",");
-      while (st.hasMoreTokens()) {
-        domainNamespaces.add(st.nextToken().trim());
-      }
+  private void startEventWatcher(String ns, String initialResourceVersion) {
+    if (!eventWatchers.containsKey(ns)) {
+      eventWatchers.put(ns, createEventWatcher(ns, initialResourceVersion));
     }
+  }
 
-    // If no namespaces were found, default to the namespace of the operator
-    if (domainNamespaces.isEmpty()) {
-      domainNamespaces.add(namespace);
+  private void startConfigMapWatcher(String ns, String initialResourceVersion) {
+    if (!configMapWatchers.containsKey(ns)) {
+      configMapWatchers.put(ns, createConfigMapWatcher(ns, initialResourceVersion));
     }
+  }
 
-    return domainNamespaces;
+  private void startServiceWatcher(String ns, String initialResourceVersion) {
+    if (!serviceWatchers.containsKey(ns)) {
+      serviceWatchers.put(ns, createServiceWatcher(ns, initialResourceVersion));
+    }
+  }
+
+  private void startDomainWatcher(String ns, String initialResourceVersion) {
+    if (!domainWatchers.containsKey(ns)) {
+      domainWatchers.put(ns, createDomainWatcher(ns, initialResourceVersion));
+    }
+  }
+
+  private void startPodWatcher(String ns, String initialResourceVersion) {
+    if (!podWatchers.containsKey(ns)) {
+      podWatchers.put(ns, createPodWatcher(ns, initialResourceVersion));
+    }
+  }
+
+
+  ConfigMapWatcher getConfigMapWatcher(String namespace) {
+    return configMapWatchers.get(namespace);
+  }
+
+  DomainWatcher getDomainWatcher(String namespace) {
+    return domainWatchers.get(namespace);
+  }
+
+  EventWatcher getEventWatcher(String namespace) {
+    return eventWatchers.get(namespace);
+  }
+
+  PodWatcher getPodWatcher(String namespace) {
+    return podWatchers.get(namespace);
+  }
+
+  ServiceWatcher getServiceWatcher(String namespace) {
+    return serviceWatchers.get(namespace);
   }
 
   enum DomainNamespaceSelectionStrategy {
     List {
       @Override
-      public Collection<String> getConfiguredList() {
-        return getDomainNamespacesList(Optional.ofNullable(getHelmVariable.apply("OPERATOR_DOMAIN_NAMESPACES"))
-            .orElse(Optional.ofNullable(tuningAndConfig().get("domainNamespaces"))
-                .orElse(tuningAndConfig().get("targetNamespaces"))), operatorNamespace);
+      public Collection<String> getDomainNamespaces() {
+        return NamespaceHelper.parseNamespaceList(getNamespaceList());
+      }
+
+      private String getNamespaceList() {
+        return Optional.ofNullable(HelmAccess.getHelmSpecifiedNamespaceList()).orElse(getInternalNamespaceList());
+      }
+
+      private String getInternalNamespaceList() {
+        return Optional.ofNullable(getConfiguredNamespaceList()).orElse(getOperatorNamespace());
+      }
+
+      private String getConfiguredNamespaceList() {
+        return Optional.ofNullable(tuningAndConfig().get("domainNamespaces"))
+              .orElse(tuningAndConfig().get("targetNamespaces"));
       }
     },
     LabelSelector {
@@ -461,8 +491,8 @@ public class Main {
     },
     Dedicated {
       @Override
-      public Collection<String> getConfiguredList() {
-        return Collections.singleton(operatorNamespace);
+      public Collection<String> getDomainNamespaces() {
+        return Collections.singleton(getOperatorNamespace());
       }
     };
 
@@ -478,7 +508,7 @@ public class Main {
       return null;
     }
 
-    public Collection<String> getConfiguredList() {
+    public Collection<String> getDomainNamespaces() {
       return null;
     }
   }
@@ -501,9 +531,10 @@ public class Main {
     return DomainNamespaceSelectionStrategy.Dedicated.equals(getDomainNamespaceSelectionStrategy());
   }
 
+  // Returns true if the deprecated way to specify the dedicated namespace strategy is being used.
+  // This value will only be used if the 'list' namespace strategy is specified or defaulted.
   private static boolean isDeprecatedDedicated() {
-    return "true".equalsIgnoreCase(Optional.ofNullable(getHelmVariable.apply("OPERATOR_DEDICATED"))
-        .orElse(Optional.ofNullable(tuningAndConfig().get("dedicated")).orElse("false")));
+    return "true".equalsIgnoreCase(Optional.ofNullable(tuningAndConfig().get("dedicated")).orElse("false"));
   }
 
   private static void startRestServer(String principal, Collection<String> domainNamespaces)
@@ -552,7 +583,7 @@ public class Main {
     return EventWatcher.create(
         threadFactory,
         ns,
-        READINESS_PROBE_FAILURE_EVENT_FILTER,
+        ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER,
         initialResourceVersion,
         tuningAndConfig().getWatchTuning(),
         processor::dispatchEventWatch,
@@ -579,6 +610,16 @@ public class Main {
         isNamespaceStopping(ns));
   }
 
+  private static ConfigMapWatcher createConfigMapWatcher(String namespace, String initialResourceVersion) {
+    return ConfigMapWatcher.create(
+        threadFactory,
+        namespace,
+        initialResourceVersion,
+        tuningAndConfig().getWatchTuning(),
+        processor::dispatchConfigMapWatch,
+        isNamespaceStopping(namespace));
+  }
+
   private static DomainWatcher createDomainWatcher(String ns, String initialResourceVersion) {
     return DomainWatcher.create(
         threadFactory,
@@ -600,10 +641,6 @@ public class Main {
         new AtomicBoolean(false));
   }
 
-  private static String computeOperatorNamespace() {
-    return Optional.ofNullable(getHelmVariable.apply("OPERATOR_NAMESPACE")).orElse("default");
-  }
-
   private static void dispatchNamespaceWatch(Watch.Response<V1Namespace> item) {
     V1Namespace c = item.object;
     if (c != null) {
@@ -612,7 +649,7 @@ public class Main {
       switch (item.type) {
         case "ADDED":
           DomainNamespaceSelectionStrategy selectionStrategy = getDomainNamespaceSelectionStrategy();
-          Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredList();
+          Collection<String> configuredDomainNamespaces = selectionStrategy.getDomainNamespaces();
 
           // For selection strategies with a configured list, we only care about namespaces that are in that list
           if (configuredDomainNamespaces != null && !configuredDomainNamespaces.contains(ns)) {
@@ -665,9 +702,9 @@ public class Main {
   }
 
   private static Step getScriptCreationSteps(String ns) {
-    try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+    try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns)) {
       return Step.chain(
-          ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns), createConfigMapStep(ns));
+          ConfigMapHelper.createScriptConfigMapStep(ns), createConfigMapStep(ns));
     }
   }
 
@@ -711,7 +748,7 @@ public class Main {
         Collection<StepAndPacket> startDetails = new ArrayList<>();
 
         for (String ns : domainNamespaces) {
-          try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+          try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns)) {
             startDetails.add(new StepAndPacket(action(ns), packet.clone()));
           }
         }
@@ -734,7 +771,7 @@ public class Main {
       return Step.chain(
           new NamespaceRulesReviewStep(ns),
           new StartNamespaceBeforeStep(ns, isFullRecheck),
-          readExistingResources(operatorNamespace, ns));
+          readExistingResources(ns));
     }
   }
 
@@ -789,7 +826,7 @@ public class Main {
       // operator's own namespace. If the namespace status is missing, then generate it with
       // the health check helper.
       NamespaceStatus nss = namespaceStatuses.computeIfAbsent(
-          ns != null ? ns : operatorNamespace, (key) -> new NamespaceStatus());
+          ns != null ? ns : getOperatorNamespace(), (key) -> new NamespaceStatus());
 
       // we don't have the domain presence information yet
       // we add a logging context to pass the namespace information to the LoggingFormatter
@@ -805,7 +842,7 @@ public class Main {
         }
 
         try {
-          return HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns);
+          return HealthCheckHelper.performSecurityChecks(version, getOperatorNamespace(), ns);
         } catch (Throwable e) {
           LOGGER.warning(MessageKeys.EXCEPTION, e);
         }
@@ -820,202 +857,19 @@ public class Main {
     }
   }
 
-  private static class ReadExistingResourcesBeforeStep extends Step {
-    @SuppressWarnings("rawtypes")
-    @Override
-    public NextAction apply(Packet packet) {
-      packet.put(DPI_MAP, new ConcurrentHashMap());
-      return doNext(packet);
-    }
+
+  private static String getResourceVersion(KubernetesListObject list) {
+    return Optional.ofNullable(list)
+          .map(KubernetesListObject::getMetadata)
+          .map(V1ListMeta::getResourceVersion)
+          .orElse("");
   }
 
-  private static class DomainListStep extends ResponseStep<DomainList> {
-    private final String ns;
-
-    DomainListStep(String ns) {
-      this.ns = ns;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<DomainList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
-      @SuppressWarnings("unchecked")
-      Map<String, DomainPresenceInfo> dpis = (Map<String, DomainPresenceInfo>) packet.get(DPI_MAP);
-
-      DomainProcessor x = packet.getSpi(DomainProcessor.class);
-      DomainProcessor dp = x != null ? x : processor;
-
-      Set<String> domainUids = new HashSet<>();
-      if (callResponse.getResult() != null) {
-        for (Domain dom : callResponse.getResult().getItems()) {
-          String domainUid = dom.getDomainUid();
-          domainUids.add(domainUid);
-          DomainPresenceInfo info =
-              dpis.compute(
-                  domainUid,
-                  (k, v) -> {
-                    if (v == null) {
-                      return new DomainPresenceInfo(dom);
-                    }
-                    v.setDomain(dom);
-                    return v;
-                  });
-          info.setPopulated(true);
-          try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
-            dp.createMakeRightOperation(info).withExplicitRecheck().execute();
-          }
-        }
-      }
-
-      dpis.forEach(
-          (uid, info) -> {
-            if (!domainUids.contains(uid)) {
-              // This is a stranded DomainPresenceInfo.
-              info.setDeleting(true);
-              info.setPopulated(true);
-              try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns).domainUid(uid)) {
-                dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
-              }
-            }
-          });
-
-      if (!domainWatchers.containsKey(ns)) {
-        domainWatchers.put(
-            ns, createDomainWatcher(ns, getResourceVersion(callResponse.getResult())));
-      }
-
-      return doContinueListOrNext(callResponse, packet);
-    }
-
-    String getResourceVersion(DomainList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
-  }
-
-  private static class ServiceListStep extends ResponseStep<V1ServiceList> {
-    private final String ns;
-
-    ServiceListStep(String ns) {
-      this.ns = ns;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1ServiceList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1ServiceList> callResponse) {
-      V1ServiceList result = callResponse.getResult();
-
-      @SuppressWarnings("unchecked")
-      Map<String, DomainPresenceInfo> dpis = (Map<String, DomainPresenceInfo>) packet.get(DPI_MAP);
-
-      if (result != null) {
-        for (V1Service service : result.getItems()) {
-          String domainUid = ServiceHelper.getServiceDomainUid(service);
-          if (domainUid != null) {
-            DomainPresenceInfo info =
-                dpis.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(ns, domainUid));
-            ServiceHelper.addToPresence(info, service);
-          }
-        }
-      }
-
-      if (!serviceWatchers.containsKey(ns)) {
-        serviceWatchers.put(ns, createServiceWatcher(ns, getInitialResourceVersion(result)));
-      }
-
-      return doContinueListOrNext(callResponse, packet);
-    }
-
-    private String getInitialResourceVersion(V1ServiceList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
-  }
-
-  private static class EventListStep extends ResponseStep<V1EventList> {
-    private final String ns;
-
-    EventListStep(String ns) {
-      this.ns = ns;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1EventList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1EventList> callResponse) {
-      V1EventList result = callResponse.getResult();
-      // don't bother processing pre-existing events
-
-      if (!eventWatchers.containsKey(ns)) {
-        eventWatchers.put(ns, createEventWatcher(ns, getInitialResourceVersion(result)));
-      }
-
-      return doContinueListOrNext(callResponse, packet);
-    }
-
-    private String getInitialResourceVersion(V1EventList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
-  }
-
-  private static class PodListStep extends ResponseStep<V1PodList> {
-    private final String ns;
-
-    PodListStep(String ns) {
-      this.ns = ns;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1PodList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-      V1PodList result = callResponse.getResult();
-
-      @SuppressWarnings("unchecked")
-      Map<String, DomainPresenceInfo> dpis = (Map<String, DomainPresenceInfo>) packet.get(DPI_MAP);
-
-      if (result != null) {
-        for (V1Pod pod : result.getItems()) {
-          String domainUid = PodHelper.getPodDomainUid(pod);
-          String serverName = PodHelper.getPodServerName(pod);
-          if (domainUid != null && serverName != null) {
-            DomainPresenceInfo info =
-                dpis.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(ns, domainUid));
-            info.setServerPod(serverName, pod);
-          }
-        }
-      }
-
-      if (!podWatchers.containsKey(ns)) {
-        podWatchers.put(ns, createPodWatcher(ns, getInitialResourceVersion(result)));
-      }
-
-      return doContinueListOrNext(callResponse, packet);
-    }
-
-    private String getInitialResourceVersion(V1PodList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
+  private static String getResourceVersion(KubernetesObject resource) {
+    return Optional.ofNullable(resource)
+          .map(KubernetesObject::getMetadata)
+          .map(V1ObjectMeta::getResourceVersion)
+          .orElse("");
   }
 
   private static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
@@ -1041,7 +895,7 @@ public class Main {
     @Override
     public NextAction apply(Packet packet) {
       // don't bother processing pre-existing events
-      String intialResourceVersion = getInitialResourceVersion(list);
+      String intialResourceVersion = getResourceVersion(list);
       List<String> nsPossiblyPartialList = getExistingNamespaces(list);
       
       Set<String> namespacesToStartNow;
@@ -1061,7 +915,7 @@ public class Main {
         namespacesToStartNow.retainAll(nsPossiblyPartialList);
       }
 
-      Step strategy = null;
+      Step strategy;
       if (!namespacesToStartNow.isEmpty()) {
         strategy = Step.chain(
           startNamespaces(namespacesToStartNow, isFullRecheck),
@@ -1091,10 +945,6 @@ public class Main {
       return new StartNamespacesStep(namespacesToStart, isFullRecheck);
     }
 
-    private String getInitialResourceVersion(V1NamespaceList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
-    
     private List<String> getExistingNamespaces(V1NamespaceList result) {
       List<String> namespaces = new ArrayList<>();
       if (result != null) {
@@ -1120,11 +970,11 @@ public class Main {
         allDomainNamespaces = new HashSet<>();
       }
 
-      Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredList();
+      Collection<String> configuredDomainNamespaces = selectionStrategy.getDomainNamespaces();
       if (configuredDomainNamespaces != null) {
         for (String ns : configuredDomainNamespaces) {
           if (!allDomainNamespaces.contains(ns)) {
-            try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+            try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns)) {
               LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, ns);
             }
           }
@@ -1193,7 +1043,7 @@ public class Main {
 
     @Override
     public String getOperatorNamespace() {
-      return operatorNamespace;
+      return NamespaceHelper.getOperatorNamespace();
     }
 
     @Override
@@ -1239,4 +1089,37 @@ public class Main {
       return Main.engine.getExecutor().scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
   }
+
+  public static class ConfigMapAfterStep extends Step {
+    private final List<Consumer<Packet>> processors;
+
+    /**
+     * Construct config map after step.
+     * @param ns namespace
+     */
+    ConfigMapAfterStep(String ns) {
+      this(Collections.singletonList(packet -> main.startConfigMapWatcher(ns, getInitialResourceVersion(packet))));
+    }
+
+    @Nonnull
+    private static String getInitialResourceVersion(Packet packet) {
+      return getResourceVersion(getScriptConfigMap(packet));
+    }
+
+    public ConfigMapAfterStep(List<Consumer<Packet>> processors) {
+      this.processors = processors;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      processors.forEach(p -> p.accept(packet));
+      return doNext(packet);
+    }
+
+    private static V1ConfigMap getScriptConfigMap(Packet packet) {
+      return (V1ConfigMap) packet.get(ProcessingConstants.SCRIPT_CONFIG_MAP);
+    }
+
+  }
+
 }
