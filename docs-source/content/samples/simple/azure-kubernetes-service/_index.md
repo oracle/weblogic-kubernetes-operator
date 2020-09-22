@@ -131,7 +131,7 @@ $ git checkout v3.0.0-wls-aks
 
 #### Create the AKS cluster
 
-This sample requires that you disable http-application-routing by default.  If you want to enable  http-application-routing, please follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
+This sample requires that you disable the AKS addon `http_application_routing` by default.  If you want to enable  `http_application_routing`, please follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
 
 Run the following commands to create the AKS cluster instance.
 
@@ -384,7 +384,7 @@ persistentvolumeclaim/0730-azurefile-1597391432   Bound    0730-azurefile-159739
 
 The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
-Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. The Operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Please install the Operator by running the corresponding command.
+Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Please install the operator by running the corresponding command.
 
 ```bash
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
