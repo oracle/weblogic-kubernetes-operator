@@ -2,7 +2,12 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.domainNamespaces" }}
-{{- if eq .domainNamespaceSelectionStrategy "List" }}
+{{- if (or (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") (and .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "List"))) }}
+{{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
+{{-   $key := .Release.Namespace -}}
+{{-   $ignore := set $args "domainNamespace" $key -}}
+{{-   include "operator.operatorRoleBindingNamespace" $args -}}
+{{- else if eq (default "List" .domainNamespaceSelectionStrategy) "List" }}
 {{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{-   range $key := $args.domainNamespaces -}}
 {{-     $ignore := set $args "domainNamespace" $key -}}
@@ -125,10 +130,5 @@
 {{-       include "operator.operatorRoleBindingNamespace" $args -}}
 {{-     end }}
 {{-   end }}
-{{- else if or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated") }}
-{{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
-{{-   $key := .Release.Namespace -}}
-{{-   $ignore := set $args "domainNamespace" $key -}}
-{{-   include "operator.operatorRoleBindingNamespace" $args -}}
 {{- end }}
 {{- end }}

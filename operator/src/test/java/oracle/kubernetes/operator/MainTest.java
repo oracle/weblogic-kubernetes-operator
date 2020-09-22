@@ -4,8 +4,6 @@
 package oracle.kubernetes.operator;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -19,6 +17,7 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
@@ -37,6 +36,7 @@ import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,7 +45,6 @@ public class MainTest extends ThreadFactoryTestBase {
 
   private static final String NS = "default";
   private static final String DOMAIN_UID = "domain-uid-for-testing";
-  private Method getDomainNamespaces;
 
   private static final String NAMESPACE_STATUS_MAP = "namespaceStatuses";
   private static final String NAMESPACE_STOPPING_MAP = "namespaceStoppingMap";
@@ -71,14 +70,16 @@ public class MainTest extends ThreadFactoryTestBase {
   private static final V1Namespace NAMESPACE_OTHER2
           = new V1Namespace().metadata(new V1ObjectMeta().name(NS_OTHER2));
 
+  private final Main main = new Main();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
 
   @Before
   public void setUp() throws Exception {
-    mementos.add(testSupport.install());
-    mementos.add(TuningParametersStub.install());
     mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(testSupport.install());
+    mementos.add(HelmAccessStub.install());
+    mementos.add(TuningParametersStub.install());
     mementos.add(StubWatchFactory.install());
     mementos.add(StaticStubSupport.install(Main.class, "version", new KubernetesVersion(1, 16)));
     mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "INSTANCE", this));
@@ -123,11 +124,11 @@ public class MainTest extends ThreadFactoryTestBase {
     Collection<String> domainNamespaces = Arrays.asList(NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3);
     testSupport.runSteps(Main.readExistingNamespaces(selectionStrategy, domainNamespaces, false));
 
-    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
                      hasEntry(is(NS_WEBLOGIC2), isNamespaceStarting()),
                      hasEntry(is(NS_WEBLOGIC3), isNamespaceStarting())));
+    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
   }
 
   @SuppressWarnings("unused")
@@ -163,11 +164,11 @@ public class MainTest extends ThreadFactoryTestBase {
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
     testSupport.runSteps(Main.readExistingNamespaces(selectionStrategy, null, false));
 
-    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
                      hasEntry(is(NS_WEBLOGIC2), isNamespaceStarting()),
                      hasEntry(is(NS_WEBLOGIC3), isNamespaceStarting())));
+    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
   }
 
   @Test
@@ -180,58 +181,11 @@ public class MainTest extends ThreadFactoryTestBase {
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
     testSupport.runSteps(Main.readExistingNamespaces(selectionStrategy, null, false));
 
-    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
                      hasEntry(is(NS_WEBLOGIC2), isNamespaceStarting()),
                      hasEntry(is(NS_WEBLOGIC3), isNamespaceStarting())));
-  }
-
-  @Test
-  public void getDomainNamespaces_withEmptyValue_should_return_default()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getDomainNamespaces("", NS);
-    assertTrue(namespaces.contains("default"));
-  }
-
-  @Test
-  public void getDomainNamespaces_withNonEmptyValue_should_not_return_default()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getDomainNamespaces("dev-domain", NS);
-    assertFalse(namespaces.contains("default"));
-  }
-
-  @Test
-  public void getDomainNamespaces_with_single_target_should_return_it()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getDomainNamespaces("dev-domain", NS);
-    assertTrue(namespaces.contains("dev-domain"));
-  }
-
-  @Test
-  public void getDomainNamespaces_with_multiple_targets_should_include_all()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces =
-        invoke_getDomainNamespaces("dev-domain,domain1,test-domain", NS);
-    assertTrue(namespaces.contains("dev-domain"));
-    assertTrue(namespaces.contains("domain1"));
-    assertTrue(namespaces.contains("test-domain"));
-  }
-
-  @Test
-  public void getDomainNamespaces_should_remove_leading_spaces()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getDomainNamespaces(" test-domain, dev-domain", NS);
-    assertTrue(namespaces.contains("dev-domain"));
-    assertTrue(namespaces.contains("test-domain"));
-  }
-
-  @Test
-  public void getDomainNamespaces_should_remove_trailing_spaces()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getDomainNamespaces("dev-domain ,test-domain ", NS);
-    assertTrue(namespaces.contains("dev-domain"));
-    assertTrue(namespaces.contains("test-domain"));
+    assertThat(getNamespaceStatusMap(), aMapWithSize(3));
   }
 
   private V1ObjectMeta createMetadata(DateTime creationTimestamp) {
@@ -274,14 +228,14 @@ public class MainTest extends ThreadFactoryTestBase {
     assertTrue(KubernetesUtils.isFirstNewer(domainMeta, domain2Meta));
   }
 
-  @SuppressWarnings({"unchecked", "SameParameterValue"})
-  private Collection<String> invoke_getDomainNamespaces(String tnValue, String namespace)
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    if (getDomainNamespaces == null) {
-      getDomainNamespaces =
-          Main.class.getDeclaredMethod("getDomainNamespacesList", String.class, String.class);
-      getDomainNamespaces.setAccessible(true);
-    }
-    return (Collection<String>) getDomainNamespaces.invoke(null, tnValue, namespace);
+  @Test
+  public void afterReadingExistingResourcesForNamespace_WatcheraAreDefined() {
+    testSupport.runSteps(main.readExistingResources(NS));
+
+    assertThat(main.getConfigMapWatcher(NS), notNullValue());
+    assertThat(main.getDomainWatcher(NS), notNullValue());
+    assertThat(main.getEventWatcher(NS), notNullValue());
+    assertThat(main.getPodWatcher(NS), notNullValue());
+    assertThat(main.getServiceWatcher(NS), notNullValue());
   }
 }

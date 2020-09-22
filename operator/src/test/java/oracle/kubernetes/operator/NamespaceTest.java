@@ -7,20 +7,19 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
+import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
@@ -54,8 +53,6 @@ public class NamespaceTest {
   private final WatchTuning tuning = new WatchTuning(30, 0, 5);
   private final List<Memento> mementos = new ArrayList<>();
   private final Set<String> currentNamespaces = new HashSet<>();
-  private final Map<String,String> helmValues = new HashMap<>();
-  private final Function<String,String> getTestHelmValue = helmValues::get;
   private final DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
   private Method stopNamespace = null;
 
@@ -64,7 +61,7 @@ public class NamespaceTest {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(StaticStubSupport.preserve(Main.class, "namespaceStatuses"));
     mementos.add(StaticStubSupport.preserve(Main.class, NAMESPACE_STOPPING_MAP));
-    mementos.add(StaticStubSupport.install(Main.class, "getHelmVariable", getTestHelmValue));
+    mementos.add(HelmAccessStub.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(StaticStubSupport.install(Main.class, "processor", dp));
     mementos.add(testSupport.install());
@@ -177,13 +174,13 @@ public class NamespaceTest {
 
   private void addDomainNamespace(String namespace) {
     currentNamespaces.add(namespace);
-    helmValues.put(NAMESPACES_PROPERTY, String.join(",", currentNamespaces));
+    HelmAccessStub.defineVariable(NAMESPACES_PROPERTY, String.join(",", currentNamespaces));
   }
 
   @SuppressWarnings("SameParameterValue")
   private void deleteDomainNamespace(String namespace) {
     currentNamespaces.remove(namespace);
-    helmValues.put(NAMESPACES_PROPERTY, String.join(",", currentNamespaces));
+    HelmAccessStub.defineVariable(NAMESPACES_PROPERTY, String.join(",", currentNamespaces));
   }
 
   private void cacheStartedNamespaces() throws NoSuchFieldException {
