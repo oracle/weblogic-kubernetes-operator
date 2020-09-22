@@ -5,6 +5,8 @@ package oracle.kubernetes.operator.logging;
 
 import java.util.Optional;
 
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+
 /** Necessary additional context information for Operator log messages. */
 public class LoggingContext implements AutoCloseable {
   public static final String LOGGING_CONTEXT_KEY = "LoggingContextComponent";
@@ -47,9 +49,13 @@ public class LoggingContext implements AutoCloseable {
     this.domainUid = domainUid;
     return this;
   }
-  
+
   public String domainUid() {
     return domainUid;
+  }
+
+  public LoggingContext presenceInfo(DomainPresenceInfo info) {
+    return namespace(info.getNamespace()).domainUid(info.getDomainUid());
   }
 
   public void close() {
