@@ -35,7 +35,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -90,6 +89,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -172,8 +172,7 @@ class ItMiiDomain {
     final int replicaCount = 2;
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> CommonTestUtils.createOcirRepoSecret(domainNamespace),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -258,8 +257,7 @@ class ItMiiDomain {
     final int replicaCount = 2;
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> CommonTestUtils.createOcirRepoSecret(domainNamespace1),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    createOcirRepoSecret(domainNamespace1);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -546,8 +544,7 @@ class ItMiiDomain {
     dockerLoginAndPushImageToRegistry(miiImage);
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> CommonTestUtils.createOcirRepoSecret(domainNamespace),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");

@@ -61,7 +61,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -453,7 +452,7 @@ public class ItIstioDomainInPV  {
                                     .name(domainScriptCM)))) //config map containing domain scripts
                     .imagePullSecrets(isUseSecret ? Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))
+                            .name(BASE_IMAGES_REPO_SECRET))
                         : null))));
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create Job");

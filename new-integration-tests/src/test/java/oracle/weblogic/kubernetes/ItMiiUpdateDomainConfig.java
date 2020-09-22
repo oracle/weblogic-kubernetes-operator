@@ -47,7 +47,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
@@ -199,8 +198,7 @@ class ItMiiUpdateDomainConfig {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> CommonTestUtils.createOcirRepoSecret(domainNamespace),
-          String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");

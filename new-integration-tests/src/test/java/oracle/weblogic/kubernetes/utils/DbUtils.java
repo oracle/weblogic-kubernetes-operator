@@ -39,15 +39,15 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -88,8 +88,11 @@ public class DbUtils {
     LoggingFacade logger = getLogger();
     // create pull secrets when running in non Kind Kubernetes cluster
     if (isUseSecret) {
-      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace);
+      if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+        createOcrRepoSecret(dbNamespace);
+      } else {
+        createOcirRepoSecret(dbNamespace);
+      }
     }
 
     logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}, isUseSecret: {3}",
@@ -197,7 +200,7 @@ public class DbUtils {
                     .terminationGracePeriodSeconds(30L)
                     .imagePullSecrets(isUseSecret ? Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))
+                            .name(BASE_IMAGES_REPO_SECRET))
                         : null))));
 
     logger.info("Create deployment for Oracle DB in namespace {0}",
@@ -297,7 +300,7 @@ public class DbUtils {
                     .addArgsItem("infinity")))
             .imagePullSecrets(isUseSecret ? Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))
+                            .name(BASE_IMAGES_REPO_SECRET))
                         : null));
 
     V1Pod pvPod = Kubernetes.createPod(dbNamespace, podBody);

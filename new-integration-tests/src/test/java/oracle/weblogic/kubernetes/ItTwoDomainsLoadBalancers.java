@@ -94,7 +94,6 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
@@ -855,7 +854,7 @@ public class ItTwoDomainsLoadBalancers {
                                     .name(domainScriptConfigMapName))))  //ConfigMap containing domain scripts
                     .imagePullSecrets(isUseSecret ? Collections.singletonList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))
+                            .name(BASE_IMAGES_REPO_SECRET))
                         : null))));
 
     assertNotNull(jobBody.getMetadata());

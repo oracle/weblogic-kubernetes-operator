@@ -57,7 +57,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -631,7 +630,7 @@ class ItParameterizedDomain {
 
     // create docker registry secret to pull the image from registry
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    CommonTestUtils.createOcirRepoSecret(domainNamespace);
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
@@ -1160,7 +1159,7 @@ class ItParameterizedDomain {
     dockerLoginAndPushImageToRegistry(domainInImageWithWDTImage);
 
     // Create the repo secret to pull the image
-    CommonTestUtils.createOcirRepoSecret(domainNamespace);
+    createOcirRepoSecret(domainNamespace);
 
     // create the domain custom resource
     Domain domain = new Domain()
