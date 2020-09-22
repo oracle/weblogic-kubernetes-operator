@@ -197,6 +197,8 @@ class ItSecureAdminNodePort {
   public void testVerifyAdminPortService() {
     int sslNodePort = getServiceNodePort(
          domainNamespace, adminServerPodName + "-external", "default-admin");
+    assertTrue(sslNodePort != -1,
+          "Could not get the default-admin external service node port");    
     logger.info("Found the administration service nodePort {0}", sslNodePort);
     String curlCmd = "curl -sk --show-error --noproxy '*' "
         + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
@@ -207,6 +209,8 @@ class ItSecureAdminNodePort {
 
     int nodePort = getServiceNodePort(
            domainNamespace, adminServerPodName + "-external", "default");
+    assertTrue(nodePort != -1,
+          "Could not get the default external service node port");    
     logger.info("Found the default service nodePort {0}", nodePort);
     curlCmd = "curl -s --show-error --noproxy '*' "
         + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
