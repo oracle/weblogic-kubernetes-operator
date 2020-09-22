@@ -51,6 +51,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_N
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 public class ConfigMapHelper {
 
@@ -67,12 +68,11 @@ public class ConfigMapHelper {
   /**
    * Factory for {@link Step} that creates config map containing scripts.
    *
-   * @param operatorNamespace the operator's namespace
    * @param domainNamespace the domain's namespace
    * @return Step for creating config map containing scripts
    */
-  public static Step createScriptConfigMapStep(String operatorNamespace, String domainNamespace) {
-    return new ScriptConfigMapStep(operatorNamespace, domainNamespace);
+  public static Step createScriptConfigMapStep(String domainNamespace) {
+    return new ScriptConfigMapStep(domainNamespace);
   }
 
   static FileGroupReader getScriptReader() {
@@ -166,8 +166,8 @@ public class ConfigMapHelper {
   static class ScriptConfigMapStep extends Step {
     final ConfigMapContext context;
 
-    ScriptConfigMapStep(String operatorNamespace, String domainNamespace) {
-      context = new ScriptConfigMapContext(this, operatorNamespace, domainNamespace);
+    ScriptConfigMapStep(String domainNamespace) {
+      context = new ScriptConfigMapContext(this, domainNamespace);
     }
 
     @Override
@@ -178,10 +178,10 @@ public class ConfigMapHelper {
 
   static class ScriptConfigMapContext extends ConfigMapContext {
 
-    ScriptConfigMapContext(Step conflictStep, String operatorNamespace, String domainNamespace) {
+    ScriptConfigMapContext(Step conflictStep, String domainNamespace) {
       super(conflictStep, SCRIPT_CONFIG_MAP_NAME, domainNamespace, loadScriptsFromClasspath(domainNamespace), null);
 
-      addLabel(LabelConstants.OPERATORNAME_LABEL, operatorNamespace);
+      addLabel(LabelConstants.OPERATORNAME_LABEL, getOperatorNamespace());
     }
 
     private static synchronized Map<String, String> loadScriptsFromClasspath(String domainNamespace) {
