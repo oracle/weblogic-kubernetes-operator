@@ -27,7 +27,9 @@ public class OperatorParams {
   private static final String ELASTICSEARCH_PORT = "elasticSearchPort";
   private static final String JAVA_LOGGING_LEVEL = "javaLoggingLevel";
   private static final String LOGSTASH_IMAGE = "logStashImage";
-
+  private static final String DOMAIN_NS_SELECTOR_STRATEGY = "domainNamespaceSelectionStrategy";
+  private static final String DOMAIN_NS_LABEL_SELECTOR = "domainNamespaceLabelSelector";
+  private static final String DOMAIN_NS_REG_EXP = "domainNamespaceRegExp";
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
   private String image;
@@ -43,6 +45,9 @@ public class OperatorParams {
   private int elasticSearchPort;
   private String javaLoggingLevel;
   private String logStashImage;
+  private String domainNamespaceSelectionStrategy;
+  private String domainNamespaceLabelSelector;
+  private String domainNamespaceRegExp;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -109,6 +114,21 @@ public class OperatorParams {
     return this;
   }
 
+  public OperatorParams domainNamespaceLabelSelector(String domainNamespaceLabelSelector) {
+    this.domainNamespaceLabelSelector = domainNamespaceLabelSelector;
+    return this;
+  }
+
+  public OperatorParams domainNamespaceSelectionStrategy(String domainNamespaceSelectionStrategy) {
+    this.domainNamespaceSelectionStrategy = domainNamespaceSelectionStrategy;
+    return this;
+  }
+
+  public OperatorParams domainNamespaceRegExp(String domainNamespaceRegExp) {
+    this.domainNamespaceRegExp = domainNamespaceRegExp;
+    return this;
+  }
+
   public OperatorParams logStashImage(String logStashImage) {
     this.logStashImage = logStashImage;
     return this;
@@ -150,6 +170,15 @@ public class OperatorParams {
     }
     if (logStashImage != null) {
       values.put(LOGSTASH_IMAGE, logStashImage);
+    }
+    if (domainNamespaceLabelSelector != null) {
+      values.put(DOMAIN_NS_LABEL_SELECTOR, domainNamespaceLabelSelector);
+    }
+    if (domainNamespaceSelectionStrategy != null) {
+      values.put(DOMAIN_NS_SELECTOR_STRATEGY, domainNamespaceSelectionStrategy);
+    }
+    if (domainNamespaceRegExp != null) {
+      values.put(DOMAIN_NS_REG_EXP, domainNamespaceRegExp);
     }
     values.values().removeIf(Objects::isNull);
     return values;
