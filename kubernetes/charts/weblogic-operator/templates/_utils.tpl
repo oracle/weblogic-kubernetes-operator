@@ -458,3 +458,18 @@ Verify that a list of strings can not be defined if another string is already de
 {{- define "utils.mutexString" -}}
 {{- include "utils.mutexValue" (append . "string") -}}
 {{- end -}}
+
+{{/*
+Verify that a Kubernetes resource exists in a given namespace
+*/}}
+{{- define "utils.verifyK8SResource" -}}
+{{- $scope := index . 0 -}}
+{{- $name := index . 1 -}}
+{{- $type := index . 2 -}}
+{{- $namespace := index . 3 -}}
+{{- $found := (lookup "v1" $type $namespace $name) }}
+{{- if not $found }}
+{{-   $errorMsg := cat $type $name " does not exist in namespace " $namespace -}}
+{{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
+{{- end -}}
+{{- end -}}

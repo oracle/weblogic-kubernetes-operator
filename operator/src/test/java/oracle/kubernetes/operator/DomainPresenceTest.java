@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
+import java.util.stream.IntStream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -24,6 +25,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.OperatorServiceType;
+import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -36,9 +38,13 @@ import org.junit.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
+import static oracle.kubernetes.operator.helpers.TuningParametersStub.CALL_REQUEST_LIMIT;
 import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -48,6 +54,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private static final String NS = "default";
   private static final String UID = "UID1";
+  private static final int LAST_DOMAIN_NUM = 2 * CALL_REQUEST_LIMIT - 1;
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -67,6 +74,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
     mementos.add(StaticStubSupport.install(Main.class, "engine", testSupport.getEngine()));
     mementos.add(NoopWatcherStarter.install());
+    mementos.add(TuningParametersStub.install());
 
     namespaceStoppingMap = getStoppingVariable();
     namespaceStoppingMap.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
@@ -95,8 +103,21 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     assertThat(dp.getDomainPresenceInfos(), is(anEmptyMap()));
   }
 
+  @Test
+  public void whenPreexistingDomainExistsWithoutPodsOrServices_addToPresenceMap() {
+    Domain domain = createDomain(UID, NS);
+    testSupport.defineResources(domain);
+
+    DomainProcessorStub dp = createStub(DomainProcessorStub.class);
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+
+    readExistingResources();
+
+    assertThat(getDomainPresenceInfo(dp, UID).getDomain(), equalTo(domain));
+  }
+
   private void readExistingResources() {
-    testSupport.runStepsToCompletion(Main.readExistingResources("operator", NS));
+    testSupport.runSteps(Main.readExistingResources(NS));
   }
 
   private void addDomainResource(String uid, String namespace) {
@@ -109,6 +130,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withMetadata(
             new V1ObjectMeta()
                 .namespace(namespace)
+                .name(uid)
                 .resourceVersion("1")
                 .creationTimestamp(DateTime.now()));
   }
@@ -223,7 +245,29 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
     readExistingResources();
 
-    assertThat(testSupport.getResources(KubernetesTestSupport.SERVICE), empty());
+    assertThat(testSupport.getResources(SERVICE), empty());
+  }
+
+  @Test
+  public void dontRemoveNonStrandedResources() {
+    createDomains(LAST_DOMAIN_NUM);
+    V1Service service1 = createServerService("UID1", NS, "admin");
+    V1Service service2 = createServerService("UID" + LAST_DOMAIN_NUM, NS, "admin");
+    testSupport.defineResources(service1, service2);
+
+    namespaceStoppingMap.get(NS).set(false);
+
+    readExistingResources();
+
+    assertThat(testSupport.getResources(SERVICE), both(hasItem(service1)).and(hasItem(service2)));
+  }
+
+  private void createDomains(int lastDomainNum) {
+    IntStream.rangeClosed(1, lastDomainNum)
+          .boxed()
+          .map(i -> "UID" + i)
+          .map(uid -> createDomain(uid, NS))
+          .forEach(testSupport::defineResources);
   }
 
   public abstract static class DomainProcessorStub implements DomainProcessor {
