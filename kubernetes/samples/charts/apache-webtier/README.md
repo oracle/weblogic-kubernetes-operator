@@ -2,7 +2,7 @@
 
 This Helm chart bootstraps an Apache HTTP Server deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
  
-The chart depends on the Docker image for the Apache HTTP Server with Oracle WebLogic Server Proxy Plugin (supported verions, 12.2.1.3.0 and 12.2.1.4.0). See the details in [Apache HTTP Server with Oracle WebLogic Server Proxy Plugin on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache).
+The chart depends on the Docker image for the Apache HTTP Server with Oracle WebLogic Server Proxy Plugin (supported versions 12.2.1.3.0 and 12.2.1.4.0). See the details in [Apache HTTP Server with Oracle WebLogic Server Proxy Plugin on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache).
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ The following table lists the configurable parameters of the Apache webtier char
 | -----------------------------------| ------------------------------------------------------------- | ----------------------|
 | `image`                            | Apache webtier Docker image                                   | `store/oracle/apache:12.2.1.3` |
 | `imagePullPolicy`                  | Image pull policy for the Apache webtier Docker image         | `IfNotPresent`        |
-| `imagePullSecrets`                 | Image pull Secrets required to access the registry containing the apache webtier Docker image| ``|
+| `imagePullSecrets`                 | Image pull Secrets required to access the registry containing the Apache webtier Docker image| ``|
 | `persistentVolumeClaimName`        | Persistence Volume Claim name Apache webtier                  | ``                    |
 | `createRBAC`                       | Boolean indicating if RBAC resources should be created        | `true`                |
 | `httpNodePort`                     | Node port to expose for HTTP access                           | `30305`               |
@@ -67,13 +67,13 @@ installing the chart. For example:
 $ helm install my-release --values values.yaml apache-webtier
 ```
 ## useNonPriviledgedPorts
-By default, the chart will install the Apache webtier on PriviledgedPort i.e port 80. You need to have the flag `useNonPriviledgedPorts=true` to enable the Apache webtier to listen on port `8080`
+By default, the chart will install the Apache webtier on PriviledgedPort (port 80). Set the flag `useNonPriviledgedPorts=true` to enable the Apache webtier to listen on port `8080`
 
 
 ## RBAC
 By default, the chart will install the recommended RBAC roles and role bindings.
 
-You need to have the flag `--authorization-mode=RBAC` on the API server. See the following document for how to enable [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).
+Set the flag `--authorization-mode=RBAC` on the API server. See the following document for how to enable [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).
 
 To determine if your cluster supports RBAC, run the following command:
 

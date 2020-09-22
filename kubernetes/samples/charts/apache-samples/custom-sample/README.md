@@ -78,7 +78,7 @@ PathTrim /weblogic2
 </Location>
 ```
 
-* Create  PV / PVC (pv-claim-name) that can be used to place the `custom_mod_wl_apache.conf`.  Refer to the [Sample for creating a PV or PVC](/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/README.md).
+* Create a PV / PVC (pv-claim-name) that can be used to store the `custom_mod_wl_apache.conf`. Refer to the [Sample for creating a PV or PVC](/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/README.md).
 
 ## 5. Prepare your own certificate and private key
 In production, Oracle strongly recommends that you provide your own certificates. Run the following commands to generate your own certificate and private key using `openssl`.
