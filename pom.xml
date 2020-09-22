@@ -12,7 +12,6 @@
   <modules>
     <module>operator</module>
     <module>swagger</module>
-    <module>integration-tests</module>
     <module>new-integration-tests</module>
     <module>kubernetes</module>
     <module>json-schema-maven-plugin</module>
