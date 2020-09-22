@@ -74,12 +74,14 @@ import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
@@ -117,6 +119,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVer
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
@@ -732,7 +735,11 @@ class ItParameterizedDomain {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     if (isUseSecret) {
-      createOcrRepoSecret(domainNamespace);
+      if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+        createOcrRepoSecret(domainNamespace);
+      } else {
+        createOcirRepoSecret(domainNamespace);
+      }
     }
 
     // create WebLogic domain credential secret
@@ -824,7 +831,7 @@ class ItParameterizedDomain {
             .imagePullPolicy("IfNotPresent")
             .imagePullSecrets(isUseSecret ? Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(OCR_SECRET_NAME))
+                    .name(BASE_IMAGES_REPO_SECRET))
                 : null)
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)

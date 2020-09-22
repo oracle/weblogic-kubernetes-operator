@@ -17,8 +17,6 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
@@ -28,18 +26,17 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyDefaultTokenExists;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
@@ -221,7 +218,7 @@ public class BuildApplication {
                 .addArgsItem("600")))
             .imagePullSecrets(isUseSecret
                 ? Arrays.asList(new V1LocalObjectReference()
-                .name(OCR_SECRET_NAME))
+                .name(BASE_IMAGES_REPO_SECRET))
                 : null)) // the persistent volume claim used by the test
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
@@ -250,26 +247,17 @@ public class BuildApplication {
     final LoggingFacade logger = getLogger();
     //determine if the tests are running in Kind cluster.
     //if true use images from Kind registry
-    String ocrImage = WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
+    String baseImage = WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
     if (KIND_REPO != null) {
-      image = KIND_REPO + ocrImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      image = KIND_REPO + baseImage.substring(TestConstants.BASE_IMAGES_REPO.length() + 1);
       isUseSecret = false;
     } else {
       // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-      image = ocrImage;
-      boolean secretExists = false;
-      V1SecretList listSecrets = listSecrets(namespace);
-      if (null != listSecrets) {
-        for (V1Secret item : listSecrets.getItems()) {
-          if (item.getMetadata().getName().equals(OCR_SECRET_NAME)) {
-            secretExists = true;
-            break;
-          }
-        }
-      }
-      if (!secretExists) {
-        CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-            OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
+      image = baseImage;
+      if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+        createOcrRepoSecret(namespace);
+      } else {
+        createOcirRepoSecret(namespace);
       }
       isUseSecret = true;
     }
