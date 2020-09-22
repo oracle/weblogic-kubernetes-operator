@@ -12,7 +12,7 @@
   <modules>
     <module>operator</module>
     <module>swagger</module>
-    <module>new-integration-tests</module>
+    <module>integration-tests</module>
     <module>kubernetes</module>
     <module>json-schema-maven-plugin</module>
     <module>json-schema</module>
