@@ -75,7 +75,8 @@ public class CommonMiiTestUtils {
         adminSecretName,
         REPO_SECRET_NAME,
         encryptionSecretName,
-        replicaCount);
+        replicaCount,
+        "cluster-1");
 
     createDomainAndVerify(domain, domainNamespace);
 
@@ -115,14 +116,16 @@ public class CommonMiiTestUtils {
    * @param replicaCount number of managed servers to start
    * @return domain object of the domain resource
    */
-  private static Domain createDomainResource(
+  public static Domain createDomainResource(
       String domainResourceName,
       String domNamespace,
       String imageName,
       String adminSecretName,
       String repoSecretName,
       String encryptionSecretName,
-      int replicaCount) {
+      int replicaCount,
+      String clusterName) {
+
     // create the domain CR
     return new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -155,7 +158,7 @@ public class CommonMiiTestUtils {
                         .channelName("default")
                         .nodePort(0))))
             .addClustersItem(new oracle.weblogic.domain.Cluster()
-                .clusterName("cluster-1")
+                .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING"))
             .configuration(new oracle.weblogic.domain.Configuration()
