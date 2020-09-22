@@ -1524,7 +1524,7 @@ public class ItTwoDomainsLoadBalancers {
 
   private static Callable<Boolean> pullImageFromOcirAndPushToKind(String apacheImage) {
     return (() -> {
-      kindRepoApacheImage = KIND_REPO + apacheImage.substring(REPO_DEFAULT.length());
+      kindRepoApacheImage = KIND_REPO + apacheImage.substring(REPO_DEFAULT.length() + 1);
       logger.info("pulling image {0} from OCIR, tag it as image {1} and push to KIND repo",
           apacheImage, kindRepoApacheImage);
       return dockerPull(apacheImage) && dockerTag(apacheImage, kindRepoApacheImage) && dockerPush(kindRepoApacheImage);
