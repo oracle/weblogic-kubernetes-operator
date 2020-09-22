@@ -8,6 +8,7 @@
 {{- $ignore := include "utils.verifyResourceName" (list $scope "Namespace") -}}
 {{- $ignore := include "utils.popValidationContext" $scope -}}
 {{- $ignore := include "utils.verifyString" (list $scope "serviceAccount") -}}
+{{- $ignore := include "utils.verifyK8SResource" (list $scope .serviceAccount "ServiceAccount" .Release.Namespace) -}}
 {{- $ignore := include "utils.verifyString" (list $scope "image") -}}
 {{- $ignore := include "utils.verifyEnum" (list $scope "imagePullPolicy" (list "Always" "IfNotPresent" "Never")) -}}
 {{- $ignore := include "utils.verifyOptionalDictionaryList" (list $scope "imagePullSecrets") -}}
