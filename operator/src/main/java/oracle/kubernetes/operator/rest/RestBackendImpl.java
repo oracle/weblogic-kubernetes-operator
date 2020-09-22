@@ -43,6 +43,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.INVALID_DOMAIN_UID;
 
 /**
@@ -135,7 +136,7 @@ public class RestBackendImpl implements RestBackend {
   private V1UserInfo authenticate(String accessToken) {
     LOGGER.entering();
     V1TokenReviewStatus status = atn.check(principal, accessToken,
-        Main.isDedicated() ? Main.getOperatorNamespace() : null);
+        Main.isDedicated() ? getOperatorNamespace() : null);
     if (status == null) {
       throw new AssertionError(LOGGER.formatMessage(MessageKeys.NULL_TOKEN_REVIEW_STATUS));
     }
