@@ -44,6 +44,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ServerDownIteratorStepTest {
@@ -220,16 +221,16 @@ public class ServerDownIteratorStepTest {
   public void whenMaxConcurrentShutdownSet_limitNumberOfServersShuttingDownAtOnce() {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(2).withReplicas(1);
     addWlsCluster(CLUSTER, PORT, MS1, MS2, MS3, MS4);
-    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2,MS3,MS4);
+    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2, MS3, MS4);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
     createShutdownInfos()
-            .forClusteredServers(CLUSTER,MS1, MS2, MS3, MS4)
+            .forClusteredServers(CLUSTER, MS1, MS2, MS3, MS4)
             .shutdown();
 
-    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS3, MS4));
-    testSupport.setTime(10, TimeUnit.SECONDS);
-    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS2, MS3, MS4));
+    assertThat(serverPodsBeingDeleted(), hasSize(2));
+    testSupport.setTime(5, TimeUnit.SECONDS);
+    assertThat(serverPodsBeingDeleted(), hasSize(4));
   }
 
   @Test
@@ -238,12 +239,12 @@ public class ServerDownIteratorStepTest {
     configureCluster(CLUSTER2).withMaxConcurrentShutdown(1).withReplicas(1);
     addWlsCluster(CLUSTER, PORT, MS1, MS2, MS3);
     addWlsCluster(CLUSTER2, PORT, MS4, MS5, MS6);
-    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2,MS3,MS4,MS5,MS6);
+    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2, MS3, MS4, MS5, MS6);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
     createShutdownInfos()
-            .forClusteredServers(CLUSTER,MS1, MS2, MS3)
-            .forClusteredServers(CLUSTER2,MS4, MS5, MS6)
+            .forClusteredServers(CLUSTER, MS1, MS2, MS3)
+            .forClusteredServers(CLUSTER2, MS4, MS5, MS6)
             .shutdown();
 
     assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS1, MS2, MS3, MS6));

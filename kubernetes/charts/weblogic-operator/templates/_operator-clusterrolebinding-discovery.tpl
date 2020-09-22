@@ -4,7 +4,7 @@
 {{- define "operator.clusterRoleBindingDiscovery" }}
 ---
 apiVersion: "rbac.authorization.k8s.io/v1"
-{{- if (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
+{{- if (or (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") (and .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "List"))) }}
 kind: "RoleBinding"
 {{- else }}
 kind: "ClusterRoleBinding"
@@ -12,7 +12,7 @@ kind: "ClusterRoleBinding"
 metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
-  {{- if (or .dedicated (eq .domainNamespaceSelectionStrategy "Dedicated")) }}
+  {{- if (or (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") (and .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "List"))) }}
   name: "weblogic-operator-rolebinding-discovery"
   namespace: {{ .Release.Namespace | quote }}
   {{- else }}

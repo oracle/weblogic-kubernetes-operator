@@ -62,7 +62,7 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   // ------------------------ data methods ----------------------------
 
-  private V1Job getJobModel() {
+  protected V1Job getJobModel() {
     return jobModel;
   }
 
