@@ -92,7 +92,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * This tests in this class verify creating a domain from model and application archive files stored in the persistent
+ * This test class verify creating a domain from model and application archive files stored in the persistent
  * volume.
  */
 @DisplayName("Verify MII domain can be created from model file in PV location")
@@ -131,12 +131,10 @@ public class ItMiiDomainModelInPV {
   /**
    * 1. Get namespaces for operator and WebLogic domain.
    * 2. Create operator.
-   * 3. Build a MII with no domain and push it
-   * to repository.
+   * 3. Build a MII with no domain and push it to repository.
    * 4. Create WebLogic credential and model encryption secrets
-   * 5. Create PV and PVC to store model and
-   * application files.
-   * 6. Copy the files to model and application files to PV.
+   * 5. Create PV and PVC to store model and application files.
+   * 6. Copy the model file and application files to PV.
    *
    * @param namespaces list of namespaces injected by JUnit
    */
@@ -228,7 +226,7 @@ public class ItMiiDomainModelInPV {
    */
   @Test
   @DisplayName("Create MII domain with model and application file from PV")
-  public void testCreateDomainWithModelInPV() {
+  public void testMiiDomainWithModelAndApplicationInPV() {
 
     // create domain custom resource and verify all the pods came up
     Domain domain = buildDomainResource();
@@ -352,7 +350,7 @@ public class ItMiiDomainModelInPV {
         });
   }
 
-  // setup a temporary to access PV location to store model and application files
+  // setup a temporary pod to access PV location to store model and application files
   private static V1Pod setupPVPod(String namespace) {
 
     // Create the temporary pod with oraclelinux image
