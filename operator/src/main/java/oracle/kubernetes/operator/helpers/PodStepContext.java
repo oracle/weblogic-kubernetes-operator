@@ -30,6 +30,7 @@ import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
+import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
@@ -411,7 +412,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return new CreateResponseStep(next);
   }
 
-  private ResponseStep<V1Pod> deleteResponse(Step next) {
+  private ResponseStep<V1Status> deleteResponse(Step next) {
     return new DeleteResponseStep(next);
   }
 
@@ -874,7 +875,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
   }
 
-  private class DeleteResponseStep extends ResponseStep<V1Pod> {
+  private class DeleteResponseStep extends ResponseStep<V1Status> {
     DeleteResponseStep(Step next) {
       super(next);
     }
@@ -884,7 +885,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponses) {
+    public NextAction onFailure(Packet packet, CallResponse<V1Status> callResponses) {
       if (callResponses.getStatusCode() == CallBuilder.NOT_FOUND) {
         return onSuccess(packet, callResponses);
       }
@@ -892,7 +893,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponses) {
+    public NextAction onSuccess(Packet packet, CallResponse<V1Status> callResponses) {
       return doNext(replacePod(getNext()), packet);
     }
   }
