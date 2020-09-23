@@ -949,7 +949,7 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
    $ kubectl describe domain domain1
    ```
 
-   Make sure the status of cluster-1 is `ServersReady` and `Available`. The status of admin-server, managed-server1 and managed-server2 should be `RUNNING`. Otherwise, the cluster is likely still in the process of being fully ready.
+   Make sure the status of cluster-1 is `ServersReady` and `Available`. The status of admin-server, managed-server1 and managed-server2 should be `RUNNING`. Otherwise, the cluster is likely still in the process of becoming fully ready.
 
    ```yaml
    Status:
