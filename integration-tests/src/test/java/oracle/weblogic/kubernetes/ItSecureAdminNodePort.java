@@ -28,9 +28,7 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -39,19 +37,15 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOCRRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
@@ -67,7 +61,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * a channel called `default-admin` is added to domain resource and 
  * `AdministrationPortEnabled` is set to true.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test secure nodePort service through admin port and default-admin channel in a mii domain")
 @IntegrationTest
 class ItSecureAdminNodePort {
@@ -75,7 +68,6 @@ class ItSecureAdminNodePort {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static String wlsBaseImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
   private static boolean isUseSecret = true;
   private static int replicaCount = 2;
   private static final String domainUid = "mii-default-admin";
@@ -138,17 +130,6 @@ class ItSecureAdminNodePort {
         + "  AdministrationPort: '9010'\n";
 
     createModelConfigMap(configMapName, yamlString);
-
-    //determine if the tests are running in Kind cluster. if true use images from Kind registry
-    if (KIND_REPO != null) {
-      String kindRepoImage = KIND_REPO + wlsBaseImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      logger.info("Using image {0}", kindRepoImage);
-      wlsBaseImage = kindRepoImage;
-      isUseSecret = false;
-    } else {
-      // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-      createOCRRepoSecret(domainNamespace);
-    }
 
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
