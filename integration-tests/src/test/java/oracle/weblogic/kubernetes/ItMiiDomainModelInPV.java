@@ -209,6 +209,8 @@ public class ItMiiDomainModelInPV {
 
   /**
    * Test domain creation from model file stored in PV.
+   * https://oracle.github.io/weblogic-kubernetes-operator
+   *       /userguide/managing-domains/domain-resource/#domain-spec-elements
    * 1. Create the domain custom resource using mii with no domain and specifying a PV location for modelHome
    * 2. Verify the domain creation is successful and application is accessible.
    */
