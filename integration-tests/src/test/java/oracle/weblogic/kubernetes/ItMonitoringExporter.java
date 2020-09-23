@@ -705,6 +705,15 @@ class ItMonitoringExporter {
   @AfterAll
   public void tearDownAll() {
 
+    // uninstall NGINX release
+    logger.info("Uninstalling NGINX");
+    if (nginxHelmParams != null) {
+      assertThat(uninstallNginx(nginxHelmParams))
+          .as("Test uninstallNginx1 returns true")
+          .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
+    }
+
     // shutdown domain1
     logger.info("Shutting down domain1");
     assertTrue(shutdownDomain(domain1Uid, domain1Namespace),
@@ -761,14 +770,6 @@ class ItMonitoringExporter {
       deleteImage(webhookImage);
     }
     deleteMonitoringExporterTempDir();
-
-    // uninstall NGINX release
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
-          .as("Test uninstallNginx1 returns true")
-          .withFailMessage("uninstallNginx() did not return true")
-          .isTrue();
-    }
   }
 
   /**
