@@ -119,8 +119,12 @@ public class DomainPresenceInfo {
     return getServers().values().stream()
           .map(ServerKubernetesObjects::getPod)
           .map(AtomicReference::get)
-          .filter(PodHelper::isNotDeleting)
+          .filter(this::isNotDeletingPod)
           .filter(p -> hasClusterNameOrNull(p, clusterName));
+  }
+
+  boolean isNotDeletingPod(@Nullable V1Pod pod) {
+    return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getDeletionTimestamp).isEmpty();
   }
 
   public void setServerService(String serverName, V1Service service) {

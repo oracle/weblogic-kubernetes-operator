@@ -103,15 +103,15 @@ public class PodHelper {
   }
 
   private static String getClusterName(@Nullable V1Pod pod) {
-    return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getLabels).map(PodHelper::getClusterName).orElse(null);
+    return Optional.ofNullable(pod)
+          .map(V1Pod::getMetadata)
+          .map(V1ObjectMeta::getLabels)
+          .map(PodHelper::getClusterName)
+          .orElse(null);
   }
 
   private static String getClusterName(@Nonnull Map<String,String> labels) {
     return labels.get(CLUSTERNAME_LABEL);
-  }
-
-  static boolean isNotDeleting(@Nullable V1Pod pod) {
-    return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getDeletionTimestamp).isEmpty();
   }
 
   /**
@@ -125,14 +125,14 @@ public class PodHelper {
           .map(V1PodStatus::getConditions)
           .orElse(Collections.emptyList())
           .stream()
-          .anyMatch(PodHelper::isReady);
+          .anyMatch(PodHelper::isReadyCondition);
   }
 
   private static boolean isRunning(@Nonnull V1PodStatus status) {
     return "Running".equals(status.getPhase());
   }
 
-  private static boolean isReady(V1PodCondition condition) {
+  private static boolean isReadyCondition(V1PodCondition condition) {
     return "Ready".equals(condition.getType()) && "True".equals(condition.getStatus());
   }
 
@@ -587,7 +587,6 @@ public class PodHelper {
 
   /* Retry strategy for delete pod which will not perform any retries */
   private static final class DeletePodRetryStrategy implements RetryStrategy {
-    private long retryCount = 0;
     private final Step retryStep;
 
     DeletePodRetryStrategy(Step retryStep) {
