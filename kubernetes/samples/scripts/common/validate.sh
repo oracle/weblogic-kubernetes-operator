@@ -337,13 +337,13 @@ function validateDomainSecret {
   failIfValidationErrors
 
   # Verify the secret contains a username
-  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep username: | wc | awk ' { print $1; }'`
+  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}' | tr -d '"' | grep username: | wc | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
     validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a username"
   fi
 
   # Verify the secret contains a password
-  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep password: | wc | awk ' { print $1; }'`
+  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}' | tr -d '"'| grep password: | wc | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
     validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a password"
   fi

@@ -364,20 +364,10 @@ function createFileShare {
 }
 
 function installWebLogicOperator {
-    # Helm
-    helmVersion=$(echo `helm version` | grep -Po '(?<=Version:\"v)\d')
-    if [ $helmVersion -lt 3 ]
-    then 
-        helm init
-        helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
-        helm repo update
-        helm install weblogic-operator/weblogic-operator --name weblogic-operator --version "3.0.0"
-    else
-        # For Helm 3.x
-        helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
-        helm repo update
-        helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.0.0"
-    fi
+    echo `helm version`
+    helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
+    helm repo update
+    helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.0.0"
 }
 
 function createWebLogicDomain {
@@ -409,7 +399,7 @@ function waitForJobComplete {
     svcState="completed"
     attempts=$((attempts + 1))
     echo Waiting for job completed...${attempts}
-    sleep 1m
+    sleep 120
 
     # If the job is completed, there should have the following services created,
     #    ${domainUID}-${adminServerName}, e.g. domain1-admin-server
