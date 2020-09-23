@@ -45,6 +45,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -186,10 +187,9 @@ public class ManagedServerUpIteratorStepTest {
   @Test
   public void withConcurrencyOf1_bothClusteredServersScheduleAndStartSequentially() {
     configureCluster(CLUSTER).withMaxConcurrentStartup(1);
-    //addWlsCluster(CLUSTER, 8001, MS1, MS2);
     addWlsCluster(CLUSTER, 8001, MS1, MS2);
 
-    invokeStepWithServerStartupInfos(createServerStartupInfosForCluster(CLUSTER,MS1, MS2));
+    invokeStepWithServerStartupInfos(createServerStartupInfosForCluster(CLUSTER, MS1, MS2));
 
     assertThat(MS1 + " pod", domainPresenceInfo.getServerPod(MS1), notNullValue());
     schedulePod(MS1, "Node1");
@@ -292,6 +292,27 @@ public class ManagedServerUpIteratorStepTest {
     testSupport.setTime(200, TimeUnit.MILLISECONDS);
     assertThat(MS3 + " pod", domainPresenceInfo.getServerPod(MS3), notNullValue());
   }
+
+  @Test
+  public void whenClusteredServersAlreadyScheduled_canStartNonclusteredServer() {
+    domain.getSpec().setMaxClusterConcurrentStartup(1);
+    Arrays.asList(MS1, MS2).forEach(serverName -> addScheduledClusteredServer(domainPresenceInfo, serverName));
+
+    addWlsCluster(CLUSTER, PORT, MS1, MS2);
+    addWlsServer(MS3);
+
+    invokeStepWithServerStartupInfos(createServerStartupInfos(MS3));
+
+    assertThat(MS3 + " pod", domainPresenceInfo.getServerPod(MS3), notNullValue());
+  }
+
+  private void addScheduledClusteredServer(DomainPresenceInfo info, String serverName) {
+    domainPresenceInfo.setServerPod(serverName,
+          new V1Pod().metadata(
+                withNames(new V1ObjectMeta().namespace(NS).putLabelsItem(CLUSTERNAME_LABEL, CLUSTER), serverName))
+                      .spec(new V1PodSpec().nodeName("scheduled")));
+  }
+
 
   @NotNull
   private Collection<ServerStartupInfo> createServerStartupInfosForCluster(String clusterName, String... servers) {

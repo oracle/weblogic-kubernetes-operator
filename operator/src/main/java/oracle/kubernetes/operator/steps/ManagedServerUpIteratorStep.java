@@ -165,7 +165,7 @@ public class ManagedServerUpIteratorStep extends Step {
 
       if (startDetailsQueue.isEmpty()) {
         return doNext(new ManagedServerUpAfterStep(getNext()), packet);
-      } else if (serverAvailableToStart(packet.getSpi(DomainPresenceInfo.class))) {
+      } else if (hasServerAvailableToStart(packet.getSpi(DomainPresenceInfo.class))) {
         numStarted.getAndIncrement();
         return doForkJoin(this, packet, Collections.singletonList(startDetailsQueue.poll()));
       } else {
@@ -173,12 +173,12 @@ public class ManagedServerUpIteratorStep extends Step {
       }
     }
 
-    private boolean serverAvailableToStart(DomainPresenceInfo info) {
-      return ((numStarted.get() < PodHelper.getScheduledPods(info, clusterName).size())
-              && (canStartConcurrently(PodHelper.getReadyPods(info, clusterName).size())));
+    private boolean hasServerAvailableToStart(DomainPresenceInfo info) {
+      return ((numStarted.get() < info.getNumScheduledServers(clusterName))
+              && (canStartConcurrently(info.getNumReadyServers(clusterName))));
     }
 
-    private boolean canStartConcurrently(int numReady) {
+    private boolean canStartConcurrently(long numReady) {
       return ((this.maxConcurrency > 0) && (numStarted.get() < (this.maxConcurrency + numReady - 1)))
           || (this.maxConcurrency == 0);
     }
