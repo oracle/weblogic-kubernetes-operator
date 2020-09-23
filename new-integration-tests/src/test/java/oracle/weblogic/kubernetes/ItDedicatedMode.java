@@ -72,6 +72,9 @@ class ItDedicatedMode {
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
 
+  private static final String CRD_V16 = "domain-crd.yaml";
+  private static final String CRD_V15 = "domain-v1beta1-crd.yaml";
+
   // domain constants
   private final String domainUid = "domain1";
   private final String clusterName = "cluster-1";
@@ -87,7 +90,7 @@ class ItDedicatedMode {
   private static LoggingFacade logger = null;
 
   /**
-   * Get namespaces for operator and domain2.
+   * Get namespaces for operator and domain2. Create CRD based on the k8s version.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism.
@@ -114,6 +117,31 @@ class ItDedicatedMode {
         new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
             .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR);
+
+    // get k8s version
+    CommandParams k8sVersionCommand = new CommandParams();
+    new Command()
+        .withParams(k8sVersionCommand
+            .saveResults(true)
+            .command("kubectl version"))
+        .execute();
+
+    String k8sVersion = k8sVersionCommand.stdout();
+    boolean k8sV15 = k8sVersion.contains("v1.15");
+    String installedK8sVersion = (k8sV15) ? CRD_V15 : CRD_V16;
+
+    // delete existing CRD
+    new Command()
+        .withParams(new CommandParams()
+            .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+        .execute();
+
+    // install CRD
+    String createCrdCommand = "kubectl create -f " + ITTESTS_DIR + "/../kubernetes/crd/" + installedK8sVersion;
+    logger.info("Creating CRD with command {0}", createCrdCommand);
+    new Command()
+        .withParams(new CommandParams().command(createCrdCommand))
+        .execute();
   }
 
   @AfterAll
