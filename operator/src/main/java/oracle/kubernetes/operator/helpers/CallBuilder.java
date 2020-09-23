@@ -311,7 +311,7 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1DeleteOptions) requestParams.body,
                   callback));
-  private final CallFactory<V1Pod> deletePod =
+  private final CallFactory<V1Status> deletePod =
       (requestParams, usage, cont, callback) ->
           wrap(
               deletePodAsync(
@@ -339,7 +339,7 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1DeleteOptions) requestParams.body,
                   callback));
-  private final CallFactory<V1PersistentVolume> deletePersistentvolume =
+  private final CallFactory<V1Status> deletePersistentvolume =
       (requestParams, client, cont, callback) ->
           wrap(
               new CoreV1Api(client)
@@ -352,7 +352,7 @@ public class CallBuilder {
                       propagationPolicy,
                       (V1DeleteOptions) requestParams.body,
                       callback));
-  private final CallFactory<V1PersistentVolumeClaim> deletePersistentvolumeclaim =
+  private final CallFactory<V1Status> deletePersistentvolumeclaim =
       (requestParams, client, cont, callback) ->
           wrap(
               new CoreV1Api(client)
@@ -404,7 +404,7 @@ public class CallBuilder {
       (client, requestParams) ->
           new CoreV1Api(client)
               .createPersistentVolume((V1PersistentVolume) requestParams.body, pretty, null, null);
-  private SynchronousCallFactory<V1PersistentVolume> deletePvCall =
+  private SynchronousCallFactory<V1Status> deletePvCall =
       (client, requestParams) ->
           new CoreV1Api(client)
               .deletePersistentVolume(
@@ -424,7 +424,7 @@ public class CallBuilder {
                   pretty,
                   null,
                   null);
-  private SynchronousCallFactory<V1PersistentVolumeClaim> deletePvcCall =
+  private SynchronousCallFactory<V1Status> deletePvcCall =
       (client, requestParams) ->
           new CoreV1Api(client)
               .deleteNamespacedPersistentVolumeClaim(
@@ -1162,7 +1162,7 @@ public class CallBuilder {
       String name,
       String namespace,
       V1DeleteOptions deleteOptions,
-      ApiCallback<V1Pod> callback)
+      ApiCallback<V1Status> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .deleteNamespacedPodAsync(
@@ -1192,7 +1192,7 @@ public class CallBuilder {
       String namespace,
       String domainUid,
       V1DeleteOptions deleteOptions,
-      ResponseStep<V1Pod> responseStep) {
+      ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid),
             deletePod, retryStrategy);
