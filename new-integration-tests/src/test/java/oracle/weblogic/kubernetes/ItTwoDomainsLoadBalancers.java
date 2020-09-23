@@ -254,7 +254,7 @@ public class ItTwoDomainsLoadBalancers {
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
-      String kindRepoImage = KIND_REPO + image.substring(OCR_REGISTRY.length() + 1);
+      String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + 1);
       logger.info("Using image {0}", kindRepoImage);
       image = kindRepoImage;
       isUseSecret = false;

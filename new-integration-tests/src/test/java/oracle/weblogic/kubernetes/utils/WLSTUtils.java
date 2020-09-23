@@ -20,7 +20,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
@@ -184,7 +183,7 @@ public class WLSTUtils {
     //if true use images from Kind registry
     String baseImage = WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
     if (KIND_REPO != null) {
-      image = KIND_REPO + baseImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      image = KIND_REPO + baseImage.substring(BASE_IMAGES_REPO.length() + 1);
       isUseSecret = false;
     } else {
       // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
