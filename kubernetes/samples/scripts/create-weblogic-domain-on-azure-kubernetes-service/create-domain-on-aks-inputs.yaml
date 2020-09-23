@@ -19,13 +19,13 @@ azureServicePrincipalClientSecret: azure-service-principal-client-secret
 # Tenant (Directory) id of the service principal.
 azureServicePrincipalTenantId: azure-service-principal-tenant-id
 
-# Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image
+# Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image.
 dockerEmail: docker-email
 
-# Password for Oracle SSO account password, used to pull the WebLogic Server Docker image
+# Oracle SSO account password, used to pull the WebLogic Server Docker image.
 dockerPassword: docker-password
 
-# The same value as dockerEmail
+# The same value as dockerEmail.
 dockerUserName: docker-user-name
 
 # Specify where to create azure resource.
