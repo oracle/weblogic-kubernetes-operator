@@ -538,7 +538,13 @@ function createFiles {
   if [ -z "${serverPodResources}" ]; then
     sed -i -e "/%OPTIONAL_SERVERPOD_RESOURCES%/d" ${dcrOutput}
   else
-    sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
+    if [[ $(uname) -eq "Darwin" ]]; then
+      serverPodResources=$(echo "${serverPodResources}" | sed -e 's/\\n/%NEWLINE%/g')
+      sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
+      sed -i -e $'s|%NEWLINE%|\\\n|g' ${dcrOutput}
+    else
+      sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
+    fi
   fi
 
   if [ "${domainHomeInImage}" == "true" ]; then
