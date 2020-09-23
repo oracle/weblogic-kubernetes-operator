@@ -63,7 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test secure nodePort service through admin port and default-admin channel in a mii domain")
 @IntegrationTest
-class ItSecureAdminNodePort {
+class ItDefaultAdminNodePort {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -175,7 +175,7 @@ class ItSecureAdminNodePort {
    */
   @Test
   @DisplayName("Verify the secure service through administration port")
-  public void testVerifyAdminPortService() {
+  public void testVerifyDefaultAdminPortService() {
     int sslNodePort = getServiceNodePort(
          domainNamespace, adminServerPodName + "-external", "default-admin");
     assertTrue(sslNodePort != -1,
