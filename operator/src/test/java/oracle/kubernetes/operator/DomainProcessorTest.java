@@ -88,7 +88,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class DomainProcessorTest {
   private static final String ADMIN_NAME = "admin";
   private static final String CLUSTER = "cluster";
-  private static final int MAX_SERVERS = 5;
+  private static final int MAX_SERVERS = 60;
   private static final String MS_PREFIX = "managed-server";
   private static final int MIN_REPLICAS = 2;
   private static final int NUM_ADMIN_SERVERS = 1;
@@ -498,7 +498,6 @@ public class DomainProcessorTest {
     configureDomain(newDomain).configureCluster(CLUSTER).withReplicas(3);
 
     makeRightOperation.execute();
-
     assertThat(introspectionRunBeforeUpdates, hasEntry(getManagedPodName(3), false));
   }
 
@@ -527,6 +526,25 @@ public class DomainProcessorTest {
 
     assertThat(job, nullValue());
   }
+
+  @Test
+  public void whenDomainTypeIsFromModelDomainAndAdminServerModified_runIntrospectionJobFirst2() throws Exception {
+    establishPreviousIntrospection(this::configureForModelInImage);
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
+    configureDomain(newDomain).configureAdminServer().withAdditionalVolume("newVol", "/path");
+    makeRightOperation.execute();
+    assertThat(job, notNullValue());
+    job = null;
+    DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(newDomain);
+    domainPresenceInfo.getDomain().getStatus().setMessage("FatalIntrospectorError: ECCC");
+    domainPresenceInfo.getDomain().getSpec().setIntrospectVersion("NEWVERSION");
+    MakeRightDomainOperation mk = processor.createMakeRightOperation(domainPresenceInfo).withExplicitRecheck();
+    mk.execute();
+    assertThat(job, nullValue());
+    assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
+  }
+
 
   // todo after external service created, if adminService deleted, delete service
 
@@ -641,7 +659,7 @@ public class DomainProcessorTest {
     assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
     assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("managedServers", "ms1"));
   }
-
+  
   private String getStatusReason(Domain updatedDomain) {
     return Optional.ofNullable(updatedDomain).map(Domain::getStatus).map(DomainStatus::getReason).orElse(null);
   }

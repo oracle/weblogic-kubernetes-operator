@@ -33,11 +33,13 @@ public interface ProcessingConstants {
 
   String ENCODED_CREDENTIALS = "encodedCredentials";
   String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
-
   String INTROSPECTOR_JOB_FAILURE_LOGGED = "introspectorJobfailureLogged";
-
   String WAIT_FOR_POD_READY = "waitForPodReady";
 
   /** Key to an object of type MakeRightDomainOperation. */
   String MAKE_RIGHT_DOMAIN_OPERATION = "makeRightOp";
+
+  /** Field selectors to filter the events the operator will watch. */
+  String READINESS_PROBE_FAILURE_EVENT_FILTER =
+      "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
 }
