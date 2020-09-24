@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
@@ -227,7 +228,7 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Uninstalling operator");
     uninstallOperator(opHelmParams);
     cleanUpSA(opNamespace);
-    deleteSecret("ocir-secret",opNamespace);
+    deleteSecret(OCR_SECRET_NAME,opNamespace);
 
     // verify the operator pod does not exist in the operator namespace
     logger.info("Checking that operator pod does not exist in operator namespace");
@@ -330,7 +331,7 @@ class ItUsabilityOperatorHelmChart {
 
     } finally {
       uninstallOperator(op1HelmParams);
-      deleteSecret("ocir-secret",opNamespace);
+      deleteSecret(OCR_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
     }
   }
@@ -442,7 +443,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       uninstallOperator(op1HelmParams);
       cleanUpSA(op2Namespace);
-      deleteSecret("ocir-secret",op2Namespace);
+      deleteSecret(OCR_SECRET_NAME,op2Namespace);
     }
   }
 
@@ -484,7 +485,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
-      deleteSecret("ocir-secret",opNamespace);
+      deleteSecret(OCR_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
     }
   }
@@ -526,7 +527,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
-      deleteSecret("ocir-secret",opNamespace);
+      deleteSecret(OCR_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
     }
@@ -573,8 +574,8 @@ class ItUsabilityOperatorHelmChart {
       uninstallOperator(op2HelmParams);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
-      deleteSecret("ocir-secret",opNamespace);
-      deleteSecret("ocir-secret",op2Namespace);
+      deleteSecret(OCR_SECRET_NAME,opNamespace);
+      deleteSecret(OCR_SECRET_NAME,op2Namespace);
     }
   }
 
@@ -663,7 +664,7 @@ class ItUsabilityOperatorHelmChart {
 
     } finally {
       uninstallOperator(op2HelmParams);
-      deleteSecret("ocir-secret",op2Namespace);
+      deleteSecret(OCR_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
     }
   }
@@ -729,7 +730,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       //uninstall operator helm chart
       uninstallOperator(opHelmParams);
-      deleteSecret("ocir-secret",op2Namespace);
+      deleteSecret(OCR_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
     }
   }
