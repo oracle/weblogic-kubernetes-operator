@@ -9,6 +9,8 @@ import java.util.List;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.work.Packet;
@@ -34,14 +36,15 @@ public class PodHelperTest {
   private static final String POD_NAME = LegalNames.toPodName(UID, SERVER_NAME);
   private static final String NS = "ns1";
   private final TerminalStep terminalStep = new TerminalStep();
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
-  private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
-  private V1Pod pod =
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+  private final V1Pod pod =
       new V1Pod()
           .metadata(
               KubernetesUtils.withOperatorLabels(
                   "uid", new V1ObjectMeta().name(POD_NAME).namespace(NS)));
+
 
   private DomainPresenceInfo createDomainPresenceInfo() {
     return new DomainPresenceInfo(new Domain().withMetadata(new V1ObjectMeta().namespace(NS)));
@@ -64,9 +67,7 @@ public class PodHelperTest {
    */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
   }
@@ -118,4 +119,50 @@ public class PodHelperTest {
 
     MatcherAssert.assertThat(terminalStep.wasRun(), is(true));
   }
+
+  @Test
+  public void whenPodHasNoStatus_isNotReady() {
+    assertThat(PodHelper.getReadyStatus(new V1Pod()), is(false));
+  }
+
+  @Test
+  public void whenPodPhaseNotRunning_isNotReady() {
+    V1Pod pod = new V1Pod()
+          .status(new V1PodStatus()
+                .phase("Pending")
+                .addConditionsItem(new V1PodCondition()));
+
+    assertThat(PodHelper.getReadyStatus(pod), is(false));
+  }
+
+  @Test
+  public void whenPodRunningWithOnlyNonReadyConditions_isNotReady() {
+    V1Pod pod = new V1Pod()
+          .status(new V1PodStatus()
+                .phase("Running")
+                .addConditionsItem(new V1PodCondition().type("Initialized")));
+
+    assertThat(PodHelper.getReadyStatus(pod), is(false));
+  }
+
+  @Test
+  public void whenPodRunningWithOnlyReadyConditionNotTrue_isNotReady() {
+    V1Pod pod = new V1Pod()
+          .status(new V1PodStatus()
+                .phase("Running")
+                .addConditionsItem(new V1PodCondition().type("Ready")));
+
+    assertThat(PodHelper.getReadyStatus(pod), is(false));
+  }
+
+  @Test
+  public void whenPodRunningWithOnlyReadyConditionTrue_isReady() {
+    V1Pod pod = new V1Pod()
+          .status(new V1PodStatus()
+                .phase("Running")
+                .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
+
+    assertThat(PodHelper.getReadyStatus(pod), is(true));
+  }
+
 }
