@@ -194,6 +194,8 @@ class ItPodsShutdownOption {
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 2,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
+    verifyServerLog(domainNamespace, indManagedServerPodName1,
+        new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=120"});
     verifyServerLog(domainNamespace, indManagedServerPodName2,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Forced", "SHUTDOWN_TIMEOUT=45"});
   }
@@ -253,6 +255,8 @@ class ItPodsShutdownOption {
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 2,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
+    verifyServerLog(domainNamespace, indManagedServerPodName1,
+        new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=120"});
     verifyServerLog(domainNamespace, indManagedServerPodName2,
         new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=45"});
   }
@@ -338,7 +342,7 @@ class ItPodsShutdownOption {
     }
 
     // check for independent managed server pods existence in the domain namespace
-    for (String podName : new String[]{indManagedServerPodName2}) {
+    for (String podName : new String[]{indManagedServerPodName1, indManagedServerPodName2}) {
       // check that ms service/pod exists in the domain namespace
       logger.info("Checking that independent ms service/pod {0} exists in namespace {1}",
           podName, domainNamespace);

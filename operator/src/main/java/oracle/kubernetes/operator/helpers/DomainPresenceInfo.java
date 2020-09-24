@@ -33,6 +33,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 
 /**
  * Operator's mapping between custom resource Domain and runtime details about that domain,
@@ -91,6 +92,39 @@ public class DomainPresenceInfo {
       }
     }
     return false;
+  }
+
+  /**
+   * Counts the number of unclustered servers and servers in the specified cluster that are scheduled.
+   * @param clusterName cluster name of the pod server
+   */
+  public long getNumScheduledServers(String clusterName) {
+    return getServersInNoOtherCluster(clusterName)
+          .filter(PodHelper::isScheduled)
+          .count();
+  }
+
+  /**
+   * Counts the number of unclustered servers and servers in the specified cluster that are ready.
+   * @param clusterName cluster name of the pod server
+   */
+  public long getNumReadyServers(String clusterName) {
+    return getServersInNoOtherCluster(clusterName)
+          .filter(PodHelper::hasReadyServer)
+          .count();
+  }
+
+  @Nonnull
+  private Stream<V1Pod> getServersInNoOtherCluster(String clusterName) {
+    return getServers().values().stream()
+          .map(ServerKubernetesObjects::getPod)
+          .map(AtomicReference::get)
+          .filter(this::isNotDeletingPod)
+          .filter(p -> hasClusterNameOrNull(p, clusterName));
+  }
+
+  boolean isNotDeletingPod(@Nullable V1Pod pod) {
+    return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getDeletionTimestamp).isEmpty();
   }
 
   public void setServerService(String serverName, V1Service service) {
