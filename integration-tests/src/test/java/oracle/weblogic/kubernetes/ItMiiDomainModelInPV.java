@@ -192,14 +192,14 @@ public class ItMiiDomainModelInPV {
     V1Pod webLogicPod = setupPVPod(domainNamespace);
 
     try {
-      logger.info("Creating directory {0} in PV", "/shared/applications");
-      Exec.exec(webLogicPod, null, false, "/bin/sh", "-c", "mkdir /shared/applications");
+      logger.info("Creating directory {0} in PV", "/u01/modelHome/applications");
+      Exec.exec(webLogicPod, null, false, "/bin/sh", "-c", "mkdir -p /u01/modelHome/applications");
     } catch (IOException | ApiException | InterruptedException ex) {
       logger.warning(ex.getMessage());
     }
     try {
-      logger.info("Creating directory {0} in PV", "/shared/model");
-      Exec.exec(webLogicPod, null, false, "/bin/sh", "-c", "mkdir /shared/model");
+      logger.info("Creating directory {0} in PV", "/u01/modelHome/model");
+      Exec.exec(webLogicPod, null, false, "/bin/sh", "-c", "mkdir -p /u01/modelHome/model");
     } catch (IOException | ApiException | InterruptedException ex) {
       logger.warning(ex.getMessage());
     }
@@ -207,17 +207,17 @@ public class ItMiiDomainModelInPV {
     try {
       //copy the model file to PV using the temp pod - we don't have access to PVROOT in Jenkins env
       logger.info("Copying model file {0} to pv directory {1}",
-          Paths.get(MODEL_DIR, modelFile).toString(), "/shared/model");
+          Paths.get(MODEL_DIR, modelFile).toString(), "/u01/modelHome/model");
       Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
-          Paths.get(MODEL_DIR, modelFile), Paths.get("shared", "model", modelFile));
+          Paths.get(MODEL_DIR, modelFile), Paths.get("/u01/modelHome/model", modelFile));
     } catch (IOException | ApiException ex) {
       logger.warning(ex.getMessage());
     }
     try {
       logger.info("Copying application file {0} to pv directory {1}",
-          clusterViewAppPath.toString(), "/shared/applications");
+          clusterViewAppPath.toString(), "/u01/modelHome/applications");
       Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
-          clusterViewAppPath, Paths.get("shared", "applications", "clusterview.war"));
+          clusterViewAppPath, Paths.get("/u01/modelHome/applications", "clusterview.war"));
     } catch (IOException | ApiException ex) {
       logger.warning(ex.getMessage());
     }
@@ -246,14 +246,14 @@ public class ItMiiDomainModelInPV {
 
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
         image, adminSecretName, REPO_SECRET_NAME, encryptionSecretName, replicaCount, clusterName);
-    domainCR.spec().configuration().model().withModelHome("/shared/model");
+    domainCR.spec().configuration().model().withModelHome("/u01/modelHome/model");
     domainCR.spec().serverPod()
         .addVolumesItem(new V1Volume()
             .name(pvName)
             .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
                 .claimName(pvcName)))
         .addVolumeMountsItem(new V1VolumeMount()
-            .mountPath("/shared")
+            .mountPath("/u01/modelHome")
             .name(pvName));
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -353,7 +353,7 @@ public class ItMiiDomainModelInPV {
                     .volumeMounts(Arrays.asList(
                         new V1VolumeMount()
                             .name(pvName) // mount the persistent volume to /shared inside the pod
-                            .mountPath("/shared")))
+                            .mountPath("/u01/modelHome")))
                     .addCommandItem("tailf")
                     .addArgsItem("/dev/null")))
             .volumes(Arrays.asList(
@@ -417,7 +417,7 @@ public class ItMiiDomainModelInPV {
     createImage(defaultWitParams()
         .modelImageName(MII_BASIC_IMAGE_NAME)
         .modelImageTag(miiImageTagCustom)
-        .wdtModelHome("/shared/model")
+        .wdtModelHome("/u01/modelHome/model")
         .wdtModelOnly(true)
         .wdtVersion(WDT_VERSION)
         .env(env)

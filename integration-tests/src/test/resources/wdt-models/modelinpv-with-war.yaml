@@ -28,6 +28,6 @@ topology:
 appDeployments:
     Application:
         myear:
-            SourcePath: "/shared/applications/clusterview.war"
+            SourcePath: "/u01/modelHome/applications/clusterview.war"
             ModuleType: war
             Target: 'admin-server,cluster-1'
