@@ -192,11 +192,11 @@ $ helm uninstall nginx-operator --namespace nginx
 ```
 
 ## Install and uninstall the NGINX operator with setupLoadBalancer.sh
-Alternatively, you can run the helper script ` setupLoadBalancer.sh` under the `kubernetes/samples/charts/util` folder, to install and uninstall NGINX.
+Alternatively, you can run the helper script `setupLoadBalancer.sh` under the `kubernetes/samples/charts/util` folder, to install and uninstall NGINX.
 
 To install NGINX:
 ```
-$ ./setupLoadBalancer.sh create nginx
+$ ./setupLoadBalancer.sh create nginx [nginx-version]
 ```
 To uninstall NGINX:
 ```
