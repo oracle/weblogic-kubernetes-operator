@@ -115,7 +115,7 @@ set('WeblogicPluginEnabled',true)
 Replace the string `weblogic-domain` with namespace of the WebLogic domain, the string `domain1` with domain UID and the string `adminserver` with name of the Administration Server in the WebLogic domain.  
 
 
-**NOTE**: If you also have HTTP requests coming into an ingress, make sure that you remove any incoming `WL-Proxy-SSL` header. This protects you from a malicious user sending in a request to appear to WebLogic as secure when it isn't. Add the following `customRequestHeaders` in the Traefik ingress configuration to block `WL-Proxy` headers coming from the client. In the following example, the ingress resource will eliminate the client header `WL-Proxy-Client-IP`.
+**NOTE**: If you also have HTTP requests coming into an ingress, make sure that you remove any incoming `WL-Proxy-SSL` header. This protects you from a malicious user sending in a request to appear to WebLogic as secure when it isn't. Add the following `customRequestHeaders` in the Traefik ingress configuration to block `WL-Proxy` headers coming from the client. In the following example, the ingress resource will eliminate the client headers `WL-Proxy-Client-IP` and `WL-Proxy-SSL`.
 
 ```
 apiVersion: traefik.containo.us/v1alpha1
@@ -150,10 +150,11 @@ metadata:
 spec:
   headers:
     customRequestHeaders:
-      WL-Proxy-SSL: "true"
       X-Custom-Request-Header: ""
       X-Forwarded-For: "" 
       WL-Proxy-Client-IP: ""
+      WL-Proxy-SSL: ""
+      WL-Proxy-SSL: "true"
     sslRedirect: true
 ```
 ### 3. Create ingress resource
