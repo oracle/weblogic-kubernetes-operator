@@ -42,6 +42,9 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 public class ManagedServerUpIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  /** The interval in msec that the operator will wait to ensure that started pods have been scheduled on a node. */
+  public static final int SCHEDULING_DETECTION_DELAY = 100;
+
   private final Collection<ServerStartupInfo> startupInfos;
 
   public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> startupInfos, Step next) {
@@ -165,20 +168,20 @@ public class ManagedServerUpIteratorStep extends Step {
 
       if (startDetailsQueue.isEmpty()) {
         return doNext(new ManagedServerUpAfterStep(getNext()), packet);
-      } else if (serverAvailableToStart(packet.getSpi(DomainPresenceInfo.class))) {
+      } else if (hasServerAvailableToStart(packet.getSpi(DomainPresenceInfo.class))) {
         numStarted.getAndIncrement();
         return doForkJoin(this, packet, Collections.singletonList(startDetailsQueue.poll()));
       } else {
-        return doDelay(this, packet, 100, TimeUnit.MILLISECONDS);
+        return doDelay(this, packet, SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
       }
     }
 
-    private boolean serverAvailableToStart(DomainPresenceInfo info) {
-      return ((numStarted.get() < PodHelper.getScheduledPods(info, clusterName).size())
-              && (canStartConcurrently(PodHelper.getReadyPods(info, clusterName).size())));
+    private boolean hasServerAvailableToStart(DomainPresenceInfo info) {
+      return ((numStarted.get() < info.getNumScheduledServers(clusterName))
+              && (canStartConcurrently(info.getNumReadyServers(clusterName))));
     }
 
-    private boolean canStartConcurrently(int numReady) {
+    private boolean canStartConcurrently(long numReady) {
       return ((this.maxConcurrency > 0) && (numStarted.get() < (this.maxConcurrency + numReady - 1)))
           || (this.maxConcurrency == 0);
     }
