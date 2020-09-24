@@ -7,9 +7,8 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -219,7 +218,7 @@ public class FiberTestSupport {
     /* current time in milliseconds. */
     private long currentTime = 0;
 
-    private final SortedSet<ScheduledItem> scheduledItems = new TreeSet<>();
+    private final PriorityQueue<ScheduledItem> scheduledItems = new PriorityQueue<>();
     private final Queue<Runnable> queue = new ArrayDeque<>();
     private Runnable current;
 
@@ -282,15 +281,14 @@ public class FiberTestSupport {
             "Attempt to move clock backwards from " + currentTime + " to " + newTime);
       }
 
-      while (!scheduledItems.isEmpty() && scheduledItems.first().atTime <= newTime) {
-        executeAsScheduled(scheduledItems.first());
+      while (!scheduledItems.isEmpty() && scheduledItems.peek().atTime <= newTime) {
+        executeAsScheduled(scheduledItems.poll());
       }
 
       currentTime = newTime;
     }
 
     private void executeAsScheduled(ScheduledItem item) {
-      scheduledItems.remove(item);
       currentTime = item.atTime;
       execute(item.runnable);
       if (item.isReschedulable()) {
