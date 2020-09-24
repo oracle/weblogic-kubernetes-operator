@@ -87,11 +87,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
- * Simple JUnit test file used for testing operator usability.
+ * Simple JUnit test file used for testing operator namespace management usability.
  * Use Helm chart to install operator(s)
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test operator usability using Helm chart installation")
+@DisplayName("Test operator namespace management usability using Helm chart installation")
 @IntegrationTest
 class ItManageNs {
 
@@ -212,6 +212,7 @@ class ItManageNs {
    * modify namespace2 to set label1, verify that operator can manage it
    * verify that domainNamespaces field will be ignored and domain will not start for specific NS and default
    * add another operator using domainNamespaces sharing same namespace and verify it fails to install
+   * upgrade operator to replace managing domains using RegExp namespaces
    */
   @Test
   @DisplayName("install operator helm chart and domain, "
@@ -256,7 +257,7 @@ class ItManageNs {
     checkDomainNotStartedInDefaultNS("SelectLabel");
     checkSecondOperatorFailedToShareSameNS(domain1Namespace);
 
-    //upgrade operator to replace managed domains with RegExp namespaces
+    //upgrade operator to replace managing domains using RegExp namespaces
     assertDoesNotThrow(() -> Kubernetes.createNamespace("nstest" + domain1Namespace));
     int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
     OperatorParams opParams = new OperatorParams()
@@ -453,7 +454,9 @@ class ItManageNs {
   private static void createSecrets(String domainNamespace) {
     // create docker registry secret to pull the image from registry
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createDockerRegistrySecret(domainNamespace);
+    if (domainNamespace.equals("default")) {
+      createDockerRegistrySecret(domainNamespace);
+    }
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
@@ -467,7 +470,9 @@ class ItManageNs {
   private static void deleteSecrets(String domainNamespace) {
     // create docker registry secret to pull the image from registry
     logger.info("Deleting docker registry secret in namespace {0}", domainNamespace);
-    deleteSecret(OCR_SECRET_NAME, domainNamespace);
+    if (domainNamespace.equals("default")) {
+      deleteSecret(OCR_SECRET_NAME, domainNamespace);
+    }
 
     // delete secret for admin credentials
     logger.info("Deleting secret for admin credentials");
