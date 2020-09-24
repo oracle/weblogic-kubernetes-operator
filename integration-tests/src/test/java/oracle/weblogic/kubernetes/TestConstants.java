@@ -167,6 +167,9 @@ public interface TestConstants {
       .orElse("11.1.5");
   public static final String GRAFANA_CHART_VERSION = Optional.ofNullable(System.getenv("GRAFANA_CHART_VERSION"))
       .orElse("5.0.20");
+  public static final String STABLE_REPO_NAME = "stable";
+  public static final String GOOGLE_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
+
   // credentials
   public static final String ADMIN_USERNAME_DEFAULT = "weblogic";
   public static final String ADMIN_PASSWORD_DEFAULT = "welcome1";
