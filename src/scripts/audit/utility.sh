@@ -47,11 +47,12 @@ function warning {
 }
 
 function printReport {
+  info "Image scan ended at `date -u '+%Y-%m-%d %H.%M.%SUTC'`"
   rowCount=$(cat "${reportFile}" | wc -l)
   if [ $rowCount -gt 1 ]; then
-    echo "==============================" | tee -a "${logFile}"
-    echo "    Matching Image Details    " | tee -a "${logFile}"
-    echo "==============================" | tee -a "${logFile}"
+    echo "==================================" | tee -a "${logFile}"
+    echo "  Images Running Oracle Products  " | tee -a "${logFile}"
+    echo "==================================" | tee -a "${logFile}"
     if [ -z "${kubernetesFile}" ]; then
       cat "${reportFile}" | column -t -s ',' |  tee -a "${logFile}"
     else
@@ -88,8 +89,8 @@ function cleanUpImage {
 
 function generateReportHeader {
   if [ -z "${kubernetesFile}" ]; then
-    awk 'BEGIN {printf "%s,%s,%s\n","Respository", "Tag", "Digest"}' >> "${reportFile}"
+    awk 'BEGIN {printf "%s,%s,%s,%s\n", "Artifact", "Respository", "Tag", "Digest"}' >> "${reportFile}"
   else 
-    awk 'BEGIN {printf "%s|%s|%s|%s\n","Node","Respository", "Tag", "Digest"}' >> "${reportFile}"
+    awk 'BEGIN {printf "%s|%s|%s|%s|%s\n","Node", "Artifact", "Respository", "Tag", "Digest"}' >> "${reportFile}"
   fi
 }
