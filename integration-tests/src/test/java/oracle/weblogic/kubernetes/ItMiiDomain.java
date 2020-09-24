@@ -107,7 +107,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to create model in image domain and start the domain")
+@DisplayName("Test to a create model in image domain and start the domain")
 @IntegrationTest
 class ItMiiDomain {
 
@@ -167,9 +167,9 @@ class ItMiiDomain {
   /**
    * Create a WebLogic domain with SSL enabled in WebLogic configuration by 
    * configuring an additional configmap to the domain resource.
-   * Add two channels to the domain resource with name `default-secure`and `default`.
+   * Add two channels to the domain resource with name `default-secure` and `default`.
    * Make sure the pre-packaged application in domain image gets deployed to 
-   * the cluster and accessible from all the manged server pods 
+   * the cluster and accessible from all the managed server pods 
    * Make sure two external NodePort services are created in domain namespace.
    * Make sure WebLogic console is accessible through both 
    *   `default-secure` service and `default` service.  
