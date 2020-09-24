@@ -61,9 +61,32 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
 
 #### Supported and unsupported updates
 
- - You can add new MBeans or resources simply by specifying their corresponding model file YAML snippet along with their parent bean hierarchy. See [Example of adding a data source](#example-of-adding-a-data-source).
+{{% notice warning %}}
+The expected behavior is undefined when applying an unsupported update. If you need to make an unsupported update and no workaround is documented, then shut down your domain entirely before making the change.
+{{% /notice %}}
 
- - You can change or add secrets that your model references. For example, you can change a database password secret.
+##### Supported updates
+
+The following updates are *supported* except when they reference an area that is specifically documented as [unsupported](#unsupported-updates) below:
+
+ - You can add a new WebLogic cluster or standalone server.
+
+ - You can add new MBeans or resources by specifying their corresponding model YAML file snippet along with their parent bean hierarchy. See [Example of adding a data source](#example-of-adding-a-data-source).
+
+ - You can change or add MBean attributes by specifying a YAML file snippet along with its parent bean hierarchy that references an existing MBean and the attribute. For example, to add or alter the maximum capacity of a data source named `mynewdatasource`:
+
+   ```
+   resources:
+     JDBCSystemResource:
+       mynewdatasource:
+         JdbcResource:
+           JDBCConnectionPoolParams:
+             MaxCapacity: 5
+   ```
+
+   For more information, see [Using Multiple Models](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md#using-multiple-models) in the WebLogic Deploy Tooling documentation.
+
+ - You can change or add secrets that your model macros reference (macros that use the `@@SECRET:secretname:secretkey@@` syntax). For example, you can change a database password secret.
 
  - You can change or add environment variables that your model macros reference (macros that use the `@@ENV:myenvvar@@` syntax).
 
@@ -75,50 +98,50 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
        !mynewdatasource:
    ```
 
-   For more information, see [Declaring Named MBeans to Delete](https://github.com/oracle/weblogic-deploy-tooling#declaring-named-mbeans-to-delete) in the WebLogic Deploying Tooling documentation.
+   For more information, see [Declaring Named MBeans to Delete](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md#declaring-named-mbeans-to-delete) in the WebLogic Deploying Tooling documentation.
 
- - You can add or alter an MBean attribute by specifying a YAML snippet along with its parent bean hierarchy that references an existing MBean and the attribute. For example, to add or alter the maximum capacity of a data source named `mynewdatasource`:
+##### Unsupported updates
 
-   ```
-   resources:
-     JDBCSystemResource:
-       mynewdatasource:
-         JdbcResource:
-           JDBCConnectionPoolParams:
-             MaxCapacity: 5
-   ```
+The following updates are *unsupported*. If you need to make an unsupported update and no workaround is documented, then shut down your domain entirely before making the change.
 
-   For more information, see [Using Multiple Models](https://github.com/oracle/weblogic-deploy-tooling#using-multiple-models) in the WebLogic Deploy Tooling documentation.
-
- - There is no way to directly delete an attribute from an MBean that's already been specified by a model file. The work-around is to do this using two model files: add a model file that deletes the named bean/resource that is a parent to the attribute you want to delete, and add another model file that will be loaded after the first one, which fully defines the named bean/resource but without the attribute you want to delete.
+ - There is no way to directly delete an attribute from an MBean that's already been specified by a model file. The workaround is to do this using two model files: add a model file that deletes the named bean/resource that is a parent to the attribute you want to delete, and add another model file that will be loaded after the first one, which fully defines the named bean/resource but without the attribute you want to delete.
 
  - There is no way to directly change the MBean name of an attribute. Instead, you can remove a named MBean using the `!` syntax as described above, and then add a new one as a replacement.
 
  - You cannot change the domain name at runtime.
 
- - The following types of runtime update configuration are _not_ supported in this release of Model in Image. If you need to make these kinds of updates, shut down your domain entirely before making the change:
-   * Domain topology of an existing WebLogic cluster (cluster members)
-   * Network channel listen address, port, and enabled configuration of an existing cluster or server
-   * Server and domain log locations
-   * Node Manager related configuration
-   * Changing any existing MBean name
+ - You cannot change the topology of an existing WebLogic cluster. Specifically, do not apply runtime updates for:
+   - Dynamic cluster size
+   - Adding WebLogic Servers to a cluster or removing them
+
+ - You cannot change, add, or remove network listen address, port, protocol, and enabled configuration for existing clusters or servers at runtime.
 
    Specifically, do not apply runtime updates for:
-
-   * Adding WebLogic Servers to a cluster, or removing them
-   * Adding or removing Network Access Points (custom channels) for existing servers
-   * Changing any of the following:
-     * Dynamic cluster size
-     * Default, SSL, and Admin channel `Enabled`, listen address, and port
-     * Network Access Point (custom channel), listen address, or port
-     * Server and domain log locations -- use the `logHome` domain setting instead
-     * Node Manager access credentials
+   - A Default, SSL, Admin channel `Enabled`, listen address, or port.
+   - A Network Access Point (custom channel) `Enabled`, listen address, protocol, or port.
 
    Note that it is permitted to override network access point `public` or `external` addresses and ports. External access to JMX (MBean) or online WLST requires that the network access point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
 
-{{% notice warning %}}
-Due to security considerations, we strongly recommend that T3 or any RMI protocol should not be exposed outside the cluster.
-{{% /notice %}}
+   {{% notice warning %}}
+   Due to security considerations, we strongly recommend that T3 or any RMI protocol should not be exposed outside the cluster.
+   {{% /notice %}}
+
+ - You cannot change, add, or remove server and domain log related settings in an MBean at runtime when the domain resource is configured to override the same MBeans using the `spec.logHome`, `spec.logHomeEnabled`, or `spec.httpAccessLogInLogHome` attributes.
+
+ - You cannot change embedded LDAP security entries for [users, groups, roles](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-weblogic-users-groups-and-roles), and [credential mappings](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-weblogic-user-password-credential-mapping). For example, you cannot add a user to the default security realm. If you need to make these kinds of updates, then shut down your domain entirely before making the change, or switch to an [external security provider](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-security-providers).
+
+ - The following summarizes the types of runtime update configuration that are _not_ supported in this release of Model in Image unless a workaround is documented:
+
+   * Domain topology of an existing WebLogic cluster. Specifically:
+     * Dynamic cluster size
+     * Adding WebLogic Servers to a cluster or removing them
+   * Default and custom network channel configuration for an existing WebLogic cluster or server. Specifically:
+     * Adding or removing Network Access Points (custom channels) for existing servers
+     * Changing a Default, SSL, Admin, or custom channel, `Enabled`, listen address, protocol, or port
+   * Node Manager related configuration
+   * Changing any existing MBean name
+   * Deleting an MBean attribute
+   * Embedded LDAP entries
 
 #### Changing a Domain `restartVersion`
 
