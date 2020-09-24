@@ -160,7 +160,7 @@ public class ItMiiDomainModelInPV {
     miiImagePV = MII_BASIC_IMAGE_NAME + ":" + miiImageTagCustom;
 
     // build a new MII image with custom wdtHome
-    buildMIIWithwdtModelHomeandPushToRepo(Paths.get(MODEL_DIR, modelFile).toString());
+    buildMIIWithwdtModelHomeandPushToRepo();
 
     params.put("domain1", miiImagePV);
     params.put("domain2", miiImageCustom);
@@ -409,7 +409,7 @@ public class ItMiiDomainModelInPV {
 
   // create a model in image with no domain
   // push the image to repo
-  private static void buildMIIWithwdtModelHomeandPushToRepo(String wdtModelHome) {
+  private static void buildMIIWithwdtModelHomeandPushToRepo() {
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
     Map<String, String> env = new HashMap<>();
@@ -417,7 +417,7 @@ public class ItMiiDomainModelInPV {
     createImage(defaultWitParams()
         .modelImageName(MII_BASIC_IMAGE_NAME)
         .modelImageTag(miiImageTagCustom)
-        .wdtModelHome(wdtModelHome)
+        .wdtModelHome("/shared/model")
         .wdtModelOnly(true)
         .wdtVersion(WDT_VERSION)
         .env(env)
