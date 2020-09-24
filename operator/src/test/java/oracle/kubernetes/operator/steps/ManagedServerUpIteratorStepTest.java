@@ -7,8 +7,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 
@@ -21,7 +24,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
@@ -40,13 +42,17 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.steps.ManagedServerUpIteratorStep.SCHEDULING_DETECTION_DELAY;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ManagedServerUpIteratorStepTest {
@@ -56,7 +62,12 @@ public class ManagedServerUpIteratorStepTest {
   private static final String UID = "uid1";
   protected static final String KUBERNETES_UID = "12345";
   private static final String ADMIN = "asName";
-  private static final String CLUSTER = "cluster1";
+  private static final String CLUSTER1 = "cluster1";
+  private static final String CLUSTER2 = "cluster2";
+  private static final int SCHEDULING_DELAY_MSEC = SCHEDULING_DETECTION_DELAY / 2;
+  private static final int POD_READY_DELAY_SEC = 9;
+  private static final int READY_DETECTION_DELAY = 10;
+  private static final int NUM_CLUSTERS = 2;
   private static final boolean INCLUDE_SERVER_OUT_IN_POD_LOG = true;
   private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
   private static final String LATEST_IMAGE = "image:latest";
@@ -85,9 +96,10 @@ public class ManagedServerUpIteratorStepTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfoWithServers();
   private final WlsDomainConfig domainConfig = createDomainConfig();
+  private final Collection<ServerStartupInfo> startupInfos = new ArrayList<>();
 
   private static WlsDomainConfig createDomainConfig() {
-    WlsClusterConfig clusterConfig = new WlsClusterConfig(CLUSTER);
+    WlsClusterConfig clusterConfig = new WlsClusterConfig(CLUSTER1);
     for (String serverName : MANAGED_SERVER_NAMES) {
       clusterConfig.addServerConfig(new WlsServerConfig(serverName, "domain1-" + serverName, 8001));
     }
@@ -141,13 +153,9 @@ public class ManagedServerUpIteratorStepTest {
   private static V1ObjectMeta withNames(V1ObjectMeta objectMeta, String serverName) {
     return objectMeta
             .name(LegalNames.toPodName(UID, serverName))
-            .putLabelsItem(LabelConstants.SERVERNAME_LABEL, serverName);
+            .putLabelsItem(SERVERNAME_LABEL, serverName);
   }
 
-  /**
-   * Setup env for tests.
-   * @throws NoSuchFieldException if TestStepFactory fails to install
-   */
   @Before
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
@@ -158,168 +166,166 @@ public class ManagedServerUpIteratorStepTest {
     testSupport
             .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
             .addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.doOnCreate(KubernetesTestSupport.POD, p -> schedulePodUpdates((V1Pod) p));
   }
 
-  /**
-   * Cleanup env after tests.
-   * @throws Exception if test support failed
-   */
+  // Invoked when a pod is created to simulate the Kubernetes behavior in which a pod is scheduled on a node
+  // very quickly, and then takes much longer actually to become ready.
+  void schedulePodUpdates(V1Pod pod) {
+    testSupport.schedule(() -> setPodScheduled(getServerName(pod)), SCHEDULING_DELAY_MSEC, TimeUnit.MILLISECONDS);
+    testSupport.schedule(() -> setPodReady(getServerName(pod)), POD_READY_DELAY_SEC, TimeUnit.SECONDS);
+  }
+
+  // Marks the pod with the specified server name as having been scheduled on a Kubernetes node.
+  private void setPodScheduled(String serverName) {
+    Objects.requireNonNull(domainPresenceInfo.getServerPod(serverName).getSpec()).setNodeName("aNode");
+  }
+
+  // Marks the pod with the specified server name as having become ready.
+  private void setPodReady(String serverName) {
+    domainPresenceInfo.getServerPod(serverName).status(createPodReadyStatus());
+  }
+
+  private V1PodStatus createPodReadyStatus() {
+    return new V1PodStatus()
+          .phase("Running")
+          .addConditionsItem(new V1PodCondition().status("True").type("Ready"));
+  }
+
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
   }
 
-  private void makePodReady(String serverName) {
-    domainPresenceInfo.getServerPod(serverName).status(new V1PodStatus().phase("Running"));
-    Objects.requireNonNull(domainPresenceInfo.getServerPod(serverName).getStatus())
-            .addConditionsItem(new V1PodCondition().status("True").type("Ready"));
+  @Test
+  public void withMultipleServersAvailableToStart_onlyOneForEachClusterInitiallyStarts() {
+    configureCluster(CLUSTER1).withMaxConcurrentStartup(0);
+    configureCluster(CLUSTER2).withMaxConcurrentStartup(1);
+    addWlsCluster(CLUSTER1, MS1, MS2);
+    addWlsCluster(CLUSTER2, MS3, MS4);
+
+    invokeStepWithServerStartupInfos();
+
+    assertThat(getStartedManagedServers().size(), equalTo(NUM_CLUSTERS));
   }
 
-  private void schedulePod(String serverName, String nodeName) {
-    Objects.requireNonNull(domainPresenceInfo.getServerPod(serverName).getSpec()).setNodeName(nodeName);
+  @Nonnull
+  private List<String> getStartedManagedServers() {
+    return domainPresenceInfo.getServerPods()
+          .map(this::getServerName)
+          .filter(name -> !ADMIN.equals(name))
+          .collect(Collectors.toList());
+  }
+
+  private String getServerName(V1Pod pod) {
+    return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getLabels).map(this::getServerName).orElse(null);
+  }
+
+  private String getServerName(@Nonnull Map<String,String> labels) {
+    return labels.get(SERVERNAME_LABEL);
   }
 
   @Test
-  public void withConcurrencyOf1_bothClusteredServersScheduleAndStartSequentially() {
-    configureCluster(CLUSTER).withMaxConcurrentStartup(1);
-    //addWlsCluster(CLUSTER, 8001, MS1, MS2);
-    addWlsCluster(CLUSTER, 8001, MS1, MS2);
+  public void whenConcurrencyLimitDisabled_additionalClusteredServersStartsAfterPreviousIsScheduled() {
+    configureCluster(CLUSTER1).withMaxConcurrentStartup(0);
+    addWlsCluster(CLUSTER1, MS1, MS2, MS3);
 
-    invokeStepWithServerStartupInfos(createServerStartupInfosForCluster(CLUSTER,MS1, MS2));
+    invokeStepWithServerStartupInfos();
+    testSupport.setTime(2 * SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
 
-    assertThat(MS1 + " pod", domainPresenceInfo.getServerPod(MS1), notNullValue());
-    schedulePod(MS1, "Node1");
-    testSupport.setTime(100, TimeUnit.MILLISECONDS);
-    assertThat(MS2 + " pod", domainPresenceInfo.getServerPod(MS2), nullValue());
-    makePodReady(MS1);
-    testSupport.setTime(10, TimeUnit.SECONDS);
-    assertThat(MS2 + " pod", domainPresenceInfo.getServerPod(MS2), notNullValue());
+    assertThat(getStartedManagedServers(), containsInAnyOrder(MS1, MS2, MS3));
   }
 
   @Test
-  public void withConcurrencyOf0_clusteredServersScheduleSequentiallyAndStartConcurrently() {
-    configureCluster(CLUSTER).withMaxConcurrentStartup(0);
-    addWlsCluster(CLUSTER, PORT, MS1, MS2);
+  public void whenConcurrencyLimitIs1_secondClusteredServerDoesNotStartIfFirstIsNotReady() {
+    configureCluster(CLUSTER1).withMaxConcurrentStartup(1);
+    addWlsCluster(CLUSTER1, MS1, MS2);
 
-    invokeStepWithServerStartupInfos(createServerStartupInfosForCluster(CLUSTER,MS1, MS2));
+    invokeStepWithServerStartupInfos();
+    testSupport.setTime(SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
 
-    assertThat(MS1 + " pod", domainPresenceInfo.getServerPod(MS1), notNullValue());
-    assertThat(MS2 + " pod", domainPresenceInfo.getServerPod(MS2), nullValue());
-    schedulePod(MS1, "Node1");
-    testSupport.setTime(100, TimeUnit.MILLISECONDS);
-    assertThat(MS2 + " pod", domainPresenceInfo.getServerPod(MS2), notNullValue());
+    assertThat(getStartedManagedServers(), hasSize(1));
   }
 
   @Test
-  public void withConcurrencyOf2_clusteredServersScheduleSequentiallyAndStartConcurrently() {
-    configureCluster(CLUSTER).withMaxConcurrentStartup(2);
-    addWlsCluster(CLUSTER, PORT, MS1, MS2);
+  public void whenConcurrencyLimitIs1_secondClusteredServerStartsAfterFirstIsReady() {
+    configureCluster(CLUSTER1).withMaxConcurrentStartup(1);
+    addWlsCluster(CLUSTER1, MS1, MS2);
 
-    invokeStepWithServerStartupInfos(createServerStartupInfosForCluster(CLUSTER, MS1, MS2));
+    invokeStepWithServerStartupInfos();
+    testSupport.setTime(READY_DETECTION_DELAY, TimeUnit.SECONDS);
 
-    assertThat(MS1 + " pod", domainPresenceInfo.getServerPod(MS1), notNullValue());
-    assertThat(MS2 + " pod", domainPresenceInfo.getServerPod(MS2), nullValue());
-    schedulePod(MS1, "Node1");
-    testSupport.setTime(100, TimeUnit.MILLISECONDS);
-    assertThat(MS2 + " pod", domainPresenceInfo.getServerPod(MS2), notNullValue());
+    assertThat(getStartedManagedServers(), hasSize(2));
   }
 
   @Test
-  public void withConcurrencyOf2_4clusteredServersScheduleSequentiallyAndStartIn2Threads() {
-    configureCluster(CLUSTER).withMaxConcurrentStartup(2);
-    addWlsCluster(CLUSTER, PORT, MS1, MS2, MS3, MS4);
+  public void whenConcurrencyLimitIs2_secondClusteredServerStartsAfterFirstIsScheduledButNotThird() {
+    configureCluster(CLUSTER1).withMaxConcurrentStartup(2);
+    addWlsCluster(CLUSTER1, MS1, MS2, MS3, MS4);
 
-    invokeStepWithServerStartupInfos(createServerStartupInfosForCluster(CLUSTER, MS1, MS2, MS3, MS4));
-    assertThat(MS1 + " pod", domainPresenceInfo.getServerPod(MS1), notNullValue());
-    assertThat(MS2 + " pod", domainPresenceInfo.getServerPod(MS2), nullValue());
-    schedulePod(MS1, "Node1");
-    testSupport.setTime(100, TimeUnit.MILLISECONDS);
-    assertThat(MS2 + " pod", domainPresenceInfo.getServerPod(MS2), notNullValue());
-    assertThat(MS3 + " pod", domainPresenceInfo.getServerPod(MS3), nullValue());
-    schedulePod(MS2, "Node2");
-    testSupport.setTime(200, TimeUnit.MILLISECONDS);
-    assertThat(MS3 + " pod", domainPresenceInfo.getServerPod(MS3), nullValue());
-    makePodReady(MS1);
-    testSupport.setTime(10, TimeUnit.SECONDS);
-    assertThat(MS3 + " pod", domainPresenceInfo.getServerPod(MS3), notNullValue());
-    assertThat(MS4 + " pod", domainPresenceInfo.getServerPod(MS4), nullValue());
-    makePodReady(MS2);
-    schedulePod(MS3, "Node3");
-    testSupport.setTime(20, TimeUnit.SECONDS);
-    assertThat(MS4 + " pod", domainPresenceInfo.getServerPod(MS4), notNullValue());
+    invokeStepWithServerStartupInfos();
+    testSupport.setTime(2 * SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
+
+    assertThat(getStartedManagedServers(), containsInAnyOrder(MS1, MS2));
+  }
+
+  @Test
+  public void whenConcurrencyLimitIs2_nextTwoStartAfterFirstTwoAreReady() {
+    configureCluster(CLUSTER1).withMaxConcurrentStartup(2);
+    addWlsCluster(CLUSTER1, MS1, MS2, MS3, MS4);
+
+    invokeStepWithServerStartupInfos();
+    testSupport.setTime(READY_DETECTION_DELAY, TimeUnit.SECONDS);
+
+    assertThat(getStartedManagedServers(), containsInAnyOrder(MS1, MS2, MS3, MS4));
+  }
+
+  @Test
+  public void nonClusteredServers_ignoreConcurrencyLimit() {
+    domain.getSpec().setMaxClusterConcurrentStartup(1);
+    addWlsServers(MS1, MS2, MS3);
+
+    invokeStepWithServerStartupInfos();
+    testSupport.setTime(2 * SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
+
+    assertThat(getStartedManagedServers(), containsInAnyOrder(MS1, MS2, MS3));
   }
 
   @Test
   public void withMultipleClusters_differentClusterScheduleAndStartDifferently() {
-    final String CLUSTER2 = "cluster2";
-
-    configureCluster(CLUSTER).withMaxConcurrentStartup(0);
+    configureCluster(CLUSTER1).withMaxConcurrentStartup(0);
     configureCluster(CLUSTER2).withMaxConcurrentStartup(1);
+    addWlsCluster(CLUSTER1, MS1, MS2);
+    addWlsCluster(CLUSTER2, MS3, MS4);
 
-    addWlsCluster(CLUSTER, PORT, MS1, MS2);
-    addWlsCluster(CLUSTER2, PORT, MS3, MS4);
+    invokeStepWithServerStartupInfos();
+    testSupport.setTime(SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
 
-    Collection<ServerStartupInfo> serverStartupInfos = createServerStartupInfosForCluster(CLUSTER, MS1, MS2);
-    serverStartupInfos.addAll(createServerStartupInfosForCluster(CLUSTER2, MS3, MS4));
-    invokeStepWithServerStartupInfos(serverStartupInfos);
-
-    assertThat(MS1 + " pod", domainPresenceInfo.getServerPod(MS1), notNullValue());
-    assertThat(MS3 + " pod", domainPresenceInfo.getServerPod(MS3), notNullValue());
-    schedulePod(MS1, "Node1");
-    schedulePod(MS3, "Node2");
-    testSupport.setTime(100, TimeUnit.MILLISECONDS);
-    assertThat(MS2 + " pod", domainPresenceInfo.getServerPod(MS2), notNullValue());
-    assertThat(MS4 + " pod", domainPresenceInfo.getServerPod(MS4), nullValue());
-    //makePodReady(MS3);
-    //k8sTestSupport.setTime(10, TimeUnit.SECONDS);
-    //assertThat(MS4 + " pod", domainPresenceInfo.getServerPod(MS4), notNullValue());
+    assertThat(getStartedManagedServers(), containsInAnyOrder(MS1, MS2, MS3));
   }
 
   @Test
-  public void maxClusterConcurrentStartup_doesNotApplyToNonClusteredServers() {
+  public void whenClusteredServersAlreadyScheduled_canStartNonclusteredServer() {
     domain.getSpec().setMaxClusterConcurrentStartup(1);
+    Arrays.asList(MS1, MS2).forEach(this::addScheduledClusteredServer);
+    addWlsServer(MS3);
 
-    addWlsServers(MS3, MS4);
+    invokeStepWithServerStartupInfos();
 
-    invokeStepWithServerStartupInfos(createServerStartupInfos(MS3, MS4));
-
-    assertThat(MS3 + " pod", domainPresenceInfo.getServerPod(MS3), notNullValue());
-    schedulePod(MS3, "Node2");
-    testSupport.setTime(200, TimeUnit.MILLISECONDS);
     assertThat(MS3 + " pod", domainPresenceInfo.getServerPod(MS3), notNullValue());
   }
 
-  @NotNull
-  private Collection<ServerStartupInfo> createServerStartupInfosForCluster(String clusterName, String... servers) {
-    Collection<ServerStartupInfo> serverStartupInfos = new ArrayList<>();
-    Arrays.stream(servers).forEach(server ->
-            serverStartupInfos.add(
-                new ServerStartupInfo(configSupport.getWlsServer(clusterName, server),
-                    clusterName,
-                    domain.getServer(server, clusterName))
-            )
-    );
-    return serverStartupInfos;
+  private void addScheduledClusteredServer(String serverName) {
+    domainPresenceInfo.setServerPod(serverName,
+          new V1Pod().metadata(
+                withNames(new V1ObjectMeta().namespace(NS).putLabelsItem(CLUSTERNAME_LABEL, CLUSTER1), serverName))
+                      .spec(new V1PodSpec().nodeName("scheduled")));
   }
 
-  @NotNull
-  private Collection<ServerStartupInfo> createServerStartupInfos(String... servers) {
-    Collection<ServerStartupInfo> serverStartupInfos = new ArrayList<>();
-    Arrays.stream(servers).forEach(server ->
-        serverStartupInfos.add(
-            new ServerStartupInfo(configSupport.getWlsServer(server),
-                null,
-                domain.getServer(server, null))
-        )
-    );
-    return serverStartupInfos;
-  }
 
-  private void invokeStepWithServerStartupInfos(Collection<ServerStartupInfo> startupInfos) {
+  private void invokeStepWithServerStartupInfos() {
     ManagedServerUpIteratorStep step = new ManagedServerUpIteratorStep(startupInfos, nextStep);
     testSupport.runSteps(step);
   }
@@ -333,11 +339,23 @@ public class ManagedServerUpIteratorStepTest {
   }
 
   private void addWlsServer(String serverName) {
-    configSupport.addWlsServer(serverName, 8001);
+    configSupport.addWlsServer(serverName, PORT);
+    startupInfos.add(
+          new ServerStartupInfo(configSupport.getWlsServer(serverName),
+              null,
+              domain.getServer(serverName, null))
+    );
   }
 
-  private void addWlsCluster(String clusterName, int port, String... serverNames) {
+  private void addWlsCluster(String clusterName, String... serverNames) {
+    configSupport.addWlsCluster(clusterName, PORT, serverNames);
+    Arrays.stream(serverNames).forEach(server ->
+            startupInfos.add(
+                new ServerStartupInfo(configSupport.getWlsServer(clusterName, server),
+                    clusterName,
+                    domain.getServer(server, clusterName))
+            )
+    );
 
-    configSupport.addWlsCluster(clusterName, port, serverNames);
   }
 }
