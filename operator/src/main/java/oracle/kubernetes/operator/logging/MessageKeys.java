@@ -148,6 +148,8 @@ public class MessageKeys {
   public static final String NO_CLUSTER_IN_DOMAIN = "WLSDO-0011";
   public static final String NO_MANAGED_SERVER_IN_DOMAIN = "WLSDO-0012";
   public static final String CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO = "WLSDO-0013";
+  public static final String INTROSPECT_JOB_FAILED = "WLSDO-0014";
+  public static final String INTROSPECT_JOB_FAILED_RETRY_COUNT = "WLSDO-0015";
 
   private MessageKeys() {
   }
