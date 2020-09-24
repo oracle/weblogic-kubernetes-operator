@@ -17,6 +17,8 @@ public class HelmParams {
   private String chartValuesFile;
   private String filter;
   private String chartVersion;
+  private boolean wait;
+  private String timeout;
 
   public HelmParams releaseName(String releaseName) {
     this.releaseName = releaseName;
@@ -63,6 +65,16 @@ public class HelmParams {
     return this;
   }
 
+  public HelmParams wait(boolean wait) {
+    this.wait = wait;
+    return this;
+  }
+
+  public HelmParams timeout(String timeout) {
+    this.timeout = timeout;
+    return this;
+  }
+
   public String getReleaseName() {
     return releaseName;
   }
@@ -98,5 +110,9 @@ public class HelmParams {
   public String getChartVersion() {
     return chartVersion;
   }
+
+  public String getTimeout() { return timeout; }
+
+  public boolean isWait() { return wait; }
 
 }

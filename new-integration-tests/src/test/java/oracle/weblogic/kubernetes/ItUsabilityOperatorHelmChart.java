@@ -685,7 +685,9 @@ class ItUsabilityOperatorHelmChart {
     HelmParams opHelmParams =
         new HelmParams().releaseName(opReleaseName)
             .namespace(op2Namespace)
-            .chartDir(OPERATOR_CHART_DIR);
+            .chartDir(OPERATOR_CHART_DIR)
+            .wait(true)
+            .timeout("60s");
     try {
       try {
         // install and verify operator will not start
@@ -704,6 +706,11 @@ class ItUsabilityOperatorHelmChart {
               .namespace(op2Namespace)
               .name(opServiceAccount))));
       logger.info("Created service account: {0}", opServiceAccount);
+
+      logger.info("Installing operator %s in namespace %s again", opReleaseName, op2Namespace);
+      HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, false, false,
+          false,null,"deployed", 0, opHelmParams,  domain2Namespace);
+
       // list Helm releases matching operator release name in operator namespace
       logger.info("Checking operator release {0} status in namespace {1}",
           opReleaseName, op2Namespace);
@@ -724,8 +731,9 @@ class ItUsabilityOperatorHelmChart {
                   condition.getRemainingTimeInMS()))
           .until(assertDoesNotThrow(() -> operatorIsReady(op2Namespace),
               "operatorIsReady failed with ApiException"));
-      //comment it out due OWLS-84294, helm does not report failed status
-      //assertNull(errorMsg, errorMsg);
+
+      // Helm reports error message status
+      assertNotNull(errorMsg);
     } finally {
       //uninstall operator helm chart
       deleteSecret("ocir-secret",op2Namespace);
@@ -951,18 +959,13 @@ class ItUsabilityOperatorHelmChart {
           String.format("Operator install failed with unexpected error  :%s", helmErrorMsg));
       return null;
     } else {
-      assertTrue(installOperator(opParams),
+      boolean succeeded = installOperator(opParams);
+      checkReleaseStatus(operNamespace, helmStatus, logger, opReleaseName);
+      assertTrue(succeeded,
           String.format("Failed to install operator in namespace %s ", operNamespace));
       logger.info("Operator installed in namespace {0}", operNamespace);
     }
-    // list Helm releases matching operator release name in operator namespace
-    logger.info("Checking operator release {0} status in namespace {1}",
-        opReleaseName, operNamespace);
-    assertTrue(checkHelmReleaseStatus(opReleaseName, operNamespace, helmStatus),
-        String.format("Operator release %s is not in %s status in namespace %s",
-            opReleaseName, helmStatus, operNamespace));
-    logger.info("Operator release {0} status is {1} in namespace {2}",
-        opReleaseName, helmStatus, operNamespace);
+    checkReleaseStatus(operNamespace, helmStatus, logger, opReleaseName);
     if (helmStatus.equalsIgnoreCase("deployed")) {
       // wait for the operator to be ready
       logger.info("Wait for the operator pod is ready in namespace {0}", operNamespace);
@@ -991,6 +994,17 @@ class ItUsabilityOperatorHelmChart {
       return opHelmParams;
     }
     return null;
+  }
+
+  private static void checkReleaseStatus(String operNamespace, String helmStatus, LoggingFacade logger, String opReleaseName) {
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking operator release {0} status in namespace {1}",
+        opReleaseName, operNamespace);
+    assertTrue(checkHelmReleaseStatus(opReleaseName, operNamespace, helmStatus),
+        String.format("Operator release %s is not in %s status in namespace %s",
+            opReleaseName, helmStatus, operNamespace));
+    logger.info("Operator release {0} status is {1} in namespace {2}",
+        opReleaseName, helmStatus, operNamespace);
   }
 
   /**
