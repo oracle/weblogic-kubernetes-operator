@@ -143,7 +143,7 @@ set('WeblogicPluginEnabled',true)
 ### 2. Create NGINX ingress resource with custom annotation values
 Save the below configuration as `nginx-tls-console.yaml` and replace the string `weblogic-domain` with the namespace of the WebLogic domain, the string `domain1` with the domain UID, and the string `adminserver` with the name of the Administration Server in the WebLogic domain.
 
-**NOTE**:If you also have HTTP requests coming into an ingress, make sure that you remove any incoming `WL-Proxy-SSL` header. This protects you from a malicious user sending in a request to appear to WebLogic as secure when it isn't. Add the following annotations in the NGINX ingress configuration to block `WL-Proxy` headers coming from the client. In the following example, the ingress resource will eliminate the client header `WL-Proxy-Client-IP`.
+**NOTE**:If you also have HTTP requests coming into an ingress, make sure that you remove any incoming `WL-Proxy-SSL` header. This protects you from a malicious user sending in a request to appear to WebLogic as secure when it isn't. Add the following annotations in the NGINX ingress configuration to block `WL-Proxy` headers coming from the client. In the following example, the ingress resource will eliminate the client headers `WL-Proxy-Client-IP` and `WL-Proxy-SSL`.
 
 ```
 apiVersion: extensions/v1beta1
@@ -154,9 +154,9 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_clear_input_headers "WL-Proxy-Client-IP" "WL-Proxy-SSL";
       more_set_input_headers "X-Forwarded-Proto: https";
       more_set_input_headers "WL-Proxy-SSL: true";
-      proxy_set_header WL-Proxy-Client-IP "";
     nginx.ingress.kubernetes.io/ingress.allow-http: "false"
 spec:
   tls:
