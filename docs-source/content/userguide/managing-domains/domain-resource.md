@@ -214,6 +214,8 @@ You can use the following environment variables to specify JVM memory and JVM op
 * `NODEMGR_MEM_ARGS`: JVM memory arguments for starting a Node Manager instance.
 * `WLST_PROPERTIES`: System properties for WLST commands in introspector jobs or WebLogic Server instance containers.
 * `WLSDEPLOY_PROPERTIES`: System properties for WebLogic Deploy Tool commands during Model in Image introspector jobs or WebLogic Server instance containers.
+* `PRE_CLASSPATH`: Path(s) that are *prepended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
+* `CLASSPATH`: Path(s) that are *appended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
 
 **Notes:**
 
@@ -249,6 +251,10 @@ spec:
       value: "-Dweblogic.StdoutDebugEnabled=false "
     - name: NODEMGR_MEM_ARGS
       value: "-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom "
+    - name: PRE_CLASSPATH
+      value: "/sample/path/prepended/to/weblogic/system/classpath:/another/prepended/path"
+    - name: CLASSPATH
+      value: "/sample/path/appended/to/weblogic/system/classpath:/another/appended/path"
 ```
 
 #### Pod generation
