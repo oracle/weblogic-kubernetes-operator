@@ -454,7 +454,7 @@ class ItManageNs {
   private static void createSecrets(String domainNamespace) {
     // create docker registry secret to pull the image from registry
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    if (domainNamespace.equals("default")) {
+    if (!domainNamespace.equals("default")) {
       createDockerRegistrySecret(domainNamespace);
     }
 
@@ -470,7 +470,7 @@ class ItManageNs {
   private static void deleteSecrets(String domainNamespace) {
     // create docker registry secret to pull the image from registry
     logger.info("Deleting docker registry secret in namespace {0}", domainNamespace);
-    if (domainNamespace.equals("default")) {
+    if (!domainNamespace.equals("default")) {
       deleteSecret(OCR_SECRET_NAME, domainNamespace);
     }
 
