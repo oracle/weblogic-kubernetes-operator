@@ -996,7 +996,11 @@ class ItUsabilityOperatorHelmChart {
     return null;
   }
 
-  private static void checkReleaseStatus(String operNamespace, String helmStatus, LoggingFacade logger, String opReleaseName) {
+  private static void checkReleaseStatus(
+      String operNamespace, 
+      String helmStatus, 
+      LoggingFacade logger, 
+      String opReleaseName) {
     // list Helm releases matching operator release name in operator namespace
     logger.info("Checking operator release {0} status in namespace {1}",
         opReleaseName, operNamespace);

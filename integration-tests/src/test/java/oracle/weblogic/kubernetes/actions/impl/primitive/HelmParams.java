@@ -111,8 +111,12 @@ public class HelmParams {
     return chartVersion;
   }
 
-  public String getTimeout() { return timeout; }
+  public String getTimeout() { 
+    return timeout; 
+  }
 
-  public boolean isWait() { return wait; }
+  public boolean isWait() { 
+    return wait; 
+  }
 
 }
