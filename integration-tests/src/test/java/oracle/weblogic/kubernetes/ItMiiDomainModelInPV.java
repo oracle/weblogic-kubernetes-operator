@@ -39,7 +39,6 @@ import org.awaitility.core.ConditionFactory;
 import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -234,7 +233,6 @@ public class ItMiiDomainModelInPV {
    */
   @ParameterizedTest
   @MethodSource("paramProvider")
-  @Test
   @DisplayName("Create MII domain with model and application file from PV")
   public void testMiiDomainWithModelAndApplicationInPV(Entry<String, String> params) {
 
