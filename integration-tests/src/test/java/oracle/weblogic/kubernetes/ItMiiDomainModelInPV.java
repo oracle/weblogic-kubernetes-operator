@@ -14,7 +14,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -38,6 +40,8 @@ import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -90,20 +94,22 @@ public class ItMiiDomainModelInPV {
   private static String domainNamespace = null;
 
   // domain constants
-  private static String domainUid = "domain1";
+  private static Map<String, String> params = new HashMap<>();
+  private static String domainUid1 = "domain1";
+  private static String domainUid2 = "domain2";
   private static String adminServerName = "admin-server";
   private static String clusterName = "cluster-1";
   private static int replicaCount = 2;
-  private static String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-  private static String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
-  private static String miiImage;
-  private static String miiImageTag;
+  private static String miiImagePV;
+  private static String miiImageTagPV;
+  private static String miiImageCustom;
+  private static String miiImageTagCustom;
   private static String adminSecretName;
   private static String encryptionSecretName;
 
-  private static String pvName = domainUid + "-pv"; // name of the persistent volume
-  private static String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+  private static String pvName = domainUid1 + "-pv"; // name of the persistent volume
+  private static String pvcName = domainUid1 + "-pvc"; // name of the persistent volume claim
 
   private static Path clusterViewAppPath;
   private static String modelFile = "modelinpv-with-war.yaml";
@@ -134,19 +140,30 @@ public class ItMiiDomainModelInPV {
     assertNotNull(namespaces.get(0), "Namespace list is null");
     String opNamespace = namespaces.get(0);
 
-    // get a unique domain namespace
-    logger.info("Getting a unique namespace for WebLogic domain");
+    // get a unique domain1 namespace
+    logger.info("Getting a unique namespace for WebLogic domains");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    miiImageTag = TestUtils.getDateAndTimeStamp();
-    miiImage = MII_BASIC_IMAGE_NAME + ":" + miiImageTag;
+    logger.info("Building image with empty model file");
+    miiImageTagPV = TestUtils.getDateAndTimeStamp();
+    miiImagePV = MII_BASIC_IMAGE_NAME + ":" + miiImageTagPV;
 
     // build a new MII image with no domain
     buildMIIandPushToRepo();
+
+    logger.info("Building image with custom wdt model home location");
+    miiImageTagCustom = TestUtils.getDateAndTimeStamp();
+    miiImagePV = MII_BASIC_IMAGE_NAME + ":" + miiImageTagCustom;
+
+    // build a new MII image with custom wdtHome
+    buildMIIWithwdtModelHomeandPushToRepo(Paths.get(MODEL_DIR, modelFile).toString());
+
+    params.put("domain1", miiImagePV);
+    params.put("domain2", miiImageCustom);
 
     // create docker registry secret to pull the image from registry
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
@@ -155,7 +172,7 @@ public class ItMiiDomainModelInPV {
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
     adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create model encryption secret
     logger.info("Creating encryption secret");
@@ -163,8 +180,8 @@ public class ItMiiDomainModelInPV {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
     // create the PV and PVC to store application and model files
-    createPV(pvName, domainUid, "ItMiiDomainModelInPV");
-    createPVC(pvName, pvcName, domainUid, domainNamespace);
+    createPV(pvName, domainUid1, "ItMiiDomainModelInPV");
+    createPVC(pvName, pvcName, domainUid1, domainNamespace);
 
     // build the clusterview application
     Path distDir = buildApplication(Paths.get(APP_DIR, "clusterview"),
@@ -208,19 +225,41 @@ public class ItMiiDomainModelInPV {
   }
 
   /**
-   * Test domain creation from model file stored in PV.
-   * https://oracle.github.io/weblogic-kubernetes-operator
-   *       /userguide/managing-domains/domain-resource/#domain-spec-elements
-   * 1. Create the domain custom resource using mii with no domain and specifying a PV location for modelHome
-   * 2. Verify the domain creation is successful and application is accessible.
+   * Test domain creation from model file stored in PV.https://oracle.github.io/weblogic-kubernetes-operator
+       /userguide/managing-domains/domain-resource/#domain-spec-elements
+    1.Create the domain custom resource using mii with no domain and specifying a PV location for modelHome
+    2.Create the domain custom resource using mii with custom wdt model home in a pv location
+    2. Verify the domain creation is successful and application is accessible.
+   * @param params domain name and image parameters
    */
+  @ParameterizedTest
+  @MethodSource("paramProvider")
   @Test
   @DisplayName("Create MII domain with model and application file from PV")
-  public void testMiiDomainWithModelAndApplicationInPV() {
+  public void testMiiDomainWithModelAndApplicationInPV(Entry<String, String> params) {
+
+    String domainUid = params.getKey();
+    String image = params.getValue();
 
     // create domain custom resource and verify all the pods came up
-    Domain domain = buildDomainResource();
-    createVerifyDomain(domain);
+    logger.info("Creating domain custom resource");
+
+    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
+        image, adminSecretName, REPO_SECRET_NAME, encryptionSecretName, replicaCount, clusterName);
+    domainCR.spec().configuration().model().withModelHome("/shared/model");
+    domainCR.spec().serverPod()
+        .addVolumesItem(new V1Volume()
+            .name(pvName)
+            .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                .claimName(pvcName)))
+        .addVolumeMountsItem(new V1VolumeMount()
+            .mountPath("/shared")
+            .name(pvName));
+
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+
+    createVerifyDomain(domainUid, domainCR, adminServerPodName, managedServerPodNamePrefix);
 
     List<String> managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -232,30 +271,21 @@ public class ItMiiDomainModelInPV {
 
   }
 
-  // create custom domain resource with model file in modelHome
-  private Domain buildDomainResource() {
-    logger.info("Creating domain custom resource");
-    Domain domainCR = CommonMiiTestUtils.createDomainResource(
-        domainUid, domainNamespace, miiImage, adminSecretName,
-        REPO_SECRET_NAME, encryptionSecretName, replicaCount, clusterName
-    );
-    domainCR.spec().configuration().model().withModelHome("/shared/model");
-    domainCR.spec().serverPod()
-        .addVolumesItem(new V1Volume()
-            .name(pvName)
-            .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
-                .claimName(pvcName)))
-        .addVolumeMountsItem(new V1VolumeMount()
-            .mountPath("/shared")
-            .name(pvName));
-    return domainCR;
+
+  /**
+   * Generate a steam of Domain objects used in parameterized tests.
+   * @return stream of oracle.weblogic.domain.Domain objects
+   */
+  private static Stream<Entry<String,String>> paramProvider() {
+    return params.entrySet().stream();
   }
 
   // create domain resource and verify all the server pods are ready
-  private void createVerifyDomain(Domain domain) {
+  private void createVerifyDomain(String domainUid, Domain domain,
+      String adminServerPodName, String managedServerPodNamePrefix) {
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, miiImage);
+        domainUid, domainNamespace, miiImagePV);
     createDomainAndVerify(domain, domainNamespace);
 
     // check that admin service/pod exists in the domain namespace
@@ -368,13 +398,34 @@ public class ItMiiDomainModelInPV {
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
     createImage(defaultWitParams()
         .modelImageName(MII_BASIC_IMAGE_NAME)
-        .modelImageTag(miiImageTag)
+        .modelImageTag(miiImageTagPV)
         .modelFiles(modelList)
         .wdtModelOnly(true)
         .wdtVersion(WDT_VERSION)
         .env(env)
         .redirect(true));
+    dockerLoginAndPushImage(miiImagePV);
+  }
 
+  // create a model in image with no domain
+  // push the image to repo
+  private static void buildMIIWithwdtModelHomeandPushToRepo(String wdtModelHome) {
+    // Set additional environment variables for WIT
+    checkDirectory(WIT_BUILD_DIR);
+    Map<String, String> env = new HashMap<>();
+    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
+    createImage(defaultWitParams()
+        .modelImageName(MII_BASIC_IMAGE_NAME)
+        .modelImageTag(miiImageTagCustom)
+        .wdtModelHome(wdtModelHome)
+        .wdtModelOnly(true)
+        .wdtVersion(WDT_VERSION)
+        .env(env)
+        .redirect(true));
+    dockerLoginAndPushImage(miiImageCustom);
+  }
+
+  private static void dockerLoginAndPushImage(String image) {
     // login to docker
     if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login");
@@ -389,14 +440,15 @@ public class ItMiiDomainModelInPV {
 
     // push the image to repo
     if (!REPO_NAME.isEmpty()) {
-      logger.info("docker push image {0} to {1}", miiImage, REPO_NAME);
+      logger.info("docker push image {0} to {1}", miiImagePV, REPO_NAME);
       withStandardRetryPolicy
           .conditionEvaluationListener(condition -> logger.info("Waiting for docker push for image {0} to be successful"
           + "(elapsed time {1} ms, remaining time {2} ms)",
-          miiImage,
+          miiImagePV,
           condition.getElapsedTimeInMS(),
           condition.getRemainingTimeInMS()))
-          .until(() -> dockerPush(miiImage));
+          .until(() -> dockerPush(image));
     }
   }
+
 }

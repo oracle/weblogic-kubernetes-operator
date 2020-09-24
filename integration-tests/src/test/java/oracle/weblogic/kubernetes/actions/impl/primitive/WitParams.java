@@ -158,17 +158,17 @@ public class WitParams {
     return wdtModelOnly;
   }
 
+  public WitParams wdtModelOnly(boolean wdtModelOnly) {
+    this.wdtModelOnly = wdtModelOnly;
+    return this;
+  }
+
   public String wdtModelHome() {
     return wdtModelHome;
   }
 
-  public WitParams wdtModelOnly(String wdtModelHome) {
+  public WitParams wdtModelHome(String wdtModelHome) {
     this.wdtModelHome = wdtModelHome;
-    return this;
-  }
-
-  public WitParams wdtModelOnly(boolean wdtModelOnly) {
-    this.wdtModelOnly = wdtModelOnly;
     return this;
   }
 
