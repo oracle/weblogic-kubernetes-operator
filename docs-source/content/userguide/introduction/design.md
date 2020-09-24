@@ -14,9 +14,9 @@ It is important to note the distinction between an *operator* and an *administra
 
 Human operators may manage more than one domain, and the operator is also designed to be able to manage more than one domain.  Like its human counterpart, the operator will only take actions against domains that it is told to manage, and will ignore any other domains that may be present in the same environment.
 
-Like a human operator, the operator is designed to be event-based.  It waits for a significant event to occur, or for a scheduled time to perform some action, and then takes the appropriate action.  Examples of significant events include being made aware of a new domain that needs to be managed, receiving a request to scale up a WebLogic cluster, or applying a patch of WebLogic or an application while preserving cluster availability.
+Like a human operator, the operator is designed to be event-based.  It waits for a significant event to occur, or for a scheduled time to perform some action, and then takes the appropriate action.  Examples of significant events include being made aware of a new domain that needs to be managed, receiving a request to scale up a WebLogic cluster, or applying a WebLogic Server patch or an application while preserving cluster availability.
 
-There are some operator tasks, such as initiating backups, that are presently not implemented by the Oracle WebLogic Kubernetes Operator. We welcome any feedback or requirements as this helps us to properly create our roadmap.
+There are some operator tasks, such as initiating backups, that are presently not implemented by the Oracle WebLogic Server Kubernetes Operator. We welcome any feedback or requirements as this helps us to properly create our roadmap.
 
 The operator is designed with security in mind from the outset.  Some examples of the specific security practices we follow are:
 
