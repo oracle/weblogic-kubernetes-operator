@@ -42,6 +42,9 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 public class ManagedServerUpIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  /** The interval in msec that the operator will wait to ensure that started pods have been scheduled on a node. */
+  public static final int SCHEDULING_DETECTION_DELAY = 100;
+
   private final Collection<ServerStartupInfo> startupInfos;
 
   public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> startupInfos, Step next) {
@@ -169,7 +172,7 @@ public class ManagedServerUpIteratorStep extends Step {
         numStarted.getAndIncrement();
         return doForkJoin(this, packet, Collections.singletonList(startDetailsQueue.poll()));
       } else {
-        return doDelay(this, packet, 100, TimeUnit.MILLISECONDS);
+        return doDelay(this, packet, SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
       }
     }
 
