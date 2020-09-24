@@ -69,13 +69,13 @@ externalRestHttpsPort: 31001
 javaLoggingLevel: "INFO"
 
 # nodeSelector specifies a matching rule that the Kubernetes scheduler will use when selecting the node
-# where the operator will run. If the nodeSelector value is specified then this content will be added to
+# where the operator will run. If the nodeSelector value is specified, then this content will be added to
 # the operator's deployment. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
 # for more information on node selectors.
 #nodeSelector:
 
 # affinity specifies a set of matching rules related to the presence of other workloads that the Kubernetes scheduler
-# will use when selecting the node where the operator will run. If the affinity value is specified then this content
+# will use when selecting the node where the operator will run. If the affinity value is specified, then this content
 # will be added to the operator's deployment. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
 # for more information on affinity and anti-affinity.
 #affinity:
