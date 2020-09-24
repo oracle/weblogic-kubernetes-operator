@@ -48,12 +48,16 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
+import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -71,6 +75,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createExternalRestIdentitySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -92,6 +97,7 @@ class ItManageNs {
 
   private static String opNamespace = null;
   private static String op2Namespace = null;
+  private static String op3Namespace = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static String domain3Namespace = null;
@@ -101,20 +107,19 @@ class ItManageNs {
   private final String domain2Uid = "managensdomain2";
   private final String domain3Uid = "managensdomain3";
   private final String clusterName = "cluster-1";
-  private final int managedServerPort = 8001;
   private final int replicaCount = 2;
   private final String adminServerPrefix = "-" + ADMIN_SERVER_NAME_BASE;
   private final String managedServerPrefix = "-" + MANAGED_SERVER_NAME_BASE;
-  private boolean isDomain1Running = false;
-  private boolean isDomain2Running = false;
-  private int replicaCountDomain1 = 2;
-  private int replicaCountDomain2 = 2;
+
   private HelmParams opHelmParams1;
   private HelmParams opHelmParams2;
+  private static String adminSecretName = "weblogic-credentials";
+  private static String encryptionSecretName = "encryptionsecret";
 
   // ingress host list
   private List<String> ingressHostList;
   private static LoggingFacade logger = null;
+  private static String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
   private static org.awaitility.core.ConditionFactory withStandardRetryPolicy =
       with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
@@ -127,7 +132,7 @@ class ItManageNs {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(5) List<String> namespaces) {
+  public static void initAll(@Namespaces(6) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -153,6 +158,15 @@ class ItManageNs {
     logger.info("Getting a unique namespace for operator 2");
     assertNotNull(namespaces.get(4), "Namespace list is null");
     op2Namespace = namespaces.get(4);
+
+    // get a unique operator 2 namespace
+    logger.info("Getting a unique namespace for operator 3");
+    assertNotNull(namespaces.get(5), "Namespace list is null");
+    op3Namespace = namespaces.get(5);
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(miiImage);
+    createSecrets(domain3Namespace);
+    createSecrets("default");
   }
 
   @AfterAll
@@ -167,14 +181,20 @@ class ItManageNs {
     deleteDomainCustomResource(domain2Uid, domain2Namespace);
     logger.info("Deleted Domain Custom Resource " + domain2Uid + " from " + domain2Namespace);
 
-    logger.info("Delete domain3 custom resource in namespace {0}", domain2Namespace);
-
+    logger.info("Delete domain3 custom resource in namespace {0}", domain3Namespace);
+    deleteDomainCustomResource(domain3Uid, domain3Namespace);
+    logger.info("Delete domain1xoxoxo custom resource in namespace {0}", "xoxoxo-" + domain1Namespace);
     deleteDomainCustomResource(domain1Uid + "xoxoxo", "xoxoxo-" + domain1Namespace);
     logger.info("Deleted Domain Custom Resource " + domain1Uid + "xoxoxo from xoxoxo-" + domain1Namespace);
+    logger.info("Delete domain2xoxoxo custom resource in namespace {0}", "xoxoxo-" + domain2Namespace);
     deleteDomainCustomResource(domain2Uid + "xoxoxo", "xoxoxo-" + domain2Namespace);
     logger.info("Deleted Domain Custom Resource " + domain2Uid + "xoxoxo from xoxoxo-" + domain2Namespace);
 
-
+    deleteSecrets("default");
+    deleteSecrets("xoxoxo-" + domain1Namespace);
+    deleteSecrets("xoxoxo-" + domain2Namespace);
+    deleteNamespace("xoxoxo-" + domain1Namespace);
+    deleteNamespace("xoxoxo-" + domain2Namespace);
     //delete operator
     uninstallOperator(opHelmParams1);
     uninstallOperator(opHelmParams2);
@@ -182,54 +202,128 @@ class ItManageNs {
   }
 
   /**
-   * Install the Operator successfully and verify it is deployed successfully.
-   * Deploy a custom domain resource and verify all server pods in the domain were created and ready.
-   * Uninstall operator helm chart.
-   * Verify the states of all server pods in the domain were not changed.
-   * Verify the access to managed server configuration via rest api in the domain after the operator was deleted.
+   * Install the Operator successfully and verify it is deployed successfully
+   * with domainNamespaceSelectionStrategy=LabelSelector,
+   * and domainNamespaceLabelSelector=label1.
+   * Deploy a custom domain resource in the namespace with label1
+   * and verify all server pods in the domain were created and ready.
+   * Verify operator is able to manage this domain by scaling.
+   * Try to start another domain with namespace2 with label2. Verify it is not started by operator.
+   * modify namespace2 to set label1, verify that operator can manage it
+   * verify that domainNamespaces field will be ignored and domain will not start for specific NS and default
+   * add another operator using domainNamespaces sharing same namespace and verify it fails to install
    */
   @Test
   @DisplayName("install operator helm chart and domain, "
       + " using label namespace management")
   public void testNsManageByLabel() {
-    //add label to domain namespace
-    V1Namespace namespaceObject1 = assertDoesNotThrow(() -> Kubernetes.getNamespaceAsObject(domain1Namespace));
-    assertNotNull(namespaceObject1, "Can't find namespace with name " + domain1Namespace);
-    //add label to namespace
-    Map<String,String> labels1 = new java.util.HashMap<>();
+    Map<String, String> labels1 = new java.util.HashMap<>();
     labels1.put("weblogic-operator", OPERATOR_RELEASE_NAME);
-    V1Namespace namespaceObjectWithLabel1 = namespaceObject1;
-    namespaceObjectWithLabel1.getMetadata().setLabels(labels1);
-    assertDoesNotThrow(() -> Kubernetes.replaceNamespace(namespaceObjectWithLabel1));
-
-    V1Namespace namespaceObject2 = assertDoesNotThrow(() -> Kubernetes.getNamespaceAsObject(domain2Namespace));
-    assertNotNull(namespaceObject2, "Can't find namespace with name " + domain2Namespace);
-    //add label to namespace
-    Map<String,String> labels2 = new java.util.HashMap<>();
-    labels2.put("weblogic-operator", OPERATOR_RELEASE_NAME + "2");
-    V1Namespace namespaceObjectWithLabel2 = namespaceObject2;
-    namespaceObjectWithLabel2.getMetadata().setLabels(labels2);
-    assertDoesNotThrow(() -> Kubernetes.replaceNamespace(namespaceObjectWithLabel2));
+    Map<String, String> labels2 = new java.util.HashMap<>();
+    labels2.put("weblogic-operator", OPERATOR_RELEASE_NAME+ "2");
+    setLabelToNamespace(domain1Namespace, labels1);
+    setLabelToNamespace(domain2Namespace, labels2);
 
     // install and verify operator
-
     opHelmParams1 = installOperatorHelmChart(OPERATOR_RELEASE_NAME,
-        opNamespace, "LabelSelector", "weblogic-operator=" + OPERATOR_RELEASE_NAME);
-    if (!isDomain1Running) {
-      logger.info("Installing and verifying domain1");
-      assertTrue(createVerifyDomain(domain1Namespace, domain1Uid),
-          "can't start or verify domain in namespace " + domain1Namespace);
-      isDomain1Running = true;
-    }
-    int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
-    assertTrue(scaleClusterWithRestApi(domain1Uid, clusterName,3,
-        externalRestHttpsPort,opNamespace, OPERATOR_RELEASE_NAME + "-sa"),
-        "Domain1 " + domain1Namespace + " scaling operation failed");
+        opNamespace, "LabelSelector",
+        "weblogic-operator=" + OPERATOR_RELEASE_NAME, domain3Namespace);
 
-    assertFalse(createVerifyDomain(domain2Namespace, domain2Uid),
+    logger.info("Installing and verifying domain1");
+    createSecrets(domain1Namespace);
+    assertTrue(startDomain(domain1Namespace, domain1Uid),
+        "can't start or verify domain in namespace " + domain1Namespace);
+
+    checkOperatorCanScaleDomain(opNamespace, domain1Uid, domain1Namespace);
+
+    //verify that domainNamespaces field will be ignored and domain will not start
+    assertFalse(startDomain(domain3Namespace,domain3Uid));
+
+    //verify that domain in namespace with no label1 will not start
+    createSecrets(domain2Namespace);
+    assertFalse(startDomain(domain2Namespace, domain2Uid),
         "operator can start or verify domain in namespace " + domain2Namespace);
+
+    //clean up domain resources in namespace and set to label , managed by operator
+    deleteDomainCustomResource(domain2Uid, domain2Namespace);
+
+    //switch to the label1, managed by operator and start domain.
+    setLabelToNamespace(domain2Namespace, labels1);
+
+    //verify that domain has started
+    assertTrue(startDomain(domain2Namespace, domain2Uid));
+    checkOperatorCanScaleDomain(opNamespace, domain2Uid, domain2Namespace);
+    checkDomainNotStartedInDefaultNS("SelectLabel");
+    checkSecondOperatorFailedToShareSameNS(domain1Namespace);
+
+    //upgrade operator to replace managed domains with RegExp namespaces
+    assertDoesNotThrow(() -> Kubernetes.createNamespace("nstest" + domain1Namespace));
+    int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(opHelmParams1)
+        .externalRestEnabled(true)
+        .externalRestHttpsPort(externalRestHttpsPort)
+        .serviceAccount(OPERATOR_RELEASE_NAME + "-sa")
+        .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME)
+        .domainNamespaceSelectionStrategy("RegExp")
+        .domainNamespaceRegExp("^" + "nstest");
+
+    assertTrue(upgradeAndVerifyOperator(opNamespace, opParams));
+
+    //verify domain is started
+    createSecrets("nstest" + domain1Namespace);
+    assertTrue(startDomain("nstest" + domain1Namespace,"nstest"));
+    checkOperatorCanScaleDomain(opNamespace,"nstest", "nstest" + domain1Namespace);
+    //check operator can't manage anymore domain1Namespace
+    assertFalse(scaleClusterWithRestApi(domain1Uid, clusterName, 2,
+        externalRestHttpsPort, opNamespace, OPERATOR_RELEASE_NAME + "-sa"),
+        "Domain " + domain1Namespace + " scaling operation failed");
+
   }
 
+  private void setLabelToNamespace(String domainNS, Map<String, String> labels) {
+    //add label to domain namespace
+    V1Namespace namespaceObject1 = assertDoesNotThrow(() -> Kubernetes.getNamespaceAsObject(domainNS));
+    assertNotNull(namespaceObject1, "Can't find namespace with name " + domainNS);
+    namespaceObject1.getMetadata().setLabels(labels);
+    assertDoesNotThrow(() -> Kubernetes.replaceNamespace(namespaceObject1));
+  }
+
+  private void checkOperatorCanScaleDomain(String opNamespace, String domainUid, String domainNamespace) {
+    int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+    assertTrue(scaleClusterWithRestApi(domainUid, clusterName, 3,
+        externalRestHttpsPort, opNamespace, OPERATOR_RELEASE_NAME + "-sa"),
+        "Domain " + domainNamespace + " scaling operation failed");
+  }
+
+  private void checkSecondOperatorFailedToShareSameNS(String domainNamespace) {
+    // try to install another operator sharing same domain namespace via different domainNsSelectionStrategy
+    try {
+      oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams opHelmParams3 = installOperatorHelmChart(OPERATOR_RELEASE_NAME,
+          op3Namespace, "List",
+          null, domainNamespace);
+    } catch (org.opentest4j.AssertionFailedError ex) {
+      //expecting to fail
+      logger.info("Helm installation failed as expected " + ex.getMessage());
+    }
+  }
+
+  private void checkDomainNotStartedInDefaultNS(String domainNsSelctionStrategy) {
+    //verify operator can't start domain in the default namespace
+    assertFalse(startDomain("default", "defaultuid"), "operator can " +
+        "start the domain in the default namespace with domainNsSelctionStrategy=" + domainNsSelctionStrategy);
+  }
+
+  /**
+   * Install the Operator successfully and verify it is deployed successfully
+   * with domainNamespaceSelectionStrategy=RegExp,
+   * and domainNamespaceRegExp=^xoxoxo and domainNamespace= domain3NS.
+   * Deploy two custom domain resources in the two different namespaces with names starting with xoxoxo
+   * and verify all server pods in the domains were created and ready.
+   * Verify operator is able to manage these domains by scaling.
+   * Try to start another domain with namespace domain3NS. Verify it is not started by operator
+   * and value of domainNamespace is ignored for both specific namespace and default.
+   */
   @Test
   @DisplayName("install operator helm chart and domain, "
       + " using expression namespace management")
@@ -243,27 +337,55 @@ class ItManageNs {
     // install and verify operator
 
     opHelmParams2 = installOperatorHelmChart(OPERATOR_RELEASE_NAME,
-        op2Namespace, "RegExp", "^xoxoxo");
+        op2Namespace, "RegExp", "^xoxoxo", domain3Namespace);
 
     logger.info("Installing and verifying domain1");
-    assertTrue(createVerifyDomain(domain1NS, domain1Uid + "xoxoxo"),
+    createSecrets(domain1NS);
+    assertTrue(startDomain(domain1NS, domain1Uid + "xoxoxo"),
         "can't start or verify domain in namespace " + domain1NS);
+    checkOperatorCanScaleDomain(op2Namespace, domain1Uid + "xoxoxo", domain1NS);
 
-
-    int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
-    assertTrue(scaleClusterWithRestApi(domain1Uid + "xoxoxo", clusterName,3,
-        externalRestHttpsPort,op2Namespace, OPERATOR_RELEASE_NAME + "-sa"),
-        "Domain1 " + domain1NS + " scaling operation failed");
-
-    assertTrue(createVerifyDomain(domain2Namespace + "xoxoxo", domain2Uid + "xoxoxo"),
+    logger.info("Installing and verifying domain2");
+    createSecrets(domain2NS);
+    assertTrue(startDomain(domain2NS, domain2Uid + "xoxoxo"),
         "operator can start or verify domain in namespace " + domain2NS);
-    externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
-    assertTrue(scaleClusterWithRestApi(domain2Uid + "xoxoxo", clusterName,3,
-        externalRestHttpsPort,op2Namespace, OPERATOR_RELEASE_NAME + "-sa"),
-        "Domain2 " + domain2NS + " scaling operation failed");
+    checkOperatorCanScaleDomain(op2Namespace, domain2Uid + "xoxoxo", domain2NS);
+    //verify that domainNamespaces field will be ignored and domain will not start for specific NS and default
+    assertFalse(startDomain(domain3Namespace,domain3Uid));
+    checkDomainNotStartedInDefaultNS("RegExp");
+    // install  operator sharing same domain
+    checkSecondOperatorFailedToShareSameNS(domain1NS);
+
+    //upgrade operator to replace managed domains with Labeled namespaces
+
+    int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+    assertDoesNotThrow(() -> Kubernetes.createNamespace("nstest" + domain2Namespace));
+    Map<String, String> labels = new java.util.HashMap<>();
+    labels.put("mytest", "nstest");
+    setLabelToNamespace(domain1Namespace, labels);
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(opHelmParams2)
+        .externalRestEnabled(true)
+        .externalRestHttpsPort(externalRestHttpsPort)
+        .serviceAccount(OPERATOR_RELEASE_NAME + "-sa")
+        .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME)
+        .domainNamespaceLabelSelector("mytest=nstest")
+        .domainNamespaceSelectionStrategy("LabelSelector");
+
+    assertTrue(upgradeAndVerifyOperator(op2Namespace, opParams));
+
+    //verify domain is started
+    createSecrets("nstest" + domain2Namespace);
+    assertTrue(startDomain("nstest" + domain2Namespace,"nstest"));
+    checkOperatorCanScaleDomain(op2Namespace,"nstest", "nstest" + domain2Namespace);
+    //check operator can't manage anymore domain2NS
+    assertFalse(scaleClusterWithRestApi(domain2Uid + "xoxoxo", clusterName, 2,
+        externalRestHttpsPort, op2Namespace, OPERATOR_RELEASE_NAME + "-sa"),
+        "Domain " + domain2NS + " scaling operation failed");
   }
 
-  private boolean createVerifyDomain(String domainNamespace, String domainUid) {
+
+  private boolean startDomain(String domainNamespace, String domainUid) {
 
     // create and verify the domain
     logger.info("Creating and verifying model in image domain");
@@ -280,26 +402,6 @@ class ItManageNs {
    * Create a model in image domain and verify the domain pods are ready.
    */
   private void createAndVerifyMiiDomain(String domainNamespace, String domainUid) {
-
-    // get the pre-built image created by IntegrationTestWatcher
-    String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
-
-    // create docker registry secret to pull the image from registry
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createDockerRegistrySecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Creating secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
-
-    // create encryption secret
-    logger.info("Creating encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
     // construct a list of oracle.weblogic.domain.Cluster objects to be used in the domain custom resource
     List<Cluster> clusters = new ArrayList<>();
@@ -345,6 +447,38 @@ class ItManageNs {
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
+    createVerifyDomain(domainNamespace, domainUid, miiImage, domain);
+  }
+
+  private static void createSecrets(String domainNamespace) {
+    // create docker registry secret to pull the image from registry
+    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    createDockerRegistrySecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Creating secret for admin credentials");
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
+
+    // create encryption secret
+    logger.info("Creating encryption secret");
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+  }
+
+  private static void deleteSecrets(String domainNamespace) {
+    // create docker registry secret to pull the image from registry
+    logger.info("Deleting docker registry secret in namespace {0}", domainNamespace);
+    deleteSecret(OCR_SECRET_NAME, domainNamespace);
+
+    // delete secret for admin credentials
+    logger.info("Deleting secret for admin credentials");
+    deleteSecret(adminSecretName, domainNamespace);
+
+    // delete encryption secret
+    logger.info("Deleting encryption secret");
+    deleteSecret(encryptionSecretName, domainNamespace);
+  }
+
+  private void createVerifyDomain(String domainNamespace, String domainUid, String miiImage, Domain domain) {
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
@@ -487,41 +621,6 @@ class ItManageNs {
             "operator external service is not running"));
 
     return opHelmParams;
-  }
-
-  /**
-   * Executes the given command and return error message if command failed.
-   * @param command the command to execute
-   * @return Error message string for failed command or null if no failure
-   */
-  private static String createNS(String command) {
-    getLogger().info("Running command - \n" + command);
-    ExecResult result = null;
-    try {
-      result = ExecCommand.exec(command, true);
-      getLogger().info("The command returned exit value: "
-          + result.exitValue() + " command output: "
-          + result.stderr() + "\n" + result.stdout());
-      if (result.exitValue() != 0) {
-        getLogger().info("Command failed with errors " + result.stderr() + "\n" + result.stdout());
-        return result.stderr();
-      }
-    } catch (Exception e) {
-      getLogger().info("Got exception, command failed with errors " + e.getMessage());
-      return result.stderr();
-    }
-    return null;
-  }
-
-  private void cleanUpSA(String namespace) {
-    V1ServiceAccountList sas = Kubernetes.listServiceAccounts(namespace);
-    if (sas != null) {
-      for (V1ServiceAccount sa : sas.getItems()) {
-        String saName = sa.getMetadata().getName();
-        deleteServiceAccount(saName, namespace);
-        checkServiceDoesNotExist(saName, namespace);
-      }
-    }
   }
 
   /*
