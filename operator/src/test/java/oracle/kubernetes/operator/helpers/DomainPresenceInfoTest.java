@@ -3,17 +3,23 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainPresenceInfoTest {
-  private DomainPresenceInfo info = new DomainPresenceInfo("ns", "domain");
+  private final DomainPresenceInfo info = new DomainPresenceInfo("ns", "domain");
 
   @Test
   public void whenNoneDefined_getClusterServiceReturnsNull() {
@@ -78,4 +84,62 @@ public class DomainPresenceInfoTest {
     assertThat(info.getValidationWarningsAsString(), containsString(warning1));
     assertThat(info.getValidationWarningsAsString(), containsString(warning2));
   }
+
+  @Test
+  public void countReadyServers() {
+    addServer("MS1", "cluster1");
+    addReadyServer("MS2", "cluster1");
+    addServer("MS3", "cluster2");
+    addReadyServer("MS4", "cluster2");
+    addServer("MS5", null);
+    addReadyServer("MS6", null);
+
+    assertThat(info.getNumReadyServers("cluster1"), equalTo(2L));
+    assertThat(info.getNumReadyServers("cluster2"), equalTo(2L));
+    assertThat(info.getNumReadyServers(null), equalTo(1L));
+  }
+
+  private void addServer(String serverName, String clusterName) {
+    info.setServerPod(serverName, createServerInCluster(serverName, clusterName));
+  }
+
+  private V1Pod createServerInCluster(String podName, String clusterName) {
+    return new V1Pod().metadata(new V1ObjectMeta().name(podName).putLabelsItem(CLUSTERNAME_LABEL, clusterName));
+  }
+
+  private void addReadyServer(String serverName, String clusterName) {
+    addServer(serverName, clusterName);
+    setReady(info.getServerPod(serverName));
+  }
+
+  private void setReady(V1Pod pod) {
+    pod.status(new V1PodStatus()
+          .phase("Running")
+          .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
+
+  }
+
+  @Test
+  public void countScheduledServers() {
+    addServer("MS1", "cluster1");
+    addScheduledServer("MS2", "cluster1");
+    addServer("MS3", "cluster2");
+    addScheduledServer("MS4", "cluster2");
+    addServer("MS5", null);
+    addScheduledServer("MS6", null);
+
+    assertThat(info.getNumScheduledServers("cluster1"), equalTo(2L));
+    assertThat(info.getNumScheduledServers("cluster2"), equalTo(2L));
+    assertThat(info.getNumScheduledServers(null), equalTo(1L));
+  }
+
+  private void addScheduledServer(String serverName, String clusterName) {
+    addServer(serverName, clusterName);
+    setScheduled(info.getServerPod(serverName));
+  }
+
+  private void setScheduled(V1Pod pod) {
+    pod.spec(new V1PodSpec().nodeName("aNode"));
+  }
+
 }

@@ -4,9 +4,12 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -87,61 +90,28 @@ public class PodHelper {
     return ready;
   }
 
-  /**
-   * Get list of scheduled pods for a particular cluster or non-clustered servers.
-   * @param info Domain presence info
-   * @param clusterName cluster name of the pod server
-   * @return list containing scheduled pods
-   */
-  public static List<String> getScheduledPods(DomainPresenceInfo info, String clusterName) {
-    // These are presently scheduled servers
-    List<String> scheduledServers = new ArrayList<>();
-    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-      V1Pod pod = entry.getValue().getPod().get();
-      if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getScheduledStatus(pod)) {
-        String wlsClusterName = pod.getMetadata().getLabels().get(CLUSTERNAME_LABEL);
-        if ((wlsClusterName == null) || (wlsClusterName.contains(clusterName))) {
-          scheduledServers.add(entry.getKey());
-        }
-      }
-    }
-    return scheduledServers;
+  static boolean hasReadyServer(V1Pod pod) {
+    return Optional.ofNullable(pod).map(PodHelper::getReadyStatus).orElse(false);
   }
 
-  /**
-   * Get list of ready pods for a particular cluster or non-clustered servers.
-   * @param info Domain presence info
-   * @param clusterName cluster name of the pod server
-   * @return list containing ready pods
-   */
-  public static List<String> getReadyPods(DomainPresenceInfo info, String clusterName) {
-    // These are presently Ready servers
-    List<String> readyServers = new ArrayList<>();
-    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-      V1Pod pod = entry.getValue().getPod().get();
-      if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getReadyStatus(pod)) {
-        String wlsClusterName = pod.getMetadata().getLabels().get(CLUSTERNAME_LABEL);
-        if ((wlsClusterName == null) || (wlsClusterName.contains(clusterName))) {
-          readyServers.add(entry.getKey());
-        }
-      }
-    }
-    return readyServers;
+  static boolean isScheduled(@Nullable V1Pod pod) {
+    return Optional.ofNullable(pod).map(V1Pod::getSpec).map(V1PodSpec::getNodeName).isPresent();
   }
 
-  /**
-   * get if pod is in scheduled state.
-   * @param pod pod
-   * @return true, if pod is scheduled
-   */
-  public static boolean getScheduledStatus(V1Pod pod) {
-    V1PodSpec spec = pod.getSpec();
-    if (spec != null) {
-      if (spec.getNodeName() != null) {
-        return true;
-      }
-    }
-    return false;
+  static boolean hasClusterNameOrNull(@Nullable V1Pod pod, String clusterName) {
+    return getClusterName(pod) == null || getClusterName(pod).equals(clusterName);
+  }
+
+  private static String getClusterName(@Nullable V1Pod pod) {
+    return Optional.ofNullable(pod)
+          .map(V1Pod::getMetadata)
+          .map(V1ObjectMeta::getLabels)
+          .map(PodHelper::getClusterName)
+          .orElse(null);
+  }
+
+  private static String getClusterName(@Nonnull Map<String,String> labels) {
+    return labels.get(CLUSTERNAME_LABEL);
   }
 
   /**
@@ -150,22 +120,20 @@ public class PodHelper {
    * @return true, if pod is ready
    */
   public static boolean getReadyStatus(V1Pod pod) {
-    V1PodStatus status = pod.getStatus();
-    if (status != null) {
-      if ("Running".equals(status.getPhase())) {
-        List<V1PodCondition> conds = status.getConditions();
-        if (conds != null) {
-          for (V1PodCondition cond : conds) {
-            if ("Ready".equals(cond.getType())) {
-              if ("True".equals(cond.getStatus())) {
-                return true;
-              }
-            }
-          }
-        }
-      }
-    }
-    return false;
+    return Optional.ofNullable(pod.getStatus())
+          .filter(PodHelper::isRunning)
+          .map(V1PodStatus::getConditions)
+          .orElse(Collections.emptyList())
+          .stream()
+          .anyMatch(PodHelper::isReadyCondition);
+  }
+
+  private static boolean isRunning(@Nonnull V1PodStatus status) {
+    return "Running".equals(status.getPhase());
+  }
+
+  private static boolean isReadyCondition(V1PodCondition condition) {
+    return "Ready".equals(condition.getType()) && "True".equals(condition.getStatus());
   }
 
   /**
@@ -619,7 +587,6 @@ public class PodHelper {
 
   /* Retry strategy for delete pod which will not perform any retries */
   private static final class DeletePodRetryStrategy implements RetryStrategy {
-    private long retryCount = 0;
     private final Step retryStep;
 
     DeletePodRetryStrategy(Step retryStep) {
