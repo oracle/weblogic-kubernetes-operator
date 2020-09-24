@@ -17,31 +17,31 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
  *
  */
 public class WitParams {
- 
+
   // The name of the Docker image that is used as the base of a new image
   private String baseImageName;
-  
+
   // The tag of the Docker image that is used as the base of a new image
   private String baseImageTag;
-  
+
   // The name of the to be generated Docker image
   private String modelImageName;
-  
+
   // The name of the to be generated Docker image
   private String modelImageTag;
-  
+
   // A comma separated list of the names of the WDT model yaml files
   private List<String> modelFiles;
-  
+
   // A comma separated list of the names of the WDT model properties files
   private List<String> modelVariableFiles;
-  
+
   // A comma separated list of the names of the WDT model achieve files
   private List<String> modelArchiveFiles;
-  
+
   // The version of WDT
   private String wdtVersion;
-  
+
   // The type of the WebLogic domain. The valid values are "WLS, "JRF", and "Restricted JRF"
   private String domainType;
 
@@ -53,7 +53,10 @@ public class WitParams {
 
   //Install WDT and copy the models to the image, but do not create the domain
   private boolean wdtModelOnly;
-  
+
+  // Custom WDT model home
+  private String wdtModelHome;
+
   // The env variables that are needed for running WIT
   private Map<String, String> env;
 
@@ -83,20 +86,20 @@ public class WitParams {
     this.baseImageName = baseImageName;
     return this;
   }
-  
+
   public String baseImageName() {
     return baseImageName;
   }
-  
+
   public WitParams baseImageTag(String baseImageTag) {
     this.baseImageTag = baseImageTag;
     return this;
   }
-  
+
   public String baseImageTag() {
     return baseImageTag;
   }
-  
+
   public WitParams modelImageName(String modelImageName) {
     this.modelImageName = modelImageName;
     return this;
@@ -105,21 +108,21 @@ public class WitParams {
   public String modelImageName() {
     return modelImageName;
   }
-  
+
   public WitParams modelImageTag(String modelImageTag) {
     this.modelImageTag = modelImageTag;
     return this;
   }
-    
+
   public String modelImageTag() {
     return modelImageTag;
   }
-     
+
   public WitParams wdtVersion(String wdtVersion) {
     this.wdtVersion = wdtVersion;
     return this;
   }
-      
+
   public String wdtVersion() {
     return wdtVersion;
   }
@@ -155,6 +158,15 @@ public class WitParams {
     return wdtModelOnly;
   }
 
+  public String wdtModelHome() {
+    return wdtModelHome;
+  }
+
+  public WitParams wdtModelOnly(String wdtModelHome) {
+    this.wdtModelHome = wdtModelHome;
+    return this;
+  }
+
   public WitParams wdtModelOnly(boolean wdtModelOnly) {
     this.wdtModelOnly = wdtModelOnly;
     return this;
@@ -182,7 +194,7 @@ public class WitParams {
     this.modelArchiveFiles = modelArchiveFiles;
     return this;
   }
-  
+
   public List<String> modelArchiveFiles() {
     return modelArchiveFiles;
   }
@@ -190,7 +202,7 @@ public class WitParams {
   public String generatedImageName() {
     return modelImageName + ":" + modelImageTag;
   }
-  
+
   public WitParams env(Map<String, String> env) {
     this.env = env;
     return this;
