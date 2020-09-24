@@ -240,8 +240,8 @@ public class ItMiiDomainModelInPV {
     String image = params.getValue();
 
     // create domain custom resource and verify all the pods came up
-    logger.info("Creating domain custom resource");
-
+    logger.info("Creating domain custom resource with domainUid {0} and image {1}",
+        domainUid, image);
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
         image, adminSecretName, REPO_SECRET_NAME, encryptionSecretName, replicaCount, clusterName);
     domainCR.spec().configuration().model().withModelHome("/u01/modelHome/model");
