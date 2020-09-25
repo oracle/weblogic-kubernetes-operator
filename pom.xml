@@ -569,11 +569,6 @@
         <version>${jackson-version}</version>
       </dependency>
       <dependency>
-        <groupId>org.yaml</groupId>
-        <artifactId>snakeyaml</artifactId>
-        <version>${snakeyaml-version}</version>
-      </dependency>
-      <dependency>
         <groupId>javax.jms</groupId>
         <artifactId>javax.jms-api</artifactId>
         <version>2.0.1</version>
@@ -698,7 +693,6 @@
     <jersey-version>2.31</jersey-version>
     <jackson-version>2.11.1</jackson-version>
     <jackson-databind-version>2.11.1</jackson-databind-version>
-    <snakeyaml-version>1.26</snakeyaml-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
