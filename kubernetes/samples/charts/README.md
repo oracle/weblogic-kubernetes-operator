@@ -6,6 +6,7 @@ The Oracle WebLogic Server Kubernetes Operator supports three load balancers: Tr
 
 * [traefik](traefik/README.md)
 * [voyager](voyager/README.md)
+* [NGINX](nginx/README.md)
 * apache-samples/[custom-sample](apache-samples/custom-sample/README.md)
 * apache-samples/[default-sample](apache-samples/default-sample/README.md)
 * [ingress-per-domain](ingress-per-domain/README.md)
