@@ -127,6 +127,7 @@ public class ItMiiDomainModelInPV {
 
   private static Path clusterViewAppPath;
   private static String modelFile = "modelinpv-with-war.yaml";
+  private static String modelMountPath = "/u01/modelHome";
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -212,8 +213,8 @@ public class ItMiiDomainModelInPV {
 
     ExecResult exec = null;
     try {
-      logger.info("Creating directory {0} in PV", "/u01/modelHome/applications");
-      exec = Exec.exec(pvPod, null, false, "/bin/sh", "-c", "mkdir -p /u01/modelHome/applications");
+      logger.info("Creating directory {0} in PV", modelMountPath + "/applications");
+      exec = Exec.exec(pvPod, null, false, "/bin/sh", "-c", "mkdir -p " + modelMountPath + "/applications");
       if (exec.stdout() != null) {
         logger.info("Exec stdout {0}", exec.stdout());
       }
@@ -224,8 +225,8 @@ public class ItMiiDomainModelInPV {
       logger.warning(ex.getMessage());
     }
     try {
-      logger.info("Creating directory {0} in PV", "/u01/modelHome/model");
-      exec = Exec.exec(pvPod, null, false, "/bin/sh", "-c", "mkdir -p /u01/modelHome/model");
+      logger.info("Creating directory {0} in PV", modelMountPath + "/model");
+      exec = Exec.exec(pvPod, null, false, "/bin/sh", "-c", "mkdir -p " + modelMountPath + "/model");
       if (exec.stdout() != null) {
         logger.info("Exec stdout {0}", exec.stdout());
       }
@@ -239,24 +240,24 @@ public class ItMiiDomainModelInPV {
     try {
       //copy the model file to PV using the temp pod - we don't have access to PVROOT in Jenkins env
       logger.info("Copying model file {0} to pv directory {1}",
-          Paths.get(MODEL_DIR, modelFile).toString(), "/u01/modelHome/model");
+          Paths.get(MODEL_DIR, modelFile).toString(), modelMountPath + "/model");
       Kubernetes.copyFileToPod(domainNamespace, pvPod.getMetadata().getName(), null,
-          Paths.get(MODEL_DIR, modelFile), Paths.get("/u01/modelHome/model", modelFile));
+          Paths.get(MODEL_DIR, modelFile), Paths.get(modelMountPath + "/model", modelFile));
     } catch (IOException | ApiException ex) {
       logger.warning(ex.getMessage());
     }
     try {
       logger.info("Copying application file {0} to pv directory {1}",
-          clusterViewAppPath.toString(), "/u01/modelHome/applications");
+          clusterViewAppPath.toString(), modelMountPath + "/applications");
       Kubernetes.copyFileToPod(domainNamespace, pvPod.getMetadata().getName(), null,
-          clusterViewAppPath, Paths.get("/u01/modelHome/applications", "clusterview.war"));
+          clusterViewAppPath, Paths.get(modelMountPath + "/applications", "clusterview.war"));
     } catch (IOException | ApiException ex) {
       logger.warning(ex.getMessage());
     }
 
     try {
-      logger.info("Changing file ownership {0} to oracle:root in PV", "/u01/modelHome");
-      Exec.exec(pvPod, null, false, "/bin/sh", "-c", "chown -R oracle:root /u01/modelHome");
+      logger.info("Changing file ownership {0} to oracle:root in PV", modelMountPath);
+      Exec.exec(pvPod, null, false, "/bin/sh", "-c", "chown -R oracle:root " + modelMountPath);
     } catch (IOException | ApiException | InterruptedException ex) {
       logger.warning(ex.getMessage());
     }
@@ -283,14 +284,14 @@ public class ItMiiDomainModelInPV {
         domainUid, image);
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
         image, adminSecretName, REPO_SECRET_NAME, encryptionSecretName, replicaCount, clusterName);
-    domainCR.spec().configuration().model().withModelHome("/u01/modelHome/model");
+    domainCR.spec().configuration().model().withModelHome(modelMountPath + "/model");
     domainCR.spec().serverPod()
         .addVolumesItem(new V1Volume()
             .name(pvName)
             .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
                 .claimName(pvcName)))
         .addVolumeMountsItem(new V1VolumeMount()
-            .mountPath("/u01/modelHome")
+            .mountPath(modelMountPath)
             .name(pvName));
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -387,11 +388,11 @@ public class ItMiiDomainModelInPV {
                 .image("oraclelinux:7")
                 .addCommandItem("/bin/sh")
                 .addArgsItem("-c")
-                .addArgsItem("chown -R 1000:1000 /u01/modelHome")
+                .addArgsItem("chown -R 1000:1000 " + modelMountPath)
                 .volumeMounts(Arrays.asList(
                     new V1VolumeMount()
                         .name(pvName)
-                        .mountPath("/u01/modelHome")))
+                        .mountPath(modelMountPath)))
                 .securityContext(new V1SecurityContext()
                     .runAsGroup(0L)
                     .runAsUser(0L))))
@@ -403,7 +404,7 @@ public class ItMiiDomainModelInPV {
                     .volumeMounts(Arrays.asList(
                         new V1VolumeMount()
                             .name(pvName) // mount the persistent volume to /shared inside the pod
-                            .mountPath("/u01/modelHome")))
+                            .mountPath(modelMountPath)))
                     .addCommandItem("tailf")
                     .addArgsItem("/dev/null")))
             .volumes(Arrays.asList(
@@ -444,11 +445,11 @@ public class ItMiiDomainModelInPV {
                 .image(wlsImage)
                 .addCommandItem("/bin/sh")
                 .addArgsItem("-c")
-                .addArgsItem("chown -R 1000:1000 /u01/modelHome")
+                .addArgsItem("chown -R 1000:1000 " + modelMountPath)
                 .volumeMounts(Arrays.asList(
                     new V1VolumeMount()
                         .name(pvName)
-                        .mountPath("/u01/modelHome")))
+                        .mountPath(modelMountPath)))
                 .securityContext(new V1SecurityContext()
                     .runAsGroup(0L)
                     .runAsUser(0L))))
@@ -462,7 +463,7 @@ public class ItMiiDomainModelInPV {
                     .volumeMounts(Arrays.asList(
                         new V1VolumeMount()
                             .name(pvName) // mount the persistent volume to /shared inside the pod
-                            .mountPath("/u01/modelHome")))))
+                            .mountPath(modelMountPath)))))
             .imagePullSecrets(isUseSecret ? Arrays.asList(new V1LocalObjectReference().name(OCR_SECRET_NAME)) : null)
             // the persistent volume claim used by the test
             .volumes(Arrays.asList(
@@ -522,7 +523,7 @@ public class ItMiiDomainModelInPV {
     createImage(defaultWitParams()
         .modelImageName(MII_BASIC_IMAGE_NAME)
         .modelImageTag(miiImageTagCustom)
-        .wdtModelHome("/u01/modelHome/model")
+        .wdtModelHome(modelMountPath + "/model")
         .wdtModelOnly(true)
         .wdtVersion(WDT_VERSION)
         .env(env)
