@@ -37,6 +37,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.awaitility.core.ConditionFactory;
@@ -208,15 +209,28 @@ public class ItMiiDomainModelInPV {
     //V1Pod pvPod = setupPVPod(domainNamespace);
     V1Pod pvPod = setupWebLogicPod(domainNamespace);
 
+    ExecResult exec = null;
     try {
       logger.info("Creating directory {0} in PV", "/u01/modelHome/applications");
-      Exec.exec(pvPod, null, false, "/bin/sh", "-c", "mkdir -p /u01/modelHome/applications");
+      exec = Exec.exec(pvPod, null, false, "/bin/sh", "-c", "mkdir -p /u01/modelHome/applications");
+      if (exec.stdout() != null) {
+        logger.info("Exec stdout {0}", exec.stdout());
+      }
+      if (exec.stderr() != null) {
+        logger.info("Exec stderr {0}", exec.stderr());
+      }
     } catch (IOException | ApiException | InterruptedException ex) {
       logger.warning(ex.getMessage());
     }
     try {
       logger.info("Creating directory {0} in PV", "/u01/modelHome/model");
-      Exec.exec(pvPod, null, false, "/bin/sh", "-c", "mkdir -p /u01/modelHome/model");
+      exec = Exec.exec(pvPod, null, false, "/bin/sh", "-c", "mkdir -p /u01/modelHome/model");
+      if (exec.stdout() != null) {
+        logger.info("Exec stdout {0}", exec.stdout());
+      }
+      if (exec.stderr() != null) {
+        logger.info("Exec stderr {0}", exec.stderr());
+      }
     } catch (IOException | ApiException | InterruptedException ex) {
       logger.warning(ex.getMessage());
     }
