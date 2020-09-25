@@ -181,8 +181,8 @@ public class ItMiiDomainModelInPV {
     // build a new MII image with custom wdtHome
     buildMIIWithwdtModelHomeandPushToRepo();
 
-    params.put("domain1", miiImagePV);
     params.put("domain2", miiImageCustom);
+    params.put("domain1", miiImagePV);
 
     // create docker registry secret to pull the image from registry
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
