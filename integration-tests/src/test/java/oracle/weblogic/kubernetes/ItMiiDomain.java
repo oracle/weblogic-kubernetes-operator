@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -32,8 +33,6 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
@@ -49,8 +48,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V2;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V3;
@@ -72,6 +74,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
+import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
@@ -79,14 +82,14 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceImagePatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
@@ -95,6 +98,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPus
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -103,7 +107,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to create model in image domain and start the domain")
+@DisplayName("Test to a create model in image domain and start the domain")
 @IntegrationTest
 class ItMiiDomain {
 
@@ -160,11 +164,19 @@ class ItMiiDomain {
     installAndVerifyOperator(opNamespace, domainNamespace, domainNamespace1);
   }
 
+  /**
+   * Create a WebLogic domain with SSL enabled in WebLogic configuration by 
+   * configuring an additional configmap to the domain resource.
+   * Add two channels to the domain resource with name `default-secure` and `default`.
+   * Make sure the pre-packaged application in domain image gets deployed to 
+   * the cluster and accessible from all the managed server pods 
+   * Make sure two external NodePort services are created in domain namespace.
+   * Make sure WebLogic console is accessible through both 
+   *   `default-secure` service and `default` service.  
+   */
   @Test
   @Order(1)
-  @DisplayName("Create model in image domain")
-  @Slow
-  @MustNotRunInParallel
+  @DisplayName("Create model in image domain and verify external admin services")
   public void testCreateMiiDomain() {
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
@@ -178,31 +190,30 @@ class ItMiiDomain {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-                                    adminSecretName,
-                                    domainNamespace,
-                                    "weblogic",
-                                    "welcome1"),
-        String.format("createSecret failed for %s", adminSecretName));
-
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-                                      encryptionSecretName,
-                                      domainNamespace,
-                            "weblogicenc",
-                            "weblogicenc"),
-                    String.format("createSecret failed for %s", encryptionSecretName));
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
+            "weblogicenc", "weblogicenc");
 
+    String configMapName = "default-secure-configmap";
+    String yamlString = "topology:\n"
+        + "  Server:\n"
+        + "    'admin-server':\n"
+        + "       SSL: \n"
+        + "         Enabled: true \n"
+        + "         ListenPort: '7008' \n";
+    createModelConfigMap(configMapName, yamlString, domainUid);
+     
     // create the domain object
-    Domain domain = createDomainResource(domainUid,
-                                      domainNamespace,
-                                      adminSecretName,
-                                      REPO_SECRET_NAME,
-                                      encryptionSecretName,
-                                      replicaCount,
-                              MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    Domain domain = createDomainResourceWithConfigMap(domainUid,
+               domainNamespace, adminSecretName,
+               REPO_SECRET_NAME, encryptionSecretName,
+               replicaCount,
+               MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
@@ -212,26 +223,13 @@ class ItMiiDomain {
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
-    
     // check and wait for the application to be accessible in all server pods
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
@@ -242,15 +240,36 @@ class ItMiiDomain {
           MII_APP_RESPONSE_V1 + i);
     }
  
-    logger.info("Domain {0} is fully started - servers are running and application is available",
-        domainUid);
+    logger.info("All the servers in Domain {0} are running and application is available", domainUid);
+
+    int sslNodePort = getServiceNodePort(
+         domainNamespace, adminServerPodName + "-external", "default-secure");
+    assertTrue(sslNodePort != -1,
+          "Could not get the default-secure external service node port");
+    logger.info("Found the administration service nodePort {0}", sslNodePort);
+    String curlCmd = "curl -sk --show-error --noproxy '*' "
+        + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
+        + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
+    logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
+    logger.info("WebLogic console is accessible thru default-secure service");
+    
+    int nodePort = getServiceNodePort(
+           domainNamespace, adminServerPodName + "-external", "default");
+    assertTrue(nodePort != -1,
+          "Could not get the default external service node port");
+    logger.info("Found the default service nodePort {0}", nodePort);
+    String curlCmd2 = "curl -s --show-error --noproxy '*' "
+        + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
+        + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
+    logger.info("Executing default nodeport curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReady(curlCmd2, 5));
+    logger.info("WebLogic console is accessible thru default service");
   }
 
   @Test
   @Order(2)
   @DisplayName("Create a second domain with the image from the the first test")
-  @Slow
-  @MustNotRunInParallel
   public void testCreateMiiSecondDomainDiffNSSameImage() {
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid1 + "-admin-server";
@@ -264,22 +283,14 @@ class ItMiiDomain {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        adminSecretName,
-        domainNamespace1,
-        "weblogic",
-        "welcome1"),
-        String.format("createSecret failed for %s", adminSecretName));
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace1,
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-                            encryptionSecretName,
-                            domainNamespace1,
-                      "weblogicenc",
-                      "weblogicenc"),
-                    String.format("createSecret failed for %s", encryptionSecretName));
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace1,
+            "weblogicenc", "weblogicenc");
 
     // create the domain object
     Domain domain = createDomainResource(domainUid1,
@@ -296,34 +307,22 @@ class ItMiiDomain {
     createDomainAndVerify(domain, domainNamespace1);
 
     // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-            adminServerPodName, domainNamespace1);
-    checkPodReady(adminServerPodName, domainUid1, domainNamespace1);
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-              managedServerPrefix + i, domainNamespace1);
-      checkPodReady(managedServerPrefix + i, domainUid1, domainNamespace1);
-    }
-
     logger.info("Check admin service {0} is created in namespace {1}",
             adminServerPodName, domainNamespace1);
-    checkServiceExists(adminServerPodName, domainNamespace1);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid1, domainNamespace1);
 
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed server service {0} is created in namespace {1}",
               managedServerPrefix + i, domainNamespace1);
-      checkServiceExists(managedServerPrefix + i, domainNamespace1);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid1, domainNamespace1);
     }
+
   }
 
   @Test
   @Order(3)
   @DisplayName("Update the sample-app application to version 2")
-  @Slow
-  @MustNotRunInParallel
   public void testPatchAppV2() {
     
     // application in the new image contains what is in the original application directory sample-app, 
@@ -427,8 +426,6 @@ class ItMiiDomain {
   @Test
   @Order(4)
   @DisplayName("Update the domain with another application")
-  @Slow
-  @MustNotRunInParallel
   public void testAddSecondApp() {
     
     // the existing application is the combination of what are in appDir1 and appDir2 as in test case number 4,
@@ -552,16 +549,14 @@ class ItMiiDomain {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic",
-        "welcome1"),
-        String.format("createSecret failed for %s", adminSecretName));
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc",
-        "weblogicenc"),
-        String.format("createSecret failed for %s", encryptionSecretName));
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
+            "weblogicenc", "weblogicnc");
 
     // create the domain object
     Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName, REPO_SECRET_NAME,
@@ -575,24 +570,13 @@ class ItMiiDomain {
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
     // check and wait for the application to be accessible in all server pods
@@ -847,7 +831,7 @@ class ItMiiDomain {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
@@ -866,10 +850,58 @@ class ItMiiDomain {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
-
-
   }
 
+  // Create a domain resource with a custom ConfigMap
+  private Domain createDomainResourceWithConfigMap(String domainUid, 
+          String domNamespace, String adminSecretName,
+          String repoSecretName, String encryptionSecretName, 
+          int replicaCount, String miiImage, String configmapName) {
+    // create the domain CR
+    return new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default-secure")
+                        .nodePort(0))
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
+            .addClustersItem(new Cluster()
+                .clusterName("cluster-1")
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .configMap(configmapName)
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(300L)));
+  }
 
   private void patchAndVerify(
       final String domainUid,
@@ -1094,6 +1126,25 @@ class ItMiiDomain {
       }
     }
     return true;
+  }
+ 
+  // create a ConfigMap with a model that enable SSL on the Administration server
+  private static void createModelConfigMap(String configMapName, String model, String domainUid) {
+    Map<String, String> labels = new HashMap<>();
+    labels.put("weblogic.domainUid", domainUid);
+    Map<String, String> data = new HashMap<>();
+    data.put("model.ssl.yaml", model);
+
+    V1ConfigMap configMap = new V1ConfigMap()
+        .data(data)
+        .metadata(new V1ObjectMeta()
+            .labels(labels)
+            .name(configMapName)
+            .namespace(domainNamespace));
+
+    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
+        String.format("Can't create ConfigMap %s", configMapName));
+    assertTrue(cmCreated, String.format("createConfigMap failed %s", configMapName));
   }
 
 }
