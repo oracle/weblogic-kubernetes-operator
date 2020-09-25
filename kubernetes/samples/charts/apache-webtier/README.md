@@ -35,7 +35,7 @@ The following table lists the configurable parameters of the Apache webtier char
 
 | Parameter                          | Description                                                   | Default               |
 | -----------------------------------| ------------------------------------------------------------- | ----------------------|
-| `image`                            | Apache webtier Docker image                                   | `store/oracle/apache:12.2.1.3` |
+| `image`                            | Apache webtier Docker image                                   | `oracle/apache:12.2.1.3` |
 | `imagePullPolicy`                  | Image pull policy for the Apache webtier Docker image         | `IfNotPresent`        |
 | `volumePath`                       | Docker volume path for the Apache webtier                     | ``                    |
 | `createRBAC`                       | Boolean indicating if RBAC resources should be created        | `true`                |

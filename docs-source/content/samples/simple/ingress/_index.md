@@ -17,6 +17,7 @@ The samples are located in following folders:
 
 * [Traefik](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md)
 * [Voyager](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/voyager/README.md)
+* [NGINX](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/nginx/README.md)
 * Apache-samples/[custom-sample](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/apache-samples/custom-sample/README.md)
 * Apache-samples/[default-sample](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/apache-samples/default-sample/README.md)
 * [Ingress-per-domain](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/ingress-per-domain/README.md)

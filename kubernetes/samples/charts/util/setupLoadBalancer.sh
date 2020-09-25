@@ -4,7 +4,7 @@
 
 # This script is to create or delete Ingress controllers. 
 # Currently the script supports ingress controllers: Traefik, Voyager, and Nginx.
-# Usage $0 create|delete traefik|voyager|nginx traefik_version|voyager_version
+# Usage $0 create|delete traefik|voyager|nginx traefik_version|voyager_version|nginx-version
 
 UTILDIR="$(dirname "$(readlink -f "$0")")"
 VNAME=voyager-operator  # release name for Voyager
@@ -21,6 +21,9 @@ DefaultVoyagerVersion=10.0.0
 
 # https://github.com/containous/traefik/releases
 DefaultTraefikVersion=2.2.1
+
+# https://github.com/kubernetes/ingress-nginx/releases
+DefaultNginxVersion=2.16.0
 
 HELM_VERSION=$(helm version --short --client)
 if [[ "$HELM_VERSION" =~ "v2" ]]; then
@@ -213,7 +216,7 @@ function createNginx() {
 
   if [ "$(helm list --namespace $NNAME | grep $NNAME |  wc -l)" = 0 ]; then
     echo "Installing Nginx operator."
-    helm install $NNAME ingress-nginx/ingress-nginx --namespace ${NSPACE}
+    helm install $NNAME ingress-nginx/ingress-nginx --namespace ${NSPACE} --version ${DefaultNginxVersion}
   else
     echo "Nginx operator is already installed."
     exit 0;
@@ -240,11 +243,17 @@ function createNginx() {
 }
 
 function usage() {
-  echo "usage: $0 create|delete traefik|voyager|nginx [traefik version|voyager version]"
+  echo "usage: $0 create|delete traefik|voyager|nginx [traefik-version|voyager-version | nginx-version]"
+  echo "Refer to https://github.com/voyagermesh/voyager#supported-versions for available Voyager version"
+  echo "Refer to https://github.com/containous/traefik/releases for available Traefik version "
+  echo "Refer to https://github.com/containous/traefik/releases for available NGINX version "
   exit 1
 }
 
 function main() {
+  if [ "$#" -eq 0 ]; then
+    usage
+  fi
   if [ "$#" -lt 2 ]; then
     echo "[ERROR] Requires at least 2 positional parameters"
     usage
