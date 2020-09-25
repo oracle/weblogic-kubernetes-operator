@@ -918,7 +918,9 @@ public abstract class PodStepContext extends BasePodStepContext {
 
       // TEST
       System.out.println("***TEST***: replace response failure: "
-          + callResponse.getStatusCode() + ", server: " + getServerName());
+          + callResponse.getStatusCode() + ", server: " + getServerName()
+          + ", this: " + this
+          + ", conflict: " + getConflictStep());
 
       return super.onFailure(packet, callResponse);
     }
