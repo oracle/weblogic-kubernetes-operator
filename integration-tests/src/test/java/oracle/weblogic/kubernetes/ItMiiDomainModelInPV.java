@@ -27,6 +27,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
@@ -381,6 +382,19 @@ public class ItMiiDomainModelInPV {
     final String podName = "pv-pod-" + namespace;
     V1Pod podBody = new V1Pod()
         .spec(new V1PodSpec()
+            .initContainers(Arrays.asList(new V1Container()
+                .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
+                .image("oraclelinux:7")
+                .addCommandItem("/bin/sh")
+                .addArgsItem("-c")
+                .addArgsItem("chown -R 1000:1000 /u01/modelHome")
+                .volumeMounts(Arrays.asList(
+                    new V1VolumeMount()
+                        .name(pvName)
+                        .mountPath("/u01/modelHome")))
+                .securityContext(new V1SecurityContext()
+                    .runAsGroup(0L)
+                    .runAsUser(0L))))
             .containers(Arrays.asList(
                 new V1Container()
                     .name("pv-container")
@@ -425,6 +439,19 @@ public class ItMiiDomainModelInPV {
     final String podName = "weblogic-pv-pod-" + namespace;
     V1Pod podBody = new V1Pod()
         .spec(new V1PodSpec()
+            .initContainers(Arrays.asList(new V1Container()
+                .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
+                .image(wlsImage)
+                .addCommandItem("/bin/sh")
+                .addArgsItem("-c")
+                .addArgsItem("chown -R 1000:1000 /u01/modelHome")
+                .volumeMounts(Arrays.asList(
+                    new V1VolumeMount()
+                        .name(pvName)
+                        .mountPath("/u01/modelHome")))
+                .securityContext(new V1SecurityContext()
+                    .runAsGroup(0L)
+                    .runAsUser(0L))))
             .containers(Arrays.asList(
                 new V1Container()
                     .name("weblogic-container")
