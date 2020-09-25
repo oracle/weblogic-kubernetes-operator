@@ -38,6 +38,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
@@ -72,9 +73,11 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
@@ -84,6 +87,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -129,9 +133,13 @@ public class ItIntrospectVersion {
   private static HelmParams nginxHelmParams = null;
 
   private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
+  private static String imageUpdate = WLS_BASE_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG;
+
   private static boolean isUseSecret = true;
 
   private final String wlSecretName = "weblogic-credentials";
+
+  private Map<String, DateTime> podsWithTimeStamps = null;
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -175,8 +183,10 @@ public class ItIntrospectVersion {
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
       String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      logger.info("Using image {0}", kindRepoImage);
+      String kindRepoImageUpdate = KIND_REPO + imageUpdate.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      logger.info("Using base image {0}, update image {1}", kindRepoImage, kindRepoImageUpdate);
       image = kindRepoImage;
+      imageUpdate = kindRepoImageUpdate;
       isUseSecret = false;
     } else {
       // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
@@ -852,6 +862,83 @@ public class ItIntrospectVersion {
   }
 
   /**
+   * Modify the domain scope property
+   * From: "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4" to
+   * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
+   * Verify all the pods are restarted and back to ready state.
+   */
+  @Order(5)
+  @Test
+  @DisplayName("Verify server pods are restarted by changing imagePullPolicy")
+  @Slow
+  public void testUpdateImageName() {
+    final String domainUid = "mydomain";
+    final String domainNamespace = introDomainNamespace;
+
+    final String adminServerName = "admin-server";
+    final String adminServerPodName = domainUid + "-" + adminServerName;
+
+    final String managedServerNameBase = "cl2-ms-";
+    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+
+    final int replicaCount = 2;
+
+    List<String> managedServerNames = new ArrayList<String>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(managedServerNameBase + i);
+    }
+
+    // get the original domain resource before update
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+
+    // get the map with server pods and their original creation timestamps
+    podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, managedServerPodNamePrefix,
+        replicaCount);
+
+    //print out the original imagePullPolicy
+    String imagePullPolicy = domain1.getSpec().getImagePullPolicy();
+    logger.info("Original domain imagePullPolicy is: {0}", imagePullPolicy);
+
+    //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/image\",")
+        .append("\"value\": \"")
+        .append(imageUpdate)
+        .append("\"}]");
+    logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
+
+    boolean cmPatched = patchDomainResource(domainUid, domainNamespace, patchStr);
+    assertTrue(cmPatched, "patchDomainCustomResource(imageUpdate) failed");
+
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, "Got null domain resource after patching");
+    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+
+    //print out image name in the new patched domain
+    image = domain1.getSpec().getImage();
+    logger.info("In the new patched domain image name is: {0}", image);
+
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    //verify admin server accessibility and the health of cluster members
+    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
+
+  }
+
+
+  /**
    * Create a WebLogic domain on a persistent volume by doing the following.
    * Create a configmap containing WLST script and property file.
    * Create a Kubernetes job to create domain on persistent volume.
@@ -945,6 +1032,26 @@ public class ItIntrospectVersion {
           }
           return health;
         });
+  }
+
+  private Map getPodsWithTimeStamps(String domainNamespace, String adminServerPodName,
+       String managedServerPrefix, int replicaCount) {
+
+    // create the map with server pods and their original creation timestamps
+    podsWithTimeStamps = new LinkedHashMap<>();
+    podsWithTimeStamps.put(adminServerPodName,
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
+            String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+                adminServerPodName, domainNamespace)));
+
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = managedServerPrefix + i;
+      podsWithTimeStamps.put(managedServerPodName,
+          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
+              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+                  managedServerPodName, domainNamespace)));
+    }
+    return podsWithTimeStamps;
   }
 
   /**
