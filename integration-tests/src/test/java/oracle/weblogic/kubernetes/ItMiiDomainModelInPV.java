@@ -156,7 +156,7 @@ public class ItMiiDomainModelInPV {
 
     logger.info("Building image with custom wdt model home location");
     miiImageTagCustom = TestUtils.getDateAndTimeStamp();
-    miiImagePV = MII_BASIC_IMAGE_NAME + ":" + miiImageTagCustom;
+    miiImageCustom = MII_BASIC_IMAGE_NAME + ":" + miiImageTagCustom;
 
     // build a new MII image with custom wdtHome
     buildMIIWithwdtModelHomeandPushToRepo();
@@ -257,6 +257,8 @@ public class ItMiiDomainModelInPV {
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
+    logger.info("Creating domain {0} with model in image {1} in namespace {2}",
+        domainUid, image, domainNamespace);
     createVerifyDomain(domainUid, domainCR, adminServerPodName, managedServerPodNamePrefix);
 
     List<String> managedServerNames = new ArrayList<String>();
@@ -282,8 +284,6 @@ public class ItMiiDomainModelInPV {
   private void createVerifyDomain(String domainUid, Domain domain,
       String adminServerPodName, String managedServerPodNamePrefix) {
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, miiImagePV);
     createDomainAndVerify(domain, domainNamespace);
 
     // check that admin service/pod exists in the domain namespace
