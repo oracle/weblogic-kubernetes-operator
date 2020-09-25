@@ -685,15 +685,14 @@ class ItUsabilityOperatorHelmChart {
     HelmParams opHelmParams =
         new HelmParams().releaseName(opReleaseName)
             .namespace(op2Namespace)
-            .chartDir(OPERATOR_CHART_DIR)
-            .wait(true)
-            .timeout("60s");
+            .chartDir(OPERATOR_CHART_DIR);
     try {
       try {
         // install and verify operator will not start
         logger.info("Installing  operator %s in namespace %s", opReleaseName, op2Namespace);
+        errorMsg = String.format("ServiceAccount %s not found in namespace %s", opServiceAccount, op2Namespace);
         HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, false, false,
-            true,null,"failed", 0, opHelmParams,  domain2Namespace);
+            true, errorMsg,"failed", 0, opHelmParams,  domain2Namespace);
         assertNull(opHelmParam2, "FAILURE: Helm installs operator with not preexisted service account ");
       } catch (AssertionError ex) {
         logger.info(" Receieved assertion error " + ex.getMessage());
@@ -956,7 +955,7 @@ class ItUsabilityOperatorHelmChart {
       String helmErrorMsg = installNegative(opHelmParams, opParams.getValues());
       assertNotNull(helmErrorMsg, "helm chart install successful, but expected to fail");
       assertTrue(helmErrorMsg.contains(errMsg),
-          String.format("Operator install failed with unexpected error  :%s", helmErrorMsg));
+          String.format("Operator install failed with error  :%s", helmErrorMsg));
       return null;
     } else {
       boolean succeeded = installOperator(opParams);

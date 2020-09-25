@@ -471,7 +471,7 @@ Verify that a Kubernetes resource exists in a given namespace
 {{- if $foundNS }}
 {{-   $foundResource := (lookup "v1" $type $namespace $name) }}
 {{-   if not $foundResource }}
-{{-     $errorMsg := cat $type $name " does not exist in namespace " $namespace -}}
+{{-     $errorMsg := cat $type $name" does not exist in namespace" $namespace -}}
 {{-     include "utils.recordValidationError" (list $scope $errorMsg) -}}
 {{-   end -}}
 {{- end -}}

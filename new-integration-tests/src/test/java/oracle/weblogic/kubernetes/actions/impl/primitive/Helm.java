@@ -82,13 +82,6 @@ public class Helm {
       installCmd = installCmd + " --version " + helmParams.getChartVersion();
     }
 
-    if (helmParams.isWait()) {
-      installCmd = installCmd + " --wait ";
-      if (helmParams.getTimeout() != null) {
-        installCmd = installCmd + " --timeout " + helmParams.getTimeout();
-      }
-    }
-
     // run the command
     return exec(installCmd);
 
