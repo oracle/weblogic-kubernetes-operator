@@ -514,18 +514,18 @@ class ItServerStartPolicy {
     
     patchServerStartPolicy("/spec/managedServers/2/serverStartPolicy", 
                            "ALWAYS");
-    logger.info("Domain resource patched to start the managed server");
+    logger.info("Domain resource patched to start the second managed server in dynamic cluster");
     checkPodReadyAndServiceExists(serverPodName, 
           domainUid, domainNamespace);
-    logger.info("Config cluster managed server is RUNNING");
+    logger.info("Second managed server in dynamic cluster is RUNNING");
 
     patchServerStartPolicy("/spec/managedServers/2/serverStartPolicy", 
                            "IF_NEEDED");
-    logger.info("Domain resource patched to shutdown the managed server");
+    logger.info("Domain resource patched to shutdown the second managed server in dynamic cluster");
 
     logger.info("Wait for managed server ${0} to be shutdown", serverPodName);
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
-    logger.info("Dynamic cluster managed server shutdown success");
+    logger.info("Dynamic cluster second managed server shutdown success");
   }
 
   /**
