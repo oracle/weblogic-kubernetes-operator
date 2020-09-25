@@ -77,6 +77,23 @@ $ export LB_PORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-con
 $ curl -H 'host: domain1.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 $ curl -H 'host: domain2.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 ```
+
+#### Path-based routing 
+This sample demonstrates how to access an application on two WebLogic domains using path-based routing. Install a path-based routing ingress controller.
+```
+$ kubectl create -f samples/path-routing.yaml
+ingress.extensions/domain1-ingress-path created
+ingress.extensions/domain2-ingress-path created
+```
+Now you can send requests to different WebLogic domains with the unique NGINX entry point of different paths, as defined in the route section of the `path-routing.yaml` file.
+
+```
+# Get the ingress controller web port
+$ export LB_PORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+$ curl http://${HOSTNAME}:${LB_PORT}/domain1/testwebapp/
+$ curl http://${HOSTNAME}:${LB_PORT}/domain2/testwebapp/
+```
+
 #### Host-based secured routing
 This sample demonstrates how to access an application on two WebLogic domains using an HTTPS endpoint. Install a TLS-enabled ingress controller.
 
@@ -124,7 +141,9 @@ cd('/Clusters/%s' % cluster_name)
 set('WeblogicPluginEnabled',true)
 ```
 ### 2. Create NGINX ingress resource with custom annotation values
-Save the below configuration as 'nginx-tls-console.yaml' and replace the string 'weblogic-domain' with the namespace of the WebLogic domain, the string 'domain1' with the domain UID, and the string 'adminserver' with the name of the Administration server in the WebLogic domain.
+Save the below configuration as `nginx-tls-console.yaml` and replace the string `weblogic-domain` with the namespace of the WebLogic domain, the string `domain1` with the domain UID, and the string `adminserver` with the name of the Administration Server in the WebLogic domain.
+
+**NOTE**:If you also have HTTP requests coming into an ingress, make sure that you remove any incoming `WL-Proxy-SSL` header. This protects you from a malicious user sending in a request to appear to WebLogic as secure when it isn't. Add the following annotations in the NGINX ingress configuration to block `WL-Proxy` headers coming from the client. In the following example, the ingress resource will eliminate the client headers `WL-Proxy-Client-IP` and `WL-Proxy-SSL`.
 
 ```
 apiVersion: extensions/v1beta1
@@ -135,6 +154,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_clear_input_headers "WL-Proxy-Client-IP" "WL-Proxy-SSL";
       more_set_input_headers "X-Forwarded-Proto: https";
       more_set_input_headers "WL-Proxy-SSL: true";
     nginx.ingress.kubernetes.io/ingress.allow-http: "false"
@@ -172,11 +192,11 @@ $ helm uninstall nginx-operator --namespace nginx
 ```
 
 ## Install and uninstall the NGINX operator with setupLoadBalancer.sh
-Alternatively, you can run the helper script ` setupLoadBalancer.sh` under the `kubernetes/samples/charts/util` folder, to install and uninstall NGINX.
+Alternatively, you can run the helper script `setupLoadBalancer.sh` under the `kubernetes/samples/charts/util` folder, to install and uninstall NGINX.
 
 To install NGINX:
 ```
-$ ./setupLoadBalancer.sh create nginx
+$ ./setupLoadBalancer.sh create nginx [nginx-version]
 ```
 To uninstall NGINX:
 ```
