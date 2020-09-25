@@ -53,11 +53,7 @@ function printReport {
     echo "==================================" | tee -a "${logFile}"
     echo "  Images Running Oracle Products  " | tee -a "${logFile}"
     echo "==================================" | tee -a "${logFile}"
-    if [ -z "${kubernetesFile}" ]; then
-      cat "${reportFile}" | column -t -s ',' |  tee -a "${logFile}"
-    else
-      cat "${reportFile}" | column -t -s '|' |  tee -a "${logFile}"
-    fi
+    cat "${reportFile}" | column -t -s ',' |  tee -a "${logFile}"
   else 
     echo "No matching images found."
   fi
@@ -91,6 +87,6 @@ function generateReportHeader {
   if [ -z "${kubernetesFile}" ]; then
     awk 'BEGIN {printf "%s,%s,%s,%s\n", "Artifact", "Respository", "Tag", "Digest"}' >> "${reportFile}"
   else 
-    awk 'BEGIN {printf "%s|%s|%s|%s|%s\n","Node", "Artifact", "Respository", "Tag", "Digest"}' >> "${reportFile}"
+    awk 'BEGIN {printf "%s,%s,%s,%s,%s\n","Node", "Artifact", "Respository", "Tag", "Digest"}' >> "${reportFile}"
   fi
 }

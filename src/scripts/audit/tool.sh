@@ -13,6 +13,7 @@ function usage {
   echo "  -k File containing Kubernetes Node information in json format (output of 'kubectl get nodes -o json')."
   echo "  -w Working directory for the generated files. Defaults to './work' dir."
   echo "  -s Silent mode."
+  echo "  -d Disable Image Validation"
   echo "  -h Help"
   exit 1
 }
@@ -21,18 +22,21 @@ function usage {
 # Parse the command line options
 #
 silentMode=false
+disableValidation=false
 imageFile=""
 kubernetesFile=""
 nodeImages=""
 artifactsFile="util/artifacts/weblogic.txt"
 workDir=work
-while getopts "s:i:k:a:w:h:" opt; do
+while getopts "ds:i:k:a:w:h:" opt; do
   case $opt in
     i) imageFile="${OPTARG}"
     ;;
     k) kubernetesFile="${OPTARG}"
     ;;
     a) artifactsFile="${OPTARG}" #for testing only
+    ;;
+    d) disableValidation=true;
     ;;
     s) silentMode=true;
     ;;
@@ -86,17 +90,18 @@ function initialize {
   failIfValidationErrors
 
   # Initialize workspace dir and generate report header
-  workDir=$scriptDir/work
   initWorkDir
   generateReportHeader
 
   # validate availale images
-  if [[ -n "${kubernetesFile}" && -z "$imageFile" ]]; then
+  if [ -z "$imageFile" ]; then
     echo "Scanning all images on current machine, use '-i' option if you want to scan specific set of images."
     imageFile=$(docker images --digests --format "{{.Repository}}:{{.Tag}}@{{.Digest}}@{{.ID}}" | grep -v "<none>:<none>")
     imageNoTagFile=$(docker images --digests --format "{{.Repository}}@{{.Digest}}" | grep -v "<none>:<none>")
     imageNoDigestFile=$(docker images --digests --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>:<none>")
+  fi
 
+  if [[ -n "${kubernetesFile}" && ${disableValidation} == 'false' ]]; then
     #echo "validating available images"
     validateAvailableImages
   fi
@@ -115,25 +120,26 @@ function initialize {
 
 function validateAvailableImages {
 
+  info "Validating images available for scanning on this machine..."
   nonExistentImages=()
   getNonExistentImages
   sortedNonExistentImages=($(echo "${nonExistentImages[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
   len=${#sortedNonExistentImages[@]}
   if [[ len -gt 0 ]]; then
-    validationError "Following images reported in Kubernetes node information file are not available on current machine. These images must be pulled before the script can continue"
+    validationError "Following images reported in Kubernetes node information file are not available on current machine. These images must be pulled before the script can continue. Use '-d' option to disable image validation."
     echo "================="
     printf '%s\n' "${sortedNonExistentImages[@]}" | tee -a ${missingImagesReport}
     echo "================="
-    fail "The images listed in '${missingImagesReport}' file must be pulled before the script can continue"
+    fail "The images listed in '${missingImagesReport}' file must be pulled before the script can continue. Use '-d' option to disable image validation."
   fi
 }
 
 function getNonExistentImages {
   getNodeImages
-  for nodeImage in ${nodeImages}
+  for nodeImage in ${nodeImages[@]}
   do
-    existingImagesOnHost=$(docker images --digests --format "{{.Repository}}@{{.Digest}}" | grep -v "<none>:<none>")
-    if ! inarray  "$nodeImage" "${existingImagesOnHost[@]}"; then
+    existingImagesOnHost=($(docker images --digests --format "{{.Repository}}@{{.Digest}}" | grep -v "<none>:<none>"))
+    if ! inarray  "${nodeImage}" "${existingImagesOnHost[@]}"; then
       if [ -n ${nodeImage} ]; then 
         nonExistentImages+=(${nodeImage})
       fi
@@ -154,7 +160,6 @@ function getNodeImages {
 
 imagesToExclude=()
 imagesToExclude+="quay.io"
-#IFS=$'\n'
 imagesInNodeFile=$(cat ${kubernetesFile} | jq '.items |[.[] | {name: .metadata.name, image:.status.images |.[].names | select(.[0] !="<none>@<none>") | .[0] }]' | jq -r '.[].image')
 
 for imageInNodeFile in ${imagesInNodeFile}; do
@@ -170,7 +175,9 @@ done
 # Initialize workspace dir and generate report header
 #
 function initWorkDir {
-  workDir="$scriptDir/work"
+  if [ -z ${workDir} ]; then
+    workDir="./work"
+  fi
   rm -fr "${workDir}"
   mkdir -p "${workDir}"
   missingImagesReport="${workDir}/missing-images.txt"
@@ -197,7 +204,7 @@ function readImageListAndProcess {
     fi
     imageSize=`docker inspect ${imageId} | jq .[].Size`
     
-    result="`verifyHashAndGetNodeNames ${repository} ${imageHash} ${imageSize}`"
+    verifyHashAndGetNodeNames ${repository} ${imageHash} ${imageSize} result
     if [[ -n "${kubernetesFile}" && "${result}" == "NotAvailable" ]]; then
         continue;
     elif [[ ${result} =~ "hashVerificationFailed" ]]; then
@@ -227,10 +234,11 @@ function verifyHashAndGetNodeNames {
   local imageRepository=$1
   local imageHash=$2
   local imageSize=$3
+  local __result=$4
   hashVerificationFailed=false
-  imageNode=""
+  imageNode=()
   if [ -z "${kubernetesFile}" ]; then
-    echo "NotAvailable"
+    eval $__result="NotAvailable"
     return
   fi
 
@@ -247,7 +255,7 @@ function verifyHashAndGetNodeNames {
       imageRepoInK8sFile=$(echo $imageRepoInK8sFile | cut -d':' -f1)
     fi
     if [[ "${imageRepoInK8sFile}" == "${imageRepository}" && "${imageSizeInK8sFile}" == "${imageSize}" ]]; then
-      imageNode+="${nodeName},"
+      imageNode+=(${nodeName})
       if [[ -z ${imageHash} || ${imageHash} == "<none>" ]]; then
         break
       fi
@@ -257,12 +265,14 @@ function verifyHashAndGetNodeNames {
     fi
   done
 
-  if [ -z ${imageNode} ]; then
-     echo "NotAvailable"
+  len=${#imageNode[@]}
+  if [[ len -lt 1 ]]; then
+     eval $__result="NotAvailable"
   elif [ ${hashVerificationFailed} == 'true' ]; then
-     echo "hashVerificationFailed"
+     eval $__result="hashVerificationFailed"
   else 
-     echo "${imageNode::-1}"
+     imageNode=($(echo "${imageNode[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+     eval $__result="'${imageNode}'"
   fi
 }
 
@@ -305,7 +315,7 @@ function searchArtifactInLayers {
     if [ -z "${kubernetesFile}" ]; then
       echo $imageDetail | awk -v a="${artifact}" '{printf "%s,%s,%s,%s\n", a,$1,$2,$3}' >> "${reportFile}"
     else 
-      echo $imageDetail | awk -v n="${nodeName}" -v a="${artifact}" '{printf "%s|%s|%s|%s|%s\n", n,a,$1,$2,$3}' >> "${reportFile}"
+      echo $imageDetail | awk -v n="${nodeName}" -v a="${artifact}" '{printf "%s,%s,%s,%s,%s\n", n,a,$1,$2,$3}' >> "${reportFile}"
     fi
     info "Artifact $artifact found in image $imageName ."
   fi
