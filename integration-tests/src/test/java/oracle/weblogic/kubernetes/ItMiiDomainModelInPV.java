@@ -20,10 +20,13 @@ import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
@@ -33,6 +36,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
+import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.awaitility.core.ConditionFactory;
@@ -48,8 +52,14 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
@@ -60,11 +70,14 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -120,6 +133,10 @@ public class ItMiiDomainModelInPV {
           .atMost(15, MINUTES).await();
 
   private static LoggingFacade logger = null;
+
+  private static String wlsImage;
+  private static boolean isUseSecret;
+
 
   /**
    * 1. Get namespaces for operator and WebLogic domain.
@@ -188,17 +205,18 @@ public class ItMiiDomainModelInPV {
     clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
     assertTrue(clusterViewAppPath.toFile().exists(), "Application archive is not available");
 
-    V1Pod webLogicPod = setupPVPod(domainNamespace);
+    //V1Pod pvPod = setupPVPod(domainNamespace);
+    V1Pod pvPod = setupWebLogicPod(domainNamespace);
 
     try {
       logger.info("Creating directory {0} in PV", "/u01/modelHome/applications");
-      Exec.exec(webLogicPod, null, false, "/bin/sh", "-c", "mkdir -p /u01/modelHome/applications");
+      Exec.exec(pvPod, null, false, "/bin/sh", "-c", "mkdir -p /u01/modelHome/applications");
     } catch (IOException | ApiException | InterruptedException ex) {
       logger.warning(ex.getMessage());
     }
     try {
       logger.info("Creating directory {0} in PV", "/u01/modelHome/model");
-      Exec.exec(webLogicPod, null, false, "/bin/sh", "-c", "mkdir -p /u01/modelHome/model");
+      Exec.exec(pvPod, null, false, "/bin/sh", "-c", "mkdir -p /u01/modelHome/model");
     } catch (IOException | ApiException | InterruptedException ex) {
       logger.warning(ex.getMessage());
     }
@@ -207,7 +225,7 @@ public class ItMiiDomainModelInPV {
       //copy the model file to PV using the temp pod - we don't have access to PVROOT in Jenkins env
       logger.info("Copying model file {0} to pv directory {1}",
           Paths.get(MODEL_DIR, modelFile).toString(), "/u01/modelHome/model");
-      Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
+      Kubernetes.copyFileToPod(domainNamespace, pvPod.getMetadata().getName(), null,
           Paths.get(MODEL_DIR, modelFile), Paths.get("/u01/modelHome/model", modelFile));
     } catch (IOException | ApiException ex) {
       logger.warning(ex.getMessage());
@@ -215,12 +233,18 @@ public class ItMiiDomainModelInPV {
     try {
       logger.info("Copying application file {0} to pv directory {1}",
           clusterViewAppPath.toString(), "/u01/modelHome/applications");
-      Kubernetes.copyFileToPod(domainNamespace, webLogicPod.getMetadata().getName(), null,
+      Kubernetes.copyFileToPod(domainNamespace, pvPod.getMetadata().getName(), null,
           clusterViewAppPath, Paths.get("/u01/modelHome/applications", "clusterview.war"));
     } catch (IOException | ApiException ex) {
       logger.warning(ex.getMessage());
     }
 
+    try {
+      logger.info("Changing file ownership {0} to oracle:root in PV", "/u01/modelHome");
+      Exec.exec(pvPod, null, false, "/bin/sh", "-c", "chown -R oracle:root /u01/modelHome");
+    } catch (IOException | ApiException | InterruptedException ex) {
+      logger.warning(ex.getMessage());
+    }
   }
 
   /**
@@ -382,6 +406,48 @@ public class ItMiiDomainModelInPV {
     return pvPod;
   }
 
+  private static V1Pod setupWebLogicPod(String namespace) {
+    setImage(namespace);
+    final String podName = "weblogic-pv-pod-" + namespace;
+    V1Pod podBody = new V1Pod()
+        .spec(new V1PodSpec()
+            .containers(Arrays.asList(
+                new V1Container()
+                    .name("weblogic-container")
+                    .image(wlsImage)
+                    .imagePullPolicy("IfNotPresent")
+                    .addCommandItem("sleep")
+                    .addArgsItem("600")
+                    .volumeMounts(Arrays.asList(
+                        new V1VolumeMount()
+                            .name(pvName) // mount the persistent volume to /shared inside the pod
+                            .mountPath("/u01/modelHome")))))
+            .imagePullSecrets(isUseSecret ? Arrays.asList(new V1LocalObjectReference().name(OCR_SECRET_NAME)) : null)
+            // the persistent volume claim used by the test
+            .volumes(Arrays.asList(
+                new V1Volume()
+                    .name(pvName) // the persistent volume that needs to be archived
+                    .persistentVolumeClaim(
+                        new V1PersistentVolumeClaimVolumeSource()
+                            .claimName(pvcName)))))
+        .metadata(new V1ObjectMeta().name(podName))
+        .apiVersion("v1")
+        .kind("Pod");
+    V1Pod wlsPod = assertDoesNotThrow(() -> Kubernetes.createPod(namespace, podBody));
+
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
+                + "(elapsed time {2} , remaining time {3}",
+                podName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(podReady(podName, null, namespace));
+
+    return wlsPod;
+  }
+
   // create a model in image with no domain
   // push the image to repo
   private static void buildMIIandPushToRepo() {
@@ -447,6 +513,36 @@ public class ItMiiDomainModelInPV {
           condition.getRemainingTimeInMS()))
           .until(() -> dockerPush(image));
     }
+  }
+
+  private static void setImage(String namespace) {
+    final LoggingFacade logger = getLogger();
+    //determine if the tests are running in Kind cluster.
+    //if true use images from Kind registry
+    String ocrImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
+    if (KIND_REPO != null) {
+      wlsImage = KIND_REPO + ocrImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      isUseSecret = false;
+    } else {
+      // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+      wlsImage = ocrImage;
+      boolean secretExists = false;
+      V1SecretList listSecrets = listSecrets(namespace);
+      if (null != listSecrets) {
+        for (V1Secret item : listSecrets.getItems()) {
+          if (item.getMetadata().getName().equals(OCR_SECRET_NAME)) {
+            secretExists = true;
+            break;
+          }
+        }
+      }
+      if (!secretExists) {
+        CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+            OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
+      }
+      isUseSecret = true;
+    }
+    logger.info("Using image {0}", wlsImage);
   }
 
 }
