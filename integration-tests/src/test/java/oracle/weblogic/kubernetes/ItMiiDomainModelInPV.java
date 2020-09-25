@@ -120,8 +120,8 @@ public class ItMiiDomainModelInPV {
   private static String adminSecretName;
   private static String encryptionSecretName;
 
-  private static String pvName = domainUid1 + "-pv"; // name of the persistent volume
-  private static String pvcName = domainUid1 + "-pvc"; // name of the persistent volume claim
+  private static String pvName = domainUid1 + "-wdtmodel-pv"; // name of the persistent volume
+  private static String pvcName = domainUid1 + "-wdtmodel-pvc"; // name of the persistent volume claim
 
   private static Path clusterViewAppPath;
   private static String modelFile = "modelinpv-with-war.yaml";
