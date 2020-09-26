@@ -333,11 +333,10 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Create one operator if it is not running.
-   * Create domain domain1 and domain2 dynamic cluster in default namespace, managed by operator1.
+   * Create domain domain1 and domain2 with a dynamic cluster in each domain in default namespace, managed by operator1.
    * Both domains share one PV.
    * Verify scaling for domain2 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1.
-   * Shut down domain1 and back up, plus verify no impact on domain2.
+   * Shut down and restart domain1, and make sure there is no impact on domain2.
    * shutdown both domains
    */
   @Order(2)
@@ -360,7 +359,7 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Test deploy applications and install ingress controllers Traefik and Voyager.
+   * Test deploy applications and install ingress controllers Traefik, NGINX, Apache and Voyager.
    */
   @Order(3)
   @Test
@@ -405,20 +404,21 @@ public class ItTwoDomainsLoadBalancers {
       assertDoesNotThrow(() -> createSecretWithTLSCertKey(domainUid + "-tls-secret",
           defaultNamespace, tlsKeyFile, tlsCertFile));
     }
-    // create loadbalancing rules for Traefik, Voyager and NGINX
+
+    // create ingress rules with non-tls host routing, tls host routing and path routing for Traefik
     createTraefikIngressRoutingRules();
 
-    // create ingress with non-tls host routing
+    // create ingress rules with non-tls host routing for Voyager and NGINX
     createVoyagerIngressHostRoutingRules(false);
-    createNginxIngressHostRouting4TwoDomains(false);
+    createNginxIngressHostRoutingForTwoDomains(false);
 
-    // create ingress with tls host routing
+    // create ingress rules with tls host routing for Voyager and NGINX
     createVoyagerIngressHostRoutingRules(true);
-    createNginxIngressHostRouting4TwoDomains(true);
+    createNginxIngressHostRoutingForTwoDomains(true);
 
-    // create ingress with path routing
+    // create ingress rules with path routing for Voyager and NGINX
     createVoyagerIngressPathRoutingRules();
-    createNginxIngressPathRouting4TwoDomains();
+    createNginxIngressPathRoutingForTwoDomains();
 
     // install and verify Apache
     apacheHelmParams1 = assertDoesNotThrow(
@@ -434,32 +434,31 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Test verifies admin server access through Traefik loadbalancer. Accesses the admin server for each domain through
-   * Traefik loadbalancer web port and verifies it is a console login page.
+   * Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol.
    */
   @Order(4)
   @Test
-  @DisplayName("Access admin server console through Traefik loadbalancer")
+  @DisplayName("Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol")
   public void testTraefikHostRoutingAdminServer() {
-    logger.info("Verifying admin server access through Traefik");
+    logger.info("Verifying WebLogic admin console is accessible through Traefik host routing with HTTP protocol");
     for (String domainUid : domainUids) {
       verifyAdminServerAccess(domainUid);
     }
   }
 
   /**
-   * Test verifies multiple WebLogic domains can be loadbalanced by Traefik loadbalancer with host based routing rules.
+   * Verify multiple WebLogic domains can be loadbalanced by Traefik loadbalancer with host based routing rules.
    * Accesses the clusterview application deployed in the WebLogic cluster through Traefik loadbalancer web
    * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
   @Order(5)
   @Test
-  @DisplayName("Create domain1 and domain2 and Ingress resources")
+  @DisplayName("Verify Traefik host routing with HTTP protocol across two domains")
   public void testTraefikHttpHostRoutingAcrossDomains() {
 
-    // verify load balancing works when 2 domains are running in the same namespace
-    logger.info("Verifying http traffic");
+    // verify Traefik host routing with HTTP protocol across two domains
+    logger.info("Verifying Traefik host routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".cluster-1.test",
           "http", getTraefikLbNodePort(false), replicaCount, true, "");
@@ -467,16 +466,16 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Test verifies multiple WebLogic domains can be loadbalanced by Traefik loadbalancer with host based routing rules.
+   * Verify multiple WebLogic domains can be loadbalanced by Traefik loadbalancer with host based routing rules.
    * Accesses the clusterview application deployed in the WebLogic cluster through Traefik loadbalancer websecure
    * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    */
   @Order(6)
   @Test
-  @DisplayName("Loadbalance WebLogic cluster traffic through Traefik loadbalancer websecure channel")
+  @DisplayName("Verify Traefik host routing with HTTPS protocol across two domains")
   public void testTraefikHostHttpsRoutingAcrossDomains() {
 
-    logger.info("Verifying https traffic");
+    logger.info("Verifying Traefik host routing with HTTPS protocol across two domains");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".cluster-1.test",
           "https", getTraefikLbNodePort(true), replicaCount, true, "");
@@ -484,14 +483,14 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Test verifies multiple WebLogic domains can be loadbalanced by Traefik loadbalancer with path routing rules.
+   * Verify Traefik path routing with HTTP protocol across two domains.
    */
   @Order(7)
   @Test
-  @DisplayName("Loadbalance WebLogic cluster traffic through Traefik loadbalancer path routing")
+  @DisplayName("Verify Traefik path routing with HTTP protocol across two domains")
   public void testTraefikPathRoutingAcrossDomains() {
 
-    logger.info("Verifying https traffic");
+    logger.info("Verifying Traefik path routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, "", "http", getTraefikLbNodePort(false),
           replicaCount, false, "/" + domainUid.substring(6));
@@ -499,17 +498,17 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Test verifies multiple WebLogic domains can be loadbalanced by Voyager loadbalancer with host based routing rules.
+   * Verify multiple WebLogic domains can be loadbalanced by Voyager loadbalancer with host based routing rules.
    * Accesses the clusterview application deployed in the WebLogic cluster through Voyager loadbalancer and verifies it
    * is correctly routed to the specific domain cluster identified by the -H host header.
    */
   @Order(8)
   @Test
-  @DisplayName("Loadbalance WebLogic cluster traffic through Voyager loadbalancer host routing")
+  @DisplayName("Verify Voyager host routing with HTTP protocol across two domains")
   public void testVoyagerHostHttpRoutingAcrossDomains() {
 
-    // verify load balancing works when 2 domains are running in the same namespace
-    logger.info("Verifying Voyager http routing");
+    // verify Voyager host routing with HTTP protocol across two domains
+    logger.info("Verifying Voyager host routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
       String ingressName = domainUid + "-voyager-host-routing";
       verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".voyager.nonssl.test",
@@ -519,17 +518,17 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Test verifies multiple WebLogic domains can be loadbalanced by Voyager loadbalancer with tls based routing rules.
+   * Verify multiple WebLogic domains can be loadbalanced by Voyager loadbalancer with tls based routing rules.
    * Accesses the clusterview application deployed in the WebLogic cluster through Voyager loadbalancer and verifies it
    * is correctly routed to the specific domain cluster identified by the -H host header.
    */
   @Order(9)
   @Test
-  @DisplayName("Loadbalance WebLogic cluster traffic through Voyager loadbalancer tls host routing")
+  @DisplayName("Verify Voyager host routing with HTTPS protocol across two domains")
   public void testVoyagerHostHttpsRoutingAcrossDomains() {
 
-    // verify load balancing works when 2 domains are running in the same namespace
-    logger.info("Verifying Voyager tls host routing");
+    // verify Voyager host routing with HTTPS protocol across two domains
+    logger.info("Verifying Voyager host routing with HTTPS protocol across two domains");
     for (String domainUid : domainUids) {
       String ingressName = domainUid + "-voyager-tls";
       verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".voyager.ssl.test",
@@ -539,17 +538,17 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Test verifies multiple WebLogic domains can be loadbalanced by Voyager loadbalancer with path routing rules.
+   * Verify multiple WebLogic domains can be loadbalanced by Voyager loadbalancer with path routing rules.
    * Accesses the clusterview application deployed in the WebLogic cluster through Voyager loadbalancer and verifies it
    * is correctly routed to the specific domain cluster.
    */
   @Order(10)
   @Test
-  @DisplayName("Load balance WebLogic cluster traffic through Voyager load balancer path routing")
+  @DisplayName("Verify Voyager path routing with HTTP protocol across two domains")
   public void testVoyagerPathRoutingAcrossDomains() {
 
-    // verify load balancing works when 2 domains are running in the same namespace
-    logger.info("Verifying Voyager path routing");
+    // verify Voyager path routing with HTTP protocol across two domains
+    logger.info("Verifying Voyager path routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
       String ingressName = "voyager-path-routing";
       verifyClusterLoadbalancing(domainUid, "", "http", getVoyagerLbNodePort(ingressName, "tcp-80"),
@@ -567,7 +566,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(11)
   @Test
   @DisplayName("verify Apache load balancer default sample through HTTP channel")
-  public void testApacheDefaultSample() {
+  public void testApacheLoadBalancingDefaultSample() {
 
     // verify Apache default sample
     logger.info("Verifying Apache default sample");
@@ -586,7 +585,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(12)
   @Test
   @DisplayName("verify Apache load balancer custom sample through HTTP and HTTPS channel")
-  public void testApacheCustomSample() {
+  public void testApacheLoadBalancingCustomSample() {
 
     // verify Apache custom sample
     logger.info("Verifying Apache custom sample");
@@ -602,18 +601,18 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Test verifies multiple WebLogic domains can be loadbalanced by NGINX loadbalancer with host based routing rules.
-   * Accesses the clusterview application deployed in the WebLogic cluster through NGINX host routing
+   * Verify multiple WebLogic domains can be loadbalanced by NGINX loadbalancer with host based routing rules.
+   * Accesses the clusterview application deployed in the WebLogic cluster through NGINX host routing with HTTP protocol
    * and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
   @Order(13)
   @Test
-  @DisplayName("verify NGINX host routing with HTTP across two domains")
+  @DisplayName("verify NGINX host routing with HTTP protocol across two domains")
   public void testNginxHttpHostRoutingAcrossDomains() {
 
-    // verify load balancing works when 2 domains are running in the same namespace
-    logger.info("Verifying NGINX load balancer host routing");
+    // verify NGINX host routing with HTTP protocol
+    logger.info("Verifying NGINX host routing with HTTP protocol");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".nginx.nonssl.test",
           "http", getNginxLbNodePort("http"), replicaCount, true, "");
@@ -622,17 +621,17 @@ public class ItTwoDomainsLoadBalancers {
 
   /**
    * Test verifies multiple WebLogic domains can be loadbalanced by NGINX loadbalancer with host based routing rules.
-   * Accesses the clusterview application deployed in the WebLogic cluster through NGINX tls host routing
-   * and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
+   * Accesses the clusterview application deployed in the WebLogic cluster through NGINX tls host routing with HTTPS
+   * protocol and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
   @Order(14)
   @Test
-  @DisplayName("verify NGINX tls host routing across two domains")
+  @DisplayName("verify NGINX host routing with https protocol across two domains")
   public void testNginxHttpsHostRoutingAcrossDomains() {
 
-    // verify load balancing works when 2 domains are running in the same namespace
-    logger.info("Verifying NGINX tls host routing");
+    // verify NGINX host routing with HTTPS protocol across two domains
+    logger.info("Verifying NGINX host routing with HTTPS protocol across two domains");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".nginx.ssl.test",
           "https", getNginxLbNodePort("https"), replicaCount, true, "");
@@ -646,11 +645,11 @@ public class ItTwoDomainsLoadBalancers {
    */
   @Order(15)
   @Test
-  @DisplayName("Load balance WebLogic cluster traffic through NGINX load balancer path routing")
+  @DisplayName("Verify NGINX path routing with HTTP protocol across two domains")
   public void testNginxPathRoutingAcrossDomains() {
 
-    // verify load balancing works when 2 domains are running in the same namespace
-    logger.info("Verifying NGINX ingress path routing");
+    // verify NGINX path routing with HTTP protocol across two domains
+    logger.info("Verifying NGINX path routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, "", "http", getNginxLbNodePort("http"),
           replicaCount, false, "/" + domainUid.substring(6));
@@ -1580,7 +1579,7 @@ public class ItTwoDomainsLoadBalancers {
     }
   }
 
-  private void createNginxIngressHostRouting4TwoDomains(boolean isTLS) {
+  private void createNginxIngressHostRoutingForTwoDomains(boolean isTLS) {
 
     // create an ingress in domain namespace
     String ingressName;
@@ -1659,7 +1658,7 @@ public class ItTwoDomainsLoadBalancers {
     }
   }
 
-  private void createNginxIngressPathRouting4TwoDomains() {
+  private void createNginxIngressPathRoutingForTwoDomains() {
 
     // create an ingress in domain namespace
     String ingressName = defaultNamespace + "-nginx-path-routing";
