@@ -228,7 +228,7 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Uninstalling operator");
     uninstallOperator(opHelmParams);
     cleanUpSA(opNamespace);
-    deleteSecret(OCR_SECRET_NAME,opNamespace);
+    deleteSecret(REPO_SECRET_NAME,opNamespace);
 
     // verify the operator pod does not exist in the operator namespace
     logger.info("Checking that operator pod does not exist in operator namespace");
@@ -331,7 +331,7 @@ class ItUsabilityOperatorHelmChart {
 
     } finally {
       uninstallOperator(op1HelmParams);
-      deleteSecret(OCR_SECRET_NAME,opNamespace);
+      deleteSecret(REPO_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
     }
   }
@@ -442,8 +442,8 @@ class ItUsabilityOperatorHelmChart {
 
     } finally {
       uninstallOperator(op1HelmParams);
+      deleteSecret(REPO_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
-      deleteSecret(OCR_SECRET_NAME,op2Namespace);
     }
   }
 
@@ -485,7 +485,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
-      deleteSecret(OCR_SECRET_NAME,opNamespace);
+      deleteSecret(REPO_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
     }
   }
@@ -527,7 +527,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
-      deleteSecret(OCR_SECRET_NAME,opNamespace);
+      deleteSecret(REPO_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
     }
@@ -569,13 +569,13 @@ class ItUsabilityOperatorHelmChart {
           expectedError,"failed",
           externalRestHttpsPort, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
+      uninstallOperator(op2HelmParams);
     } finally {
       uninstallOperator(opHelmParams);
-      uninstallOperator(op2HelmParams);
+      deleteSecret(REPO_SECRET_NAME,opNamespace);
+      deleteSecret(REPO_SECRET_NAME,op2Namespace);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
-      deleteSecret(OCR_SECRET_NAME,opNamespace);
-      deleteSecret(OCR_SECRET_NAME,op2Namespace);
     }
   }
 
@@ -664,7 +664,7 @@ class ItUsabilityOperatorHelmChart {
 
     } finally {
       uninstallOperator(op2HelmParams);
-      deleteSecret(OCR_SECRET_NAME,op2Namespace);
+      deleteSecret(REPO_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
     }
   }
@@ -730,7 +730,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       //uninstall operator helm chart
       uninstallOperator(opHelmParams);
-      deleteSecret(OCR_SECRET_NAME,op2Namespace);
+      deleteSecret(REPO_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
     }
   }
