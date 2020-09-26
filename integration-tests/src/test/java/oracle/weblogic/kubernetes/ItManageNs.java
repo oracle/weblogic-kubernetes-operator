@@ -99,11 +99,13 @@ class ItManageNs {
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static String domain3Namespace = null;
+  private static String domain4Namespace = null;
 
   // domain constants
   private final String domain1Uid = "managensdomain1";
   private final String domain2Uid = "managensdomain2";
   private final String domain3Uid = "managensdomain3";
+  private final String domain4Uid = "managensdomain4";
 
   private final String clusterName = "cluster-1";
   private final int replicaCount = 2;
@@ -131,37 +133,42 @@ class ItManageNs {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  public static void initAll(@Namespaces(7) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    // get a unique domain namespace
+    // get a unique domain1 namespace
     logger.info("Getting a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domain1Namespace = namespaces.get(1);
 
-    // get a unique domain namespace
+    // get a unique domain2 namespace
     logger.info("Getting a unique namespace for WebLogic domain 2");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domain2Namespace = namespaces.get(2);
 
-    // get a unique domain namespace
+    // get a unique domain3 namespace
     logger.info("Getting a unique namespace for WebLogic domain 3");
     assertNotNull(namespaces.get(3), "Namespace list is null");
     domain3Namespace = namespaces.get(3);
 
+    // get a unique domain4 namespace
+    logger.info("Getting a unique namespace for WebLogic domain 4");
+    assertNotNull(namespaces.get(4), "Namespace list is null");
+    domain4Namespace = namespaces.get(4);
+
     // get a unique operator 2 namespace
     logger.info("Getting a unique namespace for operator 2");
-    assertNotNull(namespaces.get(4), "Namespace list is null");
-    op2Namespace = namespaces.get(4);
+    assertNotNull(namespaces.get(5), "Namespace list is null");
+    op2Namespace = namespaces.get(5);
 
     // get a unique operator 2 namespace
     logger.info("Getting a unique namespace for operator 3");
-    assertNotNull(namespaces.get(5), "Namespace list is null");
-    op3Namespace = namespaces.get(5);
+    assertNotNull(namespaces.get(6), "Namespace list is null");
+    op3Namespace = namespaces.get(6);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
@@ -189,6 +196,12 @@ class ItManageNs {
 
     logger.info("Delete domain3 custom resource in namespace {0}", domain3Namespace);
     deleteDomainCustomResource(domain3Uid, domain3Namespace);
+    logger.info("Deleted Domain Custom Resource " + domain3Uid);
+
+    logger.info("Delete domain4 custom resource in namespace {0}", domain4Namespace);
+    deleteDomainCustomResource(domain4Uid, domain4Namespace);
+    logger.info("Deleted Domain Custom Resource " + domain4Uid);
+
     logger.info("Delete domain1xoxoxo custom resource in namespace {0}", "xoxoxo-" + domain1Namespace);
     deleteDomainCustomResource(domain1Uid + "xoxoxo", "xoxoxo-" + domain1Namespace);
     logger.info("Deleted Domain Custom Resource " + domain1Uid + "xoxoxo from xoxoxo-" + domain1Namespace);
@@ -199,7 +212,7 @@ class ItManageNs {
 
     logger.info("Delete defaultuid custom resource in namespace {0}", "default");
     deleteDomainCustomResource("defaultuid", "default");
-    logger.info("Deleted Domain Custom Resource " + domain2Uid + "xoxoxo from xoxoxo-" + domain2Namespace);
+    logger.info("Deleted Domain Custom Resource " + "defaultuid");
 
     logger.info("Delete nstest custom resource in namespace {0}", "nstest" + domain2Namespace);
     deleteDomainCustomResource("nstest", "nstest" + domain2Namespace);
@@ -307,26 +320,26 @@ class ItManageNs {
         + domain1Uid + " in the namespace " + domain1Namespace);
   }
 
-  private void addExtraDomainByAddingLabelToNS(java.util.Map<String, String> labels) {
+  private void addExtraDomainByAddingLabelToNS(Map<String, String> labels) {
     //clean up domain resources in namespace and set namespace to label , managed by operator
-    logger.info("deleting domain custom resource {0}", domain2Uid);
-    assertTrue(deleteDomainCustomResource(domain2Uid, domain2Namespace));
+    logger.info("deleting domain custom resource {0}", domain4Uid);
+    assertTrue(deleteDomainCustomResource(domain4Uid, domain4Namespace));
 
     // wait until domain was deleted
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
-                domain2Uid,
-                domain2Namespace,
+                domain4Uid,
+                domain4Namespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(domainDoesNotExist(domain2Uid, DOMAIN_VERSION, domain2Namespace));
+        .until(domainDoesNotExist(domain4Uid, DOMAIN_VERSION, domain4Namespace));
 
     //switch to the label1, managed by operator and verify domain is started and can be managed by operator.
-    setLabelToNamespace(domain2Namespace, labels);
-    assertTrue(startDomain(domain2Namespace, domain2Uid));
-    checkOperatorCanScaleDomain(opNamespace, domain2Uid);
+    setLabelToNamespace(domain4Namespace, labels);
+    assertTrue(startDomain(domain4Namespace, domain4Uid));
+    checkOperatorCanScaleDomain(opNamespace, domain4Uid);
   }
 
   private void installAndVerifyOperatorCanManageDomainByLabelSelector() {
@@ -334,7 +347,7 @@ class ItManageNs {
     // domainNamespaces set to domain3 will be ignored
     opHelmParams1 = installOperatorHelmChart(OPERATOR_RELEASE_NAME,
         opNamespace, "LabelSelector",
-        "weblogic-operator=" + OPERATOR_RELEASE_NAME, domain3Namespace);
+        "weblogic-operator=" + OPERATOR_RELEASE_NAME, domain4Namespace);
 
     logger.info("Installing and verifying domain1");
     createSecrets(domain1Namespace);
@@ -344,7 +357,8 @@ class ItManageNs {
     checkOperatorCanScaleDomain(opNamespace, domain1Uid);
 
     //verify that domainNamespaces field will be ignored and domain will not start
-    assertFalse(startDomain(domain3Namespace,domain3Uid));
+    createSecrets(domain4Namespace);
+    assertFalse(startDomain(domain4Namespace,domain4Uid));
 
     //verify that domain in namespace with no label2 will not start
     createSecrets(domain2Namespace);
