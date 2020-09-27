@@ -192,7 +192,7 @@ public class Main {
         threadFactory, tuningAndConfig().getWatchTuning(), Main::isNamespaceStopping);
 
     Namespaces namespaces = new Namespaces(false);
-    Namespaces.SelectionStrategy selectionStrategy = NamespaceHelper.getSelectionStrategy();
+    Namespaces.SelectionStrategy selectionStrategy = Namespaces.getSelectionStrategy();
     Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredDomainNamespaces();
     if (configuredDomainNamespaces != null) {
       LOGGER.info(MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES, StringUtils.join(configuredDomainNamespaces, ", "));
@@ -305,7 +305,7 @@ public class Main {
   }
 
   static Step createDomainRecheckSteps(DateTime now) {
-    Namespaces.SelectionStrategy selectionStrategy = NamespaceHelper.getSelectionStrategy();
+    Namespaces.SelectionStrategy selectionStrategy = Namespaces.getSelectionStrategy();
     Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredDomainNamespaces();
 
     int recheckInterval = tuningAndConfig().getMainTuning().domainPresenceRecheckIntervalSeconds;
@@ -425,35 +425,20 @@ public class Main {
    * Returns true if the operator is configured to use a single dedicated namespace for both itself any any domains.
    */
   public static boolean isDedicated() {
-    return Namespaces.SelectionStrategy.Dedicated.equals(NamespaceHelper.getSelectionStrategy());
+    return Namespaces.SelectionStrategy.Dedicated.equals(Namespaces.getSelectionStrategy());
   }
 
   public static class Namespaces {
+    public static final String SELECTION_STRATEGY_KEY = "domainNamespaceSelectionStrategy";
     /** The key in a Packet of the collection of existing namespaces that are designated as domain namespaces. */
     static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
 
-    SelectionStrategy selectionStrategy = NamespaceHelper.getSelectionStrategy();
+    SelectionStrategy selectionStrategy = getSelectionStrategy();
     private Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredDomainNamespaces();
     boolean isFullRecheck;
 
     public Namespaces(boolean isFullRecheck) {
       this.isFullRecheck = isFullRecheck;
-    }
-
-    static @Nonnull Collection<String> getAllDomainNamespaces(Packet packet) {
-      return Optional.ofNullable(getFoundDomainNamespaces(packet)).orElse(Collections.emptyList());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Collection<String> getFoundDomainNamespaces(Packet packet) {
-      if (!packet.containsKey(ALL_DOMAIN_NAMESPACES)) {
-        packet.put(ALL_DOMAIN_NAMESPACES, new HashSet<>());
-      }
-      return (Collection<String>) packet.get(ALL_DOMAIN_NAMESPACES);
-    }
-
-    @Nonnull Collection<String> getConfiguredDomainNamespaces() {
-      return Optional.ofNullable(configuredDomainNamespaces).orElse(Collections.emptyList());
     }
 
     public enum SelectionStrategy {
@@ -531,6 +516,45 @@ public class Main {
         return null;
       }
     }
+
+    static @Nonnull Collection<String> getAllDomainNamespaces(Packet packet) {
+      return Optional.ofNullable(getFoundDomainNamespaces(packet)).orElse(Collections.emptyList());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Collection<String> getFoundDomainNamespaces(Packet packet) {
+      if (!packet.containsKey(ALL_DOMAIN_NAMESPACES)) {
+        packet.put(ALL_DOMAIN_NAMESPACES, new HashSet<>());
+      }
+      return (Collection<String>) packet.get(ALL_DOMAIN_NAMESPACES);
+    }
+
+    /**
+     * Gets the configured domain namespace selection strategy.
+     * @return Selection strategy
+     */
+    public static SelectionStrategy getSelectionStrategy() {
+      SelectionStrategy strategy =
+          Optional.ofNullable(tuningAndConfig().get(SELECTION_STRATEGY_KEY))
+                .map(SelectionStrategy::valueOf)
+                .orElse(SelectionStrategy.List);
+
+      if (SelectionStrategy.List.equals(strategy) && isDeprecatedDedicated()) {
+        return SelectionStrategy.Dedicated;
+      }
+      return strategy;
+    }
+
+    // Returns true if the deprecated way to specify the dedicated namespace strategy is being used.
+    // This value will only be used if the 'list' namespace strategy is specified or defaulted.
+    private static boolean isDeprecatedDedicated() {
+      return "true".equalsIgnoreCase(Optional.ofNullable(tuningAndConfig().get("dedicated")).orElse("false"));
+    }
+
+    @Nonnull Collection<String> getConfiguredDomainNamespaces() {
+      return Optional.ofNullable(configuredDomainNamespaces).orElse(Collections.emptyList());
+    }
+
 
     /**
      * Reads the existing namespaces from Kubernetes and performs appropriate processing on those
@@ -742,7 +766,7 @@ public class Main {
 
     switch (item.type) {
       case "ADDED":
-        if (!NamespaceHelper.getSelectionStrategy().isSelected(ns)) {
+        if (!Namespaces.getSelectionStrategy().isSelected(ns)) {
           return;
         }
 

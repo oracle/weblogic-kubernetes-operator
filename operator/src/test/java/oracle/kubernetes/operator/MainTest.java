@@ -25,7 +25,6 @@ import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
-import oracle.kubernetes.operator.helpers.NamespaceHelper;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
@@ -236,7 +235,7 @@ public class MainTest extends ThreadFactoryTestBase {
   // todo add unit tests for namespace shutdown. Must manipulate the namespaceStopping map. Can that be abstracted?
 
   private void defineSelectionStrategy(SelectionStrategy selectionStrategy) {
-    TuningParameters.getInstance().put(NamespaceHelper.SELECTION_STRATEGY_KEY, selectionStrategy.toString());
+    TuningParameters.getInstance().put(Main.Namespaces.SELECTION_STRATEGY_KEY, selectionStrategy.toString());
   }
 
   @Test
