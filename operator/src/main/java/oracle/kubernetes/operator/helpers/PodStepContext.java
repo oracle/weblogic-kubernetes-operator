@@ -811,8 +811,17 @@ public abstract class PodStepContext extends BasePodStepContext {
     public NextAction apply(Packet packet) {
       V1Pod currentPod = info.getServerPod(getServerName());
       if (currentPod == null) {
+        Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+            .map(DomainPresenceInfo::getDomain)
+            .map(Domain::getStatus)
+            .ifPresent(a -> a.resetIntrospectJobFailureCount());
+
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
+        Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+            .map(DomainPresenceInfo::getDomain)
+            .map(Domain::getStatus)
+            .ifPresent(a -> a.resetIntrospectJobFailureCount());
         LOGGER.info(
             MessageKeys.CYCLING_POD,
             Objects.requireNonNull(currentPod.getMetadata()).getName(),

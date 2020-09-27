@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -318,10 +319,23 @@ public class DomainStatusUpdater {
           .map(DomainStatus::getMessage)
           .orElse(null);
 
+      List<DomainCondition> domainConditions = Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getConditions)
+          .orElse(null);
+
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(info.getValidationWarningsAsString());
         if (existingError != null) {
-          newStatus.incrementIntrospectJobFailureCount();
+          if (domainConditions != null && domainConditions.size() > 0) {
+            String reason = domainConditions.get(0).getReason();
+            // Only increase the instrospect job failure count if the job failed or timeout
+            // e.g. domain validation error is not counted as introspection error
+            if ("BackoffLimitExceeded".equals(reason)) {
+              newStatus.incrementIntrospectJobFailureCount();
+            }
+          }
         }
       }
       return newStatus;
