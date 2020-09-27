@@ -5,7 +5,6 @@ package oracle.kubernetes.operator;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +18,7 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.operator.Main.Namespaces.SelectionStrategy;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
@@ -26,7 +26,6 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.NamespaceHelper;
-import oracle.kubernetes.operator.helpers.NamespaceHelper.SelectionStrategy;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
@@ -129,15 +128,13 @@ public class MainTest extends ThreadFactoryTestBase {
   @Test
   public void withNamespaceList_onReadExistingNamespaces_startsNamespaces()
       throws IllegalAccessException, NoSuchFieldException {
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(Main.Namespaces.SelectionStrategy.List);
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES,
           String.join(",", NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3));
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
                                 NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
-    Collection<String> domainNamespaces = Arrays.asList(NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3);
-    Namespaces namespaces = new Namespaces(false);
-    testSupport.runSteps(Main.readExistingNamespaces(domainNamespaces, namespaces));
+    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
 
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
@@ -172,13 +169,12 @@ public class MainTest extends ThreadFactoryTestBase {
   @Test
   public void withRegExp_onReadExistingNamespaces_startsNamespaces()
           throws IllegalAccessException, NoSuchFieldException {
-    defineSelectionStrategy(SelectionStrategy.RegExp);
+    defineSelectionStrategy(Main.Namespaces.SelectionStrategy.RegExp);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
           NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
-    Namespaces namespaces = new Namespaces(false);
-    testSupport.runSteps(Main.readExistingNamespaces(null, namespaces));
+    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
 
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC2), isNamespaceStarting()),
@@ -189,13 +185,12 @@ public class MainTest extends ThreadFactoryTestBase {
   @Test
   public void withLabelSelector_onReadExistingNamespaces_startsNamespaces()
           throws IllegalAccessException, NoSuchFieldException {
-    defineSelectionStrategy(SelectionStrategy.LabelSelector);
+    defineSelectionStrategy(Main.Namespaces.SelectionStrategy.LabelSelector);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
           NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
-    Namespaces namespaces = new Namespaces(false);
-    testSupport.runSteps(Main.readExistingNamespaces(null, namespaces));
+    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
 
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
@@ -216,13 +211,12 @@ public class MainTest extends ThreadFactoryTestBase {
   public void whenConfiguredDomainNamespaceMissing_logWarning() {
     loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
 
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(Main.Namespaces.SelectionStrategy.List);
     String namespaceString = "NS1,NS" + LAST_NAMESPACE_NUM;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(LAST_NAMESPACE_NUM - 1);
-    Namespaces namespaces = new Namespaces(false);
 
-    testSupport.runSteps(Main.readExistingNamespaces(NamespaceHelper.parseNamespaceList(namespaceString), namespaces));
+    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
 
     assertThat(logRecords, containsWarning(MessageKeys.NAMESPACE_IS_MISSING));
   }
@@ -231,13 +225,12 @@ public class MainTest extends ThreadFactoryTestBase {
   public void whenNamespacesListedInOneChunk_dontDeclarePresentNamespacesAsMissing() {
     loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
 
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(Main.Namespaces.SelectionStrategy.List);
     String namespaceString = "NS1,NS" + LAST_NAMESPACE_NUM;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(LAST_NAMESPACE_NUM);
-    Namespaces namespaces = new Namespaces(false);
-    
-    testSupport.runSteps(Main.readExistingNamespaces(NamespaceHelper.parseNamespaceList(namespaceString), namespaces));
+
+    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
   }
 
   // todo add unit tests for namespace shutdown. Must manipulate the namespaceStopping map. Can that be abstracted?
@@ -250,13 +243,12 @@ public class MainTest extends ThreadFactoryTestBase {
   public void whenNamespacesListedInMultipleChunks_dontDeclarePresentNamespacesAsMissing() {
     loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
 
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(Main.Namespaces.SelectionStrategy.List);
     String namespaceString = "NS1,NS" + MULTICHUNK_LAST_NAMESPACE_NUM;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(MULTICHUNK_LAST_NAMESPACE_NUM);
-    Namespaces namespaces = new Namespaces(false);
 
-    testSupport.runSteps(Main.readExistingNamespaces(NamespaceHelper.parseNamespaceList(namespaceString), namespaces));
+    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
   }
 
   private void createNamespaces(int lastNamespaceNum) {
