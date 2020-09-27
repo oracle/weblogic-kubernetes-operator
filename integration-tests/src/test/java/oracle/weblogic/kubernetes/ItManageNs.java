@@ -226,6 +226,7 @@ class ItManageNs {
     deleteNamespace("xoxoxo-" + domain1Namespace);
     deleteNamespace("xoxoxo-" + domain2Namespace);
     deleteNamespace("nstest" + domain2Namespace);
+    deleteNamespace("axoxoxo-" + domain1Namespace);
     //delete operator
     uninstallOperator(opHelmParams1);
     uninstallOperator(opHelmParams2);
@@ -338,6 +339,7 @@ class ItManageNs {
 
     //switch to the label1, managed by operator and verify domain is started and can be managed by operator.
     setLabelToNamespace(domain4Namespace, labels);
+    createSecrets(domain4Namespace);
     assertTrue(startDomain(domain4Namespace, domain4Uid));
     checkOperatorCanScaleDomain(opNamespace, domain4Uid);
   }
