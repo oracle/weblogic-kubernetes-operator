@@ -78,13 +78,8 @@ public class Helm {
     // add override chart values
     installCmd = installCmd + valuesToString(chartValues);
 
-    if (helmParams.getChartVersion() != null) {
-      installCmd = installCmd + " --version " + helmParams.getChartVersion();
-    }
-
     // run the command
     return exec(installCmd);
-
   }
 
   /**
