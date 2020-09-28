@@ -172,14 +172,14 @@ public class ItMiiDomainModelInPV {
     miiImagePV = MII_BASIC_IMAGE_NAME + ":" + miiImageTagPV;
 
     // build a new MII image with no domain
-    buildMIIandPushToRepo(null);
+    buildMIIandPushToRepo(miiImagePV, null);
 
     logger.info("Building image with custom wdt model home location");
     miiImageTagCustom = TestUtils.getDateAndTimeStamp();
     miiImageCustom = MII_BASIC_IMAGE_NAME + ":" + miiImageTagCustom;
 
     // build a new MII image with custom wdtHome
-    buildMIIandPushToRepo(modelMountPath + "/model");
+    buildMIIandPushToRepo(miiImageCustom, modelMountPath + "/model");
 
     params.put("domain2", miiImageCustom);
     params.put("domain1", miiImagePV);
@@ -432,7 +432,7 @@ public class ItMiiDomainModelInPV {
 
   // create a model in image with no domain
   // push the image to repo
-  private static void buildMIIandPushToRepo(String customWDTHome) {
+  private static void buildMIIandPushToRepo(String image, String customWDTHome) {
     Path emptyModelFile = Paths.get(TestConstants.RESULTS_ROOT, "miitemp", "empty-wdt-model.yaml");
     assertDoesNotThrow(() -> Files.createDirectories(emptyModelFile.getParent()));
     emptyModelFile.toFile().delete();
@@ -447,14 +447,14 @@ public class ItMiiDomainModelInPV {
       defaultWitParams.wdtModelHome(customWDTHome);
     }
     createImage(defaultWitParams
-        .modelImageName(MII_BASIC_IMAGE_NAME)
-        .modelImageTag(miiImageTagCustom)
+        .modelImageName(image.split(":")[0])
+        .modelImageTag(image.split(":")[1])
         .modelFiles(modelList)
         .wdtModelOnly(true)
         .wdtVersion(WDT_VERSION)
         .env(env)
         .redirect(true));
-    dockerLoginAndPushImage(miiImageCustom);
+    dockerLoginAndPushImage(image);
   }
 
   private static void dockerLoginAndPushImage(String image) {
