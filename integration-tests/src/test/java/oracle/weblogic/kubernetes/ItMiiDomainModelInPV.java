@@ -33,6 +33,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -42,7 +43,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.awaitility.core.ConditionFactory;
-import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -172,14 +172,14 @@ public class ItMiiDomainModelInPV {
     miiImagePV = MII_BASIC_IMAGE_NAME + ":" + miiImageTagPV;
 
     // build a new MII image with no domain
-    buildMIIandPushToRepo();
+    buildMIIandPushToRepo(null);
 
     logger.info("Building image with custom wdt model home location");
     miiImageTagCustom = TestUtils.getDateAndTimeStamp();
     miiImageCustom = MII_BASIC_IMAGE_NAME + ":" + miiImageTagCustom;
 
     // build a new MII image with custom wdtHome
-    buildMIIWithwdtModelHomeandPushToRepo();
+    buildMIIandPushToRepo(modelMountPath + "/model");
 
     params.put("domain2", miiImageCustom);
     params.put("domain1", miiImagePV);
@@ -375,66 +375,6 @@ public class ItMiiDomainModelInPV {
         });
   }
 
-  // setup a temporary pod to access PV location to store model and application files
-  private static V1Pod setupPVPod(String namespace) {
-
-    // Create the temporary pod with oraclelinux image
-    // oraclelinux:7-slim is not useful, missing tar utility
-    final String podName = "pv-pod-" + namespace;
-    V1Pod podBody = new V1Pod()
-        .spec(new V1PodSpec()
-            .initContainers(Arrays.asList(new V1Container()
-                .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                .image("oraclelinux:7")
-                .addCommandItem("/bin/sh")
-                .addArgsItem("-c")
-                .addArgsItem("chown -R 1000:1000 " + modelMountPath)
-                .volumeMounts(Arrays.asList(
-                    new V1VolumeMount()
-                        .name(pvName)
-                        .mountPath(modelMountPath)))
-                .securityContext(new V1SecurityContext()
-                    .runAsGroup(0L)
-                    .runAsUser(0L))))
-            .containers(Arrays.asList(
-                new V1Container()
-                    .name("pv-container")
-                    .image("oraclelinux:7")
-                    .imagePullPolicy("IfNotPresent")
-                    .volumeMounts(Arrays.asList(
-                        new V1VolumeMount()
-                            .name(pvName) // mount the persistent volume to /shared inside the pod
-                            .mountPath(modelMountPath)))
-                    .addCommandItem("tailf")
-                    .addArgsItem("/dev/null")))
-            .volumes(Arrays.asList(
-                new V1Volume()
-                    .name(pvName) // the persistent volume that needs to be archived
-                    .persistentVolumeClaim(
-                        new V1PersistentVolumeClaimVolumeSource()
-                            .claimName(pvcName))))) // the persistent volume claim used by the test
-        .metadata(new V1ObjectMeta().name(podName))
-        .apiVersion("v1")
-        .kind("Pod");
-    V1Pod pvPod = assertDoesNotThrow(() -> Kubernetes.createPod(namespace, podBody));
-
-    try {
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
-                  + "(elapsed time {2} , remaining time {3}",
-                  podName,
-                  namespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(podReady(podName, null, namespace));
-    } catch (ConditionTimeoutException ex) {
-      logger.warning("Condition not met", ex);
-    }
-
-    return pvPod;
-  }
-
   private static V1Pod setupWebLogicPod(String namespace) {
     setImage(namespace);
     final String podName = "weblogic-pv-pod-" + namespace;
@@ -492,7 +432,7 @@ public class ItMiiDomainModelInPV {
 
   // create a model in image with no domain
   // push the image to repo
-  private static void buildMIIandPushToRepo() {
+  private static void buildMIIandPushToRepo(String customWDTHome) {
     Path emptyModelFile = Paths.get(TestConstants.RESULTS_ROOT, "miitemp", "empty-wdt-model.yaml");
     assertDoesNotThrow(() -> Files.createDirectories(emptyModelFile.getParent()));
     emptyModelFile.toFile().delete();
@@ -502,34 +442,14 @@ public class ItMiiDomainModelInPV {
     checkDirectory(WIT_BUILD_DIR);
     Map<String, String> env = new HashMap<>();
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
-    createImage(defaultWitParams()
-        .modelImageName(MII_BASIC_IMAGE_NAME)
-        .modelImageTag(miiImageTagPV)
-        .modelFiles(modelList)
-        .wdtModelOnly(true)
-        .wdtVersion(WDT_VERSION)
-        .env(env)
-        .redirect(true));
-    dockerLoginAndPushImage(miiImagePV);
-  }
-
-  // create a model in image with no domain
-  // push the image to repo
-  private static void buildMIIWithwdtModelHomeandPushToRepo() {
-    Path emptyModelFile = Paths.get(TestConstants.RESULTS_ROOT, "miitemp", "empty-wdt-model.yaml");
-    assertDoesNotThrow(() -> Files.createDirectories(emptyModelFile.getParent()));
-    emptyModelFile.toFile().delete();
-    assertTrue(assertDoesNotThrow(() -> emptyModelFile.toFile().createNewFile()));
-    final List<String> modelList = Collections.singletonList(emptyModelFile.toString());
-    // Set additional environment variables for WIT
-    checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap<>();
-    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
-    createImage(defaultWitParams()
+    WitParams defaultWitParams = defaultWitParams();
+    if (customWDTHome != null) {
+      defaultWitParams.wdtModelHome(customWDTHome);
+    }
+    createImage(defaultWitParams
         .modelImageName(MII_BASIC_IMAGE_NAME)
         .modelImageTag(miiImageTagCustom)
         .modelFiles(modelList)
-        .wdtModelHome(modelMountPath + "/model")
         .wdtModelOnly(true)
         .wdtVersion(WDT_VERSION)
         .env(env)
