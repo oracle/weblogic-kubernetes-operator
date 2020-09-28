@@ -210,10 +210,6 @@ class ItManageNs {
     deleteDomainCustomResource(domain2Uid + "xoxoxo", "xoxoxo-" + domain2Namespace);
     logger.info("Deleted Domain Custom Resource " + domain2Uid + "xoxoxo from xoxoxo-" + domain2Namespace);
 
-    logger.info("Delete defaultuid custom resource in namespace {0}", "default");
-    deleteDomainCustomResource("defaultuid", "default");
-    logger.info("Deleted Domain Custom Resource " + "defaultuid");
-
     logger.info("Delete nstest custom resource in namespace {0}", "nstest" + domain2Namespace);
     deleteDomainCustomResource("nstest", "nstest" + domain2Namespace);
     logger.info("Deleted Domain Custom Resource nstest from nstest" + domain2Namespace);
@@ -418,6 +414,10 @@ class ItManageNs {
     // and selector does not match default
     assertFalse(startDomain("default", "defaultuid"), "operator can "
         + "start the domain in the default namespace with domainNsSelctionStrategy=" + domainNsSelectionStrategy);
+
+    logger.info("Delete defaultuid custom resource in namespace {0}", "default");
+    deleteDomainCustomResource("defaultuid", "default");
+    logger.info("Deleted Domain Custom Resource " + "defaultuid");
   }
 
   private void switchNSManagementToLabelSelectUsingUpgradeOperator(String domain2NS) {
