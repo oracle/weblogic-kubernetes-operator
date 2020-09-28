@@ -101,7 +101,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test class verify creating a domain from model and application archive files stored in the persistent
  * volume.
  */
-@DisplayName("Verify MII domain can be created from model file in PV location")
+@DisplayName("Verify MII domain can be created from model file in PV location and custom wdtModelHome")
 @IntegrationTest
 public class ItMiiDomainModelInPV {
 
@@ -144,7 +144,7 @@ public class ItMiiDomainModelInPV {
   /**
    * 1. Get namespaces for operator and WebLogic domain.
    * 2. Create operator.
-   * 3. Build a MII with no domain and push it to repository.
+   * 3. Build a MII with no domain, MII with custom wdtModelHome and push it to repository.
    * 4. Create WebLogic credential and model encryption secrets
    * 5. Create PV and PVC to store model and application files.
    * 6. Copy the model file and application files to PV.
@@ -208,7 +208,7 @@ public class ItMiiDomainModelInPV {
     clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
     assertTrue(clusterViewAppPath.toFile().exists(), "Application archive is not available");
 
-    //V1Pod pvPod = setupPVPod(domainNamespace);
+    logger.info("Setting up WebLogic pod to access PV");
     V1Pod pvPod = setupWebLogicPod(domainNamespace);
 
     ExecResult exec = null;
@@ -268,12 +268,13 @@ public class ItMiiDomainModelInPV {
        /userguide/managing-domains/domain-resource/#domain-spec-elements
     1.Create the domain custom resource using mii with no domain and specifying a PV location for modelHome
     2.Create the domain custom resource using mii with custom wdt model home in a pv location
-    2. Verify the domain creation is successful and application is accessible.
+    3. Verify the domain creation is successful and application is accessible.
+    4. Repeat the test the above test using image created with custom wdtModelHome.
    * @param params domain name and image parameters
    */
   @ParameterizedTest
   @MethodSource("paramProvider")
-  @DisplayName("Create MII domain with model and application file from PV")
+  @DisplayName("Create MII domain with model and application file from PV and custon wdtModelHome")
   public void testMiiDomainWithModelAndApplicationInPV(Entry<String, String> params) {
 
     String domainUid = params.getKey();
@@ -311,11 +312,7 @@ public class ItMiiDomainModelInPV {
 
   }
 
-
-  /**
-   * Generate a steam of Domain objects used in parameterized tests.
-   * @return stream of oracle.weblogic.domain.Domain objects
-   */
+  // generates the stream of objects used by parametrized test.
   private static Stream<Entry<String,String>> paramProvider() {
     return params.entrySet().stream();
   }
@@ -430,7 +427,7 @@ public class ItMiiDomainModelInPV {
     return wlsPod;
   }
 
-  // create a model in image with no domain
+  // create a model in image with no domain and custom wdtModelHome
   // push the image to repo
   private static void buildMIIandPushToRepo(String image, String customWDTHome) {
     Path emptyModelFile = Paths.get(TestConstants.RESULTS_ROOT, "miitemp", "empty-wdt-model.yaml");
