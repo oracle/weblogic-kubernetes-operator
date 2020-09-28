@@ -27,19 +27,18 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcrRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getDateAndTimeStamp;
@@ -62,10 +61,10 @@ public class ItMiiSample {
 
   private static final String OCR_SECRET_NAME = "docker-store";
   private static final String CURRENT_DATE_TIME = getDateAndTimeStamp();
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = REPO_NAME + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = REPO_NAME + "mii-" + CURRENT_DATE_TIME + "-wlsv2";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V1 = REPO_NAME + "mii-" + CURRENT_DATE_TIME + "-jrfv1";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = REPO_NAME + "mii-" + CURRENT_DATE_TIME + "-jrfv2";
+  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
+  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv2";
+  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv1";
+  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv2";
   private static final String SUCCESS_SEARCH_STRING = "Finished without errors";
 
   private static String opNamespace = null;
@@ -118,7 +117,7 @@ public class ItMiiSample {
     envMap.put("WORKDIR", MII_SAMPLES_WORK_DIR);
     envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_NAME);
     envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
-    envMap.put("IMAGE_PULL_SECRET_NAME", REPO_SECRET_NAME); //ocir secret
+    envMap.put("IMAGE_PULL_SECRET_NAME", OCIR_SECRET_NAME); //ocir secret
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
 
     // kind cluster uses openjdk which is not supported by image tool
@@ -147,14 +146,10 @@ public class ItMiiSample {
     // Create the repo secret to pull the image
     createOcirRepoSecret(domainNamespace);
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
-        REPO_SECRET_NAME, domainNamespace);
+        OCIR_SECRET_NAME, domainNamespace);
 
     // create ocr/ocir docker registry secret to pull the db images
-    if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
-      createOcrRepoSecret(dbNamespace);
-    } else {
-      createOcirRepoSecret(dbNamespace);
-    }
+    createSecretForBaseImages(dbNamespace);
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
         BASE_IMAGES_REPO_SECRET, dbNamespace);
   }

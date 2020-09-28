@@ -100,18 +100,18 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -688,7 +688,7 @@ class ItMonitoringExporter {
     assertTrue(installAndVerifyPodFromCustomImage(monitoringExporterEndToEndDir + "/webhook",
         "webhook",
         webhookNS,
-        "app=webhook", REPO_SECRET_NAME), "Failed to start webhook");
+        "app=webhook", OCIR_SECRET_NAME), "Failed to start webhook");
   }
 
   /**
@@ -847,14 +847,14 @@ class ItMonitoringExporter {
                                                 String secretName) throws ApiException {
     //build webhook image
     String imagePullPolicy = "IfNotPresent";
-    if (!REPO_NAME.isEmpty()) {
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       imagePullPolicy = "Always";
     }
     String image = createPushImage(dockerFileDir,baseImageName, namespace, secretName);
     logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
       webhookImage = image;
-      createWebHook(webhookImage, imagePullPolicy, namespace, REPO_SECRET_NAME);
+      createWebHook(webhookImage, imagePullPolicy, namespace, OCIR_SECRET_NAME);
     } else if (baseImageName.contains("coordinator")) {
       coordinatorImage = image;
       createCoordinator(coordinatorImage, imagePullPolicy, namespace, "coordsecret");
@@ -1136,7 +1136,7 @@ class ItMonitoringExporter {
     // create unique image name with date
     final String imageTag = TestUtils.getDateAndTimeStamp();
     // Add repository name in image name for Jenkins runs
-    final String imageName = REPO_NAME + baseImageName;
+    final String imageName = DOMAIN_IMAGES_REPO + baseImageName;
 
     final String image = imageName + ":" + imageTag;
 
@@ -1148,8 +1148,8 @@ class ItMonitoringExporter {
     }
 
     //create registry docker secret
-    createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
-        REPO_REGISTRY, secretName, namespace);
+    createDockerRegistrySecret(OCIR_USERNAME, OCIR_PASSWORD, OCIR_EMAIL,
+        OCIR_REGISTRY, secretName, namespace);
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(image);
 
@@ -1397,7 +1397,7 @@ class ItMonitoringExporter {
     // create domain and verify
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, namespace, miiImage);
-    createDomainCrAndVerify(adminSecretName, REPO_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
+    createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
             namespace, domainHomeSource, replicaCount);
     String adminServerPodName = domainUid + "-admin-server";
 

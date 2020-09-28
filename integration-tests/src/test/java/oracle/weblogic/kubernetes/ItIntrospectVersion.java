@@ -58,12 +58,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -87,10 +85,9 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFo
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
@@ -176,11 +173,7 @@ public class ItIntrospectVersion {
       isUseSecret = false;
     } else {
       // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-      if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
-        createOcrRepoSecret(introDomainNamespace);
-      } else {
-        createOcirRepoSecret(introDomainNamespace);
-      }
+      createSecretForBaseImages(introDomainNamespace);
     }
 
     // build the clusterview application

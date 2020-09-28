@@ -43,7 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
@@ -163,7 +163,7 @@ class ItIstioMiiDomain {
     Domain domain = createDomainResource(domainUid,
                                       domainNamespace,
                                       adminSecretName,
-                                      REPO_SECRET_NAME,
+        OCIR_SECRET_NAME,
                                       encryptionSecretName,
                                       replicaCount,
                               MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);

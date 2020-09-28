@@ -31,22 +31,30 @@ public interface TestConstants {
   public static final String OPERATOR_DOCKER_BUILD_SCRIPT =
       "../buildDockerImage.sh";
   public static final String OPERATOR_SERVICE_NAME = "internal-weblogic-operator-svc";
-  public static final String REPO_DUMMY_VALUE = "dummy";
-  public static final String REPO_SECRET_NAME = "ocir-secret";
-  public static final String REPO_REGISTRY = Optional.ofNullable(System.getenv("REPO_REGISTRY"))
-      .orElse(REPO_DUMMY_VALUE);
-  public static final String REPO_DEFAULT = "phx.ocir.io";
-  public static final String KIND_REPO = System.getenv("KIND_REPO");
-  public static final String REPO_NAME = Optional.ofNullable(KIND_REPO)
-      .orElse(!REPO_REGISTRY.equals(REPO_DUMMY_VALUE) ? REPO_DEFAULT : "");
-  public static final String REPO_USERNAME = Optional.ofNullable(System.getenv("REPO_USERNAME"))
-      .orElse(REPO_DUMMY_VALUE);
-  public static final String REPO_PASSWORD = Optional.ofNullable(System.getenv("REPO_PASSWORD"))
-      .orElse(REPO_DUMMY_VALUE);
-  public static final String REPO_EMAIL = Optional.ofNullable(System.getenv("REPO_EMAIL"))
-      .orElse(REPO_DUMMY_VALUE);
   public static final String OPERATOR_GITHUB_CHART_REPO_URL =
-        "https://oracle.github.io/weblogic-kubernetes-operator/charts";
+      "https://oracle.github.io/weblogic-kubernetes-operator/charts";
+
+
+  public static final String REPO_DUMMY_VALUE = "dummy";
+  public static final String KIND_REPO = System.getenv("KIND_REPO");
+  public static final boolean USE_SECRET_TO_PULL_BASE_IMAGES = KIND_REPO == null ? true : false;
+
+  public static final String OCIR_DEFAULT = "phx.ocir.io";
+  public static final String OCIR_REGISTRY = Optional.ofNullable(System.getenv("REPO_REGISTRY"))
+      .orElse(OCIR_DEFAULT);
+  public static final String OCIR_USERNAME = Optional.ofNullable(System.getenv("REPO_USERNAME"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String OCIR_PASSWORD = Optional.ofNullable(System.getenv("REPO_PASSWORD"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String OCIR_EMAIL = Optional.ofNullable(System.getenv("REPO_EMAIL"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String OCIR_SECRET_NAME = "ocir-secret";
+
+  // repository to push domain images, for kind push to kind repo
+  // for others push to REPO_REGISTRY if provided, if not(like local runs) don't push the domain images
+  public static final String DOMAIN_IMAGES_REPO = Optional.ofNullable(KIND_REPO)
+      .orElse(Optional.ofNullable(System.getenv("REPO_REGISTRY"))
+          .orElse(""));
 
   // OCR registry
   public static final String OCR_SECRET_NAME = "ocr-secret";
@@ -60,9 +68,10 @@ public interface TestConstants {
 
   // base images
   public static final String BASE_IMAGES_REPO = Optional.ofNullable(System.getenv("BASE_IMAGES_REPO"))
-      .orElse(REPO_DEFAULT);
+      .orElse(OCIR_DEFAULT);
   public static final String BASE_IMAGES_REPO_SECRET =
-      BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_SECRET_NAME : REPO_SECRET_NAME;
+      BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_SECRET_NAME : OCIR_SECRET_NAME;
+
   public static final String OCIR_WEBLOGIC_IMAGE_NAME = "weblogick8s/test-images/weblogic";
   public static final String OCIR_WEBLOGIC_IMAGE_TAG = "12.2.1.4";
   public static final String OCIR_FMWINFRA_IMAGE_NAME = "weblogick8s/test-images/fmw-infrastructure";
@@ -76,16 +85,25 @@ public interface TestConstants {
       .orElse(OCIR_WEBLOGIC_IMAGE_NAME);
   public static final String WEBLOGIC_IMAGE_TAG = Optional.ofNullable(System.getenv("WEBLOGIC_IMAGE_TAG"))
       .orElse(OCIR_WEBLOGIC_IMAGE_TAG);
+  public static final String WEBLOGIC_IMAGE_TO_USE_IN_SPEC = KIND_REPO != null ? KIND_REPO
+      + (WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
+      : WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
+
   public static final String FMWINFRA_IMAGE_NAME
       = BASE_IMAGES_REPO + "/" + Optional.ofNullable(System.getenv("FMWINFRA_IMAGE_NAME"))
       .orElse(OCIR_FMWINFRA_IMAGE_NAME);
   public static final String FMWINFRA_IMAGE_TAG = Optional.ofNullable(System.getenv("FMWINFRA_IMAGE_TAG"))
       .orElse(OCIR_FMWINFRA_IMAGE_TAG);
+  public static final String KIND_FMWINFRA_IMAGE = KIND_REPO
+      + (FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1);
+
   public static final String DB_IMAGE_NAME
       = BASE_IMAGES_REPO + "/" + Optional.ofNullable(System.getenv("DB_IMAGE_NAME"))
       .orElse(OCIR_DB_IMAGE_NAME);
   public static final String DB_IMAGE_TAG = Optional.ofNullable(System.getenv("DB_IMAGE_TAG"))
       .orElse(OCIR_DB_IMAGE_TAG);
+  public static final String KIND_DB_IMAGE = KIND_REPO
+      + (DB_IMAGE_NAME + ":" + DB_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1);
 
   // jenkins constants
   public static final String BUILD_ID = Optional.ofNullable(System.getenv("BUILD_ID"))
@@ -162,7 +180,7 @@ public interface TestConstants {
 
   // MII image constants
   public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";
-  public static final String MII_BASIC_IMAGE_NAME = REPO_NAME + "mii-basic-image";
+  public static final String MII_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-basic-image";
   public static final String MII_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String MII_BASIC_IMAGE_DOMAINTYPE = "mii";
   public static final String MII_BASIC_APP_NAME = "sample-app";
@@ -177,7 +195,7 @@ public interface TestConstants {
   // WDT domain-in-image constants
   public static final String WDT_BASIC_MODEL_FILE = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
-  public static final String WDT_BASIC_IMAGE_NAME = REPO_NAME + "wdt-basic-image";
+  public static final String WDT_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "wdt-basic-image";
   public static final String WDT_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String WDT_BASIC_IMAGE_DOMAINHOME = "/u01/oracle/user_projects/domains/domain1";
   public static final String WDT_IMAGE_DOMAINHOME_BASE_DIR = "/u01/oracle/user_projects/domains";

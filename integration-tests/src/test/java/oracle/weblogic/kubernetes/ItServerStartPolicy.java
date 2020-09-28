@@ -49,7 +49,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -205,7 +205,7 @@ class ItServerStartPolicy {
 
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
-        REPO_SECRET_NAME, encryptionSecretName,
+        OCIR_SECRET_NAME, encryptionSecretName,
         replicaCount, configMapName);
 
     // wait for the domain to exist

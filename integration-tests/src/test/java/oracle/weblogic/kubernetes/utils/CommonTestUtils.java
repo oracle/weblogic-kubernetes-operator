@@ -77,8 +77,10 @@ import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
@@ -97,6 +99,11 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
@@ -106,12 +113,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
@@ -364,7 +365,7 @@ public class CommonTestUtils {
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", REPO_SECRET_NAME);
+    secretNameMap.put("name", OCIR_SECRET_NAME);
 
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()
@@ -661,14 +662,14 @@ public class CommonTestUtils {
     LoggingFacade logger = getLogger();
 
     // Create Docker registry secret in the apache namespace to pull the Apache webtier image from repository
-    if (!secretExists(REPO_SECRET_NAME, apacheNamespace)) {
+    if (!secretExists(OCIR_SECRET_NAME, apacheNamespace)) {
       logger.info("Creating Docker registry secret in namespace {0}", apacheNamespace);
       createOcirRepoSecret(apacheNamespace);
     }
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", REPO_SECRET_NAME);
+    secretNameMap.put("name", OCIR_SECRET_NAME);
 
     // Helm install parameters
     HelmParams apacheHelmParams = new HelmParams()
@@ -1662,7 +1663,7 @@ public class CommonTestUtils {
     Date date = new Date();
     final String imageTag = baseImageTag + "-" + dateFormat.format(date) + "-" + System.currentTimeMillis();
     // Add repository name in image name for Jenkins runs
-    final String imageName = REPO_NAME + imageNameBase;
+    final String imageName = DOMAIN_IMAGES_REPO + imageNameBase;
     final String image = imageName + ":" + imageTag;
 
     List<String> archiveList = new ArrayList<>();
@@ -1806,7 +1807,7 @@ public class CommonTestUtils {
    */
   public static void createOcrRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
-    logger.info("Creating image pull secret in namespace {0}", namespace);
+    logger.info("Creating image pull secret {0} in namespace {1}", OCR_SECRET_NAME, namespace);
     createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
   }
 
@@ -1817,8 +1818,10 @@ public class CommonTestUtils {
    * @param namespace the namespace in which the secret will be created
    */
   public static void createOcirRepoSecret(String namespace) {
-    createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
-        REPO_REGISTRY, REPO_SECRET_NAME, namespace);
+    LoggingFacade logger = getLogger();
+    logger.info("Creating image pull secret {0} in namespace {1}", OCIR_SECRET_NAME, namespace);
+    createDockerRegistrySecret(OCIR_USERNAME, OCIR_PASSWORD, OCIR_EMAIL,
+        OCIR_REGISTRY, OCIR_SECRET_NAME, namespace);
   }
 
   /**
@@ -1853,6 +1856,19 @@ public class CommonTestUtils {
   }
 
   /**
+   * Create a Docker registry secret in the specified namespace to pull base images.
+   *
+   * @param namespace the namespace in which the secret will be created
+   */
+  public static void createSecretForBaseImages(String namespace) {
+    if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+      createOcrRepoSecret(namespace);
+    } else {
+      createOcirRepoSecret(namespace);
+    }
+  }
+
+  /**
    * Docker login and push the image to Docker registry.
    *
    * @param dockerImage the Docker image to push to registry
@@ -1860,14 +1876,14 @@ public class CommonTestUtils {
   public static void dockerLoginAndPushImageToRegistry(String dockerImage) {
     LoggingFacade logger = getLogger();
     // push image, if necessary
-    if (!REPO_NAME.isEmpty() && dockerImage.contains(REPO_NAME)) {
+    if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(DOMAIN_IMAGES_REPO)) {
       // docker login, if necessary
-      if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+      if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
         logger.info("docker login");
-        assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+        assertTrue(dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD), "docker login failed");
       }
 
-      logger.info("docker push image {0} to {1}", dockerImage, REPO_NAME);
+      logger.info("docker push image {0} to {1}", dockerImage, DOMAIN_IMAGES_REPO);
       assertTrue(dockerPush(dockerImage), String.format("docker push failed for image %s", dockerImage));
     }
   }

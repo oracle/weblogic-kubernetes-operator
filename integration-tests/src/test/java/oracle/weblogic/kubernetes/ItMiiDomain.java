@@ -52,6 +52,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V2;
@@ -61,12 +62,11 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_TWO_APP_WDT_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -210,7 +210,7 @@ class ItMiiDomain {
     // create the domain object
     Domain domain = createDomainResourceWithConfigMap(domainUid,
                domainNamespace, adminSecretName,
-               REPO_SECRET_NAME, encryptionSecretName,
+        OCIR_SECRET_NAME, encryptionSecretName,
                replicaCount,
                MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
 
@@ -294,7 +294,7 @@ class ItMiiDomain {
     Domain domain = createDomainResource(domainUid1,
                 domainNamespace1,
                 adminSecretName,
-                REPO_SECRET_NAME,
+        OCIR_SECRET_NAME,
                 encryptionSecretName,
                 replicaCount,
                 MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
@@ -556,7 +556,7 @@ class ItMiiDomain {
             "weblogicenc", "weblogicnc");
 
     // create the domain object
-    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName, REPO_SECRET_NAME,
+    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, miiImage);
 
     // create model in image domain
@@ -631,13 +631,13 @@ class ItMiiDomain {
 
   private void pushImageIfNeeded(String image) {
     // push the image to a registry to make the test work in multi node cluster
-    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-      logger.info("docker login to registry {0}", REPO_REGISTRY);
-      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+    if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
+      logger.info("docker login to registry {0}", OCIR_REGISTRY);
+      assertTrue(dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD), "docker login failed");
     }
 
     // push image 
-    if (!REPO_NAME.isEmpty()) {
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry", image);
       assertTrue(dockerPush(image), String.format("docker push failed for image %s", image));
     }

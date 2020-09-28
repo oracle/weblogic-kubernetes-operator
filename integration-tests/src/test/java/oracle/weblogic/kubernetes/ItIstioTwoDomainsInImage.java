@@ -40,7 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -165,9 +165,9 @@ class ItIstioTwoDomainsInImage {
          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create the domain CR(s)
-    createDomainResource(domainUid1, domainNamespace1, adminSecretName1, REPO_SECRET_NAME,
+    createDomainResource(domainUid1, domainNamespace1, adminSecretName1, OCIR_SECRET_NAME,
         replicaCount);
-    createDomainResource(domainUid2, domainNamespace2, adminSecretName2, REPO_SECRET_NAME,
+    createDomainResource(domainUid2, domainNamespace2, adminSecretName2, OCIR_SECRET_NAME,
         replicaCount);
 
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace1);

@@ -93,12 +93,10 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -136,9 +134,9 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
@@ -277,7 +275,7 @@ public class ItTwoDomainsLoadBalancers {
                       + "(elapsed time {0} ms, remaining time {1} ms)",
                   condition.getElapsedTimeInMS(),
                   condition.getRemainingTimeInMS()))
-          .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
+          .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
 
       withStandardRetryPolicy
           .conditionEvaluationListener(
@@ -667,11 +665,7 @@ public class ItTwoDomainsLoadBalancers {
 
       if (isUseSecret) {
         // create pull secrets for WebLogic image
-        if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
-          createOcrRepoSecret(domainNamespaces.get(i));
-        } else {
-          createOcirRepoSecret(domainNamespaces.get(i));
-        }
+        createSecretForBaseImages(domainNamespaces.get(i));
       }
 
       t3ChannelPort = getNextFreePort(32001, 32700);
@@ -1523,7 +1517,7 @@ public class ItTwoDomainsLoadBalancers {
 
   private static Callable<Boolean> pullImageFromOcirAndPushToKind(String apacheImage) {
     return (() -> {
-      kindRepoApacheImage = KIND_REPO + apacheImage.substring(REPO_DEFAULT.length() + 1);
+      kindRepoApacheImage = KIND_REPO + apacheImage.substring(OCIR_REGISTRY.length() + 1);
       logger.info("pulling image {0} from OCIR, tag it as image {1} and push to KIND repo",
           apacheImage, kindRepoApacheImage);
       return dockerPull(apacheImage) && dockerTag(apacheImage, kindRepoApacheImage) && dockerPush(kindRepoApacheImage);

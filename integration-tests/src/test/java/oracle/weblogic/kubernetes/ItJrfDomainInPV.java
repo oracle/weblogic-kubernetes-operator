@@ -50,13 +50,11 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcrRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -170,11 +168,7 @@ public class ItJrfDomainInPV {
 
     // create pull secrets for jrfDomainNamespace when running in non Kind Kubernetes cluster
     if (isUseSecret) {
-      if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
-        createOcrRepoSecret(jrfDomainNamespace);
-      } else {
-        createOcirRepoSecret(jrfDomainNamespace);
-      }
+      createSecretForBaseImages(jrfDomainNamespace);
     }
 
     // create JRF domain credential secret

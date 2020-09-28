@@ -35,6 +35,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
@@ -43,14 +44,13 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYP
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINTYPE;
@@ -101,8 +101,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
   ConditionFactory withStandardRetryPolicy
       = with().pollDelay(0, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(30, MINUTES).await();
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(30, MINUTES).await();
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -146,15 +146,15 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                         condition.getRemainingTimeInMS()))
                 .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
           }
-        } else if (BASE_IMAGES_REPO.equals(REPO_REGISTRY)) {
-          if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+        } else if (BASE_IMAGES_REPO.equals(OCIR_REGISTRY)) {
+          if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
             withStandardRetryPolicy
                 .conditionEvaluationListener(
                     condition -> logger.info("Waiting for docker login to OCIR to be successful"
                             + "(elapsed time {0} ms, remaining time {1} ms)",
                         condition.getElapsedTimeInMS(),
                         condition.getRemainingTimeInMS()))
-                .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
+                .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
           }
         }
         // The following code is for pulling WLS images if running tests in Kind cluster
@@ -190,7 +190,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           withStandardRetryPolicy
               .conditionEvaluationListener(
                   condition -> logger.info("Waiting for createBasicImage to be successful"
-                      + "(elapsed time {0} ms, remaining time {1} ms)",
+                          + "(elapsed time {0} ms, remaining time {1} ms)",
                       condition.getElapsedTimeInMS(),
                       condition.getRemainingTimeInMS()))
               .until(createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
@@ -202,7 +202,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           withStandardRetryPolicy
               .conditionEvaluationListener(
                   condition -> logger.info("Waiting for createBasicImage to be successful"
-                      + "(elapsed time {0} ms, remaining time {1} ms)",
+                          + "(elapsed time {0} ms, remaining time {1} ms)",
                       condition.getElapsedTimeInMS(),
                       condition.getRemainingTimeInMS()))
               .until(createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
@@ -221,20 +221,21 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", wdtBasicImage));
 
-          if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-            logger.info("docker login");
-            withStandardRetryPolicy
-                .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for docker login to be successful"
-                        + "(elapsed time {0} ms, remaining time {1} ms)",
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-                .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
-          }
+        }
+
+        if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
+          logger.info("docker login");
+          withStandardRetryPolicy
+              .conditionEvaluationListener(
+                  condition -> logger.info("Waiting for docker login to OCIR to be successful"
+                          + "(elapsed time {0} ms, remaining time {1} ms)",
+                      condition.getElapsedTimeInMS(),
+                      condition.getRemainingTimeInMS()))
+              .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
         }
 
         // push the images to repo
-        if (!REPO_NAME.isEmpty()) {
+        if (!DOMAIN_IMAGES_REPO.isEmpty()) {
 
           List<String> images = new ArrayList<>();
           images.add(operatorImage);
@@ -245,11 +246,11 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           }
 
           for (String image : images) {
-            logger.info("docker push image {0} to {1}", image, REPO_NAME);
+            logger.info("docker push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
             withStandardRetryPolicy
                 .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for docker push for image {0} to be successful"
-                        + "(elapsed time {1} ms, remaining time {2} ms)",
+                    condition -> logger.info("Waiting for docker push to OCIR for image {0} to be successful"
+                            + "(elapsed time {1} ms, remaining time {2} ms)",
                         image,
                         condition.getElapsedTimeInMS(),
                         condition.getRemainingTimeInMS()))
@@ -280,13 +281,14 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     // check initialization is already done and is not successful
     assertTrue(started.get() && isInitializationSuccessful,
         "Initialization(pull images from OCR or login/push to OCIR) failed, "
-        + "check the actual error or stack trace in the first test that failed in the test suite");
+            + "check the actual error or stack trace in the first test that failed in the test suite");
 
   }
 
   /**
    * Called when images are pushed to Docker allowing conditional cleanup of images that are pushed
    * to a remote registry.
+   *
    * @param imageName Image name
    */
   public static void registerPushedImage(String imageName) {
@@ -307,7 +309,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     }
 
     // delete images from OCIR, if necessary
-    if (REPO_NAME.contains("ocir.io")) {
+    if (DOMAIN_IMAGES_REPO.contains("ocir.io")) {
       String token = getOcirToken();
       if (token != null) {
         for (String image : pushedImages) {
@@ -316,7 +318,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       }
     }
 
-    for (Handler handler:logger.getUnderlyingLogger().getHandlers()) {
+    for (Handler handler : logger.getUnderlyingLogger().getHandlers()) {
       handler.close();
     }
   }
@@ -424,17 +426,18 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
   /**
    * Create image with basic domain model yaml, variable file and sample application.
-   * @param imageName name of the image
-   * @param imageTag tag of the image
-   * @param modelFile model file to build the image
-   * @param varFile variable file to build the image
-   * @param appName name of the application to build the image
+   *
+   * @param imageName  name of the image
+   * @param imageTag   tag of the image
+   * @param modelFile  model file to build the image
+   * @param varFile    variable file to build the image
+   * @param appName    name of the application to build the image
    * @param domainType domain type to be built
    * @return true if image is created successfully
    */
 
   public Callable<Boolean> createBasicImage(String imageName, String imageTag, String modelFile, String varFile,
-      String appName, String domainType) {
+                                            String appName, String domainType) {
     return (() -> {
       LoggingFacade logger = getLogger();
       final String image = imageName + ":" + imageTag;
@@ -445,7 +448,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       // build an application archive using what is in resources/apps/APP_NAME
       logger.info("Build an application archive using resources/apps/{0}", appName);
       assertTrue(buildAppArchive(defaultAppParams()
-          .srcDirList(Collections.singletonList(appName))),
+              .srcDirList(Collections.singletonList(appName))),
           String.format("Failed to create app archive for %s", appName));
 
       // build the archive list

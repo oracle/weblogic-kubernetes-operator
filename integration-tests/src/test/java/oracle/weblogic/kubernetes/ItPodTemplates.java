@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
@@ -214,7 +214,7 @@ class ItPodTemplates {
     // create domain and verify
     logger.info("Create domain {0} in namespace {1} using docker image {2}",
         domainUid, namespace, imageName);
-    createDomainCrAndVerify(adminSecretName, REPO_SECRET_NAME, encryptionSecretName, imageName,domainUid,
+    createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, imageName,domainUid,
         namespace, domainHomeSource, replicaCount);
     String adminServerPodName = domainUid + "-admin-server";
 

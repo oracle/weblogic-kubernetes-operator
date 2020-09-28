@@ -49,10 +49,10 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -788,7 +788,7 @@ class ItUsabilityOperatorHelmChart {
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(REPO_SECRET_NAME))
+                .name(OCIR_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))
@@ -903,7 +903,7 @@ class ItUsabilityOperatorHelmChart {
       V1SecretList listSecrets = listSecrets(operNamespace);
       if (null != listSecrets) {
         for (V1Secret item : listSecrets.getItems()) {
-          if (item.getMetadata().getName().equals(REPO_SECRET_NAME)) {
+          if (item.getMetadata().getName().equals(OCIR_SECRET_NAME)) {
             secretExists = true;
             break;
           }
@@ -918,7 +918,7 @@ class ItUsabilityOperatorHelmChart {
     }
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", REPO_SECRET_NAME);
+    secretNameMap.put("name", OCIR_SECRET_NAME);
 
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()
