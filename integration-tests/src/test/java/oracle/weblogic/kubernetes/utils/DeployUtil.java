@@ -29,19 +29,15 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
@@ -49,8 +45,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcrRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -62,8 +57,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class DeployUtil {
 
-  private static String image;
-  private static boolean isUseSecret;
   private static final String MOUNT_POINT = "/deployScripts/";
   private static final String DEPLOY_SCRIPT = "application_deployment.py";
   private static final String DOMAIN_PROPERTIES = "domain.properties";
@@ -87,7 +80,10 @@ public class DeployUtil {
   public static void deployUsingWlst(String host, String port, String userName,
                                      String password, String targets, Path archivePath, String namespace) {
     final LoggingFacade logger = getLogger();
-    setImage(namespace);
+
+    if (USE_SECRET_TO_PULL_BASE_IMAGES) {
+      createSecretForBaseImages(namespace);
+    }
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("domain", "properties"),
@@ -184,7 +180,7 @@ public class DeployUtil {
                     .restartPolicy("Never")
                     .containers(Arrays.asList(jobContainer
                         .name("deploy-application-container")
-                        .image(image)
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .imagePullPolicy("IfNotPresent")
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
@@ -195,7 +191,7 @@ public class DeployUtil {
                             .name("deploy-job-cm-volume") // deployment scripts volume
                             .configMap(new V1ConfigMapVolumeSource()
                                 .name(deployScriptConfigMap)))) //config map containing deployment scripts
-                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                    .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
                         new V1LocalObjectReference()
                             .name(BASE_IMAGES_REPO_SECRET))
                         : null))));
@@ -233,31 +229,6 @@ public class DeployUtil {
 
   }
 
-  /**
-   * Set the image to use and create secrets if needed.
-   *
-   * @param namespace namespace in which secrets needs to be created
-   */
-  private static void setImage(String namespace) {
-    final LoggingFacade logger = getLogger();
-    //determine if the tests are running in Kind cluster.
-    //if true use images from Kind registry
-    String baseImage = WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
-    if (KIND_REPO != null) {
-      image = KIND_REPO + baseImage.substring(TestConstants.BASE_IMAGES_REPO.length() + 1);
-      isUseSecret = false;
-    } else {
-      // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-      image = baseImage;
-      if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
-        createOcrRepoSecret(namespace);
-      } else {
-        createOcirRepoSecret(namespace);
-      }
-      isUseSecret = true;
-    }
-    logger.info("Using image {0}", image);
-  }
 
   /**
    * Deploy application to a cluster using REST API with curl utility.

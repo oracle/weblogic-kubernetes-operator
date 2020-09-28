@@ -119,6 +119,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
@@ -1835,11 +1836,22 @@ public class CommonTestUtils {
    */
   public static void createDockerRegistrySecret(String userName, String password,
                                                 String email, String registry, String secretName, String namespace) {
-
+    LoggingFacade logger = getLogger();
     // Create registry secret in the namespace to pull the image from repository
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
         userName, password, email, registry);
     String dockerConfigJson = dockerConfigJsonObject.toString();
+
+    // skip if the secret already exists
+    V1SecretList listSecrets = listSecrets(namespace);
+    if (listSecrets != null) {
+      for (V1Secret item : listSecrets.getItems()) {
+        if (item.getMetadata().getName().equals(secretName)) {
+          logger.info("Secret {0} already exists in namespace {1}, skipping secret creation", secretName, namespace);
+          return;
+        }
+      }
+    }
 
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
@@ -2764,19 +2776,18 @@ public class CommonTestUtils {
    * Create a job to create a domain in persistent volume.
    *
    * @param image image name used to create the domain
-   * @param isUseSecret true for non Kind Kubernetes cluster
    * @param pvName name of the persistent volume to create domain in
    * @param pvcName name of the persistent volume claim
    * @param domainScriptCM configmap holding domain creation script files
    * @param namespace name of the domain namespace in which the job is created
    * @param jobContainer V1Container with job commands to create domain
    */
-  public static void createDomainJob(String image, boolean isUseSecret, String pvName,
+  public static void createDomainJob(String image, String pvName,
                                String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
 
     LoggingFacade logger = getLogger();
-    logger.info("Running Kubernetes job to create domain for image: {1}, isUserSecret: {2} "
-        + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image, isUseSecret,
+    logger.info("Running Kubernetes job to create domain for image: {1}, USE_SECRET_TO_PULL_BASE_IMAGES: {2} "
+        + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image, USE_SECRET_TO_PULL_BASE_IMAGES,
         pvName, pvcName, domainScriptCM, namespace);
     V1Job jobBody = new V1Job()
         .metadata(
@@ -2825,7 +2836,7 @@ public class CommonTestUtils {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptCM)))) //config map containing domain scripts
-                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                    .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
                         new V1LocalObjectReference()
                             .name(BASE_IMAGES_REPO_SECRET))
                         : null))));

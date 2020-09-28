@@ -31,7 +31,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
-import oracle.weblogic.kubernetes.utils.DbUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -41,15 +40,12 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -57,6 +53,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -83,9 +80,6 @@ public class ItJrfDomainInPV {
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
 
   private static String dbUrl = null;
-  private static String fmwImage = FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG;
-  private static String dbImage = DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
-  private static boolean isUseSecret = true;
   private static LoggingFacade logger = null;
 
   private final String domainUid = "jrfdomain-inpv";
@@ -123,26 +117,19 @@ public class ItJrfDomainInPV {
     assertNotNull(namespaces.get(2), "Namespace is null");
     jrfDomainNamespace = namespaces.get(2);
 
-    //determine if the tests are running in Kind cluster. if true use images from Kind registry
-    if (KIND_REPO != null) {
-      dbImage = KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1)
-          + ":" + DB_IMAGE_TAG;
-      fmwImage = KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1)
-          + ":" + FMWINFRA_IMAGE_TAG;
-      isUseSecret = false;
-    }
-
     logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, "
-        + "dbUrl: {2}, dbImage: {3},  fmwImage: {4} isUseSecret: {5}", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
-        dbImage, fmwImage, isUseSecret);
-    assertDoesNotThrow(() -> DbUtils.setupDBandRCUschema(dbImage, fmwImage, RCUSCHEMAPREFIX, dbNamespace,
-        0, dbUrl, isUseSecret), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbUrl %s, isUseSecret %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, isUseSecret));
+        + "dbUrl: {2}, dbImage: {3},  fmwImage: {4} ", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
+        DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
+    assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
+        RCUSCHEMAPREFIX, dbNamespace, 0, dbUrl),
+        String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
+        + "dbUrl %s, isUseSecret %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, USE_SECRET_TO_PULL_BASE_IMAGES));
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, jrfDomainNamespace);
 
-    logger.info("For ItJrfDomainInPV using DB image: {0}, FMW image {1}", dbImage, fmwImage);
+    logger.info("For ItJrfDomainInPV using DB image: {0}, FMW image {1}",
+        DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
 
   }
 
@@ -167,7 +154,7 @@ public class ItJrfDomainInPV {
     final String pvcName = domainUid + "-pvc";
 
     // create pull secrets for jrfDomainNamespace when running in non Kind Kubernetes cluster
-    if (isUseSecret) {
+    if (USE_SECRET_TO_PULL_BASE_IMAGES) {
       createSecretForBaseImages(jrfDomainNamespace);
     }
 
@@ -231,9 +218,9 @@ public class ItJrfDomainInPV {
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
-            .image(fmwImage)
+            .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
-            .imagePullSecrets(isUseSecret ? Arrays.asList(
+            .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET))
                 : null)
@@ -335,7 +322,7 @@ public class ItJrfDomainInPV {
         .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName()); //domain property file
 
     logger.info("Running a Kubernetes job to create the domain");
-    CommonTestUtils.createDomainJob(fmwImage, isUseSecret, pvName, pvcName, domainScriptConfigMapName,
+    CommonTestUtils.createDomainJob(FMWINFRA_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
         jrfDomainNamespace, jobCreationContainer);
 
   }

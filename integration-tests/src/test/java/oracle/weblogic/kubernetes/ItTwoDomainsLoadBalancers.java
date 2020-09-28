@@ -86,7 +86,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
@@ -98,9 +97,9 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
@@ -169,9 +168,7 @@ public class ItTwoDomainsLoadBalancers {
   private static final int numberOfOperators = 2;
   private static final String wlSecretName = "weblogic-credentials";
 
-  private static boolean isUseSecret = true;
   private static String defaultNamespace = "default";
-  private static String image = WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
   private static String domain1Uid = null;
   private static String domain2Uid = null;
   private static String domain1Namespace = null;
@@ -250,13 +247,7 @@ public class ItTwoDomainsLoadBalancers {
     domain1Namespace = domainNamespaces.get(0);
     domain2Namespace = domainNamespaces.get(1);
 
-    //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
-      String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + 1);
-      logger.info("Using image {0}", kindRepoImage);
-      image = kindRepoImage;
-      isUseSecret = false;
-
       // The kind clusters can't pull Apache webtier image from OCIR using the image pull secret.
       // Try the following instead:
       //   1. docker login
@@ -663,7 +654,7 @@ public class ItTwoDomainsLoadBalancers {
 
     for (int i = 0; i < numberOfDomains; i++) {
 
-      if (isUseSecret) {
+      if (USE_SECRET_TO_PULL_BASE_IMAGES) {
         // create pull secrets for WebLogic image
         createSecretForBaseImages(domainNamespaces.get(i));
       }
@@ -806,7 +797,7 @@ public class ItTwoDomainsLoadBalancers {
                     .restartPolicy("Never")
                     .initContainers(Collections.singletonList(new V1Container()
                         .name("fix-pvc-owner")
-                        .image(image)
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
                         .addArgsItem("chown -R 1000:1000 /shared")
@@ -819,7 +810,7 @@ public class ItTwoDomainsLoadBalancers {
                             .runAsUser(0L))))
                     .containers(Collections.singletonList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")
-                        .image(image)
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .ports(Collections.singletonList(new V1ContainerPort()
                             .containerPort(7001)))
                         .volumeMounts(Arrays.asList(
@@ -846,7 +837,7 @@ public class ItTwoDomainsLoadBalancers {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptConfigMapName))))  //ConfigMap containing domain scripts
-                    .imagePullSecrets(isUseSecret ? Collections.singletonList(
+                    .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Collections.singletonList(
                         new V1LocalObjectReference()
                             .name(BASE_IMAGES_REPO_SECRET))
                         : null))));
@@ -1077,8 +1068,8 @@ public class ItTwoDomainsLoadBalancers {
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
-            .image(image)
-            .imagePullSecrets(isUseSecret ? Collections.singletonList(
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Collections.singletonList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET))
                 : null)
@@ -1132,7 +1123,7 @@ public class ItTwoDomainsLoadBalancers {
     String pvName = "default-sharing-pv";
     String pvcName = "default-sharing-pvc";
 
-    if (isUseSecret) {
+    if (USE_SECRET_TO_PULL_BASE_IMAGES) {
       // create pull secrets for WebLogic image
       createOcrRepoSecret(defaultNamespace);
     }

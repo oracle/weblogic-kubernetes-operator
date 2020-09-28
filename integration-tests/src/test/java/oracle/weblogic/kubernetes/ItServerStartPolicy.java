@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -134,22 +133,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItServerStartPolicy {
 
-  private static V1ServiceAccount serviceAccount = null;
-  private String serviceAccountName = null;
   private static String opNamespace = null;
-  private static String operatorImage = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static String dockerConfigJson = "";
 
   private static int replicaCount = 1;
   private static final String domainUid = "mii-start-policy";
-  private StringBuffer curlString = null;
-
   private StringBuffer checkCluster = null;
   private V1Patch patch = null;
-
-  private static Map<String, Object> secretNameMap;
 
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";

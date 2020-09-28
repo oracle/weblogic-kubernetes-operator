@@ -26,20 +26,16 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcrRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -50,8 +46,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class WLSTUtils {
 
-  private static String image;
-  private static boolean isUseSecret;
   private static final String MOUNT_POINT = "/scripts";
 
   private static final ConditionFactory withStandardRetryPolicy
@@ -68,7 +62,10 @@ public class WLSTUtils {
    */
   public static void executeWLSTScript(Path wlstScript, Path domainProperties, String namespace) {
     final LoggingFacade logger = getLogger();
-    setImage(namespace);
+
+    if (USE_SECRET_TO_PULL_BASE_IMAGES) {
+      createSecretForBaseImages(namespace);
+    }
 
     String wlstScriptFileName = wlstScript.getFileName().toString();
     String wlstPropertiesFile = domainProperties.getFileName().toString();
@@ -122,7 +119,7 @@ public class WLSTUtils {
                     .restartPolicy("Never")
                     .containers(Arrays.asList(jobContainer
                         .name("execute-wlst-container")
-                        .image(image)
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .imagePullPolicy("IfNotPresent")
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
@@ -132,7 +129,7 @@ public class WLSTUtils {
                         .name("wlst-job-cm-volume") // WLST scripts volume
                         .configMap(new V1ConfigMapVolumeSource()
                             .name(wlstScriptConfigMapName)))) //config map containing WLST script
-                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                    .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
                         new V1LocalObjectReference()
                             .name(BASE_IMAGES_REPO_SECRET))
                         : null))));
@@ -173,29 +170,5 @@ public class WLSTUtils {
     }
   }
 
-  /**
-   * Set the image to use and create secrets if needed.
-   *
-   * @param namespace namespace in which secrets needs to be created
-   */
-  private static void setImage(String namespace) {
-    //determine if the tests are running in Kind cluster.
-    //if true use images from Kind registry
-    String baseImage = WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
-    if (KIND_REPO != null) {
-      image = KIND_REPO + baseImage.substring(BASE_IMAGES_REPO.length() + 1);
-      isUseSecret = false;
-    } else {
-      // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-      image = baseImage;
-      if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
-        createOcrRepoSecret(namespace);
-      } else {
-        createOcirRepoSecret(namespace);
-      }
-      isUseSecret = true;
-    }
-    getLogger().info("Using image {0}", image);
-  }
 
 }

@@ -76,15 +76,16 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -156,13 +157,11 @@ class ItParameterizedDomain {
   private static final String WLDF_OPENSESSION_APP_CONTEXT_ROOT = "opensession";
   private static final String wlSecretName = "weblogic-credentials";
 
-  private static String wlsBaseImage = WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
   private static String opNamespace = null;
   private static String opServiceAccount = null;
   private static HelmParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int externalRestHttpsPort = 0;
-  private static boolean isUseSecret = true;
   private static List<Domain> domains = new ArrayList<>();
   private static LoggingFacade logger = null;
   private static Domain miiDomain = null;
@@ -202,14 +201,6 @@ class ItParameterizedDomain {
 
     // set the service account name for the operator
     opServiceAccount = opNamespace + "-sa";
-
-    //determine if the tests are running in Kind cluster. if true use images from Kind registry
-    if (KIND_REPO != null) {
-      String kindRepoImage = KIND_REPO + wlsBaseImage.substring(TestConstants.BASE_IMAGES_REPO.length() + 1);
-      logger.info("Using image {0}", kindRepoImage);
-      wlsBaseImage = kindRepoImage;
-      isUseSecret = false;
-    }
 
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0,
@@ -730,7 +721,7 @@ class ItParameterizedDomain {
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    if (isUseSecret) {
+    if (USE_SECRET_TO_PULL_BASE_IMAGES) {
       createSecretForBaseImages(domainNamespace);
     }
 
@@ -819,9 +810,9 @@ class ItParameterizedDomain {
             .domainUid(domainUid)
             .domainHome("/u01/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
-            .image(wlsBaseImage)
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
-            .imagePullSecrets(isUseSecret ? Arrays.asList(
+            .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET))
                 : null)
@@ -1057,7 +1048,7 @@ class ItParameterizedDomain {
                     .restartPolicy("Never")
                     .addInitContainersItem(new V1Container()
                         .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(wlsBaseImage)
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
                         .addArgsItem("chown -R 1000:1000 /u01/shared")
@@ -1070,7 +1061,7 @@ class ItParameterizedDomain {
                             .runAsUser(0L)))
                     .addContainersItem(jobContainer  // container containing WLST or WDT details
                         .name("create-weblogic-domain-onpv-container")
-                        .image(wlsBaseImage)
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .imagePullPolicy("IfNotPresent")
                         .addPortsItem(new V1ContainerPort()
                             .containerPort(7001))
@@ -1092,7 +1083,7 @@ class ItParameterizedDomain {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptCM)))) //config map containing domain scripts
-                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                    .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
                         new V1LocalObjectReference()
                             .name(BASE_IMAGES_REPO_SECRET))
                         : null))));

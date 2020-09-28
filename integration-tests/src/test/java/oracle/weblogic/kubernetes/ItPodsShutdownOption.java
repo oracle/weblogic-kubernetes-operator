@@ -61,7 +61,6 @@ class ItPodsShutdownOption {
 
   // domain constants
   private static String domainUid = "domain1";
-  private static String adminServerName = "admin-server";
   private static String clusterName = "cluster-1";
   private static int replicaCount = 2;
   private static String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;

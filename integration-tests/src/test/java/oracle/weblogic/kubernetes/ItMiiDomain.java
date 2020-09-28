@@ -20,7 +20,6 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -30,7 +29,6 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -111,16 +109,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItMiiDomain {
 
-  private static HelmParams opHelmParams = null;
-  private static V1ServiceAccount serviceAccount = null;
-  private String serviceAccountName = null;
   private static String opNamespace = null;
-  private static String operatorImage = null;
   private static String domainNamespace = null;
   private static String domainNamespace1 = null;
   private static ConditionFactory withStandardRetryPolicy = null;
   private static ConditionFactory withQuickRetryPolicy = null;
-  private static String dockerConfigJson = "";
 
   private String domainUid = "domain1";
   private String domainUid1 = "domain2";
@@ -128,8 +121,6 @@ class ItMiiDomain {
   private String miiImageAddSecondApp = null;
   private String miiImage = null;
   private static LoggingFacade logger = null;
-
-  private static Map<String, Object> secretNameMap;
 
   /**
    * Install Operator.

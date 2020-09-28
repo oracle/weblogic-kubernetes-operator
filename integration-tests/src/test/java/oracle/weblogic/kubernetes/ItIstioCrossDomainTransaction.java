@@ -27,7 +27,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -86,19 +85,14 @@ public class ItIstioCrossDomainTransaction {
   private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossdomaintransaction-domain2.properties";
   private static final String WDT_IMAGE_NAME1 = "domain1-wdt-image";
   private static final String WDT_IMAGE_NAME2 = "domain2-wdt-image";
-  private static final String WDT_APP_NAME = "txforward";
   private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/istiocrossdomaintransactiontemp";
 
-  private static HelmParams opHelmParams = null;
   private static String opNamespace = null;
-  private static String operatorImage = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static String dockerConfigJson = "";
   private String domainUid1 = "domain1";
   private String domainUid2 = "domain2";
-  private static Map<String, Object> secretNameMap;
   private final String domain1AdminServerPodName = domainUid1 + "-admin-server";
   private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";

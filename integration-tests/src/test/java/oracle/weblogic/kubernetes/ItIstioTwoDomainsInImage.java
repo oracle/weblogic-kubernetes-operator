@@ -21,7 +21,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
@@ -69,13 +68,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItIstioTwoDomainsInImage {
 
-  private static HelmParams opHelmParams = null;
   private static String opNamespace = null;
-  private static String operatorImage = null;
   private static String domainNamespace1 = null;
   private static String domainNamespace2 = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static String dockerConfigJson = "";
   private final String clusterName = "cluster-1"; // do not modify 
   private final String adminServerName = "admin-server"; // do not modify
   private final String domainUid1 = "istio-dii-wdt-1";

@@ -68,17 +68,10 @@ class ItDefaultAdminNodePort {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static boolean isUseSecret = true;
   private static int replicaCount = 2;
   private static final String domainUid = "mii-default-admin";
-  private StringBuffer curlString = null;
-
-  private StringBuffer checkCluster = null;
-  private static Map<String, Object> secretNameMap;
-
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
-  private final String adminServerName = "admin-server";
 
   private static LoggingFacade logger = null;
 

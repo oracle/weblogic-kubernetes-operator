@@ -11,8 +11,6 @@ import java.util.Map;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
@@ -63,7 +61,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimes
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmValuesToString;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
-import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseStatus;
@@ -899,22 +896,10 @@ class ItUsabilityOperatorHelmChart {
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
     logger.info("operator image name {0}", operatorImage);
     if (createSecret) {
-      boolean secretExists = false;
-      V1SecretList listSecrets = listSecrets(operNamespace);
-      if (null != listSecrets) {
-        for (V1Secret item : listSecrets.getItems()) {
-          if (item.getMetadata().getName().equals(OCIR_SECRET_NAME)) {
-            secretExists = true;
-            break;
-          }
-        }
-      }
-      if (!secretExists) {
+      // Create Docker registry secret in the operator namespace to pull the image from repository
+      logger.info("Creating Docker registry secret in namespace {0}", operNamespace);
+      CommonTestUtils.createOcirRepoSecret(operNamespace);
 
-        // Create Docker registry secret in the operator namespace to pull the image from repository
-        logger.info("Creating Docker registry secret in namespace {0}", operNamespace);
-        CommonTestUtils.createOcirRepoSecret(operNamespace);
-      }
     }
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
