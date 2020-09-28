@@ -23,12 +23,14 @@ function usage {
 #
 silentMode=false
 disableValidation=false
+sizeVerificationEnabled=true
 imageFile=""
 kubernetesFile=""
 nodeImages=""
 artifactsFile="util/artifacts/weblogic.txt"
+ignoreImageVerificationList="util/exclude/exclude.txt"
 workDir=work
-while getopts "ds:i:k:a:w:h:" opt; do
+while getopts "des:a:i:h:k:w:x:" opt; do
   case $opt in
     i) imageFile="${OPTARG}"
     ;;
@@ -38,9 +40,13 @@ while getopts "ds:i:k:a:w:h:" opt; do
     ;;
     d) disableValidation=true;
     ;;
+    e) sizeVerificationEnabled=false;
+    ;;
     s) silentMode=true;
     ;;
     w) workDir="${OPTARG}"
+    ;;
+    x) ignoreImageVerificationList="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -86,7 +92,7 @@ function initialize {
   if [ ! -f "$artifactsFile" ]; then
     validationError "Unable to locate the artifacts file ${artifactsFile}"
   fi
-   
+
   failIfValidationErrors
 
   # Initialize workspace dir and generate report header
@@ -97,8 +103,6 @@ function initialize {
   if [ -z "$imageFile" ]; then
     echo "Scanning all images on current machine, use '-i' option if you want to scan specific set of images."
     imageFile=$(docker images --digests --format "{{.Repository}}:{{.Tag}}@{{.Digest}}@{{.ID}}" | grep -v "<none>:<none>")
-    imageNoTagFile=$(docker images --digests --format "{{.Repository}}@{{.Digest}}" | grep -v "<none>:<none>")
-    imageNoDigestFile=$(docker images --digests --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>:<none>")
   fi
 
   if [[ -n "${kubernetesFile}" && ${disableValidation} == 'false' ]]; then
@@ -115,7 +119,6 @@ function initialize {
   # Read artifacts file
   IFS=$'\n' read -d '' -r -a artifacts < "$artifactsFile"
   artifactsFile=${artifacts[@]}
-  
 }
 
 function validateAvailableImages {
@@ -156,18 +159,28 @@ inarray() {
     return 1
 }
 
+inarrayPattern() {
+    local n=$1 h
+    shift
+    for h; do
+      [[ $n = *"$h"* ]] && return
+    done
+    return 1
+}
+
 function getNodeImages {
 
-imagesToExclude=()
-imagesToExclude+="quay.io"
+if [ -f ${ignoreImageVerificationList} ]; then
+  IFS=$'\n' read -d '' -r -a ignoreImageVerificationList < "$ignoreImageVerificationList"
+else
+  ignoreImageVerificationList=()
+fi
 imagesInNodeFile=$(cat ${kubernetesFile} | jq '.items |[.[] | {name: .metadata.name, image:.status.images |.[].names | select(.[0] !="<none>@<none>") | .[0] }]' | jq -r '.[].image')
 
 for imageInNodeFile in ${imagesInNodeFile}; do
-   for imageToExclude in ${imagesToExclude}; do
-     if [[ ! "${imageInNodeFile}" == *"${imageToExclude}"* ]]; then
-       nodeImages+=(${imageInNodeFile})
-     fi
-   done
+  if ! inarrayPattern "${imageInNodeFile}" "${ignoreImageVerificationList[@]}"; then
+    nodeImages+=(${imageInNodeFile})
+  fi
 done
 }
 
@@ -208,7 +221,9 @@ function readImageListAndProcess {
     if [[ -n "${kubernetesFile}" && "${result}" == "NotAvailable" ]]; then
         continue;
     elif [[ ${result} =~ "hashVerificationFailed" ]]; then
-        warning "Hash verification failed for ${image}..result is $result "
+        warning "Hash verification failed for ${image} ."
+        continue;
+    elif [[ ${result} =~ "sizeVerificationFailed" ]]; then
         continue;
     fi
 
@@ -236,6 +251,7 @@ function verifyHashAndGetNodeNames {
   local imageSize=$3
   local __result=$4
   hashVerificationFailed=false
+  sizeVerificationFailed=false
   imageNode=()
   if [ -z "${kubernetesFile}" ]; then
     eval $__result="NotAvailable"
@@ -254,7 +270,11 @@ function verifyHashAndGetNodeNames {
     if [[ -n $(echo $imageRepoInK8sFile | sed -n 's/:/,/p') ]]; then
       imageRepoInK8sFile=$(echo $imageRepoInK8sFile | cut -d':' -f1)
     fi
-    if [[ "${imageRepoInK8sFile}" == "${imageRepository}" && "${imageSizeInK8sFile}" == "${imageSize}" ]]; then
+    if [[ "${imageRepoInK8sFile}" == "${imageRepository}" ]]; then
+      if [[ ${sizeVerificationEnabled} == 'true' && ${imageSizeInK8sFile} != ${imageSize} ]]; then
+        sizeVerificationFailed=true
+        break;
+      fi
       imageNode+=(${nodeName})
       if [[ -z ${imageHash} || ${imageHash} == "<none>" ]]; then
         break
@@ -266,7 +286,10 @@ function verifyHashAndGetNodeNames {
   done
 
   len=${#imageNode[@]}
-  if [[ len -lt 1 ]]; then
+  if [ ${sizeVerificationFailed} == 'true' ]; then
+     warning "Size verification failed for image ${imageRepoInK8sFile}. Image size returned by 'docker inspect' is ${imageSize}, image size in k8s file is ${imageSizeInK8sFile}"
+     eval $__result="sizeVerificationFailed"
+  elif [[ len -lt 1 ]]; then
      eval $__result="NotAvailable"
   elif [ ${hashVerificationFailed} == 'true' ]; then
      eval $__result="hashVerificationFailed"
