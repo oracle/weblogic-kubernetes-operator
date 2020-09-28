@@ -8,13 +8,15 @@ description: "The Oracle WebLogic Server Kubernetes Operator (the “operator”
 
 The Oracle WebLogic Server Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.
 
-Human operators are typically responsible for starting and stopping environments, initiating backups, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.  It is envisaged that the operator will have similar responsibilities in a Kubernetes environment.
+Human operators are typically responsible for starting and stopping environments, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.  It is envisaged that the operator will have similar responsibilities in a Kubernetes environment.
 
 It is important to note the distinction between an *operator* and an *administrator*.  A WebLogic Server administrator typically has different responsibilities centered around managing the detailed configuration of the WebLogic domains.  The operator has only limited interest in the domain configuration, with its main concern being the high-level topology of the domain; for example, how many clusters and servers, and information about network access points, such as channels.
 
 Human operators may manage more than one domain, and the operator is also designed to be able to manage more than one domain.  Like its human counterpart, the operator will only take actions against domains that it is told to manage, and will ignore any other domains that may be present in the same environment.
 
-Like a human operator, the operator is designed to be event-based.  It waits for a significant event to occur, or for a scheduled time to perform some action, and then takes the appropriate action.  Examples of significant events include being made aware of a new domain that needs to be managed, receiving a request to scale up a WebLogic cluster, or receiving a request to perform a backup of a domain.
+Like a human operator, the operator is designed to be event-based.  It waits for a significant event to occur, or for a scheduled time to perform some action, and then takes the appropriate action.  Examples of significant events include being made aware of a new domain that needs to be managed, receiving a request to scale up a WebLogic cluster, or applying a WebLogic Server patch or an application while preserving cluster availability.
+
+There are some operator tasks, such as initiating backups, that are presently not implemented by the Oracle WebLogic Server Kubernetes Operator. We welcome any feedback or requirements as this helps us to properly create our roadmap.
 
 The operator is designed with security in mind from the outset.  Some examples of the specific security practices we follow are:
 
