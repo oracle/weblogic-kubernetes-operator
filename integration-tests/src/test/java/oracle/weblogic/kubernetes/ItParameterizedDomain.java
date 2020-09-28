@@ -219,7 +219,7 @@ class ItParameterizedDomain {
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-    String nginxServiceName = nginxHelmParams.getReleaseName() + "-nginx-ingress-controller";
+    String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
     logger.info("NGINX service name: {0}", nginxServiceName);
     nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
     logger.info("NGINX http node port: {0}", nodeportshttp);

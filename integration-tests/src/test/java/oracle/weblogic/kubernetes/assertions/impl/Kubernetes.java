@@ -358,7 +358,7 @@ public class Kubernetes {
 
   /**
    * Checks if a NGINX pod is running in the specified namespace.
-   * The method assumes that the NGINX pod name contains "nginx-ingress-controller".
+   * The method assumes that the NGINX pod name contains "ingress-nginx-controller".
    *
    * @param namespace in which to check if the NGINX pod is running
    * @return true if the pod is running, otherwise false
@@ -366,12 +366,12 @@ public class Kubernetes {
    */
   public static boolean isNginxPodRunning(String namespace) throws ApiException {
 
-    return isPodRunning(namespace, null, "nginx-ingress-controller");
+    return isPodRunning(namespace, null, "ingress-nginx-controller");
   }
 
   /**
    * Check whether the NGINX pod is ready in the specified namespace.
-   * The method assumes that the NGINX pod name starts with "nginx-ingress-controller".
+   * The method assumes that the NGINX pod name contains with "ingress-nginx-controller".
    *
    * @param namespace in which to check if the NGINX pod is ready
    * @return true if the pod is in the ready state, false otherwise
@@ -379,7 +379,7 @@ public class Kubernetes {
    */
   public static boolean isNginxPodReady(String namespace) throws ApiException {
     String labelSelector = null;
-    return isPodReady(namespace, labelSelector, "nginx-ingress-controller");
+    return isPodReady(namespace, labelSelector, "ingress-nginx-controller");
   }
 
   /**
