@@ -516,6 +516,11 @@ public class ItMiiDomainModelInPV {
   // create a model in image with no domain
   // push the image to repo
   private static void buildMIIWithwdtModelHomeandPushToRepo() {
+    Path emptyModelFile = Paths.get(TestConstants.RESULTS_ROOT, "miitemp", "empty-wdt-model.yaml");
+    assertDoesNotThrow(() -> Files.createDirectories(emptyModelFile.getParent()));
+    emptyModelFile.toFile().delete();
+    assertTrue(assertDoesNotThrow(() -> emptyModelFile.toFile().createNewFile()));
+    final List<String> modelList = Collections.singletonList(emptyModelFile.toString());
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
     Map<String, String> env = new HashMap<>();
@@ -523,6 +528,7 @@ public class ItMiiDomainModelInPV {
     createImage(defaultWitParams()
         .modelImageName(MII_BASIC_IMAGE_NAME)
         .modelImageTag(miiImageTagCustom)
+        .modelFiles(modelList)
         .wdtModelHome(modelMountPath + "/model")
         .wdtModelOnly(true)
         .wdtVersion(WDT_VERSION)
