@@ -572,7 +572,7 @@ To recover:
 
 #### Upgrading an operator and assigning it a service account that doesn't exist
 
-The `helm upgrade` with a non-existing service account fails with the same error message as `helm install' and the existing oeprator deployment and replicaset stays unchanged.
+The `helm upgrade` with a non-existing service account fails with the same error message as mentioned in the previous section, and the existing operator deployment and replica set stay unchanged.
 
 To recover:
 
