@@ -189,7 +189,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     List<Step> steps = new ArrayList<>();
     steps.add(new BeforeAdminServiceStep(null));
     steps.add(PodHelper.createAdminPodStep(null));
-    
+
     Domain dom = info.getDomain();
     AdminServer adminServer = dom.getSpec().getAdminServer();
     AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
