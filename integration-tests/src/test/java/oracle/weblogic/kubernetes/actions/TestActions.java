@@ -1051,7 +1051,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    * @throws InterruptedException if any thread has interrupted the current thread
    */
-  public static ExecResult execCommand(
+  public static synchronized ExecResult execCommand(
       String namespace,
       String podName,
       String containerName,
