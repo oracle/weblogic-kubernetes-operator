@@ -556,12 +556,12 @@ Error: UPGRADE FAILED: Service "external-weblogic-operator-svc" is invalid: spec
 
 #### Installing an operator and assigning it a service account that doesn't exist
 
-The following command tries to install an operator release with a non-existing service account `op2-sa`.
+The following `helm install` command fails because it tries to install an operator release with a non-existing service account `op2-sa`.
 ```
 $ helm install op2 kubernetes/charts/weblogic-operator --namespace myuser-op2-ns --set serviceAccount=op2-sa --wait --no-hooks
 ```
 
-The command above fails with the following error message.
+The output contains the following error message.
 ```
 ServiceAccount op2-sa not found in namespace myuser-op2-ns
 ```
@@ -572,7 +572,7 @@ To recover:
 
 #### Upgrading an operator and assigning it a service account that doesn't exist
 
-The `helm upgrade` with a non-existing service account fails with the same error message as mentioned in the previous section, and the existing operator deployment and replica set stay unchanged.
+The `helm upgrade` with a non-existing service account fails with the same error message as mentioned in the previous section, and the existing operator deployment stays unchanged.
 
 To recover:
 
