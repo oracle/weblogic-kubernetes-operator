@@ -61,7 +61,8 @@ public interface TestConstants {
   public static final String OCIR_DB_IMAGE_TAG = "12.2.0.1-slim";
 
   // repository to push domain images, for kind push to kind repo
-  // for others push to REPO_REGISTRY if REPO_REGISTRY provided, if not(like local runs) don't push the domain images to any repo
+  // for others push to REPO_REGISTRY if REPO_REGISTRY provided,
+  // if not(like local runs) don't push the domain images to any repo
   public static final String DOMAIN_IMAGES_REPO = Optional.ofNullable(KIND_REPO)
       .orElse(Optional.ofNullable(System.getenv("REPO_REGISTRY"))
           .orElse(""));
