@@ -32,6 +32,8 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -431,6 +433,7 @@ public class ItMiiDomainModelInPV {
   // create a model in image with no domain and custom wdtModelHome
   // push the image to repo
   private static void buildMIIandPushToRepo(String image, String customWDTHome) {
+    logger.info("Building image {0}", image);
     Path emptyModelFile = Paths.get(TestConstants.RESULTS_ROOT, "miitemp", "empty-wdt-model.yaml");
     assertDoesNotThrow(() -> Files.createDirectories(emptyModelFile.getParent()));
     emptyModelFile.toFile().delete();
@@ -452,6 +455,10 @@ public class ItMiiDomainModelInPV {
         .wdtVersion(WDT_VERSION)
         .env(env)
         .redirect(true));
+    CommandParams cmdParams = Command.defaultCommandParams()
+        .command("docker images")
+        .saveResults(true)
+        .redirect(false);
     assertTrue(doesImageExist(image.split(":")[1]),
         String.format("Image %s doesn't exist", image));
     dockerLoginAndPushImage(image);
