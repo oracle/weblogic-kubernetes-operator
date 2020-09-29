@@ -80,6 +80,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -180,7 +181,7 @@ public class ItMiiDomainModelInPV {
 
     // build a new MII image with custom wdtHome
     buildMIIandPushToRepo(miiImageCustom, modelMountPath + "/model");
-
+    
     params.put("domain2", miiImageCustom);
     params.put("domain1", miiImagePV);
 
@@ -451,6 +452,8 @@ public class ItMiiDomainModelInPV {
         .wdtVersion(WDT_VERSION)
         .env(env)
         .redirect(true));
+    assertTrue(doesImageExist(image),
+        String.format("Image %s doesn't exist", image));
     dockerLoginAndPushImage(image);
   }
 
@@ -469,11 +472,11 @@ public class ItMiiDomainModelInPV {
 
     // push the image to repo
     if (!REPO_NAME.isEmpty()) {
-      logger.info("docker push image {0} to {1}", miiImagePV, REPO_NAME);
+      logger.info("docker push image {0} to {1}", image, REPO_NAME);
       withStandardRetryPolicy
           .conditionEvaluationListener(condition -> logger.info("Waiting for docker push for image {0} to be successful"
           + "(elapsed time {1} ms, remaining time {2} ms)",
-          miiImagePV,
+          image,
           condition.getElapsedTimeInMS(),
           condition.getRemainingTimeInMS()))
           .until(() -> dockerPush(image));
