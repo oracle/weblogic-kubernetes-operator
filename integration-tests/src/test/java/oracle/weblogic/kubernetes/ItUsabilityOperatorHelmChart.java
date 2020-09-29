@@ -732,7 +732,7 @@ class ItUsabilityOperatorHelmChart {
               "operatorIsReady failed with ApiException"));
 
       // Helm reports error message status
-      assertNotNull(errorMsg);
+      assertNotNull(errorMsg, "Expected error message for missing ServiceAccount not found");
     } finally {
       //uninstall operator helm chart
       deleteSecret("ocir-secret",op2Namespace);
