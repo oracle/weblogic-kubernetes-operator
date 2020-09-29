@@ -33,7 +33,6 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -175,14 +174,14 @@ public class ItMiiDomainModelInPV {
     miiImagePV = MII_BASIC_IMAGE_NAME + ":" + miiImageTagPV;
 
     // build a new MII image with no domain
-    buildMIIandPushToRepo(miiImagePV, null);
+    buildMIIandPushToRepo(MII_BASIC_IMAGE_NAME, miiImageTagPV, null);
 
     logger.info("Building image with custom wdt model home location");
     miiImageTagCustom = TestUtils.getDateAndTimeStamp();
     miiImageCustom = MII_BASIC_IMAGE_NAME + ":" + miiImageTagCustom;
 
     // build a new MII image with custom wdtHome
-    buildMIIandPushToRepo(miiImageCustom, modelMountPath + "/model");
+    buildMIIandPushToRepo(MII_BASIC_IMAGE_NAME, miiImageTagCustom, modelMountPath + "/model");
 
     params.put("domain2", miiImageCustom);
     params.put("domain1", miiImagePV);
@@ -432,7 +431,8 @@ public class ItMiiDomainModelInPV {
 
   // create a model in image with no domain and custom wdtModelHome
   // push the image to repo
-  private static void buildMIIandPushToRepo(String image, String customWDTHome) {
+  private static void buildMIIandPushToRepo(String imageName, String imageTag, String customWDTHome) {
+    final String image = imageName + ":" + imageTag;
     logger.info("Building image {0}", image);
     Path emptyModelFile = Paths.get(TestConstants.RESULTS_ROOT, "miitemp", "empty-wdt-model.yaml");
     assertDoesNotThrow(() -> Files.createDirectories(emptyModelFile.getParent()));
@@ -448,19 +448,19 @@ public class ItMiiDomainModelInPV {
       defaultWitParams.wdtModelHome(customWDTHome);
     }
     createImage(defaultWitParams
-        .modelImageName(image.split(":")[0])
-        .modelImageTag(image.split(":")[1])
+        .modelImageName(imageName)
+        .modelImageTag(imageTag)
         .modelFiles(modelList)
         .wdtModelOnly(true)
         .wdtVersion(WDT_VERSION)
         .env(env)
         .redirect(true));
-    CommandParams cmdParams = Command.defaultCommandParams()
+    Command.defaultCommandParams()
         .command("docker images")
         .saveResults(true)
         .redirect(false);
-    assertTrue(doesImageExist(image.split(":")[1]),
-        String.format("Image %s doesn't exist", image));
+    assertTrue(doesImageExist(imageTag),
+        String.format("Image %s doesn't exist", imageName));
     dockerLoginAndPushImage(image);
   }
 
