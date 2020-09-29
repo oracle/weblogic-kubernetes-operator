@@ -444,7 +444,7 @@ public class Main {
     public enum SelectionStrategy {
       List {
         @Override
-        public boolean isSelected(@Nonnull String namespaceName) {
+        public boolean isDomainNamespace(@Nonnull String namespaceName) {
           return getConfiguredDomainNamespaces().contains(namespaceName);
         }
 
@@ -473,13 +473,13 @@ public class Main {
         }
 
         @Override
-        public boolean isSelected(@Nonnull String namespaceName) {
+        public boolean isDomainNamespace(@Nonnull String namespaceName) {
           return true;  // filtering is done by Kubernetes list call
         }
       },
       RegExp {
         @Override
-        public boolean isSelected(@Nonnull String namespaceName) {
+        public boolean isDomainNamespace(@Nonnull String namespaceName) {
           try {
             return Pattern.compile(getRegExp()).matcher(namespaceName).find();
           } catch (PatternSyntaxException e) {
@@ -494,7 +494,7 @@ public class Main {
       },
       Dedicated {
         @Override
-        public boolean isSelected(@Nonnull String namespaceName) {
+        public boolean isDomainNamespace(@Nonnull String namespaceName) {
           return namespaceName.equals(getOperatorNamespace());
         }
 
@@ -506,7 +506,7 @@ public class Main {
 
       static final String[] NO_SELECTORS = new String[0];
 
-      public abstract boolean isSelected(@Nonnull String namespaceName);
+      public abstract boolean isDomainNamespace(@Nonnull String namespaceName);
 
       public String[] getLabelSelectors() {
         return NO_SELECTORS;
@@ -608,7 +608,7 @@ public class Main {
       }
 
       private Set<String> getNamespacesToStart(List<String> namespaceNames) {
-        return namespaceNames.stream().filter(selectionStrategy::isSelected).collect(Collectors.toSet());
+        return namespaceNames.stream().filter(selectionStrategy::isDomainNamespace).collect(Collectors.toSet());
       }
 
       private Step startNamespaces(Namespaces namespaces, Collection<String> namespacesToStart) {
@@ -766,7 +766,7 @@ public class Main {
 
     switch (item.type) {
       case "ADDED":
-        if (!Namespaces.getSelectionStrategy().isSelected(ns)) {
+        if (!Namespaces.getSelectionStrategy().isDomainNamespace(ns)) {
           return;
         }
 
