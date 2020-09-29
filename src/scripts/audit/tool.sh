@@ -22,14 +22,15 @@ function usage {
 # Parse the command line options
 #
 silentMode=false
-disableValidation=false
-sizeVerificationEnabled=true
+disableImageValidation=false
+sizeVerificationDisabled=""
 imageFile=""
 kubernetesFile=""
-nodeImages=""
 artifactsFile="util/artifacts/weblogic.txt"
 ignoreImageVerificationList="util/exclude/exclude.txt"
 workDir=work
+nodeToImageMapping=()
+
 while getopts "des:a:i:h:k:w:x:" opt; do
   case $opt in
     i) imageFile="${OPTARG}"
@@ -38,9 +39,9 @@ while getopts "des:a:i:h:k:w:x:" opt; do
     ;;
     a) artifactsFile="${OPTARG}" #for testing only
     ;;
-    d) disableValidation=true;
+    d) disableImageValidation=true;
     ;;
-    e) sizeVerificationEnabled=false;
+    e) sizeVerificationDisabled=true;
     ;;
     s) silentMode=true;
     ;;
@@ -99,14 +100,14 @@ function initialize {
   initWorkDir
   generateReportHeader
 
-  # validate availale images
+  # If image list is not provided, get all images on the current machine 
   if [ -z "$imageFile" ]; then
     echo "Scanning all images on current machine, use '-i' option if you want to scan specific set of images."
     imageFile=$(docker images --digests --format "{{.Repository}}:{{.Tag}}@{{.Digest}}@{{.ID}}" | grep -v "<none>:<none>")
   fi
 
-  if [[ -n "${kubernetesFile}" && ${disableValidation} == 'false' ]]; then
-    #echo "validating available images"
+  # Validate list of available images
+  if [[ -n "${kubernetesFile}" && ${disableImageValidation} == 'false' ]]; then
     validateAvailableImages
   fi
 
@@ -119,69 +120,22 @@ function initialize {
   # Read artifacts file
   IFS=$'\n' read -d '' -r -a artifacts < "$artifactsFile"
   artifactsFile=${artifacts[@]}
+
+  # Read image to node mapping from kubernetes file in nodeToImageMapping array
+  if [ -n "${kubernetesFile}" ]; then
+    getImagesInNodeFile
+  fi
+
 }
 
 function validateAvailableImages {
 
   info "Validating images available for scanning on this machine..."
-  nonExistentImages=()
-  getNonExistentImages
-  sortedNonExistentImages=($(echo "${nonExistentImages[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
-  len=${#sortedNonExistentImages[@]}
-  if [[ len -gt 0 ]]; then
-    validationError "Following images reported in Kubernetes node information file are not available on current machine. These images must be pulled before the script can continue. Use '-d' option to disable image validation."
-    echo "================="
-    printf '%s\n' "${sortedNonExistentImages[@]}" | tee -a ${missingImagesReport}
-    echo "================="
-    fail "The images listed in '${missingImagesReport}' file must be pulled before the script can continue. Use '-d' option to disable image validation."
+  getMissingImagesList
+  missingImageCount=$?
+  if [[ $missingImageCount -gt 0 ]]; then
+    fail "Found $missingImageCount images missing on current machine. The list of missing images is saved in ${missingImagesReport} file, these images must be pulled to current machine before the script can continue. Use '-d' option to disable image validation."
   fi
-}
-
-function getNonExistentImages {
-  getNodeImages
-  for nodeImage in ${nodeImages[@]}
-  do
-    existingImagesOnHost=($(docker images --digests --format "{{.Repository}}@{{.Digest}}" | grep -v "<none>:<none>"))
-    if ! inarray  "${nodeImage}" "${existingImagesOnHost[@]}"; then
-      if [ -n ${nodeImage} ]; then 
-        nonExistentImages+=(${nodeImage})
-      fi
-    fi
-  done
-}
-
-inarray() {
-    local n=$1 h
-    shift
-    for h; do
-      [[ $n = "$h" ]] && return
-    done
-    return 1
-}
-
-inarrayPattern() {
-    local n=$1 h
-    shift
-    for h; do
-      [[ $n = *"$h"* ]] && return
-    done
-    return 1
-}
-
-function getNodeImages {
-
-if [ -f ${ignoreImageVerificationList} ]; then
-  IFS=$'\n' read -d '' -r -a ignoreImageVerificationList < "$ignoreImageVerificationList"
-else
-  ignoreImageVerificationList=()
-fi
-imagesInNodeFile=$(cat ${kubernetesFile} | jq '.items |[.[] | {name: .metadata.name, image:.status.images |.[].names | select(.[0] !="<none>@<none>") | .[0] }]' | jq -r '.[].image')
-
-for imageInNodeFile in ${imagesInNodeFile}; do
-  if ! inarrayPattern "${imageInNodeFile}" "${ignoreImageVerificationList[@]}"; then
-    nodeImages+=(${imageInNodeFile})
-  fi
-done
 }
 
 #
@@ -201,9 +155,9 @@ function initWorkDir {
 }
 
 #
-# Read image list, verify hash, scan image and search for artifact
+# Read image list, verify hash and get node names (if node info provided) and process
 #
-function readImageListAndProcess {
+function scanAndSearchImageList {
 
   for image in ${imageFile}
   do
@@ -212,30 +166,20 @@ function readImageListAndProcess {
     imageId=$(echo $image | cut -d'@' -f3)
     repository=$(echo $imageRepoTag | cut -d':' -f1)
     tag=$(echo $imageRepoTag | cut -d':' -f2)
+
     if [ -z ${imageId} ]; then
       imageId=$(getImageId "${imageRepoTag}")
     fi
+
     imageSize=`docker inspect ${imageId} | jq .[].Size`
-    
-    verifyHashAndGetNodeNames ${repository} ${imageHash} ${imageSize} result
-    if [[ -n "${kubernetesFile}" && "${result}" == "NotAvailable" ]]; then
-        continue;
-    elif [[ ${result} =~ "hashVerificationFailed" ]]; then
-        warning "Hash verification failed for ${image} ."
-        continue;
-    elif [[ ${result} =~ "sizeVerificationFailed" ]]; then
+    verifyHashAndGetNodeNames ${repository} ${imageHash} ${imageSize} resultNodeName
+    if [[ -n "${kubernetesFile}" && "${resultNodeName}" == "FailedNotAvailable" ]]; then
         continue;
     fi
 
     if [ -n "$imageId" ]; then
-      imageDir="${workDir}/${imageId}"
-      mkdir -p "${imageDir}"
-
       info "Scanning image ${imageRepoTag} with id $imageId "
-
-      saveImageAndExtractLayers "${imageId}" "${imageDir}"
-      searchArtifactInImage "${imageId}" "${imageDir}" "${result}"
-      cleanUpImage "${imageDir}"
+      scanAndSearchImage "${imageId}" "${imageDir}" "${resultNodeName}" 
     else
       fail "Unable to determine image id for image ${image}, image must be pulled before the script can continue"
     fi
@@ -243,62 +187,69 @@ function readImageListAndProcess {
 }
 
 #
+# Scan image and search for artifact
+#
+function scanAndSearchImage {
+  local imageId=$1
+  local imageDir=$2
+  local nodeNames=$3
+
+  imageDir="${workDir}/${imageId}"
+  mkdir -p "${imageDir}"
+
+  saveImageAndExtractLayers "${imageId}" "${imageDir}"
+  searchArtifactInImage "${imageId}" "${imageDir}" "${nodeNames}"
+  cleanUpImage "${imageDir}"
+}
+
+#
 # Verify image hash and get node names using Kubernetes Node information file
 #
 function verifyHashAndGetNodeNames {
-  local imageRepository=$1
+  local imageRepo=$1
   local imageHash=$2
   local imageSize=$3
   local __result=$4
-  hashVerificationFailed=false
-  sizeVerificationFailed=false
+
+  #sameSize=false
+  hashMatchFailed=false
   imageNode=()
   if [ -z "${kubernetesFile}" ]; then
-    eval $__result="NotAvailable"
+    eval $__result="FailedNotAvailable"
     return
   fi
 
   IFS=$'\n'
-  for nodeImage in $(cat "${kubernetesFile}" | jq '.items |[.[] | {name: .metadata.name, images:.status.images | .[]}]' | jq '.[] | {node:.name, images:.images.names | .[], size:.images.sizeBytes}' | jq -r '"\(.node);\(.images);\(.size )"'  | grep -v "<none>:<none>" | grep -v "<none>@<none>"); do
-    nodeName=$(echo $nodeImage | cut -d';' -f1)
-    k8sImage=$(echo $nodeImage | cut -d';' -f2)
-    imageSizeInK8sFile=$(echo $nodeImage | cut -d';' -f3)
-    if [[ -n $(echo $k8sImage | sed -n 's/@/,/p') ]]; then
-      imageRepoInK8sFile=$(echo $k8sImage | cut -d'@' -f1)
-      imageHashInK8sFile=$(echo $k8sImage | cut -d'@' -f2)
-    fi
-    if [[ -n $(echo $imageRepoInK8sFile | sed -n 's/:/,/p') ]]; then
-      imageRepoInK8sFile=$(echo $imageRepoInK8sFile | cut -d':' -f1)
-    fi
-    if [[ "${imageRepoInK8sFile}" == "${imageRepository}" ]]; then
-      if [[ ${sizeVerificationEnabled} == 'true' && ${imageSizeInK8sFile} != ${imageSize} ]]; then
-        sizeVerificationFailed=true
-        break;
-      fi
-      imageNode+=(${nodeName})
-      if [[ -z ${imageHash} || ${imageHash} == "<none>" ]]; then
+  for nodeImage in ${nodeToImageMapping[@]}; do
+    IFS=';' read -ra imageDetails <<< "${nodeImage}"
+    nodeName=${imageDetails[0]}
+    img=${imageDetails[1]}
+    size=${imageDetails[2]}
+    [[ $img == *[@]* ]] && repo=$(echo $img | cut -d'@' -f1) && hash=$(echo $img | cut -d'@' -f2)
+    [[ $img == *[:]* ]] && repo=$(echo $img | cut -d':' -f1) && tag=$(echo $img | cut -d':' -f2)
+    [[ $repo == *[:]* ]] && repo=$(echo $repo | cut -d':' -f1)
+    if [[ "${repo}" == "${imageRepo}" ]]; then
+      if [[ -z ${sizeVerificationDisabled} && ${size} != ${imageSize} ]]; then
+        warning "Size verification failed for image ${imageRepo}. Image size returned by 'docker inspect' is ${imageSize}, image size in k8s file is ${size}"
         break
       fi
-      if [[ -n ${imageHash} && ${imageHashInK8sFile} != ${imageHash} ]]; then
-        hashVerificationFailed=true
+      imageNode+=(${nodeName})
+      [[ -z ${imageHash} || ${imageHash} == "<none>" ]] && break
+      if [[ -n ${imageHash} && ${hash} != ${imageHash} ]]; then
+        warning "Hash verification failed for image ${imageRepo}"
+        hashMatchFailed=true
+        break
       fi
     fi
   done
 
   len=${#imageNode[@]}
-  if [ ${sizeVerificationFailed} == 'true' ]; then
-     warning "Size verification failed for image ${imageRepoInK8sFile}. Image size returned by 'docker inspect' is ${imageSize}, image size in k8s file is ${imageSizeInK8sFile}"
-     eval $__result="sizeVerificationFailed"
-  elif [[ len -lt 1 ]]; then
-     eval $__result="NotAvailable"
-  elif [ ${hashVerificationFailed} == 'true' ]; then
-     eval $__result="hashVerificationFailed"
+  if [[ $len -lt 1  || ${hashMatchFailed} == 'true' ]]; then
+    eval $__result="FailedNotAvailable"
   else 
-     imageNode=($(echo "${imageNode[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
-     eval $__result="'${imageNode}'"
+    eval $__result="'$(echo "${imageNode[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')'"
   fi
 }
-
 
 function saveImageAndExtractLayers {
   local image=$1
@@ -347,7 +298,7 @@ function searchArtifactInLayers {
 
 function runTool {
   initialize
-  readImageListAndProcess
+  scanAndSearchImageList
   printReport
 }
     

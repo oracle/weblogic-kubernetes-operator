@@ -90,3 +90,81 @@ function generateReportHeader {
     awk 'BEGIN {printf "%s,%s,%s,%s,%s\n","Node", "Artifact", "Respository", "Tag", "Digest"}' >> "${reportFile}"
   fi
 }
+
+#
+# check if string passed as first argument is present in array passed as second argument
+#
+checkStringInArray() {
+    local n=$1 h
+    shift
+    for h; do
+      [[ $n = "$h" ]] && return
+    done
+    return 1
+}
+
+#
+# check if string passed as first argument matches the pattern specified in array passed as second argument
+#
+checkStringMatchesArrayPattern() {
+    local n=$1 h
+    shift
+    for h; do
+      [[ $n = *"$h"* ]] && return
+    done
+    return 1
+}
+
+#
+# Get list of images missing on this machine
+#
+function getMissingImagesList {
+  missingImages=()
+  imagesToVerify=()
+  existingImagesOnHost=($(docker images --digests --format "{{.Repository}}@{{.Digest}}" | grep -v "<none>:<none>"))
+
+  getImagesToVerify
+  for imageToVerify in ${imagesToVerify[@]}
+  do
+    if ! checkStringInArray  "${imageToVerify}" "${existingImagesOnHost[@]}"; then
+      if [ -n ${imageToVerify} ]; then 
+        missingImages+=(${imageToVerify})
+      fi
+    fi
+  done
+
+  sortedMissingImagesList=($(echo "${missingImages[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+  missingImageCount=${#sortedMissingImagesList[@]}
+  printf '%s\n' "${sortedMissingImagesList[@]}" > ${missingImagesReport}
+  return ${missingImageCount}
+}
+
+#
+# Get list of images that require availabilty verification (i.e. filter out images in ignoreImageVerificationList)
+#
+function getImagesToVerify {
+  # Check if a file containing list of images to skip verification exists
+  if [ -f ${ignoreImageVerificationList} ]; then
+    IFS=$'\n' read -d '' -r -a ignoreImageVerificationList < "$ignoreImageVerificationList"
+  else
+    ignoreImageVerificationList=()
+  fi
+
+  # Get list of images present in Kubernetes Node Information file
+  imagesInNodeFile=$(cat ${kubernetesFile} | jq '.items |[.[] | {name: .metadata.name, image:.status.images |.[].names | select(.[0] !="<none>@<none>") | .[0] }]' | jq -r '.[].image')
+
+  # Create an array list of images that requires validation
+  for imageInNodeFile in ${imagesInNodeFile}; do
+    if ! checkStringMatchesArrayPattern "${imageInNodeFile}" "${ignoreImageVerificationList[@]}"; then
+      imagesToVerify+=(${imageInNodeFile})
+    fi
+  done
+}
+
+#
+# Get list of images from Kubernetes node information 'output of kubectl get node' file
+#
+function getImagesInNodeFile {
+  IFS=$'\n'
+  nodeToImageMapping=$(cat "${kubernetesFile}" | jq '.items |[.[] | {name: .metadata.name, images:.status.images | .[]}]' | jq '.[] | {node:.name, images:.images.names | .[], size:.images.sizeBytes}' | jq -r '"\(.node);\(.images);\(.size )"'  | grep -v "<none>:<none>" | grep -v "<none>@<none>")
+}
