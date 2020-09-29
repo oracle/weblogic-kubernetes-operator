@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -481,7 +482,7 @@ public class Main {
         @Override
         public boolean isDomainNamespace(@Nonnull String namespaceName) {
           try {
-            return Pattern.compile(getRegExp()).matcher(namespaceName).find();
+            return getCompiledPattern(getRegExp()).matcher(namespaceName).find();
           } catch (PatternSyntaxException e) {
             LOGGER.severe(MessageKeys.EXCEPTION, e);
             return false;
@@ -490,6 +491,10 @@ public class Main {
 
         private String getRegExp() {
           return tuningAndConfig().get("domainNamespaceRegExp");
+        }
+
+        private Pattern getCompiledPattern(String regExp) {
+          return compiledPatterns.computeIfAbsent(regExp, Pattern::compile);
         }
       },
       Dedicated {
@@ -515,6 +520,8 @@ public class Main {
       public Collection<String> getConfiguredDomainNamespaces() {
         return null;
       }
+
+      private static Map<String,Pattern> compiledPatterns = new WeakHashMap<>();
     }
 
     static @Nonnull Collection<String> getAllDomainNamespaces(Packet packet) {

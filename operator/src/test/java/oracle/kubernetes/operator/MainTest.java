@@ -37,6 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.MainTest.NamespaceStatusMatcher.isNamespaceStarting;
+import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.allOf;
@@ -48,6 +49,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class MainTest extends ThreadFactoryTestBase {
+
+  /** More than one chunk's worth of namespaces. */
+  private static final int MULTICHUNK_LAST_NAMESPACE_NUM = DEFAULT_CALL_LIMIT + 1;
+
+  /** Less than one chunk's worth of namespaces. */
+  private static final int LAST_NAMESPACE_NUM = DEFAULT_CALL_LIMIT - 1;
 
   private static final String NS = "default";
   private static final String DOMAIN_UID = "domain-uid-for-testing";
@@ -75,8 +82,6 @@ public class MainTest extends ThreadFactoryTestBase {
           = new V1Namespace().metadata(new V1ObjectMeta().name(NS_WEBLOGIC4));
   private static final V1Namespace NAMESPACE_WEBLOGIC5
           = new V1Namespace().metadata(new V1ObjectMeta().name(NS_WEBLOGIC5).putLabelsItem(LABEL, VALUE));
-  private static final int MULTICHUNK_LAST_NAMESPACE_NUM = 90;
-  static final int LAST_NAMESPACE_NUM = 10;
 
   private final Main main = new Main();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
