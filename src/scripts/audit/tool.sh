@@ -1,6 +1,7 @@
 #!/bin/bash
-# Copyright 2020, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 
 #set -x
 script="${BASH_SOURCE[0]}"
@@ -8,12 +9,12 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/utility.sh
 
 function usage {
-  echo "usage: ${script} [-i] [-s] [-w] [-h]"
+  echo "usage: ${script} [-i <filename>] [-k <filename>] [-s] [-w <dirname>] [-d] [-h]"
   echo "  -i File containing list of images to scan in [Repository]:[Tag]@[Hash] format."
   echo "  -k File containing Kubernetes Node information in json format (output of 'kubectl get nodes -o json')."
   echo "  -w Working directory for the generated files. Defaults to './work' dir."
   echo "  -s Silent mode."
-  echo "  -d Disable Image Validation"
+  echo "  -d Disable validation check of images that are present in node informaion file but have not been pulled on current machine."
   echo "  -h Help"
   exit 1
 }
@@ -22,7 +23,7 @@ function usage {
 # Parse the command line options
 #
 silentMode=false
-disableImageValidation=false
+disableMissingImagesValidation=false
 sizeVerificationDisabled=""
 imageFile=""
 kubernetesFile=""
@@ -39,7 +40,7 @@ while getopts "des:a:i:h:k:w:x:" opt; do
     ;;
     a) artifactsFile="${OPTARG}" #for testing only
     ;;
-    d) disableImageValidation=true;
+    d) disableMissingImagesValidation=true;
     ;;
     e) sizeVerificationDisabled=true;
     ;;
@@ -107,7 +108,7 @@ function initialize {
   fi
 
   # Validate list of available images
-  if [[ -n "${kubernetesFile}" && ${disableImageValidation} == 'false' ]]; then
+  if [[ -n "${kubernetesFile}" && ${disableMissingImagesValidation} == 'false' ]]; then
     validateAvailableImages
   fi
 
@@ -211,7 +212,6 @@ function verifyHashAndGetNodeNames {
   local imageSize=$3
   local __result=$4
 
-  #sameSize=false
   hashMatchFailed=false
   imageNode=()
   if [ -z "${kubernetesFile}" ]; then
