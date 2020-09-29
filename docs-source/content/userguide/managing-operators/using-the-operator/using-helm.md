@@ -489,6 +489,9 @@ Error: UPGRADE FAILED: Service "external-weblogic-operator-svc" is invalid: spec
 #### Installing an operator and assigning it a service account that doesn't exist
 
 The `helm install` eventually times out and creates a failed release.
+```
+$ helm install kubernetes/charts/weblogic-operator --name op2 --namespace myuser-op2-ns --values o24.yaml --wait --no-hooks
+```
 
 To recover:
 
