@@ -181,7 +181,7 @@ public class ItMiiDomainModelInPV {
 
     // build a new MII image with custom wdtHome
     buildMIIandPushToRepo(miiImageCustom, modelMountPath + "/model");
-    
+
     params.put("domain2", miiImageCustom);
     params.put("domain1", miiImagePV);
 
@@ -452,7 +452,7 @@ public class ItMiiDomainModelInPV {
         .wdtVersion(WDT_VERSION)
         .env(env)
         .redirect(true));
-    assertTrue(doesImageExist(image),
+    assertTrue(doesImageExist(image.split(":")[1]),
         String.format("Image %s doesn't exist", image));
     dockerLoginAndPushImage(image);
   }
