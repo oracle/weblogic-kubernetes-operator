@@ -10,6 +10,8 @@ import java.util.Map;
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -522,6 +524,23 @@ public class TestActions {
                                            int adminServerPort) {
     return Ingress.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap,
         annotations, setIngressHost, tlsSecret, enableAdminServerRouting, adminServerPort);
+  }
+
+  /**
+   * Create an ingress in specified namespace.
+   * @param ingressName ingress name
+   * @param namespace namespace in which the ingress will be created
+   * @param annotations annotations of the ingress
+   * @param ingressRules a list of ingress rules
+   * @param tlsList list of ingress tls
+   * @throws ApiException if Kubernetes API call fails
+   */
+  public static void createIngress(String ingressName,
+                                   String namespace,
+                                   Map<String, String> annotations,
+                                   List<NetworkingV1beta1IngressRule> ingressRules,
+                                   List<NetworkingV1beta1IngressTLS> tlsList) throws ApiException {
+    Ingress.createIngress(ingressName, namespace, annotations, ingressRules, tlsList);
   }
 
   /**
@@ -1051,7 +1070,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    * @throws InterruptedException if any thread has interrupted the current thread
    */
-  public static ExecResult execCommand(
+  public static synchronized ExecResult execCommand(
       String namespace,
       String podName,
       String containerName,

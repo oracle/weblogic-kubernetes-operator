@@ -223,9 +223,9 @@ class ItUsabilityOperatorHelmChart {
     }
     // delete operator
     logger.info("Uninstalling operator");
-    cleanUpSA(opNamespace);
-    deleteSecret("ocir-secret",opNamespace);
     uninstallOperator(opHelmParams);
+    cleanUpSA(opNamespace);
+    deleteSecret(OCIR_SECRET_NAME,opNamespace);
 
     // verify the operator pod does not exist in the operator namespace
     logger.info("Checking that operator pod does not exist in operator namespace");
@@ -327,9 +327,9 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain1 scaled to " + replicaCountDomain1 + " servers");
 
     } finally {
-      deleteSecret("ocir-secret",opNamespace);
-      cleanUpSA(opNamespace);
       uninstallOperator(op1HelmParams);
+      deleteSecret(OCIR_SECRET_NAME,opNamespace);
+      cleanUpSA(opNamespace);
     }
   }
 
@@ -438,9 +438,9 @@ class ItUsabilityOperatorHelmChart {
           "operator can still manage domain1, scaling was succeeded for " + managedServerPodName1);
 
     } finally {
-      cleanUpSA(op2Namespace);
-      deleteSecret("ocir-secret",op2Namespace);
       uninstallOperator(op1HelmParams);
+      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
+      cleanUpSA(op2Namespace);
     }
   }
 
@@ -480,10 +480,10 @@ class ItUsabilityOperatorHelmChart {
       assertNull(opHelmParam2,
           "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      deleteSecret("ocir-secret",opNamespace);
-      cleanUpSA(opNamespace);
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
+      deleteSecret(OCIR_SECRET_NAME,opNamespace);
+      cleanUpSA(opNamespace);
     }
   }
 
@@ -522,11 +522,11 @@ class ItUsabilityOperatorHelmChart {
           expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      deleteSecret("ocir-secret",opNamespace);
-      cleanUpSA(opNamespace);
-      cleanUpSA(op2Namespace);
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
+      deleteSecret(OCIR_SECRET_NAME,opNamespace);
+      cleanUpSA(opNamespace);
+      cleanUpSA(op2Namespace);
     }
   }
 
@@ -566,13 +566,13 @@ class ItUsabilityOperatorHelmChart {
           expectedError,"failed",
           externalRestHttpsPort, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
+      uninstallOperator(op2HelmParams);
     } finally {
+      uninstallOperator(opHelmParams);
+      deleteSecret(OCIR_SECRET_NAME,opNamespace);
+      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
-      deleteSecret("ocir-secret",opNamespace);
-      deleteSecret("ocir-secret",op2Namespace);
-      uninstallOperator(opHelmParams);
-      uninstallOperator(op2HelmParams);
     }
   }
 
@@ -660,9 +660,9 @@ class ItUsabilityOperatorHelmChart {
 
 
     } finally {
-      deleteSecret("ocir-secret",op2Namespace);
-      cleanUpSA(op2Namespace);
       uninstallOperator(op2HelmParams);
+      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
+      cleanUpSA(op2Namespace);
     }
   }
 
@@ -726,9 +726,9 @@ class ItUsabilityOperatorHelmChart {
       //assertNull(errorMsg, errorMsg);
     } finally {
       //uninstall operator helm chart
-      deleteSecret("ocir-secret",op2Namespace);
-      cleanUpSA(op2Namespace);
       uninstallOperator(opHelmParams);
+      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
+      cleanUpSA(op2Namespace);
     }
   }
 

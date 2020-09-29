@@ -116,6 +116,8 @@ public class ItIntrospectVersion {
   private static String opNamespace = null;
   private static String introDomainNamespace = null;
 
+  private static final String domainUid = "myintrodomain";
+
   private static String nginxNamespace = null;
   private static int nodeportshttp;
   private static HelmParams nginxHelmParams = null;
@@ -190,7 +192,6 @@ public class ItIntrospectVersion {
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   public void testDomainIntrospectVersionNotRolling() {
 
-    final String domainUid = "mydomain";
     final String clusterName = "mycluster";
 
     final String adminServerName = "admin-server";
@@ -487,7 +488,6 @@ public class ItIntrospectVersion {
   @DisplayName("Test introspectVersion rolling server pods when admin server port is changed")
   public void testDomainIntrospectVersionRolling() {
 
-    final String domainUid = "mydomain";
     final String clusterName = "mycluster";
 
     final String adminServerName = "admin-server";
@@ -606,8 +606,6 @@ public class ItIntrospectVersion {
   @Test
   @DisplayName("Test change WebLogic admin credentials for domain running in persistent volume")
   public void testCredentialChange() {
-
-    final String domainUid = "mydomain";
 
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
@@ -755,7 +753,6 @@ public class ItIntrospectVersion {
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
   public void testCreateNewCluster() {
 
-    final String domainUid = "mydomain";
     final String clusterName = "cl2";
 
     final String adminServerName = "admin-server";

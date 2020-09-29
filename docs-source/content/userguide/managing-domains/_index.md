@@ -11,7 +11,7 @@ description: "Important considerations for WebLogic domains in Kubernetes."
 * [Creating and managing WebLogic domains](#creating-and-managing-weblogic-domains)
 * [Modifying domain configurations](#modifying-domain-configurations)
 * [About the Domain resource](#about-the-domain-resource)
-* [Managing life cycle operations](#managing-life-cycle-operations)
+* [Managing lifecycle operations](#managing-lifecycle-operations)
 * [Scaling clusters](#scaling-clusters)
 * [Log files](#log-files)
 
@@ -152,12 +152,12 @@ Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
   cd('/')
   create(dname,'Log')
   cd('/Log/' + dname);
-  
+
   # configured server log for a server named 'sname'
   cd('/Servers/' + sname)
   create(sname, 'Log')
   cd('/Servers/' + sname + '/Log/' + sname)
-  
+
   # templated (dynamic) server log for a template named 'tname'
   cd('/ServerTemplates/' + tname)
   create(tname,'Log')
@@ -169,10 +169,10 @@ Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
   ```bash
   # minimum log file size before rotation in kilobytes
   set('FileMinSize', 1000)
-  
+
   # maximum number of rotated files
   set('FileCount', 10)
-  
+
   # set to true to rotate file every time on startup (instead of append)
   set('RotateLogOnStartup', 'true')
   ```
@@ -187,7 +187,7 @@ Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
 
 - For WebLogic Server `.log` and `.out` files (including both dynamic and configured servers), you can alternatively
 set logging attributes using system properties that start with `weblogic.log.`
-and that end with the corresponding Log MBean attribute name. 
+and that end with the corresponding Log MBean attribute name.
 
   For example, you can include `-Dweblogic.log.FileMinSize=1000 -Dweblogic.log.FileCount=10 -Dweblogic.log.RotateLogOnStartup=true` in `domain.spec.serverPod.env.name.JAVA_OPTIONS` to set the behavior for all WebLogic Servers in your domain. For information about setting `JAVA_OPTIONS`, see [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md#jvm-memory-and-java-option-environment-variables" >}}).
 
@@ -195,4 +195,3 @@ and that end with the corresponding Log MBean attribute name.
 Kubernetes stores pod logs on each of its nodes, and, depending on the Kubernetes implementation, extra steps may be necessary to limit their disk space usage.
 For more information, see [Kubernetes Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/).
 {{% /notice %}}
- 

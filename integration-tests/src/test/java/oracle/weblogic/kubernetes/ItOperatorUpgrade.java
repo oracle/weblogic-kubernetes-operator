@@ -147,6 +147,21 @@ public class ItOperatorUpgrade {
     upgradeOperator("3.0.1", true);
   }
 
+
+  /**
+   * Operator upgrade from 3.0.2 to latest.
+   * Install 3.0.2 Operator from GitHub chart repository and create a domain.
+   * Upgrade operator with latest Operator image and verify CRD version and image are updated
+   * and the domain can be managed by scaling the cluster using operator REST api.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.0.2 to latest")
+  @MustNotRunInParallel
+  public void testOperatorUpgradeFrom3_0_2(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    upgradeOperator("3.0.2", true);
+  }
+
   /**
    * Cleanup Kubernetes artifacts in the namespaces used by the test and
    * delete CRD.

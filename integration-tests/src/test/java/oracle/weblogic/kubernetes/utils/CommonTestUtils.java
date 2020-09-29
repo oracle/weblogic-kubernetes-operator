@@ -89,7 +89,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
@@ -98,7 +97,10 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
@@ -111,10 +113,11 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_NAME;
@@ -513,14 +516,34 @@ public class CommonTestUtils {
   public static HelmParams installAndVerifyNginx(String nginxNamespace,
                                                  int nodeportshttp,
                                                  int nodeportshttps) {
+    return installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps, NGINX_CHART_VERSION);
+  }
+
+  /**
+   * Install NGINX and wait up to five minutes until the NGINX pod is ready.
+   *
+   * @param nginxNamespace the namespace in which the NGINX will be installed
+   * @param nodeportshttp the http nodeport of NGINX
+   * @param nodeportshttps the https nodeport of NGINX
+   * @param chartVersion the chart version of NGINX
+   * @return the NGINX Helm installation parameters
+   */
+  public static HelmParams installAndVerifyNginx(String nginxNamespace,
+                                                 int nodeportshttp,
+                                                 int nodeportshttps,
+                                                 String chartVersion) {
     LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
         .releaseName(NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3))
         .namespace(nginxNamespace)
-        .repoUrl(GOOGLE_REPO_URL)
-        .repoName(STABLE_REPO_NAME)
+        .repoUrl(NGINX_REPO_URL)
+        .repoName(NGINX_REPO_NAME)
         .chartName(NGINX_CHART_NAME);
+
+    if (chartVersion != null) {
+      nginxHelmParams.chartVersion(chartVersion);
+    }
 
     // NGINX chart values to override
     NginxParams nginxParams = new NginxParams()
@@ -1206,6 +1229,24 @@ public class CommonTestUtils {
                                                             String domainNamespace,
                                                             String ingressName,
                                                             Map<String, Integer> clusterNameMSPortMap) {
+    return installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMSPortMap, null);
+  }
+
+  /**
+   * Create an ingress for the domain with domainUid in a given namespace and verify.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param ingressName name of ingress to be created in a given domain
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @param tlsSecret the secret name for TLS
+   * @return list of ingress hosts
+   */
+  public static List<String> installVoyagerIngressAndVerify(String domainUid,
+                                                            String domainNamespace,
+                                                            String ingressName,
+                                                            Map<String, Integer> clusterNameMSPortMap,
+                                                            String tlsSecret) {
     LoggingFacade logger = getLogger();
     final String voyagerIngressName = VOYAGER_CHART_NAME + "-" + ingressName;
     final String channelName = "tcp-80";
@@ -1221,7 +1262,7 @@ public class CommonTestUtils {
 
     // create an ingress in domain namespace
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true, null);
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true, tlsSecret);
 
     // wait until the Voyager ingress pod is ready.
     withStandardRetryPolicy
@@ -2205,7 +2246,9 @@ public class CommonTestUtils {
     HelmParams promHelmParams = new HelmParams()
         .releaseName(promReleaseName)
         .namespace(promNamespace)
-        .chartDir("stable/prometheus")
+        .repoUrl(PROMETHEUS_REPO_URL)
+        .repoName(PROMETHEUS_REPO_NAME)
+        .chartName("prometheus")
         .chartValuesFile(promValueFile);
 
     if (promVersion != null) {
