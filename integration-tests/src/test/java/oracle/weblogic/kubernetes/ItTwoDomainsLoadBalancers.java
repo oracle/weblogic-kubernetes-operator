@@ -162,6 +162,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -1748,7 +1749,7 @@ public class ItTwoDomainsLoadBalancers {
     int serviceNodePort = assertDoesNotThrow(() ->
             getServiceNodePort(namespace, adminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
-
+    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
     logger.info("Deploying application {0} to domain {1} cluster target cluster-1 in namespace {2}",
         clusterViewAppPath, domainUid, namespace);
     ExecResult result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,

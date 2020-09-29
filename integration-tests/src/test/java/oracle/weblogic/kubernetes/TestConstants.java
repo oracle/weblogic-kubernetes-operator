@@ -64,7 +64,7 @@ public interface TestConstants {
   // for others push to REPO_REGISTRY if REPO_REGISTRY provided,
   // if not(like local runs) don't push the domain images to any repo
   public static final String DOMAIN_IMAGES_REPO = Optional.ofNullable(KIND_REPO)
-      .orElse(Optional.ofNullable(System.getenv("REPO_REGISTRY"))
+      .orElse(Optional.ofNullable(System.getenv("REPO_REGISTRY") + "/weblogick8s/")
           .orElse(""));
 
   // OCR constants
