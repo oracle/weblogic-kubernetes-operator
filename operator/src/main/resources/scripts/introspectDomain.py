@@ -765,17 +765,17 @@ class TopologyGenerator(Generator):
       self.writeln("  networkAccessPoints:")
       self.indent()
       for nap in naps:
-        self.addNetworkAccessPoint(server, nap)
+        self.addNetworkAccessPoint(server, nap, is_server_template)
 
     added_istio_yaml = self.addIstioNetworkAccessPoints(server, is_server_template, added_nap)
     if len(naps) != 0 or added_istio_yaml:
       self.undent()
 
-  def addNetworkAccessPoint(self, server, nap):
+  def addNetworkAccessPoint(self, server, nap, is_server_template):
 
     # Change the name to follow the istio port naming convention
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    nap_protocol = getNAPProtocol(nap, server, self.env.getDomain())
+    nap_protocol = getNAPProtocol(nap, server, self.env.getDomain(), is_server_template)
 
     if istio_enabled == 'true':
       http_protocol = [ 'http' ]
@@ -1734,10 +1734,13 @@ def getAdministrationPort(server, domain):
     port = domain.getAdministrationPort()
   return port
 
-def getNAPProtocol(nap, server, domain):
+def getNAPProtocol(nap, server, domain, is_server_template=False):
   protocol = nap.getProtocol()
   if len(server.getNetworkAccessPoints()) > 0:
-    cd('/Server/' + server.getName() + '/NetworkAccessPoint/' + nap.getName())
+    if is_server_template:
+      cd('/ServerTemplate/' + server.getName() + '/NetworkAccessPoint/' + nap.getName())
+    else:
+      cd('/Server/' + server.getName() + '/NetworkAccessPoint/' + nap.getName())
     if not isSet('Protocol') and isSecureModeEnabledForDomain(domain):
       protocol = "t3s"
   return protocol
