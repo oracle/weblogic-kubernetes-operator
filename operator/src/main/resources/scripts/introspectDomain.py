@@ -925,9 +925,9 @@ class MII_DomainConfigGenerator(Generator):
     # all the many policies files
     packcmd = "tar -pczf /tmp/domain.tar.gz %s/config/config.xml %s/config/jdbc/ %s/config/jms %s/config/coherence " \
               "%s/config/diagnostics %s/config/startup %s/config/configCache %s/config/nodemanager " \
-              "%s/config/security %s" % (
+              "%s/config/security %s/config/fmwconfig/servers/*/logging.xml %s" % (
               self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home,
-              self.domain_home, self.domain_home, self.domain_home, self.domain_home, empath)
+              self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home, empath)
     os.system(packcmd)
     domain_data = self.env.readBinaryFile("/tmp/domain.tar.gz")
     b64 = ""
