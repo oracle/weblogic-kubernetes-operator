@@ -862,7 +862,8 @@ public class ItIntrospectVersion {
    * Modify the domain scope property
    * From: "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4" to
    * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
-   * Verify all the pods are restarted and back to ready state.
+   * Verify all the pods are restarted and back to ready state
+   * Verify the admin server is accessible and cluster member is healthy
    */
   @Order(5)
   @Test
