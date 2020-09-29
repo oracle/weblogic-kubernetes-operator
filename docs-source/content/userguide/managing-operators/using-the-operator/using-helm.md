@@ -76,7 +76,7 @@ This section describes the details of the operator Helm chart's available config
 
 ##### `serviceAccount`
 Specifies the name of the service account in the operator's namespace that the operator will use to make requests to the Kubernetes API server. You are responsible for creating the service account.
-The `helm install` or `helm upgrade` command with a non-existing service account results in a Helm charts validation error.
+The `helm install` or `helm upgrade` command with a non-existing service account results in a Helm chart validation error.
 
 Defaults to `default`.
 
