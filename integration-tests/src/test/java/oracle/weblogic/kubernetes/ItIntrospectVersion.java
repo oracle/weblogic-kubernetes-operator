@@ -867,15 +867,14 @@ public class ItIntrospectVersion {
    */
   @Order(5)
   @Test
-  @DisplayName("Verify server pods are restarted by changing imagePullPolicy")
+  @DisplayName("Verify server pods are restarted by updating image name")
   @Slow
   public void testUpdateImageName() {
-    final String domainUid = "mydomain";
+    
     final String domainNamespace = introDomainNamespace;
 
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
-
     final String managedServerNameBase = "cl2-ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
 
@@ -897,11 +896,11 @@ public class ItIntrospectVersion {
     podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, managedServerPodNamePrefix,
         replicaCount);
 
-    //print out the original imagePullPolicy
-    String imagePullPolicy = domain1.getSpec().getImagePullPolicy();
-    logger.info("Original domain imagePullPolicy is: {0}", imagePullPolicy);
+    //print out the original image name
+    String imageName = domain1.getSpec().getImage();
+    logger.info("Original domain imagePullPolicy is: {0}", imageName);
 
-    //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
+    //change image name to imageUpdate
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
