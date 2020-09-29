@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import static java.util.function.Function.identity;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
+import static oracle.kubernetes.operator.helpers.HelmAccess.OPERATOR_DOMAIN_NAMESPACES;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.empty;
@@ -174,13 +175,13 @@ public class NamespaceTest {
 
   private void addDomainNamespace(String namespace) {
     currentNamespaces.add(namespace);
-    HelmAccessStub.defineVariable(NAMESPACES_PROPERTY, String.join(",", currentNamespaces));
+    HelmAccessStub.defineVariable(OPERATOR_DOMAIN_NAMESPACES, String.join(",", currentNamespaces));
   }
 
   @SuppressWarnings("SameParameterValue")
   private void deleteDomainNamespace(String namespace) {
     currentNamespaces.remove(namespace);
-    HelmAccessStub.defineVariable(NAMESPACES_PROPERTY, String.join(",", currentNamespaces));
+    HelmAccessStub.defineVariable(OPERATOR_DOMAIN_NAMESPACES, String.join(",", currentNamespaces));
   }
 
   private void cacheStartedNamespaces() throws NoSuchFieldException {

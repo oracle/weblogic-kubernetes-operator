@@ -35,7 +35,6 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -627,7 +626,6 @@ class ItServerStartPolicy {
 
   // The usecase fails NEVER->ALWAYS
   // https://bug.oraclecorp.com/pls/bug/webbug_print.show?c_rptno=31833260
-  @Disabled
   @Test
   @DisplayName("Restart the standalone managed server with serverStartPolicy")
   public void testStandaloneManagedRestartAlways() {
@@ -667,7 +665,6 @@ class ItServerStartPolicy {
 
   // The usecase fails NEVER->IF_NEEDED
   // https://bug.oraclecorp.com/pls/bug/webbug_print.show?c_rptno=31833260
-  @Disabled
   @Test
   @DisplayName("Restart the standalone managed server with serverStartPolicy")
   public void testStandaloneManagedRestartIfNeeded() {
