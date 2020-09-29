@@ -870,7 +870,7 @@ public class ItIntrospectVersion {
   @DisplayName("Verify server pods are restarted by updating image name")
   @Slow
   public void testUpdateImageName() {
-    
+
     final String domainNamespace = introDomainNamespace;
 
     final String adminServerName = "admin-server";
@@ -898,7 +898,7 @@ public class ItIntrospectVersion {
 
     //print out the original image name
     String imageName = domain1.getSpec().getImage();
-    logger.info("Original domain imagePullPolicy is: {0}", imageName);
+    logger.info("Original domain image name is: {0}", imageName);
 
     //change image name to imageUpdate
     StringBuffer patchStr = null;
