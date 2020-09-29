@@ -10,11 +10,11 @@ source ${scriptDir}/utility.sh
 
 function usage {
   echo "usage: ${script} [-i <filename>] [-k <filename>] [-s] [-w <dirname>] [-d] [-h]"
-  echo "  -i File containing list of images to scan in [Repository]:[Tag]@[Hash] format."
+  echo "  -i File containing list of images to scan in [Repository]:[Tag]@[Hash] format with each image on a separate line."
   echo "  -k File containing Kubernetes Node information in json format (output of 'kubectl get nodes -o json')."
   echo "  -w Working directory for the generated files. Defaults to './work' dir."
   echo "  -s Silent mode."
-  echo "  -d Disable validation check of images that are present in node informaion file but have not been pulled on current machine."
+  echo "  -d Disable validation check of images that are present in node information file but have not been pulled on current machine."
   echo "  -h Help"
   exit 1
 }
