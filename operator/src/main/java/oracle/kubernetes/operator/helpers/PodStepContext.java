@@ -810,6 +810,14 @@ public abstract class PodStepContext extends BasePodStepContext {
     @Override
     public NextAction apply(Packet packet) {
       V1Pod currentPod = info.getServerPod(getServerName());
+
+      // reset introspect failure job count - if any
+      
+      Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .ifPresent(a -> a.resetIntrospectJobFailureCount());
+
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
