@@ -64,10 +64,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseStatus;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -252,7 +252,8 @@ class ItManageNs {
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp1NS));
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp2NS));
     assertDoesNotThrow(() -> Kubernetes.createNamespace(domain3NS));
-    installAndVerifyOperatorCanManageDomainByNSRegExp(manageByExp1NS, manageByExp2NS, manageByExpDomain1Uid, manageByExpDomain2Uid);
+    installAndVerifyOperatorCanManageDomainByNSRegExp(manageByExp1NS, manageByExp2NS,
+        manageByExpDomain1Uid, manageByExpDomain2Uid);
 
     //verify that domainNamespaces field will be ignored and domain will not start for specific NS and default
     checkPodNotCreated(domain3Uid + adminServerPrefix, domain3Uid, domain3Namespace);
@@ -263,7 +264,8 @@ class ItManageNs {
 
     // install  operator sharing same domain
     checkSecondOperatorFailedToShareSameNS(manageByExp1NS);
-    switchNSManagementToLabelSelectUsingUpgradeOperator(manageByLabelNS, manageByExp1NS, manageByLabelDomainUid, manageByExpDomain1Uid);
+    switchNSManagementToLabelSelectUsingUpgradeOperator(manageByLabelNS, manageByExp1NS,
+        manageByLabelDomainUid, manageByExpDomain1Uid);
 
   }
 
@@ -305,7 +307,8 @@ class ItManageNs {
   }
 
   private void checkUpgradeFailedToAddNSManagedByAnotherOperator() {
-    //upgrade operator1 to replace managing domains using RegExp namespaces for ns names starting from weblogic, there one of domains
+    //upgrade operator1 to replace managing domains using RegExp namespaces
+    // for ns names starting from weblogic, there one of domains
     //in namespace weblogic* is managed by operator2
     int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
     //set helm params to use domainNamespaceSelectionStrategy=RegExp for namespaces names started with weblogic
@@ -320,8 +323,10 @@ class ItManageNs {
         + " managed by other operator");
   }
 
-    private void switchNSManagementToRegExpUsingUpgradeOperator(String manageByLabelNS, String manageByExpNS,
-                                                              String manageByLabelDomainUid, String manageByExpDomainUid) {
+  private void switchNSManagementToRegExpUsingUpgradeOperator(String manageByLabelNS,
+                                                              String manageByExpNS,
+                                                              String manageByLabelDomainUid,
+                                                              String manageByExpDomainUid) {
     //upgrade operator1 to replace managing domains using RegExp namespaces
     assertDoesNotThrow(() -> createNamespace(manageByExpNS));
     int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
@@ -367,8 +372,10 @@ class ItManageNs {
     checkOperatorCanScaleDomain(opNamespace, domainUid);
   }
 
-  private void installAndVerifyOperatorCanManageDomainByLabelSelector(String manageByLabelDomain1NS, String manageByLabelDomain2NS,
-                                                                      String manageByLabelDomain1Uid, String manageByLabelDomain2Uid) {
+  private void installAndVerifyOperatorCanManageDomainByLabelSelector(String manageByLabelDomain1NS,
+                                                                      String manageByLabelDomain2NS,
+                                                                      String manageByLabelDomain1Uid,
+                                                                      String manageByLabelDomain2Uid) {
     // install and verify operator set to manage domains based on LabelSelector strategy,
     // domainNamespaces set to domain4 will be ignored
     opHelmParams1 = installOperatorHelmChart(OPERATOR_RELEASE_NAME,
@@ -447,8 +454,10 @@ class ItManageNs {
     logger.info("Deleted Domain Custom Resource " + "defaultuid");
   }
 
-  private void switchNSManagementToLabelSelectUsingUpgradeOperator(String manageByLabelNS, String manageByExpNS,
-                                                                   String manageByLabelDomainUid, String manageByExpDomainUid) {
+  private void switchNSManagementToLabelSelectUsingUpgradeOperator(String manageByLabelNS,
+                                                                   String manageByExpNS,
+                                                                   String manageByLabelDomainUid,
+                                                                   String manageByExpDomainUid) {
 
     //upgrade operator to manage domains with Labeled namespaces
     int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
@@ -475,8 +484,10 @@ class ItManageNs {
         + manageByExpNS + " in the namespace " + manageByExpNS);
   }
 
-  private void installAndVerifyOperatorCanManageDomainByNSRegExp(String manageByExp1NS, String manageByExp2NS,
-                                                                 String manageByExpDomain1Uid, String manageByExpDomain2Uid) {
+  private void installAndVerifyOperatorCanManageDomainByNSRegExp(String manageByExp1NS,
+                                                                 String manageByExp2NS,
+                                                                 String manageByExpDomain1Uid,
+                                                                 String manageByExpDomain2Uid) {
     // install and verify operator with domainNsSelectStrategy=RegExp to manage domains with namespaces names,
     // starting from test
     opHelmParams2 = installOperatorHelmChart(OPERATOR_RELEASE_NAME,
