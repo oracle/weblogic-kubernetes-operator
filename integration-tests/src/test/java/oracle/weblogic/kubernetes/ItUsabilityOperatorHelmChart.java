@@ -27,7 +27,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.joda.time.DateTime;
@@ -760,6 +759,7 @@ class ItUsabilityOperatorHelmChart {
     dockerLoginAndPushImageToRegistry(miiImage);
 
     // create docker registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
     createOcirRepoSecret(domainNamespace);
 
@@ -904,8 +904,9 @@ class ItUsabilityOperatorHelmChart {
     logger.info("operator image name {0}", operatorImage);
     if (createSecret) {
       // Create Docker registry secret in the operator namespace to pull the image from repository
+      // this secret is used only for non-kind cluster
       logger.info("Creating Docker registry secret in namespace {0}", operNamespace);
-      CommonTestUtils.createOcirRepoSecret(operNamespace);
+      createOcirRepoSecret(operNamespace);
 
     }
     // map with secret

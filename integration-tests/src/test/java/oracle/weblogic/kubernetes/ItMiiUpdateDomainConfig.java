@@ -71,7 +71,6 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
@@ -189,6 +188,7 @@ class ItMiiUpdateDomainConfig {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
@@ -218,9 +218,8 @@ class ItMiiUpdateDomainConfig {
 
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    if (USE_SECRET_TO_PULL_BASE_IMAGES) {
-      createSecretForBaseImages(domainNamespace);
-    }
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(domainNamespace);
 
     // create PV, PVC for logs
     createPV(pvName, domainUid, ItMiiUpdateDomainConfig.class.getSimpleName());
@@ -960,10 +959,9 @@ class ItMiiUpdateDomainConfig {
                             .persistentVolumeClaim(
                                 new V1PersistentVolumeClaimVolumeSource()
                                     .claimName(pvcName))))
-                    .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
+                    .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))
-                        : null))));
+                            .name(BASE_IMAGES_REPO_SECRET)))))); // this secret is used only for non-kind cluster
 
     String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
 

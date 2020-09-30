@@ -254,6 +254,7 @@ public class ItCrossDomainTransaction {
     final int replicaCount = 2;
 
     // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
 
     // create the domain CR

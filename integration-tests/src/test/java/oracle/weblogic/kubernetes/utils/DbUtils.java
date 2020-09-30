@@ -40,7 +40,6 @@ import org.awaitility.core.ConditionFactory;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -85,9 +84,8 @@ public class DbUtils {
       int dbPort, String dbUrl) throws ApiException {
     LoggingFacade logger = getLogger();
     // create pull secrets when running in non Kind Kubernetes cluster
-    if (USE_SECRET_TO_PULL_BASE_IMAGES) {
-      createSecretForBaseImages(dbNamespace);
-    }
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(dbNamespace);
 
     logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}",
         dbImage, dbPort, dbNamespace);
@@ -192,10 +190,9 @@ public class DbUtils {
                     .restartPolicy("Always")
                     .schedulerName("default-scheduler")
                     .terminationGracePeriodSeconds(30L)
-                    .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
+                    .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))
-                        : null))));
+                            .name(BASE_IMAGES_REPO_SECRET))))));
 
     logger.info("Create deployment for Oracle DB in namespace {0}",
         dbNamespace);
@@ -292,10 +289,9 @@ public class DbUtils {
                     .imagePullPolicy("IfNotPresent")
                     .addArgsItem("sleep")
                     .addArgsItem("infinity")))
-            .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
+            .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))
-                        : null));
+                            .name(BASE_IMAGES_REPO_SECRET))));  // this secret is used only for non-kind cluster
 
     V1Pod pvPod = Kubernetes.createPod(dbNamespace, podBody);
 

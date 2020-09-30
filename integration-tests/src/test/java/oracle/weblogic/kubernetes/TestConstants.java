@@ -37,7 +37,6 @@ public interface TestConstants {
 
   // kind constants
   public static final String KIND_REPO = System.getenv("KIND_REPO");
-  public static final boolean USE_SECRET_TO_PULL_BASE_IMAGES = KIND_REPO == null ? true : false;
   public static final String REPO_DUMMY_VALUE = "dummy";
 
   // ocir constants
@@ -60,9 +59,9 @@ public interface TestConstants {
   public static final String OCIR_DB_IMAGE_NAME = "weblogick8s/test-images/database/enterprise";
   public static final String OCIR_DB_IMAGE_TAG = "12.2.0.1-slim";
 
-  // repository to push domain images, for kind push to kind repo
-  // for others push to REPO_REGISTRY if REPO_REGISTRY provided,
-  // if not(like local runs) don't push the domain images to any repo
+  // repository to push the domain images, for kind push to kind repo
+  // for others push to REPO_REGISTRY if REPO_REGISTRY env var is provided,
+  // if its not provided (like local runs) don't push the domain images to any repo
   public static final String DOMAIN_IMAGES_REPO = Optional.ofNullable(KIND_REPO)
       .orElse(Optional.ofNullable(System.getenv("REPO_REGISTRY") + "/weblogick8s/")
           .orElse(""));
@@ -77,27 +76,52 @@ public interface TestConstants {
   public static final String OCR_EMAIL = Optional.ofNullable(System.getenv("OCR_EMAIL"))
       .orElse(REPO_DUMMY_VALUE);
 
-  // base images constants
+  // OCR default image values, these values will be used while running locally
+  public static final String OCR_WEBLOGIC_IMAGE_NAME = "weblogick8s/weblogic";
+  public static final String OCR_WEBLOGIC_IMAGE_TAG = "12.2.1.4";
+  public static final String OCR_FMWINFRA_IMAGE_NAME = "weblogick8s/fmw-infrastructure";
+  public static final String OCR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
+  public static final String OCR_DB_IMAGE_NAME = "database/enterprise";
+  public static final String OCR_DB_IMAGE_TAG = "12.2.0.1-slim";
+
+  // ----------------------------- base images constants ---------------------
+  // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default
   public static final String BASE_IMAGES_REPO = Optional.ofNullable(System.getenv("BASE_IMAGES_REPO"))
       .orElse(OCIR_DEFAULT);
+  // Use OCR secret name if OCR is used for base images, if not use OCIR secret name
   public static final String BASE_IMAGES_REPO_SECRET =
       BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_SECRET_NAME : OCIR_SECRET_NAME;
-  // base image names with default values using OCIR images if env var are not provided
+
+  // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, if its not provided and
+  // if base images repo is OCR use OCR default image values
+  // or if base images repo is OCIR use OCIR default image values
   public static final String WEBLOGIC_IMAGE_NAME
           = BASE_IMAGES_REPO + "/" + Optional.ofNullable(System.getenv("WEBLOGIC_IMAGE_NAME"))
-      .orElse(OCIR_WEBLOGIC_IMAGE_NAME);
+      .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_WEBLOGIC_IMAGE_NAME : OCIR_WEBLOGIC_IMAGE_NAME);
   public static final String WEBLOGIC_IMAGE_TAG = Optional.ofNullable(System.getenv("WEBLOGIC_IMAGE_TAG"))
-      .orElse(OCIR_WEBLOGIC_IMAGE_TAG);
+      .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_WEBLOGIC_IMAGE_TAG : OCIR_WEBLOGIC_IMAGE_TAG);
+
+  // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not provided and
+  // if base images repo is OCR use OCR default image values
+  // or if base images repo is OCIR use OCIR default image values
   public static final String FMWINFRA_IMAGE_NAME
       = BASE_IMAGES_REPO + "/" + Optional.ofNullable(System.getenv("FMWINFRA_IMAGE_NAME"))
-      .orElse(OCIR_FMWINFRA_IMAGE_NAME);
+      .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_FMWINFRA_IMAGE_NAME : OCIR_FMWINFRA_IMAGE_NAME);
   public static final String FMWINFRA_IMAGE_TAG = Optional.ofNullable(System.getenv("FMWINFRA_IMAGE_TAG"))
-      .orElse(OCIR_FMWINFRA_IMAGE_TAG);
+      .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_FMWINFRA_IMAGE_TAG : OCIR_FMWINFRA_IMAGE_TAG);
+
+  // Get DB_IMAGE_NAME/DB_IMAGE_TAG from env var, if its not provided and
+  // if base images repo is OCR use OCR default image values
+  // or if base images repo is OCIR use OCIR default image values
   public static final String DB_IMAGE_NAME
       = BASE_IMAGES_REPO + "/" + Optional.ofNullable(System.getenv("DB_IMAGE_NAME"))
-      .orElse(OCIR_DB_IMAGE_NAME);
+      .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_DB_IMAGE_NAME : OCIR_DB_IMAGE_NAME);
   public static final String DB_IMAGE_TAG = Optional.ofNullable(System.getenv("DB_IMAGE_TAG"))
-      .orElse(OCIR_DB_IMAGE_TAG);
+      .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_DB_IMAGE_TAG : OCIR_DB_IMAGE_TAG);
+
+  // For kind, replace repo name in image name with KIND_REPO, otherwise use the actual image name
+  // For example, image container-registry.oracle.com/middleware/weblogic:12.2.1.4 will be pushed/used as
+  // localhost:5000/middleware/weblogic:12.2.1.4 in kind and in non-kind cluster it will be used as is.
   public static final String WEBLOGIC_IMAGE_TO_USE_IN_SPEC = KIND_REPO != null ? KIND_REPO
       + (WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
       : WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
@@ -105,6 +129,8 @@ public interface TestConstants {
       + (FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1);
   public static final String DB_IMAGE_TO_USE_IN_SPEC = KIND_REPO
       + (DB_IMAGE_NAME + ":" + DB_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1);
+
+  // ----------------------------- base images constants - end -------------------
 
   // jenkins constants
   public static final String BUILD_ID = Optional.ofNullable(System.getenv("BUILD_ID"))

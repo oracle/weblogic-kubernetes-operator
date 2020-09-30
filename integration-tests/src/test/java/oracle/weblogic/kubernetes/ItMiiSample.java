@@ -143,11 +143,13 @@ public class ItMiiSample {
     logger.info("Setting up docker secrets");
 
     // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
         OCIR_SECRET_NAME, domainNamespace);
 
     // create ocr/ocir docker registry secret to pull the db images
+    // this secret is used only for non-kind cluster
     createSecretForBaseImages(dbNamespace);
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
         BASE_IMAGES_REPO_SECRET, dbNamespace);

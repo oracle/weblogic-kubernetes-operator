@@ -26,7 +26,6 @@ import org.awaitility.core.ConditionFactory;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -88,9 +87,10 @@ public class BuildApplication {
   public static Path buildApplication(Path appSrcPath, Map<String, String> antParams,
                                       String antTargets, String archiveDistDir, String namespace) {
     final LoggingFacade logger = getLogger();
-    if (USE_SECRET_TO_PULL_BASE_IMAGES) {
-      createSecretForBaseImages(namespace);
-    }
+
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(namespace);
+
 
     // Path of temp location for application source directory
     Path tempAppPath = Paths.get(WORK_DIR, "j2eeapplications", appSrcPath.getFileName().toString());
@@ -211,10 +211,8 @@ public class BuildApplication {
                 .imagePullPolicy("IfNotPresent")
                 .addCommandItem("sleep")
                 .addArgsItem("600")))
-            .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES
-                ? Arrays.asList(new V1LocalObjectReference()
-                .name(BASE_IMAGES_REPO_SECRET))
-                : null)) // the persistent volume claim used by the test
+            .imagePullSecrets(Arrays.asList(new V1LocalObjectReference()
+                .name(BASE_IMAGES_REPO_SECRET)))) // the persistent volume claim used by the test
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
         .kind("Pod");

@@ -65,7 +65,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -179,9 +178,9 @@ public class ItConfigDistributionStrategy {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    if (USE_SECRET_TO_PULL_BASE_IMAGES) {
-      createSecretForBaseImages(domainNamespace);
-    }
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(domainNamespace);
+
 
     //start two MySQL database instances
     createMySQLDB("mysqldb-1", "root", "root123", 0, domainNamespace, null);
@@ -831,10 +830,9 @@ public class ItConfigDistributionStrategy {
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
-            .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
+            .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET))
-                : null)
+                    .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))

@@ -36,7 +36,6 @@ import org.awaitility.core.ConditionFactory;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
@@ -81,9 +80,9 @@ public class DeployUtil {
                                      String password, String targets, Path archivePath, String namespace) {
     final LoggingFacade logger = getLogger();
 
-    if (USE_SECRET_TO_PULL_BASE_IMAGES) {
-      createSecretForBaseImages(namespace);
-    }
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(namespace);
+
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("domain", "properties"),
@@ -191,10 +190,9 @@ public class DeployUtil {
                             .name("deploy-job-cm-volume") // deployment scripts volume
                             .configMap(new V1ConfigMapVolumeSource()
                                 .name(deployScriptConfigMap)))) //config map containing deployment scripts
-                    .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
+                    .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))
-                        : null))));
+                            .name(BASE_IMAGES_REPO_SECRET)))))); // this secret is used only for non-kind cluster
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create deploy Job");
 

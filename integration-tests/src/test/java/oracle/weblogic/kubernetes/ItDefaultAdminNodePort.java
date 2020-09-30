@@ -102,6 +102,7 @@ class ItDefaultAdminNodePort {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials

@@ -106,6 +106,7 @@ class ItPodsShutdownOption {
     miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     // create docker registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
     createOcirRepoSecret(domainNamespace);
 

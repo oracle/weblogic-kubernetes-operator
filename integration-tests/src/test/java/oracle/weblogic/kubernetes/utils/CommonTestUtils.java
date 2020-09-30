@@ -122,7 +122,6 @@ import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_URL;
-import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
@@ -364,6 +363,7 @@ public class CommonTestUtils {
     logger.info("operator image name {0}", operatorImage);
 
     // Create Docker registry secret in the operator namespace to pull the image from repository
+    // this secret is used only for non-kind cluster
     logger.info("Creating Docker registry secret in namespace {0}", opNamespace);
     createOcirRepoSecret(opNamespace);
 
@@ -686,6 +686,7 @@ public class CommonTestUtils {
     LoggingFacade logger = getLogger();
 
     // Create Docker registry secret in the apache namespace to pull the Apache webtier image from repository
+    // this secret is used only for non-kind cluster
     if (!secretExists(OCIR_SECRET_NAME, apacheNamespace)) {
       logger.info("Creating Docker registry secret in namespace {0}", apacheNamespace);
       createOcirRepoSecret(apacheNamespace);
@@ -2829,8 +2830,8 @@ public class CommonTestUtils {
                                String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
 
     LoggingFacade logger = getLogger();
-    logger.info("Running Kubernetes job to create domain for image: {1}, USE_SECRET_TO_PULL_BASE_IMAGES: {2} "
-        + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image, USE_SECRET_TO_PULL_BASE_IMAGES,
+    logger.info("Running Kubernetes job to create domain for image: {1}: {2} "
+        + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image,
         pvName, pvcName, domainScriptCM, namespace);
     V1Job jobBody = new V1Job()
         .metadata(
@@ -2879,10 +2880,9 @@ public class CommonTestUtils {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptCM)))) //config map containing domain scripts
-                    .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
+                    .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))
-                        : null))));
+                            .name(BASE_IMAGES_REPO_SECRET))))));  // this secret is used only for non-kind cluster
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create Job");
 

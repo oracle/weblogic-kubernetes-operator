@@ -137,6 +137,7 @@ class ItMiiMultiModel {
         opNamespace, domainNamespace);
     installAndVerifyOperator(opNamespace, domainNamespace);
 
+    // this secret is used only for non-kind cluster
     logger.info("Create the repo secret {0} to pull the image", OCIR_SECRET_NAME);
     createOcirRepoSecret(domainNamespace);
 

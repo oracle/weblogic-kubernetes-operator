@@ -45,7 +45,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -123,7 +122,7 @@ public class ItJrfDomainInPV {
     assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
         RCUSCHEMAPREFIX, dbNamespace, 0, dbUrl),
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbUrl %s, isUseSecret %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, USE_SECRET_TO_PULL_BASE_IMAGES));
+        + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, jrfDomainNamespace);
@@ -154,9 +153,9 @@ public class ItJrfDomainInPV {
     final String pvcName = domainUid + "-pvc";
 
     // create pull secrets for jrfDomainNamespace when running in non Kind Kubernetes cluster
-    if (USE_SECRET_TO_PULL_BASE_IMAGES) {
-      createSecretForBaseImages(jrfDomainNamespace);
-    }
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(jrfDomainNamespace);
+
 
     // create JRF domain credential secret
     createSecretWithUsernamePassword(wlSecretName, jrfDomainNamespace,
@@ -220,10 +219,9 @@ public class ItJrfDomainInPV {
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
-            .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
+            .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET))
-                : null)
+                    .name(BASE_IMAGES_REPO_SECRET)))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(jrfDomainNamespace))

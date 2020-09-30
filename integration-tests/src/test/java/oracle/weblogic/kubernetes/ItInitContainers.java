@@ -131,6 +131,7 @@ class ItInitContainers {
     dockerLoginAndPushImageToRegistry(miiImage);
 
     // create docker registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
     createOcirRepoSecret(domainNamespace);
 

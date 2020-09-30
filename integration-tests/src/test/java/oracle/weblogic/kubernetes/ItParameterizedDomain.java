@@ -80,7 +80,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -618,6 +617,7 @@ class ItParameterizedDomain {
     dockerLoginAndPushImageToRegistry(miiImage);
 
     // create docker registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
     createOcirRepoSecret(domainNamespace);
 
@@ -721,9 +721,8 @@ class ItParameterizedDomain {
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    if (USE_SECRET_TO_PULL_BASE_IMAGES) {
-      createSecretForBaseImages(domainNamespace);
-    }
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(domainNamespace);
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
@@ -812,10 +811,9 @@ class ItParameterizedDomain {
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
-            .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
+            .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET))
-                : null)
+                    .name(BASE_IMAGES_REPO_SECRET)))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
@@ -1083,10 +1081,9 @@ class ItParameterizedDomain {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptCM)))) //config map containing domain scripts
-                    .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Arrays.asList(
+                    .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))
-                        : null))));
+                            .name(BASE_IMAGES_REPO_SECRET))))));  // this secret is used only for non-kind cluster
 
     String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
 
@@ -1144,6 +1141,7 @@ class ItParameterizedDomain {
     dockerLoginAndPushImageToRegistry(domainInImageWithWDTImage);
 
     // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
 
     // create the domain custom resource

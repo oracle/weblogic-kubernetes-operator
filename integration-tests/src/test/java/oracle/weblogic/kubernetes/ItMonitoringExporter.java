@@ -1379,6 +1379,7 @@ class ItMonitoringExporter {
                                             String domainHomeSource,
                                             int replicaCount) {
     // create docker registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
     // create secret for admin credentials
     logger.info("Create docker registry secret in namespace {0}", namespace);
     createOcirRepoSecret(namespace);

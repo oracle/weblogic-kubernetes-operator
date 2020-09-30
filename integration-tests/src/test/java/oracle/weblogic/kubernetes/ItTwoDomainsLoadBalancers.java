@@ -102,7 +102,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.USE_SECRET_TO_PULL_BASE_IMAGES;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -141,7 +140,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithTLSCertKey;
@@ -796,10 +794,8 @@ public class ItTwoDomainsLoadBalancers {
 
     for (int i = 0; i < numberOfDomains; i++) {
 
-      if (USE_SECRET_TO_PULL_BASE_IMAGES) {
-        // create pull secrets for WebLogic image
-        createSecretForBaseImages(domainNamespaces.get(i));
-      }
+      // this secret is used only for non-kind cluster
+      createSecretForBaseImages(domainNamespaces.get(i));
 
       t3ChannelPort = getNextFreePort(32001, 32700);
       logger.info("t3ChannelPort for domain {0} is {1}", domainUids.get(i), t3ChannelPort);
@@ -979,10 +975,9 @@ public class ItTwoDomainsLoadBalancers {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptConfigMapName))))  //ConfigMap containing domain scripts
-                    .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Collections.singletonList(
+                    .imagePullSecrets(Collections.singletonList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))
-                        : null))));
+                            .name(BASE_IMAGES_REPO_SECRET))))));  // this secret is used only for non-kind cluster
 
     assertNotNull(jobBody.getMetadata());
     logger.info("Running a job {0} to create a domain on PV for domain {1} in namespace {2}",
@@ -1211,10 +1206,9 @@ public class ItTwoDomainsLoadBalancers {
             .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullSecrets(USE_SECRET_TO_PULL_BASE_IMAGES ? Collections.singletonList(
+            .imagePullSecrets(Collections.singletonList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET))
-                : null)
+                    .name(BASE_IMAGES_REPO_SECRET)))  // this secret is used only for non-kind cluster
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
@@ -1265,10 +1259,9 @@ public class ItTwoDomainsLoadBalancers {
     String pvName = "default-sharing-pv";
     String pvcName = "default-sharing-pvc";
 
-    if (USE_SECRET_TO_PULL_BASE_IMAGES) {
-      // create pull secrets for WebLogic image
-      createOcrRepoSecret(defaultNamespace);
-    }
+    // create pull secrets for WebLogic image
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(defaultNamespace);
 
     // create WebLogic credentials secret
     createSecretWithUsernamePassword(wlSecretName, defaultNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
