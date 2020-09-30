@@ -63,8 +63,7 @@ public interface TestConstants {
   // for others push to REPO_REGISTRY if REPO_REGISTRY env var is provided,
   // if its not provided (like local runs) don't push the domain images to any repo
   public static final String DOMAIN_IMAGES_REPO = Optional.ofNullable(KIND_REPO)
-      .orElse(Optional.ofNullable(System.getenv("REPO_REGISTRY") + "/weblogick8s/")
-          .orElse(""));
+      .orElse(System.getenv("REPO_REGISTRY") != null ? System.getenv("REPO_REGISTRY") + "/weblogick8s/" : "");
 
   // OCR constants
   public static final String OCR_SECRET_NAME = "ocr-secret";
