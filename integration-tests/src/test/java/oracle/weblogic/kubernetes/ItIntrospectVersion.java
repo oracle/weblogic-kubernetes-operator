@@ -932,7 +932,6 @@ public class ItIntrospectVersion {
 
   }
 
-
   /**
    * Create a WebLogic domain on a persistent volume by doing the following.
    * Create a configmap containing WLST script and property file.
@@ -1028,7 +1027,7 @@ public class ItIntrospectVersion {
           return health;
         });
   }
-  
+
   /**
    * Uninstall Nginx.
    * The cleanup framework does not uninstall Nginx release.
