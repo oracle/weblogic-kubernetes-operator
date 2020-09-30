@@ -154,7 +154,7 @@ class ItIstioMiiDomain {
     Domain domain = createDomainResource(domainUid,
                                       domainNamespace,
                                       adminSecretName,
-        OCIR_SECRET_NAME,
+                                      OCIR_SECRET_NAME,
                                       encryptionSecretName,
                                       replicaCount,
                               MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);

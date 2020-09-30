@@ -84,7 +84,7 @@ public interface TestConstants {
   public static final String OCR_DB_IMAGE_TAG = "12.2.0.1-slim";
 
   // ----------------------------- base images constants ---------------------
-  // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default
+  // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default to pull base images
   public static final String BASE_IMAGES_REPO = Optional.ofNullable(System.getenv("BASE_IMAGES_REPO"))
       .orElse(OCIR_DEFAULT);
   // Use OCR secret name if OCR is used for base images, if not use OCIR secret name
