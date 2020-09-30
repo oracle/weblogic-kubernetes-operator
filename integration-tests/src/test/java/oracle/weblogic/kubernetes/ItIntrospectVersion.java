@@ -38,7 +38,6 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
@@ -77,7 +76,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_UPDATE_IMAG
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
@@ -101,6 +99,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
@@ -863,12 +862,11 @@ public class ItIntrospectVersion {
    * From: "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4" to
    * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
    * Verify all the pods are restarted and back to ready state
-   * Verify the admin server is accessible and cluster member is healthy
+   * Verify the admin server is accessible and cluster members are healthy
    */
   @Order(5)
   @Test
   @DisplayName("Verify server pods are restarted by updating image name")
-  @Slow
   public void testUpdateImageName() {
 
     final String domainNamespace = introDomainNamespace;
@@ -890,7 +888,7 @@ public class ItIntrospectVersion {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
-    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+    assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, managedServerPodNamePrefix,
@@ -898,7 +896,7 @@ public class ItIntrospectVersion {
 
     //print out the original image name
     String imageName = domain1.getSpec().getImage();
-    logger.info("Original domain image name is: {0}", imageName);
+    logger.info("Currently the image name used for the domain is: {0}", imageName);
 
     //change image name to imageUpdate
     StringBuffer patchStr = null;
@@ -910,14 +908,14 @@ public class ItIntrospectVersion {
         .append("\"}]");
     logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
 
-    boolean cmPatched = patchDomainResource(domainUid, domainNamespace, patchStr);
-    assertTrue(cmPatched, "patchDomainCustomResource(imageUpdate) failed");
+    assertTrue(patchDomainResource(domainUid, domainNamespace, patchStr),
+        "patchDomainCustomResource(imageUpdate) failed");
 
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource after patching");
-    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+    assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
 
     //print out image name in the new patched domain
     image = domain1.getSpec().getImage();
@@ -1030,27 +1028,7 @@ public class ItIntrospectVersion {
           return health;
         });
   }
-
-  private Map getPodsWithTimeStamps(String domainNamespace, String adminServerPodName,
-       String managedServerPrefix, int replicaCount) {
-
-    // create the map with server pods and their original creation timestamps
-    podsWithTimeStamps = new LinkedHashMap<>();
-    podsWithTimeStamps.put(adminServerPodName,
-        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
-            String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
-                adminServerPodName, domainNamespace)));
-
-    for (int i = 1; i <= replicaCount; i++) {
-      String managedServerPodName = managedServerPrefix + i;
-      podsWithTimeStamps.put(managedServerPodName,
-          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
-              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
-                  managedServerPodName, domainNamespace)));
-    }
-    return podsWithTimeStamps;
-  }
-
+  
   /**
    * Uninstall Nginx.
    * The cleanup framework does not uninstall Nginx release.
