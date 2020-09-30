@@ -52,6 +52,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
+import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -98,6 +99,7 @@ class ItManageNs {
   private static String opNamespace = null;
   private static String op2Namespace = null;
   private static String op3Namespace = null;
+  private static String op4Namespace = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static String domain3Namespace = null;
@@ -116,6 +118,7 @@ class ItManageNs {
 
   private HelmParams opHelmParams1;
   private HelmParams opHelmParams2;
+  private HelmParams opHelmParams4;
   private static String adminSecretName = "weblogic-credentials-itmanagens";
   private static String encryptionSecretName = "encryptionsecret-itmanagens";
   private static Map<String, String> labels1;
@@ -135,7 +138,7 @@ class ItManageNs {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(7) List<String> namespaces) {
+  public static void initAll(@Namespaces(8) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -167,10 +170,15 @@ class ItManageNs {
     assertNotNull(namespaces.get(5), "Namespace list is null");
     op2Namespace = namespaces.get(5);
 
-    // get a unique operator 2 namespace
+    // get a unique operator 3 namespace
     logger.info("Getting a unique namespace for operator 3");
     assertNotNull(namespaces.get(6), "Namespace list is null");
     op3Namespace = namespaces.get(6);
+
+    // get a unique operator 4 namespace
+    logger.info("Getting a unique namespace for operator 4");
+    assertNotNull(namespaces.get(7), "Namespace list is null");
+    op4Namespace = namespaces.get(7);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
@@ -222,6 +230,7 @@ class ItManageNs {
     //delete operator
     uninstallOperator(opHelmParams1);
     uninstallOperator(opHelmParams2);
+    uninstallOperator(opHelmParams4);
 
   }
 
@@ -306,6 +315,48 @@ class ItManageNs {
     checkUpgradeFailedToAddNSManagedByAnotherOperator();
   }
 
+  /**
+   * Create namespace ns1 with no label
+   * Install the Operator successfully and verify it is deployed successfully
+   * with domainNamespaceSelectionStrategy=LabelSelector,
+   * and domainNamespaceLabelSelector=label1 and enableRbac=false.
+   * Add label1 to ns1 and verify domain can't be started
+   * Call upgrade operator with reuse values to enable management for ns1
+   * Deploy a custom domain resource in the namespace ns1 with label1
+   * and verify all server pods in the domain were created and ready.
+   * Verify operator is able to manage this domain by scaling.
+   */
+  @Test
+  @Order(3)
+  @DisplayName("install operator helm chart and domain, "
+      + " with enableClusterRoleBinding")
+  public void testSwitchRbac() {
+    String manageByLabelDomainNS = domain1Namespace + "test1";
+    String manageByLabelDomainUid = domain1Uid + "test1";
+    assertDoesNotThrow(() -> createNamespace(manageByLabelDomainNS));
+    opHelmParams4 = installOperatorHelmChart(OPERATOR_RELEASE_NAME,
+        op4Namespace, "LabelSelector",
+        "mytest", false);
+    Map<String, String> labels = new HashMap<>();
+    labels.put("mytest", manageByLabelDomainUid);
+    assertDoesNotThrow(() -> addLabelsToNamespace(manageByLabelDomainNS, labels));
+    //verify domain can't be started because operator does not have permission to manage it
+    createSecrets(manageByLabelDomainNS);
+    checkPodNotCreated(manageByLabelDomainUid + adminServerPrefix, manageByLabelDomainUid, manageByLabelDomainNS);
+    deleteDomainCrd(manageByLabelDomainNS, manageByLabelDomainUid);
+    //upgrade operator and start domain
+    int externalRestHttpsPort = getServiceNodePort(op4Namespace, "external-weblogic-operator-svc");
+
+    OperatorParams opParams = new OperatorParams()
+        .externalRestEnabled(true)
+        .externalRestHttpsPort(externalRestHttpsPort)
+        .helmParams(opHelmParams4);
+
+    assertTrue(upgradeAndVerifyOperator(op4Namespace, opParams));
+    assertTrue(startDomain(manageByLabelDomainNS, manageByLabelDomainUid));
+    checkOperatorCanScaleDomain(op4Namespace, manageByLabelDomainUid);
+  }
+
   private void checkUpgradeFailedToAddNSManagedByAnotherOperator() {
     //upgrade operator1 to replace managing domains using RegExp namespaces
     // for ns names starting from weblogic, there one of domains
@@ -351,6 +402,15 @@ class ItManageNs {
   }
 
   private void addExtraDomainByAddingLabelToNS(Map<String, String> labels, String domainNS, String domainUid) {
+    deleteDomainCrd(domainNS, domainUid);
+
+    //switch to the label1, managed by operator and verify domain is started and can be managed by operator.
+    setLabelToNamespace(domainNS, labels);
+    assertTrue(startDomain(domainNS, domainUid));
+    checkOperatorCanScaleDomain(opNamespace, domainUid);
+  }
+
+  private void deleteDomainCrd(String domainNS, String domainUid) {
     //clean up domain resources in namespace and set namespace to label , managed by operator
     logger.info("deleting domain custom resource {0}", domainUid);
     assertTrue(deleteDomainCustomResource(domainUid, domainNS));
@@ -365,11 +425,6 @@ class ItManageNs {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(domainDoesNotExist(domainUid, DOMAIN_VERSION, domainNS));
-
-    //switch to the label1, managed by operator and verify domain is started and can be managed by operator.
-    setLabelToNamespace(domainNS, labels);
-    assertTrue(startDomain(domainNS, domainUid));
-    checkOperatorCanScaleDomain(opNamespace, domainUid);
   }
 
   private void installAndVerifyOperatorCanManageDomainByLabelSelector(String manageByLabelDomain1NS,
@@ -380,7 +435,7 @@ class ItManageNs {
     // domainNamespaces set to domain4 will be ignored
     opHelmParams1 = installOperatorHelmChart(OPERATOR_RELEASE_NAME,
         opNamespace, "LabelSelector",
-        OPERATOR_RELEASE_NAME, manageByLabelDomain1NS);
+        OPERATOR_RELEASE_NAME, true, manageByLabelDomain1NS);
 
     logger.info("Installing and verifying domain1");
     createSecrets(manageByLabelDomain1NS);
@@ -436,7 +491,7 @@ class ItManageNs {
     try {
       HelmParams opHelmParams3 = installOperatorHelmChart(OPERATOR_RELEASE_NAME,
           op3Namespace, "List",
-          null, domainNamespace);
+          null, true, domainNamespace);
       assertNull(opHelmParams3, "Operator helm chart sharing same NS with other operator did not fail");
     } catch (org.opentest4j.AssertionFailedError ex) {
       //expecting to fail
@@ -491,7 +546,7 @@ class ItManageNs {
     // install and verify operator with domainNsSelectStrategy=RegExp to manage domains with namespaces names,
     // starting from test
     opHelmParams2 = installOperatorHelmChart(OPERATOR_RELEASE_NAME,
-        op2Namespace, "RegExp", "^test", domain3Namespace);
+        op2Namespace, "RegExp", "^test", true, domain3Namespace);
 
     logger.info("Installing and verifying domain1");
     createSecrets(manageByExp1NS);
@@ -630,12 +685,14 @@ class ItManageNs {
    *
    * @param operNamespace the operator namespace in which the operator will be installed
    * @param opReleaseName the operator release name
+   * @param enableClusterRoleBinding operator cluster role binding
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
   private static HelmParams installOperatorHelmChart(String opReleaseName, String operNamespace,
                                                      String domainNsSelectionStrategy,
                                                      String domainNsSelector,
+                                                     boolean enableClusterRoleBinding,
                                                      String... domainNamespace) {
     LoggingFacade logger = getLogger();
 
@@ -678,6 +735,7 @@ class ItManageNs {
         .helmParams(opHelmParams)
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(java.util.Arrays.asList(domainNamespace))
+        .enableClusterRoleBinding(enableClusterRoleBinding)
         .serviceAccount(opReleaseName + "-sa");
     if (domainNsSelectionStrategy != null) {
       opParams.domainNamespaceSelectionStrategy(domainNsSelectionStrategy);
