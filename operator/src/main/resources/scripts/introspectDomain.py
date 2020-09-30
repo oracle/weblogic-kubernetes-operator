@@ -202,7 +202,8 @@ class OfflineWlstEnv(object):
       try:
         # Only export if it is not there already (i.e. have not been copied from the secrets
         if not os.path.exists('/tmp/opsswallet/ewallet.p12'):
-          opss_passphrase = self.getEnv('OPSS_PASSPHRASE')
+          opss_passphrase_file = self.getEnv('OPSS_KEY_PASSPHRASE')
+          opss_passphrase = self.readFile(opss_passphrase_file).strip()
           os.mkdir('/tmp/opsswallet')
           exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml', \
                               keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)
@@ -924,9 +925,9 @@ class MII_DomainConfigGenerator(Generator):
     # all the many policies files
     packcmd = "tar -pczf /tmp/domain.tar.gz %s/config/config.xml %s/config/jdbc/ %s/config/jms %s/config/coherence " \
               "%s/config/diagnostics %s/config/startup %s/config/configCache %s/config/nodemanager " \
-              "%s/config/security %s" % (
+              "%s/config/security %s/config/fmwconfig/servers/*/logging.xml %s" % (
               self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home,
-              self.domain_home, self.domain_home, self.domain_home, self.domain_home, empath)
+              self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home, empath)
     os.system(packcmd)
     domain_data = self.env.readBinaryFile("/tmp/domain.tar.gz")
     b64 = ""
