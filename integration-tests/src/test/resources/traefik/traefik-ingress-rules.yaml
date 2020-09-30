@@ -112,3 +112,61 @@ spec:
     - kind: Service
       name: @domain2uid@-admin-server
       port: 7001
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: @domain1uid@-traefik-pathrouting
+  namespace: @NS@
+spec:
+  routes:
+  - kind: Rule
+    match: PathPrefix(`/domain1`)
+    middlewares:
+    - name: middleware-domain1
+      namespace: @NS@
+    services:
+    - kind: Service
+      name: @domain1uid@-cluster-cluster-1
+      port: 8001
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: middleware-domain1
+  namespace: @NS@
+spec:
+  replacePathRegex:
+    regex: ^/domain1(.*)
+    replacement: /$1
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: @domain2uid@-traefik-pathrouting
+  namespace: @NS@
+spec:
+  routes:
+  - kind: Rule
+    match: PathPrefix(`/domain2`)
+    middlewares:
+    - name: middleware-domain2
+      namespace: @NS@
+    services:
+    - kind: Service
+      name: @domain2uid@-cluster-cluster-1
+      port: 8001
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: middleware-domain2
+  namespace: @NS@
+spec:
+  replacePathRegex:
+    regex: ^/domain2(.*)
+    replacement: /$1
