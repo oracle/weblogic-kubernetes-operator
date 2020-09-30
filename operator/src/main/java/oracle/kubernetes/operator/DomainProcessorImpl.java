@@ -190,12 +190,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     steps.add(new BeforeAdminServiceStep(null));
     steps.add(PodHelper.createAdminPodStep(null));
 
-    // Reset introspection failure count if any
-    Optional.ofNullable(info)
-        .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getStatus)
-        .ifPresent(a -> a.resetIntrospectJobFailureCount());
-
     Domain dom = info.getDomain();
     AdminServer adminServer = dom.getSpec().getAdminServer();
     AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
@@ -683,7 +677,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
           .map(DomainStatus::getIntrospectJobFailureCount)
-          .orElse(1);
+          .orElse(0);
 
       String existingError = Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)

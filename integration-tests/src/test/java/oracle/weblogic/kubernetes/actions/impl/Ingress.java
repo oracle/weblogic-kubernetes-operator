@@ -152,6 +152,46 @@ public class Ingress {
   }
 
   /**
+   * Create an ingress in specified namespace.
+   * @param ingressName ingress name
+   * @param namespace namespace in which the ingress will be created
+   * @param annotations annotations of the ingress
+   * @param ingressRules a list of ingress rules
+   * @param tlsList list of ingress tls
+   * @throws ApiException if Kubernetes API call fails
+   */
+  public static void createIngress(String ingressName,
+                                   String namespace,
+                                   Map<String, String> annotations,
+                                   List<NetworkingV1beta1IngressRule> ingressRules,
+                                   List<NetworkingV1beta1IngressTLS> tlsList) throws ApiException {
+
+    // set the ingress
+    NetworkingV1beta1Ingress ingress = new NetworkingV1beta1Ingress()
+        .apiVersion(INGRESS_API_VERSION)
+        .kind(INGRESS_KIND)
+        .metadata(new V1ObjectMeta()
+            .name(ingressName)
+            .namespace(namespace)
+            .annotations(annotations))
+        .spec(new NetworkingV1beta1IngressSpec()
+            .rules(ingressRules));
+
+    if (tlsList != null) {
+      NetworkingV1beta1IngressSpec spec = ingress.getSpec().tls(tlsList);
+      ingress.setSpec(spec);
+    }
+
+    // create the ingress
+    try {
+      Kubernetes.createIngress(namespace, ingress);
+    } catch (ApiException apex) {
+      getLogger().severe("got ApiException while calling createIngress: {0}", apex.getResponseBody());
+      throw apex;
+    }
+  }
+
+  /**
    * List all of the ingresses in the specified namespace.
    *
    * @param namespace the namespace to which the ingresses belong
