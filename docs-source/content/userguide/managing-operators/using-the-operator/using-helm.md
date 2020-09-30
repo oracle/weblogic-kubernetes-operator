@@ -76,6 +76,7 @@ This section describes the details of the operator Helm chart's available config
 
 ##### `serviceAccount`
 Specifies the name of the service account in the operator's namespace that the operator will use to make requests to the Kubernetes API server. You are responsible for creating the service account.
+The `helm install` or `helm upgrade` command with a non-existing service account results in a Helm chart validation error.
 
 Defaults to `default`.
 
@@ -555,40 +556,27 @@ Error: UPGRADE FAILED: Service "external-weblogic-operator-svc" is invalid: spec
 
 #### Installing an operator and assigning it a service account that doesn't exist
 
-The `helm install` eventually times out and creates a failed release.
+The following `helm install` command fails because it tries to install an operator release with a non-existing service account `op2-sa`.
 ```
-$ helm install kubernetes/charts/weblogic-operator --name op2 --namespace myuser-op2-ns --values o24.yaml --wait --no-hooks
-Error: release op2 failed: timed out waiting for the condition
-
-kubectl logs -n kube-system tiller-deploy-f9b8476d-mht6v
-...
-[kube] 2018/12/06 21:16:54 Deployment is not ready: myuser-op2-ns/weblogic-operator
-...
+$ helm install op2 kubernetes/charts/weblogic-operator --namespace myuser-op2-ns --set serviceAccount=op2-sa --wait --no-hooks
 ```
 
+The output contains the following error message.
+```
+ServiceAccount op2-sa not found in namespace myuser-op2-ns
+```
 To recover:
 
-- `helm delete --purge` the failed release.
 - Create the service account.
 - `helm install` again.
 
 #### Upgrading an operator and assigning it a service account that doesn't exist
 
-The `helm upgrade` succeeds and changes the service account on the existing operator deployment, but the existing deployment's pod doesn't get modified, so it keeps running. If the pod is deleted, the deployment creates another one using the OLD service account. However, there's an error in the deployment's status section saying that the service account doesn't exist.
-```
-lastTransitionTime: 2018-12-06T23:19:26Z
-lastUpdateTime: 2018-12-06T23:19:26Z
-message: 'pods "weblogic-operator-88bbb5896-" is forbidden: error looking up
-service account myuser-op2-ns/no-such-sa2: serviceaccount "no-such-sa2" not found'
-reason: FailedCreate
-status: "True"
-type: ReplicaFailure
-```
+The `helm upgrade` with a non-existing service account fails with the same error message as mentioned in the previous section, and the existing operator deployment stays unchanged.
 
 To recover:
 
 - Create the service account.
-- `helm rollback`
 - `helm upgrade` again.
 
 #### Installing an operator and having it manage a domain namespace that doesn't exist
