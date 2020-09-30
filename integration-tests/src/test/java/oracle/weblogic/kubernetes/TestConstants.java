@@ -41,13 +41,13 @@ public interface TestConstants {
 
   // ocir constants
   public static final String OCIR_DEFAULT = "phx.ocir.io";
-  public static final String OCIR_REGISTRY = Optional.ofNullable(System.getenv("REPO_REGISTRY"))
+  public static final String OCIR_REGISTRY = Optional.ofNullable(System.getenv("OCIR_REGISTRY"))
       .orElse(OCIR_DEFAULT);
-  public static final String OCIR_USERNAME = Optional.ofNullable(System.getenv("REPO_USERNAME"))
+  public static final String OCIR_USERNAME = Optional.ofNullable(System.getenv("OCIR_USERNAME"))
       .orElse(REPO_DUMMY_VALUE);
-  public static final String OCIR_PASSWORD = Optional.ofNullable(System.getenv("REPO_PASSWORD"))
+  public static final String OCIR_PASSWORD = Optional.ofNullable(System.getenv("OCIR_PASSWORD"))
       .orElse(REPO_DUMMY_VALUE);
-  public static final String OCIR_EMAIL = Optional.ofNullable(System.getenv("REPO_EMAIL"))
+  public static final String OCIR_EMAIL = Optional.ofNullable(System.getenv("OCIR_EMAIL"))
       .orElse(REPO_DUMMY_VALUE);
   public static final String OCIR_SECRET_NAME = "ocir-secret";
 
