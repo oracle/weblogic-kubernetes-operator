@@ -35,6 +35,18 @@ topology:
             Cluster: "cluster-2"
             ListenPort: 8001
 
+resources:
+    FileStore:
+        'FileStore-0':
+            Directory: '/u01/oracle/customFileStore/'
+            Target: 'admin-server'
+    JMSServer:
+        'JMSServer-0':
+            PersistentStore: 'FileStore-0'
+            Target: 'admin-server'
+            MessagesMaximum: 100000
+            BlockingSendPolicy: FIFO
+
 appDeployments:
     Application:
         myear:
