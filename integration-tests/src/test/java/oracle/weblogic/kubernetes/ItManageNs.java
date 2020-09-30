@@ -331,14 +331,14 @@ class ItManageNs {
   @DisplayName("install operator helm chart and domain, "
       + " with enableClusterRoleBinding")
   public void testSwitchRbac() {
-    String manageByLabelDomainNS = domain1Namespace + "test1";
-    String manageByLabelDomainUid = domain1Uid + "test1";
+    String manageByLabelDomainNS = domain1Namespace + "test4";
+    String manageByLabelDomainUid = domain1Uid + "test4";
     assertDoesNotThrow(() -> createNamespace(manageByLabelDomainNS));
     opHelmParams4 = installOperatorHelmChart(OPERATOR_RELEASE_NAME,
         op4Namespace, "LabelSelector",
-        "mytest", false);
+        "mytest4", false);
     Map<String, String> labels = new HashMap<>();
-    labels.put("mytest", manageByLabelDomainUid);
+    labels.put("mytest4", manageByLabelDomainUid);
     assertDoesNotThrow(() -> addLabelsToNamespace(manageByLabelDomainNS, labels));
     //verify domain can't be started because operator does not have permission to manage it
     createSecrets(manageByLabelDomainNS);
