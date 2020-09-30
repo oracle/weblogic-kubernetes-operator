@@ -172,10 +172,12 @@ function scanAndSearchImageList {
       imageId=$(getImageId "${imageRepoTag}")
     fi
 
-    imageSize=`docker inspect ${imageId} | jq .[].Size`
-    verifyHashAndGetNodeNames ${repository} ${imageHash} ${imageSize} resultNodeName
-    if [[ -n "${kubernetesFile}" && "${resultNodeName}" == "FailedNotAvailable" ]]; then
-        continue;
+    if [ -n "${kubernetesFile}" ]; then
+      imageSize=`docker inspect ${imageId} | jq .[].Size`
+      verifyHashAndGetNodeNames ${repository} ${imageHash} ${imageSize} resultNodeName
+      if [ "${resultNodeName}" == "NotAvailableOrFailed" ]; then
+          continue;
+      fi
     fi
 
     if [ -n "$imageId" ]; then
@@ -214,10 +216,6 @@ function verifyHashAndGetNodeNames {
 
   hashMatchFailed=false
   imageNode=()
-  if [ -z "${kubernetesFile}" ]; then
-    eval $__result="FailedNotAvailable"
-    return
-  fi
 
   IFS=$'\n'
   for nodeImage in ${nodeToImageMapping[@]}; do
@@ -245,7 +243,7 @@ function verifyHashAndGetNodeNames {
 
   len=${#imageNode[@]}
   if [[ $len -lt 1  || ${hashMatchFailed} == 'true' ]]; then
-    eval $__result="FailedNotAvailable"
+    eval $__result="NotAvailableOrFailed"
   else 
     eval $__result="'$(echo "${imageNode[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')'"
   fi
