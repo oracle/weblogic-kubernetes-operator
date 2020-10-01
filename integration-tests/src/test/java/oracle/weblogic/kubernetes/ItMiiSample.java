@@ -23,30 +23,26 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -63,12 +59,11 @@ public class ItMiiSample {
   private static final String MII_SAMPLES_SCRIPT =
       "../src/integration-tests/model-in-image/run-test.sh";
 
-  private static final String OCR_SECRET_NAME = "docker-store";
   private static final String CURRENT_DATE_TIME = getDateAndTimeStamp();
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = REPO_NAME + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = REPO_NAME + "mii-" + CURRENT_DATE_TIME + "-wlsv2";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V1 = REPO_NAME + "mii-" + CURRENT_DATE_TIME + "-jrfv1";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = REPO_NAME + "mii-" + CURRENT_DATE_TIME + "-jrfv2";
+  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
+  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv2";
+  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv1";
+  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv2";
   private static final String SUCCESS_SEARCH_STRING = "Finished without errors";
 
   private static String opNamespace = null;
@@ -119,7 +114,9 @@ public class ItMiiSample {
     envMap.put("TRAEFIK_HTTP_NODEPORT", "0"); // 0-->dynamically choose the np
     envMap.put("TRAEFIK_HTTPS_NODEPORT", "0"); // 0-->dynamically choose the np
     envMap.put("WORKDIR", MII_SAMPLES_WORK_DIR);
-    envMap.put("IMAGE_PULL_SECRET_NAME", REPO_SECRET_NAME); //ocir secret
+    envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_NAME);
+    envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
+    envMap.put("IMAGE_PULL_SECRET_NAME", OCIR_SECRET_NAME); //ocir secret
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
 
     // kind cluster uses openjdk which is not supported by image tool
@@ -146,18 +143,16 @@ public class ItMiiSample {
     logger.info("Setting up docker secrets");
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
-        REPO_REGISTRY, REPO_SECRET_NAME, domainNamespace),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
-        REPO_SECRET_NAME, domainNamespace);
+        OCIR_SECRET_NAME, domainNamespace);
 
-    // create ocr docker registry secret to pull the db images
-    assertDoesNotThrow(() -> createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-        OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace),
-        String.format("createSecret failed for %s", OCR_SECRET_NAME));
+    // create ocr/ocir docker registry secret to pull the db images
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(dbNamespace);
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
-        OCR_SECRET_NAME, dbNamespace);
+        BASE_IMAGES_REPO_SECRET, dbNamespace);
   }
 
   /**
@@ -261,19 +256,19 @@ public class ItMiiSample {
   @DisplayName("Test to verify MII sample JRF initial use case")
   public void testJrfInitialUseCase() {
     String dbImageName = (KIND_REPO != null
-        ? KIND_REPO + DB_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : DB_IMAGE_NAME);
+        ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
     String jrfBaseImageName = (KIND_REPO != null
-        ? KIND_REPO + JRF_BASE_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : JRF_BASE_IMAGE_NAME);
+        ? KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : FMWINFRA_IMAGE_NAME);
 
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
     envMap.put("DB_IMAGE_NAME", dbImageName);
     envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
     envMap.put("DB_NODE_PORT", "none");
     envMap.put("BASE_IMAGE_NAME", jrfBaseImageName);
-    envMap.put("BASE_IMAGE_TAG", JRF_BASE_IMAGE_TAG);
+    envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
     envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
     envMap.put("DB_NAMESPACE", dbNamespace);
-    envMap.put("DB_IMAGE_PULL_SECRET", OCR_SECRET_NAME); //ocr secret
+    envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
     envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
 
     // run JRF use cases irrespective of WLS use cases fail/pass

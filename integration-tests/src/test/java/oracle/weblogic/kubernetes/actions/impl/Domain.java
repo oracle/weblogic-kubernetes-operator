@@ -488,7 +488,8 @@ public class Domain {
 
     logger.info("executing command {0} in admin server pod", command);
     result = exec(adminPod, null, true, "/bin/sh", "-c", command);
-    if (result.exitValue() != 0) {
+    // k8s exec api sometimes returns non-zero exit value even on success, so checking for stderr as well
+    if (result.exitValue() != 0 && !result.stderr().isEmpty()) {
       logger.info("failed to create WLDF policy rule and action");
       return false;
     }

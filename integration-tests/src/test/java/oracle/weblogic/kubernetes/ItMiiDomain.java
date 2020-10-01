@@ -20,7 +20,6 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -30,7 +29,6 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -52,6 +50,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V2;
@@ -61,18 +60,17 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_TWO_APP_WDT_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
@@ -90,9 +88,9 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExis
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceImagePatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -111,16 +109,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItMiiDomain {
 
-  private static HelmParams opHelmParams = null;
-  private static V1ServiceAccount serviceAccount = null;
-  private String serviceAccountName = null;
   private static String opNamespace = null;
-  private static String operatorImage = null;
   private static String domainNamespace = null;
   private static String domainNamespace1 = null;
   private static ConditionFactory withStandardRetryPolicy = null;
   private static ConditionFactory withQuickRetryPolicy = null;
-  private static String dockerConfigJson = "";
 
   private String domainUid = "domain1";
   private String domainUid1 = "domain2";
@@ -128,8 +121,6 @@ class ItMiiDomain {
   private String miiImageAddSecondApp = null;
   private String miiImage = null;
   private static LoggingFacade logger = null;
-
-  private static Map<String, Object> secretNameMap;
 
   /**
    * Install Operator.
@@ -184,8 +175,8 @@ class ItMiiDomain {
     final int replicaCount = 2;
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -211,7 +202,7 @@ class ItMiiDomain {
     // create the domain object
     Domain domain = createDomainResourceWithConfigMap(domainUid,
                domainNamespace, adminSecretName,
-               REPO_SECRET_NAME, encryptionSecretName,
+        OCIR_SECRET_NAME, encryptionSecretName,
                replicaCount,
                MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
 
@@ -277,8 +268,8 @@ class ItMiiDomain {
     final int replicaCount = 2;
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace1),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace1);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -296,7 +287,7 @@ class ItMiiDomain {
     Domain domain = createDomainResource(domainUid1,
                 domainNamespace1,
                 adminSecretName,
-                REPO_SECRET_NAME,
+        OCIR_SECRET_NAME,
                 encryptionSecretName,
                 replicaCount,
                 MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
@@ -535,7 +526,7 @@ class ItMiiDomain {
         "mii-image",
         MII_BASIC_WDT_MODEL_FILE,
         MII_BASIC_APP_NAME,
-        WLS_BASE_IMAGE_NAME,
+        WEBLOGIC_IMAGE_NAME,
         imageTag,
         WLS);
 
@@ -543,8 +534,8 @@ class ItMiiDomain {
     dockerLoginAndPushImageToRegistry(miiImage);
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -559,7 +550,7 @@ class ItMiiDomain {
             "weblogicenc", "weblogicnc");
 
     // create the domain object
-    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName, REPO_SECRET_NAME,
+    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, miiImage);
 
     // create model in image domain
@@ -634,13 +625,13 @@ class ItMiiDomain {
 
   private void pushImageIfNeeded(String image) {
     // push the image to a registry to make the test work in multi node cluster
-    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-      logger.info("docker login to registry {0}", REPO_REGISTRY);
-      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+    if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
+      logger.info("docker login to registry {0}", OCIR_REGISTRY);
+      assertTrue(dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD), "docker login failed");
     }
 
     // push image 
-    if (!REPO_NAME.isEmpty()) {
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry", image);
       assertTrue(dockerPush(image), String.format("docker push failed for image %s", image));
     }

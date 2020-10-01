@@ -27,7 +27,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -47,7 +46,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -58,8 +57,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
@@ -86,19 +85,14 @@ public class ItIstioCrossDomainTransaction {
   private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossdomaintransaction-domain2.properties";
   private static final String WDT_IMAGE_NAME1 = "domain1-wdt-image";
   private static final String WDT_IMAGE_NAME2 = "domain2-wdt-image";
-  private static final String WDT_APP_NAME = "txforward";
   private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/istiocrossdomaintransactiontemp";
 
-  private static HelmParams opHelmParams = null;
   private static String opNamespace = null;
-  private static String operatorImage = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static String dockerConfigJson = "";
   private String domainUid1 = "domain1";
   private String domainUid2 = "domain2";
-  private static Map<String, Object> secretNameMap;
   private final String domain1AdminServerPodName = domainUid1 + "-admin-server";
   private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
@@ -304,10 +298,11 @@ public class ItIstioCrossDomainTransaction {
     final int replicaCount = 2;
 
     // Create the repo secret to pull the image
-    createDockerRegistrySecret(domainNamespace);
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
 
     // create the domain CR
-    createDomainResource(domainUid, domainNamespace, adminSecretName, REPO_SECRET_NAME,
+    createDomainResource(domainUid, domainNamespace, adminSecretName, OCIR_SECRET_NAME,
         replicaCount, domainImage);
 
     // wait for the domain to exist
