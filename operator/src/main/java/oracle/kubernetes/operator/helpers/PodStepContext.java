@@ -237,7 +237,23 @@ public abstract class PodStepContext extends BasePodStepContext {
     return null;
   }
 
-  abstract Integer getDefaultPort();
+  /**
+   * Returns the configured listen port of the WLS instance.
+   *
+   * @return the non-SSL port of the WLS instance or null if not enabled
+   */
+  Integer getDefaultPort() {
+    return scan.getListenPort();
+  }
+
+  /**
+   * Returns the configured SSL port of the WLS instance.
+   *
+   * @return the SSL port of the WLS instance or null if not enabled
+   */
+  Integer getSSLPort() {
+    return scan.getSslListenPort();
+  }
 
   abstract String getServerName();
 
@@ -535,7 +551,9 @@ public abstract class PodStepContext extends BasePodStepContext {
           .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, hash));
 
     // Add prometheus annotations. This will overwrite any custom annotations with same name.
-    AnnotationHelper.annotateForPrometheus(metadata, getDefaultPort());
+    // Prometheus does not support "prometheus.io/scheme".  The scheme(http/https) can be set
+    // in the Prometheus Chart values yaml under the "extraScrapeConfigs:" section.
+    AnnotationHelper.annotateForPrometheus(metadata, getDefaultPort() != null ? getDefaultPort() : getSSLPort());
     return metadata;
   }
 
