@@ -55,18 +55,12 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
@@ -77,6 +71,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHost
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -100,9 +95,6 @@ public class ItIstioDomainInPV  {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-
-  private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
-  private static boolean isUseSecret = true;
 
   private final String wlSecretName = "weblogic-credentials";
   private final String domainUid = "istio-div";
@@ -147,13 +139,6 @@ public class ItIstioDomainInPV  {
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    //determine if the tests are running in Kind cluster. if true use images from Kind registry
-    if (KIND_REPO != null) {
-      String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      logger.info("Using image {0}", kindRepoImage);
-      image = kindRepoImage;
-      isUseSecret = false;
-    }
   }
 
   /**
@@ -176,10 +161,8 @@ public class ItIstioDomainInPV  {
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    if (isUseSecret) {
-      createOCRRepoSecret(domainNamespace);
-    }
-
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(domainNamespace);
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
@@ -234,12 +217,11 @@ public class ItIstioDomainInPV  {
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid) 
             .domainHomeSourceType("PersistentVolume")
-            .image(image)
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
-            .imagePullSecrets(isUseSecret ? Arrays.asList(
+            .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(OCR_SECRET_NAME))
-                : null)
+                    .name(BASE_IMAGES_REPO_SECRET)))     // this secret is used only on non-kind cluster
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
@@ -412,7 +394,7 @@ public class ItIstioDomainInPV  {
                     .restartPolicy("Never")
                     .initContainers(Arrays.asList(new V1Container()
                         .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(image)
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
                         .addArgsItem("chown -R 1000:1000 /shared")
@@ -425,7 +407,7 @@ public class ItIstioDomainInPV  {
                             .runAsUser(0L))))
                     .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
                         .name("create-weblogic-domain-onpv-container")
-                        .image(image)
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .imagePullPolicy("Always")
                         .ports(Arrays.asList(new V1ContainerPort()
                             .containerPort(7001)))
@@ -447,10 +429,9 @@ public class ItIstioDomainInPV  {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptCM)))) //config map containing domain scripts
-                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                    .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))
-                        : null))));
+                            .name(BASE_IMAGES_REPO_SECRET))))));    // this secret is used only on non-kind cluster
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create Job");
 
@@ -490,14 +471,6 @@ public class ItIstioDomainInPV  {
 
   }
 
-  /**
-   * Create secret for docker credentials.
-   *
-   * @param namespace name of the namespace in which to create secret
-   */
-  private void createOCRRepoSecret(String namespace) {
-    CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-        OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
-  }
+
 
 }

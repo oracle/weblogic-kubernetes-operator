@@ -266,11 +266,6 @@ public class PodHelper {
     }
 
     @Override
-    Integer getDefaultPort() {
-      return getAsPort();
-    }
-
-    @Override
     String getServerName() {
       return getAsName();
     }
@@ -405,11 +400,6 @@ public class PodHelper {
     @Override
     Integer getLocalAdminProtocolChannelPort() {
       return scan.getLocalAdminProtocolChannelPort();
-    }
-
-    @Override
-    Integer getDefaultPort() {
-      return scan.getListenPort();
     }
 
     @Override
