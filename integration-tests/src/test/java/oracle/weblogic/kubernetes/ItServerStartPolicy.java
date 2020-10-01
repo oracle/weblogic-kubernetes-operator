@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -48,7 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -58,7 +57,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarte
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
@@ -133,22 +132,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItServerStartPolicy {
 
-  private static V1ServiceAccount serviceAccount = null;
-  private String serviceAccountName = null;
   private static String opNamespace = null;
-  private static String operatorImage = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static String dockerConfigJson = "";
 
   private static int replicaCount = 1;
   private static final String domainUid = "mii-start-policy";
-  private StringBuffer curlString = null;
-
   private StringBuffer checkCluster = null;
   private V1Patch patch = null;
-
-  private static Map<String, Object> secretNameMap;
 
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
@@ -181,8 +172,8 @@ class ItServerStartPolicy {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
-          String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -205,7 +196,7 @@ class ItServerStartPolicy {
 
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
-        REPO_SECRET_NAME, encryptionSecretName,
+        OCIR_SECRET_NAME, encryptionSecretName,
         replicaCount, configMapName);
 
     // wait for the domain to exist
@@ -514,18 +505,18 @@ class ItServerStartPolicy {
     
     patchServerStartPolicy("/spec/managedServers/2/serverStartPolicy", 
                            "ALWAYS");
-    logger.info("Domain resource patched to start the managed server");
+    logger.info("Domain resource patched to start the second managed server in dynamic cluster");
     checkPodReadyAndServiceExists(serverPodName, 
           domainUid, domainNamespace);
-    logger.info("Config cluster managed server is RUNNING");
+    logger.info("Second managed server in dynamic cluster is RUNNING");
 
     patchServerStartPolicy("/spec/managedServers/2/serverStartPolicy", 
                            "IF_NEEDED");
-    logger.info("Domain resource patched to shutdown the managed server");
+    logger.info("Domain resource patched to shutdown the second managed server in dynamic cluster");
 
     logger.info("Wait for managed server ${0} to be shutdown", serverPodName);
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
-    logger.info("Dynamic cluster managed server shutdown success");
+    logger.info("Dynamic cluster second managed server shutdown success");
   }
 
   /**

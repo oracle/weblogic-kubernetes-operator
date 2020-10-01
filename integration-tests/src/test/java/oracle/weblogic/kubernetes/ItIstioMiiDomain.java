@@ -13,7 +13,6 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
@@ -22,7 +21,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -43,15 +41,15 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -70,23 +68,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItIstioMiiDomain {
 
-  private static HelmParams opHelmParams = null;
-  private static V1ServiceAccount serviceAccount = null;
-  private String serviceAccountName = null;
   private static String opNamespace = null;
-  private static String operatorImage = null;
   private static String domainNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
-  private static ConditionFactory withQuickRetryPolicy = null;
-  private static String dockerConfigJson = "";
 
   private String domainUid = "istio-mii";
-  private final String clusterName = "cluster-1"; // do not modify 
-  private final String adminServerName = "admin-server"; // do not modify
-  private String miiImage = null;
-  private static LoggingFacade logger = null;
+  private final String clusterName = "cluster-1"; // do not modify
 
-  private static Map<String, Object> secretNameMap;
+  // create standard, reusable retry/backoff policy
+  private static ConditionFactory withStandardRetryPolicy = null;
+  private static LoggingFacade logger = null;
 
   /**
    * Install Operator.
@@ -137,8 +127,8 @@ class ItIstioMiiDomain {
     final int replicaCount = 2;
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -164,7 +154,7 @@ class ItIstioMiiDomain {
     Domain domain = createDomainResource(domainUid,
                                       domainNamespace,
                                       adminSecretName,
-                                      REPO_SECRET_NAME,
+                                      OCIR_SECRET_NAME,
                                       encryptionSecretName,
                                       replicaCount,
                               MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);

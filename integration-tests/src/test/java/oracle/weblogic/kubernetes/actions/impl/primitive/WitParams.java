@@ -6,11 +6,12 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 import java.util.List;
 import java.util.Map;
 
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_MODEL_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_MODEL_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
+
 
 /**
  * Contains the parameters for creating a Docker image using the WebLogic Image Tool.
@@ -71,8 +72,8 @@ public class WitParams {
    * @return WIT parameters
    */
   public WitParams defaults() {
-    this.baseImageName(WLS_BASE_IMAGE_NAME)
-        .baseImageTag(WLS_BASE_IMAGE_TAG)
+    this.baseImageName(WEBLOGIC_IMAGE_NAME)
+        .baseImageTag(WEBLOGIC_IMAGE_TAG)
         .modelImageName(DEFAULT_MODEL_IMAGE_NAME)
         .modelImageTag(DEFAULT_MODEL_IMAGE_TAG)
         .domainType(WLS);
