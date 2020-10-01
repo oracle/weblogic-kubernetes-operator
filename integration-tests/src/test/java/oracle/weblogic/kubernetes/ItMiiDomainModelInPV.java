@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,7 +17,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -31,7 +29,6 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
-import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -39,7 +36,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.awaitility.core.ConditionFactory;
@@ -84,11 +80,13 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExis
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -212,56 +210,25 @@ public class ItMiiDomainModelInPV {
     logger.info("Setting up WebLogic pod to access PV");
     V1Pod pvPod = setupWebLogicPod(domainNamespace);
 
-    ExecResult exec = null;
-    try {
-      logger.info("Creating directory {0} in PV", modelMountPath + "/applications");
-      exec = Exec.exec(pvPod, null, false, "/bin/sh", "-c", "mkdir -p " + modelMountPath + "/applications");
-      if (exec.stdout() != null) {
-        logger.info("Exec stdout {0}", exec.stdout());
-      }
-      if (exec.stderr() != null) {
-        logger.info("Exec stderr {0}", exec.stderr());
-      }
-    } catch (IOException | ApiException | InterruptedException ex) {
-      logger.warning(ex.getMessage());
-    }
-    try {
-      logger.info("Creating directory {0} in PV", modelMountPath + "/model");
-      exec = Exec.exec(pvPod, null, false, "/bin/sh", "-c", "mkdir -p " + modelMountPath + "/model");
-      if (exec.stdout() != null) {
-        logger.info("Exec stdout {0}", exec.stdout());
-      }
-      if (exec.stderr() != null) {
-        logger.info("Exec stderr {0}", exec.stderr());
-      }
-    } catch (IOException | ApiException | InterruptedException ex) {
-      logger.warning(ex.getMessage());
-    }
+    logger.info("Creating directory {0} in PV", modelMountPath + "/applications");
+    execInPod(pvPod, null, true, "mkdir -p " + modelMountPath + "/applications");
 
-    try {
-      //copy the model file to PV using the temp pod - we don't have access to PVROOT in Jenkins env
-      logger.info("Copying model file {0} to pv directory {1}",
-          Paths.get(MODEL_DIR, modelFile).toString(), modelMountPath + "/model");
-      Kubernetes.copyFileToPod(domainNamespace, pvPod.getMetadata().getName(), null,
-          Paths.get(MODEL_DIR, modelFile), Paths.get(modelMountPath + "/model", modelFile));
-    } catch (IOException | ApiException ex) {
-      logger.warning(ex.getMessage());
-    }
-    try {
-      logger.info("Copying application file {0} to pv directory {1}",
-          clusterViewAppPath.toString(), modelMountPath + "/applications");
-      Kubernetes.copyFileToPod(domainNamespace, pvPod.getMetadata().getName(), null,
-          clusterViewAppPath, Paths.get(modelMountPath + "/applications", "clusterview.war"));
-    } catch (IOException | ApiException ex) {
-      logger.warning(ex.getMessage());
-    }
+    logger.info("Creating directory {0} in PV", modelMountPath + "/model");
+    execInPod(pvPod, null, true, "mkdir -p " + modelMountPath + "/model");
 
-    try {
-      logger.info("Changing file ownership {0} to oracle:root in PV", modelMountPath);
-      Exec.exec(pvPod, null, false, "/bin/sh", "-c", "chown -R oracle:root " + modelMountPath);
-    } catch (IOException | ApiException | InterruptedException ex) {
-      logger.warning(ex.getMessage());
-    }
+    //copy the model file to PV using the temp pod - we don't have access to PVROOT in Jenkins env
+    logger.info("Copying model file {0} to pv directory {1}",
+        Paths.get(MODEL_DIR, modelFile).toString(), modelMountPath + "/model", modelFile);
+    copyFileToPod(domainNamespace, pvPod.getMetadata().getName(), null,
+        Paths.get(MODEL_DIR, modelFile), Paths.get(modelMountPath + "/model", modelFile));
+
+    logger.info("Copying application file {0} to pv directory {1}",
+        clusterViewAppPath.toString(), modelMountPath + "/applications", "clusterview.war");
+    copyFileToPod(domainNamespace, pvPod.getMetadata().getName(), null,
+        clusterViewAppPath, Paths.get(modelMountPath + "/applications", "clusterview.war"));
+
+    logger.info("Changing file ownership {0} to oracle:root in PV", modelMountPath);
+    execInPod(pvPod, null, true, "chown -R oracle:root " + modelMountPath);
   }
 
   /**
