@@ -1559,6 +1559,22 @@ public class Kubernetes {
   }
 
   /**
+   * Get the persistent volumes in the Kubernetes cluster with specified name.
+   * @param pvname the name of the PV
+   * @return V1PersistentVolume the Persistent Volume with specified name in Kubernetes cluster
+   */
+  public static V1PersistentVolume getPersistentVolumes(String pvname) {
+    KubernetesApiResponse<V1PersistentVolume> response = pvClient.get(pvname);
+    if (response.isSuccess()) {
+      return response.getObject();
+    } else {
+      getLogger().warning("Failed to get Persistent Volume {0},"
+          + " status code {1}", pvname, response.getHttpStatusCode());
+      return null;
+    }
+  }
+
+  /**
    * List persistent volume claims in the namespace.
    * @param namespace name of the namespace in which to list
    * @return V1PersistentVolumeClaimList of Persistent Volume Claims in namespace
@@ -1570,6 +1586,23 @@ public class Kubernetes {
     } else {
       getLogger().warning("Failed to list Persistent Volumes claims,"
           + " status code {0}", list.getHttpStatusCode());
+      return null;
+    }
+  }
+
+  /**
+   * Get persistent volume claims in the namespace.
+   * @param namespace name of the namespace in which to get the PVC
+   * @param pvcname the name of PVC
+   * @return V1PersistentVolumeClaim the Persistent Volume Claims in namespace
+   */
+  public static V1PersistentVolumeClaim getPersistentVolumeClaims(String namespace, String pvcname) {
+    KubernetesApiResponse<V1PersistentVolumeClaim> response = pvcClient.get(namespace, pvcname);
+    if (response.isSuccess()) {
+      return response.getObject();
+    } else {
+      getLogger().warning("Failed to get Persistent Volumes claim {0},"
+          + " status code {1}", pvcname, response.getHttpStatusCode());
       return null;
     }
   }

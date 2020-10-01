@@ -73,7 +73,7 @@ import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.AfterAll;
+//import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -177,6 +177,7 @@ public class ItTwoDomainsLoadBalancers {
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
   private static final String wlSecretName = "weblogic-credentials";
+  private static final String defaultSharingPVCName = "default-sharing-pvc";
 
   private static boolean isUseSecret = true;
   private static String defaultNamespace = "default";
@@ -430,7 +431,7 @@ public class ItTwoDomainsLoadBalancers {
     }
     apacheHelmParams2 = assertDoesNotThrow(
         () -> installAndVerifyApache(defaultNamespace, kindRepoApacheImage, 0, 0, domain1Uid,
-            PV_ROOT + "/" + this.getClass().getSimpleName(), "apache-sample-host", clusterNamePortMap));
+            defaultSharingPVCName, "apache-sample-host", clusterNamePortMap));
   }
 
   /**
@@ -659,7 +660,7 @@ public class ItTwoDomainsLoadBalancers {
   /**
    * Cleanup all the remaining artifacts in default namespace created by the test.
    */
-  @AfterAll
+  //@AfterAll
   public void tearDownAll() {
     // uninstall Traefik loadbalancer
     if (traefikHelmParams != null) {
@@ -754,9 +755,9 @@ public class ItTwoDomainsLoadBalancers {
     }
 
     // delete pv and pvc in default namespace
-    logger.info("deleting pvc default-sharing-pvc");
+    logger.info("deleting pvc {0}", defaultSharingPVCName );
     logger.info("deleting pv default-sharing-pv");
-    assertTrue(deletePersistentVolumeClaim("default-sharing-pvc", defaultNamespace));
+    assertTrue(deletePersistentVolumeClaim(defaultSharingPVCName, defaultNamespace));
     assertTrue(deletePersistentVolume("default-sharing-pv"));
 
     // delete ingressroute in namespace
@@ -1271,7 +1272,6 @@ public class ItTwoDomainsLoadBalancers {
   private void createTwoDomainsSharingPVUsingWlstAndVerify() {
 
     String pvName = "default-sharing-pv";
-    String pvcName = "default-sharing-pvc";
 
     if (isUseSecret) {
       // create pull secrets for WebLogic image
@@ -1310,7 +1310,7 @@ public class ItTwoDomainsLoadBalancers {
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("6Gi"))))
         .metadata(new V1ObjectMetaBuilder()
-            .withName(pvcName)
+            .withName(defaultSharingPVCName)
             .withNamespace(defaultNamespace)
             .build()
             .putLabelsItem("sharing-pvc", "true"));
@@ -1328,13 +1328,13 @@ public class ItTwoDomainsLoadBalancers {
       logger.info("t3ChannelPort for domain {0} is {1}", domainUid, t3ChannelPort);
 
       // run create a domain on PV job using WLST
-      runCreateDomainOnPVJobUsingWlst(pvName, pvcName, domainUid, defaultNamespace, domainScriptConfigMapName,
+      runCreateDomainOnPVJobUsingWlst(pvName, defaultSharingPVCName, domainUid, defaultNamespace, domainScriptConfigMapName,
           createDomainInPVJobName);
 
       // create the domain custom resource configuration object
       logger.info("Creating domain custom resource");
       Domain domain =
-          createDomainCustomResource(domainUid, defaultNamespace, pvName, pvcName, t3ChannelPort);
+          createDomainCustomResource(domainUid, defaultNamespace, pvName, defaultSharingPVCName, t3ChannelPort);
 
       logger.info("Creating domain custom resource {0} in namespace {1}", domainUid, defaultNamespace);
       createDomainAndVerify(domain, defaultNamespace);
@@ -1349,9 +1349,9 @@ public class ItTwoDomainsLoadBalancers {
         checkPodReadyAndServiceExists(managedServerPodName, domainUid, defaultNamespace);
       }
 
-      logger.info("Getting admin service node port");
       int serviceNodePort =
           getServiceNodePort(defaultNamespace, adminServerPodName + "-external", "default");
+      logger.info("Getting admin service node port: {0}", serviceNodePort);
 
       logger.info("Validating WebLogic admin server access by login to console");
       assertTrue(assertDoesNotThrow(

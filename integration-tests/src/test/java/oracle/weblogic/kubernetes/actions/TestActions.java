@@ -649,6 +649,14 @@ public class TestActions {
   }
 
   // -------------------------   pv/pvc  ---------------------------------
+  /**
+   * Get the persistent volumes in the Kubernetes cluster with specified name.
+   * @param pvname the name of the PV
+   * @return V1PersistentVolume the Persistent Volume with specified name in Kubernetes cluster
+   */
+  public static V1PersistentVolume getPersistentVolumes(String pvname) {
+    return Kubernetes.getPersistentVolumes(pvname);
+  }
 
   /**
    * Create a Kubernetes Persistent Volume.
@@ -670,6 +678,16 @@ public class TestActions {
    */
   public static boolean deletePersistentVolume(String name) {
     return PersistentVolume.delete(name);
+  }
+
+  /**
+   * Get persistent volume claims in the namespace.
+   * @param namespace name of the namespace in which to get the PVC
+   * @param pvcname the name of PVC
+   * @return V1PersistentVolumeClaim the Persistent Volume Claims in namespace
+   */
+  public static V1PersistentVolumeClaim getPersistentVolumeClaims(String namespace, String pvcname) {
+    return Kubernetes.getPersistentVolumeClaims(namespace, pvcname);
   }
 
   /**
