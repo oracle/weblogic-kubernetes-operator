@@ -225,9 +225,9 @@ class ItUsabilityOperatorHelmChart {
     }
     // delete operator
     logger.info("Uninstalling operator");
-    cleanUpSA(opNamespace);
-    deleteSecret("ocir-secret",opNamespace);
     uninstallOperator(opHelmParams);
+    cleanUpSA(opNamespace);
+    deleteSecret(REPO_SECRET_NAME,opNamespace);
 
     // verify the operator pod does not exist in the operator namespace
     logger.info("Checking that operator pod does not exist in operator namespace");
@@ -329,9 +329,9 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain1 scaled to " + replicaCountDomain1 + " servers");
 
     } finally {
-      deleteSecret("ocir-secret",opNamespace);
-      cleanUpSA(opNamespace);
       uninstallOperator(op1HelmParams);
+      deleteSecret(REPO_SECRET_NAME,opNamespace);
+      cleanUpSA(opNamespace);
     }
   }
 
@@ -440,9 +440,9 @@ class ItUsabilityOperatorHelmChart {
           "operator can still manage domain1, scaling was succeeded for " + managedServerPodName1);
 
     } finally {
-      cleanUpSA(op2Namespace);
-      deleteSecret("ocir-secret",op2Namespace);
       uninstallOperator(op1HelmParams);
+      deleteSecret(REPO_SECRET_NAME,op2Namespace);
+      cleanUpSA(op2Namespace);
     }
   }
 
@@ -482,10 +482,10 @@ class ItUsabilityOperatorHelmChart {
       assertNull(opHelmParam2,
           "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      deleteSecret("ocir-secret",opNamespace);
-      cleanUpSA(opNamespace);
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
+      deleteSecret(REPO_SECRET_NAME,opNamespace);
+      cleanUpSA(opNamespace);
     }
   }
 
@@ -524,11 +524,11 @@ class ItUsabilityOperatorHelmChart {
           expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      deleteSecret("ocir-secret",opNamespace);
-      cleanUpSA(opNamespace);
-      cleanUpSA(op2Namespace);
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
+      deleteSecret(REPO_SECRET_NAME,opNamespace);
+      cleanUpSA(opNamespace);
+      cleanUpSA(op2Namespace);
     }
   }
 
@@ -568,13 +568,13 @@ class ItUsabilityOperatorHelmChart {
           expectedError,"failed",
           externalRestHttpsPort, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
+      uninstallOperator(op2HelmParams);
     } finally {
+      uninstallOperator(opHelmParams);
+      deleteSecret(REPO_SECRET_NAME,opNamespace);
+      deleteSecret(REPO_SECRET_NAME,op2Namespace);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
-      deleteSecret("ocir-secret",opNamespace);
-      deleteSecret("ocir-secret",op2Namespace);
-      uninstallOperator(opHelmParams);
-      uninstallOperator(op2HelmParams);
     }
   }
 
@@ -662,9 +662,9 @@ class ItUsabilityOperatorHelmChart {
 
 
     } finally {
-      deleteSecret("ocir-secret",op2Namespace);
-      cleanUpSA(op2Namespace);
       uninstallOperator(op2HelmParams);
+      deleteSecret(REPO_SECRET_NAME,op2Namespace);
+      cleanUpSA(op2Namespace);
     }
   }
 
@@ -690,8 +690,9 @@ class ItUsabilityOperatorHelmChart {
       try {
         // install and verify operator will not start
         logger.info("Installing  operator %s in namespace %s", opReleaseName, op2Namespace);
+        errorMsg = String.format("ServiceAccount %s not found in namespace %s", opServiceAccount, op2Namespace);
         HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, false, false,
-            true,null,"failed", 0, opHelmParams,  domain2Namespace);
+            true, errorMsg,"failed", 0, opHelmParams,  domain2Namespace);
         assertNull(opHelmParam2, "FAILURE: Helm installs operator with not preexisted service account ");
       } catch (AssertionError ex) {
         logger.info(" Receieved assertion error " + ex.getMessage());
@@ -704,6 +705,11 @@ class ItUsabilityOperatorHelmChart {
               .namespace(op2Namespace)
               .name(opServiceAccount))));
       logger.info("Created service account: {0}", opServiceAccount);
+
+      logger.info("Installing operator %s in namespace %s again", opReleaseName, op2Namespace);
+      HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, false, false,
+          false,null,"deployed", 0, opHelmParams,  domain2Namespace);
+
       // list Helm releases matching operator release name in operator namespace
       logger.info("Checking operator release {0} status in namespace {1}",
           opReleaseName, op2Namespace);
@@ -724,13 +730,14 @@ class ItUsabilityOperatorHelmChart {
                   condition.getRemainingTimeInMS()))
           .until(assertDoesNotThrow(() -> operatorIsReady(op2Namespace),
               "operatorIsReady failed with ApiException"));
-      //comment it out due OWLS-84294, helm does not report failed status
-      //assertNull(errorMsg, errorMsg);
+
+      // Helm reports error message status
+      assertNotNull(errorMsg, "Expected error message for missing ServiceAccount not found");
     } finally {
       //uninstall operator helm chart
-      deleteSecret("ocir-secret",op2Namespace);
-      cleanUpSA(op2Namespace);
       uninstallOperator(opHelmParams);
+      deleteSecret(REPO_SECRET_NAME,op2Namespace);
+      cleanUpSA(op2Namespace);
     }
   }
 
@@ -948,21 +955,16 @@ class ItUsabilityOperatorHelmChart {
       String helmErrorMsg = installNegative(opHelmParams, opParams.getValues());
       assertNotNull(helmErrorMsg, "helm chart install successful, but expected to fail");
       assertTrue(helmErrorMsg.contains(errMsg),
-          String.format("Operator install failed with unexpected error  :%s", helmErrorMsg));
+          String.format("Operator install failed with error  :%s", helmErrorMsg));
       return null;
     } else {
-      assertTrue(installOperator(opParams),
+      boolean succeeded = installOperator(opParams);
+      checkReleaseStatus(operNamespace, helmStatus, logger, opReleaseName);
+      assertTrue(succeeded,
           String.format("Failed to install operator in namespace %s ", operNamespace));
       logger.info("Operator installed in namespace {0}", operNamespace);
     }
-    // list Helm releases matching operator release name in operator namespace
-    logger.info("Checking operator release {0} status in namespace {1}",
-        opReleaseName, operNamespace);
-    assertTrue(checkHelmReleaseStatus(opReleaseName, operNamespace, helmStatus),
-        String.format("Operator release %s is not in %s status in namespace %s",
-            opReleaseName, helmStatus, operNamespace));
-    logger.info("Operator release {0} status is {1} in namespace {2}",
-        opReleaseName, helmStatus, operNamespace);
+    checkReleaseStatus(operNamespace, helmStatus, logger, opReleaseName);
     if (helmStatus.equalsIgnoreCase("deployed")) {
       // wait for the operator to be ready
       logger.info("Wait for the operator pod is ready in namespace {0}", operNamespace);
@@ -991,6 +993,21 @@ class ItUsabilityOperatorHelmChart {
       return opHelmParams;
     }
     return null;
+  }
+
+  private static void checkReleaseStatus(
+      String operNamespace, 
+      String helmStatus, 
+      LoggingFacade logger, 
+      String opReleaseName) {
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking operator release {0} status in namespace {1}",
+        opReleaseName, operNamespace);
+    assertTrue(checkHelmReleaseStatus(opReleaseName, operNamespace, helmStatus),
+        String.format("Operator release %s is not in %s status in namespace %s",
+            opReleaseName, helmStatus, operNamespace));
+    logger.info("Operator release {0} status is {1} in namespace {2}",
+        opReleaseName, helmStatus, operNamespace);
   }
 
   /**

@@ -324,8 +324,6 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
-                          fsGroupChangePolicy:
-                            type: string
                           supplementalGroups:
                             type: array
                             items:
@@ -2837,8 +2835,6 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
-                            fsGroupChangePolicy:
-                              type: string
                             supplementalGroups:
                               type: array
                               items:
@@ -5358,8 +5354,6 @@ spec:
                             type: string
                           gmsaCredentialSpecName:
                             type: string
-                      fsGroupChangePolicy:
-                        type: string
                       supplementalGroups:
                         type: array
                         items:
@@ -7757,8 +7751,6 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
-                            fsGroupChangePolicy:
-                              type: string
                             supplementalGroups:
                               type: array
                               items:

@@ -24,27 +24,13 @@ AKS is a managed Kubernetes Service that lets you quickly deploy and manage Kube
 
 #### Prerequisites
 
-This sample assumes the following prerequisites.
+This sample assumes the following prerequisite environment setup.
 
-##### Environment for setup
-
-This sample assumes one of the following two execution environments:
-
-1. Run the commands on your local computer. This allows for the greatest flexibility while requiring some setup effort.
-1. Run the commands in the Azure Cloud Shell. Cloud Shell is a browser-based utility and runs on the Azure portal. This option may be best for users already familiar with the utility and Azure. It is also suitable for users wanting to avoid installing additional software on their local computer.
-
-* Local Environment Setup
-
-  * Operating System: Linux, UNIX, macOS or [WSL for Windows 10](https://docs.microsoft.com/windows/wsl/install-win10).
-  * [Git](https://git-scm.com/downloads), use `git --version` to test if `git` works.  This document was tested with version 2.17.1.
-  * [Azure CLI](https://docs.microsoft.com/cli/azure), use `az --version` to test if `az` works.  This document was tested with version 2.9.1.
-  * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/), use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.16.3.
-  * [helm](https://helm.sh/docs/intro/install/), version 3.1 and later, use `helm version` to check the `helm` version.  This document was tested with version v3.2.4.
-
-* Azure Cloud Shell
-
-  The Azure Cloud Shell already has the necessary prerequisites installed. 
-  To start the Azure Cloud Shell, please go to [Overview of Azure Cloud Shell](https://docs.microsoft.com/azure/cloud-shell/overview).
+* Operating System: GNU/Linux, macOS or [WSL for Windows 10](https://docs.microsoft.com/windows/wsl/install-win10).
+* [Git](https://git-scm.com/downloads), use `git --version` to test if `git` works.  This document was tested with version 2.17.1.
+* [Azure CLI](https://docs.microsoft.com/cli/azure), use `az --version` to test if `az` works.  This document was tested with version 2.9.1.
+* [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/), use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.16.3.
+* [helm](https://helm.sh/docs/intro/install/), version 3.1 and later, use `helm version` to check the `helm` version.  This document was tested with version v3.2.4.
 
 ##### Create Service Principal for AKS
 
@@ -52,7 +38,7 @@ An AKS cluster requires either an [Azure Active Directory (AD) service principal
 
 We will use a service principal to create an AKS cluster. Follow the commands below to create a new service principal.
 
-If you run commands in your local environment, please run `az login` first. Skip that command if you run on the Azure Cloud Shell. Do set the subscription you want to work with. You can get a list of your subscriptions by running `az account list`.
+Please run `az login` first. Do set the subscription you want to work with. You can get a list of your subscriptions by running `az account list`.
 
 ```bash
 # Login
@@ -118,16 +104,26 @@ Successful output will look like the following:
 
 ##### Oracle Container Registry
 
-You will need an Oracle account.  Follow the steps at [GET IMAGES](/weblogic-kubernetes-operator/quickstart/get-images/), accepting the license agreement for WebLogic Server in the process.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.3, but other
-versions may work as well.
+You will need an Oracle account. The following steps will direct you to accept the license agreement for WebLogic Server.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.3, but other versions may work as well.
+
+1. Obtain the WebLogic Server image from the [Oracle Container Registry](https://container-registry.oracle.com/).
+
+   a. First time users, [follow these directions](/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/#obtaining-standard-images-from-the-oracle-container-registry).
+   
+   b. Find and then pull the WebLogic 12.2.1.3 install image:
+   
+      ```bash
+      $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.3
+      ```
 
 ##### Clone WebLogic Server Kubernetes Operator repository
 
-Clone this repository to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.0.0.
+Clone the [Oracle WebLogic Server Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.0.0-wls-aks.
 
 ```bash
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
-$ git checkout v3.0.0
+#cd weblogic-kubernetes-operator
+$ git checkout v3.0.0-wls-aks
 ```
   
 {{% notice info %}} The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
@@ -135,7 +131,7 @@ $ git checkout v3.0.0
 
 #### Create the AKS cluster
 
-This sample requires that you disable http-application-routing by default.  If you want to enable  http_application_routing, please follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
+This sample requires that you disable the AKS addon `http_application_routing` by default.  If you want to enable  `http_application_routing`, please follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
 
 Run the following commands to create the AKS cluster instance.
 
@@ -273,9 +269,9 @@ For example, given the service principal created above, the following values mus
 | `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | `appId` |
 | `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | `password` |
 | `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | `tenant` |
-| `dockerEmail` | `yourDockerEmail` | The email address corresponding to the Docker user name |
-| `dockerPassword` | `yourDockerPassword`| Your Docker password in clear text |
-| `dockerUserName` | `yourDockerId` | Your Docker ID|
+| `dockerEmail` | `yourDockerEmail` | Your Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image from the Oracle Container Registry. |
+| `dockerPassword` | `yourDockerPassword`| Your Oracle Single Sign-On (SSO) account password in clear text. |
+| `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`. |
 | `namePrefix` | `0730` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. Make sure the value matches the value of `${NAME_PREFIX}` to keep names in step-by-step commands the same with those in configuration files. |
 
 Use the following command to generate configuration files, assuming the output directory is `~/azure`.  The script will overwrite any files generated by a previous invocation.
@@ -307,7 +303,7 @@ Completed
 
 In order to mount the file share as a persistent volume, we have provided a configuration file `pv.yaml`. You can find it in your output directory. The following content is an example that uses the value `0730-weblogic-1597391432` as "shareName", `0730azure-secret` as "secretName", and the persistent volume name is `0730-azurefile-1597391432`.
 
-We will use the initial StorageClasses `azurefile`. If you want to create a new class, follow this document [Create a storage class](https://docs.microsoft.com/en-us/azure/aks/azure-files-dynamic-pv#create-a-storage-class). For more information, see the page [Storage options for applications in Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/concepts-storage#storage-classes).
+We will use the storage class `azurefile`. If you want to create a new class, follow this document [Create a storage class](https://docs.microsoft.com/en-us/azure/aks/azure-files-dynamic-pv#create-a-storage-class). For more information, see the page [Storage options for applications in Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/concepts-storage#storage-classes).
 
 ```yaml
 apiVersion: v1
@@ -388,13 +384,9 @@ persistentvolumeclaim/0730-azurefile-1597391432   Bound    0730-azurefile-159739
 
 The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
-Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Please check the Helm version first if you are using the Azure Cloud Shell, and run the corresponding command. This sample was tested with v3.0.0.
+Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Please install the operator by running the corresponding command.
 
 ```bash
-# Check the helm version
-$ helm version
-
-# For Helm 3.x, run the following:
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
 $ helm repo update
 $ helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.0.0"
@@ -456,13 +448,13 @@ Now that we have created the AKS cluster, installed the operator, and verified t
    $ export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
 
    #cd kubernetes/samples/scripts/create-kuberetes-secrets
-   $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e <foo@bar.com> -p <myDockerPassword> -u <myDockerUserId> -d container-registry.oracle.com
+   $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e <oracleSsoEmail> -p <oracleSsoPassword> -u <oracleSsoEmail> -d container-registry.oracle.com
    ```
 
    The following is an example of successful output:
 
    ```bash
-   $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e foo@bar.com -p myDockerPassword -u myDockerUserId
+   $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e foo@bar.com -p oracleSsoPassword -u foo@bar.com
    secret/0730regcred created
    The secret 0730regcred has been successfully created in the default namespace.
    ```
@@ -490,9 +482,9 @@ Now that we have created the AKS cluster, installed the operator, and verified t
 
 3. We will use the `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume we created previously.
 
-   First, we need to set up the domain configuration for the WebLogic domain.  This step uses the configuration generated previously.
+   We need to set up the domain configuration for the WebLogic domain. This step uses the configuration generated previously.
 
-   Next, validate all the resources created above using script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/validate.sh`.
+   Validate all the resources created above using the script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/validate.sh`.
    
    Use the following commands to check if the resources are ready:
 
@@ -816,8 +808,8 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 | `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | A client secret of your service principal, refer to the client secret in the [Create Service Principal](#create-service-principal-for-aks) section. |
 | `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | Tenant (Directory ) ID of your service principal, refer to the client secret in the [Create Service Principal](#create-service-principal-for-aks) section. |
 | `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image. |
-| `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account password, used to pull the WebLogic Server Docker image.  In clear text. |
-| `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`  |
+| `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server Docker image.  In clear text. |
+| `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`.  |
 | `namePrefix` | `0730` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. |
 
 If you don't want to change the other parameters, you can use the default values.  Please make sure no extra whitespaces are added!
@@ -930,9 +922,9 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
    Check the deploy log and find the failure details with `kubectl describe pod podname`.
    Please go to 1. Getting pod error details.
 
-   * **Process of starting the Administration Server is still running**
+   * **Process of starting the servers is still running**
 
-   Check with `kubectl get svc` and if domain1-admin-server is not listed,
+   Check with `kubectl get svc` and if domain1-admin-server, domain1-managed-server1 and domain1-managed-server2 are not listed,
    we need to wait some more for the Administration Server to start.
 
    The following output is an example of when the Administration Server has started.
@@ -949,6 +941,55 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
    domain1-managed-server2            ClusterIP      None          <none>          8001/TCP             1s
    internal-weblogic-operator-svc     ClusterIP      10.0.1.23     <none>          8082/TCP             9m59s
    kubernetes                         ClusterIP      10.0.0.1      <none>          443/TCP              16m
+   ```
+
+   If services are up but the WLS Administration Console is still not available, use `kubectl describe domain` to check domain status.
+
+   ```bash
+   $ kubectl describe domain domain1
+   ```
+
+   Make sure the status of cluster-1 is `ServersReady` and `Available`. The status of admin-server, managed-server1 and managed-server2 should be `RUNNING`. Otherwise, the cluster is likely still in the process of becoming fully ready.
+
+   ```yaml
+   Status:
+    Clusters:
+      Cluster Name:      cluster-1
+      Maximum Replicas:  5
+      Minimum Replicas:  1
+      Ready Replicas:    2
+      Replicas:          2
+      Replicas Goal:     2
+    Conditions:
+      Last Transition Time:  2020-07-06T05:39:32.539Z
+      Reason:                ServersReady
+      Status:                True
+      Type:                  Available
+    Replicas:                2
+    Servers:
+      Desired State:  RUNNING
+      Node Name:      aks-nodepool1-11471722-vmss000001
+      Server Name:    admin-server
+      State:          RUNNING
+      Cluster Name:   cluster-1
+      Desired State:  RUNNING
+      Node Name:      aks-nodepool1-11471722-vmss000001
+      Server Name:    managed-server1
+      State:          RUNNING
+      Cluster Name:   cluster-1
+      Desired State:  RUNNING
+      Node Name:      aks-nodepool1-11471722-vmss000001
+      Server Name:    managed-server2
+      State:          RUNNING
+      Cluster Name:   cluster-1
+      Desired State:  SHUTDOWN
+      Server Name:    managed-server3
+      Cluster Name:   cluster-1
+      Desired State:  SHUTDOWN
+      Server Name:    managed-server4
+      Cluster Name:   cluster-1
+      Desired State:  SHUTDOWN
+      Server Name:    managed-server5
    ```
 
 3. **Domain debugging**
