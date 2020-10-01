@@ -1332,29 +1332,6 @@ public class CommonTestUtils {
     }
   }
 
-
-  /**
-   * Copy a file to the pod.
-   *
-   * @param namespace the namespace in which the pod exists
-   * @param podName name of the pod
-   * @param containerName name of the container inside the pod
-   * @param srcPath source path of the file to copy
-   * @param dstPath destination path for the file inside the pod
-   */
-  public static void copyFileToPod(String namespace, String podName,
-      String containerName, Path srcPath, Path dstPath) {
-    LoggingFacade logger = getLogger();
-    try {
-      logger.info("Copying file {0} inside pod location {1}", srcPath, dstPath);
-      Kubernetes.copyFileToPod(namespace, podName, containerName, srcPath, dstPath);
-    } catch (ApiException | IOException ex) {
-      logger.warning(ex.getMessage());
-    }
-  }
-
-
-
   /**
    * Check pod exists in the specified namespace.
    *

@@ -80,7 +80,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExis
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
@@ -89,6 +88,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -219,13 +219,15 @@ public class ItMiiDomainModelInPV {
     //copy the model file to PV using the temp pod - we don't have access to PVROOT in Jenkins env
     logger.info("Copying model file {0} to pv directory {1}",
         Paths.get(MODEL_DIR, modelFile).toString(), modelMountPath + "/model", modelFile);
-    copyFileToPod(domainNamespace, pvPod.getMetadata().getName(), null,
-        Paths.get(MODEL_DIR, modelFile), Paths.get(modelMountPath + "/model", modelFile));
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace, pvPod.getMetadata().getName(), null,
+        Paths.get(MODEL_DIR, modelFile), Paths.get(modelMountPath + "/model", modelFile)),
+        "Copying file to pod failed");
 
     logger.info("Copying application file {0} to pv directory {1}",
         clusterViewAppPath.toString(), modelMountPath + "/applications", "clusterview.war");
-    copyFileToPod(domainNamespace, pvPod.getMetadata().getName(), null,
-        clusterViewAppPath, Paths.get(modelMountPath + "/applications", "clusterview.war"));
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace, pvPod.getMetadata().getName(), null,
+        clusterViewAppPath, Paths.get(modelMountPath + "/applications", "clusterview.war")),
+        "Copying file to pod failed");
 
     logger.info("Changing file ownership {0} to oracle:root in PV", modelMountPath);
     execInPod(pvPod, null, true, "chown -R oracle:root " + modelMountPath);
