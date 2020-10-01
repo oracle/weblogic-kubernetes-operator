@@ -28,7 +28,6 @@ public interface ActionConstants {
 
   // ------------ WebLogicImageTool action constants -------------
   public static final String WLS = "WLS";
-
   public static final String DEFAULT_MODEL_IMAGE_NAME = "test-mii-image";
   public static final String DEFAULT_MODEL_IMAGE_TAG  = "v1";
 
