@@ -75,6 +75,7 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -582,6 +583,7 @@ public class ItTwoDomainsLoadBalancers {
    * For more details, please check:
    * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/custom-sample
    */
+  @Disabled("Disabled the test due to intermittent test failure, see JIRA OWLS-84928")
   @Order(12)
   @Test
   @DisplayName("verify Apache load balancer custom sample through HTTP and HTTPS channel")
