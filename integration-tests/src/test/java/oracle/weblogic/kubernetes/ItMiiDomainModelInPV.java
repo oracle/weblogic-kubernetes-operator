@@ -23,8 +23,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -35,7 +33,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
-import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.awaitility.core.ConditionFactory;
@@ -49,41 +46,35 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -184,8 +175,9 @@ public class ItMiiDomainModelInPV {
     params.put("domain1", miiImagePV);
 
     // create docker registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createDockerRegistrySecret(domainNamespace);
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
@@ -254,7 +246,7 @@ public class ItMiiDomainModelInPV {
     logger.info("Creating domain custom resource with domainUid {0} and image {1}",
         domainUid, image);
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
-        image, adminSecretName, REPO_SECRET_NAME, encryptionSecretName, replicaCount, clusterName);
+        image, adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, replicaCount, clusterName);
     domainCR.spec().configuration().model().withModelHome(modelMountPath + "/model");
     domainCR.spec().serverPod()
         .addVolumesItem(new V1Volume()
@@ -283,7 +275,7 @@ public class ItMiiDomainModelInPV {
   }
 
   // generates the stream of objects used by parametrized test.
-  private static Stream<Entry<String,String>> paramProvider() {
+  private static Stream<Entry<String, String>> paramProvider() {
     return params.entrySet().stream();
   }
 
@@ -343,13 +335,15 @@ public class ItMiiDomainModelInPV {
   }
 
   private static V1Pod setupWebLogicPod(String namespace) {
-    setImage(namespace);
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(namespace);
+
     final String podName = "weblogic-pv-pod-" + namespace;
     V1Pod podBody = new V1Pod()
         .spec(new V1PodSpec()
             .initContainers(Arrays.asList(new V1Container()
                 .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                .image(wlsImage)
+                .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                 .addCommandItem("/bin/sh")
                 .addArgsItem("-c")
                 .addArgsItem("chown -R 1000:1000 " + modelMountPath)
@@ -363,7 +357,7 @@ public class ItMiiDomainModelInPV {
             .containers(Arrays.asList(
                 new V1Container()
                     .name("weblogic-container")
-                    .image(wlsImage)
+                    .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                     .imagePullPolicy("IfNotPresent")
                     .addCommandItem("sleep")
                     .addArgsItem("600")
@@ -371,7 +365,8 @@ public class ItMiiDomainModelInPV {
                         new V1VolumeMount()
                             .name(pvName) // mount the persistent volume to /shared inside the pod
                             .mountPath(modelMountPath)))))
-            .imagePullSecrets(isUseSecret ? Arrays.asList(new V1LocalObjectReference().name(OCR_SECRET_NAME)) : null)
+            .imagePullSecrets(Arrays.asList(new V1LocalObjectReference()
+                .name(BASE_IMAGES_REPO_SECRET)))
             // the persistent volume claim used by the test
             .volumes(Arrays.asList(
                 new V1Volume()
@@ -430,7 +425,7 @@ public class ItMiiDomainModelInPV {
 
   private static void dockerLoginAndPushImage(String image) {
     // login to docker
-    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+    if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login");
       withStandardRetryPolicy
           .conditionEvaluationListener(
@@ -438,12 +433,12 @@ public class ItMiiDomainModelInPV {
                   + "(elapsed time {0} ms, remaining time {1} ms)",
                   condition.getElapsedTimeInMS(),
                   condition.getRemainingTimeInMS()))
-          .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
+          .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
     }
 
     // push the image to repo
-    if (!REPO_NAME.isEmpty()) {
-      logger.info("docker push image {0} to {1}", image, REPO_NAME);
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
       withStandardRetryPolicy
           .conditionEvaluationListener(condition -> logger.info("Waiting for docker push for image {0} to be successful"
           + "(elapsed time {1} ms, remaining time {2} ms)",
@@ -453,35 +448,4 @@ public class ItMiiDomainModelInPV {
           .until(() -> dockerPush(image));
     }
   }
-
-  private static void setImage(String namespace) {
-    final LoggingFacade logger = getLogger();
-    //determine if the tests are running in Kind cluster.
-    //if true use images from Kind registry
-    String ocrImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
-    if (KIND_REPO != null) {
-      wlsImage = KIND_REPO + ocrImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      isUseSecret = false;
-    } else {
-      // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-      wlsImage = ocrImage;
-      boolean secretExists = false;
-      V1SecretList listSecrets = listSecrets(namespace);
-      if (null != listSecrets) {
-        for (V1Secret item : listSecrets.getItems()) {
-          if (item.getMetadata().getName().equals(OCR_SECRET_NAME)) {
-            secretExists = true;
-            break;
-          }
-        }
-      }
-      if (!secretExists) {
-        CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-            OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
-      }
-      isUseSecret = true;
-    }
-    logger.info("Using image {0}", wlsImage);
-  }
-
 }
