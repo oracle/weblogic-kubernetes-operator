@@ -39,15 +39,12 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -84,20 +81,18 @@ public class DbUtils {
    */
 
   public static void setupDBandRCUschema(String dbImage, String fmwImage, String rcuSchemaPrefix, String dbNamespace,
-      int dbPort, String dbUrl, boolean isUseSecret) throws ApiException {
+      int dbPort, String dbUrl) throws ApiException {
     LoggingFacade logger = getLogger();
     // create pull secrets when running in non Kind Kubernetes cluster
-    if (isUseSecret) {
-      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace);
-    }
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(dbNamespace);
 
-    logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}, isUseSecret: {3}",
-        dbImage, dbPort, dbNamespace, isUseSecret);
-    startOracleDB(dbImage, dbPort, dbNamespace, isUseSecret);
+    logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}",
+        dbImage, dbPort, dbNamespace);
+    startOracleDB(dbImage, dbPort, dbNamespace);
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
-        + " dbNamespace: {3}, isUseSecret {4}:", fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace, isUseSecret);
-    createRcuSchema(fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace, isUseSecret);
+        + " dbNamespace: {3}:", fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
+    createRcuSchema(fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
 
   }
 
@@ -108,7 +103,7 @@ public class DbUtils {
    * @param dbPort NodePort of DB
    * @param dbNamespace namespace where DB instance is going to start
    */
-  public static void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace, boolean isUseSecret)
+  public static void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace)
       throws ApiException {
     LoggingFacade logger = getLogger();
     Map labels = new HashMap<String, String>();
@@ -195,10 +190,9 @@ public class DbUtils {
                     .restartPolicy("Always")
                     .schedulerName("default-scheduler")
                     .terminationGracePeriodSeconds(30L)
-                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                    .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))
-                        : null))));
+                            .name(BASE_IMAGES_REPO_SECRET))))));
 
     logger.info("Create deployment for Oracle DB in namespace {0}",
         dbNamespace);
@@ -249,10 +243,10 @@ public class DbUtils {
    * @throws ApiException when create RCU pod fails
    */
   public static void createRcuSchema(String fmwBaseImageName, String rcuPrefix, String dbUrl,
-      String dbNamespace, boolean isUseSecret) throws ApiException {
+      String dbNamespace) throws ApiException {
     LoggingFacade logger = getLogger();
     logger.info("Create RCU pod for RCU prefix {0}", rcuPrefix);
-    assertDoesNotThrow(() -> createRcuPod(fmwBaseImageName, dbUrl, dbNamespace, isUseSecret),
+    assertDoesNotThrow(() -> createRcuPod(fmwBaseImageName, dbUrl, dbNamespace),
         String.format("Creating RCU pod failed with ApiException for image: %s, rcuPrefix: %s, dbUrl: %s, "
                 + "in namespace: %s", fmwBaseImageName, rcuPrefix, dbUrl, dbNamespace));
 
@@ -270,7 +264,7 @@ public class DbUtils {
    * @param dbNamespace namespace of DB where RCU is
    * @throws ApiException when create RCU pod fails
    */
-  public static V1Pod createRcuPod(String fmwBaseImageName, String dbUrl, String dbNamespace, boolean isUseSecret)
+  public static V1Pod createRcuPod(String fmwBaseImageName, String dbUrl, String dbNamespace)
       throws ApiException {
     LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
@@ -295,10 +289,9 @@ public class DbUtils {
                     .imagePullPolicy("IfNotPresent")
                     .addArgsItem("sleep")
                     .addArgsItem("infinity")))
-            .imagePullSecrets(isUseSecret ? Arrays.asList(
+            .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))
-                        : null));
+                            .name(BASE_IMAGES_REPO_SECRET))));  // this secret is used only for non-kind cluster
 
     V1Pod pvPod = Kubernetes.createPod(dbNamespace, podBody);
 

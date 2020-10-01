@@ -64,17 +64,15 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
@@ -92,11 +90,11 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOCRRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -150,19 +148,13 @@ class ItMiiUpdateDomainConfig {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static String wlsBaseImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
-  private static boolean isUseSecret = true;
   private static int replicaCount = 2;
   private static final String domainUid = "mii-add-config";
   private static String pvName = domainUid + "-pv"; // name of the persistent volume
   private static String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
   private StringBuffer curlString = null;
-
   private StringBuffer checkCluster = null;
   private V1Patch patch = null;
-
-  private static Map<String, Object> secretNameMap;
-
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
   private final String adminServerName = "admin-server";
@@ -196,8 +188,8 @@ class ItMiiUpdateDomainConfig {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
-          String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -224,16 +216,10 @@ class ItMiiUpdateDomainConfig {
         configMapName, domainUid, domainNamespace,
         Arrays.asList("model.sysresources.yaml"));
 
-    //determine if the tests are running in Kind cluster. if true use images from Kind registry
-    if (KIND_REPO != null) {
-      String kindRepoImage = KIND_REPO + wlsBaseImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      logger.info("Using image {0}", kindRepoImage);
-      wlsBaseImage = kindRepoImage;
-      isUseSecret = false;
-    } else {
-      // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-      createOCRRepoSecret(domainNamespace);
-    }
+
+    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(domainNamespace);
 
     // create PV, PVC for logs
     createPV(pvName, domainUid, ItMiiUpdateDomainConfig.class.getSimpleName());
@@ -244,7 +230,7 @@ class ItMiiUpdateDomainConfig {
 
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
-        REPO_SECRET_NAME, encryptionSecretName,
+        OCIR_SECRET_NAME, encryptionSecretName,
         replicaCount, configMapName, dbSecretName);
 
     // wait for the domain to exist
@@ -956,7 +942,7 @@ class ItMiiUpdateDomainConfig {
                     .restartPolicy("Never")
                     .addContainersItem(new V1Container()
                         .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(wlsBaseImage)
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
                         .addArgsItem("chown -R 1000:1000 /shared")
@@ -973,10 +959,9 @@ class ItMiiUpdateDomainConfig {
                             .persistentVolumeClaim(
                                 new V1PersistentVolumeClaimVolumeSource()
                                     .claimName(pvcName))))
-                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                    .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))
-                        : null))));
+                            .name(BASE_IMAGES_REPO_SECRET)))))); // this secret is used only for non-kind cluster
 
     String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
 
