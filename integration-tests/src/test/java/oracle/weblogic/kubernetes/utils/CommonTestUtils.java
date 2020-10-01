@@ -2921,4 +2921,33 @@ public class CommonTestUtils {
           return false;
         });
   }
+
+  /**
+   * Get the creationTimestamp for the domain admin server pod and managed server pods.
+   *
+   * @param domainNamespace namespace where the domain is
+   * @param adminServerPodName the pod name of the admin server
+   * @param managedServerPrefix prefix of the managed server pod name
+   * @param replicaCount replica count of the managed servers
+   * @return map of domain admin server pod and managed server pods with their corresponding creationTimestamps
+   */
+  public static Map getPodsWithTimeStamps(String domainNamespace, String adminServerPodName,
+       String managedServerPrefix, int replicaCount) {
+
+    // create the map with server pods and their original creation timestamps
+    Map<String, DateTime> podsWithTimeStamps = new LinkedHashMap<>();
+    podsWithTimeStamps.put(adminServerPodName,
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
+            String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+                adminServerPodName, domainNamespace)));
+
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = managedServerPrefix + i;
+      podsWithTimeStamps.put(managedServerPodName,
+          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
+              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+                  managedServerPodName, domainNamespace)));
+    }
+    return podsWithTimeStamps;
+  }
 }
