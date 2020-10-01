@@ -66,6 +66,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -158,6 +159,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           //   5. use this image name to create the domain resource
           Collection<String> images = new ArrayList<>();
           images.add(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG);
+          images.add(WLS_BASE_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG);
           images.add(JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG);
           images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
 
