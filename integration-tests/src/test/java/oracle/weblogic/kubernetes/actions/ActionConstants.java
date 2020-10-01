@@ -3,8 +3,6 @@
 
 package oracle.weblogic.kubernetes.actions;
 
-import oracle.weblogic.kubernetes.TestConstants;
-
 public interface ActionConstants {
 
   // Work directory for the integration test suite
@@ -30,13 +28,6 @@ public interface ActionConstants {
 
   // ------------ WebLogicImageTool action constants -------------
   public static final String WLS = "WLS";
-  public static final String JRF = "JRF";
-  public static final String RJRF = "RestrictedJRF";
-  public static final String WLS_BASE_IMAGE_NAME
-      = TestConstants.OCR_REGISTRY + "/middleware/weblogic";
-  public static final String WLS_BASE_IMAGE_TAG = "12.2.1.4";
-  public static final String WLS_UPDATE_IMAGE_TAG = "14.1.1.0-11";
-
   public static final String DEFAULT_MODEL_IMAGE_NAME = "test-mii-image";
   public static final String DEFAULT_MODEL_IMAGE_TAG  = "v1";
 
