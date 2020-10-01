@@ -32,7 +32,6 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -266,7 +265,7 @@ public class ItMiiDomainModelInPV {
   }
 
   /**
-   * Test domain creation from model file stored in PV.https://oracle.github.io/weblogic-kubernetes-operator
+   * Test domain creation from model file stored in PV. https://oracle.github.io/weblogic-kubernetes-operator
        /userguide/managing-domains/domain-resource/#domain-spec-elements
     1.Create the domain custom resource using mii with no domain and specifying a PV location for modelHome
     2.Create the domain custom resource using mii with custom wdt model home in a pv location
@@ -455,10 +454,6 @@ public class ItMiiDomainModelInPV {
         .wdtVersion(WDT_VERSION)
         .env(env)
         .redirect(true));
-    Command.defaultCommandParams()
-        .command("docker images")
-        .saveResults(true)
-        .redirect(false);
     assertTrue(doesImageExist(imageTag),
         String.format("Image %s doesn't exist", imageName));
     dockerLoginAndPushImage(image);
