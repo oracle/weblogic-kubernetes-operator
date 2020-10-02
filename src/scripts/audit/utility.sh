@@ -47,7 +47,21 @@ function warning {
 }
 
 function printReport {
+  if [ -f ${imageValidationSkippedReport} ]; then
+    skippedValidationCount=$(cat "${imageValidationSkippedReport}" | wc -l)
+    if [ ${skippedValidationCount} -gt 1 ]; then
+      info "There are $skippedValidationCount images file that were excluded from validation. Please see ${imageValidationSkippedReport} file for the list of images which were excluded from validation."
+    fi
+  fi
+  if [ -f ${imageScanExcludedReport} ]; then
+    imageScanExcludeCount=$(cat "${imageScanExcludedReport}" | wc -l)
+    if [ ${imageScanExcludeCount} -gt 1 ]; then
+      info "There are $imageScanExcludeCount images that were NOT scanned. Please see ${imageScanExcludedReport} file for the list of images which were excluded from scan."
+    fi
+  fi
+  duration=$SECONDS
   info "Image scan ended at `date -u '+%Y-%m-%d %H.%M.%SUTC'`"
+  info "Time Elapsed : $(($duration / 60)) minutes and $(($duration % 60)) seconds."
   rowCount=$(cat "${reportFile}" | wc -l)
   if [ $rowCount -gt 1 ]; then
     echo "==================================" | tee -a "${logFile}"
@@ -65,11 +79,11 @@ function printReport {
 function getImageId {
   local imageRepoTag=$1
 
-  imageId=$(docker images --format "{{.ID}}" "$imageRepoTag")
+  imageId=$(${containerBinary} images --format "{{.ID}}" "$imageRepoTag")
   if [ -z "${imageId}" ]; then
     repository=$(echo $imageRepoTag | cut -d':' -f1)
     tag=$(echo $imageRepoTag | cut -d':' -f2)
-    imageId=$(docker images | awk '{print $1,$2,$3}' | grep "${repository} " | grep "${tag}" | awk '{print $3}')
+    imageId=$(${containerBinary} images | awk '{print $1,$2,$3}' | grep "${repository} " | grep "${tag}" | awk '{print $3}')
 
   fi
   echo "$imageId"
@@ -87,7 +101,7 @@ function generateReportHeader {
   if [ -z "${kubernetesFile}" ]; then
     awk 'BEGIN {printf "%s,%s,%s,%s\n", "Artifact", "Respository", "Tag", "Digest"}' >> "${reportFile}"
   else 
-    awk 'BEGIN {printf "%s,%s,%s,%s,%s\n","Node", "Artifact", "Respository", "Tag", "Digest"}' >> "${reportFile}"
+    awk 'BEGIN {printf "%s,%s,%s,%s,%s\n","Node(s)", "Artifact", "Respository", "Tag", "Digest"}' >> "${reportFile}"
   fi
 }
 
@@ -121,7 +135,7 @@ checkStringMatchesArrayPattern() {
 function getMissingImagesList {
   missingImages=()
   imagesToVerify=()
-  existingImagesOnHost=($(docker images --digests --format "{{.Repository}}@{{.Digest}}" | grep -v "<none>:<none>"))
+  existingImagesOnHost=($(${containerBinary} images --digests --format "{{.Repository}}@{{.Digest}}" | grep -v "<none>:<none>"))
 
   getImagesToVerify
   for imageToVerify in ${imagesToVerify[@]}
@@ -157,6 +171,8 @@ function getImagesToVerify {
   for imageInNodeFile in ${imagesInNodeFile}; do
     if ! checkStringMatchesArrayPattern "${imageInNodeFile}" "${ignoreImageVerificationList[@]}"; then
       imagesToVerify+=(${imageInNodeFile})
+    else
+      echo ${imageInNodeFile} >> ${imageValidationSkippedReport}
     fi
   done
 }
@@ -167,4 +183,9 @@ function getImagesToVerify {
 function getImagesInNodeFile {
   IFS=$'\n'
   nodeToImageMapping=$(cat "${kubernetesFile}" | jq '.items |[.[] | {name: .metadata.name, images:.status.images | .[]}]' | jq '.[] | {node:.name, images:.images.names | .[], size:.images.sizeBytes}' | jq -r '"\(.node);\(.images);\(.size )"'  | grep -v "<none>:<none>" | grep -v "<none>@<none>")
+}
+
+function convertToBytes {
+  local size=$1
+  echo ${size} | awk '/[0-9]$/{print $1;next};/[mM]$/{printf "%u\n", $1*(1024*1024);next};/[kK]$/{printf "%u\n", $1*1024;next}'
 }
