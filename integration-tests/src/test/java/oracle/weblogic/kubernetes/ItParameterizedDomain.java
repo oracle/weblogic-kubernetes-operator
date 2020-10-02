@@ -440,15 +440,18 @@ class ItParameterizedDomain {
         .isTrue();
   }
 
+  /**
+   * Verify dataHome override in a domain with domain in image type.
+   * In this domain, set dataHome to /u01/oracle/mydata in domain custom resource
+   * The domain contains JMS and File Store configuration
+   * File store directory is set to /u01/oracle/customFileStore in the model file which should be overridden by dataHome
+   * File store and JMS server are targeted to the WebLogic cluster cluster-1
+   * see resource/wdt-models/wdt-singlecluster-multiapps-usingprop-wls.yaml
+   */
   @Test
   @DisplayName("Test dataHome override in a domain with domain in image type")
   public void testDataHomeOverrideDomainInImage() {
-    // in this domain, set dataHome to /u01/oracle/mydata in domain custom resource
-    // the domain contains JMS and File Store configuration
-    // File store directory is set to /u01/oracle/customFileStore/ in the model file which should be overridden
-    // by dataHome
-    // File store and JMS server are target to cluster-1
-    // see resource/wdt-models/wdt-singlecluster-multiapps-usingprop-wls.yaml
+
     assertDomainNotNull(domainInImage);
     String domainUid = domainInImage.getSpec().getDomainUid();
     String domainNamespace = domainInImage.getMetadata().getNamespace();
@@ -494,15 +497,19 @@ class ItParameterizedDomain {
     }
   }
 
+  /**
+   * Verify dataHome override in a domain with model in image type.
+   * In this domain, dataHome is not specified in the domain custom resource
+   * The domain contains JMS and File Store configuration
+   * File store directory is set to /u01/oracle/customFileStore in the model file which should not be overridden
+   * by dataHome
+   * File store and JMS server are targeted to the WebLogic admin server
+   * see resource/wdt-models/model-multiclusterdomain-sampleapp-wls.yaml
+   */
   @Test
   @DisplayName("Test dataHome override in a domain with model in image type")
   public void testDataHomeOverrideMiiDomain() {
-    // in this domain, dataHome is not specified
-    // the domain contains JMS and File Store configuration
-    // File store directory is set to /u01/oracle/customFileStore/ in the model file which should not be overridden
-    // by dataHome
-    // File store and JMS server are target to admin server
-    // see resource/wdt-models/model-multiclusterdomain-sampleapp-wls.yaml
+
     assertDomainNotNull(miiDomain);
     String domainUid = miiDomain.getSpec().getDomainUid();
     String domainNamespace = miiDomain.getMetadata().getNamespace();
@@ -551,15 +558,19 @@ class ItParameterizedDomain {
     }
   }
 
+  /**
+   * Verify dataHome override in a domain with domain on PV type.
+   * In this domain, dataHome is set to empty string in the domain custom resource
+   * The domain contains JMS and File Store configuration
+   * File store directory is set to /u01/oracle/customFileStore in the model file which should not be overridden
+   * by dataHome
+   * File store and JMS server are targeted to the WebLogic admin server
+   * see resource/wdt-models/domain-onpv-wdt-model.yaml
+   */
   @Test
   @DisplayName("Test dataHome override in a domain with domain on PV type")
   public void testDataHomeOverrideDomainOnPV() {
-    // in this domain, dataHome is set to empty string
-    // the domain contains JMS and File Store configuration
-    // File store directory is set to /u01/oracle/customFileStore/ in the model file which should not be overridden
-    // by dataHome
-    // File store and JMS server are target to admin server
-    // see resource/wdt-models/domain-onpv-wdt-model.yaml
+
     assertDomainNotNull(domainOnPV);
     String domainUid = domainOnPV.getSpec().getDomainUid();
     String domainNamespace = domainOnPV.getMetadata().getNamespace();
