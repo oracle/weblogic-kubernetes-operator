@@ -54,6 +54,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
+import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
@@ -169,6 +170,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallElasticsearch;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallKibana;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
@@ -1339,6 +1341,32 @@ public class CommonTestUtils {
     return ingressHostList;
   }
 
+
+  /**
+   * Execute command inside a pod and assert the execution.
+   *
+   * @param pod V1Pod object
+   * @param containerName name of the container inside the pod
+   * @param redirectToStdout if true redirect to stdout and stderr
+   * @param command the command to execute inside the pod
+   */
+  public static void execInPod(V1Pod pod, String containerName, boolean redirectToStdout, String command) {
+    LoggingFacade logger = getLogger();
+    ExecResult exec = null;
+    try {
+      logger.info("Executing command {0}", command);
+      exec = Exec.exec(pod, containerName, redirectToStdout, "/bin/sh", "-c", command);
+      // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero
+      // exit value even on success, so checking for exitValue non-zero and stderr not empty for failure,
+      // otherwise its success
+      assertFalse(exec.exitValue() != 0 && exec.stderr() != null && !exec.stderr().isEmpty(),
+          String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
+              command, exec.exitValue(), exec.stderr(), exec.stdout()));
+    } catch (IOException | ApiException | InterruptedException ex) {
+      logger.warning(ex.getMessage());
+    }
+  }
+
   /**
    * Check pod exists in the specified namespace.
    *
@@ -2363,13 +2391,32 @@ public class CommonTestUtils {
     }
     // install grafana
     logger.info("Installing grafana in namespace {0}", grafanaNamespace);
-    int grafanaNodePort = getNextFreePort(31050, 31200);
+    int grafanaNodePort = getNextFreePort(31060, 31200);
+    logger.info("Installing grafana with node port {0}", grafanaNodePort);
     // grafana chart values to override
     GrafanaParams grafanaParams = new GrafanaParams()
         .helmParams(grafanaHelmParams)
         .nodePort(grafanaNodePort);
-    assertTrue(installGrafana(grafanaParams),
-        String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+    boolean isGrafanaInstalled = false;
+    try {
+      assertTrue(installGrafana(grafanaParams),
+          String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+    } catch (AssertionError err) {
+      //retry with different nodeport
+      uninstallGrafana(grafanaHelmParams);
+      grafanaNodePort = getNextFreePort(31060, 31200);
+      grafanaParams = new GrafanaParams()
+          .helmParams(grafanaHelmParams)
+          .nodePort(grafanaNodePort);
+      isGrafanaInstalled = installGrafana(grafanaParams);
+      if (!isGrafanaInstalled) {
+        //clean up
+        logger.info(String.format("Failed to install grafana in namespace %s with nodeport %s",
+            grafanaNamespace, grafanaNodePort));
+        uninstallGrafana(grafanaHelmParams);
+        return null;
+      }
+    }
     logger.info("Grafana installed in namespace {0}", grafanaNamespace);
 
     // list Helm releases matching grafana release name in  namespace
