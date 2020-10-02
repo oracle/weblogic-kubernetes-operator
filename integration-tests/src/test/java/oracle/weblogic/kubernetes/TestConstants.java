@@ -76,9 +76,9 @@ public interface TestConstants {
       .orElse(REPO_DUMMY_VALUE);
 
   // OCR default image values, these values will be used while running locally
-  public static final String OCR_WEBLOGIC_IMAGE_NAME = "weblogick8s/weblogic";
+  public static final String OCR_WEBLOGIC_IMAGE_NAME = "middleware/weblogic";
   public static final String OCR_WEBLOGIC_IMAGE_TAG = "12.2.1.4";
-  public static final String OCR_FMWINFRA_IMAGE_NAME = "weblogick8s/fmw-infrastructure";
+  public static final String OCR_FMWINFRA_IMAGE_NAME = "middleware/fmw-infrastructure";
   public static final String OCR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
   public static final String OCR_DB_IMAGE_NAME = "database/enterprise";
   public static final String OCR_DB_IMAGE_TAG = "12.2.0.1-slim";
