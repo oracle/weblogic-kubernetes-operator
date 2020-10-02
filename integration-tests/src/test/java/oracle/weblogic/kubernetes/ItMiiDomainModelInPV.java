@@ -44,15 +44,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -65,8 +65,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
@@ -149,8 +149,9 @@ public class ItMiiDomainModelInPV {
     buildMIIandPushToRepo();
 
     // create docker registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createDockerRegistrySecret(domainNamespace);
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
@@ -237,7 +238,7 @@ public class ItMiiDomainModelInPV {
     logger.info("Creating domain custom resource");
     Domain domainCR = CommonMiiTestUtils.createDomainResource(
         domainUid, domainNamespace, miiImage, adminSecretName,
-        REPO_SECRET_NAME, encryptionSecretName, replicaCount, clusterName
+        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, clusterName
     );
     domainCR.spec().configuration().model().withModelHome("/shared/model");
     domainCR.spec().serverPod()
@@ -376,7 +377,7 @@ public class ItMiiDomainModelInPV {
         .redirect(true));
 
     // login to docker
-    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+    if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login");
       withStandardRetryPolicy
           .conditionEvaluationListener(
@@ -384,12 +385,12 @@ public class ItMiiDomainModelInPV {
                   + "(elapsed time {0} ms, remaining time {1} ms)",
                   condition.getElapsedTimeInMS(),
                   condition.getRemainingTimeInMS()))
-          .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
+          .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
     }
 
     // push the image to repo
-    if (!REPO_NAME.isEmpty()) {
-      logger.info("docker push image {0} to {1}", miiImage, REPO_NAME);
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to {1}", miiImage, DOMAIN_IMAGES_REPO);
       withStandardRetryPolicy
           .conditionEvaluationListener(condition -> logger.info("Waiting for docker push for image {0} to be successful"
           + "(elapsed time {1} ms, remaining time {2} ms)",

@@ -24,6 +24,7 @@ public class Docker {
         registryName, username, password);
     return new Command()
         .withParams(new CommandParams()
+            .verbose(false)
             .command(cmdToExecute))
         .execute();
   }
