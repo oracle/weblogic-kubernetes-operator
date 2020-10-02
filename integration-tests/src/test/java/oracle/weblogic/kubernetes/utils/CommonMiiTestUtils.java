@@ -9,11 +9,11 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -41,9 +41,10 @@ public class CommonMiiTestUtils {
       int replicaCount
   ) {
     LoggingFacade logger = getLogger();
-    logger.info("Create the repo secret {0} to pull the image", REPO_SECRET_NAME);
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
-            String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    // this secret is used only for non-kind cluster
+    logger.info("Create the repo secret {0} to pull the image", OCIR_SECRET_NAME);
+    assertDoesNotThrow(() -> createOcirRepoSecret(domainNamespace),
+            String.format("createSecret failed for %s", OCIR_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -73,7 +74,7 @@ public class CommonMiiTestUtils {
         domainNamespace,
         imageName,
         adminSecretName,
-        REPO_SECRET_NAME,
+        OCIR_SECRET_NAME,
         encryptionSecretName,
         replicaCount,
         "cluster-1");

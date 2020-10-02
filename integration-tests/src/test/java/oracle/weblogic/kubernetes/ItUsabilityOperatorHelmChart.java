@@ -11,8 +11,6 @@ import java.util.Map;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
@@ -48,10 +46,10 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -62,7 +60,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimes
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmValuesToString;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
-import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseStatus;
@@ -75,9 +72,9 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createExternalRestIdentitySecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -225,9 +222,9 @@ class ItUsabilityOperatorHelmChart {
     }
     // delete operator
     logger.info("Uninstalling operator");
-    cleanUpSA(opNamespace);
-    deleteSecret("ocir-secret",opNamespace);
     uninstallOperator(opHelmParams);
+    cleanUpSA(opNamespace);
+    deleteSecret(OCIR_SECRET_NAME,opNamespace);
 
     // verify the operator pod does not exist in the operator namespace
     logger.info("Checking that operator pod does not exist in operator namespace");
@@ -329,9 +326,9 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain1 scaled to " + replicaCountDomain1 + " servers");
 
     } finally {
-      deleteSecret("ocir-secret",opNamespace);
-      cleanUpSA(opNamespace);
       uninstallOperator(op1HelmParams);
+      deleteSecret(OCIR_SECRET_NAME,opNamespace);
+      cleanUpSA(opNamespace);
     }
   }
 
@@ -440,9 +437,9 @@ class ItUsabilityOperatorHelmChart {
           "operator can still manage domain1, scaling was succeeded for " + managedServerPodName1);
 
     } finally {
-      cleanUpSA(op2Namespace);
-      deleteSecret("ocir-secret",op2Namespace);
       uninstallOperator(op1HelmParams);
+      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
+      cleanUpSA(op2Namespace);
     }
   }
 
@@ -482,10 +479,10 @@ class ItUsabilityOperatorHelmChart {
       assertNull(opHelmParam2,
           "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      deleteSecret("ocir-secret",opNamespace);
-      cleanUpSA(opNamespace);
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
+      deleteSecret(OCIR_SECRET_NAME,opNamespace);
+      cleanUpSA(opNamespace);
     }
   }
 
@@ -524,11 +521,11 @@ class ItUsabilityOperatorHelmChart {
           expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      deleteSecret("ocir-secret",opNamespace);
-      cleanUpSA(opNamespace);
-      cleanUpSA(op2Namespace);
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
+      deleteSecret(OCIR_SECRET_NAME,opNamespace);
+      cleanUpSA(opNamespace);
+      cleanUpSA(op2Namespace);
     }
   }
 
@@ -568,13 +565,13 @@ class ItUsabilityOperatorHelmChart {
           expectedError,"failed",
           externalRestHttpsPort, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
+      uninstallOperator(op2HelmParams);
     } finally {
+      uninstallOperator(opHelmParams);
+      deleteSecret(OCIR_SECRET_NAME,opNamespace);
+      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
-      deleteSecret("ocir-secret",opNamespace);
-      deleteSecret("ocir-secret",op2Namespace);
-      uninstallOperator(opHelmParams);
-      uninstallOperator(op2HelmParams);
     }
   }
 
@@ -662,9 +659,9 @@ class ItUsabilityOperatorHelmChart {
 
 
     } finally {
-      deleteSecret("ocir-secret",op2Namespace);
-      cleanUpSA(op2Namespace);
       uninstallOperator(op2HelmParams);
+      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
+      cleanUpSA(op2Namespace);
     }
   }
 
@@ -690,8 +687,9 @@ class ItUsabilityOperatorHelmChart {
       try {
         // install and verify operator will not start
         logger.info("Installing  operator %s in namespace %s", opReleaseName, op2Namespace);
+        errorMsg = String.format("ServiceAccount %s not found in namespace %s", opServiceAccount, op2Namespace);
         HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, false, false,
-            true,null,"failed", 0, opHelmParams,  domain2Namespace);
+            true, errorMsg,"failed", 0, opHelmParams,  domain2Namespace);
         assertNull(opHelmParam2, "FAILURE: Helm installs operator with not preexisted service account ");
       } catch (AssertionError ex) {
         logger.info(" Receieved assertion error " + ex.getMessage());
@@ -704,6 +702,11 @@ class ItUsabilityOperatorHelmChart {
               .namespace(op2Namespace)
               .name(opServiceAccount))));
       logger.info("Created service account: {0}", opServiceAccount);
+
+      logger.info("Installing operator %s in namespace %s again", opReleaseName, op2Namespace);
+      HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, false, false,
+          false,null,"deployed", 0, opHelmParams,  domain2Namespace);
+
       // list Helm releases matching operator release name in operator namespace
       logger.info("Checking operator release {0} status in namespace {1}",
           opReleaseName, op2Namespace);
@@ -724,13 +727,14 @@ class ItUsabilityOperatorHelmChart {
                   condition.getRemainingTimeInMS()))
           .until(assertDoesNotThrow(() -> operatorIsReady(op2Namespace),
               "operatorIsReady failed with ApiException"));
-      //comment it out due OWLS-84294, helm does not report failed status
-      //assertNull(errorMsg, errorMsg);
+
+      // Helm reports error message status
+      assertNotNull(errorMsg, "Expected error message for missing ServiceAccount not found");
     } finally {
       //uninstall operator helm chart
-      deleteSecret("ocir-secret",op2Namespace);
-      cleanUpSA(op2Namespace);
       uninstallOperator(opHelmParams);
+      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
+      cleanUpSA(op2Namespace);
     }
   }
 
@@ -755,8 +759,9 @@ class ItUsabilityOperatorHelmChart {
     dockerLoginAndPushImageToRegistry(miiImage);
 
     // create docker registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createDockerRegistrySecret(domainNamespace);
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
@@ -787,7 +792,7 @@ class ItUsabilityOperatorHelmChart {
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(REPO_SECRET_NAME))
+                .name(OCIR_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))
@@ -898,26 +903,15 @@ class ItUsabilityOperatorHelmChart {
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
     logger.info("operator image name {0}", operatorImage);
     if (createSecret) {
-      boolean secretExists = false;
-      V1SecretList listSecrets = listSecrets(operNamespace);
-      if (null != listSecrets) {
-        for (V1Secret item : listSecrets.getItems()) {
-          if (item.getMetadata().getName().equals(REPO_SECRET_NAME)) {
-            secretExists = true;
-            break;
-          }
-        }
-      }
-      if (!secretExists) {
+      // Create Docker registry secret in the operator namespace to pull the image from repository
+      // this secret is used only for non-kind cluster
+      logger.info("Creating Docker registry secret in namespace {0}", operNamespace);
+      createOcirRepoSecret(operNamespace);
 
-        // Create Docker registry secret in the operator namespace to pull the image from repository
-        logger.info("Creating Docker registry secret in namespace {0}", operNamespace);
-        createDockerRegistrySecret(operNamespace);
-      }
     }
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", REPO_SECRET_NAME);
+    secretNameMap.put("name", OCIR_SECRET_NAME);
 
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()
@@ -948,21 +942,16 @@ class ItUsabilityOperatorHelmChart {
       String helmErrorMsg = installNegative(opHelmParams, opParams.getValues());
       assertNotNull(helmErrorMsg, "helm chart install successful, but expected to fail");
       assertTrue(helmErrorMsg.contains(errMsg),
-          String.format("Operator install failed with unexpected error  :%s", helmErrorMsg));
+          String.format("Operator install failed with error  :%s", helmErrorMsg));
       return null;
     } else {
-      assertTrue(installOperator(opParams),
+      boolean succeeded = installOperator(opParams);
+      checkReleaseStatus(operNamespace, helmStatus, logger, opReleaseName);
+      assertTrue(succeeded,
           String.format("Failed to install operator in namespace %s ", operNamespace));
       logger.info("Operator installed in namespace {0}", operNamespace);
     }
-    // list Helm releases matching operator release name in operator namespace
-    logger.info("Checking operator release {0} status in namespace {1}",
-        opReleaseName, operNamespace);
-    assertTrue(checkHelmReleaseStatus(opReleaseName, operNamespace, helmStatus),
-        String.format("Operator release %s is not in %s status in namespace %s",
-            opReleaseName, helmStatus, operNamespace));
-    logger.info("Operator release {0} status is {1} in namespace {2}",
-        opReleaseName, helmStatus, operNamespace);
+    checkReleaseStatus(operNamespace, helmStatus, logger, opReleaseName);
     if (helmStatus.equalsIgnoreCase("deployed")) {
       // wait for the operator to be ready
       logger.info("Wait for the operator pod is ready in namespace {0}", operNamespace);
@@ -991,6 +980,21 @@ class ItUsabilityOperatorHelmChart {
       return opHelmParams;
     }
     return null;
+  }
+
+  private static void checkReleaseStatus(
+      String operNamespace, 
+      String helmStatus, 
+      LoggingFacade logger, 
+      String opReleaseName) {
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking operator release {0} status in namespace {1}",
+        opReleaseName, operNamespace);
+    assertTrue(checkHelmReleaseStatus(opReleaseName, operNamespace, helmStatus),
+        String.format("Operator release %s is not in %s status in namespace %s",
+            opReleaseName, helmStatus, operNamespace));
+    logger.info("Operator release {0} status is {1} in namespace {2}",
+        opReleaseName, helmStatus, operNamespace);
   }
 
   /**

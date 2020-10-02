@@ -77,7 +77,10 @@ import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
@@ -86,7 +89,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
@@ -95,7 +97,15 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
@@ -103,16 +113,11 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_NAME;
@@ -121,13 +126,13 @@ import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.archiveApp;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildCoherenceArchive;
@@ -164,6 +169,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallElasticsearch;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallKibana;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
@@ -358,12 +364,13 @@ public class CommonTestUtils {
     logger.info("operator image name {0}", operatorImage);
 
     // Create Docker registry secret in the operator namespace to pull the image from repository
+    // this secret is used only for non-kind cluster
     logger.info("Creating Docker registry secret in namespace {0}", opNamespace);
-    createDockerRegistrySecret(opNamespace);
+    createOcirRepoSecret(opNamespace);
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", REPO_SECRET_NAME);
+    secretNameMap.put("name", OCIR_SECRET_NAME);
 
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()
@@ -510,14 +517,34 @@ public class CommonTestUtils {
   public static HelmParams installAndVerifyNginx(String nginxNamespace,
                                                  int nodeportshttp,
                                                  int nodeportshttps) {
+    return installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps, NGINX_CHART_VERSION);
+  }
+
+  /**
+   * Install NGINX and wait up to five minutes until the NGINX pod is ready.
+   *
+   * @param nginxNamespace the namespace in which the NGINX will be installed
+   * @param nodeportshttp the http nodeport of NGINX
+   * @param nodeportshttps the https nodeport of NGINX
+   * @param chartVersion the chart version of NGINX
+   * @return the NGINX Helm installation parameters
+   */
+  public static HelmParams installAndVerifyNginx(String nginxNamespace,
+                                                 int nodeportshttp,
+                                                 int nodeportshttps,
+                                                 String chartVersion) {
     LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
         .releaseName(NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3))
         .namespace(nginxNamespace)
-        .repoUrl(GOOGLE_REPO_URL)
-        .repoName(STABLE_REPO_NAME)
+        .repoUrl(NGINX_REPO_URL)
+        .repoName(NGINX_REPO_NAME)
         .chartName(NGINX_CHART_NAME);
+
+    if (chartVersion != null) {
+      nginxHelmParams.chartVersion(chartVersion);
+    }
 
     // NGINX chart values to override
     NginxParams nginxParams = new NginxParams()
@@ -660,14 +687,15 @@ public class CommonTestUtils {
     LoggingFacade logger = getLogger();
 
     // Create Docker registry secret in the apache namespace to pull the Apache webtier image from repository
-    if (!secretExists(REPO_SECRET_NAME, apacheNamespace)) {
+    // this secret is used only for non-kind cluster
+    if (!secretExists(OCIR_SECRET_NAME, apacheNamespace)) {
       logger.info("Creating Docker registry secret in namespace {0}", apacheNamespace);
-      createDockerRegistrySecret(apacheNamespace);
+      createOcirRepoSecret(apacheNamespace);
     }
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", REPO_SECRET_NAME);
+    secretNameMap.put("name", OCIR_SECRET_NAME);
 
     // Helm install parameters
     HelmParams apacheHelmParams = new HelmParams()
@@ -1203,6 +1231,24 @@ public class CommonTestUtils {
                                                             String domainNamespace,
                                                             String ingressName,
                                                             Map<String, Integer> clusterNameMSPortMap) {
+    return installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMSPortMap, null);
+  }
+
+  /**
+   * Create an ingress for the domain with domainUid in a given namespace and verify.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param ingressName name of ingress to be created in a given domain
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @param tlsSecret the secret name for TLS
+   * @return list of ingress hosts
+   */
+  public static List<String> installVoyagerIngressAndVerify(String domainUid,
+                                                            String domainNamespace,
+                                                            String ingressName,
+                                                            Map<String, Integer> clusterNameMSPortMap,
+                                                            String tlsSecret) {
     LoggingFacade logger = getLogger();
     final String voyagerIngressName = VOYAGER_CHART_NAME + "-" + ingressName;
     final String channelName = "tcp-80";
@@ -1218,7 +1264,7 @@ public class CommonTestUtils {
 
     // create an ingress in domain namespace
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true, null);
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true, tlsSecret);
 
     // wait until the Voyager ingress pod is ready.
     withStandardRetryPolicy
@@ -1451,7 +1497,7 @@ public class CommonTestUtils {
                                                 String wdtModelFile,
                                                 String appName) {
     return createMiiImageAndVerify(miiImageNameBase, wdtModelFile, appName,
-        WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS);
+        WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS);
   }
 
   /**
@@ -1474,8 +1520,8 @@ public class CommonTestUtils {
     final List<String> appSrcDirList = Collections.singletonList(appName);
 
     return createImageAndVerify(
-        miiImageNameBase, modelList, appSrcDirList, null, WLS_BASE_IMAGE_NAME,
-        WLS_BASE_IMAGE_TAG, WLS, true, null, false,
+        miiImageNameBase, modelList, appSrcDirList, null, WEBLOGIC_IMAGE_NAME,
+        WEBLOGIC_IMAGE_TAG, WLS, true, null, false,
         additionalBuildCommands, additionalBuildFilesVarargs);
   }
 
@@ -1516,7 +1562,7 @@ public class CommonTestUtils {
                                                 List<String> wdtModelList,
                                                 List<String> appSrcDirList) {
     return createMiiImageAndVerify(
-        miiImageNameBase, wdtModelList, appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS, true);
+        miiImageNameBase, wdtModelList, appSrcDirList, WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS, true);
 
   }
 
@@ -1568,8 +1614,8 @@ public class CommonTestUtils {
     final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
 
     return createImageAndVerify(
-      imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
-      WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
+      imageNameBase, wdtModelList, appSrcDirList, modelPropList, WEBLOGIC_IMAGE_NAME,
+        WEBLOGIC_IMAGE_TAG, WLS, false, domainHome, false);
   }
 
   /**
@@ -1592,8 +1638,8 @@ public class CommonTestUtils {
     final List<String> modelPropList = Collections.singletonList(MODEL_DIR + "/" + modelPropFile);
 
     return createImageAndVerify(
-            imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
-            WLS_BASE_IMAGE_TAG, WLS, false, domainHome, false);
+            imageNameBase, wdtModelList, appSrcDirList, modelPropList, WEBLOGIC_IMAGE_NAME,
+        WEBLOGIC_IMAGE_TAG, WLS, false, domainHome, false);
   }
 
   /**
@@ -1661,7 +1707,7 @@ public class CommonTestUtils {
     Date date = new Date();
     final String imageTag = baseImageTag + "-" + dateFormat.format(date) + "-" + System.currentTimeMillis();
     // Add repository name in image name for Jenkins runs
-    final String imageName = REPO_NAME + imageNameBase;
+    final String imageName = DOMAIN_IMAGES_REPO + imageNameBase;
     final String image = imageName + ":" + imageTag;
 
     List<String> archiveList = new ArrayList<>();
@@ -1803,9 +1849,9 @@ public class CommonTestUtils {
    *
    * @param namespace namespace in which the secret will be created
    */
-  public static void createOCRRepoSecret(String namespace) {
+  public static void createOcrRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
-    logger.info("Creating image pull secret in namespace {0}", namespace);
+    logger.info("Creating image pull secret {0} in namespace {1}", OCR_SECRET_NAME, namespace);
     createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
   }
 
@@ -1815,9 +1861,11 @@ public class CommonTestUtils {
    *
    * @param namespace the namespace in which the secret will be created
    */
-  public static void createDockerRegistrySecret(String namespace) {
-    createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
-        REPO_REGISTRY, REPO_SECRET_NAME, namespace);
+  public static void createOcirRepoSecret(String namespace) {
+    LoggingFacade logger = getLogger();
+    logger.info("Creating image pull secret {0} in namespace {1}", OCIR_SECRET_NAME, namespace);
+    createDockerRegistrySecret(OCIR_USERNAME, OCIR_PASSWORD, OCIR_EMAIL,
+        OCIR_REGISTRY, OCIR_SECRET_NAME, namespace);
   }
 
   /**
@@ -1831,11 +1879,22 @@ public class CommonTestUtils {
    */
   public static void createDockerRegistrySecret(String userName, String password,
                                                 String email, String registry, String secretName, String namespace) {
-
+    LoggingFacade logger = getLogger();
     // Create registry secret in the namespace to pull the image from repository
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
         userName, password, email, registry);
     String dockerConfigJson = dockerConfigJsonObject.toString();
+
+    // skip if the secret already exists
+    V1SecretList listSecrets = listSecrets(namespace);
+    if (listSecrets != null) {
+      for (V1Secret item : listSecrets.getItems()) {
+        if (item.getMetadata().getName().equals(secretName)) {
+          logger.info("Secret {0} already exists in namespace {1}, skipping secret creation", secretName, namespace);
+          return;
+        }
+      }
+    }
 
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
@@ -1852,6 +1911,19 @@ public class CommonTestUtils {
   }
 
   /**
+   * Create a Docker registry secret in the specified namespace to pull base images.
+   *
+   * @param namespace the namespace in which the secret will be created
+   */
+  public static void createSecretForBaseImages(String namespace) {
+    if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+      createOcrRepoSecret(namespace);
+    } else {
+      createOcirRepoSecret(namespace);
+    }
+  }
+
+  /**
    * Docker login and push the image to Docker registry.
    *
    * @param dockerImage the Docker image to push to registry
@@ -1859,14 +1931,14 @@ public class CommonTestUtils {
   public static void dockerLoginAndPushImageToRegistry(String dockerImage) {
     LoggingFacade logger = getLogger();
     // push image, if necessary
-    if (!REPO_NAME.isEmpty() && dockerImage.contains(REPO_NAME)) {
+    if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(DOMAIN_IMAGES_REPO)) {
       // docker login, if necessary
-      if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+      if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
         logger.info("docker login");
-        assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+        assertTrue(dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD), "docker login failed");
       }
 
-      logger.info("docker push image {0} to {1}", dockerImage, REPO_NAME);
+      logger.info("docker push image {0} to {1}", dockerImage, DOMAIN_IMAGES_REPO);
       assertTrue(dockerPush(dockerImage), String.format("docker push failed for image %s", dockerImage));
     }
   }
@@ -2176,7 +2248,9 @@ public class CommonTestUtils {
     HelmParams promHelmParams = new HelmParams()
         .releaseName(promReleaseName)
         .namespace(promNamespace)
-        .chartDir("stable/prometheus")
+        .repoUrl(PROMETHEUS_REPO_URL)
+        .repoName(PROMETHEUS_REPO_NAME)
+        .chartName("prometheus")
         .chartValuesFile(promValueFile);
 
     if (promVersion != null) {
@@ -2260,13 +2334,32 @@ public class CommonTestUtils {
     }
     // install grafana
     logger.info("Installing grafana in namespace {0}", grafanaNamespace);
-    int grafanaNodePort = getNextFreePort(31050, 31200);
+    int grafanaNodePort = getNextFreePort(31060, 31200);
+    logger.info("Installing grafana with node port {0}", grafanaNodePort);
     // grafana chart values to override
     GrafanaParams grafanaParams = new GrafanaParams()
         .helmParams(grafanaHelmParams)
         .nodePort(grafanaNodePort);
-    assertTrue(installGrafana(grafanaParams),
-        String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+    boolean isGrafanaInstalled = false;
+    try {
+      assertTrue(installGrafana(grafanaParams),
+          String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+    } catch (AssertionError err) {
+      //retry with different nodeport
+      uninstallGrafana(grafanaHelmParams);
+      grafanaNodePort = getNextFreePort(31060, 31200);
+      grafanaParams = new GrafanaParams()
+          .helmParams(grafanaHelmParams)
+          .nodePort(grafanaNodePort);
+      isGrafanaInstalled = installGrafana(grafanaParams);
+      if (!isGrafanaInstalled) {
+        //clean up
+        logger.info(String.format("Failed to install grafana in namespace %s with nodeport %s",
+            grafanaNamespace, grafanaNodePort));
+        uninstallGrafana(grafanaHelmParams);
+        return null;
+      }
+    }
     logger.info("Grafana installed in namespace {0}", grafanaNamespace);
 
     // list Helm releases matching grafana release name in  namespace
@@ -2747,19 +2840,18 @@ public class CommonTestUtils {
    * Create a job to create a domain in persistent volume.
    *
    * @param image image name used to create the domain
-   * @param isUseSecret true for non Kind Kubernetes cluster
    * @param pvName name of the persistent volume to create domain in
    * @param pvcName name of the persistent volume claim
    * @param domainScriptCM configmap holding domain creation script files
    * @param namespace name of the domain namespace in which the job is created
    * @param jobContainer V1Container with job commands to create domain
    */
-  public static void createDomainJob(String image, boolean isUseSecret, String pvName,
+  public static void createDomainJob(String image, String pvName,
                                String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
 
     LoggingFacade logger = getLogger();
-    logger.info("Running Kubernetes job to create domain for image: {1}, isUserSecret: {2} "
-        + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image, isUseSecret,
+    logger.info("Running Kubernetes job to create domain for image: {1}: {2} "
+        + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image,
         pvName, pvcName, domainScriptCM, namespace);
     V1Job jobBody = new V1Job()
         .metadata(
@@ -2808,10 +2900,9 @@ public class CommonTestUtils {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptCM)))) //config map containing domain scripts
-                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                    .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))
-                        : null))));
+                            .name(BASE_IMAGES_REPO_SECRET))))));  // this secret is used only for non-kind cluster
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create Job");
 
@@ -2877,5 +2968,34 @@ public class CommonTestUtils {
           }
           return false;
         });
+  }
+
+  /**
+   * Get the creationTimestamp for the domain admin server pod and managed server pods.
+   *
+   * @param domainNamespace namespace where the domain is
+   * @param adminServerPodName the pod name of the admin server
+   * @param managedServerPrefix prefix of the managed server pod name
+   * @param replicaCount replica count of the managed servers
+   * @return map of domain admin server pod and managed server pods with their corresponding creationTimestamps
+   */
+  public static Map getPodsWithTimeStamps(String domainNamespace, String adminServerPodName,
+       String managedServerPrefix, int replicaCount) {
+
+    // create the map with server pods and their original creation timestamps
+    Map<String, DateTime> podsWithTimeStamps = new LinkedHashMap<>();
+    podsWithTimeStamps.put(adminServerPodName,
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
+            String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+                adminServerPodName, domainNamespace)));
+
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = managedServerPrefix + i;
+      podsWithTimeStamps.put(managedServerPodName,
+          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
+              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+                  managedServerPodName, domainNamespace)));
+    }
+    return podsWithTimeStamps;
   }
 }

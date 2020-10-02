@@ -46,7 +46,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -145,6 +145,21 @@ public class ItOperatorUpgrade {
   public void testOperatorUpgradeFrom3_0_1(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
     upgradeOperator("3.0.1", true);
+  }
+
+
+  /**
+   * Operator upgrade from 3.0.2 to latest.
+   * Install 3.0.2 Operator from GitHub chart repository and create a domain.
+   * Upgrade operator with latest Operator image and verify CRD version and image are updated
+   * and the domain can be managed by scaling the cluster using operator REST api.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.0.2 to latest")
+  @MustNotRunInParallel
+  public void testOperatorUpgradeFrom3_0_2(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    upgradeOperator("3.0.2", true);
   }
 
   /**
@@ -269,7 +284,8 @@ public class ItOperatorUpgrade {
   private void createDomainHomeInImageAndVerify(String domainNamespace, String operatorVersion) {
 
     // Create the repo secret to pull the image
-    createDockerRegistrySecret(domainNamespace);
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");

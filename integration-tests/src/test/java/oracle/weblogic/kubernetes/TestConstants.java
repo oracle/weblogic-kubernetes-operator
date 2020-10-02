@@ -20,7 +20,7 @@ public interface TestConstants {
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
   public static final String WLS_DOMAIN_TYPE = "WLS";
   public static final String WLS_DEFAULT_CHANNEL_NAME = "default";
-  public static final String DEFAULT_WLS_IMAGE_TAGS = "12.2.1.4, 14.1.1.0-11";
+  public static final String DEFAULT_WLS_IMAGE_TAGS = "12.2.1.3, 12.2.1.4, 14.1.1.0-11";
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
@@ -31,24 +31,41 @@ public interface TestConstants {
   public static final String OPERATOR_DOCKER_BUILD_SCRIPT =
       "../buildDockerImage.sh";
   public static final String OPERATOR_SERVICE_NAME = "internal-weblogic-operator-svc";
-  public static final String REPO_DUMMY_VALUE = "dummy";
-  public static final String REPO_SECRET_NAME = "ocir-secret";
-  public static final String REPO_REGISTRY = Optional.ofNullable(System.getenv("REPO_REGISTRY"))
-      .orElse(REPO_DUMMY_VALUE);
-  public static final String REPO_DEFAULT = "phx.ocir.io/weblogick8s/";
-  public static final String KIND_REPO = System.getenv("KIND_REPO");
-  public static final String REPO_NAME = Optional.ofNullable(KIND_REPO)
-      .orElse(!REPO_REGISTRY.equals(REPO_DUMMY_VALUE) ? REPO_DEFAULT : "");
-  public static final String REPO_USERNAME = Optional.ofNullable(System.getenv("REPO_USERNAME"))
-      .orElse(REPO_DUMMY_VALUE);
-  public static final String REPO_PASSWORD = Optional.ofNullable(System.getenv("REPO_PASSWORD"))
-      .orElse(REPO_DUMMY_VALUE);
-  public static final String REPO_EMAIL = Optional.ofNullable(System.getenv("REPO_EMAIL"))
-      .orElse(REPO_DUMMY_VALUE);
   public static final String OPERATOR_GITHUB_CHART_REPO_URL =
-        "https://oracle.github.io/weblogic-kubernetes-operator/charts";
+      "https://oracle.github.io/weblogic-kubernetes-operator/charts";
 
-  // OCR registry
+
+  // kind constants
+  public static final String KIND_REPO = System.getenv("KIND_REPO");
+  public static final String REPO_DUMMY_VALUE = "dummy";
+
+  // ocir constants
+  public static final String OCIR_DEFAULT = "phx.ocir.io";
+  public static final String OCIR_REGISTRY = Optional.ofNullable(System.getenv("OCIR_REGISTRY"))
+      .orElse(OCIR_DEFAULT);
+  public static final String OCIR_USERNAME = Optional.ofNullable(System.getenv("OCIR_USERNAME"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String OCIR_PASSWORD = Optional.ofNullable(System.getenv("OCIR_PASSWORD"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String OCIR_EMAIL = Optional.ofNullable(System.getenv("OCIR_EMAIL"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String OCIR_SECRET_NAME = "ocir-secret";
+
+  // ocir default image values, these values will be used while running locally
+  public static final String OCIR_WEBLOGIC_IMAGE_NAME = "weblogick8s/test-images/weblogic";
+  public static final String OCIR_WEBLOGIC_IMAGE_TAG = "12.2.1.4";
+  public static final String OCIR_FMWINFRA_IMAGE_NAME = "weblogick8s/test-images/fmw-infrastructure";
+  public static final String OCIR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
+  public static final String OCIR_DB_IMAGE_NAME = "weblogick8s/test-images/database/enterprise";
+  public static final String OCIR_DB_IMAGE_TAG = "12.2.0.1-slim";
+
+  // repository to push the domain images, for kind push to kind repo
+  // for others push to REPO_REGISTRY if REPO_REGISTRY env var is provided,
+  // if its not provided (like local runs) don't push the domain images to any repo
+  public static final String DOMAIN_IMAGES_REPO = Optional.ofNullable(KIND_REPO)
+      .orElse(System.getenv("REPO_REGISTRY") != null ? System.getenv("REPO_REGISTRY") + "/weblogick8s/" : "");
+
+  // OCR constants
   public static final String OCR_SECRET_NAME = "ocr-secret";
   public static final String OCR_REGISTRY = "container-registry.oracle.com";
   public static final String OCR_USERNAME = Optional.ofNullable(System.getenv("OCR_USERNAME"))
@@ -58,6 +75,63 @@ public interface TestConstants {
   public static final String OCR_EMAIL = Optional.ofNullable(System.getenv("OCR_EMAIL"))
       .orElse(REPO_DUMMY_VALUE);
 
+  // OCR default image values, these values will be used while running locally
+  public static final String OCR_WEBLOGIC_IMAGE_NAME = "weblogick8s/weblogic";
+  public static final String OCR_WEBLOGIC_IMAGE_TAG = "12.2.1.4";
+  public static final String OCR_FMWINFRA_IMAGE_NAME = "weblogick8s/fmw-infrastructure";
+  public static final String OCR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
+  public static final String OCR_DB_IMAGE_NAME = "database/enterprise";
+  public static final String OCR_DB_IMAGE_TAG = "12.2.0.1-slim";
+
+  // ----------------------------- base images constants ---------------------
+  // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default to pull base images
+  public static final String BASE_IMAGES_REPO = Optional.ofNullable(System.getenv("BASE_IMAGES_REPO"))
+      .orElse(OCIR_DEFAULT);
+  // Use OCR secret name if OCR is used for base images, if not use OCIR secret name
+  public static final String BASE_IMAGES_REPO_SECRET =
+      BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_SECRET_NAME : OCIR_SECRET_NAME;
+
+  // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, if its not provided and
+  // if base images repo is OCR use OCR default image values
+  // or if base images repo is OCIR use OCIR default image values
+  public static final String WEBLOGIC_IMAGE_NAME
+          = BASE_IMAGES_REPO + "/" + Optional.ofNullable(System.getenv("WEBLOGIC_IMAGE_NAME"))
+      .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_WEBLOGIC_IMAGE_NAME : OCIR_WEBLOGIC_IMAGE_NAME);
+  public static final String WEBLOGIC_IMAGE_TAG = Optional.ofNullable(System.getenv("WEBLOGIC_IMAGE_TAG"))
+      .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_WEBLOGIC_IMAGE_TAG : OCIR_WEBLOGIC_IMAGE_TAG);
+  public static final String WLS_UPDATE_IMAGE_TAG = "14.1.1.0-11";
+
+  // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not provided and
+  // if base images repo is OCR use OCR default image values
+  // or if base images repo is OCIR use OCIR default image values
+  public static final String FMWINFRA_IMAGE_NAME
+      = BASE_IMAGES_REPO + "/" + Optional.ofNullable(System.getenv("FMWINFRA_IMAGE_NAME"))
+      .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_FMWINFRA_IMAGE_NAME : OCIR_FMWINFRA_IMAGE_NAME);
+  public static final String FMWINFRA_IMAGE_TAG = Optional.ofNullable(System.getenv("FMWINFRA_IMAGE_TAG"))
+      .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_FMWINFRA_IMAGE_TAG : OCIR_FMWINFRA_IMAGE_TAG);
+
+  // Get DB_IMAGE_NAME/DB_IMAGE_TAG from env var, if its not provided and
+  // if base images repo is OCR use OCR default image values
+  // or if base images repo is OCIR use OCIR default image values
+  public static final String DB_IMAGE_NAME
+      = BASE_IMAGES_REPO + "/" + Optional.ofNullable(System.getenv("DB_IMAGE_NAME"))
+      .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_DB_IMAGE_NAME : OCIR_DB_IMAGE_NAME);
+  public static final String DB_IMAGE_TAG = Optional.ofNullable(System.getenv("DB_IMAGE_TAG"))
+      .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_DB_IMAGE_TAG : OCIR_DB_IMAGE_TAG);
+
+  // For kind, replace repo name in image name with KIND_REPO, otherwise use the actual image name
+  // For example, image container-registry.oracle.com/middleware/weblogic:12.2.1.4 will be pushed/used as
+  // localhost:5000/middleware/weblogic:12.2.1.4 in kind and in non-kind cluster it will be used as is.
+  public static final String WEBLOGIC_IMAGE_TO_USE_IN_SPEC = KIND_REPO != null ? KIND_REPO
+      + (WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
+      : WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
+  public static final String FMWINFRA_IMAGE_TO_USE_IN_SPEC = KIND_REPO
+      + (FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1);
+  public static final String DB_IMAGE_TO_USE_IN_SPEC = KIND_REPO
+      + (DB_IMAGE_NAME + ":" + DB_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1);
+
+  // ----------------------------- base images constants - end -------------------
+
   // jenkins constants
   public static final String BUILD_ID = Optional.ofNullable(System.getenv("BUILD_ID"))
       .orElse("");
@@ -66,19 +140,19 @@ public interface TestConstants {
 
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostName()));
-  public static final String GOOGLE_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
   public static final String RESULTS_ROOT = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/ittestsresults";
   public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
-
   public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
       System.getProperty("java.io.tmpdir") + "/ittestspvroot");
 
   // NGINX constants
+  public static final String NGINX_REPO_URL = "https://kubernetes.github.io/ingress-nginx";
   public static final String NGINX_RELEASE_NAME = "nginx-release" + BUILD_ID;
-  public static final String STABLE_REPO_NAME = "stable";
-  public static final String NGINX_CHART_NAME = "nginx-ingress";
+  public static final String NGINX_REPO_NAME = "ingress-nginx";
+  public static final String NGINX_CHART_NAME = "ingress-nginx";
+  public static final String NGINX_CHART_VERSION = "2.16.0";
 
   // Traefik constants
   public static final String TRAEFIK_REPO_URL = "https://containous.github.io/traefik-helm-chart";
@@ -133,7 +207,7 @@ public interface TestConstants {
 
   // MII image constants
   public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";
-  public static final String MII_BASIC_IMAGE_NAME = REPO_NAME + "mii-basic-image";
+  public static final String MII_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-basic-image";
   public static final String MII_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String MII_BASIC_IMAGE_DOMAINTYPE = "mii";
   public static final String MII_BASIC_APP_NAME = "sample-app";
@@ -148,7 +222,7 @@ public interface TestConstants {
   // WDT domain-in-image constants
   public static final String WDT_BASIC_MODEL_FILE = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
-  public static final String WDT_BASIC_IMAGE_NAME = REPO_NAME + "wdt-basic-image";
+  public static final String WDT_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "wdt-basic-image";
   public static final String WDT_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String WDT_BASIC_IMAGE_DOMAINHOME = "/u01/oracle/user_projects/domains/domain1";
   public static final String WDT_IMAGE_DOMAINHOME_BASE_DIR = "/u01/oracle/user_projects/domains";
@@ -166,6 +240,9 @@ public interface TestConstants {
       .orElse("11.1.5");
   public static final String GRAFANA_CHART_VERSION = Optional.ofNullable(System.getenv("GRAFANA_CHART_VERSION"))
       .orElse("5.0.20");
+  public static final String PROMETHEUS_REPO_NAME = "stable";
+  public static final String PROMETHEUS_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
+
   // credentials
   public static final String ADMIN_USERNAME_DEFAULT = "weblogic";
   public static final String ADMIN_PASSWORD_DEFAULT = "welcome1";
@@ -177,12 +254,6 @@ public interface TestConstants {
   public static final String GEN_EXTERNAL_REST_IDENTITY_FILE =
       PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
-
-  // JRF constants
-  public static final String JRF_BASE_IMAGE_NAME = OCR_REGISTRY + "/middleware/fmw-infrastructure";
-  public static final String JRF_BASE_IMAGE_TAG = "12.2.1.4";
-  public static final String DB_IMAGE_NAME = OCR_REGISTRY + "/database/enterprise";
-  public static final String DB_IMAGE_TAG = "12.2.0.1-slim";
 
   // istio constants
   public static final String ISTIO_VERSION = "1.5.4";

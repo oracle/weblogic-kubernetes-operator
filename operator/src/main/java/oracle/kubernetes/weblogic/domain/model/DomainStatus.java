@@ -480,7 +480,7 @@ public class DomainStatus {
         .append("servers", servers)
         .append("clusters", clusters)
         .append("startTime", startTime)
-        .append("introspectJobFailureRetryCount", introspectJobFailureCount)
+        .append("introspectJobFailureCount", introspectJobFailureCount)
         .toString();
   }
 
@@ -521,7 +521,7 @@ public class DomainStatus {
         .withConstructor(DomainStatus::new)
         .withStringField("message", DomainStatus::getMessage)
         .withStringField("reason", DomainStatus::getReason)
-        .withIntegerField("introspectJobFailureRetryCount", DomainStatus::getIntrospectJobFailureCount)
+        .withIntegerField("introspectJobFailureCount", DomainStatus::getIntrospectJobFailureCount)
         .withIntegerField("replicas", DomainStatus::getReplicas)
         .withListField("conditions", DomainCondition.getObjectPatch(), DomainStatus::getConditions)
         .withListField("clusters", ClusterStatus.getObjectPatch(), DomainStatus::getClusters)

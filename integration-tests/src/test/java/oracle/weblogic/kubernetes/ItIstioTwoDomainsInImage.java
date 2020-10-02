@@ -21,7 +21,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
@@ -40,7 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -51,7 +50,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -69,13 +68,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItIstioTwoDomainsInImage {
 
-  private static HelmParams opHelmParams = null;
   private static String opNamespace = null;
-  private static String operatorImage = null;
   private static String domainNamespace1 = null;
   private static String domainNamespace2 = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static String dockerConfigJson = "";
   private final String clusterName = "cluster-1"; // do not modify 
   private final String adminServerName = "admin-server"; // do not modify
   private final String domainUid1 = "istio-dii-wdt-1";
@@ -151,8 +147,9 @@ class ItIstioTwoDomainsInImage {
     final int replicaCount = 2;
 
     // Create the repo secret to pull the image
-    createDockerRegistrySecret(domainNamespace1);
-    createDockerRegistrySecret(domainNamespace2);
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace1);
+    createOcirRepoSecret(domainNamespace2);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -165,9 +162,9 @@ class ItIstioTwoDomainsInImage {
          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create the domain CR(s)
-    createDomainResource(domainUid1, domainNamespace1, adminSecretName1, REPO_SECRET_NAME,
+    createDomainResource(domainUid1, domainNamespace1, adminSecretName1, OCIR_SECRET_NAME,
         replicaCount);
-    createDomainResource(domainUid2, domainNamespace2, adminSecretName2, REPO_SECRET_NAME,
+    createDomainResource(domainUid2, domainNamespace2, adminSecretName2, OCIR_SECRET_NAME,
         replicaCount);
 
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace1);
