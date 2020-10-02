@@ -22,6 +22,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,9 +38,9 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
@@ -76,7 +77,7 @@ class ItDedicatedMode {
   private static final String CRD_V15 = "domain-v1beta1-crd.yaml";
 
   // domain constants
-  private final String domainUid = "domain1";
+  private final String domainUid = "dedicated-domain-1";
   private final String clusterName = "cluster-1";
   private final int replicaCount = 2;
   private final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -161,6 +162,7 @@ class ItDedicatedMode {
    *   Verify that the domain does not come up.
    */
   @Test
+  @MustNotRunInParallel
   @Order(1)
   @DisplayName("Set domainNamespaceSelectionStrategy to Dedicated for the Operator Helm Chart and "
       + "verify that a domain not deployed in operator's namespace doesn't come up")
@@ -186,6 +188,7 @@ class ItDedicatedMode {
    *   Verify that the WebLogic domain whose namespace is same as Operator's namespace comes up.
    */
   @Test
+  @MustNotRunInParallel
   @Order(2)
   @DisplayName("Set domainNamespaceSelectionStrategy to Dedicated for the Operator Helm Chart and "
       + "verify that the domain deployed in the operator's namespace comes up")
@@ -201,6 +204,7 @@ class ItDedicatedMode {
    * scaling up cluster-1 in domain1Namespace succeeds.
    */
   @Test
+  @MustNotRunInParallel
   @Disabled("Disable the test due to JIRA OWLS-84741")
   @Order(3)
   @DisplayName("Scale up cluster-1 in domain1Namespace and verify it succeeds")
@@ -307,10 +311,11 @@ class ItDedicatedMode {
     // create domain and verify
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainNamespace, domainUid, domainNamespace);
-    createDomainCrAndVerify(domainNamespace, adminSecretName, encryptionSecretName);
+    createDomainCrAndVerify(domainNamespace, OCIR_SECRET_NAME, adminSecretName, encryptionSecretName);
   }
 
   private void createDomainCrAndVerify(String domainNamespace,
+                                       String repoSecretName,
                                        String adminSecretName,
                                        String encryptionSecretName) {
     // get the pre-built image created by IntegrationTestWatcher
@@ -335,7 +340,7 @@ class ItDedicatedMode {
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(REPO_SECRET_NAME))
+                .name(repoSecretName))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))
