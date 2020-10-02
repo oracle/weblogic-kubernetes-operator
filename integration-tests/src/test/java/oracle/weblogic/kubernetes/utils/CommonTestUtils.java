@@ -169,6 +169,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallElasticsearch;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallKibana;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
@@ -2333,13 +2334,32 @@ public class CommonTestUtils {
     }
     // install grafana
     logger.info("Installing grafana in namespace {0}", grafanaNamespace);
-    int grafanaNodePort = getNextFreePort(31050, 31200);
+    int grafanaNodePort = getNextFreePort(31060, 31200);
+    logger.info("Installing grafana with node port {0}", grafanaNodePort);
     // grafana chart values to override
     GrafanaParams grafanaParams = new GrafanaParams()
         .helmParams(grafanaHelmParams)
         .nodePort(grafanaNodePort);
-    assertTrue(installGrafana(grafanaParams),
-        String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+    boolean isGrafanaInstalled = false;
+    try {
+      assertTrue(installGrafana(grafanaParams),
+          String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+    } catch (AssertionError err) {
+      //retry with different nodeport
+      uninstallGrafana(grafanaHelmParams);
+      grafanaNodePort = getNextFreePort(31060, 31200);
+      grafanaParams = new GrafanaParams()
+          .helmParams(grafanaHelmParams)
+          .nodePort(grafanaNodePort);
+      isGrafanaInstalled = installGrafana(grafanaParams);
+      if (!isGrafanaInstalled) {
+        //clean up
+        logger.info(String.format("Failed to install grafana in namespace %s with nodeport %s",
+            grafanaNamespace, grafanaNodePort));
+        uninstallGrafana(grafanaHelmParams);
+        return null;
+      }
+    }
     logger.info("Grafana installed in namespace {0}", grafanaNamespace);
 
     // list Helm releases matching grafana release name in  namespace
