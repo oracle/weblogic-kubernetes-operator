@@ -9,9 +9,10 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/utility.sh
 
 function usage {
-  echo "usage: ${script} [-i <filename>] [-k <filename>] [-s] [-w <dirname>] [-d] [-h]"
+  echo "usage: ${script} [-i <filename>] [-k <filename>] [-m <container_cli>] [-s] [-w <dirname>] [-d] [-h]"
   echo "  -i File containing list of images to scan in [Repository]:[Tag]@[Hash] format with each image on a separate line."
   echo "  -k File containing Kubernetes Node information in json format (output of 'kubectl get nodes -o json')."
+  echo "  -m Container CLI command e.g. 'docker' or 'podman'. Defaults to 'docker'."
   echo "  -w Working directory for the generated files. Defaults to './work' dir."
   echo "  -s Silent mode."
   echo "  -d Disable validation check of images that are present in node information file but have not been pulled on current machine."
@@ -188,7 +189,7 @@ function scanAndSearchImageList {
       continue
     fi
     if checkStringMatchesArrayPattern "${imageRepoTag}" "${ignoreImageVerificationList[@]}"; then
-      info "Image scan skipped as image is in exclude list - ${imageRepoTag}@${imageHash}" | tee -a ${imageScanExcludedReport}
+      info "Image scan skipped as image is in exclude list - ${imageRepoTag}" | tee -a ${imageScanExcludedReport}
       continue
     fi
 
@@ -285,7 +286,10 @@ function searchArtifactInImage {
   do
       find "${imageDir}" -name '*.tar' | while read layer
       do
-          searchArtifactInLayers "${image}" "${layer}" "${artifact}" "${nodeName}"
+          searchArtifactInLayers "${image}" "${layer}" "${artifact}" "${nodeName}" matchFound
+          if [ "${matchFound}" == 'true' ]; then
+            break
+          fi
       done
   done
 }
@@ -295,6 +299,7 @@ function searchArtifactInLayers {
   local layer=$2
   local artifact=$3 
   local nodeName=$4
+  local __matchFound=$5
 
   tar -tf "${layer}" | grep -q "${artifact}"
   if [ $? -eq 0 ]; then
@@ -308,6 +313,7 @@ function searchArtifactInLayers {
       echo $imageDetail | awk -v n="${node::-1}" -v a="${artifact}" '{printf "%s,%s,%s,%s,%s\n", n,a,$1,$2,$3}' >> "${reportFile}"
     fi
     info "Artifact $artifact found in image $imageName ."
+    eval $__matchFound=true
   fi
 }
 

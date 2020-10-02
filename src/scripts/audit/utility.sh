@@ -49,13 +49,13 @@ function warning {
 function printReport {
   if [ -f ${imageValidationSkippedReport} ]; then
     skippedValidationCount=$(cat "${imageValidationSkippedReport}" | wc -l)
-    if [ ${skippedValidationCount} -gt 1 ]; then
+    if [ ${skippedValidationCount} -gt 0 ]; then
       info "There are $skippedValidationCount images file that were excluded from validation. Please see ${imageValidationSkippedReport} file for the list of images which were excluded from validation."
     fi
   fi
   if [ -f ${imageScanExcludedReport} ]; then
     imageScanExcludeCount=$(cat "${imageScanExcludedReport}" | wc -l)
-    if [ ${imageScanExcludeCount} -gt 1 ]; then
+    if [ ${imageScanExcludeCount} -gt 0 ]; then
       info "There are $imageScanExcludeCount images that were NOT scanned. Please see ${imageScanExcludedReport} file for the list of images which were excluded from scan."
     fi
   fi
@@ -187,5 +187,5 @@ function getImagesInNodeFile {
 
 function convertToBytes {
   local size=$1
-  echo ${size} | awk '/[0-9]$/{print $1;next};/[mM]$/{printf "%u\n", $1*(1024*1024);next};/[kK]$/{printf "%u\n", $1*1024;next}'
+  echo ${size} | awk '/[0-9]$/{print $1;next};/[gG]$/{printf "%u\n", $1*(1024*1024*1024);next};/[mM]$/{printf "%u\n", $1*(1024*1024);next};/[kK]$/{printf "%u\n", $1*1024;next}'
 }
