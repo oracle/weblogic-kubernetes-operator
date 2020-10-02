@@ -659,7 +659,7 @@ public class CommonTestUtils {
                                                   int httpsNodePort,
                                                   String domainUid) throws IOException {
     return installAndVerifyApache(apacheNamespace, image, httpNodePort, httpsNodePort, domainUid,
-        null, null, null);
+        null, null, 0, null);
   }
 
   /**
@@ -670,8 +670,9 @@ public class CommonTestUtils {
    * @param httpNodePort the http nodeport of Apache
    * @param httpsNodePort the https nodeport of Apache
    * @param domainUid the uid of the domain to which Apache will route the services
-   * @param pvcName the name of PVC which contains your own custom_mod_wl_apache.conf file
+   * @param pvcName name of the Persistent Volume Claim which contains your own custom_mod_wl_apache.conf file
    * @param virtualHostName the VirtualHostName of the Apache HTTP server which is used to enable custom SSL config
+   * @param adminServerPort admin server port
    * @param clusterNamePortMap the map with clusterName as key and cluster port number as value
    * @return the Apache Helm installation parameters
    */
@@ -682,6 +683,7 @@ public class CommonTestUtils {
                                                   String domainUid,
                                                   String pvcName,
                                                   String virtualHostName,
+                                                  int adminServerPort,
                                                   LinkedHashMap<String, String> clusterNamePortMap)
       throws IOException {
 
@@ -733,20 +735,20 @@ public class CommonTestUtils {
       assertNotNull(v1pv.getSpec());
       assertNotNull(v1pv.getSpec().getHostPath());
       String volumePath = v1pv.getSpec().getHostPath().getPath();
-      logger.info("Got hostPath of the PV {0} is {1}", pvName, volumePath);
+      logger.info("hostPath of the PV {0} is {1}", pvName, volumePath);
 
       Path customConf = Paths.get(volumePath, "custom_mod_wl_apache.conf");
       ArrayList<String> lines = new ArrayList<>();
       lines.add("<IfModule mod_weblogic.c>");
       lines.add("WebLogicHost " + domainUid + "-admin-server");
-      lines.add("WebLogicPort 7001");
+      lines.add("WebLogicPort " + adminServerPort);
       lines.add("</IfModule>");
 
       // Directive for weblogic admin Console deployed on Weblogic Admin Server
       lines.add("<Location /console>");
       lines.add("SetHandler weblogic-handler");
       lines.add("WebLogicHost " + domainUid + "-admin-server");
-      lines.add("WebLogicPort 7001");
+      lines.add("WebLogicPort " + adminServerPort);
       lines.add("</Location>");
 
       // Directive for all application deployed on weblogic cluster with a prepath defined by LOCATION variable
@@ -773,7 +775,7 @@ public class CommonTestUtils {
         throw ioex;
       }
 
-      apacheParams.volumePath(volumePath);
+      apacheParams.pvcName(pvcName);
     }
 
     if (virtualHostName != null) {
