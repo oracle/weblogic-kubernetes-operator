@@ -41,7 +41,8 @@ UPDATE_RCUPWD_FLAG=""
 WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 ARCHIVE_ZIP_CHANGED=0
 WDT_ARTIFACTS_CHANGED=0
-ROLLBACK_ERROR=3
+RESTART_REQUIRED=103
+PROG_ROLLBACK_IF_RESTART_EXIT_CODE=104
 MII_USE_ONLINE_UPDATE="MII_USE_ONLINE_UPDATE"
 MII_ROLLBACK_IFRESTART="MII_ROLLBACK_IFRESTART"
 
@@ -908,16 +909,15 @@ function wdtHandleOnlineUpdate() {
 
   trace "Completed online update="${ret}
 
-  if [ ${ret} -eq ${ROLLBACK_ERROR} ] ; then
-    trace ">>>  updatedomainResult=3"
-    exit 1
+  if [ ${ret} -eq ${RESTART_REQUIRED} ] ; then
+    trace ">>>  updatedomainResult=${ret}"
+  elif [ ${ret} -eq ${PROG_ROLLBACK_IF_RESTART_EXIT_CODE} ] ; then
+    trace ">>>  updatedomainResult=${ret}"
   elif [ ${ret} -ne 0 ] ; then
     trace "Introspect job terminated: Online update failed. Check error in the logs"
-    trace "Note: Changes in the optional configmap and/or image may needs to be correction"
+    trace "Note: Changes in the optional configmap and/or image may needs to be corrected"
     trace ">>>  updatedomainResult=${ret}"
     exit 1
-  else
-    trace ">>>  updatedomainResult=${ret}"
   fi
 
   # Restore encrypted merge model otherwise the on in the domain will be the diffed model
