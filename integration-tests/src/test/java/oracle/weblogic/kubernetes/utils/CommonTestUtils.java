@@ -152,8 +152,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolumeClaims;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolumes;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -726,13 +726,13 @@ public class CommonTestUtils {
       // create a custom Apache plugin configuration file named custom_mod_wl_apache.conf
       // and put it under the directory specified in pv hostPath
       // this file provides a custom Apache plugin configuration to fine tune the behavior of Apache
-      V1PersistentVolumeClaim v1pvc = getPersistentVolumeClaims(apacheNamespace, pvcName);
+      V1PersistentVolumeClaim v1pvc = getPersistentVolumeClaim(apacheNamespace, pvcName);
       assertNotNull(v1pvc);
       assertNotNull(v1pvc.getSpec());
       String pvName = v1pvc.getSpec().getVolumeName();
       logger.info("Got PV {0} from PVC {1} in namespace {2}", pvName, pvcName, apacheNamespace);
 
-      V1PersistentVolume v1pv = getPersistentVolumes(pvName);
+      V1PersistentVolume v1pv = getPersistentVolume(pvName);
       assertNotNull(v1pv);
       assertNotNull(v1pv.getSpec());
       assertNotNull(v1pv.getSpec().getHostPath());

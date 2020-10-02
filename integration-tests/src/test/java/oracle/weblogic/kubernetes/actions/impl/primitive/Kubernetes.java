@@ -1563,7 +1563,7 @@ public class Kubernetes {
    * @param pvname the name of the Persistent Volume
    * @return V1PersistentVolume the Persistent Volume object with specified name in Kubernetes cluster
    */
-  public static V1PersistentVolume getPersistentVolumes(String pvname) {
+  public static V1PersistentVolume getPersistentVolume(String pvname) {
     KubernetesApiResponse<V1PersistentVolume> response = pvClient.get(pvname);
     if (response.isSuccess()) {
       return response.getObject();
@@ -1596,7 +1596,7 @@ public class Kubernetes {
    * @param pvcname the name of Persistent Volume Claim
    * @return V1PersistentVolumeClaim the Persistent Volume Claims Object in specified namespace
    */
-  public static V1PersistentVolumeClaim getPersistentVolumeClaims(String namespace, String pvcname) {
+  public static V1PersistentVolumeClaim getPersistentVolumeClaim(String namespace, String pvcname) {
     KubernetesApiResponse<V1PersistentVolumeClaim> response = pvcClient.get(namespace, pvcname);
     if (response.isSuccess()) {
       return response.getObject();
