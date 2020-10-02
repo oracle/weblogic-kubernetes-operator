@@ -54,6 +54,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
+import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
@@ -1308,6 +1309,32 @@ public class CommonTestUtils {
         ingressName, domainUid, domainNamespace);
 
     return ingressHostList;
+  }
+
+
+  /**
+   * Execute command inside a pod and assert the execution.
+   *
+   * @param pod V1Pod object
+   * @param containerName name of the container inside the pod
+   * @param redirectToStdout if true redirect to stdout and stderr
+   * @param command the command to execute inside the pod
+   */
+  public static void execInPod(V1Pod pod, String containerName, boolean redirectToStdout, String command) {
+    LoggingFacade logger = getLogger();
+    ExecResult exec = null;
+    try {
+      logger.info("Executing command {0}", command);
+      exec = Exec.exec(pod, containerName, redirectToStdout, "/bin/sh", "-c", command);
+      // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero
+      // exit value even on success, so checking for exitValue non-zero and stderr not empty for failure,
+      // otherwise its success
+      assertFalse(exec.exitValue() != 0 && exec.stderr() != null && !exec.stderr().isEmpty(),
+          String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
+              command, exec.exitValue(), exec.stderr(), exec.stdout()));
+    } catch (IOException | ApiException | InterruptedException ex) {
+      logger.warning(ex.getMessage());
+    }
   }
 
   /**
