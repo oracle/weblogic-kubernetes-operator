@@ -969,6 +969,8 @@ function wdtHandleOnlineUpdate() {
     trace "Note: Changes in the optional configmap and/or image may needs to be corrected"
     trace ">>>  updatedomainResult=${ret}"
     exit 1
+  else
+    trace ">>>  updatedomainResult=${ret}"
   fi
 
   # Restore encrypted merge model otherwise the on in the domain will be the diffed model
