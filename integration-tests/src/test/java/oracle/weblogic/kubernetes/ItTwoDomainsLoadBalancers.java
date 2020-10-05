@@ -75,7 +75,6 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -176,6 +175,10 @@ public class ItTwoDomainsLoadBalancers {
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
   private static final String wlSecretName = "weblogic-credentials";
+  private static final String defaultSharingPvcName = "default-sharing-pvc";
+  private static final String defaultSharingPvName = "default-sharing-pv";
+  private static final String apachePvcName = "apache-custom-file-pvc";
+  private static final String apachePvName = "apache-custom-file-pv";
 
   private static String defaultNamespace = "default";
   private static String domain1Uid = null;
@@ -411,17 +414,19 @@ public class ItTwoDomainsLoadBalancers {
     createVoyagerIngressPathRoutingRules();
     createNginxIngressPathRoutingForTwoDomains();
 
-    // install and verify Apache
+    // install and verify Apache for default sample
     apacheHelmParams1 = assertDoesNotThrow(
         () -> installAndVerifyApache(domain1Namespace, kindRepoApacheImage, 0, 0, domain1Uid));
 
+    // install and verify Apache for custom sample
     LinkedHashMap<String, String> clusterNamePortMap = new LinkedHashMap<>();
     for (int i = 0; i < numberOfDomains; i++) {
       clusterNamePortMap.put(domainUids.get(i) + "-cluster-cluster-1", "" + MANAGED_SERVER_PORT);
     }
+    createPVPVCForApacheCustomConfiguration(defaultNamespace);
     apacheHelmParams2 = assertDoesNotThrow(
         () -> installAndVerifyApache(defaultNamespace, kindRepoApacheImage, 0, 0, domain1Uid,
-            PV_ROOT + "/" + this.getClass().getSimpleName(), "apache-sample-host", clusterNamePortMap));
+            apachePvcName, "apache-sample-host", ADMIN_SERVER_PORT, clusterNamePortMap));
   }
 
   /**
@@ -573,7 +578,6 @@ public class ItTwoDomainsLoadBalancers {
    * For more details, please check:
    * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/custom-sample
    */
-  @Disabled("Disabled the test due to intermittent test failure, see JIRA OWLS-84928")
   @Order(12)
   @Test
   @DisplayName("verify Apache load balancer custom sample through HTTP and HTTPS channel")
@@ -746,10 +750,14 @@ public class ItTwoDomainsLoadBalancers {
     }
 
     // delete pv and pvc in default namespace
-    logger.info("deleting pvc default-sharing-pvc");
-    logger.info("deleting pv default-sharing-pv");
-    assertTrue(deletePersistentVolumeClaim("default-sharing-pvc", defaultNamespace));
-    assertTrue(deletePersistentVolume("default-sharing-pv"));
+    logger.info("deleting pvc {0}", defaultSharingPvcName);
+    assertTrue(deletePersistentVolumeClaim(defaultSharingPvcName, defaultNamespace));
+    logger.info("deleting pv {0}", defaultSharingPvName);
+    assertTrue(deletePersistentVolume(defaultSharingPvName));
+    logger.info("deleting pvc {0}", apachePvcName);
+    assertTrue(deletePersistentVolumeClaim(apachePvcName, defaultNamespace));
+    logger.info("deleting pv {0}", apachePvName);
+    assertTrue(deletePersistentVolume(apachePvName));
 
     // delete ingressroute in namespace
     if (dstFile != null) {
@@ -1258,9 +1266,6 @@ public class ItTwoDomainsLoadBalancers {
    */
   private void createTwoDomainsSharingPVUsingWlstAndVerify() {
 
-    String pvName = "default-sharing-pv";
-    String pvcName = "default-sharing-pvc";
-
     // create pull secrets for WebLogic image
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(defaultNamespace);
@@ -1285,7 +1290,7 @@ public class ItTwoDomainsLoadBalancers {
             .hostPath(new V1HostPathVolumeSource()
                 .path(pvHostPath.toString())))
         .metadata(new V1ObjectMetaBuilder()
-            .withName(pvName)
+            .withName(defaultSharingPvName)
             .build()
             .putLabelsItem("sharing-pv", "true"));
 
@@ -1293,11 +1298,11 @@ public class ItTwoDomainsLoadBalancers {
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
             .storageClassName("default-sharing-weblogic-domain-storage-class")
-            .volumeName(pvName)
+            .volumeName(defaultSharingPvName)
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("6Gi"))))
         .metadata(new V1ObjectMetaBuilder()
-            .withName(pvcName)
+            .withName(defaultSharingPvcName)
             .withNamespace(defaultNamespace)
             .build()
             .putLabelsItem("sharing-pvc", "true"));
@@ -1315,13 +1320,13 @@ public class ItTwoDomainsLoadBalancers {
       logger.info("t3ChannelPort for domain {0} is {1}", domainUid, t3ChannelPort);
 
       // run create a domain on PV job using WLST
-      runCreateDomainOnPVJobUsingWlst(pvName, pvcName, domainUid, defaultNamespace, domainScriptConfigMapName,
-          createDomainInPVJobName);
+      runCreateDomainOnPVJobUsingWlst(defaultSharingPvName, defaultSharingPvcName, domainUid, defaultNamespace,
+          domainScriptConfigMapName, createDomainInPVJobName);
 
       // create the domain custom resource configuration object
       logger.info("Creating domain custom resource");
-      Domain domain =
-          createDomainCustomResource(domainUid, defaultNamespace, pvName, pvcName, t3ChannelPort);
+      Domain domain = createDomainCustomResource(domainUid, defaultNamespace, defaultSharingPvName,
+          defaultSharingPvcName, t3ChannelPort);
 
       logger.info("Creating domain custom resource {0} in namespace {1}", domainUid, defaultNamespace);
       createDomainAndVerify(domain, defaultNamespace);
@@ -1336,9 +1341,9 @@ public class ItTwoDomainsLoadBalancers {
         checkPodReadyAndServiceExists(managedServerPodName, domainUid, defaultNamespace);
       }
 
-      logger.info("Getting admin service node port");
       int serviceNodePort =
           getServiceNodePort(defaultNamespace, adminServerPodName + "-external", "default");
+      logger.info("Getting admin service node port: {0}", serviceNodePort);
 
       logger.info("Validating WebLogic admin server access by login to console");
       assertTrue(assertDoesNotThrow(
@@ -1940,5 +1945,47 @@ public class ItTwoDomainsLoadBalancers {
       logger.info("Executing curl command {0}", curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
     }
+  }
+
+  /**
+   * Create PV and PVC for Apache custom configuration file in specified namespace.
+   * @param apacheNamespace namespace in which to create PVC
+   */
+  private void createPVPVCForApacheCustomConfiguration(String apacheNamespace) {
+    Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), "apache-persistentVolume");
+
+    logger.info("Creating PV directory {0}", pvHostPath);
+    assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
+    assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
+
+    V1PersistentVolume v1pv = new V1PersistentVolume()
+        .spec(new V1PersistentVolumeSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName("apache-storage-class")
+            .volumeMode("Filesystem")
+            .putCapacityItem("storage", Quantity.fromString("1Gi"))
+            .persistentVolumeReclaimPolicy("Retain")
+            .hostPath(new V1HostPathVolumeSource()
+                .path(pvHostPath.toString())))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(apachePvName)
+            .build()
+            .putLabelsItem("apacheLabel", "apache-custom-config"));
+
+    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
+        .spec(new V1PersistentVolumeClaimSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName("apache-storage-class")
+            .volumeName(apachePvName)
+            .resources(new V1ResourceRequirements()
+                .putRequestsItem("storage", Quantity.fromString("1Gi"))))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(apachePvcName)
+            .withNamespace(apacheNamespace)
+            .build()
+            .putLabelsItem("apacheLabel", "apache-custom-config"));
+
+    String labelSelector = String.format("apacheLabel in (%s)", "apache-custom-config");
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, apacheNamespace);
   }
 }
