@@ -76,9 +76,9 @@ public interface TestConstants {
       .orElse(REPO_DUMMY_VALUE);
 
   // OCR default image values, these values will be used while running locally
-  public static final String OCR_WEBLOGIC_IMAGE_NAME = "weblogick8s/weblogic";
+  public static final String OCR_WEBLOGIC_IMAGE_NAME = "middleware/weblogic";
   public static final String OCR_WEBLOGIC_IMAGE_TAG = "12.2.1.4";
-  public static final String OCR_FMWINFRA_IMAGE_NAME = "weblogick8s/fmw-infrastructure";
+  public static final String OCR_FMWINFRA_IMAGE_NAME = "middleware/fmw-infrastructure";
   public static final String OCR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
   public static final String OCR_DB_IMAGE_NAME = "database/enterprise";
   public static final String OCR_DB_IMAGE_TAG = "12.2.0.1-slim";
@@ -169,7 +169,7 @@ public interface TestConstants {
 
   // Apache constants
   public static final String APACHE_IMAGE_NAME = "phx.ocir.io/weblogick8s/oracle/apache";
-  public static final String APACHE_IMAGE_VERSION = "12.2.1.3";
+  public static final String APACHE_IMAGE_VERSION = "12.2.1.4";
   public static final String APACHE_IMAGE = APACHE_IMAGE_NAME + ":" + APACHE_IMAGE_VERSION;
   public static final String APACHE_RELEASE_NAME = "apache-release" + BUILD_ID;
   public static final String APACHE_SAMPLE_CHART_DIR = "../kubernetes/samples/charts/apache-webtier";

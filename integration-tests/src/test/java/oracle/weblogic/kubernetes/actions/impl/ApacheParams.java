@@ -19,7 +19,7 @@ public class ApacheParams {
   private static final String IMAGE = "image";
   private static final String IMAGE_PULL_POLICY = "imagePullPolicy";
   private static final String IMAGE_PULL_SECRETS = "imagePullSecrets";
-  private static final String VOLUME_PATH = "volumePath";
+  private static final String PVC_NAME = "persistentVolumeClaimName";
   private static final String HTTP_NODEPORT = "httpNodePort";
   private static final String HTTPS_NODEPORT = "httpsNodePort";
   private static final String VIRTUAL_HOSTNAME = "virtualHostName";
@@ -30,7 +30,7 @@ public class ApacheParams {
   private String image = null;
   private String imagePullPolicy = null;
   private Map<String, Object> imagePullSecrets = null;
-  private String volumePath = null;
+  private String pvcName = null;
   private int httpNodePort = 0;
   private int httpsNodePort = 0;
   private String virtualHostName = null;
@@ -54,8 +54,8 @@ public class ApacheParams {
     return this;
   }
 
-  public ApacheParams volumePath(String volumePath) {
-    this.volumePath = volumePath;
+  public ApacheParams pvcName(String pvcName) {
+    this.pvcName = pvcName;
     return this;
   }
 
@@ -109,7 +109,7 @@ public class ApacheParams {
     values.put(IMAGE, image);
     values.put(IMAGE_PULL_POLICY, imagePullPolicy);
     values.put(IMAGE_PULL_SECRETS, imagePullSecrets);
-    values.put(VOLUME_PATH, volumePath);
+    values.put(PVC_NAME, pvcName);
 
     if (httpNodePort >= 0) {
       values.put(HTTP_NODEPORT, httpNodePort);

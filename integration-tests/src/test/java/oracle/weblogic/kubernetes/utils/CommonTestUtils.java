@@ -54,6 +54,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
+import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
@@ -151,6 +152,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -169,6 +172,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallElasticsearch;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallKibana;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
@@ -785,7 +789,7 @@ public class CommonTestUtils {
                                                   int httpsNodePort,
                                                   String domainUid) throws IOException {
     return installAndVerifyApache(apacheNamespace, image, httpNodePort, httpsNodePort, domainUid,
-        null, null, null);
+        null, null, 0, null);
   }
 
   /**
@@ -796,8 +800,9 @@ public class CommonTestUtils {
    * @param httpNodePort the http nodeport of Apache
    * @param httpsNodePort the https nodeport of Apache
    * @param domainUid the uid of the domain to which Apache will route the services
-   * @param volumePath the path to put your own custom_mod_wl_apache.conf file
+   * @param pvcName name of the Persistent Volume Claim which contains your own custom_mod_wl_apache.conf file
    * @param virtualHostName the VirtualHostName of the Apache HTTP server which is used to enable custom SSL config
+   * @param adminServerPort admin server port
    * @param clusterNamePortMap the map with clusterName as key and cluster port number as value
    * @return the Apache Helm installation parameters
    */
@@ -806,8 +811,9 @@ public class CommonTestUtils {
                                                   int httpNodePort,
                                                   int httpsNodePort,
                                                   String domainUid,
-                                                  String volumePath,
+                                                  String pvcName,
                                                   String virtualHostName,
+                                                  int adminServerPort,
                                                   LinkedHashMap<String, String> clusterNamePortMap)
       throws IOException {
 
@@ -844,22 +850,35 @@ public class CommonTestUtils {
           .httpsNodePort(httpsNodePort);
     }
 
-    if (volumePath != null && clusterNamePortMap != null) {
+    if (pvcName != null && clusterNamePortMap != null) {
       // create a custom Apache plugin configuration file named custom_mod_wl_apache.conf
-      // and put it under the directory specified in volumePath
+      // and put it under the directory specified in pv hostPath
       // this file provides a custom Apache plugin configuration to fine tune the behavior of Apache
+      V1PersistentVolumeClaim v1pvc = getPersistentVolumeClaim(apacheNamespace, pvcName);
+      assertNotNull(v1pvc);
+      assertNotNull(v1pvc.getSpec());
+      String pvName = v1pvc.getSpec().getVolumeName();
+      logger.info("Got PV {0} from PVC {1} in namespace {2}", pvName, pvcName, apacheNamespace);
+
+      V1PersistentVolume v1pv = getPersistentVolume(pvName);
+      assertNotNull(v1pv);
+      assertNotNull(v1pv.getSpec());
+      assertNotNull(v1pv.getSpec().getHostPath());
+      String volumePath = v1pv.getSpec().getHostPath().getPath();
+      logger.info("hostPath of the PV {0} is {1}", pvName, volumePath);
+
       Path customConf = Paths.get(volumePath, "custom_mod_wl_apache.conf");
       ArrayList<String> lines = new ArrayList<>();
       lines.add("<IfModule mod_weblogic.c>");
-      lines.add("WebLogicHost ${WEBLOGIC_HOST}");
-      lines.add("WebLogicPort ${WEBLOGIC_PORT}");
+      lines.add("WebLogicHost " + domainUid + "-admin-server");
+      lines.add("WebLogicPort " + adminServerPort);
       lines.add("</IfModule>");
 
       // Directive for weblogic admin Console deployed on Weblogic Admin Server
       lines.add("<Location /console>");
       lines.add("SetHandler weblogic-handler");
       lines.add("WebLogicHost " + domainUid + "-admin-server");
-      lines.add("WebLogicPort ${WEBLOGIC_PORT}");
+      lines.add("WebLogicPort " + adminServerPort);
       lines.add("</Location>");
 
       // Directive for all application deployed on weblogic cluster with a prepath defined by LOCATION variable
@@ -886,7 +905,7 @@ public class CommonTestUtils {
         throw ioex;
       }
 
-      apacheParams.volumePath(volumePath);
+      apacheParams.pvcName(pvcName);
     }
 
     if (virtualHostName != null) {
@@ -1435,6 +1454,32 @@ public class CommonTestUtils {
         ingressName, domainUid, domainNamespace);
 
     return ingressHostList;
+  }
+
+
+  /**
+   * Execute command inside a pod and assert the execution.
+   *
+   * @param pod V1Pod object
+   * @param containerName name of the container inside the pod
+   * @param redirectToStdout if true redirect to stdout and stderr
+   * @param command the command to execute inside the pod
+   */
+  public static void execInPod(V1Pod pod, String containerName, boolean redirectToStdout, String command) {
+    LoggingFacade logger = getLogger();
+    ExecResult exec = null;
+    try {
+      logger.info("Executing command {0}", command);
+      exec = Exec.exec(pod, containerName, redirectToStdout, "/bin/sh", "-c", command);
+      // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero
+      // exit value even on success, so checking for exitValue non-zero and stderr not empty for failure,
+      // otherwise its success
+      assertFalse(exec.exitValue() != 0 && exec.stderr() != null && !exec.stderr().isEmpty(),
+          String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
+              command, exec.exitValue(), exec.stderr(), exec.stdout()));
+    } catch (IOException | ApiException | InterruptedException ex) {
+      logger.warning(ex.getMessage());
+    }
   }
 
   /**
@@ -2461,13 +2506,32 @@ public class CommonTestUtils {
     }
     // install grafana
     logger.info("Installing grafana in namespace {0}", grafanaNamespace);
-    int grafanaNodePort = getNextFreePort(31050, 31200);
+    int grafanaNodePort = getNextFreePort(31060, 31200);
+    logger.info("Installing grafana with node port {0}", grafanaNodePort);
     // grafana chart values to override
     GrafanaParams grafanaParams = new GrafanaParams()
         .helmParams(grafanaHelmParams)
         .nodePort(grafanaNodePort);
-    assertTrue(installGrafana(grafanaParams),
-        String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+    boolean isGrafanaInstalled = false;
+    try {
+      assertTrue(installGrafana(grafanaParams),
+          String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+    } catch (AssertionError err) {
+      //retry with different nodeport
+      uninstallGrafana(grafanaHelmParams);
+      grafanaNodePort = getNextFreePort(31060, 31200);
+      grafanaParams = new GrafanaParams()
+          .helmParams(grafanaHelmParams)
+          .nodePort(grafanaNodePort);
+      isGrafanaInstalled = installGrafana(grafanaParams);
+      if (!isGrafanaInstalled) {
+        //clean up
+        logger.info(String.format("Failed to install grafana in namespace %s with nodeport %s",
+            grafanaNamespace, grafanaNodePort));
+        uninstallGrafana(grafanaHelmParams);
+        return null;
+      }
+    }
     logger.info("Grafana installed in namespace {0}", grafanaNamespace);
 
     // list Helm releases matching grafana release name in  namespace
