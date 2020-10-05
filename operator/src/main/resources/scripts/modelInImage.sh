@@ -263,6 +263,57 @@ function buildWDTParams_MD5() {
     OPSS_FLAGS=""
   fi
 
+  overrideWDTTimeoutValues
+  
+  trace "Exiting setupInventoryList"
+}
+
+function overrideWDTTimeoutValues() {
+  trace "Entering overrideWDTTimeoutValues"
+
+  # WDT defaults
+  #
+  #  connect.timeout=120000
+  #  activate.timeout=180000
+  #  deploy.timeout=180000
+  #  redeploy.timeout=180000
+  #  undeploy.timeout=180000
+  #  start.application.timeout=180000
+  #  stop.application.timeout=180000
+  #  set.server.groups.timeout=30000
+
+  if [ ! -z ${connect.timeout} ] ; then
+    sed -i "s/\(connect\.timeout=\).*\$/\1${connect.timeout}/" ${WDT_ROOT}/lib/tool.properties
+  fi
+
+  if [ ! -z ${activate.timeout} ] ; then
+    sed -i "s/\(activate\.timeout=\).*\$/\1${activate.timeout}/" ${WDT_ROOT}/lib/tool.properties
+  fi
+
+  if [ ! -z ${deploy.timeout} ] ; then
+    sed -i "s/\(deploy\.timeout=\).*\$/\1${deploy.timeout}/" ${WDT_ROOT}/lib/tool.properties
+  fi
+
+  if [ ! -z ${redeploy.timeout} ] ; then
+    sed -i "s/\(redeploy\.timeout=\).*\$/\1${redeploy.timeout}/" ${WDT_ROOT}/lib/tool.properties
+  fi
+
+  if [ ! -z ${undeploy.timeout} ] ; then
+    sed -i "s/\(undeploy\.timeout=\).*\$/\1${undeploy.timeout}/" ${WDT_ROOT}/lib/tool.properties
+  fi
+
+  if [ ! -z ${start.application.timeout} ] ; then
+    sed -i "s/\(start.application\.timeout=\).*\$/\1${start.application.timeout}/" ${WDT_ROOT}/lib/tool.properties
+  fi
+
+  if [ ! -z ${stop.application.timeout} ] ; then
+    sed -i "s/\(stop.application\.timeout=\).*\$/\1${stop.application.timeout}/" ${WDT_ROOT}/lib/tool.properties
+  fi
+
+  if [ ! -z ${set.server.groups.timeout} ] ; then
+    sed -i "s/\(set.server.groups\.timeout=\).*\$/\1${set.server.groups.timeout}/" ${WDT_ROOT}/lib/tool.properties
+  fi
+
   trace "Exiting setupInventoryList"
 }
 
