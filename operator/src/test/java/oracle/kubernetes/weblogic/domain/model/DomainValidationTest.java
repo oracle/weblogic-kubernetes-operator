@@ -597,6 +597,92 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         "default")));
   }
 
+  @Test
+  public void whenDomainUidExceedMaxAllowed_reportError() {
+    String domainUID = "mydomainthatislongerthan36charactersandshouldfail";
+    Domain myDomain = createTestDomain(domainUID);
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    assertThat(myDomain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
+        "DomainUID ", domainUID, "exceeds maximum allowed length")));
+  }
+
+  @Test
+  public void whenDomainUidPlusMSNameNotExceedMaxAllowed_dontReportError() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String msName = "servernamecontains31characters";
+    myDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName(msName));
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    assertThat(myDomain.getValidationFailures(resourceLookup),  empty());
+  }
+
+  @Test
+  public void whenDomainUidPlusMSNameExceedMaxAllowed_reportError() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String msName = "servernamecontains32characterss";
+    myDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName(msName));
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    assertThat(myDomain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
+        "DomainUID ", domainUID, "server name", msName, "exceeds maximum allowed length")));
+  }
+
+  @Test
+  public void whenDomainUidPlusClusterNameNotExceedMaxAllowed_dontReportError() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String clusterName = "clusternamecontain21c";
+    myDomain.getSpec().getClusters().add(new Cluster().withClusterName(clusterName));
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    assertThat(myDomain.getValidationFailures(resourceLookup),  empty());
+  }
+
+  @Test
+  public void whenDomainUidPlusClusterNameExceedMaxAllowed_reportError() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String clusterName = "servernamecontains31characters";
+    myDomain.getSpec().getClusters().add(new Cluster().withClusterName(clusterName));
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    assertThat(myDomain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
+        "DomainUID ", domainUID, "cluster name", clusterName, "exceeds maximum allowed length")));
+  }
+
   private DomainConfigurator configureDomain(Domain domain) {
     return new DomainCommonConfigurator(domain);
   }

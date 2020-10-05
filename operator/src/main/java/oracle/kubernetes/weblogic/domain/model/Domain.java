@@ -31,6 +31,7 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
+import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -628,9 +629,47 @@ public class Domain implements KubernetesObject {
       verifyNoAlternateSecretNamespaceSpecified();
       addMissingModelConfigMap(kubernetesResources);
       verifyIstioExposingDefaultChannel();
+      verifyGeneratedResourceNames();
 
       return failures;
     }
+
+    private void verifyGeneratedResourceNames() {
+      Optional.ofNullable(getSpec().getDomainUid())
+          .ifPresent(this::checkGeneratedIntrospectorJobName);
+      getSpec().getManagedServers()
+          .stream()
+          .map(ManagedServer::getServerName)
+          .forEach(this::checkGeneratedServerServiceName);
+      getSpec().getClusters()
+          .stream()
+          .map(Cluster::getClusterName)
+          .map(LegalNames::toDns1123LegalName)
+          .forEach(this::checkGeneratedClusterServiceName);
+    }
+
+    private void checkGeneratedServerServiceName(String serverName) {
+      if (LegalNames.toServerServiceName(getSpec().getDomainUid(), serverName).length()
+          > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
+        failures.add(DomainValidationMessages.exceedMaxServerServiceName(getSpec().getDomainUid(), serverName));
+      }
+    }
+
+    private void checkGeneratedClusterServiceName(String clusterName) {
+      if (LegalNames.toClusterServiceName(getSpec().getDomainUid(), clusterName).length()
+          > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
+        failures.add(DomainValidationMessages.exceedMaxClusterServiceName(getSpec().getDomainUid(), clusterName));
+      }
+    }
+
+    private void checkGeneratedIntrospectorJobName(String domainUID) {
+      // K8S adds a 5 character suffix to an introspector job pod
+      if (LegalNames.toJobIntrospectorName(getSpec().getDomainUid()).length()
+          > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5) {
+        failures.add(DomainValidationMessages.exceedMaxIntrospectorJobName(getSpec().getDomainUid()));
+      }
+    }
+
 
     public List<String> getAdditionalValidationFailures(V1PodSpec podSpec) {
       addInvalidMountPathsForPodSpec(podSpec);
@@ -641,23 +680,13 @@ public class Domain implements KubernetesObject {
       getSpec().getManagedServers()
           .stream()
           .map(ManagedServer::getServerName)
-          .map(this::toDns1123LegalName)
+          .map(LegalNames::toDns1123LegalName)
           .forEach(this::checkDuplicateServerName);
       getSpec().getClusters()
           .stream()
           .map(Cluster::getClusterName)
-          .map(this::toDns1123LegalName)
+          .map(LegalNames::toDns1123LegalName)
           .forEach(this::checkDuplicateClusterName);
-    }
-
-    /**
-     * Converts value to nearest DNS-1123 legal name, which can be used as a Kubernetes identifier.
-     *
-     * @param value Input value
-     * @return nearest DNS-1123 legal name
-     */
-    String toDns1123LegalName(String value) {
-      return value.toLowerCase().replace('_', '-');
     }
 
     private void checkDuplicateServerName(String serverName) {

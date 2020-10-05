@@ -115,4 +115,15 @@ class DomainValidationMessages {
     return getMessage(MessageKeys.CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO, channelName);
   }
 
+  public static String exceedMaxIntrospectorJobName(String domainUid) {
+    return getMessage(MessageKeys.ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH, domainUid);
+  }
+
+  public static String exceedMaxClusterServiceName(String domainUid, String clusterName) {
+    return getMessage(MessageKeys.ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH, domainUid, clusterName);
+  }
+
+  public static String exceedMaxServerServiceName(String domainUid, String serverName) {
+    return getMessage(MessageKeys.ILLEGAL_SERVER_SERVICE_NAME_LENGTH, domainUid, serverName);
+  }
 }

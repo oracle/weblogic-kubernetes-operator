@@ -46,6 +46,9 @@ public class LegalNames {
       "VolumeName"         // V1PersistentVolumeClaimSpec, etc
   };
 
+  // The maximum length of a legal DNS label name
+  public static final int LEGAL_DNS_LABEL_NAME_MAX_LENGTH = 63;
+
   static String[] dns1123Fields;
 
   public static String toServerServiceName(String domainUid, String serverName) {
