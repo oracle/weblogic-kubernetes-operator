@@ -24,6 +24,19 @@ topology:
         "cluster-1-template":
             Cluster: "cluster-1"
             ListenPort : 8001
+
+resources:
+    FileStore:
+        'FileStore-0':
+            Directory: '/u01/oracle/customFileStore/'
+            Target: 'cluster-1'
+    JMSServer:
+        'JMSServer-0':
+            PersistentStore: 'FileStore-0'
+            Target: 'cluster-1'
+            MessagesMaximum: 100000
+            BlockingSendPolicy: FIFO
+
 appDeployments:
     Application:
         myear:

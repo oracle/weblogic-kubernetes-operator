@@ -271,4 +271,28 @@ public class FileUtils {
     logger.info("to {0}", src.toString());
     Files.write(src, content.getBytes(charset));
   }
+
+  /**
+   * Check whether a file exists in a pod in the given namespace.
+   *
+   * @param namespace the Kubernetes namespace that the pod is in
+   * @param podName the name of the Kubernetes pod in which the command is expected to run
+   * @param filename the filename to check
+   * @return true if the file exists, otherwise return false
+   * @throws IOException if an I/O error occurs.
+   * @throws ApiException if Kubernetes client API call fails
+   * @throws InterruptedException if any thread has interrupted the current thread
+   */
+  public static boolean doesFileExistInPod(String namespace, String podName, String filename)
+      throws IOException, ApiException, InterruptedException {
+
+    ExecResult result = execCommand(namespace, podName, null, true,
+        "/bin/sh", "-c", "find " + filename);
+
+    if (result.exitValue() == 0 && result.stdout().contains(filename)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 }
