@@ -282,36 +282,36 @@ function overrideWDTTimeoutValues() {
   #  stop.application.timeout=180000
   #  set.server.groups.timeout=30000
 
-  if [ ! -z ${connect_timeout} ] ; then
-    sed -i "s/\(connect\.timeout=\).*\$/\1${connect_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${wdt_connect_timeout} ] ; then
+    sed -i "s/\(connect\.timeout=\).*\$/\1${wdt_connect_timeout}/" ${WDT_ROOT}/lib/tool.properties
   fi
 
-  if [ ! -z ${activate_timeout} ] ; then
-    sed -i "s/\(activate\.timeout=\).*\$/\1${activate_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${wdt_activate_timeout} ] ; then
+    sed -i "s/\(activate\.timeout=\).*\$/\1${wdt_activate_timeout}/" ${WDT_ROOT}/lib/tool.properties
   fi
 
-  if [ ! -z ${deploy_timeout} ] ; then
-    sed -i "s/\(deploy\.timeout=\).*\$/\1${deploy_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${wdt_deploy_timeout} ] ; then
+    sed -i "s/\(deploy\.timeout=\).*\$/\1${wdt_deploy_timeout}/" ${WDT_ROOT}/lib/tool.properties
   fi
 
-  if [ ! -z ${redeploy_timeout} ] ; then
-    sed -i "s/\(redeploy\.timeout=\).*\$/\1${redeploy_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${wdt_redeploy_timeout} ] ; then
+    sed -i "s/\(redeploy\.timeout=\).*\$/\1${wdt_redeploy_timeout}/" ${WDT_ROOT}/lib/tool.properties
   fi
 
-  if [ ! -z ${undeploy_timeout} ] ; then
-    sed -i "s/\(undeploy\.timeout=\).*\$/\1${undeploy_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${wdt_undeploy_timeout} ] ; then
+    sed -i "s/\(undeploy\.timeout=\).*\$/\1${wdt_undeploy_timeout}/" ${WDT_ROOT}/lib/tool.properties
   fi
 
-  if [ ! -z ${start_application_timeout} ] ; then
-    sed -i "s/\(start.application\.timeout=\).*\$/\1${start_application_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${wdt_start_application_timeout} ] ; then
+    sed -i "s/\(start.application\.timeout=\).*\$/\1${wdt_start_application_timeout}/" ${WDT_ROOT}/lib/tool.properties
   fi
 
-  if [ ! -z ${stop_application_timeout} ] ; then
-    sed -i "s/\(stop.application\.timeout=\).*\$/\1${stop_application_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${wdt_stop_application_timeout} ] ; then
+    sed -i "s/\(stop.application\.timeout=\).*\$/\1${wdt_stop_application_timeout}/" ${WDT_ROOT}/lib/tool.properties
   fi
 
-  if [ ! -z ${set_server_groups_timeout} ] ; then
-    sed -i "s/\(set.server.groups\.timeout=\).*\$/\1${set_server_groups_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${wdt_set_server_groups_timeout} ] ; then
+    sed -i "s/\(set.server.groups\.timeout=\).*\$/\1${wdt_set_server_groups_timeout}/" ${WDT_ROOT}/lib/tool.properties
   fi
 
   trace "Exiting setupInventoryList"
