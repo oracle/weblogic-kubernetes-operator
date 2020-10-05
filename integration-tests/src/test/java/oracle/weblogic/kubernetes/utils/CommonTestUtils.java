@@ -172,6 +172,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallElasticsea
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallKibana;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseStatus;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
@@ -446,6 +447,133 @@ public class CommonTestUtils {
           .until(assertDoesNotThrow(() -> operatorRestServiceRunning(opNamespace),
               "operator external service is not running"));
     }
+    return opHelmParams;
+  }
+
+  /**
+   * Install WebLogic operator and wait up to two minutes until the operator pod is ready.
+   *
+   * @param operNamespace the operator namespace in which the operator will be installed
+   * @param opReleaseName the operator release name
+   * @param domainNsSelectionStrategy SelectLabel, RegExp or List
+   * @param domainNsSelector the label or expression value to manage namespaces
+   * @param enableClusterRoleBinding operator cluster role binding
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   *                        (only in case of List selector)
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opReleaseName, String operNamespace,
+                                                     String domainNsSelectionStrategy,
+                                                     String domainNsSelector,
+                                                     boolean enableClusterRoleBinding,
+                                                     String... domainNamespace) {
+
+    HelmParams opHelmParams = new HelmParams().releaseName(opReleaseName)
+        .namespace(operNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+    LoggingFacade logger = getLogger();
+    // Create a service account for the unique operNamespace
+    logger.info("Creating service account");
+    assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
+        .metadata(new V1ObjectMeta()
+            .namespace(operNamespace)
+            .name(opReleaseName + "-sa"))));
+    logger.info("Created service account: {0}", opReleaseName + "-sa");
+
+
+    // get operator image name
+    String operatorImage = getOperatorImageName();
+    assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
+    logger.info("operator image name {0}", operatorImage);
+
+
+    V1SecretList listSecrets = oracle.weblogic.kubernetes.actions.TestActions.listSecrets(operNamespace);
+    if (null != listSecrets) {
+      for (V1Secret item : listSecrets.getItems()) {
+        if (item.getMetadata().getName().equals(OCIR_SECRET_NAME)) {
+          break;
+        }
+      }
+      // Create Docker registry secret in the operator namespace to pull the image from repository
+      logger.info("Creating Docker registry secret in namespace {0}", operNamespace);
+      createOcirRepoSecret(operNamespace);
+    }
+    // map with secret
+    Map<String, Object> secretNameMap = new HashMap<>();
+    secretNameMap.put("name", OCIR_SECRET_NAME);
+
+    // operator chart values to override
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(opHelmParams)
+        .imagePullSecrets(secretNameMap)
+        .domainNamespaces(java.util.Arrays.asList(domainNamespace))
+        .enableClusterRoleBinding(enableClusterRoleBinding)
+        .serviceAccount(opReleaseName + "-sa");
+    if (domainNsSelectionStrategy != null) {
+      opParams.domainNamespaceSelectionStrategy(domainNsSelectionStrategy);
+      if (domainNsSelectionStrategy.equalsIgnoreCase("LabelSelector")) {
+        opParams.domainNamespaceLabelSelector(domainNsSelector);
+      } else if (domainNsSelectionStrategy.equalsIgnoreCase("RegExp")) {
+        opParams.domainNamespaceRegExp(domainNsSelector);
+      }
+    }
+
+    // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
+    if (opHelmParams.getRepoUrl() == null) {
+      opParams.image(operatorImage);
+    }
+
+    // create externalRestIdentitySecret
+    assertTrue(createExternalRestIdentitySecret(operNamespace,
+        DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME + operNamespace),
+        "failed to create external REST identity secret");
+    opParams
+        .externalRestEnabled(true)
+        .externalRestHttpsPort(0)
+        .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME + operNamespace);
+
+
+    // install operator
+    logger.info("Installing operator in namespace {0}", operNamespace);
+
+    assertTrue(installOperator(opParams),
+        String.format("Failed to install operator in namespace %s ", operNamespace));
+    logger.info("Operator installed in namespace {0}", operNamespace);
+
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking operator release {0} status in namespace {1}",
+        opReleaseName, operNamespace);
+
+    assertTrue(checkHelmReleaseStatus(opReleaseName, operNamespace, "deployed"),
+        String.format("Operator release %s is not in %s status in namespace %s",
+            opReleaseName, "deployed", operNamespace));
+    logger.info("Operator release {0} status is {1} in namespace {2}",
+        opReleaseName, "deployed", operNamespace);
+
+    // wait for the operator to be ready
+    logger.info("Wait for the operator pod is ready in namespace {0}", operNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for operator to be running in namespace {0} "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                operNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> operatorIsReady(operNamespace),
+            "operatorIsReady failed with ApiException"));
+
+
+    logger.info("Wait for the operator external service in namespace {0}", operNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for operator external service in namespace {0} "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                operNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> operatorRestServiceRunning(operNamespace),
+            "operator external service is not running"));
+
     return opHelmParams;
   }
 

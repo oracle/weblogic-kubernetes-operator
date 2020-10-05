@@ -711,7 +711,7 @@ public class Kubernetes {
    * @param name the name of the namespace
    * @param labels list of labels for the namespace
    * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createNamespace(String name, Map<String, String> labels) throws ApiException {
     V1ObjectMeta meta = new V1ObjectMetaBuilder().withName(name).withLabels(labels).build();
@@ -793,7 +793,7 @@ public class Kubernetes {
   }
 
   /**
-   * List namespaces in the Kubernetes cluster.
+   * List namespaces in the Kubernetes cluster matching the label selector.
    * @return List of all Namespace names in the Kubernetes cluster
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -852,9 +852,9 @@ public class Kubernetes {
   }
 
   /**
-   * return namespace by provided name in the Kubernetes cluster as V1Namespace object.
+   * Return Namespace object for the given name from the Kubernetes cluster as V1Namespace object..
    * @name name of namespace.
-   * @return V1Namespace of Namespace in the Kubernetes cluster
+   * @return V1Namespace  Namespace object from the Kubernetes cluster
    * @throws ApiException if Kubernetes client API call fails
    */
   public static V1Namespace getNamespaceAsObject(String name) throws ApiException {
