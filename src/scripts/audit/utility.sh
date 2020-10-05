@@ -135,7 +135,7 @@ checkStringMatchesArrayPattern() {
 function getMissingImagesList {
   missingImages=()
   imagesToVerify=()
-  existingImagesOnHost=($(${containerBinary} images --digests --format "{{.Repository}}@{{.Digest}}" | grep -v "<none>:<none>"))
+  existingImagesOnHost=($(${containerBinary} images --digests --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>:<none>"))
 
   getImagesToVerify
   for imageToVerify in ${imagesToVerify[@]}
@@ -165,7 +165,7 @@ function getImagesToVerify {
   fi
 
   # Get list of images present in Kubernetes Node Information file
-  imagesInNodeFile=$(cat ${kubernetesFile} | jq '.items |[.[] | {name: .metadata.name, image:.status.images |.[].names | select(.[0] !="<none>@<none>") | .[0] }]' | jq -r '.[].image')
+  imagesInNodeFile=$(cat ${kubernetesFile} | jq '.items |[.[] | {name: .metadata.name, image:.status.images |.[].names | select(.[1] !="<none>:<none>") | .[1] }]' | jq -r '.[].image')
 
   # Create an array list of images that requires validation
   for imageInNodeFile in ${imagesInNodeFile}; do
@@ -182,7 +182,7 @@ function getImagesToVerify {
 #
 function getImagesInNodeFile {
   IFS=$'\n'
-  nodeToImageMapping=$(cat "${kubernetesFile}" | jq '.items |[.[] | {name: .metadata.name, images:.status.images | .[]}]' | jq '.[] | {node:.name, images:.images.names | .[], size:.images.sizeBytes}' | jq -r '"\(.node);\(.images);\(.size )"'  | grep -v "<none>:<none>" | grep -v "<none>@<none>")
+  nodeToImageMapping=$(cat "${kubernetesFile}" | jq '.items |[.[] | {name: .metadata.name, images:.status.images | .[]}]' | jq '.[] | {node:.name, imageTag:.images.names[1],imageHash:.images.names[0], size:.images.sizeBytes}' | jq -r '"\(.node);\(.imageTag);\(.imageHash);\(.size )"' | grep -v "<none>:<none>" | grep -v "<none>@<none>")
 }
 
 function convertToBytes {

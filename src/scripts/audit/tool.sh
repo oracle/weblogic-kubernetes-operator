@@ -233,25 +233,26 @@ function verifyHashAndGetNodeNames {
   hashMatchFailed=false
   imageNode=()
   imageRepo=$(echo $imageRepoTag | cut -d':' -f1)
+  imageTag=$(echo $imageRepoTag | cut -d':' -f2)
 
   IFS=$'\n'
   for nodeImage in ${nodeToImageMapping[@]}; do
     IFS=';' read -ra imageDetails <<< "${nodeImage}"
     nodeName=${imageDetails[0]}
-    img=${imageDetails[1]}
-    size=${imageDetails[2]}
-    [[ $img == *[@]* ]] && repo=$(echo $img | cut -d'@' -f1) && hash=$(echo $img | cut -d'@' -f2)
-    [[ $img == *[:]* ]] && repo=$(echo $img | cut -d':' -f1) && tag=$(echo $img | cut -d':' -f2)
+    imgTag=${imageDetails[1]}
+    imgHash=${imageDetails[2]}
+    size=${imageDetails[3]}
+    [[ $imgHash == *[@]* ]] && repo=$(echo $imgHash | cut -d'@' -f1) && hash=$(echo $imgHash | cut -d'@' -f2)
+    [[ $imgTag == *[:]* ]] && repo=$(echo $imgTag | cut -d':' -f1) && tag=$(echo $imgTag | cut -d':' -f2)
     [[ $repo == *[:]* ]] && repo=$(echo $repo | cut -d':' -f1)
-    if [[ "${repo}" == "${imageRepo}" ]]; then
+    if [[ "${repo}" == "${imageRepo}" && "${tag}" == "${imageTag}" ]]; then
       if [[ -n ${sizeVerificationEnabled} && ${size} != ${imageSize} ]]; then
-        warning "Image size verification failed - ${imageRepoTag}@${imageHash}" | tee -a ${imageScanExcludedReport}
+        warning "Image size verification failed - ${imageRepoTag}:${imageTag}@${imageHash}" | tee -a ${imageScanExcludedReport}
         break
       fi
       imageNode+=(${nodeName})
-      [[ -z ${imageHash} || ${imageHash} == "<none>" ]] && break
-      if [[ -n ${imageHash} && ${hash} != ${imageHash} ]]; then
-        warning "Image hash verification failed - ${imageRepoTag}@${imageHash}" | tee -a ${imageScanExcludedReport}
+      if [[ -z ${imageHash} || ${hash} != ${imageHash} ]]; then
+        warning "Image hash verification failed - ${imageRepoTag}:${imageTag}@${imageHash}" | tee -a ${imageScanExcludedReport}
         hashMatchFailed=true
         break
       fi
@@ -271,9 +272,11 @@ function saveImageAndExtractLayers {
   local imageDir=$2
 
   imageTarFile="${imageDir}/${image}.tar"
-  ${containerBinary} save "${image}" > "${imageTarFile}"
-  tar --warning=none -xf "${imageTarFile}" -C "${imageDir}"
-  rm "${imageTarFile}"
+  ${containerBinary} save "${image}" -o "${imageTarFile}" > >(tee -a ${logFile}) 2> >(tee -a ${logFile} >&2)
+  if [ -f ${imageTarFile} ]; then
+    tar --warning=none -xf "${imageTarFile}" -C "${imageDir}"
+    rm "${imageTarFile}"
+  fi
 }
 
 function searchArtifactInImage {
