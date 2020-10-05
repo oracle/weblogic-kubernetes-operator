@@ -164,7 +164,7 @@ class ItManageNs {
      
       deleteNamespace("atest-" + domainNamespaces[0]);
       //delete operator
-      for(HelmParams helmParam : opHelmParams) {
+      for (HelmParams helmParam : opHelmParams) {
         uninstallOperator(helmParam);
       }
     }
@@ -503,14 +503,9 @@ class ItManageNs {
 
     // create and verify the domain
     logger.info("Creating and verifying model in image domain");
-    //try {
-      Domain domain = createDomainCRD(domainNamespace, domainUid);
-      assertDoesNotThrow( ()-> createVerifyDomain(domainNamespace, domainUid, miiImage, domain));
-      return true;
-    //} catch (Exception ex) {
-     // logger.info("Failed to createVerifyDomain " + ex.getMessage());
-      //return false;
-    //}
+    Domain domain = createDomainCRD(domainNamespace, domainUid);
+    assertDoesNotThrow(() -> createVerifyDomain(domainNamespace, domainUid, miiImage, domain));
+    return true;
   }
 
   /**
