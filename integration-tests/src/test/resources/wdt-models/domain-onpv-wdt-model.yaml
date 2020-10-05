@@ -30,3 +30,15 @@ topology:
             ListenPort: '@@PROP:managedServerPort@@'
             JTAMigratableTarget:
                 Cluster: '@@PROP:clusterName@@'
+
+resources:
+    FileStore:
+        'FileStore-0':
+            Directory: '/u01/oracle/customFileStore/'
+            Target: '@@PROP:adminServerName@@'
+    JMSServer:
+        'JMSServer-0':
+            PersistentStore: 'FileStore-0'
+            Target: '@@PROP:adminServerName@@'
+            MessagesMaximum: 100000
+            BlockingSendPolicy: FIFO
