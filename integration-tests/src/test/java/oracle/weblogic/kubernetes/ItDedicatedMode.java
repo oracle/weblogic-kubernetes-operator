@@ -22,7 +22,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -162,7 +161,6 @@ class ItDedicatedMode {
    *   Verify that the domain does not come up.
    */
   @Test
-  @MustNotRunInParallel
   @Order(1)
   @DisplayName("Set domainNamespaceSelectionStrategy to Dedicated for the Operator Helm Chart and "
       + "verify that a domain not deployed in operator's namespace doesn't come up")
@@ -188,7 +186,6 @@ class ItDedicatedMode {
    *   Verify that the WebLogic domain whose namespace is same as Operator's namespace comes up.
    */
   @Test
-  @MustNotRunInParallel
   @Order(2)
   @DisplayName("Set domainNamespaceSelectionStrategy to Dedicated for the Operator Helm Chart and "
       + "verify that the domain deployed in the operator's namespace comes up")
@@ -204,7 +201,6 @@ class ItDedicatedMode {
    * scaling up cluster-1 in domain1Namespace succeeds.
    */
   @Test
-  @MustNotRunInParallel
   @Disabled("Disable the test due to JIRA OWLS-84741")
   @Order(3)
   @DisplayName("Scale up cluster-1 in domain1Namespace and verify it succeeds")
