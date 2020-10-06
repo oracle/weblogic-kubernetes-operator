@@ -76,6 +76,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private final String miiModelSecretsHash;
   private final String miiDomainZipHash;
   private final String domainRestartVersion;
+  private final Boolean onlineUpdate;
 
   PodStepContext(Step conflictStep, Packet packet) {
     super(packet.getSpi(DomainPresenceInfo.class));
@@ -83,6 +84,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     miiModelSecretsHash = (String)packet.get(IntrospectorConfigMapKeys.SECRETS_MD_5);
     miiDomainZipHash = (String)packet.get(IntrospectorConfigMapKeys.DOMAINZIP_HASH);
+    onlineUpdate = (Boolean)packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE);
     domainRestartVersion = (String)packet.get(IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
   }
@@ -389,7 +391,7 @@ public abstract class PodStepContext extends BasePodStepContext {
           patchBuilder, "/metadata/annotations/", getAnnotations(currentPod),
           updatedAnnotations);
     }
-    LOGGER.info("DEBUG: patch string is " + patchBuilder.build().toString());
+    //LOGGER.info("DEBUG: patch string is " + patchBuilder.build().toString());
     return new CallBuilder()
         .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
@@ -871,24 +873,37 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
+
+        Map<String, String> ann = Optional.ofNullable(getPodModel())
+            .map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getAnnotations)
+            .orElse(null);
+
+        LOGGER.info("DEBUG current pod sha256 "
+            + currentPod.getMetadata().getAnnotations().get("weblogic.sha256"));
+
         if (Objects.equals(true, packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))) {
           LOGGER.info("PodStepContext.verifyPodStep: Model in Image dynamic updated no restart necessary");
 
           logPodExists();
           V1ObjectMeta updatedMetaData = new V1ObjectMeta();
           if (miiDomainZipHash != null) {
-            LOGGER.info("DEBUG patching to miidoman hash " + miiDomainZipHash);
-
             // Create dummy meta data for patching
+            V1Pod  updatedPod = new V1Pod().metadata(currentPod.getMetadata())
+                  .spec(currentPod.getSpec());
+            //V1Pod updatedPod = new V1Pod();
+            //updatedPod.metadata(updatedMetaData);
+            // update the domain zip hash
+            V1ObjectMeta meta = updatedPod.getMetadata();
             Optional.ofNullable(miiDomainZipHash)
-                .ifPresent(hash -> addHashLabel(updatedMetaData, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
+                .ifPresent(hash -> addHashLabel(meta,
+                    LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
+            updatedPod = AnnotationHelper.withSha256Hash(updatedPod);
 
-            V1Pod updatedPod = new V1Pod();
-            updatedPod.setMetadata(updatedMetaData);
-
+            LOGGER.info("DEBUG: updating pod sha256 " + getServerName() + " " + updatedPod.getMetadata()
+                  .getAnnotations().get("weblogic.sha256"));
             return  doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
           }
-
         }
 
         LOGGER.info(
@@ -1006,8 +1021,12 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-      LOGGER.info("DEBUG: Patch succeeded");
+      LOGGER.info("DEBUG: Patch succeeded - PatchResponseStep");
       V1Pod newPod = callResponse.getResult();
+      LOGGER.info("DEBUG: onSuccess sha256 " + newPod.getMetadata().getLabels().get("weblogic.serverName")
+            + " " + newPod.getMetadata().getAnnotations().get("weblogic.sha256"));
+      LOGGER.info("DEBUG: onSuccess hash "  + newPod.getMetadata().getLabels().get("weblogic.serverName")
+            + " " + newPod.getMetadata().getLabels().get(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH));
       logPodPatched();
       if (newPod != null) {
         setRecordedPod(newPod);
