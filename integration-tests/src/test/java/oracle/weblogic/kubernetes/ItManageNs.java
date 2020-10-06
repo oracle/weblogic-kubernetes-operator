@@ -37,7 +37,9 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -174,7 +176,7 @@ class ItManageNs {
    * Install the Operator successfully and verify it is deployed successfully
    * with domainNamespaceSelectionStrategy=RegExp,
    * and domainNamespaceRegExp=^test and domainNamespace= manageByExp3NS.
-   * Deploy two custom domain resources in the two different namespaces with names starting with test
+   * Deploy two custom domain resources in two different namespaces with names starting with test
    * and verify all server pods in the domains were created and ready.
    * Verify operator is able to manage these domains by scaling.
    * Try to start another domain with namespace manageByExp3NS. Verify it is not started by operator
@@ -568,7 +570,7 @@ class ItManageNs {
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Creating encryption secret");

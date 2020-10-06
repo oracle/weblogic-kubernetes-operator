@@ -568,7 +568,7 @@ public class Kubernetes {
    * @param namespace name of the pod's namespace
    * @param labelSelector in the format "weblogic.operatorName in (%s)"
    * @param podName name of the pod
-   * @param containerName name of the container, null if there is only one container
+   * @param containerName name of the specific container if more then one, null if there is only one container
    * @return image used for the container
    * @throws ApiException if Kubernetes client API call fails
    */
