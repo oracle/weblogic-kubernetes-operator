@@ -599,7 +599,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   public void whenDomainUidExceedMaxAllowed_reportError() {
-    String domainUID = "mydomainthatislongerthan36charactersandshouldfail";
+    String domainUID = "mydomainthatislongerthan46charactersandshouldfail";
     Domain myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
         .withDomainHomeSourceType(Image)
@@ -609,7 +609,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminService()
         .withChannel("default");
 
-    assertThat(myDomain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
+    assertThat(myDomain.getAfterIntrospectValidationFailures(myDomain.getSpec()),  contains(stringContainsInOrder(
         "DomainUID ", domainUID, "exceeds maximum allowed length")));
   }
 
@@ -627,7 +627,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminService()
         .withChannel("default");
 
-    assertThat(myDomain.getValidationFailures(resourceLookup),  empty());
+    assertThat(myDomain.getAfterIntrospectValidationFailures(myDomain.getSpec()),  empty());
   }
 
   @Test
@@ -644,7 +644,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminService()
         .withChannel("default");
 
-    assertThat(myDomain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
+    assertThat(myDomain.getAfterIntrospectValidationFailures(myDomain.getSpec()),  contains(stringContainsInOrder(
         "DomainUID ", domainUID, "server name", msName, "exceeds maximum allowed length")));
   }
 
@@ -662,7 +662,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminService()
         .withChannel("default");
 
-    assertThat(myDomain.getValidationFailures(resourceLookup),  empty());
+    assertThat(myDomain.getAfterIntrospectValidationFailures(myDomain.getSpec()),  empty());
   }
 
   @Test
@@ -679,7 +679,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminService()
         .withChannel("default");
 
-    assertThat(myDomain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
+    assertThat(myDomain.getAfterIntrospectValidationFailures(myDomain.getSpec()),  contains(stringContainsInOrder(
         "DomainUID ", domainUID, "cluster name", clusterName, "exceeds maximum allowed length")));
   }
 

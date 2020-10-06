@@ -614,6 +614,10 @@ public class Domain implements KubernetesObject {
     return new Validator().getAdditionalValidationFailures(podSpec);
   }
 
+  public List<String> getAfterIntrospectValidationFailures(DomainSpec domainSpec) {
+    return new Validator().getAfterIntrospectValidationFailures(domainSpec);
+  }
+
   class Validator {
     private final List<String> failures = new ArrayList<>();
     private final Set<String> clusterNames = new HashSet<>();
@@ -629,19 +633,18 @@ public class Domain implements KubernetesObject {
       verifyNoAlternateSecretNamespaceSpecified();
       addMissingModelConfigMap(kubernetesResources);
       verifyIstioExposingDefaultChannel();
-      verifyGeneratedResourceNames();
 
       return failures;
     }
 
-    private void verifyGeneratedResourceNames() {
-      Optional.ofNullable(getSpec().getDomainUid())
+    private void verifyGeneratedResourceNames(DomainSpec domainSpec) {
+      Optional.ofNullable(domainSpec.getDomainUid())
           .ifPresent(this::checkGeneratedIntrospectorJobName);
-      getSpec().getManagedServers()
+      domainSpec.getManagedServers()
           .stream()
           .map(ManagedServer::getServerName)
           .forEach(this::checkGeneratedServerServiceName);
-      getSpec().getClusters()
+      domainSpec.getClusters()
           .stream()
           .map(Cluster::getClusterName)
           .map(LegalNames::toDns1123LegalName)
@@ -817,6 +820,11 @@ public class Domain implements KubernetesObject {
           .forEach(s -> checkReservedEnvironmentVariables(s, "spec.managedServers[" + s.getServerName() + "]"));
       spec.getClusters()
           .forEach(s -> checkReservedEnvironmentVariables(s, "spec.clusters[" + s.getClusterName() + "]"));
+    }
+
+    public List<String> getAfterIntrospectValidationFailures(DomainSpec domainSpec) {
+      verifyGeneratedResourceNames(domainSpec);
+      return failures;
     }
 
     class EnvironmentVariableCheck {
