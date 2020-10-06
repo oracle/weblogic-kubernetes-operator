@@ -852,7 +852,7 @@ public class Kubernetes {
   }
 
   /**
-   * Return Namespace object for the given name from the Kubernetes cluster as V1Namespace object..
+   * Return Namespace object for the given name from the Kubernetes cluster as V1Namespace object.
    * @name name of namespace.
    * @return V1Namespace  Namespace object from the Kubernetes cluster
    * @throws ApiException if Kubernetes client API call fails
