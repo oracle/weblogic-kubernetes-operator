@@ -931,11 +931,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(packet, callResponse);
-    }
-
-    @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
 
       V1Pod newPod = callResponse.getResult();

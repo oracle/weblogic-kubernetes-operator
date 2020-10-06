@@ -124,6 +124,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private static final RequestParams REQUEST_PARAMS
       = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
+  public static final String DELETE_POD = "deletePod";
 
   private final Map<String, DataRepository<?>> repositories = new HashMap<>();
   private final Map<Class<?>, String> dataTypes = new HashMap<>();
@@ -802,7 +803,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
         throw new NotFoundException(getResourceName(), name, namespace);
       }
       data.remove(name);
-      if (call.equals("deletePod")) {
+      if (call.equals(DELETE_POD)) {
         return (T) new V1Pod().metadata(new V1ObjectMeta().name(name).namespace(namespace));
       }
 
