@@ -911,11 +911,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponses) {
-
-      // TEST
-      System.out.println("***TEST***: delete response failure: "
-          + callResponses.getStatusCode() + ", server: " + getServerName());
-
       if (callResponses.getStatusCode() == CallBuilder.NOT_FOUND) {
         return onSuccess(packet, callResponses);
       }
@@ -924,11 +919,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponses) {
-
-      // TEST
-      System.out.println("***TEST***: delete response success: "
-          + callResponses.getStatusCode() + ", server: " + getServerName());
-
       PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
       return doNext(pw.waitForDelete(callResponses.getResult(), replacePod(getNext())), packet);
     }
@@ -942,22 +932,11 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-
-      // TEST
-      System.out.println("***TEST***: replace response failure: "
-          + callResponse.getStatusCode() + ", server: " + getServerName()
-          + ", this: " + this
-          + ", conflict: " + getConflictStep());
-
       return super.onFailure(packet, callResponse);
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-
-      // TEST
-      System.out.println("***TEST***: replace response success: "
-          + callResponse.getStatusCode() + ", server: " + getServerName());
 
       V1Pod newPod = callResponse.getResult();
       logPodReplaced();
