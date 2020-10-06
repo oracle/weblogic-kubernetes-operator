@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
@@ -33,6 +34,7 @@ import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.Yaml;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
@@ -54,10 +56,10 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 public abstract class PodStepContext extends BasePodStepContext {
@@ -354,6 +356,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     return createProgressingStep(patchPod(currentPod, next));
   }
 
+  private Step patchRunningPod(V1Pod currentPod, V1Pod updatedPod, Step next) {
+    return createProgressingStep(patchPod(currentPod, updatedPod, next));
+  }
+
   protected Step patchPod(V1Pod currentPod, Step next) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     KubernetesUtils.addPatches(
@@ -362,6 +368,33 @@ public abstract class PodStepContext extends BasePodStepContext {
         patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
     return new CallBuilder()
             .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
+            new V1Patch(patchBuilder.build().toString()), patchResponse(next));
+  }
+
+  protected Step patchPod(V1Pod currentPod, V1Pod updatedPod, Step next) {
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    Map<String, String> updatedLabels = Optional.ofNullable(updatedPod)
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .orElse(null);
+
+    Map<String, String> updatedAnnotations = Optional.ofNullable(updatedPod)
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getAnnotations)
+        .orElse(null);
+
+    if (updatedLabels != null) {
+      KubernetesUtils.addPatches(
+          patchBuilder, "/metadata/labels/", getLabels(currentPod), updatedLabels);
+    }
+    if (updatedAnnotations != null) {
+      KubernetesUtils.addPatches(
+          patchBuilder, "/metadata/annotations/", getAnnotations(currentPod),
+          updatedAnnotations);
+    }
+    //LOGGER.info("DEBUG: patch string is " + patchBuilder.build().toString());
+    return new CallBuilder()
+        .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 
@@ -407,8 +440,15 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private boolean canUseCurrentPod(V1Pod currentPod) {
+
     boolean useCurrent =
         AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
+
+    LOGGER.info(
+        MessageKeys.POD_DUMP,
+        AnnotationHelper.getDebugString(currentPod),
+        AnnotationHelper.getDebugString(getPodModel()));
+
     if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0) {
       LOGGER.fine(
           MessageKeys.POD_DUMP,
@@ -840,27 +880,39 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
         if (Objects.equals(true, packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))) {
-          LOGGER.fine("PodStepContext.verifyPodStep: Model in Image dynamic updated no restart necessary");
+          LOGGER.info("PodStepContext.verifyPodStep: Model in Image dynamic updated no restart necessary");
           logPodExists();
-          Map<String,String> podLabels = Optional.ofNullable(info)
-              .map(DomainPresenceInfo::getDomain)
-              .map(Domain::getAdminServerSpec)
-              .map(ServerSpec::getPodLabels)
-              .orElse(null);
-          if (podLabels != null) {
-            if (miiDomainZipHash != null) {
-              podLabels.put(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
-            }
 
-            if (domainRestartVersion != null) {
-              podLabels.put(LabelConstants.DOMAINRESTARTVERSION_LABEL, domainRestartVersion);
-            }
+          V1ObjectMeta metadata = currentPod.getMetadata();
+          V1ObjectMeta updatedMetaData = new V1ObjectMeta();
 
-            if (miiModelSecretsHash != null) {
-              podLabels.put(LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, miiDomainZipHash);
-            }
+          Map<String,String> currentLabels = metadata.getLabels();
+          //          for (String key: currentLabels.keySet()) {
+          //            LOGGER.info("DEBUG: current label key " + key + " value " + currentLabels.get(key));
+          //          }
+          //          Map<String,String> currentAnnotations = metadata.getAnnotations();
+          //          for (String key: currentAnnotations.keySet()) {
+          //            LOGGER.info("DEBUG: current annotation key " + key + " value " + currentAnnotations.get(key));
+          //          }
+
+          if (miiDomainZipHash != null) {
+            LOGGER.info("DEBUG patching to miidoman hash " + miiDomainZipHash);
           }
-          return  doNext(patchCurrentPod(currentPod, getNext()), packet);
+
+          if (miiModelSecretsHash != null) {
+            LOGGER.info("DEBUG patching to secret hash " + miiModelSecretsHash);
+          }
+          Optional.ofNullable(miiDomainZipHash)
+              .ifPresent(hash -> addHashLabel(updatedMetaData, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
+          Optional.ofNullable(miiModelSecretsHash)
+              .ifPresent(hash -> addHashLabel(updatedMetaData, LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, hash));
+
+          String sha256Annotation = "weblogic.sha256";
+          Function<Object, String> hashFunction = o -> DigestUtils.sha256Hex(Yaml.dump(o));
+          updatedMetaData.putAnnotationsItem(sha256Annotation, hashFunction.apply(currentPod));
+          V1Pod updatedPod = new V1Pod();
+          updatedPod.setMetadata(updatedMetaData);
+          return  doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
         }
         LOGGER.info(
             MessageKeys.CYCLING_POD,
@@ -977,7 +1029,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-
+      LOGGER.info("DEBUG: Patch succeeded");
       V1Pod newPod = callResponse.getResult();
       logPodPatched();
       if (newPod != null) {
