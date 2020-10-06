@@ -929,7 +929,8 @@ public abstract class PodStepContext extends BasePodStepContext {
       System.out.println("***TEST***: delete response success: "
           + callResponses.getStatusCode() + ", server: " + getServerName());
 
-      return doNext(replacePod(getNext()), packet);
+      PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
+      return doNext(pw.waitForDelete(callResponses.getResult(), replacePod(getNext())), packet);
     }
   }
 

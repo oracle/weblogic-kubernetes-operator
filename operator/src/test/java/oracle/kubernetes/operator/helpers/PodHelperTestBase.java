@@ -1450,7 +1450,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     @Override
     public Step waitForDelete(V1Pod pod, Step next) {
-      return ne;
+      return next;
     }
   }
 
