@@ -124,6 +124,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private static final RequestParams REQUEST_PARAMS
       = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
+  public static final String DELETE_POD = "deletePod";
 
   private final Map<String, DataRepository<?>> repositories = new HashMap<>();
   private final Map<Class<?>, String> dataTypes = new HashMap<>();
@@ -797,13 +798,16 @@ public class KubernetesTestSupport extends FiberTestSupport {
       }
     }
 
-    V1Status deleteResource(String name, String namespace) {
+    T deleteResource(String name, String namespace, String call) {
       if (!hasElementWithName(name)) {
         throw new NotFoundException(getResourceName(), name, namespace);
       }
       data.remove(name);
+      if (call.equals(DELETE_POD)) {
+        return (T) new V1Pod().metadata(new V1ObjectMeta().name(name).namespace(namespace));
+      }
 
-      return new V1Status().code(200);
+      return (T) new V1Status().code(200);
     }
 
     private String getResourceName() {
@@ -958,8 +962,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     @Override
-    V1Status deleteResource(String name, String namespace) {
-      return inNamespace(namespace).deleteResource(name, namespace);
+    T deleteResource(String name, String namespace, String call) {
+      return inNamespace(namespace).deleteResource(name, namespace, call);
     }
 
     @Override
@@ -1081,8 +1085,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return dataRepository.replaceResourceStatus(requestParams.name, (T) requestParams.body);
     }
 
-    private <T> V1Status deleteResource(DataRepository<T> dataRepository) {
-      return dataRepository.deleteResource(requestParams.name, requestParams.namespace);
+    private <T> T deleteResource(DataRepository<T> dataRepository) {
+      return dataRepository.deleteResource(requestParams.name, requestParams.namespace, requestParams.call);
     }
 
     private <T> T patchResource(DataRepository<T> dataRepository) {
