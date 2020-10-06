@@ -324,12 +324,6 @@
       <artifactId>jaxb-api</artifactId>
     </dependency>
 
-    <!-- for mvn exec:java -->
-    <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
-    </dependency>
-
     <!-- test dependencies -->
     <dependency>
       <!-- note: need to include this before junit since junit includes an obsolete version of hamcrest -->
