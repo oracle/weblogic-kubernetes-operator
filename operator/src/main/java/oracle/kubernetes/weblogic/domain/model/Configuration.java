@@ -156,7 +156,7 @@ public class Configuration {
             .append("distributionStrategy", overrideDistributionStrategy)
             .append("overridesConfigMap", overridesConfigMap)
             .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds)
-            .append("userOnlineUpdate", useOnlineUpdate)
+            .append("useOnlineUpdate", useOnlineUpdate)
             .append("rollBackIfRestartRequired", rollBackIfRestartRequired)
             .append("istio", istio);
 
