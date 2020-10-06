@@ -236,7 +236,7 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
-if [ "${test_filter}" = "ItOperatorUpgrade" || "${parallel_run}" = "false" ]; then
+if [ "${test_filter}" = "ItOperatorUpgrade" ] || [ "${parallel_run}" = "false" ]; then
   echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P integration-tests verify"
   time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
 else
