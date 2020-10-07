@@ -873,20 +873,15 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
         if (Objects.equals(true, packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))) {
-          LOGGER.info("PodStepContext.verifyPodStep: Model in Image dynamic updated no restart necessary");
-          logPodExists();
           if (miiDomainZipHash != null) {
+            LOGGER.info("PodStepContext.verifyPodStep: Model in Image dynamic updated no restart necessary");
+            logPodExists();
 
             //Create dummy meta data for patching
-
-            // use a simple pod for update label and annotation
-            V1Pod updatedPod = new V1Pod().metadata(createMetadata()).spec(createSpec(TuningParameters.getInstance()));
-            //V1Pod updatedPod = new V1Pod().spec(currentPod.getSpec()).metadata(currentPod.getMetadata());
-            AnnotationHelper.withSha256Hash(updatedPod);
-            String newSha256 = updatedPod.getMetadata().getAnnotations().get("weblogic.sha256");
-
+            V1Pod updatedPod = AnnotationHelper.withSha256Hash(createPodRecipe());
             V1ObjectMeta updatedMetaData = new V1ObjectMeta();
-            updatedMetaData.putAnnotationsItem("weblogic.sha256", newSha256);
+            updatedMetaData.putAnnotationsItem("weblogic.sha256",
+                  updatedPod.getMetadata().getAnnotations().get("weblogic.sha256"));
             updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
             updatedPod.setMetadata(updatedMetaData);
 
