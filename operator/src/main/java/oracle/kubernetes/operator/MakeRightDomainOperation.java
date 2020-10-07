@@ -19,6 +19,7 @@ public interface MakeRightDomainOperation {
 
   /**
    * Defines the operation as pertaining to the deletion of a domain.
+   * @return The make right domain operation for deletion
    */
   MakeRightDomainOperation forDeletion();
 
@@ -51,6 +52,7 @@ public interface MakeRightDomainOperation {
   /**
    * Returns true if the packet contains info about a domain that requires introspection in a sequences of steps
    * before server pods are created or modified.
+   * @return true, if the domain requires introspection
    */
   private static boolean domainRequiresIntrospectionInCurrentMakeRight(Packet packet) {
     return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))

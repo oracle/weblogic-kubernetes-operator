@@ -34,7 +34,7 @@ The service, `serviceName` and `servicePort`, of a WebLogic cluster will be used
 object and the load balancer will route traffic to the WebLogic Servers within the cluster based on the rules.
 
 {{% notice note %}}
-Most common ingress controllers, for example Traefik, Voyager, and nginx,
+Most common ingress controllers, for example Traefik, Voyager, and NGINX,
 understand that there are zero or more actual pods behind the service, and they actually
 build their backend list and route requests to those backends directly, not through the service.  This means that
 requests are properly balanced across the pods, according to the load balancing algorithm
@@ -68,9 +68,10 @@ Information about how to install and configure these to load balance WebLogic cl
 
  - [Traefik guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md)
  - [Voyager guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/voyager/README.md)
+ - [NGINX guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/nginx/README.md)
 
  {{% notice note %}}
- Traefik is recommended for development and test environments only.  For production environments, we recommend Apache or Voyager ingress controllers, or the load balancer provided by your cloud provider.
+ For production environments, we recommend NGINX, Voyager, Traefik (2.2.1 or later) ingress controllers, Apache, or the load balancer provided by your cloud provider.
  {{% /notice %}}
 
 Samples are also provided for these two ingress controllers, showing how to manage multiple WebLogic clusters as the backends, using different routing rules, host-routing and path-routing; and TLS termination:

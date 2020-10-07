@@ -34,7 +34,7 @@ public interface TuningParameters extends Map<String, String> {
     public final int domainPresenceFailureRetrySeconds;
     public final int domainPresenceFailureRetryMaxCount;
     public final int domainPresenceRecheckIntervalSeconds;
-    public final int targetNamespaceRecheckIntervalSeconds;
+    public final int domainNamespaceRecheckIntervalSeconds;
     public final int statusUpdateTimeoutSeconds;
     public final int unchangedCountToDelayStatusRecheck;
     public final long initialShortDelay;
@@ -45,7 +45,7 @@ public interface TuningParameters extends Map<String, String> {
      * @param domainPresenceFailureRetrySeconds domain presence failure retry
      * @param domainPresenceFailureRetryMaxCount domain presence failure retry max count
      * @param domainPresenceRecheckIntervalSeconds domain presence recheck interval
-     * @param targetNamespaceRecheckIntervalSeconds target namespace recheck interval
+     * @param domainNamespaceRecheckIntervalSeconds domain namespace recheck interval
      * @param statusUpdateTimeoutSeconds status update timeout
      * @param unchangedCountToDelayStatusRecheck unchanged count to delay status recheck
      * @param initialShortDelay initial short delay
@@ -55,7 +55,7 @@ public interface TuningParameters extends Map<String, String> {
         int domainPresenceFailureRetrySeconds,
         int domainPresenceFailureRetryMaxCount,
         int domainPresenceRecheckIntervalSeconds,
-        int targetNamespaceRecheckIntervalSeconds,
+        int domainNamespaceRecheckIntervalSeconds,
         int statusUpdateTimeoutSeconds,
         int unchangedCountToDelayStatusRecheck,
         long initialShortDelay,
@@ -63,7 +63,7 @@ public interface TuningParameters extends Map<String, String> {
       this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
       this.domainPresenceFailureRetryMaxCount = domainPresenceFailureRetryMaxCount;
       this.domainPresenceRecheckIntervalSeconds = domainPresenceRecheckIntervalSeconds;
-      this.targetNamespaceRecheckIntervalSeconds = targetNamespaceRecheckIntervalSeconds;
+      this.domainNamespaceRecheckIntervalSeconds = domainNamespaceRecheckIntervalSeconds;
       this.statusUpdateTimeoutSeconds = statusUpdateTimeoutSeconds;
       this.unchangedCountToDelayStatusRecheck = unchangedCountToDelayStatusRecheck;
       this.initialShortDelay = initialShortDelay;
@@ -76,7 +76,7 @@ public interface TuningParameters extends Map<String, String> {
           .append("domainPresenceFailureRetrySeconds", domainPresenceFailureRetrySeconds)
           .append("domainPresenceFailureRetryMaxCount", domainPresenceFailureRetryMaxCount)
           .append("domainPresenceRecheckIntervalSeconds", domainPresenceRecheckIntervalSeconds)
-          .append("targetNamespaceRecheckIntervalSeconds", targetNamespaceRecheckIntervalSeconds)
+          .append("domainNamespaceRecheckIntervalSeconds", domainNamespaceRecheckIntervalSeconds)
           .append("statusUpdateTimeoutSeconds", statusUpdateTimeoutSeconds)
           .append("unchangedCountToDelayStatusRecheck", unchangedCountToDelayStatusRecheck)
           .append("initialShortDelay", initialShortDelay)
@@ -90,7 +90,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(domainPresenceFailureRetrySeconds)
           .append(domainPresenceFailureRetryMaxCount)
           .append(domainPresenceRecheckIntervalSeconds)
-          .append(targetNamespaceRecheckIntervalSeconds)
+          .append(domainNamespaceRecheckIntervalSeconds)
           .append(statusUpdateTimeoutSeconds)
           .append(unchangedCountToDelayStatusRecheck)
           .append(initialShortDelay)
@@ -111,7 +111,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(domainPresenceFailureRetrySeconds, mt.domainPresenceFailureRetrySeconds)
           .append(domainPresenceFailureRetryMaxCount, mt.domainPresenceFailureRetryMaxCount)
           .append(domainPresenceRecheckIntervalSeconds, mt.domainPresenceRecheckIntervalSeconds)
-          .append(targetNamespaceRecheckIntervalSeconds, mt.targetNamespaceRecheckIntervalSeconds)
+          .append(domainNamespaceRecheckIntervalSeconds, mt.domainNamespaceRecheckIntervalSeconds)
           .append(statusUpdateTimeoutSeconds, mt.statusUpdateTimeoutSeconds)
           .append(unchangedCountToDelayStatusRecheck, mt.unchangedCountToDelayStatusRecheck)
           .append(initialShortDelay, mt.initialShortDelay)
@@ -175,10 +175,18 @@ public interface TuningParameters extends Map<String, String> {
   public static class WatchTuning {
     public final int watchLifetime;
     public final int watchMinimumDelay;
+    public final int watchBackstopRecheckDelay;
 
-    public WatchTuning(int watchLifetime, int watchMinimumDelay) {
+    /**
+     * Create watch tuning.
+     * @param watchLifetime Watch lifetime
+     * @param watchMinimumDelay Minimum delay before accepting new events to prevent hot loops
+     * @param watchBackstopRecheckDelay Recheck delay for get while waiting for a status to backstop missed watch events
+     */
+    public WatchTuning(int watchLifetime, int watchMinimumDelay, int watchBackstopRecheckDelay) {
       this.watchLifetime = watchLifetime;
       this.watchMinimumDelay = watchMinimumDelay;
+      this.watchBackstopRecheckDelay = watchBackstopRecheckDelay;
     }
 
     @Override
@@ -186,12 +194,14 @@ public interface TuningParameters extends Map<String, String> {
       return new ToStringBuilder(this)
           .append("watchLifetime", watchLifetime)
           .append("watchMinimumDelay", watchMinimumDelay)
+          .append("watchBackstopRecheckDelay", watchBackstopRecheckDelay)
           .toString();
     }
 
     @Override
     public int hashCode() {
-      return new HashCodeBuilder().append(watchLifetime).append(watchMinimumDelay).toHashCode();
+      return new HashCodeBuilder()
+              .append(watchLifetime).append(watchMinimumDelay).append(watchBackstopRecheckDelay).toHashCode();
     }
 
     @Override
@@ -206,6 +216,7 @@ public interface TuningParameters extends Map<String, String> {
       return new EqualsBuilder()
           .append(watchLifetime, wt.watchLifetime)
           .append(watchMinimumDelay, wt.watchMinimumDelay)
+          .append(watchBackstopRecheckDelay, wt.watchBackstopRecheckDelay)
           .isEquals();
     }
   }

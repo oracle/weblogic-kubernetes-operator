@@ -14,6 +14,8 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 
 public class TuningParametersImpl extends ConfigMapConsumer implements TuningParameters {
+  public static final int DEFAULT_CALL_LIMIT = 50;
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static TuningParameters INSTANCE = null;
 
@@ -51,7 +53,7 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
             (int) readTuningParameter("domainPresenceFailureRetrySeconds", 10),
             (int) readTuningParameter("domainPresenceFailureRetryMaxCount", 5),
             (int) readTuningParameter("domainPresenceRecheckIntervalSeconds", 120),
-            (int) readTuningParameter("targetNamespaceRecheckIntervalSeconds", 3),
+            (int) readTuningParameter("domainNamespaceRecheckIntervalSeconds", 3),
             (int) readTuningParameter("statusUpdateTimeoutSeconds", 10),
             (int) readTuningParameter("statusUpdateUnchangedCountToDelayStatusRecheck", 10),
             readTuningParameter("statusUpdateInitialShortDelay", 5),
@@ -59,14 +61,15 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
 
     CallBuilderTuning callBuilder =
         new CallBuilderTuning(
-            (int) readTuningParameter("callRequestLimit", 500),
+            (int) readTuningParameter("callRequestLimit", DEFAULT_CALL_LIMIT),
             (int) readTuningParameter("callMaxRetryCount", 5),
             (int) readTuningParameter("callTimeoutSeconds", 10));
 
     WatchTuning watch =
         new WatchTuning(
             (int) readTuningParameter("watchLifetime", 300),
-            (int) readTuningParameter("watchMinimumDelay", 5));
+            (int) readTuningParameter("watchMinimumDelay", 5),
+            (int) readTuningParameter("watchBackstopRecheckDelaySeconds", 5));
 
     PodTuning pod =
         new PodTuning(

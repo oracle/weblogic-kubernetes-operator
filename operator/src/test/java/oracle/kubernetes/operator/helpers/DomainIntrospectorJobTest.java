@@ -19,8 +19,7 @@ import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
-import oracle.kubernetes.operator.calls.FailureStatusSourceException;
-import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
+import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -29,9 +28,11 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.Model;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,6 +69,7 @@ public class DomainIntrospectorJobTest {
   private static final String OVERRIDE_SECRET_2 = "override-secret-2";
   private static final String LOG_HOME = "/shared/logs/" + UID;
   private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
+  private static final String WDT_MODEL_HOME = "/u01/wdt/my-models";
   private static final String LATEST_IMAGE = "image:latest";
   private static final String ADMIN_NAME = "admin";
   private static final int MAX_SERVERS = 2;
@@ -222,7 +224,8 @@ public class DomainIntrospectorJobTest {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    assertThat(getDomain(), hasStatus("ServerError",
+            "testcall in namespace junit, for testName: failure reported in test"));
   }
 
   @Test
@@ -259,8 +262,22 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
+  public void whenJobCreatedWithModelHomeDefined_hasModelHomeEnvVariable() {
+    getDomain().getSpec()
+        .setConfiguration(new Configuration().withModel(new Model().withModelHome(WDT_MODEL_HOME)));
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    List<V1Job> jobs = testSupport.getResources(KubernetesTestSupport.JOB);
+    List<V1Container> podTemplateContainers = getPodTemplateContainers(jobs.get(0));
+    assertThat(
+        podTemplateContainers.get(0).getEnv(),
+        hasEnvVar("WDT_MODEL_HOME", WDT_MODEL_HOME));
+  }
+
+  @Test
   public void whenPodCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
-    testSupport.failOnResource(JOB, getJobName(), NS, new UnprocessableEntityBuilder()
+    testSupport.failOnResource(JOB, getJobName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());
@@ -277,7 +294,7 @@ public class DomainIntrospectorJobTest {
 
   @Test
   public void whenPodCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
-    testSupport.failOnResource(JOB, getJobName(), NS, new UnprocessableEntityBuilder()
+    testSupport.failOnResource(JOB, getJobName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());

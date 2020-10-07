@@ -4,9 +4,12 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -22,6 +25,7 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -34,6 +38,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 
 public class PodHelper {
@@ -85,28 +90,50 @@ public class PodHelper {
     return ready;
   }
 
+  static boolean hasReadyServer(V1Pod pod) {
+    return Optional.ofNullable(pod).map(PodHelper::getReadyStatus).orElse(false);
+  }
+
+  static boolean isScheduled(@Nullable V1Pod pod) {
+    return Optional.ofNullable(pod).map(V1Pod::getSpec).map(V1PodSpec::getNodeName).isPresent();
+  }
+
+  static boolean hasClusterNameOrNull(@Nullable V1Pod pod, String clusterName) {
+    return getClusterName(pod) == null || getClusterName(pod).equals(clusterName);
+  }
+
+  private static String getClusterName(@Nullable V1Pod pod) {
+    return Optional.ofNullable(pod)
+          .map(V1Pod::getMetadata)
+          .map(V1ObjectMeta::getLabels)
+          .map(PodHelper::getClusterName)
+          .orElse(null);
+  }
+
+  private static String getClusterName(@Nonnull Map<String,String> labels) {
+    return labels.get(CLUSTERNAME_LABEL);
+  }
+
   /**
    * get if pod is in ready state.
    * @param pod pod
    * @return true, if pod is ready
    */
   public static boolean getReadyStatus(V1Pod pod) {
-    V1PodStatus status = pod.getStatus();
-    if (status != null) {
-      if ("Running".equals(status.getPhase())) {
-        List<V1PodCondition> conds = status.getConditions();
-        if (conds != null) {
-          for (V1PodCondition cond : conds) {
-            if ("Ready".equals(cond.getType())) {
-              if ("True".equals(cond.getStatus())) {
-                return true;
-              }
-            }
-          }
-        }
-      }
-    }
-    return false;
+    return Optional.ofNullable(pod.getStatus())
+          .filter(PodHelper::isRunning)
+          .map(V1PodStatus::getConditions)
+          .orElse(Collections.emptyList())
+          .stream()
+          .anyMatch(PodHelper::isReadyCondition);
+  }
+
+  private static boolean isRunning(@Nonnull V1PodStatus status) {
+    return "Running".equals(status.getPhase());
+  }
+
+  private static boolean isReadyCondition(V1PodCondition condition) {
+    return "Ready".equals(condition.getType()) && "True".equals(condition.getStatus());
   }
 
   /**
@@ -144,12 +171,8 @@ public class PodHelper {
    * @return domain UID
    */
   public static String getPodDomainUid(V1Pod pod) {
-    V1ObjectMeta meta = pod.getMetadata();
-    Map<String, String> labels = meta.getLabels();
-    if (labels != null) {
-      return labels.get(LabelConstants.DOMAINUID_LABEL);
-    }
-    return null;
+    return KubernetesUtils.getDomainUidLabel(
+        Optional.ofNullable(pod).map(V1Pod::getMetadata).orElse(null));
   }
 
   /**
@@ -243,26 +266,27 @@ public class PodHelper {
     }
 
     @Override
-    Integer getDefaultPort() {
-      return getAsPort();
-    }
-
-    @Override
     String getServerName() {
       return getAsName();
     }
 
     @Override
+    Step createProgressingStep(Step actionStep) {
+      return DomainStatusUpdater.createProgressingStep(
+          DomainStatusUpdater.ADMIN_SERVER_STARTING_PROGRESS_REASON, false, actionStep);
+    }
+
+    @Override
     Step createNewPod(Step next) {
-      return createPod(next);
+      return createProgressingStep(createPod(next));
     }
 
     @Override
     Step replaceCurrentPod(Step next) {
       if (MakeRightDomainOperation.isInspectionRequired(packet)) {
-        return MakeRightDomainOperation.createStepsToRerunWithIntrospection(packet);
+        return createProgressingStep(MakeRightDomainOperation.createStepsToRerunWithIntrospection(packet));
       } else {
-        return createCyclePodStep(next);
+        return createProgressingStep(createCyclePodStep(next));
       }
     }
 
@@ -379,11 +403,6 @@ public class PodHelper {
     }
 
     @Override
-    Integer getDefaultPort() {
-      return scan.getListenPort();
-    }
-
-    @Override
     String getServerName() {
       return scan.getName();
     }
@@ -410,7 +429,8 @@ public class PodHelper {
       return (Map<String, Step.StepAndPacket>) packet.get(SERVERS_TO_ROLL);
     }
 
-    private Step createProgressingStep(Step actionStep) {
+    @Override
+    Step createProgressingStep(Step actionStep) {
       return DomainStatusUpdater.createProgressingStep(
           DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, actionStep);
     }
@@ -444,7 +464,7 @@ public class PodHelper {
     protected V1ObjectMeta createMetadata() {
       V1ObjectMeta metadata = super.createMetadata();
       if (getClusterName() != null) {
-        metadata.putLabelsItem(LabelConstants.CLUSTERNAME_LABEL, getClusterName());
+        metadata.putLabelsItem(CLUSTERNAME_LABEL, getClusterName());
       }
       return metadata;
     }
@@ -502,7 +522,7 @@ public class PodHelper {
       if (oldPod != null) {
         Map<String, String> labels = oldPod.getMetadata().getLabels();
         if (labels != null) {
-          clusterName = labels.get(LabelConstants.CLUSTERNAME_LABEL);
+          clusterName = labels.get(CLUSTERNAME_LABEL);
         }
 
         ServerSpec serverSpec = info.getDomain().getServer(serverName, clusterName);
@@ -519,19 +539,22 @@ public class PodHelper {
 
         String name = oldPod.getMetadata().getName();
         info.setServerPodBeingDeleted(serverName, Boolean.TRUE);
-        return doNext(deletePod(name, info.getNamespace(), gracePeriodSeconds, getNext()), packet);
+        return doNext(
+            deletePod(name, info.getNamespace(), getPodDomainUid(oldPod), gracePeriodSeconds, getNext()),
+            packet);
       } else {
         return doNext(packet);
       }
     }
 
-    private Step deletePod(String name, String namespace, long gracePeriodSeconds, Step next) {
+    private Step deletePod(String name, String namespace, String domainUid, long gracePeriodSeconds, Step next) {
 
       Step conflictStep =
           new CallBuilder()
               .readPodAsync(
                   name,
                   namespace,
+                  domainUid,
                   new DefaultResponseStep<>(next) {
                     @Override
                     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
@@ -546,9 +569,30 @@ public class PodHelper {
                   });
 
       V1DeleteOptions deleteOptions = new V1DeleteOptions().gracePeriodSeconds(gracePeriodSeconds);
-      return new CallBuilder()
-          .deletePodAsync(
-              name, namespace, deleteOptions, new DefaultResponseStep<>(conflictStep, next));
+      DeletePodRetryStrategy retryStrategy = new DeletePodRetryStrategy(next);
+      return new CallBuilder().withRetryStrategy(retryStrategy)
+              .deletePodAsync(name, namespace, domainUid, deleteOptions, new DefaultResponseStep<>(conflictStep, next));
     }
   }
+
+  /* Retry strategy for delete pod which will not perform any retries */
+  private static final class DeletePodRetryStrategy implements RetryStrategy {
+    private final Step retryStep;
+
+    DeletePodRetryStrategy(Step retryStep) {
+      this.retryStep = retryStep;
+    }
+
+    @Override
+    public NextAction doPotentialRetry(Step conflictStep, Packet packet, int statusCode) {
+      NextAction na = new NextAction();
+      na.invoke(retryStep, packet);
+      return na;
+    }
+
+    @Override
+    public void reset() {
+    }
+  }
+
 }

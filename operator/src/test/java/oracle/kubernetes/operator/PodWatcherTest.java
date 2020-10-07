@@ -5,8 +5,10 @@ package oracle.kubernetes.operator;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.logging.LogRecord;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ContainerState;
@@ -19,11 +21,11 @@ import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
-import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,22 +46,24 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
   private static final String NS = "ns";
   private static final String NAME = "test";
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private static final int RECHECK_SECONDS = 10;
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
-  private java.util.List<com.meterware.simplestub.Memento> mementos = new java.util.ArrayList<>();
-  private java.util.List<java.util.logging.LogRecord> logRecords = new java.util.ArrayList<>();
+  private final List<LogRecord> logRecords = new java.util.ArrayList<>();
+
+  @Override
+  protected TestUtils.ConsoleHandlerMemento configureOperatorLogger() {
+    return super.configureOperatorLogger()
+          .collectLogMessages(logRecords, getMessageKeys())
+          .withLogLevel(java.util.logging.Level.FINE)
+          .ignoringLoggedExceptions(ApiException.class);
+  }
 
   @Override
   @Before
   public void setUp() throws Exception {
-    mementos.add(StubWatchFactory.install());
-    StubWatchFactory.setListener(this);
+    super.setUp();
     addMemento(testSupport.install());
-    mementos.add(
-        oracle.kubernetes.utils.TestUtils.silenceOperatorLogger()
-            .collectLogMessages(logRecords, getMessageKeys())
-            .withLogLevel(java.util.logging.Level.FINE)
-            .ignoringLoggedExceptions(ApiException.class));
   }
 
   private String[] getMessageKeys() {
@@ -248,6 +252,15 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
+  public void whenPodNotReadyLaterAndThenReadyButNoWatchEvent_runNextStep() {
+    makeModifiedPodReadyWithNoWatchEvent(this::markPodReady);
+
+    testSupport.setTime(RECHECK_SECONDS, TimeUnit.SECONDS);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
   public void whenIntrospectPodNotReadyWithTerminatedReason_logPodStatus() {
     sendIntrospectorPodModifiedWatchAfterWaitForReady(this::addContainerStateTerminatedReason);
 
@@ -274,6 +287,24 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
       testSupport.runSteps(watcher.waitForReady(createPod(), terminalStep));
       for (Function<V1Pod,V1Pod> modifier : modifiers) {
         watcher.receivedResponse(new Watch.Response<>("MODIFIED", modifier.apply(createPod())));
+      }
+    } finally {
+      stopping.set(true);
+    }
+  }
+
+  // Simulates a pod that is ready but where Kubernetes has failed to send the watch event
+  @SafeVarargs
+  private void makeModifiedPodReadyWithNoWatchEvent(Function<V1Pod,V1Pod>... modifiers) {
+    AtomicBoolean stopping = new AtomicBoolean(false);
+    PodWatcher watcher = createWatcher(stopping);
+    V1Pod pod = createPod();
+    testSupport.defineResources(pod);
+
+    try {
+      testSupport.runSteps(watcher.waitForReady(createPod(), terminalStep));
+      for (Function<V1Pod,V1Pod> modifier : modifiers) {
+        modifier.apply(pod);
       }
     } finally {
       stopping.set(true);
@@ -341,10 +372,6 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
     } finally {
       stopping.set(true);
     }
-  }
-
-  private Runnable reportPodIsNowDeleted(PodWatcher watcher) {
-    return () -> watcher.receivedResponse(WatchEvent.createDeleteEvent(createPod()).toWatchResponse());
   }
 
 }

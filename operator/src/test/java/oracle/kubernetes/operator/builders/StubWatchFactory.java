@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.builders;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,7 +11,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
@@ -18,22 +20,27 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
+import io.kubernetes.client.util.Watchable;
 import okhttp3.Call;
-import oracle.kubernetes.operator.helpers.Pool;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A test-time replacement for the factory that creates Watch objects, allowing tests to specify
  * directly the events they want returned from the Watch.
  */
-public class StubWatchFactory implements WatchBuilder.WatchFactory {
+public class StubWatchFactory<T> implements WatchFactory<T> {
 
   private static final int MAX_TEST_REQUESTS = 100;
-  private static StubWatchFactory factory;
+  private static final String SYMBOL = "[A-Z_a-z0-9.]+";
+  private static final String ENCODED_COMMA = "%2C";
+  private static final String PARAMETERS_PATTERN = "(" + SYMBOL + ")=(" + SYMBOL + "(" + ENCODED_COMMA + SYMBOL + ")*)";
+  private static final Pattern URL_PARAMETERS = Pattern.compile(PARAMETERS_PATTERN);
+  private static StubWatchFactory<?> factory;
   private static List<Map<String, String>> requestParameters;
   private static RuntimeException exceptionOnNext;
   private static AllWatchesClosedListener listener;
 
-  private List<List<Watch.Response<Object>>> calls = new ArrayList<>();
+  private final List<List<Watch.Response<?>>> calls = new ArrayList<>();
   private int numCloseCalls;
 
   private StubWatchFactory() {
@@ -45,11 +52,11 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
    * @throws NoSuchFieldException if StaticStubSupport fails to install.
    */
   public static Memento install() throws NoSuchFieldException {
-    factory = new StubWatchFactory();
+    factory = new StubWatchFactory<>();
     requestParameters = new ArrayList<>();
     exceptionOnNext = null;
 
-    return StaticStubSupport.install(WatchBuilder.class, "FACTORY", factory);
+    return StaticStubSupport.install(WatchImpl.class, "FACTORY", factory);
   }
 
   /**
@@ -57,8 +64,7 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
    *
    * @param events the events; will be converted to Watch.Response objects
    */
-  @SuppressWarnings("unchecked")
-  public static void addCallResponses(Watch.Response<Object>... events) {
+  public static void addCallResponses(Watch.Response<?>... events) {
     factory.calls.add(Arrays.asList(events));
   }
 
@@ -74,20 +80,27 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     return requestParameters;
   }
 
+  /**
+   * Programs the stub to throw the specified exception when {@link Iterator#next()} is invoked.
+   * @param e the exception to throw
+   */
   public static void throwExceptionOnNext(RuntimeException e) {
     exceptionOnNext = e;
   }
 
+  /**
+   * The factory method called when a watch is created. This method returns a stub for the Kubernetes watch
+   * that allows tests to simulate responses and check specified parameters.
+   * @param client the underlying Kubernetes http client
+   * @param call a definition of the http class to be made to Kubernetes to create the watch
+   * @param type the type of the object that the watch will describe
+   * @return a test double for the requested watch
+   */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  @Override
-  public <T> WatchI<T> createWatch(
-      Pool<ApiClient> pool,
-      CallParams callParams,
-      Class<?> responseBodyType,
-      BiFunction<ApiClient, CallParams, Call> function) {
+  @NotNull
+  public Watchable<T> createWatch(ApiClient client, Call call, Type type) {
     try {
-      Map<String, String> recordedParams = recordedParams(callParams);
-      addRecordedParameters(recordedParams);
+      addRecordedParameters(getParameters(call));
 
       if (nothingToDo()) {
         return new WatchStub<>(Collections.emptyList());
@@ -106,6 +119,16 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     }
   }
 
+  @NotNull
+  private Map<String, String> getParameters(Call call) {
+    final Matcher matcher = URL_PARAMETERS.matcher(call.request().url().toString());
+    final Map<String, String> recordedParams = new HashMap<>();
+    while (matcher.find()) {
+      recordedParams.put(matcher.group(1), matcher.group(2).replace(ENCODED_COMMA, ","));
+    }
+    return recordedParams;
+  }
+
   private void addRecordedParameters(Map<String, String> recordedParams) {
     if (requestParameters.size() > MAX_TEST_REQUESTS) {
       return;
@@ -117,27 +140,15 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     return calls.isEmpty() && exceptionOnNext == null;
   }
 
-  private Map<String, String> recordedParams(CallParams callParams) {
-    Map<String, String> result = new HashMap<>();
-    if (callParams.getResourceVersion() != null) {
-      result.put("resourceVersion", callParams.getResourceVersion());
-    }
-    if (callParams.getLabelSelector() != null) {
-      result.put("labelSelector", callParams.getLabelSelector());
-    }
-
-    return result;
-  }
-
   public interface AllWatchesClosedListener {
     void allWatchesClosed();
   }
 
-  class WatchStub<T> implements WatchI<T> {
-    private List<Watch.Response<T>> responses;
-    private Iterator<Watch.Response<T>> iterator;
+  class WatchStub<X> implements Watchable<X> {
+    private final List<Watch.Response<X>> responses;
+    private final Iterator<Watch.Response<X>> iterator;
 
-    private WatchStub(List<Watch.Response<T>> responses) {
+    private WatchStub(List<Watch.Response<X>> responses) {
       this.responses = responses;
       iterator = responses.iterator();
     }
@@ -151,7 +162,7 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     }
 
     @Override
-    public @Nonnull Iterator<Watch.Response<T>> iterator() {
+    public @Nonnull Iterator<Watch.Response<X>> iterator() {
       return responses.iterator();
     }
 
@@ -161,13 +172,13 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     }
 
     @Override
-    public Watch.Response<T> next() {
+    public Watch.Response<X> next() {
       return iterator.next();
     }
   }
 
-  class ExceptionThrowingWatchStub<T> extends WatchStub<T> {
-    private RuntimeException exception;
+  class ExceptionThrowingWatchStub<X> extends WatchStub<X> {
+    private final RuntimeException exception;
 
     private ExceptionThrowingWatchStub(RuntimeException exception) {
       super(new ArrayList<>());
@@ -180,7 +191,7 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     }
 
     @Override
-    public Response<T> next() {
+    public Response<X> next() {
       throw exception;
     }
   }

@@ -346,8 +346,6 @@ function createFiles {
     weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
   fi
 
-  wdtVersion="${WDT_VERSION}"
-
   if [ "${domainHomeInImage}" == "true" ]; then
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
     domainHome="/u01/oracle/user_projects/domains/${domainName}"
@@ -389,6 +387,9 @@ function createFiles {
       sed -i -e "s|%IMAGE_NAME%|${image}|g" ${domainPropertiesOutput}
     fi
   else
+    # we're in the domain in PV case
+
+    wdtVersion="${WDT_VERSION:-${wdtVersion}}"
 
     createJobOutput="${domainOutputDir}/create-domain-job.yaml"
     deleteJobOutput="${domainOutputDir}/delete-domain-job.yaml"
@@ -446,6 +447,8 @@ function createFiles {
     sed -i -e "s:%CUSTOM_RCUPREFIX%:${rcuSchemaPrefix}:g" ${createJobOutput}
     sed -i -e "s|%CUSTOM_CONNECTION_STRING%|${rcuDatabaseURL}|g" ${createJobOutput}
     sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3Channel}:g" ${createJobOutput}
+    sed -i -e "s:%FRONTEND_HOST%:${frontEndHost}:g" ${createJobOutput}
+    sed -i -e "s:%FRONTEND_PORT%:${frontEndPort}:g" ${createJobOutput}
     # entries for Istio
     sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
@@ -535,7 +538,13 @@ function createFiles {
   if [ -z "${serverPodResources}" ]; then
     sed -i -e "/%OPTIONAL_SERVERPOD_RESOURCES%/d" ${dcrOutput}
   else
-    sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
+    if [[ $(uname) -eq "Darwin" ]]; then
+      serverPodResources=$(echo "${serverPodResources}" | sed -e 's/\\n/%NEWLINE%/g')
+      sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
+      sed -i -e $'s|%NEWLINE%|\\\n|g' ${dcrOutput}
+    else
+      sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
+    fi
   fi
 
   if [ "${domainHomeInImage}" == "true" ]; then

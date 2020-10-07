@@ -3,14 +3,14 @@
 
 {{- define "operator.operatorClusterRoleGeneral" }}
 ---
-{{- if .dedicated }}
+{{- if (or (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") (and .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "List"))) }}
 kind: "Role"
 {{- else }}
 kind: "ClusterRole"
 {{- end }}
 apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
-  {{- if .dedicated }}
+  {{- if (or (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") (and .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "List"))) }}
   name: "weblogic-operator-role-general"
   namespace: {{ .Release.Namespace | quote }}
   {{- else }}
@@ -19,7 +19,7 @@ metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 rules:
-{{- if not .dedicated }}
+{{- if not (or (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") (and .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "List"))) }}
 - apiGroups: [""]
   resources: ["namespaces"]
   verbs: ["get", "list", "watch"]

@@ -8,9 +8,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.util.Watch;
+import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
-import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 /**
@@ -18,19 +19,23 @@ import oracle.kubernetes.operator.watcher.WatchListener;
  * the operator for processing.
  */
 public class NamespaceWatcher extends Watcher<V1Namespace> {
+  private final String[] labelSelectors;
 
   private NamespaceWatcher(
       String initialResourceVersion,
+      String[] labelSelectors,
       WatchTuning tuning,
       WatchListener<V1Namespace> listener,
       AtomicBoolean isStopping) {
     super(initialResourceVersion, tuning, isStopping, listener);
+    this.labelSelectors = labelSelectors;
   }
 
   /**
    * Create a namespace watcher.
    * @param factory the ThreadFactory to run the watcher
    * @param initialResourceVersion at which to start returning watch events
+   * @param labelSelector label selector
    * @param tuning any WatchTuning parameters
    * @param listener the WatchListener
    * @param isStopping whether the watcher is stopping
@@ -39,24 +44,31 @@ public class NamespaceWatcher extends Watcher<V1Namespace> {
   public static NamespaceWatcher create(
       ThreadFactory factory,
       String initialResourceVersion,
+      String[] labelSelector,
       WatchTuning tuning,
       WatchListener<V1Namespace> listener,
       AtomicBoolean isStopping) {
 
     NamespaceWatcher watcher =
-        new NamespaceWatcher(initialResourceVersion, tuning, listener, isStopping);
+        new NamespaceWatcher(initialResourceVersion, labelSelector, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
 
   @Override
-  public WatchI<V1Namespace> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+  public Watchable<V1Namespace> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder
+        .withLabelSelectors(labelSelectors)
         .createNamespacesWatch();
   }
 
   @Override
   public String getNamespace() {
+    return null;
+  }
+
+  @Override
+  public String getDomainUid(Watch.Response<V1Namespace> item) {
     return null;
   }
 }

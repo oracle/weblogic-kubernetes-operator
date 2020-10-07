@@ -28,26 +28,15 @@ weight: 7
     ```
 
 #### Remove the domain namespace.
-1.	Configure the Traefik load balancer to stop managing the ingresses in the domain namespace:
+1.	Configure the Traefik ingress controller to stop managing the ingresses in the domain namespace:
 
     ```bash
-    $ helm upgrade traefik-operator stable/traefik \
+    $ helm upgrade traefik-operator traefik/traefik \
         --namespace traefik \
         --reuse-values \
-        --set "kubernetes.namespaces={traefik}" \
-        --wait
+        --set "kubernetes.namespaces={traefik}" 
     ```
 
-1.	Configure the operator to stop managing the domain:
-
-    ```bash
-    $ helm upgrade  sample-weblogic-operator \
-                  kubernetes/charts/weblogic-operator \
-      --namespace sample-weblogic-operator-ns \
-      --reuse-values \
-      --set "domainNamespaces={}" \
-      --wait \
-    ```
 1.	Delete the domain namespace:
 
     ```bash
@@ -69,9 +58,9 @@ weight: 7
     $ kubectl delete namespace sample-weblogic-operator-ns
     ```
 
-#### Remove the load balancer.
+#### Remove the ingress controller.
 
-1.	Remove the Traefik load balancer:
+1.	Remove the Traefik ingress controller:
 
     ```bash
     $ helm uninstall traefik-operator -n traefik

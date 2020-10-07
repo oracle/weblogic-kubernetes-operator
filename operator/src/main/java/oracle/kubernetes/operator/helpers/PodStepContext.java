@@ -30,7 +30,6 @@ import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
-import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
@@ -237,7 +236,23 @@ public abstract class PodStepContext extends BasePodStepContext {
     return null;
   }
 
-  abstract Integer getDefaultPort();
+  /**
+   * Returns the configured listen port of the WLS instance.
+   *
+   * @return the non-SSL port of the WLS instance or null if not enabled
+   */
+  Integer getDefaultPort() {
+    return scan.getListenPort();
+  }
+
+  /**
+   * Returns the configured SSL port of the WLS instance.
+   *
+   * @return the SSL port of the WLS instance or null if not enabled
+   */
+  Integer getSSLPort() {
+    return scan.getSslListenPort();
+  }
 
   abstract String getServerName();
 
@@ -267,7 +282,9 @@ public abstract class PodStepContext extends BasePodStepContext {
    * @return a step to be scheduled.
    */
   Step verifyPod(Step next) {
-    return new VerifyPodStep(next);
+    return Step.chain(
+        DomainValidationSteps.createAdditionalDomainValidationSteps(podModel.getSpec()),
+        new VerifyPodStep(next));
   }
 
   /**
@@ -278,7 +295,7 @@ public abstract class PodStepContext extends BasePodStepContext {
    */
   private Step deletePod(Step next) {
     return new CallBuilder()
-          .deletePodAsync(getPodName(), getNamespace(), new V1DeleteOptions(), deleteResponse(next));
+          .deletePodAsync(getPodName(), getNamespace(), getDomainUid(), new V1DeleteOptions(), deleteResponse(next));
   }
 
   /**
@@ -322,7 +339,19 @@ public abstract class PodStepContext extends BasePodStepContext {
     return createPodAsync(replaceResponse(next));
   }
 
+  /**
+   * Creates a Progressing step before an action step.
+   *
+   * @param actionStep the step to perform after the ProgressingStep.
+   * @return a step to be scheduled.
+   */
+  abstract Step createProgressingStep(Step actionStep);
+
   private Step patchCurrentPod(V1Pod currentPod, Step next) {
+    return createProgressingStep(patchPod(currentPod, next));
+  }
+
+  protected Step patchPod(V1Pod currentPod, Step next) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
 
     KubernetesUtils.addPatches(
@@ -331,7 +360,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
 
     return new CallBuilder()
-        .patchPodAsync(getPodName(), getNamespace(),
+            .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 
@@ -398,7 +427,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return new CreateResponseStep(next);
   }
 
-  private ResponseStep<V1Status> deleteResponse(Step next) {
+  private ResponseStep<V1Pod> deleteResponse(Step next) {
     return new DeleteResponseStep(next);
   }
 
@@ -521,7 +550,9 @@ public abstract class PodStepContext extends BasePodStepContext {
           .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, hash));
 
     // Add prometheus annotations. This will overwrite any custom annotations with same name.
-    AnnotationHelper.annotateForPrometheus(metadata, getDefaultPort());
+    // Prometheus does not support "prometheus.io/scheme".  The scheme(http/https) can be set
+    // in the Prometheus Chart values yaml under the "extraScrapeConfigs:" section.
+    AnnotationHelper.annotateForPrometheus(metadata, getDefaultPort() != null ? getDefaultPort() : getSSLPort());
     return metadata;
   }
 
@@ -796,6 +827,14 @@ public abstract class PodStepContext extends BasePodStepContext {
     @Override
     public NextAction apply(Packet packet) {
       V1Pod currentPod = info.getServerPod(getServerName());
+
+      // reset introspect failure job count - if any
+      
+      Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .ifPresent(a -> a.resetIntrospectJobFailureCount());
+
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
@@ -861,7 +900,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
   }
 
-  private class DeleteResponseStep extends ResponseStep<V1Status> {
+  private class DeleteResponseStep extends ResponseStep<V1Pod> {
     DeleteResponseStep(Step next) {
       super(next);
     }
@@ -871,7 +910,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Status> callResponses) {
+    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponses) {
       if (callResponses.getStatusCode() == CallBuilder.NOT_FOUND) {
         return onSuccess(packet, callResponses);
       }
@@ -879,8 +918,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Status> callResponses) {
-      return doNext(replacePod(getNext()), packet);
+    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponses) {
+      PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
+      return doNext(pw.waitForDelete(callResponses.getResult(), replacePod(getNext())), packet);
     }
   }
 

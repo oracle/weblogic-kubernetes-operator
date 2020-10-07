@@ -8,6 +8,7 @@
 {{- $ignore := include "utils.verifyResourceName" (list $scope "Namespace") -}}
 {{- $ignore := include "utils.popValidationContext" $scope -}}
 {{- $ignore := include "utils.verifyString" (list $scope "serviceAccount") -}}
+{{- $ignore := include "utils.verifyK8SResource" (list $scope .serviceAccount "ServiceAccount" .Release.Namespace) -}}
 {{- $ignore := include "utils.verifyString" (list $scope "image") -}}
 {{- $ignore := include "utils.verifyEnum" (list $scope "imagePullPolicy" (list "Always" "IfNotPresent" "Never")) -}}
 {{- $ignore := include "utils.verifyOptionalDictionaryList" (list $scope "imagePullSecrets") -}}
@@ -31,7 +32,14 @@
 {{-     $ignore := include "utils.verifyInteger" (list $scope "externalDebugHttpPort") -}}
 {{-   end -}}
 {{- end -}}
-{{- $ignore := include "utils.verifyStringList" (list $scope "domainNamespaces") -}}
+{{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "enableClusterRoleBinding") -}}
+{{- if and .enableClusterRoleBinding (or (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") (and .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "List"))) }}
+{{-   $errorMsg := "The enableClusterRoleBinding value may not be true when either dedicated is true or domainNamespaceSelectionStrategy is Dedicated" -}}
+{{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
+{{- end -}}
+{{- if eq (default "List" $scope.domainNamespaceSelectionStrategy) "List" -}}
+{{-     $ignore := include "utils.verifyStringList" (list $scope "domainNamespaces") -}}
+{{- end -}}
 {{- if include "utils.verifyBoolean" (list $scope "elkIntegrationEnabled") -}}
 {{-   if $scope.elkIntegrationEnabled -}}
 {{-     $ignore := include "utils.verifyString" (list $scope "logStashImage") -}}
@@ -40,6 +48,13 @@
 {{-   end -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "dedicated") -}}
+{{- $ignore := include "utils.verifyOptionalEnum" (list $scope "domainNamespaceSelectionStrategy" (list "List" "LabelSelector" "RegExp" "Dedicated")) -}}
+{{- if eq (default "List" $scope.domainNamespaceSelectionStrategy) "LabelSelector" -}}
+{{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceLabelSelector") -}}
+{{- end -}}
+{{- if eq (default "List" $scope.domainNamespaceSelectionStrategy) "RegExp" -}}
+{{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceRegExp") -}}
+{{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
 {{- $ignore := include "utils.endValidation" $scope -}}
 {{- end -}}

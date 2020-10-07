@@ -160,15 +160,23 @@ public class LoggingFormatter extends Formatter {
           .map(Fiber::getPacket)
           .map(this::getDomainPresenceInfo)
           .map(DomainPresenceInfo::getDomainUid)
-          .orElse(getDomainUidFromThreadContext());
+          .orElse(getDomainUidFromLoggingContext(fiber));
   }
 
-  private DomainPresenceInfo getDomainPresenceInfo(Packet packet) {
-    return packet.getSpi(DomainPresenceInfo.class);
+  private String getDomainUidFromLoggingContext(Fiber fiber) {
+    return Optional.ofNullable(fiber)
+        .map(Fiber::getPacket)
+        .map(p -> p.getSpi(LoggingContext.class))
+        .map(LoggingContext::domainUid)
+        .orElse(getDomainUidFromThreadContext());
   }
 
   private String getDomainUidFromThreadContext() {
     return LoggingContext.optionalContext().map(LoggingContext::domainUid).orElse("");
+  }
+
+  private DomainPresenceInfo getDomainPresenceInfo(Packet packet) {
+    return packet.getSpi(DomainPresenceInfo.class);
   }
 
   /**

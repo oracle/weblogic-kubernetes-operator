@@ -63,7 +63,7 @@ public class MessageKeys {
   public static final String HTTP_METHOD_FAILED = "WLSKO-0081";
   public static final String NOT_STARTING_DOMAINUID_THREAD = "WLSKO-0082";
   public static final String OP_CONFIG_NAMESPACE = "WLSKO-0083";
-  public static final String OP_CONFIG_TARGET_NAMESPACES = "WLSKO-0084";
+  public static final String OP_CONFIG_DOMAIN_NAMESPACES = "WLSKO-0084";
   public static final String OP_CONFIG_SERVICE_ACCOUNT = "WLSKO-0085";
   public static final String WAITING_FOR_POD_READY = "WLSKO-0087";
   public static final String POD_IS_READY = "WLSKO-0088";
@@ -148,6 +148,8 @@ public class MessageKeys {
   public static final String NO_CLUSTER_IN_DOMAIN = "WLSDO-0011";
   public static final String NO_MANAGED_SERVER_IN_DOMAIN = "WLSDO-0012";
   public static final String CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO = "WLSDO-0013";
+  public static final String INTROSPECT_JOB_FAILED = "WLSDO-0014";
+  public static final String INTROSPECT_JOB_FAILED_RETRY_COUNT = "WLSDO-0015";
 
   private MessageKeys() {
   }

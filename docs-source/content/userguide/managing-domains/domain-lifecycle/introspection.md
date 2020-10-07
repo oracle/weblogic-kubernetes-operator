@@ -1,7 +1,7 @@
 ---
 title: "Domain introspection"
 date: 2020-07-07T08:14:51-05:00
-draft: true
+draft: false
 weight: 5
 description: "This document describes domain introspection in the Oracle WebLogic Server in Kubernetes environment."
 ---
@@ -11,7 +11,7 @@ This document describes domain introspection, when it occurs automatically, and 
 
 In order to manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic
 domain configuration using an "introspection" job. This Job will be named `DOMAIN_UID-introspect-domain-job`, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances. Because each of the
-[domain home source types](({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}})) are different (for instance, Domain in PV uses a domain home on a PersistentVolume while Model in Image generates the domain home dynamically from a WDT model), the Pod created by this Job will be
+[domain home source types]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) are different (for instance, Domain in PV uses a domain home on a PersistentVolume while Model in Image generates the domain home dynamically from a WDT model), the Pod created by this Job will be
 as similar as possible to the Pod that will later be generated for the Administration Server. This guarantees that the operator is
 analyzing the same WebLogic domain configuration that WebLogic Server instances will use.
 
@@ -53,6 +53,11 @@ When introspection fails, the operator will not start any WebLogic Server instan
 The introspection will be periodically retried and then will eventually timeout with the Domain `status` indicating the processing failed. To recover from a failed state, correct the underlying problem and update the `introspectVersion`.
 
 Please review the details for diagnosing introspection failures related to [configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md#debugging">}}) or [Model in Image domain home generation]({{<relref "/userguide/managing-domains/model-in-image/debugging.md">}}).
+
+{{% notice tip %}}
+The introspector log is mirrored to the Domain resource `spec.logHome` directory
+when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
+{{% /notice %}}
 
 ### Introspection use cases
 
@@ -97,7 +102,7 @@ With operator 3.0.0, you can now change the configuration overrides and distribu
 
 We have introduced a new field, called `overrideDistributionStrategy` and located under `configuration`, that controls whether updated configuration overrides are distributed dynamically to already running WebLogic Server instances or if the new configuration overrides are only applied when servers are started or restarted.
 
-The default value for `overrideDistributionStrategy` is DYNAMIC, which means that new configuration overrides are distributed dynamically to already running WebLogic Server instances. 
+The default value for `overrideDistributionStrategy` is DYNAMIC, which means that new configuration overrides are distributed dynamically to already running WebLogic Server instances.
 
 Alternately, you can set `overrideDistributionStrategy` to ON_RESTART, which means that the new configuration overrides will not be distributed to already running WebLogic Server instances, but will instead be applied only to servers as they start or restart. Use of this value will *not* cause WebLogic Server instances to restart absent changes to other fields, such as `restartVersion`.
 

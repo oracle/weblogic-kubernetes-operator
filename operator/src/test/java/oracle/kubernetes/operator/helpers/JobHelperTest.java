@@ -25,7 +25,6 @@ import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.LabelConstants;
@@ -43,16 +42,21 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVarRegEx;
+import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAffinity;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createConfigMapKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createContainer;
@@ -74,12 +78,10 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class JobHelperTest {
-
-  private static final String NS = "ns1";
-  private static final String DOMAIN_UID = "JobHelperTestDomain";
+public class JobHelperTest extends DomainValidationBaseTest {
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
+
   /** 
    * OEVN is the name of an env var that contains a comma-separated list of oper supplied env var names.
    * It's used by the Model in Image introspector job to detect env var differences from the last
@@ -87,7 +89,8 @@ public class JobHelperTest {
    */
   private static final String OEVN = "OPERATOR_ENVVAR_NAMES";
   private Method getDomainSpec;
-  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+  private final Domain domain = createTestDomain();
+  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   private final V1PodSecurityContext podSecurityContext = createPodSecurityContext(123L);
   private final V1SecurityContext containerSecurityContext = createSecurityContext(555L);
   private final V1Affinity podAffinity = createAffinity();
@@ -108,6 +111,8 @@ public class JobHelperTest {
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
 
+    domain.getSpec().setNodeName(null);
+    testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
 
@@ -294,7 +299,7 @@ public class JobHelperTest {
   }
 
   private static final String OVERRIDE_DATA_DIR = "/u01/data";
-  private static final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + DOMAIN_UID;
+  private static final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + UID;
 
   @Test
   public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvDefined() {
@@ -440,6 +445,55 @@ public class JobHelperTest {
   }
 
   @Test
+  public void whenDomainHasAdditionalVolumesWithReservedVariables_createIntrospectorPodWithSubstitutions() {
+    configureDomain()
+        .withAdditionalVolumeMount("volume2", "/source-$(DOMAIN_UID)");
+    runCreateJob();
+    assertThat(
+        job.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts(),
+        hasVolumeMount("volume2", "/source-" + UID));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithCustomVariables_createIntrospectorPodWithSubstitutions() {
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+
+    configureDomain()
+        .withEnvironmentVariable(ENV_NAME1, GOOD_MY_ENV_VALUE)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+
+    runCreateJob();
+
+    assertThat(job.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts(),
+            hasVolumeMount("volume1", END_VOLUME_MOUNT_PATH_1));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithCustomVariablesInvalidValue_jobNotCreated() {
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+
+    V1EnvVar envVar = new V1EnvVar().name(ENV_NAME1).value(BAD_MY_ENV_VALUE);
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
+
+    configureDomain()
+        .withEnvironmentVariable(ENV_NAME1, BAD_MY_ENV_VALUE)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+
+    runCreateJob();
+
+    assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), org.hamcrest.Matchers.is(true));
+    assertThat(job, is(nullValue()));
+  }
+
+  @Test
   public void verify_introspectorPodSpec_activeDeadlineSeconds_initial_values() {
     V1JobSpec jobSpec = createJobSpec();
 
@@ -492,7 +546,7 @@ public class JobHelperTest {
   public void podTemplate_hasDomainUidLabel() {
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(getTemplateLabel(jobSpec, LabelConstants.DOMAINUID_LABEL), equalTo(DOMAIN_UID));
+    assertThat(getTemplateLabel(jobSpec, LabelConstants.DOMAINUID_LABEL), equalTo(UID));
   }
 
   @Test
@@ -501,7 +555,7 @@ public class JobHelperTest {
 
     assertThat(
         getTemplateLabel(jobSpec, LabelConstants.JOBNAME_LABEL),
-        equalTo(LegalNames.toJobIntrospectorName(DOMAIN_UID)));
+        equalTo(LegalNames.toJobIntrospectorName(UID)));
   }
 
   private String getTemplateLabel(V1JobSpec jobSpec, String labelKey) {
@@ -569,7 +623,7 @@ public class JobHelperTest {
 
     assertThat(
         getMatchingContainer(domainPresenceInfo, jobSpec).map(V1Container::getName).orElse(null),
-        is(JobHelper.createJobName(DOMAIN_UID)));
+        is(JobHelper.createJobName(UID)));
   }
 
   @Test
@@ -830,16 +884,8 @@ public class JobHelperTest {
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
   }
 
-  private DomainPresenceInfo createDomainPresenceInfo() {
-    DomainPresenceInfo domainPresenceInfo =
-        new DomainPresenceInfo(
-            new Domain()
-                .withMetadata(new V1ObjectMeta().namespace(NS))
-                .withSpec(
-                    new DomainSpec()
-                        .withDomainUid(DOMAIN_UID)
-                        .withWebLogicCredentialsSecret(
-                            new V1SecretReference().name("webLogicCredentialsSecretName"))));
+  private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
+    DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
     configureDomain(domainPresenceInfo)
         .withDefaultServerStartPolicy(ConfigurationConstants.START_NEVER);
     return domainPresenceInfo;

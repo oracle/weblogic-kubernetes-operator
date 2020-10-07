@@ -242,7 +242,7 @@ function prepareMIIServer() {
 # trace env vars and dirs before export.*Home calls
 
 traceEnv before
-traceDirs before
+traceDirs before DOMAIN_HOME LOG_HOME DATA_HOME
 
 traceTiming "POD '${SERVICE_NAME}' MII UNZIP START"
 
@@ -316,7 +316,7 @@ exportEffectiveDomainHome || exitOrLoop
 # trace env vars and dirs after export.*Home calls
 
 traceEnv after
-traceDirs after
+traceDirs after DOMAIN_HOME LOG_HOME DATA_HOME
 
 #
 # Check if introspector actually ran.  This should never fail since
