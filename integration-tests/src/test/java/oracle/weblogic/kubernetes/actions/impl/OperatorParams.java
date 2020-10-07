@@ -181,6 +181,7 @@ public class OperatorParams {
     if (logStashImage != null) {
       values.put(LOGSTASH_IMAGE, logStashImage);
     }
+
     if (domainNamespaceLabelSelector != null) {
       values.put(DOMAIN_NS_LABEL_SELECTOR, domainNamespaceLabelSelector);
     }
@@ -190,7 +191,6 @@ public class OperatorParams {
     if (domainNamespaceRegExp != null) {
       values.put(DOMAIN_NS_REG_EXP, domainNamespaceRegExp);
     }
-
     values.values().removeIf(Objects::isNull);
     return values;
   }

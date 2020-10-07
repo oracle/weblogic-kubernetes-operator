@@ -364,8 +364,36 @@ public class CommonTestUtils {
    * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
    * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
-   * @param domainNsSelectionStrategy SelectLabel, RegExp or List
-   * @param domainNsSelector the label or expression value to manage namespaces
+   * @param domainNamespaceSelectionStrategy value to tell the operator
+   *                                         how to select the set of namespaces that it will manage
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String opServiceAccount,
+                                                    boolean withRestAPI,
+                                                    int externalRestHttpsPort,
+                                                    HelmParams opHelmParams,
+                                                    String domainNamespaceSelectionStrategy,
+                                                    boolean elkIntegrationEnabled,
+                                                    String... domainNamespace) {
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
+        withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled,
+        domainNamespaceSelectionStrategy, null, false, domainNamespace);
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opHelmParams the Helm parameters to install operator
+   * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
+   * @param domainNamespaceSelectionStrategy SelectLabel, RegExp or List, value to tell the operator
+   *                                  how to select the set of namespaces that it will manage
+   * @param domainNamespaceSelector the label or expression value to manage namespaces
    * @param enableClusterRoleBinding operator cluster role binding
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
@@ -376,8 +404,8 @@ public class CommonTestUtils {
                                                     int externalRestHttpsPort,
                                                     HelmParams opHelmParams,
                                                     boolean elkIntegrationEnabled,
-                                                    String domainNsSelectionStrategy,
-                                                    String domainNsSelector,
+                                                    String domainNamespaceSelectionStrategy,
+                                                    String domainNamespaceSelector,
                                                     boolean enableClusterRoleBinding,
                                                     String... domainNamespace) {
     LoggingFacade logger = getLogger();
@@ -412,6 +440,10 @@ public class CommonTestUtils {
         .domainNamespaces(Arrays.asList(domainNamespace))
         .serviceAccount(opServiceAccount);
 
+    if (domainNamespaceSelectionStrategy != null) {
+      opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
+    }
+
     // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
     if (opHelmParams.getRepoUrl() == null) {
       opParams.image(operatorImage);
@@ -444,12 +476,12 @@ public class CommonTestUtils {
     if (enableClusterRoleBinding) {
       opParams.enableClusterRoleBinding(enableClusterRoleBinding);
     }
-    if (domainNsSelectionStrategy != null) {
-      opParams.domainNamespaceSelectionStrategy(domainNsSelectionStrategy);
-      if (domainNsSelectionStrategy.equalsIgnoreCase("LabelSelector")) {
-        opParams.domainNamespaceLabelSelector(domainNsSelector);
-      } else if (domainNsSelectionStrategy.equalsIgnoreCase("RegExp")) {
-        opParams.domainNamespaceRegExp(domainNsSelector);
+    if (domainNamespaceSelectionStrategy != null) {
+      opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
+      if (domainNamespaceSelectionStrategy.equalsIgnoreCase("LabelSelector")) {
+        opParams.domainNamespaceLabelSelector(domainNamespaceSelector);
+      } else if (domainNamespaceSelectionStrategy.equalsIgnoreCase("RegExp")) {
+        opParams.domainNamespaceRegExp(domainNamespaceSelector);
       }
     }
 
@@ -500,16 +532,16 @@ public class CommonTestUtils {
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param opReleaseName the operator release name
-   * @param domainNsSelectionStrategy SelectLabel, RegExp or List
-   * @param domainNsSelector the label or expression value to manage namespaces
+   * @param domainNamespaceSelectionStrategy SelectLabel, RegExp or List
+   * @param domainNamespaceSelector the label or expression value to manage namespaces
    * @param enableClusterRoleBinding operator cluster role binding
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    *                        (only in case of List selector)
    * @return the operator Helm installation parameters
    */
   public static HelmParams installAndVerifyOperator(String opReleaseName, String opNamespace,
-                                                     String domainNsSelectionStrategy,
-                                                     String domainNsSelector,
+                                                     String domainNamespaceSelectionStrategy,
+                                                     String domainNamespaceSelector,
                                                      boolean enableClusterRoleBinding,
                                                      String... domainNamespace) {
 
@@ -518,7 +550,7 @@ public class CommonTestUtils {
         .chartDir(OPERATOR_CHART_DIR);
     return installAndVerifyOperator(opNamespace, opReleaseName + "-sa",
         true, 0, opHelmParams, false,
-        domainNsSelectionStrategy, domainNsSelector, enableClusterRoleBinding, domainNamespace);
+        domainNamespaceSelectionStrategy, domainNamespaceSelector, enableClusterRoleBinding, domainNamespace);
   }
 
   /**
