@@ -59,6 +59,8 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_DYNAMICALLY_UPDATED;
+
 public abstract class PodStepContext extends BasePodStepContext {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -874,7 +876,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       } else if (!canUseCurrentPod(currentPod)) {
         if (Objects.equals(true, packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))) {
           if (miiDomainZipHash != null) {
-            LOGGER.info("PodStepContext.verifyPodStep: Model in Image dynamic updated no restart necessary");
+            LOGGER.info(DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid());
             logPodExists();
 
             //Create dummy meta data for patching
@@ -884,6 +886,7 @@ public abstract class PodStepContext extends BasePodStepContext {
                   updatedPod.getMetadata().getAnnotations().get("weblogic.sha256"));
             updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
             updatedPod.setMetadata(updatedMetaData);
+
 
             return  doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
           }
