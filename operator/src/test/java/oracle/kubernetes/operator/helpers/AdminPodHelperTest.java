@@ -16,8 +16,6 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
-import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
@@ -122,11 +120,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Override
   protected void verifyPodReplaced() {
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new NullPodAwaiterStepFactory(terminalStep));
-
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getReplacedMessageKey()));
@@ -134,11 +127,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Override
   protected void verifyPodNotReplacedWhen(PodMutator mutator) {
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new NullPodAwaiterStepFactory(terminalStep));
-
     V1Pod existingPod = createPod(testSupport.getPacket());
     mutator.mutate(existingPod);
     initializeExistingPod(existingPod);
@@ -155,11 +143,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenDeleteReportsNotFound_replaceAdminPod() {
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new NullPodAwaiterStepFactory(terminalStep));
-
     initializeExistingPod(getIncompatiblePod());
     testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, CallBuilder.NOT_FOUND);
 
