@@ -59,7 +59,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -282,16 +281,20 @@ class ItManageNs {
     String manageByExpDomainNS = "weblogic2" + domainNamespaces[1];
 
 
-    //switch namespace domainsNamespaces[1] to the label1, managed by operator and verify domain is started and can be managed by operator.
+    //switch namespace domainsNamespaces[1] to the label1,
+    // managed by operator and verify domain is started and can be managed by operator.
     setLabelToNamespace(domainNamespaces[1], labels1);
-    assertTrue(createDomainCrdAndVerifyDomainIsRunning(domainNamespaces[1], domainsUid[1]), "Failed to create domain CRD or " +
-        "verify that domain " + domainsUid[1] + " is running in namespace " + domainNamespaces[1]);
+    assertTrue(createDomainCrdAndVerifyDomainIsRunning(domainNamespaces[1], domainsUid[1]),
+        "Failed to create domain CRD or "
+        + "verify that domain " + domainsUid[1]
+        + " is running in namespace " + domainNamespaces[1]);
     checkOperatorCanScaleDomain(opNamespaces[0], domainsUid[1]);
 
     //check that with specific Selector default namespace is not under operator management
     checkDomainNotStartedInDefaultNS();
 
-    //check that another operator with selector=List matching domain namespace, managed by first operator fails to install
+    //check that another operator with selector=List matching domain namespace,
+    // managed by first operator fails to install
     checkSecondOperatorFailedToShareSameNS(domainNamespaces[0]);
 
     //upgrade operator1 to replace managing domains using RegExp namespaces
@@ -448,13 +451,11 @@ class ItManageNs {
     checkPodNotCreated(manageByLabelDomain2Uid + adminServerPrefix, manageByLabelDomain2Uid, manageByLabelDomain2NS);
   }
 
-  private HelmParams installAndVerifyOperatorCanManageDomainBySelector(Map<String,String>managedDomains, Map<String,String>unmanagedDomains,
-                                                                 String selector, String selectorValue, String opNamespace,
-                                                                 String domainNamespacesValue) {
-      //String manageByLabelDomain1NS,
-                                                                      //String manageByLabelDomain2NS,
-                                                                      //String manageByLabelDomain1Uid,
-                                                                      //String manageByLabelDomain2Uid){
+  private HelmParams installAndVerifyOperatorCanManageDomainBySelector(Map<String,String> managedDomains,
+                                                                       Map<String,String> unmanagedDomains,
+                                                                       String selector, String selectorValue,
+                                                                       String opNamespace,
+                                                                       String domainNamespacesValue) {
     // install and verify operator set to manage domains based on LabelSelector strategy,
     // domainNamespaces value expected to be ignored
     HelmParams opHelmParam = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
@@ -469,7 +470,7 @@ class ItManageNs {
           checkOperatorCanScaleDomain(opNamespace, domainUid);
         }
     );
-    if (domainNamespacesValue !=null) {
+    if (domainNamespacesValue != null) {
       //verify that domainNamespaces field will be ignored and domain will not start
       createSecrets(domainNamespacesValue);
       checkPodNotCreated(domainNamespacesValue + adminServerPrefix, domainNamespacesValue, domainNamespacesValue);

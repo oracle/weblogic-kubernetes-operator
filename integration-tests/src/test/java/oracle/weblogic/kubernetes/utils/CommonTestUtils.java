@@ -176,7 +176,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallKibana;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseStatus;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
@@ -442,7 +441,7 @@ public class CommonTestUtils {
           .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME);
     }
     // operator chart values to override
-    if(enableClusterRoleBinding) {
+    if (enableClusterRoleBinding) {
       opParams.enableClusterRoleBinding(enableClusterRoleBinding);
     }
     if (domainNsSelectionStrategy != null) {
