@@ -381,33 +381,6 @@ class ItManageNs {
         + " managed by other operator");
   }
 
-  private void switchNSManagementToRegExpUsingUpgradeOperator(String manageByLabelNS,
-                                                              String manageByExpNS,
-                                                              String manageByLabelDomainUid,
-                                                              String manageByExpDomainUid) {
-    //upgrade operator1 to replace managing domains using RegExp namespaces
-    assertDoesNotThrow(() -> createNamespace(manageByExpNS));
-    int externalRestHttpsPort = getServiceNodePort(opNamespaces[0], "external-weblogic-operator-svc");
-    //set helm params to use domainNamespaceSelectionStrategy=RegExp for namespaces names started with weblogic
-    OperatorParams opParams = new OperatorParams()
-        .helmParams(opHelmParams[0])
-        .externalRestEnabled(true)
-        .externalRestHttpsPort(externalRestHttpsPort)
-        .domainNamespaceSelectionStrategy("RegExp")
-        .domainNamespaceRegExp("^" + "weblogic2");
-
-    assertTrue(upgradeAndVerifyOperator(opNamespaces[0], opParams));
-
-    //verify domain is started in namespace with name starting with weblogic* and operator can scale it.
-    createSecrets(manageByExpNS);
-    assertTrue(createDomainCrdAndVerifyDomainIsRunning(manageByExpNS,manageByExpDomainUid));
-    checkOperatorCanScaleDomain(opNamespaces[0],manageByExpDomainUid);
-    //verify operator can't manage anymore domain running in the namespace with label
-    assertTrue(isOperatorFailedToScaleDomain(opNamespaces[0], manageByLabelDomainUid, manageByLabelNS),
-        "Operator can still manage domain "
-        + manageByLabelDomainUid + " in the namespace " + manageByLabelNS);
-  }
-
   private void deleteDomainCrd(String domainNS, String domainUid) {
     //clean up domain resources in namespace and set namespace to label , managed by operator
     logger.info("deleting domain custom resource {0}", domainUid);
@@ -423,32 +396,6 @@ class ItManageNs {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(domainDoesNotExist(domainUid, DOMAIN_VERSION, domainNS));
-  }
-
-  private void installAndVerifyOperatorCanManageDomainByLabelSelector(String manageByLabelDomain1NS,
-                                                                      String manageByLabelDomain2NS,
-                                                                      String manageByLabelDomain1Uid,
-                                                                      String manageByLabelDomain2Uid) {
-    // install and verify operator set to manage domains based on LabelSelector strategy,
-    // domainNamespaces set to domain4 will be ignored
-    opHelmParams[0] = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
-        opNamespaces[0], "LabelSelector",
-        OPERATOR_RELEASE_NAME, true, manageByLabelDomain1NS);
-
-    logger.info("Installing and verifying domain1");
-    createSecrets(manageByLabelDomain1NS);
-    assertTrue(createDomainCrdAndVerifyDomainIsRunning(manageByLabelDomain1NS, manageByLabelDomain1Uid),
-        "can't start or verify domain in namespace " + manageByLabelDomain1NS);
-
-    checkOperatorCanScaleDomain(opNamespaces[0], manageByLabelDomain1Uid);
-
-    //verify that domainNamespaces field will be ignored and domain4 will not start
-    createSecrets(domainNamespaces[3]);
-    checkPodNotCreated(domainsUid[3] + adminServerPrefix, domainsUid[3], domainNamespaces[3]);
-
-    //verify that domain2 in namespace with no label2 will not start
-    createSecrets(manageByLabelDomain2NS);
-    checkPodNotCreated(manageByLabelDomain2Uid + adminServerPrefix, manageByLabelDomain2Uid, manageByLabelDomain2NS);
   }
 
   private HelmParams installAndVerifyOperatorCanManageDomainBySelector(Map<String,String> managedDomains,
@@ -544,55 +491,6 @@ class ItManageNs {
     deleteDomainCustomResource("defaultuid", "default");
     logger.info("Deleted Domain Custom Resource " + "defaultuid");
   }
-
-  private void switchNSManagementToLabelSelectUsingUpgradeOperator(String manageByLabelNS,
-                                                                   String manageByExpNS,
-                                                                   String manageByLabelDomainUid,
-                                                                   String manageByExpDomainUid) {
-
-    //upgrade operator to manage domains with Labeled namespaces
-    int externalRestHttpsPort = getServiceNodePort(opNamespaces[1], "external-weblogic-operator-svc");
-    assertDoesNotThrow(() -> createNamespace(manageByLabelNS));
-    Map<String, String> labels = new HashMap<>();
-    labels.put("mytest", "weblogic2");
-    setLabelToNamespace(manageByLabelNS, labels);
-    OperatorParams opParams = new OperatorParams()
-        .helmParams(opHelmParams[1])
-        .externalRestEnabled(true)
-        .externalRestHttpsPort(externalRestHttpsPort)
-        .domainNamespaceLabelSelector("mytest")
-        .domainNamespaceSelectionStrategy("LabelSelector");
-
-    assertTrue(upgradeAndVerifyOperator(opNamespaces[1], opParams));
-
-    //verify domain is started
-    createSecrets(manageByLabelNS);
-    assertTrue(createDomainCrdAndVerifyDomainIsRunning(manageByLabelNS,manageByLabelDomainUid));
-    checkOperatorCanScaleDomain(opNamespaces[1],manageByLabelDomainUid);
-  }
-
-  private void installAndVerifyOperatorCanManageDomainByNSRegExp(String manageByExp1NS,
-                                                                 String manageByExp2NS,
-                                                                 String manageByExpDomain1Uid,
-                                                                 String manageByExpDomain2Uid) {
-    // install and verify operator with domainNsSelectStrategy=RegExp to manage domains with namespaces names,
-    // starting from test
-    opHelmParams[1] = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
-        opNamespaces[1], "RegExp", "^test", true, domainNamespaces[2]);
-
-    logger.info("Installing and verifying domain1");
-    createSecrets(manageByExp1NS);
-    assertTrue(createDomainCrdAndVerifyDomainIsRunning(manageByExp1NS, manageByExpDomain1Uid),
-        "can't start or verify domain in namespace " + manageByExp1NS);
-    checkOperatorCanScaleDomain(opNamespaces[1], manageByExpDomain1Uid);
-
-    logger.info("Installing and verifying domain2");
-    createSecrets(manageByExp2NS);
-    assertTrue(createDomainCrdAndVerifyDomainIsRunning(manageByExp2NS, manageByExpDomain2Uid),
-        "operator can start or verify domain in namespace " + manageByExp2NS);
-    checkOperatorCanScaleDomain(opNamespaces[1], manageByExpDomain2Uid);
-  }
-
 
   private boolean createDomainCrdAndVerifyDomainIsRunning(String domainNamespace, String domainUid) {
 
