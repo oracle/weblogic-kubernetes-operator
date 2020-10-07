@@ -350,6 +350,32 @@ public class CommonTestUtils {
                                                     HelmParams opHelmParams,
                                                     boolean elkIntegrationEnabled,
                                                     String... domainNamespace) {
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
+      withRestAPI, externalRestHttpsPort, opHelmParams, null, elkIntegrationEnabled, domainNamespace);
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opHelmParams the Helm parameters to install operator
+   * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
+   * @param domainNamespaceSelectionStrategy value to tell the operator
+   *                                         how to select the set of namespaces that it will manage
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String opServiceAccount,
+                                                    boolean withRestAPI,
+                                                    int externalRestHttpsPort,
+                                                    HelmParams opHelmParams,
+                                                    String domainNamespaceSelectionStrategy,
+                                                    boolean elkIntegrationEnabled,
+                                                    String... domainNamespace) {
     LoggingFacade logger = getLogger();
 
     // Create a service account for the unique opNamespace
@@ -381,6 +407,10 @@ public class CommonTestUtils {
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
         .serviceAccount(opServiceAccount);
+
+    if (domainNamespaceSelectionStrategy != null) {
+      opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
+    }
 
     // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
     if (opHelmParams.getRepoUrl() == null) {
