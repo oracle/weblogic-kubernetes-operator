@@ -3,8 +3,22 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.helpers.LegalNames;
+import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -13,6 +27,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainSourceType.Image;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.stringContainsInOrder;
@@ -29,6 +44,21 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   private static final String BAD_MOUNT_PATH_3 = "$()DOMAIN_HOME/servers/SERVER_NAME";
 
   private Domain domain = createTestDomain();
+  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private List<Memento> mementos = new ArrayList<>();
+
+  private static final String ADMIN_SERVER_NAME = "admin";
+  private static final String CLUSTER = "cluster";
+
+  private final WlsDomainConfig domainConfig = createDomainConfig();
+
+  private static WlsDomainConfig createDomainConfig() {
+    WlsClusterConfig clusterConfig = new WlsClusterConfig(CLUSTER);
+    return new WlsDomainConfig("base_domain")
+        .withAdminServer(ADMIN_SERVER_NAME, "domain1-admin-server", 7001)
+        .withCluster(clusterConfig);
+  }
 
   /**
    * Setup test.
@@ -36,11 +66,23 @@ public class DomainValidationTest extends DomainValidationBaseTest {
    */
   @Before
   public void setUp() throws Exception {
+    mementos.add(testSupport.install());
+    mementos.add(TuningParametersStub.install());
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
     configureDomain(domain)
         .withWebLogicCredentialsSecret(SECRET_NAME, null);
+  }
+
+  /**
+   * Tear down test.
+   */
+  @After
+  public void tearDown() {
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
@@ -609,8 +651,171 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminService()
         .withChannel("default");
 
-    assertThat(myDomain.getAfterIntrospectValidationFailures(myDomain.getSpec()),  contains(stringContainsInOrder(
+    assertThat(myDomain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
         "DomainUID ", domainUID, "exceeds maximum allowed length")));
+  }
+
+
+
+  @Test
+  public void whenDomainUidExceedMaxAllowedWithCustomSuffix_reportError() {
+    String domainUID = "mydomainthatislongerthan42charactersandshould";
+    Domain myDomain = createTestDomain(domainUID);
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    TuningParameters.getInstance().put(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "introspect-domain-job");
+    assertThat(myDomain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
+        "DomainUID ", domainUID, "exceeds maximum allowed length")));
+  }
+
+  @Test
+  public void whenDomainUidNotExceedMaxAllowedWithCustomSuffix_dontReportError() {
+    String domainUID = "mydomainthatislongerthan42charactersandshould";
+    Domain myDomain = createTestDomain(domainUID);
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    TuningParameters.getInstance().put(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "-job");
+    assertThat(myDomain.getValidationFailures(resourceLookup),  empty());
+  }
+
+  @Test
+  public void whenDomainUidNotExceedMaxAllowedWithEmptyCustomSuffix_dontReportError() {
+    String domainUID = "mydomainthatislongerthan42charactersandshould";
+    Domain myDomain = createTestDomain(domainUID);
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    TuningParameters.getInstance().put(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "");
+    assertThat(myDomain.getValidationFailures(resourceLookup),  empty());
+  }
+
+
+  @Test
+  public void whenDomainUidPlusASNameNotExceedMaxAllowedWithCustomSuffix_dontReportError() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String asName = "servernamecontains29c";
+    domainConfig.withAdminServer(ADMIN_SERVER_NAME, asName, 7001);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "-external");
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
+  public void whenDomainUidPlusASNameNotExceedMaxAllowedWithEmptyCustomSuffix_dontReportError() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String asName = "servernamecontains29c";
+    domainConfig.withAdminServer(ADMIN_SERVER_NAME, asName, 7001);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "");
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
+  public void whenDomainUidPlusASNameExceedMaxAllowedWithCustomSuffix_reportError() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String asName = "servernamecontains31characters";
+    domainConfig.withAdminServer(ADMIN_SERVER_NAME, asName, 7001);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "-external");
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
+  public void whenDomainUidPlusASNameNotExceedMaxAllowed_dontReportError() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String asName = "servernamecontains31characters";
+    domainConfig.withAdminServer(ADMIN_SERVER_NAME, asName, 7001);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
+  public void whenDomainUidPlusASNameExceedMaxAllowed_reportError() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String asName = "servernamecontains32characterss";
+    domainConfig.setAdminServerName(asName);
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  contains(
+        stringContainsInOrder(
+            "DomainUID ", domainUID, "server name", asName, "exceeds maximum allowed length"),
+        stringContainsInOrder(
+            "DomainUID ", domainUID, "admin server name", asName, "exceeds maximum allowed length")));
+  }
+
+  @Test
+  public void whenDomainUidPlusASNameExceedMaxAllowed_2_reportError() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String asName = "servernamecontains32characters";
+    domainConfig.setAdminServerName(asName);
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  contains(stringContainsInOrder(
+        "DomainUID ", domainUID, "admin server name", asName, "exceeds maximum allowed length")));
   }
 
   @Test
@@ -618,7 +823,8 @@ public class DomainValidationTest extends DomainValidationBaseTest {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String msName = "servernamecontains31characters";
-    myDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName(msName));
+    domainConfig.getClusterConfig(CLUSTER)
+        .addServerConfig(new WlsServerConfig(msName, "domain1-" + msName, 8001));
     configureDomain(myDomain)
         .withDomainHomeSourceType(Image)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -626,8 +832,8 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
-
-    assertThat(myDomain.getAfterIntrospectValidationFailures(myDomain.getSpec()),  empty());
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
   }
 
   @Test
@@ -635,7 +841,8 @@ public class DomainValidationTest extends DomainValidationBaseTest {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String msName = "servernamecontains32characterss";
-    myDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName(msName));
+    domainConfig.getClusterConfig(CLUSTER)
+        .addServerConfig(new WlsServerConfig(msName, "domain1-" + msName, 8001));
     configureDomain(myDomain)
         .withDomainHomeSourceType(Image)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -643,8 +850,8 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
-
-    assertThat(myDomain.getAfterIntrospectValidationFailures(myDomain.getSpec()),  contains(stringContainsInOrder(
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  contains(stringContainsInOrder(
         "DomainUID ", domainUID, "server name", msName, "exceeds maximum allowed length")));
   }
 
@@ -653,7 +860,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String clusterName = "clusternamecontain21c";
-    myDomain.getSpec().getClusters().add(new Cluster().withClusterName(clusterName));
+    domainConfig.withCluster(new WlsClusterConfig(clusterName));
     configureDomain(myDomain)
         .withDomainHomeSourceType(Image)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -662,7 +869,8 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminService()
         .withChannel("default");
 
-    assertThat(myDomain.getAfterIntrospectValidationFailures(myDomain.getSpec()),  empty());
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
   }
 
   @Test
@@ -670,7 +878,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String clusterName = "servernamecontains31characters";
-    myDomain.getSpec().getClusters().add(new Cluster().withClusterName(clusterName));
+    domainConfig.withCluster(new WlsClusterConfig(clusterName));
     configureDomain(myDomain)
         .withDomainHomeSourceType(Image)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -679,7 +887,8 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminService()
         .withChannel("default");
 
-    assertThat(myDomain.getAfterIntrospectValidationFailures(myDomain.getSpec()),  contains(stringContainsInOrder(
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  contains(stringContainsInOrder(
         "DomainUID ", domainUID, "cluster name", clusterName, "exceeds maximum allowed length")));
   }
 

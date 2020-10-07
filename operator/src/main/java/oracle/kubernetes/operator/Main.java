@@ -55,6 +55,7 @@ import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.NamespaceHelper;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.logging.LoggingContext;
@@ -562,6 +563,25 @@ public class Main {
       return Optional.ofNullable(configuredDomainNamespaces).orElse(Collections.emptyList());
     }
 
+    /**
+     * Gets the configured domain introspector job name suffix.
+     * @return String suffix
+     */
+    public static String getIntrospectorJobNameSuffix() {
+      return Optional.ofNullable(tuningAndConfig()
+          .get(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM))
+          .orElse(LegalNames.DOMAIN_INTROSPECTOR_JOB_SUFFIX);
+    }
+
+    /**
+     * Gets the configured external service name suffix.
+     * @return String suffix
+     */
+    public static String getExternalServiceNameSuffix() {
+      return Optional.ofNullable(tuningAndConfig()
+          .get(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM))
+          .orElse(LegalNames.EXTERNAL_SERVICE_SUFFIX);
+    }
 
     /**
      * Reads the existing namespaces from Kubernetes and performs appropriate processing on those

@@ -231,6 +231,7 @@ public class DomainValidationSteps {
 
   private static class DomainAfterIntrospectValidationStep extends Step {
     private String domainUid;
+
     public DomainAfterIntrospectValidationStep(String domainUid) {
       this.domainUid = domainUid;
     }
@@ -239,7 +240,7 @@ public class DomainValidationSteps {
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       Domain domain = info.getDomain();
-      List<String> validationFailures = domain.getAfterIntrospectValidationFailures(domain.getSpec());
+      List<String> validationFailures = domain.getAfterIntrospectValidationFailures(packet);
 
       if (validationFailures.isEmpty()) {
         return doNext(packet);

@@ -126,4 +126,8 @@ class DomainValidationMessages {
   public static String exceedMaxServerServiceName(String domainUid, String serverName) {
     return getMessage(MessageKeys.ILLEGAL_SERVER_SERVICE_NAME_LENGTH, domainUid, serverName);
   }
+
+  public static String exceedMaxExternalServiceName(String domainUid, String adminServerName) {
+    return getMessage(MessageKeys.ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH, domainUid, adminServerName);
+  }
 }

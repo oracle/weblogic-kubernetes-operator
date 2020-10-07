@@ -31,8 +31,14 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -109,6 +115,8 @@ public class Domain implements KubernetesObject {
   @Valid
   @Description("The current status of the operation of the WebLogic domain. Updated automatically by the operator.")
   private DomainStatus status;
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   @SuppressWarnings({"rawtypes"})
   static List sortOrNull(List list) {
@@ -614,8 +622,8 @@ public class Domain implements KubernetesObject {
     return new Validator().getAdditionalValidationFailures(podSpec);
   }
 
-  public List<String> getAfterIntrospectValidationFailures(DomainSpec domainSpec) {
-    return new Validator().getAfterIntrospectValidationFailures(domainSpec);
+  public List<String> getAfterIntrospectValidationFailures(Packet packet) {
+    return new Validator().getAfterIntrospectValidationFailures(packet);
   }
 
   class Validator {
@@ -633,46 +641,70 @@ public class Domain implements KubernetesObject {
       verifyNoAlternateSecretNamespaceSpecified();
       addMissingModelConfigMap(kubernetesResources);
       verifyIstioExposingDefaultChannel();
+      verifyIntrospectorJobName();
 
       return failures;
     }
 
-    private void verifyGeneratedResourceNames(DomainSpec domainSpec) {
-      Optional.ofNullable(domainSpec.getDomainUid())
-          .ifPresent(this::checkGeneratedIntrospectorJobName);
-      domainSpec.getManagedServers()
+    private void verifyIntrospectorJobName() {
+      // K8S adds a 5 character suffix to an introspector job name
+      LOGGER.fine("XXX verifyIntrospectorJobName: domain UID = " + getDomainUid()
+          + " spec = " + getSpec()
+          + "generatedName = " + LegalNames.toJobIntrospectorName(getDomainUid()));
+      if (LegalNames.toJobIntrospectorName(getDomainUid()).length()
+          > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5) {
+        failures.add(DomainValidationMessages.exceedMaxIntrospectorJobName(getDomainUid()));
+      }
+    }
+
+    private void verifyGeneratedResourceNames(WlsDomainConfig wlsDomainConfig) {
+      checkGeneratedServerServiceName(wlsDomainConfig.getAdminServerName());
+      checkGeneratedExternalServiceName(wlsDomainConfig.getAdminServerName());
+      // domain level serverConfigs do not contain servers in dynamic clusters
+      wlsDomainConfig.getServerConfigs()
+          .values()
           .stream()
-          .map(ManagedServer::getServerName)
+          .map(WlsServerConfig::getName)
           .forEach(this::checkGeneratedServerServiceName);
-      domainSpec.getClusters()
-          .stream()
-          .map(Cluster::getClusterName)
-          .map(LegalNames::toDns1123LegalName)
-          .forEach(this::checkGeneratedClusterServiceName);
+      wlsDomainConfig.getClusterConfigs()
+          .values()
+          .iterator()
+          .forEachRemaining(wlsClusterConfig
+              // serverConfigs contains configured and dynamic servers in the cluster
+              -> wlsClusterConfig.getServerConfigs().forEach(wlsServerConfig
+                  -> this.checkGeneratedServerServiceName(wlsServerConfig.getName())));
+      wlsDomainConfig.getClusterConfigs()
+          .values()
+          .iterator()
+          .forEachRemaining(wlsClusterConfig -> this.checkGeneratedClusterServiceName(wlsClusterConfig.getName()));
+    }
+
+    private void checkGeneratedExternalServiceName(String adminServerName) {
+      if (LegalNames.toExternalServiceName(getDomainUid(), adminServerName).length()
+          > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
+        failures.add(DomainValidationMessages.exceedMaxExternalServiceName(getDomainUid(), adminServerName));
+      }
     }
 
     private void checkGeneratedServerServiceName(String serverName) {
-      if (LegalNames.toServerServiceName(getSpec().getDomainUid(), serverName).length()
+      LOGGER.fine("XXX checkGeneratedServerServiceName: domain UID = " + getDomainUid()
+          + " serverName = " + serverName
+          + "generatedName = " + LegalNames.toServerServiceName(getDomainUid(), serverName));
+      if (LegalNames.toServerServiceName(getDomainUid(), serverName).length()
           > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
-        failures.add(DomainValidationMessages.exceedMaxServerServiceName(getSpec().getDomainUid(), serverName));
+        failures.add(DomainValidationMessages.exceedMaxServerServiceName(getDomainUid(), serverName));
       }
     }
 
     private void checkGeneratedClusterServiceName(String clusterName) {
-      if (LegalNames.toClusterServiceName(getSpec().getDomainUid(), clusterName).length()
+      LOGGER.fine("XXX checkGeneratedServerServiceName: domain UID = " + getDomainUid()
+          + " clusterName = " + clusterName
+          + "generatedName = " + LegalNames.toServerServiceName(getDomainUid(), clusterName));
+      if (LegalNames.toClusterServiceName(getDomainUid(), clusterName).length()
           > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
-        failures.add(DomainValidationMessages.exceedMaxClusterServiceName(getSpec().getDomainUid(), clusterName));
+        failures.add(DomainValidationMessages.exceedMaxClusterServiceName(getDomainUid(), clusterName));
       }
     }
-
-    private void checkGeneratedIntrospectorJobName(String domainUID) {
-      // K8S adds a 5 character suffix to an introspector job pod
-      if (LegalNames.toJobIntrospectorName(getSpec().getDomainUid()).length()
-          > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5) {
-        failures.add(DomainValidationMessages.exceedMaxIntrospectorJobName(getSpec().getDomainUid()));
-      }
-    }
-
 
     public List<String> getAdditionalValidationFailures(V1PodSpec podSpec) {
       addInvalidMountPathsForPodSpec(podSpec);
@@ -822,8 +854,9 @@ public class Domain implements KubernetesObject {
           .forEach(s -> checkReservedEnvironmentVariables(s, "spec.clusters[" + s.getClusterName() + "]"));
     }
 
-    public List<String> getAfterIntrospectValidationFailures(DomainSpec domainSpec) {
-      verifyGeneratedResourceNames(domainSpec);
+    public List<String> getAfterIntrospectValidationFailures(Packet packet) {
+      WlsDomainConfig wlsConfig = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+      verifyGeneratedResourceNames(wlsConfig);
       return failures;
     }
 

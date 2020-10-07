@@ -9,18 +9,22 @@ import java.util.Optional;
 import java.util.StringTokenizer;
 
 import com.google.common.base.Strings;
+import oracle.kubernetes.operator.Main;
 import oracle.kubernetes.operator.TuningParameters;
 
 /** A class to create DNS-1123 legal names for Kubernetes objects. */
 public class LegalNames {
 
+  public static final String EXTERNAL_SERVICE_SUFFIX = "-ext";
   private static final String SERVER_PATTERN = "%s-%s";
   private static final String CLUSTER_SERVICE_PATTERN = "%s-cluster-%s";
-  public static final String DOMAIN_INTROSPECTOR_JOB_SUFFIX = "-introspect-domain-job";
-  private static final String DOMAIN_INTROSPECTOR_JOB_PATTERN = "%s" + DOMAIN_INTROSPECTOR_JOB_SUFFIX;
-  private static final String EXTERNAL_SERVICE_PATTERN = "%s-%s-external";
+  public static final String DOMAIN_INTROSPECTOR_JOB_SUFFIX = "-introspector";
+  private static final String DOMAIN_INTROSPECTOR_JOB_PATTERN = "%s%s";
+  private static final String EXTERNAL_SERVICE_PATTERN = "%s-%s-%s";
 
   public static final String DNS_1123_FIELDS_PARAM = "dns1123Fields";
+  public static final String INTROSPECTOR_JOB_NAME_SUFFIX_PARAM = "introspectorJobNameSuffix";
+  public static final String EXTERNAL_SERVICE_NAME_SUFFIX_PARAM = "externalServiceNameSuffix";
 
   // Fields that requires values to be DNS1123 legal
   private static final String[] DEFAULT_DNS1123_FIELDS = {
@@ -71,12 +75,32 @@ public class LegalNames {
     return toDns1123LegalName(String.format(CLUSTER_SERVICE_PATTERN, domainUid, clusterName));
   }
 
+  /**
+   * Generates the introspector job name based on the given domainUid.
+   *
+   * @param domainUid domainUid
+   * @return String introspector job name
+   */
   public static String toJobIntrospectorName(String domainUid) {
-    return toDns1123LegalName(String.format(DOMAIN_INTROSPECTOR_JOB_PATTERN, domainUid));
+    return toDns1123LegalName(String.format(
+        DOMAIN_INTROSPECTOR_JOB_PATTERN,
+        domainUid,
+        Main.Namespaces.getIntrospectorJobNameSuffix()));
   }
 
+  /**
+   * Generates the introspector job name based on the given domainUid.
+   *
+   * @param domainUid domainUid
+   * @param serverName WebLogic server name
+   * @return String introspector job name
+   */
   public static String toExternalServiceName(String domainUid, String serverName) {
-    return toDns1123LegalName(String.format(EXTERNAL_SERVICE_PATTERN, domainUid, serverName));
+    return toDns1123LegalName(String.format(
+        EXTERNAL_SERVICE_PATTERN,
+        domainUid,
+        serverName,
+        Main.Namespaces.getExternalServiceNameSuffix()));
   }
 
   /**
@@ -145,5 +169,5 @@ public class LegalNames {
     }
     return false;
   }
-
 }
+

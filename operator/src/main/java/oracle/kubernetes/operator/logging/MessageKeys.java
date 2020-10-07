@@ -153,6 +153,7 @@ public class MessageKeys {
   public static final String ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH = "WLSDO-0016";
   public static final String ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH = "WLSDO-0017";
   public static final String ILLEGAL_SERVER_SERVICE_NAME_LENGTH = "WLSDO-0018";
+  public static final String ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH = "WLSDO-0019";
 
   private MessageKeys() {
   }
