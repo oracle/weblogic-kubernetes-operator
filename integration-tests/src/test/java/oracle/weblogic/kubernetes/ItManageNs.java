@@ -189,7 +189,7 @@ class ItManageNs {
   @Order(1)
   @DisplayName("install operator helm chart and domain, "
       + " using expression namespace management")
-  public void testNsManageByExp() {
+  public void testNameSpaceManageByRegularExpression() {
     //create domain namespace
     String manageByExp1NS = "test-" +  domainNamespaces[0];
     String manageByExp2NS = "test-" +  domainNamespaces[1];
@@ -237,7 +237,7 @@ class ItManageNs {
 
     //verify domain is started
     createSecrets(manageByLabelNS);
-    assertTrue(createDomainCrdAndVerifyDomainIsRunning(manageByLabelNS,manageByLabelDomainUid));
+    assertTrue(createDomainResourceAndVerifyDomainIsRunning(manageByLabelNS,manageByLabelDomainUid));
     checkOperatorCanScaleDomain(opNamespaces[1],manageByLabelDomainUid);
 
     //check operator can't manage anymore manageByExp1NS
@@ -267,7 +267,7 @@ class ItManageNs {
   @Order(2)
   @DisplayName("install operator helm chart and domain, "
       + " using label namespace management")
-  public void testNsManageByLabel() {
+  public void testNameSpaceManagedByLabelSelector() {
     Map<String, String> managedByLabelDomains = new HashMap<>();
     managedByLabelDomains.put(domainNamespaces[0], domainsUid[0]);
     Map<String, String> unmanagedByLabelDomains = new HashMap<>();
@@ -284,7 +284,7 @@ class ItManageNs {
     //switch namespace domainsNamespaces[1] to the label1,
     // managed by operator and verify domain is started and can be managed by operator.
     setLabelToNamespace(domainNamespaces[1], labels1);
-    assertTrue(createDomainCrdAndVerifyDomainIsRunning(domainNamespaces[1], domainsUid[1]),
+    assertTrue(createDomainResourceAndVerifyDomainIsRunning(domainNamespaces[1], domainsUid[1]),
         "Failed to create domain CRD or "
         + "verify that domain " + domainsUid[1]
         + " is running in namespace " + domainNamespaces[1]);
@@ -312,7 +312,7 @@ class ItManageNs {
 
     //verify domain is started in namespace with name starting with weblogic* and operator can scale it.
     createSecrets(manageByExpDomainNS);
-    assertTrue(createDomainCrdAndVerifyDomainIsRunning(manageByExpDomainNS,manageByExpDomainUid));
+    assertTrue(createDomainResourceAndVerifyDomainIsRunning(manageByExpDomainNS,manageByExpDomainUid));
     checkOperatorCanScaleDomain(opNamespaces[0],manageByExpDomainUid);
     //verify operator can't manage anymore domain running in the namespace with label
     assertTrue(isOperatorFailedToScaleDomain(opNamespaces[0], domainsUid[0], domainNamespaces[0]),
@@ -337,7 +337,7 @@ class ItManageNs {
   @Order(3)
   @DisplayName("install operator helm chart and domain, "
       + " with enableClusterRoleBinding")
-  public void testSwitchRbac() {
+  public void testNameSpaceWithOperatorRbacFalse() {
     String manageByLabelDomainNS = domainNamespaces[0] + "test4";
     String manageByLabelDomainUid = domainsUid[0] + "test4";
     assertDoesNotThrow(() -> createNamespace(manageByLabelDomainNS));
@@ -350,7 +350,7 @@ class ItManageNs {
     //verify domain can't be started because operator does not have permission to manage it
     createSecrets(manageByLabelDomainNS);
     checkPodNotCreated(manageByLabelDomainUid + adminServerPrefix, manageByLabelDomainUid, manageByLabelDomainNS);
-    deleteDomainCrd(manageByLabelDomainNS, manageByLabelDomainUid);
+    deleteDomainResource(manageByLabelDomainNS, manageByLabelDomainUid);
     //upgrade operator and start domain
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[3], "external-weblogic-operator-svc");
 
@@ -360,7 +360,7 @@ class ItManageNs {
         .helmParams(opHelmParams[2]);
 
     assertTrue(upgradeAndVerifyOperator(opNamespaces[3], opParams));
-    assertTrue(createDomainCrdAndVerifyDomainIsRunning(manageByLabelDomainNS, manageByLabelDomainUid));
+    assertTrue(createDomainResourceAndVerifyDomainIsRunning(manageByLabelDomainNS, manageByLabelDomainUid));
     checkOperatorCanScaleDomain(opNamespaces[3], manageByLabelDomainUid);
   }
 
@@ -381,7 +381,7 @@ class ItManageNs {
         + " managed by other operator");
   }
 
-  private void deleteDomainCrd(String domainNS, String domainUid) {
+  private void deleteDomainResource(String domainNS, String domainUid) {
     //clean up domain resources in namespace and set namespace to label , managed by operator
     logger.info("deleting domain custom resource {0}", domainUid);
     assertTrue(deleteDomainCustomResource(domainUid, domainNS));
@@ -411,7 +411,7 @@ class ItManageNs {
     managedDomains.forEach((domainNS, domainUid) -> {
           logger.info("Installing and verifying domain {0} in namespace {1}", domainUid, domainNS);
           createSecrets(domainNS);
-          assertTrue(createDomainCrdAndVerifyDomainIsRunning(domainNS, domainUid),
+          assertTrue(createDomainResourceAndVerifyDomainIsRunning(domainNS, domainUid),
               "can't start or verify domain in namespace " + domainNS);
 
           checkOperatorCanScaleDomain(opNamespace, domainUid);
@@ -426,7 +426,7 @@ class ItManageNs {
     unmanagedDomains.forEach((domainNS, domainUid) -> {
       createSecrets(domainNS);
       checkPodNotCreated(domainUid + adminServerPrefix, domainUid, domainNS);
-      deleteDomainCrd(domainNS, domainUid);
+      deleteDomainResource(domainNS, domainUid);
     }
     );
     return opHelmParam;
@@ -492,19 +492,19 @@ class ItManageNs {
     logger.info("Deleted Domain Custom Resource " + "defaultuid");
   }
 
-  private boolean createDomainCrdAndVerifyDomainIsRunning(String domainNamespace, String domainUid) {
+  private boolean createDomainResourceAndVerifyDomainIsRunning(String domainNamespace, String domainUid) {
 
     // create and verify the domain
     logger.info("Creating and verifying model in image domain");
-    Domain domain = createDomainCRD(domainNamespace, domainUid);
+    Domain domain = createDomainResource(domainNamespace, domainUid);
     assertDoesNotThrow(() -> createVerifyDomain(domainNamespace, domainUid, miiImage, domain));
     return true;
   }
 
   /**
-   * Create a model in image domain crd.
+   * Create a model in image domain resource.
    */
-  private Domain createDomainCRD(String domainNamespace, String domainUid) {
+  private Domain createDomainResource(String domainNamespace, String domainUid) {
 
     // construct a list of oracle.weblogic.domain.Cluster objects to be used in the domain custom resource
     List<Cluster> clusters = new ArrayList<>();
@@ -606,7 +606,7 @@ class ItManageNs {
   }
 
   private void checkPodNotCreated(String podName, String domainUid, String domNamespace) {
-    Domain domain = createDomainCRD(domNamespace, domainUid);
+    Domain domain = createDomainResource(domNamespace, domainUid);
     assertNotNull(domain, "Failed to create domain CRD in namespace " + domNamespace);
     createDomainAndVerify(domain, domNamespace);
     checkPodDoesNotExist(podName,domainUid, domNamespace);
