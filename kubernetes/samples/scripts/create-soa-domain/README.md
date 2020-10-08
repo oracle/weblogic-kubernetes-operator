@@ -22,4 +22,6 @@ The operator has several key features to assist you with deploying and managing 
 
 #### Getting started
 
-See [here](https://oracle.github.io/fmw-kubernetes/soa-domains/) for detailed information about deploying Oracle SOA Suite domains on Kubernetes.
+Refer the following documentation link for detailed information about deploying Oracle SOA Suite domains on Kubernetes.  
+[Documentation](https://oracle.github.io/fmw-kubernetes/soa-domains/)
+
