@@ -295,7 +295,7 @@ public class DomainProcessorTest {
     processor.createMakeRightOperation(info).withExplicitRecheck().execute();
 
     assertThat(info.getExternalService(ADMIN_NAME).getMetadata().getName(),
-        equalTo(info.getDomainUid()+ "-" + ADMIN_NAME + "-ext"));
+        equalTo(info.getDomainUid() + "-" + ADMIN_NAME + "-ext"));
   }
 
   @Test
