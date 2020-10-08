@@ -655,8 +655,6 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         "DomainUID ", domainUID, "exceeds maximum allowed length")));
   }
 
-
-
   @Test
   public void whenDomainUidExceedMaxAllowedWithCustomSuffix_reportError() {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
@@ -706,68 +704,28 @@ public class DomainValidationTest extends DomainValidationBaseTest {
     assertThat(myDomain.getValidationFailures(resourceLookup),  empty());
   }
 
-
   @Test
-  public void whenDomainUidPlusASNameNotExceedMaxAllowedWithCustomSuffix_dontReportError() {
+  public void whenDomainUidPlusASNameNotExceedMaxAllowed_externalServiceDisabled_dontReportError() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
-    String asName = "servernamecontains29c";
-    domainConfig.withAdminServer(ADMIN_SERVER_NAME, asName, 7001);
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    String asName = "servernamecontains30character";
+    domainConfig.setAdminServerName(asName);
     configureDomain(myDomain)
         .withDomainHomeSourceType(Image)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
-        .configureAdminServer()
-        .configureAdminService()
-        .withChannel("default");
-    TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "-external");
+        .configureAdminServer();
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
     assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
   }
 
   @Test
-  public void whenDomainUidPlusASNameNotExceedMaxAllowedWithEmptyCustomSuffix_dontReportError() {
+  public void whenDomainUidPlusASNameNotExceedMaxAllowed_externalServiceEnabled_dontReportError() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
-    String asName = "servernamecontains29c";
-    domainConfig.withAdminServer(ADMIN_SERVER_NAME, asName, 7001);
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
-    configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
-        .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
-        .configureAdminServer()
-        .configureAdminService()
-        .withChannel("default");
-    TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "");
-    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
-  }
-
-  @Test
-  public void whenDomainUidPlusASNameExceedMaxAllowedWithCustomSuffix_reportError() {
-    String domainUID = "mydomainnamecontains32characters";
-    Domain myDomain = createTestDomain(domainUID);
-    String asName = "servernamecontains31characters";
-    domainConfig.withAdminServer(ADMIN_SERVER_NAME, asName, 7001);
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
-    configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
-        .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
-        .configureAdminServer()
-        .configureAdminService()
-        .withChannel("default");
-    TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "-external");
-    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
-  }
-
-  @Test
-  public void whenDomainUidPlusASNameNotExceedMaxAllowed_dontReportError() {
-    String domainUID = "mydomainnamecontains32characters";
-    Domain myDomain = createTestDomain(domainUID);
-    String asName = "servernamecontains31characters";
-    domainConfig.withAdminServer(ADMIN_SERVER_NAME, asName, 7001);
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    String asName = "servernamecontains26chars";
+    domainConfig.setAdminServerName(asName);
     configureDomain(myDomain)
         .withDomainHomeSourceType(Image)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -776,11 +734,12 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminService()
         .withChannel("default");
 
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
     assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
   }
 
   @Test
-  public void whenDomainUidPlusASNameExceedMaxAllowed_reportError() {
+  public void whenDomainUidPlusASNameExceedMaxAllowed_externalServiceEnabled_reportTwoErrors() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String asName = "servernamecontains32characterss";
@@ -801,10 +760,27 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusASNameExceedMaxAllowed_2_reportError() {
+  public void whenDomainUidPlusASNameExceedMaxAllowed_externalServiceDisabled_reportOneError() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
-    String asName = "servernamecontains32characters";
+    String asName = "servernamecontains32characterss";
+    domainConfig.setAdminServerName(asName);
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer();
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  contains(
+        stringContainsInOrder(
+            "DomainUID ", domainUID, "server name", asName, "exceeds maximum allowed length")));
+  }
+
+  @Test
+  public void whenDomainUidPlusASNameOnlyExternalServiceExceedMaxAllowed_reportOneError() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String asName = "servernamecontains30characters";
     domainConfig.setAdminServerName(asName);
     configureDomain(myDomain)
         .withDomainHomeSourceType(Image)
@@ -816,6 +792,64 @@ public class DomainValidationTest extends DomainValidationBaseTest {
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
     assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  contains(stringContainsInOrder(
         "DomainUID ", domainUID, "admin server name", asName, "exceeds maximum allowed length")));
+  }
+
+  @Test
+  public void whenDomainUidPlusASNameNotExceedMaxAllowedWithCustomSuffix_dontReportError() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String asName = "servernamecontains21c";
+    domainConfig.setAdminServerName(asName);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "-external");
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
+  public void whenDomainUidPlusASNameNotExceedMaxAllowedWithEmptyCustomSuffix_dontReportError() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String asName = "servernamecontains30characters";
+    domainConfig.setAdminServerName(asName);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "");
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
+  public void whenDomainUidPlusASNameExceedMaxAllowedWithCustomSuffix_reportTwoErrors() {
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String asName = "servernamecontains31characterss";
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    domainConfig.setAdminServerName(asName);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+    TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "-external");
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  contains(
+        stringContainsInOrder(
+            "DomainUID ", domainUID, "server name", asName, "exceeds maximum allowed length"),
+        stringContainsInOrder(
+            "DomainUID ", domainUID, "admin server name", asName, "exceeds maximum allowed length")));
   }
 
   @Test

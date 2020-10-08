@@ -20,7 +20,7 @@ public class LegalNames {
   private static final String CLUSTER_SERVICE_PATTERN = "%s-cluster-%s";
   public static final String DOMAIN_INTROSPECTOR_JOB_SUFFIX = "-introspector";
   private static final String DOMAIN_INTROSPECTOR_JOB_PATTERN = "%s%s";
-  private static final String EXTERNAL_SERVICE_PATTERN = "%s-%s-%s";
+  private static final String EXTERNAL_SERVICE_PATTERN = "%s-%s%s";
 
   public static final String DNS_1123_FIELDS_PARAM = "dns1123Fields";
   public static final String INTROSPECTOR_JOB_NAME_SUFFIX_PARAM = "introspectorJobNameSuffix";

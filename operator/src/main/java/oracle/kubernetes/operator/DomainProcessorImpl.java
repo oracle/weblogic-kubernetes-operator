@@ -58,9 +58,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
-import oracle.kubernetes.weblogic.domain.model.AdminServer;
-import oracle.kubernetes.weblogic.domain.model.AdminService;
-import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -196,14 +193,9 @@ public class DomainProcessorImpl implements DomainProcessor {
         .map(Domain::getStatus)
         .ifPresent(a -> a.resetIntrospectJobFailureCount());
 
-    Domain dom = info.getDomain();
-    AdminServer adminServer = dom.getSpec().getAdminServer();
-    AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
-    List<Channel> channels = adminService != null ? adminService.getChannels() : null;
-    if (channels != null && !channels.isEmpty()) {
+    if (Domain.isExternalServiceConfigured(info.getDomain().getSpec())) {
       steps.add(ServiceHelper.createForExternalServiceStep(null));
     }
-
     steps.add(ServiceHelper.createForServerStep(null));
     steps.add(new WatchPodReadyAdminStep(podAwaiterStepFactory, null));
     return Step.chain(steps.toArray(new Step[0]));

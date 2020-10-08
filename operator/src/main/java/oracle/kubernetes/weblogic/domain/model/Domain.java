@@ -134,6 +134,22 @@ public class Domain implements KubernetesObject {
   }
 
   /**
+   * check if the external service is configured for the admin server.
+   *
+   * @return true if the external service is configured
+   */
+
+  public static boolean isExternalServiceConfigured(DomainSpec domainSpec) {
+    AdminServer adminServer = domainSpec.getAdminServer();
+    AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
+    List<Channel> channels = adminService != null ? adminService.getChannels() : null;
+    if (channels != null && !channels.isEmpty()) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
    * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
@@ -659,7 +675,10 @@ public class Domain implements KubernetesObject {
 
     private void verifyGeneratedResourceNames(WlsDomainConfig wlsDomainConfig) {
       checkGeneratedServerServiceName(wlsDomainConfig.getAdminServerName());
-      checkGeneratedExternalServiceName(wlsDomainConfig.getAdminServerName());
+      if (isExternalServiceConfigured(getSpec())) {
+        checkGeneratedExternalServiceName(wlsDomainConfig.getAdminServerName());
+      }
+
       // domain level serverConfigs do not contain servers in dynamic clusters
       wlsDomainConfig.getServerConfigs()
           .values()
@@ -855,8 +874,7 @@ public class Domain implements KubernetesObject {
     }
 
     public List<String> getAfterIntrospectValidationFailures(Packet packet) {
-      WlsDomainConfig wlsConfig = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-      verifyGeneratedResourceNames(wlsConfig);
+      verifyGeneratedResourceNames((WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY));
       return failures;
     }
 
