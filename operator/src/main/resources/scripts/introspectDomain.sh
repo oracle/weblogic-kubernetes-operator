@@ -182,6 +182,10 @@ function doIntrospect() {
     rm -f ${DOMAIN_HOME}/testaccess.tmp
     createWLDomain || exit 1
     created_domain=$DOMAIN_CREATED
+    # if the changes have been rolled back, do not run introspectDomain.py
+    if [ ! -z "${MII_UPDATE_ROLLEDBACK}" ] && [ "true" == "${MII_UPDATE_ROLLEDBACK}" ] ; then
+      created_domain=0
+    fi
     trace "Create domain return code = " ${created_domain}
   else
     created_domain=1

@@ -78,7 +78,6 @@ public abstract class PodStepContext extends BasePodStepContext {
   private final String miiModelSecretsHash;
   private final String miiDomainZipHash;
   private final String domainRestartVersion;
-  private final Boolean onlineUpdate;
 
   PodStepContext(Step conflictStep, Packet packet) {
     super(packet.getSpi(DomainPresenceInfo.class));
@@ -86,7 +85,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     miiModelSecretsHash = (String)packet.get(IntrospectorConfigMapKeys.SECRETS_MD_5);
     miiDomainZipHash = (String)packet.get(IntrospectorConfigMapKeys.DOMAINZIP_HASH);
-    onlineUpdate = (Boolean)packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE);
     domainRestartVersion = (String)packet.get(IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
   }
@@ -874,7 +872,10 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
-        if (Objects.equals(true, packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))) {
+        String dynamicUpdateResult = Optional.ofNullable((String)packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))
+              .orElse(null);
+
+        if (Objects.equals("0", dynamicUpdateResult)) {
           if (miiDomainZipHash != null) {
             LOGGER.info(DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid());
             logPodExists();
@@ -890,6 +891,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
             return  doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
           }
+        }
+        // Changes rolled back per user request in the domain.spec.configuration, keep the pod
+        if (Objects.equals("104", dynamicUpdateResult)) {
+          return doNext(packet);
         }
 
         LOGGER.info(

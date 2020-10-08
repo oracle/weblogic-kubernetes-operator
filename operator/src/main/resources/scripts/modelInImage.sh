@@ -43,8 +43,7 @@ ARCHIVE_ZIP_CHANGED=0
 WDT_ARTIFACTS_CHANGED=0
 RESTART_REQUIRED=103
 PROG_ROLLBACK_IF_RESTART_EXIT_CODE=104
-MII_USE_ONLINE_UPDATE="MII_USE_ONLINE_UPDATE"
-MII_ROLLBACK_IFRESTART="MII_ROLLBACK_IFRESTART"
+MII_UPDATE_ROLLEDBACK=false
 
 # return codes for model_diff
 UNSAFE_ONLINE_UPDATE=0
@@ -959,11 +958,11 @@ function wdtHandleOnlineUpdate() {
   local ret=$?
 
   trace "Completed online update="${ret}
-
   if [ ${ret} -eq ${RESTART_REQUIRED} ] ; then
     trace ">>>  updatedomainResult=${ret}"
   elif [ ${ret} -eq ${PROG_ROLLBACK_IF_RESTART_EXIT_CODE} ] ; then
     trace ">>>  updatedomainResult=${ret}"
+    MII_UPDATE_ROLLEDBACK=true
   elif [ ${ret} -ne 0 ] ; then
     trace "Introspect job terminated: Online update failed. Check error in the logs"
     trace "Note: Changes in the optional configmap and/or image may needs to be corrected"

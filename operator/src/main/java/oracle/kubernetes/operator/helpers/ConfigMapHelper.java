@@ -515,11 +515,9 @@ public class ConfigMapHelper {
 
       String updateDomainResult = data.get("UPDATEDOMAINRESULT");
       if (updateDomainResult != null) {
-        // TODO: Need to separate this cases and report to domain status for 104
-        //  - changes have been rolledback
         if ("0".equals(updateDomainResult) || "104".equals(updateDomainResult)) {
           LOGGER.fine("ConfigMapHelper apply: short circuit finished online update");
-          packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE, true);
+          packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE, updateDomainResult);
         }
       }
     }
