@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import com.google.common.base.Charsets;
@@ -567,7 +568,7 @@ public class Kubernetes {
    * @param namespace name of the pod's namespace
    * @param labelSelector in the format "weblogic.operatorName in (%s)"
    * @param podName name of the pod
-   * @param containerName name of the container, null if there is only one container
+   * @param containerName name of the specific container if more then one, null if there is only one container
    * @return image used for the container
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -703,6 +704,34 @@ public class Kubernetes {
     return true;
   }
 
+  // --------------------------- namespaces -----------------------------------
+  /**
+   * Create a Kubernetes namespace.
+   *
+   * @param name the name of the namespace
+   * @param labels list of labels for the namespace
+   * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createNamespace(String name, Map<String, String> labels) throws ApiException {
+    V1ObjectMeta meta = new V1ObjectMetaBuilder().withName(name).withLabels(labels).build();
+    V1Namespace namespace = new V1NamespaceBuilder().withMetadata(meta).build();
+
+    try {
+      coreV1Api.createNamespace(
+          namespace, // name of the Namespace
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // name associated with the actor or entity that is making these changes
+      );
+    } catch (ApiException apex) {
+      getLogger().severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
   /**
    * Create a Kubernetes namespace.
    *
@@ -760,6 +789,15 @@ public class Kubernetes {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static List<String> listNamespaces() throws ApiException {
+    return listNamespaces(null);
+  }
+
+  /**
+   * List namespaces in the Kubernetes cluster matching the label selector.
+   * @return List of all Namespace names in the Kubernetes cluster
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static List<String> listNamespaces(String labelSelector) throws ApiException {
     ArrayList<String> nameSpaces = new ArrayList<>();
     V1NamespaceList namespaceList;
     try {
@@ -768,7 +806,7 @@ public class Kubernetes {
           ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
           null, // set when retrieving more results from the server
           null, // selector to restrict the list of returned objects by their fields
-          null, // selector to restrict the list of returned objects by their labels
+          labelSelector, // selector to restrict the list of returned objects by their labels
           null, // maximum number of responses to return for a list call
           RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
           TIMEOUT_SECONDS, // Timeout for the list/watch call
@@ -813,6 +851,39 @@ public class Kubernetes {
     return namespaceList;
   }
 
+  /**
+   * Return Namespace object for the given name from the Kubernetes cluster as V1Namespace object.
+   * @name name of namespace.
+   * @return V1Namespace  Namespace object from the Kubernetes cluster
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static V1Namespace getNamespaceAsObject(String name) throws ApiException {
+    try {
+      V1NamespaceList namespaceList = coreV1Api.listNamespace(
+          PRETTY, // pretty print output
+          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+          null, // set when retrieving more results from the server
+          null, // selector to restrict the list of returned objects by their fields
+          null, // selector to restrict the list of returned objects by their labels
+          null, // maximum number of responses to return for a list call
+          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+          TIMEOUT_SECONDS, // Timeout for the list/watch call
+          false // Watch for changes to the described resources
+      );
+
+      if (!namespaceList.getItems().isEmpty()) {
+        for (V1Namespace ns : namespaceList.getItems()) {
+          if (ns.getMetadata().getName().equalsIgnoreCase(name)) {
+            return ns;
+          }
+        }
+      }
+      return null;
+    } catch (ApiException apex) {
+      getLogger().severe(apex.getResponseBody());
+      throw apex;
+    }
+  }
 
   /**
    * Delete a namespace for the given name.
@@ -1559,6 +1630,22 @@ public class Kubernetes {
   }
 
   /**
+   * Get the V1PersistentVolume object in the Kubernetes cluster with specified Persistent Volume name.
+   * @param pvname the name of the Persistent Volume
+   * @return V1PersistentVolume the Persistent Volume object with specified name in Kubernetes cluster
+   */
+  public static V1PersistentVolume getPersistentVolume(String pvname) {
+    KubernetesApiResponse<V1PersistentVolume> response = pvClient.get(pvname);
+    if (response.isSuccess()) {
+      return response.getObject();
+    } else {
+      getLogger().warning("Failed to get Persistent Volume {0},"
+          + " status code {1}", pvname, response.getHttpStatusCode());
+      return null;
+    }
+  }
+
+  /**
    * List persistent volume claims in the namespace.
    * @param namespace name of the namespace in which to list
    * @return V1PersistentVolumeClaimList of Persistent Volume Claims in namespace
@@ -1570,6 +1657,23 @@ public class Kubernetes {
     } else {
       getLogger().warning("Failed to list Persistent Volumes claims,"
           + " status code {0}", list.getHttpStatusCode());
+      return null;
+    }
+  }
+
+  /**
+   * Get V1PersistentVolumeClaim object in the namespace with the specified Persistent Volume Claim name .
+   * @param namespace namespace in which to get the Persistent Volume Claim
+   * @param pvcname the name of Persistent Volume Claim
+   * @return V1PersistentVolumeClaim the Persistent Volume Claims Object in specified namespace
+   */
+  public static V1PersistentVolumeClaim getPersistentVolumeClaim(String namespace, String pvcname) {
+    KubernetesApiResponse<V1PersistentVolumeClaim> response = pvcClient.get(namespace, pvcname);
+    if (response.isSuccess()) {
+      return response.getObject();
+    } else {
+      getLogger().warning("Failed to get Persistent Volumes claim {0},"
+          + " status code {1}", pvcname, response.getHttpStatusCode());
       return null;
     }
   }

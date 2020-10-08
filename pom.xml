@@ -569,11 +569,6 @@
         <version>${jackson-version}</version>
       </dependency>
       <dependency>
-        <groupId>org.yaml</groupId>
-        <artifactId>snakeyaml</artifactId>
-        <version>${snakeyaml-version}</version>
-      </dependency>
-      <dependency>
         <groupId>javax.jms</groupId>
         <artifactId>javax.jms-api</artifactId>
         <version>2.0.1</version>
@@ -689,7 +684,7 @@
     <assertj.core.version>3.15.0</assertj.core.version>
     <commons.io.version>2.6</commons.io.version>
     <awaitility-version>4.0.2</awaitility-version>
-    <client-java-version>9.0.2</client-java-version>
+    <client-java-version>10.0.0</client-java-version>
     <junit.jupiter.version>5.6.0</junit.jupiter.version>
     <junit.vintage.version>5.6.0</junit.vintage.version>
     <junit.platform.version>1.6.0</junit.platform.version>
@@ -698,7 +693,6 @@
     <jersey-version>2.31</jersey-version>
     <jackson-version>2.11.1</jackson-version>
     <jackson-databind-version>2.11.1</jackson-databind-version>
-    <snakeyaml-version>1.26</snakeyaml-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>

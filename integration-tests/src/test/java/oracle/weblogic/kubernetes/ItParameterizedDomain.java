@@ -73,16 +73,18 @@ import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -90,8 +92,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_ROLE_BINDING_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_ROLE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -110,20 +110,21 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBi
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOCRRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
+import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExistInPod;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -131,6 +132,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -155,17 +157,19 @@ class ItParameterizedDomain {
   private static final String WLDF_OPENSESSION_APP = "opensessionapp";
   private static final String WLDF_OPENSESSION_APP_CONTEXT_ROOT = "opensession";
   private static final String wlSecretName = "weblogic-credentials";
+  private static final String DATA_HOME_OVERRIDE = "/u01/oracle/mydata";
 
-  private static String wlsBaseImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
   private static String opNamespace = null;
   private static String opServiceAccount = null;
   private static HelmParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int externalRestHttpsPort = 0;
-  private static boolean isUseSecret = true;
   private static List<Domain> domains = new ArrayList<>();
   private static LoggingFacade logger = null;
   private static Domain miiDomain = null;
+  private static Domain domainInImage = null;
+  private static Domain domainOnPV = null;
+  private static int t3ChannelPort = 0;
 
   private String curlCmd = null;
 
@@ -196,24 +200,16 @@ class ItParameterizedDomain {
     assertNotNull(namespaces.get(2));
     String miiDomainNamespace = namespaces.get(2);
     assertNotNull(namespaces.get(3));
-    String domainInPVNamespace = namespaces.get(3);
+    String domainOnPVNamespace = namespaces.get(3);
     assertNotNull(namespaces.get(4));
     String domainInImageNamespace = namespaces.get(4);
 
     // set the service account name for the operator
     opServiceAccount = opNamespace + "-sa";
 
-    //determine if the tests are running in Kind cluster. if true use images from Kind registry
-    if (KIND_REPO != null) {
-      String kindRepoImage = KIND_REPO + wlsBaseImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      logger.info("Using image {0}", kindRepoImage);
-      wlsBaseImage = kindRepoImage;
-      isUseSecret = false;
-    }
-
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0,
-        miiDomainNamespace, domainInPVNamespace, domainInImageNamespace);
+        miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace);
 
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
@@ -227,13 +223,13 @@ class ItParameterizedDomain {
     // create model in image domain with multiple clusters
     miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
     // create domain in image
-    Domain domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
+    domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
     // create domain in pv
-    Domain domainInPV = createDomainInPvUsingWdt(domainInPVNamespace);
+    domainOnPV = createDomainOnPvUsingWdt(domainOnPVNamespace);
 
     domains.add(miiDomain);
     domains.add(domainInImage);
-    domains.add(domainInPV);
+    domains.add(domainOnPV);
 
     // create ingress for each domain
     for (Domain domain: domains) {
@@ -445,6 +441,183 @@ class ItParameterizedDomain {
   }
 
   /**
+   * Verify dataHome override in a domain with domain in image type.
+   * In this domain, set dataHome to /u01/oracle/mydata in domain custom resource
+   * The domain contains JMS and File Store configuration
+   * File store directory is set to /u01/oracle/customFileStore in the model file which should be overridden by dataHome
+   * File store and JMS server are targeted to the WebLogic cluster cluster-1
+   * see resource/wdt-models/wdt-singlecluster-multiapps-usingprop-wls.yaml
+   */
+  @Test
+  @DisplayName("Test dataHome override in a domain with domain in image type")
+  public void testDataHomeOverrideDomainInImage() {
+
+    assertDomainNotNull(domainInImage);
+    String domainUid = domainInImage.getSpec().getDomainUid();
+    String domainNamespace = domainInImage.getMetadata().getNamespace();
+
+    // check in admin server pod, there is no data file for JMS server created
+    String dataFileToCheck = DATA_HOME_OVERRIDE + "/" + domainUid + "/FILESTORE-0000000.DAT";
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    assertFalse(assertDoesNotThrow(
+        () -> doesFileExistInPod(domainNamespace, adminServerPodName, dataFileToCheck),
+        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+            dataFileToCheck, adminServerPodName, domainNamespace)),
+        String.format("%s exists in pod %s in namespace %s, expects not exist",
+            dataFileToCheck, adminServerPodName, domainNamespace));
+
+    // check in admin server pod, the default admin server data file moved to DATA_HOME_OVERRIDE
+    String defaultAdminDataFile = DATA_HOME_OVERRIDE + "/" + domainUid + "/_WLS_ADMIN-SERVER000000.DAT";
+    assertTrue(assertDoesNotThrow(() ->
+        doesFileExistInPod(domainNamespace, adminServerPodName, defaultAdminDataFile),
+        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+            dataFileToCheck, adminServerPodName, domainNamespace)),
+        String.format("can not find file %s in pod %s in namespace %s",
+            defaultAdminDataFile, adminServerPodName, domainNamespace));
+
+    // check in managed server pod, the custom data file for JMS and default managed server datafile are created
+    // in DATA_HOME_OVERRIDE
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + i;
+      String customDataFile = DATA_HOME_OVERRIDE + "/" + domainUid + "/FILESTORE-0@MANAGED-SERVER" + i + "000000.DAT";
+      assertTrue(assertDoesNotThrow(() ->
+              doesFileExistInPod(domainNamespace, managedServerPodName, customDataFile),
+          String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+              customDataFile, managedServerPodName, domainNamespace)),
+          String.format("can not find file %s in pod %s in namespace %s",
+              customDataFile, managedServerPodName, domainNamespace));
+
+      String defaultMSDataFile = DATA_HOME_OVERRIDE + "/" + domainUid + "/_WLS_MANAGED-SERVER" + i + "000000.DAT";
+      assertTrue(assertDoesNotThrow(() ->
+              doesFileExistInPod(domainNamespace, managedServerPodName, defaultMSDataFile),
+          String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+              defaultMSDataFile, managedServerPodName, domainNamespace)),
+          String.format("can not find file %s in pod %s in namespace %s",
+              defaultMSDataFile, managedServerPodName, domainNamespace));
+    }
+  }
+
+  /**
+   * Verify dataHome override in a domain with model in image type.
+   * In this domain, dataHome is not specified in the domain custom resource
+   * The domain contains JMS and File Store configuration
+   * File store directory is set to /u01/oracle/customFileStore in the model file which should not be overridden
+   * by dataHome
+   * File store and JMS server are targeted to the WebLogic admin server
+   * see resource/wdt-models/model-multiclusterdomain-sampleapp-wls.yaml
+   */
+  @Test
+  @DisplayName("Test dataHome override in a domain with model in image type")
+  public void testDataHomeOverrideMiiDomain() {
+
+    assertDomainNotNull(miiDomain);
+    String domainUid = miiDomain.getSpec().getDomainUid();
+    String domainNamespace = miiDomain.getMetadata().getNamespace();
+
+    // check in admin server pod, there is a data file for JMS server created in /u01/oracle/customFileStore
+    String dataFileToCheck = "/u01/oracle/customFileStore/FILESTORE-0000000.DAT";
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    assertTrue(assertDoesNotThrow(
+        () -> doesFileExistInPod(domainNamespace, adminServerPodName, dataFileToCheck),
+        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+            dataFileToCheck, adminServerPodName, domainNamespace)),
+        String.format("did not find file %s in pod %s in namespace %s",
+            dataFileToCheck, adminServerPodName, domainNamespace));
+
+    // check in admin server pod, the default admin server data file is in default data store
+    String defaultAdminDataFile =
+        "/u01/domains/" + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
+    assertTrue(assertDoesNotThrow(() ->
+            doesFileExistInPod(domainNamespace, adminServerPodName, defaultAdminDataFile),
+        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+            dataFileToCheck, adminServerPodName, domainNamespace)),
+        String.format("did not find file %s in pod %s in namespace %s",
+            defaultAdminDataFile, adminServerPodName, domainNamespace));
+
+    // check in managed server pod, there is no custom data file for JMS is created
+    for (int i = 1; i <= replicaCount; i++) {
+      for (int j = 1; j <= NUMBER_OF_CLUSTERS_MIIDOMAIN; j++) {
+        String managedServerPodName = domainUid + "-cluster-" + j + "-" + MANAGED_SERVER_NAME_BASE + i;
+        String customDataFile = "/u01/oracle/customFileStore/FILESTORE-0@MANAGED-SERVER" + i + "000000.DAT";
+        assertFalse(assertDoesNotThrow(() ->
+                doesFileExistInPod(domainNamespace, managedServerPodName, customDataFile),
+            String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+                customDataFile, managedServerPodName, domainNamespace)),
+            String.format("found file %s in pod %s in namespace %s, expect not exist",
+                customDataFile, managedServerPodName, domainNamespace));
+
+        String defaultMSDataFile = "/u01/domains/" + domainUid + "/servers/cluster-" + j + "-managed-server" + i
+            + "/data/store/default/_WLS_CLUSTER-" + j + "-MANAGED-SERVER" + i + "000000.DAT";
+        assertTrue(assertDoesNotThrow(() ->
+                doesFileExistInPod(domainNamespace, managedServerPodName, defaultMSDataFile),
+            String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+                defaultMSDataFile, managedServerPodName, domainNamespace)),
+            String.format("can not find file %s in pod %s in namespace %s",
+                defaultMSDataFile, managedServerPodName, domainNamespace));
+      }
+    }
+  }
+
+  /**
+   * Verify dataHome override in a domain with domain on PV type.
+   * In this domain, dataHome is set to empty string in the domain custom resource
+   * The domain contains JMS and File Store configuration
+   * File store directory is set to /u01/oracle/customFileStore in the model file which should not be overridden
+   * by dataHome
+   * File store and JMS server are targeted to the WebLogic admin server
+   * see resource/wdt-models/domain-onpv-wdt-model.yaml
+   */
+  @Test
+  @DisplayName("Test dataHome override in a domain with domain on PV type")
+  public void testDataHomeOverrideDomainOnPV() {
+
+    assertDomainNotNull(domainOnPV);
+    String domainUid = domainOnPV.getSpec().getDomainUid();
+    String domainNamespace = domainOnPV.getMetadata().getNamespace();
+
+    // check in admin server pod, there is a data file for JMS server created in /u01/oracle/customFileStore
+    String dataFileToCheck = "/u01/oracle/customFileStore/FILESTORE-0000000.DAT";
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    assertTrue(assertDoesNotThrow(
+        () -> doesFileExistInPod(domainNamespace, adminServerPodName, dataFileToCheck),
+        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+            dataFileToCheck, adminServerPodName, domainNamespace)),
+        String.format("did not find file %s in pod %s in namespace %s",
+            dataFileToCheck, adminServerPodName, domainNamespace));
+
+    // check in admin server pod, the default admin server data file is in default data store
+    String defaultAdminDataFile =
+        "/u01/shared/domains/" + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
+    assertTrue(assertDoesNotThrow(() ->
+            doesFileExistInPod(domainNamespace, adminServerPodName, defaultAdminDataFile),
+        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+            dataFileToCheck, adminServerPodName, domainNamespace)),
+        String.format("did not find file %s in pod %s in namespace %s",
+            defaultAdminDataFile, adminServerPodName, domainNamespace));
+
+    // check in managed server pod, there is no custom data file for JMS is created
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + i;
+      String customDataFile = "/u01/oracle/customFileStore/FILESTORE-0@MANAGED-SERVER" + i + "000000.DAT";
+      assertFalse(assertDoesNotThrow(() ->
+              doesFileExistInPod(domainNamespace, managedServerPodName, customDataFile),
+          String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+              customDataFile, managedServerPodName, domainNamespace)),
+          String.format("found file %s in pod %s in namespace %s, expect not exist",
+              customDataFile, managedServerPodName, domainNamespace));
+
+      String defaultMSDataFile = "/u01/shared/domains/" + domainUid + "/servers/managed-server" + i
+          + "/data/store/default/_WLS_MANAGED-SERVER" + i + "000000.DAT";
+      assertTrue(assertDoesNotThrow(() ->
+              doesFileExistInPod(domainNamespace, managedServerPodName, defaultMSDataFile),
+          String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+              defaultMSDataFile, managedServerPodName, domainNamespace)),
+          String.format("can not find file %s in pod %s in namespace %s",
+              defaultMSDataFile, managedServerPodName, domainNamespace));
+    }
+  }
+
+  /**
    * Generate a steam of Domain objects used in parameterized tests.
    * @return stream of oracle.weblogic.domain.Domain objects
    */
@@ -621,14 +794,15 @@ class ItParameterizedDomain {
     appSrcDirList.add(WLDF_OPENSESSION_APP);
     String miiImage =
         createMiiImageAndVerify(miiImageName, Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForMiiDomain),
-            appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS_DOMAIN_TYPE, false);
+            appSrcDirList, WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, false);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
 
     // create docker registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createDockerRegistrySecret(domainNamespace);
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
@@ -662,7 +836,7 @@ class ItParameterizedDomain {
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(REPO_SECRET_NAME))
+                .name(OCIR_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))
@@ -719,20 +893,19 @@ class ItParameterizedDomain {
    * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
-  private static Domain createDomainInPvUsingWdt(String domainNamespace) {
-    final String domainUid = "domaininpv" + "-" + domainNamespace.substring(3);
+  private static Domain createDomainOnPvUsingWdt(String domainNamespace) {
+    final String domainUid = "domainonpv" + "-" + domainNamespace.substring(3);
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
-    int t3ChannelPort = getNextFreePort(31111, 32767);  // the port range has to be between 30,000 to 32,767
+    t3ChannelPort = getNextFreePort(31111, 32767);  // the port range has to be between 30,000 to 32,767
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    if (isUseSecret) {
-      createOCRRepoSecret(domainNamespace);
-    }
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(domainNamespace);
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
@@ -779,7 +952,7 @@ class ItParameterizedDomain {
     createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace);
 
     // create a temporary WebLogic domain property file as a input for WDT model file
-    File domainPropertiesFile = assertDoesNotThrow(() -> createTempFile("domaininpv", "properties"),
+    File domainPropertiesFile = assertDoesNotThrow(() -> createTempFile("domainonpv", "properties"),
         "Failed to create domain properties file");
 
     Properties p = new Properties();
@@ -804,7 +977,7 @@ class ItParameterizedDomain {
     Path wdtModelFile = get(RESOURCE_DIR, "wdt-models", "domain-onpv-wdt-model.yaml");
 
     // create configmap and domain in persistent volume using WDT
-    runCreateDomainInPVJobUsingWdt(wdtScript, wdtModelFile, domainPropertiesFile.toPath(),
+    runCreateDomainOnPVJobUsingWdt(wdtScript, wdtModelFile, domainPropertiesFile.toPath(),
         domainUid, pvName, pvcName, domainNamespace);
 
     // create the domain custom resource
@@ -819,12 +992,11 @@ class ItParameterizedDomain {
             .domainUid(domainUid)
             .domainHome("/u01/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
-            .image(wlsBaseImage)
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
-            .imagePullSecrets(isUseSecret ? Arrays.asList(
+            .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(OCR_SECRET_NAME))
-                : null)
+                    .name(BASE_IMAGES_REPO_SECRET)))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
@@ -949,7 +1121,7 @@ class ItParameterizedDomain {
    * @param pvcName name of the persistent volume claim
    * @param namespace name of the domain namespace in which the job is created
    */
-  private static void runCreateDomainInPVJobUsingWdt(Path domainCreationScriptFile,
+  private static void runCreateDomainOnPVJobUsingWdt(Path domainCreationScriptFile,
                                                      Path modelFile,
                                                      Path domainPropertiesFile,
                                                      String domainUid,
@@ -1057,7 +1229,7 @@ class ItParameterizedDomain {
                     .restartPolicy("Never")
                     .addInitContainersItem(new V1Container()
                         .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(wlsBaseImage)
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
                         .addArgsItem("chown -R 1000:1000 /u01/shared")
@@ -1070,7 +1242,7 @@ class ItParameterizedDomain {
                             .runAsUser(0L)))
                     .addContainersItem(jobContainer  // container containing WLST or WDT details
                         .name("create-weblogic-domain-onpv-container")
-                        .image(wlsBaseImage)
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .imagePullPolicy("IfNotPresent")
                         .addPortsItem(new V1ContainerPort()
                             .containerPort(7001))
@@ -1092,10 +1264,9 @@ class ItParameterizedDomain {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptCM)))) //config map containing domain scripts
-                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                    .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))
-                        : null))));
+                            .name(BASE_IMAGES_REPO_SECRET))))));  // this secret is used only for non-kind cluster
 
     String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
 
@@ -1146,14 +1317,15 @@ class ItParameterizedDomain {
     String domainInImageWithWDTImage = createImageAndVerify("domaininimage-wdtimage",
         Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForDomainInImage), appSrcDirList,
         Collections.singletonList(MODEL_DIR + "/" + WDT_BASIC_MODEL_PROPERTIES_FILE),
-        WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS_DOMAIN_TYPE, false,
+        WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, false,
         domainUid, false);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domainInImageWithWDTImage);
 
     // Create the repo secret to pull the image
-    createDockerRegistrySecret(domainNamespace);
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
 
     // create the domain custom resource
     Domain domain = new Domain()
@@ -1165,10 +1337,11 @@ class ItParameterizedDomain {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid)
+            .dataHome("/u01/oracle/mydata")
             .domainHomeSourceType("Image")
             .image(domainInImageWithWDTImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(REPO_SECRET_NAME))
+                .name(OCIR_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
