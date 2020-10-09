@@ -28,10 +28,10 @@ data:
   dns1123Fields: {{ .dns1123Fields | quote }}
   {{- end }}
   {{- if .introspectorJobNameSuffix }}
-    introspectorJobNameSuffix: {{ .introspectorJobNameSuffix | quote }}
+  introspectorJobNameSuffix: {{ .introspectorJobNameSuffix | quote }}
   {{- end }}
   {{- if .externalServiceNameSuffix }}
-    externalServiceNameSuffix: {{ .externalserviceNameSuffix | quote }}
+  externalServiceNameSuffix: {{ .externalServiceNameSuffix | quote }}
   {{- end }}
 kind: "ConfigMap"
 metadata:

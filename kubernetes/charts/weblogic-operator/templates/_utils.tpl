@@ -287,8 +287,8 @@ Verify a kubernetes resource name string value
 {{/*     labels/selectors - upper & lower case, numbers, dot, dash, underscore, max 63  */}}
 {{-   $scope := index . 0 -}}
 {{-   $name := index . 1 -}}
-{{-   $isRequired := index 2 -}}
-{{-   $max := index . 3 -}}
+{{-   $max := index . 2 -}}
+{{-   $isRequired := index . 3 -}}
 {{-   $parent := $scope.validationScope -}}
 {{-   if include "utils.dictionaryHasNonNullValue" (list $parent $name) -}}
 {{-     $value := index $parent $name -}}
@@ -308,28 +308,28 @@ Verify a kubernetes resource name string value
 Verify a required kubernetes resource name string value
 */}}
 {{- define "utils.verifyResourceName" -}}
-{{- include "utils.baseVerifyResourceName" (append . true 64) -}}
+{{- include "utils.baseVerifyResourceName" (append . true)  -}}
 {{- end -}}
 
 {{/*
 Verify an optional kubernetes resource name string value
 */}}
 {{- define "utils.verifyOptionalResourceName" -}}
-{{- include "utils.baseVerifyResourceName" (append . false 64) -}}
+{{- include "utils.baseVerifyResourceName" (append . false) -}}
 {{- end -}}
 
 {{/*
 Verify external service name suffix string value
 */}}
-{{- define "utils.verifyEnternalServiceNameSuffix" -}}
-{{- include "utils.baseVerifyResourceName" (append . false 61) -}}
+{{- define "utils.verifyExternalServiceNameSuffix" -}}
+{{- include "utils.baseVerifyResourceName" (append . false) -}}
 {{- end -}}
 
 {{/*
 Verify introspector job name suffix string value
 */}}
 {{- define "utils.verifyIntrospectorJobNameSuffix" -}}
-{{- include "utils.baseVerifyResourceName" (append . false 63) -}}
+{{- include "utils.baseVerifyResourceName" (append . false) -}}
 {{- end -}}
 
 {{/*
