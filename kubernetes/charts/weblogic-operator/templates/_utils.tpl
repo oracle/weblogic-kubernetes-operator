@@ -280,15 +280,15 @@ Verify an optional enum string value
 Verify a kubernetes resource name string value
 */}}
 {{- define "utils.baseVerifyResourceName" -}}
-{{- if include "utils.baseVerifyString" . -}}
-{{/*   https://kubernetes.io/docs/concepts/overview/working-with-objects/names */}}
-{{/*     names: only lower case, numbers, dot, dash, max 253 */}}
-{{/*   https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set  */}}
-{{/*     labels/selectors - upper & lower case, numbers, dot, dash, underscore, max 63  */}}
-{{-   $scope := index . 0 -}}
-{{-   $name := index . 1 -}}
-{{-   $max := index . 2 -}}
-{{-   $isRequired := index . 3 -}}
+{{/* https://kubernetes.io/docs/concepts/overview/working-with-objects/names */}}
+{{/*   names: only lower case, numbers, dot, dash, max 253 */}}
+{{/* https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set  */}}
+{{/*   labels/selectors - upper & lower case, numbers, dot, dash, underscore, max 63  */}}
+{{- $scope := index . 0 -}}
+{{- $name := index . 1 -}}
+{{- $max := index . 2 -}}
+{{- $isRequired := index . 3 -}}
+{{- if include "utils.baseVerifyString" (list $scope $name $isRequired) -}}
 {{-   $parent := $scope.validationScope -}}
 {{-   if include "utils.dictionaryHasNonNullValue" (list $parent $name) -}}
 {{-     $value := index $parent $name -}}
