@@ -125,10 +125,12 @@ public interface TestConstants {
   public static final String WEBLOGIC_IMAGE_TO_USE_IN_SPEC = KIND_REPO != null ? KIND_REPO
       + (WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
       : WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
-  public static final String FMWINFRA_IMAGE_TO_USE_IN_SPEC = KIND_REPO
-      + (FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1);
-  public static final String DB_IMAGE_TO_USE_IN_SPEC = KIND_REPO
-      + (DB_IMAGE_NAME + ":" + DB_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1);
+  public static final String FMWINFRA_IMAGE_TO_USE_IN_SPEC = KIND_REPO != null ? KIND_REPO
+      + (FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
+      : FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG;
+  public static final String DB_IMAGE_TO_USE_IN_SPEC = KIND_REPO != null ? KIND_REPO
+      + (DB_IMAGE_NAME + ":" + DB_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
+      : DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
 
   // ----------------------------- base images constants - end -------------------
 
