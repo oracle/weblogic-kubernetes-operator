@@ -309,6 +309,8 @@ class ItExternalRmiTunneling {
     javasCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
     javasCmd.append(":");
     javasCmd.append(Paths.get(RESULTS_ROOT));
+    javasCmd.append(" -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true ");
+    javasCmd.append(" -Djavax.net.debug=all ");
     javasCmd.append(" -Djavax.net.ssl.trustStorePassword=password");
     javasCmd.append(" -Djavax.net.ssl.trustStore=");
     javasCmd.append(jksTrustFile);
@@ -396,6 +398,11 @@ class ItExternalRmiTunneling {
       logger.info("Executing command: {0}", command);
       ExecCommand.exec(command, true);
     });
+    assertDoesNotThrow(() -> {
+      String command2 = "openssl x509 -in " + tlsCertFile + " -noout -text ";
+      logger.info("Executing command: {0}", command2);
+      ExecCommand.exec(command2, true);
+    });
   }
 
   private static void createJksStore() {
@@ -406,6 +413,12 @@ class ItExternalRmiTunneling {
              + " -storetype jks -storepass password -noprompt ";
       logger.info("Executing command: {0}", command);
       ExecCommand.exec(command, true);
+    });
+
+    assertDoesNotThrow(() -> {
+      String command2 = "keytool -list -keystore " + jksTrustFile;
+      logger.info("Executing command: {0}", command2);
+      ExecCommand.exec(command2, true);
     });
   }
 
