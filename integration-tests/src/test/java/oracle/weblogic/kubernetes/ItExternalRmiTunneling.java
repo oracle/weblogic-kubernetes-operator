@@ -208,7 +208,7 @@ class ItExternalRmiTunneling {
   @Order(1)
   @Test
   @DisplayName("Verify the RMI access WLS through LoadBalancer tunneling port")
-  public void testExtenalRmiAccessThruHttpTunneling() {
+  public void testExternalRmiAccessThruHttpTunneling() {
 
     buildClient();
 
@@ -265,7 +265,7 @@ class ItExternalRmiTunneling {
   @Order(2)
   @Test
   @DisplayName("Verify tls RMI access WLS through LoadBalancer tunneling port")
-  public void testExtenalRmiAccessThruHttpsTunneling() {
+  public void testExternalRmiAccessThruHttpsTunneling() {
 
     buildClient();
 
