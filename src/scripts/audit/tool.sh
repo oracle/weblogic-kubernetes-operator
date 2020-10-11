@@ -23,15 +23,15 @@ function usage {
 #
 # Parse the command line options
 #
-containerBinary="docker"
+containerCli=${CONTAINER_CLI:-docker}
+imageSizeThreshold=${SCAN_THRESHOLD:-200M}
 silentMode=false
 disableMissingImagesValidation=false
 sizeVerificationEnabled=""
 imageFile=""
 kubernetesFile=""
-imageSizeThreshold=200M
 artifactsFile="util/artifacts/weblogic.txt"
-ignoreImageVerificationList="util/exclude/exclude.txt"
+excludeList="util/exclude/exclude.txt"
 workDir=work
 nodeToImageMapping=()
 
@@ -47,13 +47,13 @@ while getopts "des:a:i:h:k:m:w:x:" opt; do
     ;;
     e) sizeVerificationEnabled=true;
     ;;
-    m) containerBinary="${OPTARG}";
+    m) containerCli="${OPTARG}";
     ;;
     s) silentMode=true;
     ;;
     w) workDir="${OPTARG}"
     ;;
-    x) ignoreImageVerificationList="${OPTARG}"
+    x) excludeList="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -65,8 +65,8 @@ done
 
 # try to execute container binary to see whether binary file is available
 function validateContainerBinaryAvailable {
-  if ! [ -x "$(command -v ${containerBinary})" ]; then
-    validationError "${containerBinary} is not installed"
+  if ! [ -x "$(command -v ${containerCli})" ]; then
+    validationError "${containerCli} is not installed"
   fi
 }
 
@@ -109,7 +109,7 @@ function initialize {
   # If image list is not provided, get all images on the current machine 
   if [ -z "$imageFile" ]; then
     echo "Scanning all images on current machine, use '-i' option if you want to scan specific set of images."
-    imageFile=$(${containerBinary} images --digests --format "{{.Repository}}:{{.Tag}}@{{.Digest}}@{{.ID}}" | grep -v "<none>:<none>")
+    imageFile=$(${containerCli} images --digests --format "{{.Repository}}:{{.Tag}}@{{.Digest}}@{{.ID}}" | grep -v "<none>:<none>")
   else
     IFS=$'\n' read -d '' -r -a images < "${imageFile}"
     imageFile=${images[@]}
@@ -124,9 +124,9 @@ function initialize {
   IFS=$'\n' read -d '' -r -a artifacts < "$artifactsFile"
   artifactsFile=${artifacts[@]}
 
-  # Read image to node mapping from kubernetes file in nodeToImageMapping array
+  # Read node to image mapping from kubernetes file in nodeToImageMapping array
   if [ -n "${kubernetesFile}" ]; then
-    getImagesInNodeFile
+    getNodeToImageMapping
   fi
 
 }
@@ -136,7 +136,7 @@ function validateAvailableImages {
   info "Validating images available for scanning on this machine..."
   getMissingImagesList
   missingImageCount=$?
-  if [[ $missingImageCount -gt 0 ]]; then
+  if [ $missingImageCount -gt 0 ]; then
     fail "There are $missingImageCount images that have not been pulled on current machine. Please see ${missingImagesReport} file for the list of missing images. These images must be pulled to current machine before the script can continue. Use '-d' option to disable missing image validation."
   fi
 }
@@ -170,16 +170,12 @@ function scanAndSearchImageList {
   do
     imageRepoTag=$(echo $image | cut -d'@' -f1)
     imageHash=$(echo $image | cut -d'@' -f2)
-    imageId=$(echo $image | cut -d'@' -f3)
     repository=$(echo $imageRepoTag | cut -d':' -f1)
     tag=$(echo $imageRepoTag | cut -d':' -f2)
-
-    if [ -z ${imageId} ]; then
-      imageId=$(getImageId "${imageRepoTag}")
-    fi
+    imageId=$(getImageId "${image}")
 
     if [ -n "${imageId}" ]; then
-      imageSize=`${containerBinary} inspect ${imageId} | jq .[].Size`
+      imageSize=`${containerCli} inspect ${imageId} | jq .[].Size`
     else
       fail "Unable to determine image id for image ${image}, image must be pulled before the script can continue"
     fi
@@ -188,7 +184,7 @@ function scanAndSearchImageList {
       info "Image scan skipped as image size is lower than ${imageSizeThreshold}  - ${imageRepoTag}@${imageHash}" | tee -a ${imageScanExcludedReport}
       continue
     fi
-    if checkStringMatchesArrayPattern "${imageRepoTag}" "${ignoreImageVerificationList[@]}"; then
+    if checkIfImageInExcludeList "${imageRepoTag}" "${excludeList[@]}"; then
       info "Image scan skipped as image is in exclude list - ${imageRepoTag}" | tee -a ${imageScanExcludedReport}
       continue
     fi
@@ -272,7 +268,7 @@ function saveImageAndExtractLayers {
   local imageDir=$2
 
   imageTarFile="${imageDir}/${image}.tar"
-  ${containerBinary} save "${image}" -o "${imageTarFile}" > >(tee -a ${logFile}) 2> >(tee -a ${logFile} >&2)
+  ${containerCli} save "${image}" -o "${imageTarFile}" > >(tee -a ${logFile}) 2> >(tee -a ${logFile} >&2)
   if [ -f ${imageTarFile} ]; then
     tar --warning=none -xf "${imageTarFile}" -C "${imageDir}"
     rm "${imageTarFile}"
@@ -306,8 +302,8 @@ function searchArtifactInLayers {
 
   tar -tf "${layer}" | grep -q "${artifact}"
   if [ $? -eq 0 ]; then
-    imageName=$(${containerBinary} images --format "{{.Repository}}:{{.Tag}} {{.ID}}" | grep "${image}" |awk '{print $1}')
-    imageDetail=$(${containerBinary} images --digests |grep ${image})
+    imageName=$(${containerCli} images --format "{{.Repository}}:{{.Tag}} {{.ID}}" | grep "${image}" |awk '{print $1}')
+    imageDetail=$(${containerCli} images --digests |grep ${image})
     if [ -z "${kubernetesFile}" ]; then
       echo $imageDetail | awk -v a="${artifact}" '{printf "%s,%s,%s,%s\n", a,$1,$2,$3}' >> "${reportFile}"
     else 

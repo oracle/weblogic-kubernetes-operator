@@ -77,16 +77,21 @@ function printReport {
 # Get image id using repository and tag
 #
 function getImageId {
-  local imageRepoTag=$1
+  local image=$1
 
-  imageId=$(${containerBinary} images --format "{{.ID}}" "$imageRepoTag")
-  if [ -z "${imageId}" ]; then
-    repository=$(echo $imageRepoTag | cut -d':' -f1)
-    tag=$(echo $imageRepoTag | cut -d':' -f2)
-    imageId=$(${containerBinary} images | awk '{print $1,$2,$3}' | grep "${repository} " | grep "${tag}" | awk '{print $3}')
-
+  imageId=$(echo $image | cut -d'@' -f3)
+  if [ -n "${imageId}" ]; then
+    echo "$imageId"
+  else 
+    imageRepoTag=$(echo $image | cut -d'@' -f1)
+    imageId=$(${containerCli} images --format "{{.ID}}" "$imageRepoTag")
+    if [ -z "${imageId}" ]; then
+      repository=$(echo $imageRepoTag | cut -d':' -f1)
+      tag=$(echo $imageRepoTag | cut -d':' -f2)
+      imageId=$(${containerCli} images | awk '{print $1,$2,$3}' | grep "${repository} " | grep "${tag}" | awk '{print $3}')
+    fi
+    echo "$imageId"
   fi
-  echo "$imageId"
 }
 
 #
@@ -120,7 +125,7 @@ checkStringInArray() {
 #
 # check if string passed as first argument matches the pattern specified in array passed as second argument
 #
-checkStringMatchesArrayPattern() {
+checkIfImageInExcludeList() {
     local n=$1 h
     shift
     for h; do
@@ -135,7 +140,7 @@ checkStringMatchesArrayPattern() {
 function getMissingImagesList {
   missingImages=()
   imagesToVerify=()
-  existingImagesOnHost=($(${containerBinary} images --digests --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>:<none>"))
+  existingImagesOnHost=($(${containerCli} images --digests --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>:<none>"))
 
   getImagesToVerify
   for imageToVerify in ${imagesToVerify[@]}
@@ -154,14 +159,14 @@ function getMissingImagesList {
 }
 
 #
-# Get list of images that require availabilty verification (i.e. filter out images in ignoreImageVerificationList)
+# Get list of images that require availabilty verification (i.e. filter out images in excludeList)
 #
 function getImagesToVerify {
   # Check if a file containing list of images to skip verification exists
-  if [ -f ${ignoreImageVerificationList} ]; then
-    IFS=$'\n' read -d '' -r -a ignoreImageVerificationList < "$ignoreImageVerificationList"
+  if [ -f ${excludeList} ]; then
+    IFS=$'\n' read -d '' -r -a excludeList < "$excludeList"
   else
-    ignoreImageVerificationList=()
+    excludeList=()
   fi
 
   # Get list of images present in Kubernetes Node Information file
@@ -169,7 +174,7 @@ function getImagesToVerify {
 
   # Create an array list of images that requires validation
   for imageInNodeFile in ${imagesInNodeFile}; do
-    if ! checkStringMatchesArrayPattern "${imageInNodeFile}" "${ignoreImageVerificationList[@]}"; then
+    if ! checkIfImageInExcludeList "${imageInNodeFile}" "${excludeList[@]}"; then
       imagesToVerify+=(${imageInNodeFile})
     else
       echo ${imageInNodeFile} >> ${imageValidationSkippedReport}
@@ -180,7 +185,7 @@ function getImagesToVerify {
 #
 # Get list of images from Kubernetes node information 'output of kubectl get node' file
 #
-function getImagesInNodeFile {
+function getNodeToImageMapping {
   IFS=$'\n'
   nodeToImageMapping=$(cat "${kubernetesFile}" | jq '.items |[.[] | {name: .metadata.name, images:.status.images | .[]}]' | jq '.[] | {node:.name, imageTag:.images.names[1],imageHash:.images.names[0], size:.images.sizeBytes}' | jq -r '"\(.node);\(.imageTag);\(.imageHash);\(.size )"' | grep -v "<none>:<none>" | grep -v "<none>@<none>")
 }
