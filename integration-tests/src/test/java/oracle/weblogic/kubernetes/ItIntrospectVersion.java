@@ -91,6 +91,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
@@ -347,7 +348,7 @@ public class ItIntrospectVersion {
     // deploy application and verify all servers functions normally
     logger.info("Getting node port for T3 channel");
     int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
         "Getting admin server t3channel node port failed");
     assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
 
@@ -519,7 +520,7 @@ public class ItIntrospectVersion {
 
     logger.info("Getting node port for default channel");
     int adminServerT3Port = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
         "Getting admin server node port failed");
 
     // create a temporary WebLogic WLST property file
@@ -577,7 +578,7 @@ public class ItIntrospectVersion {
 
     // verify the admin port is changed to newAdminPort
     assertEquals(newAdminPort, assertDoesNotThrow(()
-        -> getServicePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        -> getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server port failed"),
         "Updated admin server port is not equal to expected value");
 
@@ -623,7 +624,8 @@ public class ItIntrospectVersion {
     int replicaCount = 3;
 
     logger.info("Getting node port for T3 channel");
-    int adminServerT3Port = getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel");
+    int adminServerT3Port
+        = getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel");
     assertNotEquals(-1, adminServerT3Port, "Couldn't get valid port for T3 channel");
 
     // get the pod creation time stamps
@@ -722,7 +724,7 @@ public class ItIntrospectVersion {
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        introDomainNamespace, adminServerPodName + "-external", "default"),
+        introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
     assertNotEquals(-1, serviceNodePort, "Couldn't get valid node port for default channel");
 
@@ -771,7 +773,8 @@ public class ItIntrospectVersion {
     final int replicaCount = 2;
 
     logger.info("Getting node port for default channel");
-    int adminServerT3Port = getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel");
+    int adminServerT3Port
+        = getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel");
 
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
@@ -957,7 +960,7 @@ public class ItIntrospectVersion {
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
     logger.info("Checking the health of servers in cluster");

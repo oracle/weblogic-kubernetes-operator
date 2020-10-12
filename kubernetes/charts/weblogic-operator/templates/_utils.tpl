@@ -296,7 +296,7 @@ Verify a kubernetes resource name string value
 {{-     if and (lt $len $max) (regexMatch "^[a-z0-9.-]+$" $value) -}}
           true
 {{-     else -}}
-{{-       $errorMsg := cat $name "must only contain lower case letters, numbers, dashes and dots, and must not contain more than " $max " characters: " $value -}}
+{{-       $errorMsg := cat $name "must only contain lower case letters, numbers, dashes and dots, and must not contain more than" $max "characters: " $value -}}
 {{-       include "utils.recordValidationError" (list $scope $errorMsg) -}}
 {{-     end -}}
 {{-   end -}}

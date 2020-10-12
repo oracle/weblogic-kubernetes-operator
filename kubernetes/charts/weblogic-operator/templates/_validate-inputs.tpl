@@ -56,11 +56,7 @@
 {{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceRegExp") -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
-{{- if include "utils.verifyOptionalString" (list $scope "introspectorJobNameSuffix") -}}
-{{-   $ignore := include "utils.verifyIntrospectorJobNameSuffix" (list $scope "introspectorJobNameSuffix" 63) -}}
-{{- end -}}
-{{- if include "utils.verifyOptionalString" (list $scope "externalServiceNameSuffix") -}}
-{{-   $ignore := include "utils.verifyExternalServiceNameSuffix" (list $scope "externalServiceNameSuffix" 61) -}}
-{{- end -}}
+{{- $ignore := include "utils.verifyIntrospectorJobNameSuffix" (list $scope "introspectorJobNameSuffix" 63) -}}
+{{- $ignore := include "utils.verifyExternalServiceNameSuffix" (list $scope "externalServiceNameSuffix" 61) -}}
 {{- $ignore := include "utils.endValidation" $scope -}}
 {{- end -}}

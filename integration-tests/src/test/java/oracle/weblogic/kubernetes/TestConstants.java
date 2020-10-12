@@ -261,4 +261,5 @@ public interface TestConstants {
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";
 
+  public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
 }

@@ -70,6 +70,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
@@ -214,8 +215,7 @@ public class ItSystemResOverrides {
   private Callable<Boolean> configUpdated() {
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName
-            + "-external",
+        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName),
             "default"),
         "Getting admin server node port failed");
 
@@ -231,7 +231,7 @@ public class ItSystemResOverrides {
   }
 
   private void verifyJMSResourceOverride() {
-    int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     String uri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/sitconfig/SitconfigServlet";
 
     HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(uri, true));
@@ -241,7 +241,7 @@ public class ItSystemResOverrides {
   }
 
   private void verifyWLDFResourceOverride() {
-    int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     String uri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/sitconfig/SitconfigServlet";
 
     HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(uri, true));
@@ -419,7 +419,7 @@ public class ItSystemResOverrides {
   private void deployApplication(String targets) {
     logger.info("Getting node port for T3 channel");
     int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "t3channel"),
+        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
         "Getting admin server t3channel node port failed");
     assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
 
