@@ -169,7 +169,7 @@ externalDebugHttpPort: 30999
 # dns1123Fields: ""
 
 # introspectorJobNameSuffix overrides the default suffix that the operator uses
-# to append to the domainUid to form the name of the domain introspector job name.
+# to append to the domainUID to form the name of the domain introspector job name.
 # Note that the resultant job name should not be more than 58 characters due to
 # the Kubernetes' limit to the name of a job and kubernetes appends additional 5
 # characters to the name of the pod that is created by the job controller.
@@ -178,8 +178,8 @@ externalDebugHttpPort: 30999
 # introspectorJobNameSuffix: "-introspector"
 
 # externalServiceNameSuffix overrides the default suffix that the operator uses
-# to append to the domainUid and the admin server name to form the name of the
-# domain's admin server external service.
+# to append to the domainUID and the WebLogic admin server name to form the name
+# of the domain's admin server external service.
 # Note that the resultant name should not be more than 63 characters due to
 # the Kubernetes' limit to the name of a service.
 # The default suffix is '-ext'.
