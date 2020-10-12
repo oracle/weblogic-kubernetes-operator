@@ -34,8 +34,6 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
@@ -115,8 +113,6 @@ public class Domain implements KubernetesObject {
   @Valid
   @Description("The current status of the operation of the WebLogic domain. Updated automatically by the operator.")
   private DomainStatus status;
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   @SuppressWarnings({"rawtypes"})
   static List sortOrNull(List list) {
@@ -664,9 +660,6 @@ public class Domain implements KubernetesObject {
 
     private void verifyIntrospectorJobName() {
       // K8S adds a 5 character suffix to an introspector job name
-      LOGGER.fine("XXX verifyIntrospectorJobName: domain UID = " + getDomainUid()
-          + " spec = " + getSpec()
-          + "generatedName = " + LegalNames.toJobIntrospectorName(getDomainUid()));
       if (LegalNames.toJobIntrospectorName(getDomainUid()).length()
           > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5) {
         failures.add(DomainValidationMessages.exceedMaxIntrospectorJobName(getDomainUid()));
@@ -706,9 +699,6 @@ public class Domain implements KubernetesObject {
     }
 
     private void checkGeneratedServerServiceName(String serverName) {
-      LOGGER.fine("XXX checkGeneratedServerServiceName: domain UID = " + getDomainUid()
-          + " serverName = " + serverName
-          + "generatedName = " + LegalNames.toServerServiceName(getDomainUid(), serverName));
       if (LegalNames.toServerServiceName(getDomainUid(), serverName).length()
           > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
         failures.add(DomainValidationMessages.exceedMaxServerServiceName(getDomainUid(), serverName));
@@ -716,9 +706,6 @@ public class Domain implements KubernetesObject {
     }
 
     private void checkGeneratedClusterServiceName(String clusterName) {
-      LOGGER.fine("XXX checkGeneratedServerServiceName: domain UID = " + getDomainUid()
-          + " clusterName = " + clusterName
-          + "generatedName = " + LegalNames.toServerServiceName(getDomainUid(), clusterName));
       if (LegalNames.toClusterServiceName(getDomainUid(), clusterName).length()
           > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
         failures.add(DomainValidationMessages.exceedMaxClusterServiceName(getDomainUid(), clusterName));

@@ -15,10 +15,10 @@ import oracle.kubernetes.operator.TuningParameters;
 /** A class to create DNS-1123 legal names for Kubernetes objects. */
 public class LegalNames {
 
-  public static final String EXTERNAL_SERVICE_SUFFIX = "-ext";
+  public static final String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
   private static final String SERVER_PATTERN = "%s-%s";
   private static final String CLUSTER_SERVICE_PATTERN = "%s-cluster-%s";
-  public static final String DOMAIN_INTROSPECTOR_JOB_SUFFIX = "-introspector";
+  public static final String DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX = "-introspector";
   private static final String DOMAIN_INTROSPECTOR_JOB_PATTERN = "%s%s";
   private static final String EXTERNAL_SERVICE_PATTERN = "%s-%s%s";
 

@@ -570,7 +570,7 @@ public class Main {
     public static String getIntrospectorJobNameSuffix() {
       return Optional.ofNullable(tuningAndConfig()
           .get(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM))
-          .orElse(LegalNames.DOMAIN_INTROSPECTOR_JOB_SUFFIX);
+          .orElse(LegalNames.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX);
     }
 
     /**
@@ -580,7 +580,7 @@ public class Main {
     public static String getExternalServiceNameSuffix() {
       return Optional.ofNullable(tuningAndConfig()
           .get(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM))
-          .orElse(LegalNames.EXTERNAL_SERVICE_SUFFIX);
+          .orElse(LegalNames.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
     }
 
     /**
