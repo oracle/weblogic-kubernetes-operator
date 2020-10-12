@@ -3146,4 +3146,8 @@ public class CommonTestUtils {
   public static String getExternalServicePodName(String adminServerPodName) {
     return adminServerPodName + TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
   }
+
+  public static String getIntrospectPodName(String domainUid) {
+    return domainUid + "-" + TestConstants.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX;
+  }
 }

@@ -92,6 +92,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectPodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
@@ -412,7 +413,7 @@ public class ItIntrospectVersion {
 
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    String introspectPodName = getIntrospectPodName(domainUid);
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
 
@@ -548,7 +549,7 @@ public class ItIntrospectVersion {
         "Failed to patch domain with new IntrospectVersion");
 
     //verify the introspector pod is created and runs
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    String introspectPodName = getIntrospectPodName(domainUid);
 
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
@@ -694,7 +695,7 @@ public class ItIntrospectVersion {
         "Failed to patch domain");
 
     //verify the introspector pod is created and runs
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    String introspectPodName = getIntrospectPodName(domainUid);
 
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
@@ -811,7 +812,7 @@ public class ItIntrospectVersion {
         "Failed to patch domain");
 
     //verify the introspector pod is created and runs
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    String introspectPodName = getIntrospectPodName(domainUid);
 
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
