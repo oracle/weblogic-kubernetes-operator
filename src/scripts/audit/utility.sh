@@ -64,9 +64,9 @@ function printReport {
   info "Time Elapsed : $(($duration / 60)) minutes and $(($duration % 60)) seconds."
   rowCount=$(cat "${reportFile}" | wc -l)
   if [ $rowCount -gt 1 ]; then
-    echo "==================================" | tee -a "${logFile}"
-    echo "  Images Running Oracle Products  " | tee -a "${logFile}"
-    echo "==================================" | tee -a "${logFile}"
+    echo "=====================================" | tee -a "${logFile}"
+    echo "  Images Containing Oracle Products  " | tee -a "${logFile}"
+    echo "=====================================" | tee -a "${logFile}"
     cat "${reportFile}" | column -t -s ',' |  tee -a "${logFile}"
   else 
     echo "No matching images found."

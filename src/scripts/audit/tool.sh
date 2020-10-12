@@ -11,9 +11,9 @@ source ${scriptDir}/utility.sh
 function usage {
   echo "usage: ${script} [-i <filename>] [-k <filename>] [-m <container_cli>] [-s] [-w <dirname>] [-d] [-h]"
   echo "  -i File containing list of images to scan in [Repository]:[Tag]@[Hash] format with each image on a separate line."
-  echo "  -k File containing Kubernetes Node information in json format (output of 'kubectl get nodes -o json')."
+  echo "  -k Node information file containing mapping of nodes to images. For Kubernetes use-case, this is the output of 'kubectl get nodes -o json' command."
   echo "  -m Container CLI command e.g. 'docker' or 'podman'. Defaults to 'docker'."
-  echo "  -w Working directory for the generated files. Defaults to './work' dir."
+  echo "  -w Workspace directory, generated files will be stored in this directory. Defaults to './work' dir."
   echo "  -s Silent mode."
   echo "  -d Disable validation check of images that are present in node information file but have not been pulled on current machine."
   echo "  -h Help"
