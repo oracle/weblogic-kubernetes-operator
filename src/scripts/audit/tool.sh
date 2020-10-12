@@ -14,8 +14,8 @@ function usage {
   echo "  -k Node information file containing mapping of nodes to images. For Kubernetes use-case, this is the output of 'kubectl get nodes -o json' command."
   echo "  -m Container CLI command e.g. 'docker' or 'podman'. Defaults to 'docker'."
   echo "  -w Workspace directory, generated files will be stored in this directory. Defaults to './work' dir."
+  echo "  -d Disable validation check of images that are present in the Node information file but have not been pulled on the current machine."
   echo "  -s Silent mode."
-  echo "  -d Disable validation check of images that are present in node information file but have not been pulled on current machine."
   echo "  -h Help"
   exit 1
 }
