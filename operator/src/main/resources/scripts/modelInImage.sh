@@ -554,8 +554,17 @@ function createPrimordialDomain() {
     # decrypt the merged model from introspect cm
     local DECRYPTED_MERGED_MODEL="/tmp/decrypted_merged_model.json"
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+
+    # Maintain backward compatibility - check first 5 bytes to see if it is {AES}
+    # if yes then it is the not a gzipped and encrypted model, just decrypt it
     encrypt_decrypt_model "decrypt" ${INTROSPECTCM_MERGED_MODEL}  ${MII_PASSPHRASE} \
       ${DECRYPTED_MERGED_MODEL}
+
+    if [ "{" != $(head -c 1 ${DECRYPTED_MERGED_MODEL}) ] ; then
+      base64 -d ${DECRYPTED_MERGED_MODEL} > ${DECRYPTED_MERGED_MODEL}.gz
+      rm ${DECRYPTED_MERGED_MODEL}
+      gunzip ${DECRYPTED_MERGED_MODEL}.gz
+    fi
 
     diff_model ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
 
@@ -802,7 +811,9 @@ function wdtUpdateModelDomain() {
   #
   local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
 
-  encrypt_decrypt_model "encrypt" ${DOMAIN_HOME}/wlsdeploy/domain_model.json ${MII_PASSPHRASE} \
+  gzip ${DOMAIN_HOME}/wlsdeploy/domain_model.json
+  base64 ${DOMAIN_HOME}/wlsdeploy/domain_model.json.gz > ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64
+  encrypt_decrypt_model "encrypt" ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 ${MII_PASSPHRASE} \
     ${DOMAIN_HOME}/wlsdeploy/domain_model.json
 
   # restore trap
