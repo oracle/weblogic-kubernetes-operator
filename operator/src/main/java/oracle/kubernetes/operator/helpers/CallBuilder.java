@@ -467,6 +467,10 @@ public class CallBuilder {
     this.helper = helper;
   }
 
+  public CallBuilder(ClientPool pool) {
+    this(getCallBuilderTuning(), pool);
+  }
+
   private static CallBuilderTuning getCallBuilderTuning() {
     return Optional.ofNullable(TuningParameters.getInstance())
         .map(TuningParameters::getCallBuilderTuning)

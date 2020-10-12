@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.rest;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.json.Json;
@@ -21,10 +23,13 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.V1UserInfo;
+import io.kubernetes.client.util.ClientBuilder;
+import io.kubernetes.client.util.credentials.AccessTokenAuthentication;
 import oracle.kubernetes.operator.Main;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
@@ -32,6 +37,7 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -71,10 +77,12 @@ public class RestBackendImpl implements RestBackend {
       };
 
   private final AuthenticationProxy atn = new AuthenticationProxy();
-  private final AuthorizationProxy atz = new AuthorizationProxy();
+  private AuthorizationProxy atz = new AuthorizationProxy();
   private final String principal;
   private final Collection<String> domainNamespaces;
   private V1UserInfo userInfo;
+  private CallBuilder callBuilder;
+  private static Function<String,String> getEnvVariable = System::getenv;
 
   /**
    * Construct a RestBackendImpl that is used to handle one WebLogic operator REST request.
@@ -89,13 +97,40 @@ public class RestBackendImpl implements RestBackend {
   RestBackendImpl(String principal, String accessToken, Collection<String> domainNamespaces) {
     LOGGER.entering(principal, domainNamespaces);
     this.principal = principal;
-    userInfo = authenticate(accessToken);
+    initializeCallBuilder(accessToken);
     this.domainNamespaces = domainNamespaces;
     LOGGER.exiting();
   }
 
+  private void initializeCallBuilder(String accessToken) {
+    if (authenticateWithTokenReview()) {
+      userInfo = authenticate(accessToken);
+      callBuilder = new CallBuilder();
+    } else {
+      ClientPool pool = new ClientPool();
+      pool.setApiClient(createApiClient(accessToken));
+      userInfo = null;
+      callBuilder = new CallBuilder(pool);
+    }
+  }
+
+  private ApiClient createApiClient(String accessToken) {
+    AccessTokenAuthentication authentication = new AccessTokenAuthentication(accessToken);
+    ClientBuilder builder = null;
+    try {
+      builder = ClientBuilder.standard();
+      ApiClient apiClient = builder.setAuthentication(authentication).build();
+      return apiClient;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   private void authorize(String domainUid, Operation operation) {
     LOGGER.entering(domainUid, operation);
+    if (!authenticateWithTokenReview()) {
+      return;
+    }
     boolean authorized;
     if (domainUid == null) {
       authorized =
@@ -181,7 +216,7 @@ public class RestBackendImpl implements RestBackend {
     Collection<List<Domain>> c = new ArrayList<>();
     try {
       for (String ns : domainNamespaces) {
-        DomainList dl = new CallBuilder().listDomain(ns);
+        DomainList dl = callBuilder.listDomain(ns);
 
         if (dl != null) {
           c.add(dl.getItems());
@@ -331,7 +366,7 @@ public class RestBackendImpl implements RestBackend {
 
   private void patchDomain(Domain domain, JsonPatchBuilder patchBuilder) {
     try {
-      new CallBuilder()
+      callBuilder
           .patchDomain(
               domain.getDomainUid(), domain.getMetadata().getNamespace(),
               new V1Patch(patchBuilder.build().toString()));
@@ -415,6 +450,15 @@ public class RestBackendImpl implements RestBackend {
       rb.entity(msg);
     }
     return new WebApplicationException(rb.build());
+  }
+
+  protected boolean authenticateWithTokenReview() {
+    return "true".equalsIgnoreCase(Optional.ofNullable(getEnvVariable.apply("TOKEN_REVIEW_AUTHENTICATION"))
+        .orElse("false"));
+  }
+
+  protected V1UserInfo getUserInfo() {
+    return userInfo;
   }
 
   interface TopologyRetriever {

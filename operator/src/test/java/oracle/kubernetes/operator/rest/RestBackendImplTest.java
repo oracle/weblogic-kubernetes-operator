@@ -3,7 +3,9 @@
 
 package oracle.kubernetes.operator.rest;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -12,12 +14,18 @@ import javax.ws.rs.WebApplicationException;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.auth.ApiKeyAuth;
+import io.kubernetes.client.openapi.auth.Authentication;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.V1UserInfo;
+import oracle.kubernetes.operator.helpers.AuthorizationProxy;
+import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.rest.RestBackendImpl.TopologyRetriever;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
@@ -46,6 +54,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNull;
 
 @SuppressWarnings("SameParameterValue")
 public class RestBackendImplTest {
@@ -326,6 +335,74 @@ public class RestBackendImplTest {
     assertThat(wlsDomainConfig, notNullValue());
   }
 
+  @Test
+  public void verify_initializeCallBuilder_withAccessToken_userInfoIsNull() {
+    RestBackendImpl restBackendImpl = new RestBackendImpl("", "", Collections.singletonList(NS));
+    assertThat(restBackendImpl.getUserInfo(), nullValue());
+  }
+
+  @Test
+  public void verify_initializeCallBuilder_withTokenReview_userInfoNotNull() {
+    RestBackEndStub restBackEndStub = new RestBackEndStub("", "", Collections.singletonList(NS));
+    assertThat(restBackEndStub.getUserInfo(), notNullValue());
+  }
+
+  @Test
+  public void verify_authorizationCheck_notCalled_whenAuthenticateWithTokenReviewIsFalse()
+      throws NoSuchFieldException, IllegalAccessException {
+    RestBackendImpl restBackendImpl = new RestBackendImpl("", "", Collections.singletonList(NS));
+    AuthorizationProxyStub authorizationProxyStub = new AuthorizationProxyStub();
+    Field nameField = restBackendImpl.getClass()
+        .getDeclaredField("atz");
+    nameField.setAccessible(true);
+
+    nameField.set(restBackendImpl, authorizationProxyStub);
+    restBackendImpl.getClusters(NAME1);
+    assertThat(authorizationProxyStub.atzCheck, is(false));
+  }
+
+  @Test
+  public void verify_authorizationCheck_isCalled_whenAuthenticateWithTokenReviewIsTrue()
+      throws NoSuchFieldException, IllegalAccessException {
+    RestBackEndStub restBackEndStub = new RestBackEndStub("", "", Collections.singletonList(NS));
+    AuthorizationProxyStub authorizationProxyStub = new AuthorizationProxyStub();
+    Field nameField = restBackEndStub.getClass()
+        .getSuperclass()
+        .getDeclaredField("atz");
+    nameField.setAccessible(true);
+
+    nameField.set(restBackEndStub, authorizationProxyStub);
+    restBackEndStub.getClusters(NAME1);
+    assertThat(authorizationProxyStub.atzCheck, is(true));
+  }
+
+  @Test
+  public void verify_apiClient_configured_with_AccessTokenAuthentication()
+      throws IllegalAccessException {
+    RestBackendImpl restBackendImpl = new RestBackendImpl("", "1234", Collections.singletonList(NS));
+    CallBuilder callBuilder = getValue(restBackendImpl, "callBuilder");
+    ClientPool pool = getValue(callBuilder, "helper");
+    ApiClient apiClient = pool.take();
+    Authentication authentication = apiClient.getAuthentication("BearerToken");
+    assertThat(authentication instanceof ApiKeyAuth, is(true));
+    String apiKey = ((ApiKeyAuth) authentication).getApiKey();
+    assertThat(apiKey, is("1234"));
+  }
+
+  @Test
+  public void verify_apiClient_configured_whenAuthenticateWithTokenReviewIsTrue()
+      throws IllegalAccessException {
+    RestBackEndStub restBackEndStub = new RestBackEndStub("", "", Collections.singletonList(NS));
+    CallBuilder callBuilder = getValue(restBackEndStub, "callBuilder");
+    ClientPool pool = getValue(callBuilder, "helper");
+    ApiClient apiClient = pool.take();
+    Authentication authentication = apiClient.getAuthentication("BearerToken");
+    assertThat(authentication instanceof ApiKeyAuth, is(true));
+    String apiKey = ((ApiKeyAuth) authentication).getApiKey();
+    assertNull(apiKey);
+  }
+
+
   private DomainConfigurator configureDomain() {
     return configurator;
   }
@@ -334,10 +411,86 @@ public class RestBackendImplTest {
     config = configSupport.createDomainConfig();
   }
 
+  @SuppressWarnings("unchecked")
+  public static <T> T getValue(Object object, String fieldName) throws IllegalAccessException {
+    return (T) getValue(object, getField(object.getClass(), fieldName));
+  }
+
+  private static Object getValue(Object object, Field field) throws IllegalAccessException {
+    boolean wasAccessible = field.isAccessible();
+    try {
+      field.setAccessible(true);
+      return field.get(object);
+    } finally {
+      field.setAccessible(wasAccessible);
+    }
+  }
+
+  private static Field getField(Class<?> aaClass, String fieldName) {
+    assert aaClass != null : "No such field '" + fieldName + "'";
+
+    try {
+      return aaClass.getDeclaredField(fieldName);
+    } catch (NoSuchFieldException e) {
+      return getField(aaClass.getSuperclass(), fieldName);
+    }
+  }
+
   private class TopologyRetrieverStub implements TopologyRetriever {
     @Override
     public WlsDomainConfig getWlsDomainConfig(String ns, String domainUid) {
       return config;
+    }
+  }
+
+  private class RestBackEndStub extends RestBackendImpl {
+
+    /**
+     * Construct a RestBackendImpl that is used to handle one WebLogic operator REST request.
+     *
+     * @param principal        is the name of the Kubernetes user to use when calling the Kubernetes
+     *                         REST api.
+     * @param accessToken      is the access token of the Kubernetes service account of the client
+     *                         calling the WebLogic operator REST api.
+     * @param domainNamespaces a list of Kubernetes namepaces that contain domains that the WebLogic
+     */
+    RestBackEndStub(String principal, String accessToken,
+        Collection<String> domainNamespaces) {
+      super(principal, accessToken, domainNamespaces);
+    }
+
+    protected boolean authenticateWithTokenReview() {
+      return true;
+    }
+  }
+
+  private class AuthorizationProxyStub extends AuthorizationProxy {
+    boolean atzCheck = false;
+
+    /**
+     * Check if the specified principal is allowed to perform the specified operation on the specified
+     * resource in the specified scope.
+     *
+     * @param principal The user, group or service account.
+     * @param groups The groups that principal is a member of.
+     * @param operation The operation to be authorized.
+     * @param resource The kind of resource on which the operation is to be authorized.
+     * @param resourceName The name of the resource instance on which the operation is to be
+     *     authorized.
+     * @param scope The scope of the operation (cluster or namespace).
+     * @param namespaceName name of the namespace if scope is namespace else null.
+     * @return true if the operation is allowed, or false if not.
+     */
+    public boolean check(
+        String principal,
+        final List<String> groups,
+        Operation operation,
+        Resource resource,
+        String resourceName,
+        Scope scope,
+        String namespaceName) {
+      atzCheck = true;
+      return atzCheck;
     }
   }
 }

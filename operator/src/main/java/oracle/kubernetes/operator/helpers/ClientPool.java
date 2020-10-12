@@ -95,6 +95,10 @@ public class ClientPool extends Pool<ApiClient> {
     return client;
   }
 
+  public void setApiClient(ApiClient apiClient) {
+    instance.getAndSet(apiClient);
+  }
+
   private static class DefaultClientFactory implements ClientFactory {
     private final AtomicBoolean first = new AtomicBoolean(true);
 
