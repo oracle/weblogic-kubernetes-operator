@@ -263,5 +263,5 @@ public interface TestConstants {
 
   // default name suffixes
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
-  public String DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX = "introspect-domain-job";
+  public String DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX = "introspector";
 }
