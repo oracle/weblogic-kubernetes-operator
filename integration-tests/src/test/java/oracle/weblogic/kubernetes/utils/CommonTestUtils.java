@@ -3148,6 +3148,6 @@ public class CommonTestUtils {
   }
 
   public static String getIntrospectPodName(String domainUid) {
-    return domainUid + "-" + TestConstants.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX;
+    return domainUid + TestConstants.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX;
   }
 }
