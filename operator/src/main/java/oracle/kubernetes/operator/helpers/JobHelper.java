@@ -362,6 +362,8 @@ public class JobHelper {
 
   private static class DeleteIntrospectorJobStep extends Step {
 
+    public static final int JOB_DELETE_TIMEOUT_SECONDS = 1;
+
     DeleteIntrospectorJobStep(Step next) {
       super(next);
     }
@@ -395,7 +397,7 @@ public class JobHelper {
       java.lang.String namespace = info.getNamespace();
       String jobName = JobHelper.createJobName(domainUid);
       logJobDeleted(domainUid, namespace, jobName, packet);
-      return new CallBuilder()
+      return new CallBuilder().withTimeoutSeconds(JOB_DELETE_TIMEOUT_SECONDS)
             .deleteJobAsync(
                   jobName,
                   namespace,
