@@ -309,9 +309,9 @@ class ItExternalRmiTunneling {
     javasCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
     javasCmd.append(":");
     javasCmd.append(Paths.get(RESULTS_ROOT));
-    // javasCmd.append(" -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true ");
-    // javasCmd.append(" -Djavax.net.debug=all ");
+    javasCmd.append(" -Djavax.net.debug=all ");
     javasCmd.append(" -Djavax.net.ssl.trustStorePassword=password");
+    javasCmd.append(" -Djavax.net.ssl.trustStoreType=jks");
     javasCmd.append(" -Djavax.net.ssl.trustStore=");
     javasCmd.append(jksTrustFile);
     javasCmd.append(" JmsTestClient ");
@@ -390,11 +390,23 @@ class ItExternalRmiTunneling {
   }
 
   private static void createCertKeyFiles(String cn) {
+
+    Map<String, String> sanConfigTemplateMap  = new HashMap();
+    sanConfigTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
+
+    Path srcFile = Paths.get(RESOURCE_DIR, 
+        "tunneling", "san.config.template.txt");
+    Path targetFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcFile.toString(), 
+        "san.config.txt", sanConfigTemplateMap));
+    logger.info("Generated SAN config file {0}", targetFile);
+
     assertDoesNotThrow(() -> {
       tlsKeyFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.key");
       tlsCertFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.cert");
       String command = "openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout " + tlsKeyFile
-          + " -out " + tlsCertFile + " -subj \"/CN=" + cn + "\"";
+          + " -out " + tlsCertFile + " -subj \"/CN=" + cn + "-extensions san"
+          + "-config " + Paths.get(RESULTS_ROOT, "san.config.txt") + "\"";
       logger.info("Executing command: {0}", command);
       ExecCommand.exec(command, true);
     });
