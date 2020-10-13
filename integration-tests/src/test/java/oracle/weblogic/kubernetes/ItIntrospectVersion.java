@@ -906,6 +906,26 @@ public class ItIntrospectVersion {
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
+    // verify the admin server service created
+    checkServiceExists(adminServerPodName, domainNamespace);
+
+    // verify admin server pod is ready
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    // verify new cluster managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
+    }
+
+    // verify cluster managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+    }
+
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
 
