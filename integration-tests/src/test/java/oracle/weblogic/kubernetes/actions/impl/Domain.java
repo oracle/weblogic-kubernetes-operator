@@ -35,6 +35,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.PROJECT_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_API_GROUP;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_API_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_CLUSTER_ROLE;
@@ -507,6 +508,11 @@ public class Domain {
         .command(curlCommand)
         .saveResults(true)
         .redirect(true);
+
+    // copy scalingAction.log to local
+    Kubernetes.copyFileFromPod(domainNamespace, adminServerPodName, null,
+        domainHomeLocation + "/bin/scripts/scalingAction.log",
+        Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log"));
 
     return Command.withParams(params).execute();
   }
