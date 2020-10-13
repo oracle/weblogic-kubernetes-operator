@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -46,9 +47,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_RO
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_ROLE_BINDING_NAME;
 import static oracle.weblogic.kubernetes.actions.impl.ClusterRole.createClusterRole;
 import static oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding.createClusterRoleBinding;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespacedRoleBinding;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRole.clusterRoleExists;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.impl.RoleBinding.roleBindingExists;
@@ -57,6 +56,11 @@ import static org.awaitility.Awaitility.with;
 
 public class Domain {
 
+  public static final ConditionFactory withStandardRetryPolicy =
+      with().pollDelay(10, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(2, MINUTES).await();
+
   /**
    * Create a domain custom resource.
    *
@@ -64,8 +68,7 @@ public class Domain {
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain)
-      throws ApiException {
+  public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain) throws ApiException {
     return Kubernetes.createDomainCustomResource(domain);
   }
 
@@ -275,10 +278,6 @@ public class Domain {
                                                 String opNamespace,
                                                 String opServiceAccount) {
     LoggingFacade logger = getLogger();
-    final ConditionFactory withStandardRetryPolicy =
-        with().pollDelay(10, SECONDS)
-            .and().with().pollInterval(10, SECONDS)
-            .atMost(2, MINUTES).await();
 
     logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
     String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
@@ -374,7 +373,7 @@ public class Domain {
                                              String opServiceAccount,
                                              String myWebAppName,
                                              String curlCommand)
-      throws ApiException, IOException, InterruptedException {
+      throws ApiException {
     LoggingFacade logger = getLogger();
     // create RBAC API objects for WLDF script
     logger.info("Creating RBAC API objects for WLDF script");
@@ -395,67 +394,80 @@ public class Domain {
 
     // create $DOMAIN_HOME/bin/scripts directory on admin server pod
     logger.info("Creating directory {0}/bin/scripts on admin server pod", domainHomeLocation);
-    ExecResult result = exec(adminPod, null, true,
-        "/bin/sh", "-c", "mkdir -p " + domainHomeLocation + "/bin/scripts");
-    if (result.exitValue() != 0) {
-      logger.info("failed to create directory {0}/bin/scripts on admin server pod", domainHomeLocation);
-      return false;
-    }
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Creating directory {0}/bin/scripts on admin server pod, waiting for success"
+                    + " (elapsed time {1}ms, remaining time {2}ms)",
+                domainHomeLocation,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return executeCommandOnPod(adminPod, null, true,
+              "/bin/sh", "-c", "mkdir -p " + domainHomeLocation + "/bin/scripts");
+        });
 
     logger.info("Copying scalingAction.sh to admin server pod");
-    try {
-      copyFileToPod(domainNamespace, adminServerPodName, null,
-          Paths.get(PROJECT_ROOT + "/../src/scripts/scaling/scalingAction.sh"),
-          Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"));
-    } catch (ApiException apex) {
-      logger.severe("Got ApiException while copying file {0} to admin pod {1} in namespace {2}, exception: {3}",
-          PROJECT_ROOT + "/../src/scripts/scaling/scalingAction.sh", adminServerPodName, domainNamespace,
-          apex.getResponseBody());
-      return false;
-    } catch (IOException ioex) {
-      logger.severe("Got IOException while copying file {0} to admin pod {1} in namespace {2}, exception: {3}",
-          PROJECT_ROOT + "/../src/scripts/scaling/scalingAction.sh", adminServerPodName, domainNamespace,
-          ioex.getStackTrace());
-      return false;
-    }
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Copying scalingAction.sh to admin server pod, waiting for success "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return copyFileToPod(domainNamespace, adminServerPodName, null,
+              Paths.get(PROJECT_ROOT + "/../src/scripts/scaling/scalingAction.sh"),
+              Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"));
+        });
 
     logger.info("Adding execute mode for scalingAction.sh");
-    result = exec(adminPod, null, true,
-        "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh");
-    if (result.exitValue() != 0) {
-      logger.info("failed to add execute mode for file {0} in admin server pod {1}",
-          domainHomeLocation + "/bin/scripts/scalingAction.sh", adminServerPodName);
-      return false;
-    }
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Adding execute mode for scalingAction.sh, waiting for success "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return executeCommandOnPod(adminPod, null, true,
+              "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh");
+        });
 
     // copy wldf.py and callpyscript.sh to Admin Server pod
     logger.info("Copying wldf.py and callpyscript.sh to admin server pod");
-    try {
-      copyFileToPod(domainNamespace, adminServerPodName, null,
-          Paths.get(RESOURCE_DIR, "python-scripts", "wldf.py"),
-          Paths.get("/u01/oracle/wldf.py"));
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Copying wldf.py to admin server pod, waiting for success "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return copyFileToPod(domainNamespace, adminServerPodName, null,
+              Paths.get(RESOURCE_DIR, "python-scripts", "wldf.py"),
+              Paths.get("/u01/oracle/wldf.py"));
+        });
 
-      copyFileToPod(domainNamespace, adminServerPodName, null,
-          Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
-          Paths.get("/u01/oracle/callpyscript.sh"));
-    } catch (ApiException apex) {
-      logger.severe("Got ApiException while copying file {0} to admin pod {1} in namespace {2}, exception: {3}",
-          RESOURCE_DIR + "/python-scripts/wldf.py", adminServerPodName, domainNamespace, apex.getResponseBody());
-      return false;
-    } catch (IOException ioex) {
-      logger.severe("Got IOException while copying file {0} to admin pod {1} in namespace {2}, exception: {3}",
-          RESOURCE_DIR + "/python-scripts/wldf.py", adminServerPodName, domainNamespace, ioex.getStackTrace());
-      return false;
-    }
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Copying callpyscript.sh to admin server pod, waiting for success "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return copyFileToPod(domainNamespace, adminServerPodName, null,
+              Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
+              Paths.get("/u01/oracle/callpyscript.sh"));
+        });
 
     logger.info("Adding execute mode for callpyscript.sh");
-    result = exec(adminPod, null, true,
-        "/bin/sh", "-c", "chmod +x /u01/oracle/callpyscript.sh");
-    if (result.exitValue() != 0) {
-      logger.info("failed to add execute mode for file /u01/oracle/callpyscript.sh in admin pod {0}",
-          adminServerPodName);
-      return false;
-    }
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Adding execute mode for callpyscript.sh, waiting for success "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return executeCommandOnPod(adminPod, null, true,
+              "/bin/sh", "-c", "chmod +x /u01/oracle/callpyscript.sh");
+        });
 
     if (!scalingAction.equals("scaleUp") && !scalingAction.equals("scaleDown")) {
       logger.info("Set scaleAction to either scaleUp or scaleDown");
@@ -487,12 +499,16 @@ public class Domain {
         .append(myWebAppName).toString();
 
     logger.info("executing command {0} in admin server pod", command);
-    result = exec(adminPod, null, true, "/bin/sh", "-c", command);
-    // k8s exec api sometimes returns non-zero exit value even on success, so checking for stderr as well
-    if (result.exitValue() != 0 && !result.stderr().isEmpty()) {
-      logger.info("failed to create WLDF policy rule and action");
-      return false;
-    }
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("executing command {0} in admin server pod, waiting for success "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                command,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return executeCommandOnPod(adminPod, null, true, "/bin/sh", "-c", command);
+        });
 
     // sleep for a while to make sure the diagnostic modules are created
     try {
@@ -598,6 +614,72 @@ public class Domain {
         logger.info("failed to create role binding {0} in namespace {1}", roleBindingName, opNamespace);
         return false;
       }
+    }
+
+    return true;
+  }
+
+  /**
+   * Copy a file from local filesystem to Kubernetes pod.
+   * @param namespace namespace of the pod
+   * @param pod name of the pod where the file is copied to
+   * @param container name of the container
+   * @param srcPath source file location
+   * @param destPath destination file location on pod
+   * @return true if no exception thrown, false otherwise
+   */
+  private static boolean copyFileToPod(String namespace, String pod, String container, Path srcPath, Path destPath) {
+
+    try {
+      Kubernetes.copyFileToPod(namespace, pod, container, srcPath, destPath);
+    } catch (ApiException apex) {
+      getLogger().severe("Got ApiException while copying file {0} to pod {1} in namespace {2}, exception: {3}",
+          srcPath, pod, namespace, apex.getResponseBody());
+      return false;
+    } catch (IOException ioex) {
+      getLogger().severe("Got IOException while copying file {0} to pod {1} in namespace {2}, exception: {3}",
+          srcPath, pod, namespace, ioex.getStackTrace());
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Execute a command in a container.
+   *
+   * @param pod The pod where the command is to be run
+   * @param containerName The container in the Pod where the command is to be run. If no
+   *     container name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy process output to stdout
+   * @param command The command to run
+   * @return true if no exception thrown and the exit value is 0 or stderr is empty, false otherwise
+   */
+  private static boolean executeCommandOnPod(V1Pod pod,
+                                             String containerName,
+                                             boolean redirectToStdout,
+                                             String... command) {
+    ExecResult result;
+    try {
+      result = Kubernetes.exec(pod, containerName, redirectToStdout, command);
+    } catch (IOException ioex) {
+      getLogger().severe("Got IOException while executing command {0} in pod {1}, exception: {2}",
+          command, pod, ioex.getStackTrace());
+      return false;
+    } catch (ApiException apiex) {
+      getLogger().severe("Got ApiException while executing command {0} in pod {1}, exception: {2}",
+          command, pod, apiex.getResponseBody());
+      return false;
+    } catch (InterruptedException interruptedex) {
+      getLogger().severe("Got InterruptedException while executing command {0} in pod {1}, exception: {2}",
+          command, pod, interruptedex.getMessage());
+      return false;
+    }
+
+    if (result.exitValue() != 0 && !result.stderr().isEmpty()) {
+      getLogger().info("failed to execute command {0} in pod {1}, exit value: {2}, stderr: {3}",
+          command, pod, result.exitValue(), result.stderr());
+      return false;
     }
 
     return true;
