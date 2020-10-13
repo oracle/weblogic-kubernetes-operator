@@ -526,9 +526,18 @@ public class Domain {
         .redirect(true);
 
     // copy scalingAction.log to local
-    Kubernetes.copyFileFromPod(domainNamespace, adminServerPodName, null,
-        domainHomeLocation + "/bin/scripts/scalingAction.log",
-        Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log"));
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("executing command {0} in admin server pod, waiting for success "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                command,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return copyFileFromPod(domainNamespace, adminServerPodName, null,
+              domainHomeLocation + "/bin/scripts/scalingAction.log",
+              Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log"));
+        });
 
     return Command.withParams(params).execute();
   }
@@ -688,6 +697,33 @@ public class Domain {
       return false;
     }
 
+    return true;
+  }
+
+  /**
+   * Copy a file from Kubernetes pod to local filesystem.
+   * @param namespace namespace of the pod
+   * @param pod name of the pod where the file is copied to
+   * @param container name of the container
+   * @param srcPath source file location
+   * @param destPath destination file location on pod
+   * @return true if no exception thrown, false otherwise
+   */
+  private static boolean copyFileFromPod(String namespace,
+                                         String pod,
+                                         String container,
+                                         String srcPath,
+                                         Path destPath) {
+    try {
+      Kubernetes.copyFileFromPod(namespace, pod, container, srcPath, destPath);
+    } catch (IOException ioex) {
+      getLogger().severe("Got IOException while copying file {0} from pod {1} in namespace {2}, exception: {3}",
+          srcPath, pod, namespace, ioex.getStackTrace());
+    } catch (ApiException apiex) {
+      getLogger().severe("Got ApiException while copying file {0} from pod {1} in namespace {2}, exception: {3}",
+          srcPath, pod, namespace, apiex.getResponseBody());
+      return false;
+    }
     return true;
   }
 }
