@@ -396,8 +396,9 @@ public class Domain {
     logger.info("Creating directory {0}/bin/scripts on admin server pod", domainHomeLocation);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Calling curl command, waiting for success "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
+            condition -> logger.info("Creating directory {0}/bin/scripts on admin server pod, waiting for success"
+                    + " (elapsed time {1}ms, remaining time {2}ms)",
+                domainHomeLocation,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(() -> {
@@ -408,7 +409,7 @@ public class Domain {
     logger.info("Copying scalingAction.sh to admin server pod");
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Calling curl command, waiting for success "
+            condition -> logger.info("Copying scalingAction.sh to admin server pod, waiting for success "
                     + "(elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
@@ -421,7 +422,7 @@ public class Domain {
     logger.info("Adding execute mode for scalingAction.sh");
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Calling curl command, waiting for success "
+            condition -> logger.info("Adding execute mode for scalingAction.sh, waiting for success "
                     + "(elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
@@ -434,7 +435,7 @@ public class Domain {
     logger.info("Copying wldf.py and callpyscript.sh to admin server pod");
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Calling curl command, waiting for success "
+            condition -> logger.info("Copying wldf.py to admin server pod, waiting for success "
                     + "(elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
@@ -446,7 +447,7 @@ public class Domain {
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Calling curl command, waiting for success "
+            condition -> logger.info("Copying callpyscript.sh to admin server pod, waiting for success "
                     + "(elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
@@ -459,7 +460,7 @@ public class Domain {
     logger.info("Adding execute mode for callpyscript.sh");
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Calling curl command, waiting for success "
+            condition -> logger.info("Adding execute mode for callpyscript.sh, waiting for success "
                     + "(elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
@@ -500,8 +501,9 @@ public class Domain {
     logger.info("executing command {0} in admin server pod", command);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Calling curl command, waiting for success "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
+            condition -> logger.info("executing command {0} in admin server pod, waiting for success "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                command,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(() -> {
@@ -617,6 +619,15 @@ public class Domain {
     return true;
   }
 
+  /**
+   * Copy a file from local filesystem to Kubernetes pod.
+   * @param namespace namespace of the pod
+   * @param pod name of the pod where the file is copied to
+   * @param container name of the container
+   * @param srcPath source file location
+   * @param destPath destination file location on pod
+   * @return true if no exception thrown, false otherwise
+   */
   private static boolean copyFileToPod(String namespace, String pod, String container, Path srcPath, Path destPath) {
 
     try {
@@ -634,6 +645,16 @@ public class Domain {
     return true;
   }
 
+  /**
+   * Execute a command in a container.
+   *
+   * @param pod The pod where the command is to be run
+   * @param containerName The container in the Pod where the command is to be run. If no
+   *     container name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy process output to stdout
+   * @param command The command to run
+   * @return true if no exception thrown and the exit value is 0 or stderr is empty, false otherwise
+   */
   private static boolean executeCommandOnPod(V1Pod pod,
                                              String containerName,
                                              boolean redirectToStdout,
