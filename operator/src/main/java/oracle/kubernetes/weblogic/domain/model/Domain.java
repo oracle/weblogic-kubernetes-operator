@@ -662,7 +662,10 @@ public class Domain implements KubernetesObject {
       // K8S adds a 5 character suffix to an introspector job name
       if (LegalNames.toJobIntrospectorName(getDomainUid()).length()
           > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5) {
-        failures.add(DomainValidationMessages.exceedMaxIntrospectorJobName(getDomainUid()));
+        failures.add(DomainValidationMessages.exceedMaxIntrospectorJobName(
+            getDomainUid(),
+            LegalNames.toJobIntrospectorName(getDomainUid()),
+            LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5));
       }
     }
 
@@ -694,21 +697,33 @@ public class Domain implements KubernetesObject {
     private void checkGeneratedExternalServiceName(String adminServerName) {
       if (LegalNames.toExternalServiceName(getDomainUid(), adminServerName).length()
           > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
-        failures.add(DomainValidationMessages.exceedMaxExternalServiceName(getDomainUid(), adminServerName));
+        failures.add(DomainValidationMessages.exceedMaxExternalServiceName(
+            getDomainUid(),
+            adminServerName,
+            LegalNames.toExternalServiceName(getDomainUid(), adminServerName),
+            LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH));
       }
     }
 
     private void checkGeneratedServerServiceName(String serverName) {
       if (LegalNames.toServerServiceName(getDomainUid(), serverName).length()
           > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
-        failures.add(DomainValidationMessages.exceedMaxServerServiceName(getDomainUid(), serverName));
+        failures.add(DomainValidationMessages.exceedMaxServerServiceName(
+            getDomainUid(),
+            serverName,
+            LegalNames.toServerServiceName(getDomainUid(), serverName),
+            LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH));
       }
     }
 
     private void checkGeneratedClusterServiceName(String clusterName) {
       if (LegalNames.toClusterServiceName(getDomainUid(), clusterName).length()
           > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
-        failures.add(DomainValidationMessages.exceedMaxClusterServiceName(getDomainUid(), clusterName));
+        failures.add(DomainValidationMessages.exceedMaxClusterServiceName(
+            getDomainUid(),
+            clusterName,
+            LegalNames.toClusterServiceName(getDomainUid(), clusterName),
+            LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH));
       }
     }
 

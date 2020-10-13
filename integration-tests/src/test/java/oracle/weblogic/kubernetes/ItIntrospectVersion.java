@@ -92,7 +92,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectPodName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
@@ -413,9 +413,9 @@ public class ItIntrospectVersion {
 
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectPodName = getIntrospectPodName(domainUid);
-    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
 
     //verify the maximum cluster size is updated to expected value
     withStandardRetryPolicy.conditionEvaluationListener(new ConditionEvaluationListener() {
@@ -549,10 +549,10 @@ public class ItIntrospectVersion {
         "Failed to patch domain with new IntrospectVersion");
 
     //verify the introspector pod is created and runs
-    String introspectPodName = getIntrospectPodName(domainUid);
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
 
-    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
 
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
@@ -695,10 +695,10 @@ public class ItIntrospectVersion {
         "Failed to patch domain");
 
     //verify the introspector pod is created and runs
-    String introspectPodName = getIntrospectPodName(domainUid);
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
 
-    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
 
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
@@ -812,10 +812,10 @@ public class ItIntrospectVersion {
         "Failed to patch domain");
 
     //verify the introspector pod is created and runs
-    String introspectPodName = getIntrospectPodName(domainUid);
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
 
-    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
 
     // verify new cluster managed server services created
     for (int i = 1; i <= replicaCount; i++) {
