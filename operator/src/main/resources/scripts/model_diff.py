@@ -387,9 +387,11 @@ class ModelDiffer:
 
         _TOPOLOGY = 'topology'
         _NAP = 'NetworkAccessPoint'
-        forbidden_network_attributes = [ 'ListenAddress', 'ListenPort' ]
+        _SSL = 'SSL'
+        forbidden_network_attributes = [ 'ListenAddress', 'ListenPort', 'ListenPortEnabled' ]
         if model.has_key(_TOPOLOGY):
             for key in [ 'Server', 'ServerTemplate']:
+                # topology.Server|ServerTemplate
                 if model[_TOPOLOGY].has_key[key]:
                     temp = model[_TOPOLOGY][key]
                     for server in temp:
@@ -402,6 +404,9 @@ class ModelDiffer:
                                 for not_this in forbidden_network_attributes:
                                     if server.has_key(not_this):
                                         return 1
+                        # Do not allow any SSL changes
+                        if server.has_key(_SSL):
+                            return 1
 
         return 0
 
