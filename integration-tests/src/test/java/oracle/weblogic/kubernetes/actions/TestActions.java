@@ -349,7 +349,7 @@ public class TestActions {
                                              String opServiceAccount,
                                              String myWebAppName,
                                              String curlCommand)
-      throws ApiException, IOException, InterruptedException {
+      throws ApiException {
     return Domain.scaleClusterWithWLDF(clusterName, domainUid, domainNamespace, domainHomeLocation, scalingAction,
         scalingSize, opNamespace, opServiceAccount, myWebAppName, curlCommand);
   }
