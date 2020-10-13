@@ -309,7 +309,7 @@ class ItExternalRmiTunneling {
     javasCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
     javasCmd.append(":");
     javasCmd.append(Paths.get(RESULTS_ROOT));
-    javasCmd.append(" -Djavax.net.debug=all ");
+    // javasCmd.append(" -Djavax.net.debug=all ");
     javasCmd.append(" -Djavax.net.ssl.trustStorePassword=password");
     javasCmd.append(" -Djavax.net.ssl.trustStoreType=jks");
     javasCmd.append(" -Djavax.net.ssl.trustStore=");
@@ -405,8 +405,8 @@ class ItExternalRmiTunneling {
       tlsKeyFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.key");
       tlsCertFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.cert");
       String command = "openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout " + tlsKeyFile
-          + " -out " + tlsCertFile + " -subj \"/CN=" + cn + "-extensions san"
-          + "-config " + Paths.get(RESULTS_ROOT, "san.config.txt") + "\"";
+          + " -out " + tlsCertFile + " -subj \"/CN=" + cn + "\" -extensions san"
+          + " -config " + Paths.get(RESULTS_ROOT, "san.config.txt");
       logger.info("Executing command: {0}", command);
       ExecCommand.exec(command, true);
     });
