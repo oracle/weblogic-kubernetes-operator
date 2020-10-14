@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -56,11 +57,11 @@ public class ItSamples {
   private static String domainName = "domain1";
   private static String weblogicCredentialsSecretName = "domain1-weblogic-credentials";
 
-  private Path samplePath = Paths.get(ITTESTS_DIR + "kubernates/samples");
+  private Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
 
-  String pvName = "weblogic-sample-pv";
-  String pvcName = "weblogic-sample-pvc";
+  String pvName = domainName + "weblogic-sample-pv";
+  String pvcName = domainName + "weblogic-sample-pvc";
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -110,7 +111,7 @@ public class ItSamples {
   private void createPvPvc() {
 
     Path pvpvcBase = Paths.get(tempSamplePath.toString(),
-        "samples/scripts/create-weblogic-domain-pv-pvc");
+        "scripts/create-weblogic-domain-pv-pvc");
 
     // create pv and pvc
     assertDoesNotThrow(() -> {
@@ -127,11 +128,14 @@ public class ItSamples {
           "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + pvHostPath);
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "namespace: default", "namespace: " + domainNamespace);
+      replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+          "baseName: weblogic-sample", "baseName: " + domainName + "-weblogic-sample");
     });
 
     // generate the create-pv-pvc-inputs.yaml
     CommandParams params = new CommandParams().defaults();
-    params.command(Paths.get(pvpvcBase.toString(), "create-pv-pvc.sh").toString()
+    params.command("sh "
+        + Paths.get(pvpvcBase.toString(), "create-pv-pvc.sh").toString()
         + " -i " + Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString()
         + " -o "
         + Paths.get(pvpvcBase.toString()));
@@ -141,7 +145,8 @@ public class ItSamples {
 
     //create pv and pvc
     params = new CommandParams().defaults();
-    params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(), "weblogic-sample-pv.yaml").toString());
+    params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
+        "pv-pvcs/weblogic-sample-pv.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pv");
 
@@ -157,7 +162,8 @@ public class ItSamples {
                 pvName)));
 
     params = new CommandParams().defaults();
-    params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(), "weblogic-sample-pvc.yaml").toString());
+    params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
+        "pv-pvcs/weblogic-sample-pvc.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pvc");
 
@@ -179,17 +185,29 @@ public class ItSamples {
   @DisplayName("Test sample domain in pv")
   public void testSampleDomainInPv() {
 
+    setupSample();
+    createPvPvc();
+
+    Path sampleBase = Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
+
+    // change namespace from default to custom
+    assertDoesNotThrow(() -> {
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "namespace: default", "namespace: " + domainNamespace);
+    });
+
     // run create-domain.sh to create domain.yaml file
-    Path sampleBase = Paths.get(tempSamplePath.toString(), "samples/create-weblogic-domain/domain-home-on-pv");
     CommandParams params = new CommandParams().defaults();
-    params.command(
-        Paths.get(sampleBase.toString(), "create-domain.sh").toString()
+    params.command("sh "
+        + Paths.get(sampleBase.toString(), "create-domain.sh").toString()
         + " -i " + Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
         + " -o "
         + Paths.get(sampleBase.toString()));
 
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
+
+
 
     // run kubectl to create the domain
     params = new CommandParams().defaults();
@@ -248,5 +266,6 @@ public class ItSamples {
    */
   @AfterAll
   public void tearDownAll() {
+    TestActions.deletePersistentVolume(pvName);
   }
 }
