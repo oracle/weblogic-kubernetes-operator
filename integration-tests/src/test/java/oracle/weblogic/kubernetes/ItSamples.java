@@ -222,10 +222,8 @@ public class ItSamples {
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainName + "-" + adminServerName;
 
-    final String managedServerNameBase = "ms-";
+    final String managedServerNameBase = "managed-server-";
     String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
-    final int managedServerPort = 8001;
-
     int replicaCount = 2;
 
     // wait for the domain to exist
