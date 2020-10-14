@@ -64,7 +64,7 @@ public class RestBackendImpl implements RestBackend {
       "{'clusterName':'%s','replicas':%d}".replaceAll("'", "\"");
   private static final String NEW_CLUSTER_RESTART =
       "{'clusterName':'%s','restartVersion':'1'}".replaceAll("'", "\"");
-  public static final String INITIAL_VERSION = "1";
+  private static final String INITIAL_VERSION = "1";
 
   @SuppressWarnings("FieldMayBeFinal") // used by unit test
   private static TopologyRetriever INSTANCE =
@@ -115,12 +115,10 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private ApiClient createApiClient(String accessToken) {
-    AccessTokenAuthentication authentication = new AccessTokenAuthentication(accessToken);
-    ClientBuilder builder = null;
     try {
-      builder = ClientBuilder.standard();
-      ApiClient apiClient = builder.setAuthentication(authentication).build();
-      return apiClient;
+      ClientBuilder builder = ClientBuilder.standard();
+      return builder.setAuthentication(
+          new AccessTokenAuthentication(accessToken)).build();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -457,7 +455,7 @@ public class RestBackendImpl implements RestBackend {
         .orElse("false"));
   }
 
-  protected V1UserInfo getUserInfo() {
+  V1UserInfo getUserInfo() {
     return userInfo;
   }
 
