@@ -547,7 +547,7 @@ class ItStickySession {
         + "from the second HTTP connection", serverName2, sessionId2, count);
 
     // verify that two HTTP connections are sticky to the same server
-    assertAll("Check that teh sticky session is supported",
+    assertAll("Check that the sticky session is supported",
         () -> assertEquals(serverName1, serverName2,
           "HTTP connections should be sticky to the server " + serverName1),
         () -> assertEquals(sessionId1, sessionId2,
