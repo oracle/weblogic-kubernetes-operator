@@ -528,9 +528,8 @@ public class Domain {
     // copy scalingAction.log to local
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("executing command {0} in admin server pod, waiting for success "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                command,
+            condition -> logger.info("Copying scalingAction.log from admin server pod, waiting for success "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(() -> {
