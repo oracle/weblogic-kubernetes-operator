@@ -250,7 +250,7 @@ public class ItSamples {
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, domainName);
+      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
     }
 
     // verify managed server pods are ready
