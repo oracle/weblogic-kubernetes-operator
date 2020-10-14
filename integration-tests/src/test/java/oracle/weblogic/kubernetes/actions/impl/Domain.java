@@ -714,6 +714,7 @@ public class Domain {
                                          String srcPath,
                                          Path destPath) {
     try {
+      getLogger().info("Copy file {0} from pod {1} in namespace {2} to {3}", srcPath, pod, namespace, destPath);
       Kubernetes.copyFileFromPod(namespace, pod, container, srcPath, destPath);
     } catch (IOException ioex) {
       getLogger().severe("Got IOException while copying file {0} from pod {1} in namespace {2}, exception: {3}",
