@@ -130,6 +130,8 @@ public class ItSamples {
           "namespace: default", "namespace: " + domainNamespace);
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "baseName: weblogic-sample", "baseName: " + domainName + "-weblogic-sample");
+      replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+          "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
     });
 
     // generate the create-pv-pvc-inputs.yaml
