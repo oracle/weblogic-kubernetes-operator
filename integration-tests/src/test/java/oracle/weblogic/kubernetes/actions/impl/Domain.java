@@ -27,6 +27,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.FileUtils;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -48,6 +49,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_RO
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_ROLE_BINDING_NAME;
 import static oracle.weblogic.kubernetes.actions.impl.ClusterRole.createClusterRole;
 import static oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding.createClusterRoleBinding;
+import static oracle.weblogic.kubernetes.actions.impl.Exec.exec;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespacedRoleBinding;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRole.clusterRoleExists;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clusterRoleBindingExists;
@@ -645,7 +647,7 @@ public class Domain {
   private static boolean copyFileToPod(String namespace, String pod, String container, Path srcPath, Path destPath) {
 
     try {
-      Kubernetes.copyFileToPod(namespace, pod, container, srcPath, destPath);
+      FileUtils.copyFileToPod(namespace, pod, container, srcPath, destPath);
     } catch (ApiException apex) {
       getLogger().severe("Got ApiException while copying file {0} to pod {1} in namespace {2}, exception: {3}",
           srcPath, pod, namespace, apex.getResponseBody());
@@ -675,7 +677,7 @@ public class Domain {
                                              String... command) {
     ExecResult result;
     try {
-      result = Kubernetes.exec(pod, containerName, redirectToStdout, command);
+      result = exec(pod, containerName, redirectToStdout, command);
     } catch (IOException ioex) {
       getLogger().severe("Got IOException while executing command {0} in pod {1}, exception: {2}",
           command, pod, ioex.getStackTrace());
@@ -715,7 +717,7 @@ public class Domain {
                                          Path destPath) {
     try {
       getLogger().info("Copy file {0} from pod {1} in namespace {2} to {3}", srcPath, pod, namespace, destPath);
-      Kubernetes.copyFileFromPod(namespace, pod, container, srcPath, destPath);
+      FileUtils.copyFileFromPod(namespace, pod, container, srcPath, destPath);
     } catch (IOException ioex) {
       getLogger().severe("Got IOException while copying file {0} from pod {1} in namespace {2}, exception: {3}",
           srcPath, pod, namespace, ioex.getStackTrace());
