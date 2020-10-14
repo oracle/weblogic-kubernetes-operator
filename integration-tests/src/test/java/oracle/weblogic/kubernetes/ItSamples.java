@@ -60,8 +60,8 @@ public class ItSamples {
   private Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
 
-  String pvName = domainName + "weblogic-sample-pv";
-  String pvcName = domainName + "weblogic-sample-pvc";
+  String pvName = domainName + "-weblogic-sample-pv";
+  String pvcName = domainName + "-weblogic-sample-pvc";
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
