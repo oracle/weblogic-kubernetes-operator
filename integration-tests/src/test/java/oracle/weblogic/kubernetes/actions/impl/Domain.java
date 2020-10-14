@@ -534,6 +534,7 @@ public class Domain {
               .addResourcesItem("domains")
               .addVerbsItem("get")
               .addVerbsItem("list")
+              .addVerbsItem("patch")
               .addVerbsItem("update"))
           .addRulesItem(new V1PolicyRule()
               .addApiGroupsItem("apiextensions.k8s.io")
