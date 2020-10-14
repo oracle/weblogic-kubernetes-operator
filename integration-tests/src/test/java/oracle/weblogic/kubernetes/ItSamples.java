@@ -224,7 +224,7 @@ public class ItSamples {
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainName + "-" + adminServerName;
 
-    final String managedServerNameBase = "managed-server-";
+    final String managedServerNameBase = "managed-server";
     String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
     int replicaCount = 2;
 
