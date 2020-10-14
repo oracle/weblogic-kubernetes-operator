@@ -13,7 +13,9 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1EventList;
+import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -39,14 +41,16 @@ class NamespacedResources {
     this.domainUid = domainUid;
   }
 
-  void addProcessor(Processors processor) {
+  void addProcessing(Processors processor) {
     processors.add(processor);
   }
 
   Step createListSteps() {
     return Step.chain(
           getScriptConfigMapSteps(),
+          getConfigMapListSteps(),
           getEventListSteps(),
+          getJobListSteps(),
           getPodListSteps(),
           getServiceListSteps(),
           getDomainListSteps(),
@@ -67,9 +71,23 @@ class NamespacedResources {
     }
 
     /**
+     * Return the processing to be performed on a list of config maps found in Kubernetes. May be null.
+     */
+    Consumer<V1ConfigMapList> getConfigMapListProcessing() {
+      return null;
+    }
+
+    /**
      * Return the processing to be performed on a list of events found in Kubernetes. May be null.
      */
     Consumer<V1EventList> getEventListProcessing() {
+      return null;
+    }
+
+    /**
+     * Return the processing to be performed on a list of jobs found in Kubernetes. May be null.
+     */
+    Consumer<V1JobList> getJobListProcessing() {
       return null;
     }
 
@@ -113,6 +131,15 @@ class NamespacedResources {
     );
   }
 
+  private Step getConfigMapListSteps() {
+    return getListProcessing(Processors::getConfigMapListProcessing).map(this::createConfigMapListStep).orElse(null);
+  }
+
+  private Step createConfigMapListStep(List<Consumer<V1ConfigMapList>> processing) {
+    return new CallBuilder()
+             .listConfigMapsAsync(namespace, new ListResponseStep<>(processing));
+  }
+
   private Step getEventListSteps() {
     return getListProcessing(Processors::getEventListProcessing).map(this::createEventListStep).orElse(null);
   }
@@ -121,6 +148,14 @@ class NamespacedResources {
     return new CallBuilder()
             .withFieldSelector(ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER)
             .listEventAsync(namespace, new ListResponseStep<>(processing));
+  }
+
+  private Step getJobListSteps() {
+    return getListProcessing(Processors::getJobListProcessing).map(this::createJobListStep).orElse(null);
+  }
+
+  private Step createJobListStep(List<Consumer<V1JobList>> processing) {
+    return createSubResourceCallBuilder().listJobAsync(namespace, new ListResponseStep<>(processing));
   }
 
   private Step getPodListSteps() {

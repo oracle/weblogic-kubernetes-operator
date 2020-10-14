@@ -99,8 +99,8 @@ public class MainTest extends ThreadFactoryTestBase {
     mementos.add(StaticStubSupport.install(Main.class, "version", new KubernetesVersion(1, 16)));
     mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "INSTANCE", this));
     mementos.add(StaticStubSupport.install(Main.class, "engine", testSupport.getEngine()));
-    mementos.add(StaticStubSupport.install(Main.class, NAMESPACE_STATUS_MAP, createNamespaceStatuses()));
-    mementos.add(StaticStubSupport.install(Main.class, NAMESPACE_STOPPING_MAP, createNamespaceFlags()));
+    mementos.add(StaticStubSupport.install(DomainNamespaces.class, NAMESPACE_STATUS_MAP, createNamespaceStatuses()));
+    mementos.add(StaticStubSupport.install(DomainNamespaces.class, NAMESPACE_STOPPING_MAP, createNamespaceFlags()));
     mementos.add(NoopWatcherStarter.install());
   }
 
@@ -116,7 +116,7 @@ public class MainTest extends ThreadFactoryTestBase {
   @SuppressWarnings("unchecked")
   private Map<String, NamespaceStatus> getNamespaceStatusMap()
           throws NoSuchFieldException, IllegalAccessException {
-    Field field = Main.class.getDeclaredField(NAMESPACE_STATUS_MAP);
+    Field field = DomainNamespaces.class.getDeclaredField(NAMESPACE_STATUS_MAP);
     field.setAccessible(true);
     return (Map<String, NamespaceStatus>) field.get(null);
   }
@@ -300,13 +300,17 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void afterReadingExistingResourcesForNamespace_WatcheraAreDefined() {
+  public void afterReadingExistingResourcesForNamespace_WatchersAreDefined() {
     testSupport.runSteps(main.readExistingResources(NS));
 
-    assertThat(main.getConfigMapWatcher(NS), notNullValue());
-    assertThat(main.getDomainWatcher(NS), notNullValue());
-    assertThat(main.getEventWatcher(NS), notNullValue());
-    assertThat(main.getPodWatcher(NS), notNullValue());
-    assertThat(main.getServiceWatcher(NS), notNullValue());
+    assertThat(DomainNamespaces.getConfigMapWatcher(NS), notNullValue());
+    assertThat(DomainNamespaces.getDomainWatcher(NS), notNullValue());
+    assertThat(DomainNamespaces.getEventWatcher(NS), notNullValue());
+    assertThat(DomainNamespaces.getPodWatcher(NS), notNullValue());
+    assertThat(DomainNamespaces.getServiceWatcher(NS), notNullValue());
   }
+
+
+  // after reading existing resources, script config map is defined
+  // when namespace added, resources defined, config map is defined and watchers are started (?)
 }

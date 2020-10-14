@@ -1005,7 +1005,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private Step getRecordExistingResourcesSteps() {
       NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid());
 
-      resources.addProcessor(new NamespacedResources.Processors() {
+      resources.addProcessing(new NamespacedResources.Processors() {
         @Override
         Consumer<V1PodList> getPodListProcessing() {
           return list -> list.getItems().forEach(this::addPod);
