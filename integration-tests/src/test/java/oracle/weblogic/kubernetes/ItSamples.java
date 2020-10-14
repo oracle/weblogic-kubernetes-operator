@@ -264,6 +264,7 @@ public class ItSamples {
    */
   @AfterAll
   public void tearDownAll() {
+    TestActions.deletePersistentVolumeClaim(pvcName, domainNamespace);
     TestActions.deletePersistentVolume(pvName);
   }
 }
