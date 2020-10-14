@@ -74,7 +74,7 @@ public class DomainNamespaces {
   }
 
   /**
-   * Stop the specified namespace. and discard its allocated resources.
+   * Stop the specified namespace and discard its in-memory resources.
    * @param ns a namespace name
    */
   static void stopNamespace(String ns) {
@@ -144,26 +144,24 @@ public class DomainNamespaces {
           AtomicBoolean stopping);
   }
 
-  interface Dispatcher<T> extends Function<DomainProcessor, WatchListener<T>> {
-  }
+  interface ListenerSelector<T> extends Function<DomainProcessor, WatchListener<T>> { }
 
   static class WatcherControl<T, W extends Watcher<T>> {
-    private final Map<String, W> watchers;
+    private final Map<String, W> watchers = new ConcurrentHashMap<>();
     private final WatcherFactory<T,W> factory;
-    private final Dispatcher<T> dispatcher;
+    private final ListenerSelector<T> selector;
 
-    public WatcherControl(WatcherFactory<T, W> factory, Dispatcher<T> dispatcher) {
-      this.watchers = new ConcurrentHashMap<>();
+    public WatcherControl(WatcherFactory<T, W> factory, ListenerSelector<T> selector) {
       this.factory = factory;
-      this.dispatcher = dispatcher;
+      this.selector = selector;
     }
 
-    void startWatcher(String namespace, String initialResourceVersion, DomainProcessor processor) {
-      watchers.computeIfAbsent(namespace, n -> createWatcher(n, initialResourceVersion, dispatcher.apply(processor)));
+    void startWatcher(String namespace, String resourceVersion, DomainProcessor domainProcessor) {
+      watchers.computeIfAbsent(namespace, n -> createWatcher(n, resourceVersion, selector.apply(domainProcessor)));
     }
 
-    W createWatcher(String ns, String resourceVersion, WatchListener<T> dispatcher) {
-      return factory.create(getThreadFactory(), ns, resourceVersion, getWatchTuning(), dispatcher, isStopping(ns));
+    W createWatcher(String ns, String resourceVersion, WatchListener<T> listener) {
+      return factory.create(getThreadFactory(), ns, resourceVersion, getWatchTuning(), listener, isStopping(ns));
     }
 
     W getWatcher(String ns) {
@@ -175,47 +173,47 @@ public class DomainNamespaces {
     }
   }
 
-  static NamespacedResources.Processors createWatcherStartupProcessing(String ns, DomainProcessor processor) {
-    return new WatcherStartupProcessing(ns, processor);
+  static NamespacedResources.Processors createWatcherStartupProcessing(String ns, DomainProcessor domainProcessor) {
+    return new WatcherStartupProcessing(ns, domainProcessor);
   }
 
   static class WatcherStartupProcessing extends NamespacedResources.Processors {
     private final String ns;
-    private final DomainProcessor processor;
+    private final DomainProcessor domainProcessor;
 
-    WatcherStartupProcessing(String ns, DomainProcessor processor) {
+    WatcherStartupProcessing(String ns, DomainProcessor domainProcessor) {
       this.ns = ns;
-      this.processor = processor;
+      this.domainProcessor = domainProcessor;
     }
 
     @Override
     Consumer<V1ConfigMapList> getConfigMapListProcessing() {
-      return l -> configMapWatchers.startWatcher(ns, getResourceVersion(l), processor);
+      return l -> configMapWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
     Consumer<V1EventList> getEventListProcessing() {
-      return l -> eventWatchers.startWatcher(ns, getResourceVersion(l), processor);
+      return l -> eventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
     Consumer<V1JobList> getJobListProcessing() {
-      return l -> jobWatchers.startWatcher(ns, getResourceVersion(l), processor);
+      return l -> jobWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
     Consumer<V1PodList> getPodListProcessing() {
-      return l -> podWatchers.startWatcher(ns, getResourceVersion(l), processor);
+      return l -> podWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
     Consumer<V1ServiceList> getServiceListProcessing() {
-      return l -> serviceWatchers.startWatcher(ns, getResourceVersion(l), processor);
+      return l -> serviceWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
     Consumer<DomainList> getDomainListProcessing() {
-      return l -> domainWatchers.startWatcher(ns, getResourceVersion(l), processor);
+      return l -> domainWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
   }
 }
