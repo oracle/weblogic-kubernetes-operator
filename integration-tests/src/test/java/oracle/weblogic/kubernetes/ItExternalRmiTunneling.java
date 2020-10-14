@@ -408,12 +408,15 @@ class ItExternalRmiTunneling {
           + " -out " + tlsCertFile + " -subj \"/CN=" + cn + "\" -extensions san"
           + " -config " + Paths.get(RESULTS_ROOT, "san.config.txt");
       logger.info("Executing command: {0}", command);
-      ExecCommand.exec(command, true);
+      ExecResult result = ExecCommand.exec(command, true);
+      logger.info("openssl command  returned {0}", result.toString());
     });
+
     assertDoesNotThrow(() -> {
       String command2 = "openssl x509 -in " + tlsCertFile + " -noout -text ";
       logger.info("Executing command: {0}", command2);
-      ExecCommand.exec(command2, true);
+      ExecResult result = ExecCommand.exec(command2, true);
+      logger.info("openssl list command  returned {0}", result.toString());
     });
   }
 
