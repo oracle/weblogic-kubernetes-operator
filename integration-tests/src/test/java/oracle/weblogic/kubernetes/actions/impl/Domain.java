@@ -702,10 +702,10 @@ public class Domain {
   /**
    * Copy a file from Kubernetes pod to local filesystem.
    * @param namespace namespace of the pod
-   * @param pod name of the pod where the file is copied to
+   * @param pod name of the pod where the file is copied from
    * @param container name of the container
-   * @param srcPath source file location
-   * @param destPath destination file location on pod
+   * @param srcPath source file location on the pod
+   * @param destPath destination file location in local filesystem
    * @return true if no exception thrown, false otherwise
    */
   private static boolean copyFileFromPod(String namespace,
@@ -718,6 +718,7 @@ public class Domain {
     } catch (IOException ioex) {
       getLogger().severe("Got IOException while copying file {0} from pod {1} in namespace {2}, exception: {3}",
           srcPath, pod, namespace, ioex.getStackTrace());
+      return false;
     } catch (ApiException apiex) {
       getLogger().severe("Got ApiException while copying file {0} from pod {1} in namespace {2}, exception: {3}",
           srcPath, pod, namespace, apiex.getResponseBody());

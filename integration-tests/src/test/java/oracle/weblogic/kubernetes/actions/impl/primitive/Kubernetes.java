@@ -680,10 +680,10 @@ public class Kubernetes {
   /**
    * Copy a file from Kubernetes pod to local filesystem.
    * @param namespace namespace of the pod
-   * @param pod name of the pod where the file is copied to
+   * @param pod name of the pod where the file is copied from
    * @param container name of the container
-   * @param srcPath source file location
-   * @param destPath destination file location on pod
+   * @param srcPath source file location on the pod
+   * @param destPath destination file location on local filesystem
    * @throws IOException when copy fails
    * @throws ApiException when pod interaction fails
    */
