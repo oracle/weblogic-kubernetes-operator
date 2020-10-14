@@ -675,9 +675,14 @@ function createPrimordialDomain() {
     trace "No primordial domain or need to recreate again"
     wdtCreatePrimordialDomain
     create_primordial_tgz=1
+    # Override online update since the domain needs to be restarted for security related changes ?
+    # TODO check if this is enough information
+    # Note: currently there is no way in WDT to update security information online
+    trace "Security changes detected or new deployment - override spec.configuration.useOnlineUpdate to false"
+    MII_USE_ONLINE_UPDATE=false
   fi
 
-  # tar up primodial domain with em.ear if it is there.  The zip will be added to the introspect config map by the
+  # tar up primordial domain with em.ear if it is there.  The zip will be added to the introspect config map by the
   # introspectDomain.py
 
   if [ ${create_primordial_tgz} -eq 1 ]; then
@@ -889,7 +894,7 @@ function wdtUpdateModelDomain() {
 
 function wdtHandleOnlineUpdate() {
 
-  if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" -eq "${MII_USE_ONLINE_UPDATE}" ] \
+  if [ ! -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" -eq "${MII_USE_ONLINE_UPDATE}" ] \
     || [ ! -f "/tmp/diffed_model.json" ] ; then
     trace "Not using online update: no op"
     return
