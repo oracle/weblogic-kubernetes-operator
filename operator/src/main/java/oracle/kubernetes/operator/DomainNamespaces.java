@@ -39,7 +39,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getResourceVers
 public class DomainNamespaces {
   private static final Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
   private static final Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
-  private static final WatchListener<V1Job> NULL_DISPATCHER = w -> { };
+  private static final WatchListener<V1Job> NULL_LISTENER = w -> { };
 
   private static final WatcherControl<V1ConfigMap, ConfigMapWatcher> configMapWatchers
         = new WatcherControl<>(ConfigMapWatcher::create, d -> d::dispatchConfigMapWatch);
@@ -48,7 +48,7 @@ public class DomainNamespaces {
   private static final WatcherControl<V1Event, EventWatcher> eventWatchers
         = new WatcherControl<>(EventWatcher::create, d -> d::dispatchEventWatch);
   private static final WatcherControl<V1Job, JobWatcher> jobWatchers
-        = new WatcherControl<>(JobWatcher::create, d -> NULL_DISPATCHER);
+        = new WatcherControl<>(JobWatcher::create, d -> NULL_LISTENER);
   private static final WatcherControl<V1Pod, PodWatcher> podWatchers
         = new WatcherControl<>(PodWatcher::create, d -> d::dispatchPodWatch);
   private static final WatcherControl<V1Service, ServiceWatcher> serviceWatchers
