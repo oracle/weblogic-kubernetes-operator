@@ -983,6 +983,28 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
+  public void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize100_noSpaceShouldBeReserved_dontReportError() {
+    WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-100-good");
+    String domainUID = "mydomainnamecontains32charactess";
+    Domain myDomain2 = createTestDomain(domainUID);
+    String msNameBase = "servernamecontains27characs";
+    for (int i = 1; i <= 100; i++) {
+      String msName = msNameBase + i;
+      domainConfigWithCluster.getClusterConfig("CLUSTER-100-good")
+          .addServerConfig(new WlsServerConfig(msName, "domain1-" + msName, 8001));
+    }
+    configureDomain(myDomain2)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
+    assertThat(myDomain2.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
   public void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize9ButClusterPaddingDisabled_dontReportError() {
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-9-bad-ok");
     String domainUID = "mydomainnamecontains32characters";
