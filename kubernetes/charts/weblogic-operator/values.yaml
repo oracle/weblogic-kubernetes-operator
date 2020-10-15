@@ -189,5 +189,5 @@ externalServiceNameSuffix: "-ext"
 # clusterSizePaddingValidationEnabled specifies if additional one or two characters
 # need to be reserved to account for longer managed server names because of an increased
 # cluster size.
-# The default suffix is true.
+# The default value is true.
 clusterSizePaddingValidationEnabled: true
