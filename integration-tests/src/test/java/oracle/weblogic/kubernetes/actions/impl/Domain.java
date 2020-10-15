@@ -27,6 +27,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.FileUtils;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -36,6 +37,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.PROJECT_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_API_GROUP;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_API_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_CLUSTER_ROLE;
@@ -47,6 +49,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_RO
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_ROLE_BINDING_NAME;
 import static oracle.weblogic.kubernetes.actions.impl.ClusterRole.createClusterRole;
 import static oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding.createClusterRoleBinding;
+import static oracle.weblogic.kubernetes.actions.impl.Exec.exec;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespacedRoleBinding;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRole.clusterRoleExists;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clusterRoleBindingExists;
@@ -524,6 +527,19 @@ public class Domain {
         .saveResults(true)
         .redirect(true);
 
+    // copy scalingAction.log to local
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Copying scalingAction.log from admin server pod, waiting for success "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return copyFileFromPod(domainNamespace, adminServerPodName, null,
+              domainHomeLocation + "/bin/scripts/scalingAction.log",
+              Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log"));
+        });
+
     return Command.withParams(params).execute();
   }
 
@@ -631,7 +647,7 @@ public class Domain {
   private static boolean copyFileToPod(String namespace, String pod, String container, Path srcPath, Path destPath) {
 
     try {
-      Kubernetes.copyFileToPod(namespace, pod, container, srcPath, destPath);
+      FileUtils.copyFileToPod(namespace, pod, container, srcPath, destPath);
     } catch (ApiException apex) {
       getLogger().severe("Got ApiException while copying file {0} to pod {1} in namespace {2}, exception: {3}",
           srcPath, pod, namespace, apex.getResponseBody());
@@ -661,7 +677,7 @@ public class Domain {
                                              String... command) {
     ExecResult result;
     try {
-      result = Kubernetes.exec(pod, containerName, redirectToStdout, command);
+      result = exec(pod, containerName, redirectToStdout, command);
     } catch (IOException ioex) {
       getLogger().severe("Got IOException while executing command {0} in pod {1}, exception: {2}",
           command, pod, ioex.getStackTrace());
@@ -682,6 +698,35 @@ public class Domain {
       return false;
     }
 
+    return true;
+  }
+
+  /**
+   * Copy a file from Kubernetes pod to local filesystem.
+   * @param namespace namespace of the pod
+   * @param pod name of the pod where the file is copied from
+   * @param container name of the container
+   * @param srcPath source file location on the pod
+   * @param destPath destination file location in local filesystem
+   * @return true if no exception thrown, false otherwise
+   */
+  private static boolean copyFileFromPod(String namespace,
+                                         String pod,
+                                         String container,
+                                         String srcPath,
+                                         Path destPath) {
+    try {
+      getLogger().info("Copy file {0} from pod {1} in namespace {2} to {3}", srcPath, pod, namespace, destPath);
+      FileUtils.copyFileFromPod(namespace, pod, container, srcPath, destPath);
+    } catch (IOException ioex) {
+      getLogger().severe("Got IOException while copying file {0} from pod {1} in namespace {2}, exception: {3}",
+          srcPath, pod, namespace, ioex.getStackTrace());
+      return false;
+    } catch (ApiException apiex) {
+      getLogger().severe("Got ApiException while copying file {0} from pod {1} in namespace {2}, exception: {3}",
+          srcPath, pod, namespace, apiex.getResponseBody());
+      return false;
+    }
     return true;
   }
 }
