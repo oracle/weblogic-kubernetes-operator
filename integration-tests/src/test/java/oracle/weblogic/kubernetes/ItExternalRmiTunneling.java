@@ -34,7 +34,6 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-// import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -66,6 +65,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromT
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -333,24 +333,19 @@ class ItExternalRmiTunneling {
   // JMS client that sends messages to a Uniform Distributed Queue using 
   // load balancer http(s) url which maps to custom channel on cluster member
   // server on WebLogic cluster.
-  public void buildClient() {
+  private void buildClient() {
 
-    StringBuffer copyCmd = new StringBuffer("kubectl cp ");
-    copyCmd.append(domainNamespace + "/" + adminServerPodName);
-    copyCmd.append(":/u01/oracle/wlserver/server/lib/wlthint3client.jar ");
-    copyCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
-    logger.info("kubectl copy command {0}", copyCmd.toString());
-    ExecResult result = assertDoesNotThrow(
-        () -> exec(new String(copyCmd), true));
-    logger.info("kubectl copy returned {0}", result.toString());
-
+    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace, 
+             adminServerPodName, "weblogic-server",
+             "/u01/oracle/wlserver/server/lib/wlthint3client.jar", 
+             Paths.get(RESULTS_ROOT, "wlthint3client.jar")));
     StringBuffer javacCmd = new StringBuffer("javac -cp ");
     javacCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar "));
     javacCmd.append(Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"));
     javacCmd.append(Paths.get(" -d "));
     javacCmd.append(Paths.get(RESULTS_ROOT));
     logger.info("javac command {0}", javacCmd.toString());
-    result = assertDoesNotThrow(
+    ExecResult result = assertDoesNotThrow(
         () -> exec(new String(javacCmd), true));
     logger.info("javac returned {0}", result.toString());
     logger.info("javac returned EXIT value {0}", result.exitValue());
@@ -389,6 +384,7 @@ class ItExternalRmiTunneling {
     }
   }
 
+  // Create and display SSL certificate and key using openssl with SAN extension
   private static void createCertKeyFiles(String cn) {
 
     Map<String, String> sanConfigTemplateMap  = new HashMap();
@@ -420,7 +416,9 @@ class ItExternalRmiTunneling {
     });
   }
 
-  private static void createJksStore() {
+  // Import the certificate into a JKS TrustStore to be used while running 
+  // external JMS client to send message to WebLogic.
+  private void createJksStore() {
     assertDoesNotThrow(() -> {
       jksTrustFile = Paths.get(RESULTS_ROOT, domainNamespace + "-trust.jks");
       String command = "keytool -import -file " + tlsCertFile 
@@ -437,7 +435,8 @@ class ItExternalRmiTunneling {
     });
   }
 
-  private static void createSecretWithTLSCertKey(String tlsSecretName) {
+  // Create kubernetes secret from the ssl key and certificate
+  private void createSecretWithTLSCertKey(String tlsSecretName) {
     String command = "kubectl create secret tls " + tlsSecretName + " --key " 
           + tlsKeyFile + " --cert " + tlsCertFile + " -n " + domainNamespace;
     logger.info("Executing command: {0}", command);
