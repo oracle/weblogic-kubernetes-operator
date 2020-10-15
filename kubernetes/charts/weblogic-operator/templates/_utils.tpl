@@ -293,7 +293,7 @@ Verify a kubernetes resource name string value
 {{-   if include "utils.dictionaryHasNonNullValue" (list $parent $name) -}}
 {{-     $value := index $parent $name -}}
 {{-     $len := len $value -}}
-{{-     if and (lt $len $max) (regexMatch "^[a-z0-9.-]+$" $value) -}}
+{{-     if and (le $len $max) (regexMatch "^[a-z0-9.-]+$" $value) -}}
           true
 {{-     else -}}
 {{-       $errorMsg := cat $name "must only contain lower case letters, numbers, dashes and dots, and must not contain more than" $max "characters: " $value -}}

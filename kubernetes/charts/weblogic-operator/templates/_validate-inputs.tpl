@@ -5,7 +5,7 @@
 {{- $scope := include "utils.cloneDictionary" . | fromYaml -}}
 {{- $ignore:= include "utils.startValidation" $scope -}}
 {{- $ignore := include "utils.pushValidationContext" (list $scope "Release") -}}
-{{- $ignore := include "utils.verifyResourceName" (list $scope "Namespace" 64) -}}
+{{- $ignore := include "utils.verifyResourceName" (list $scope "Namespace" 63) -}}
 {{- $ignore := include "utils.popValidationContext" $scope -}}
 {{- $ignore := include "utils.verifyString" (list $scope "serviceAccount") -}}
 {{- $ignore := include "utils.verifyK8SResource" (list $scope .serviceAccount "ServiceAccount" .Release.Namespace) -}}
