@@ -122,10 +122,7 @@ public class CdtTxServlet extends HttpServlet {
         Xid xid = tx.getXID();
         System.out.println("xid=" + xid);
         tx.setProperty("TMAfterTLogBeforeCommitExit", Boolean.TRUE);
-
-        ds = (javax.sql.DataSource) ctx2.lookup("jdbc/TestCdtDataSource");
-        System.out.println("Got ds from context - " + ds);
-        out.println("Got ds from context - " + ds);
+        
         Connection conn1 = ds.getConnection();
         System.out.println("Got connection to datasource - " + conn1);
         out.println("Got connection to datasource - " + conn1);
