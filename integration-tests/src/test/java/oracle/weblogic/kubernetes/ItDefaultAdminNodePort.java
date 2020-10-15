@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -170,7 +171,7 @@ class ItDefaultAdminNodePort {
   @DisplayName("Verify the secure service through administration port")
   public void testVerifyDefaultAdminPortService() {
     int sslNodePort = getServiceNodePort(
-         domainNamespace, adminServerPodName + "-external", "default-admin");
+         domainNamespace, getExternalServicePodName(adminServerPodName), "default-admin");
     assertTrue(sslNodePort != -1,
           "Could not get the default-admin external service node port");    
     logger.info("Found the administration service nodePort {0}", sslNodePort);
@@ -182,7 +183,7 @@ class ItDefaultAdminNodePort {
     logger.info("WebLogic console is accessible thru default-admin service");
 
     int nodePort = getServiceNodePort(
-           domainNamespace, adminServerPodName + "-external", "default");
+           domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertTrue(nodePort != -1,
           "Could not get the default external service node port");    
     logger.info("Found the default service nodePort {0}", nodePort);

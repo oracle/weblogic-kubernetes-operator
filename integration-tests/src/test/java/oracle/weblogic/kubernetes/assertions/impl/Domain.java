@@ -31,6 +31,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDo
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -285,7 +286,8 @@ public class Domain {
       String namespace,
       String username,
       String password) {
-    int adminServiceNodePort = getServiceNodePort(namespace, podName + "-external", WLS_DEFAULT_CHANNEL_NAME);
+    int adminServiceNodePort
+        = getServiceNodePort(namespace, getExternalServicePodName(podName), WLS_DEFAULT_CHANNEL_NAME);
 
     if (username == null) {
       username = ADMIN_USERNAME_DEFAULT;
