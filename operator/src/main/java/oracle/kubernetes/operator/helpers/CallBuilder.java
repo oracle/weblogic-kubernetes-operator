@@ -525,6 +525,11 @@ public class CallBuilder {
     return this;
   }
 
+  public CallBuilder withTimeoutSeconds(int timeoutSeconds) {
+    this.timeoutSeconds = timeoutSeconds;
+    return this;
+  }
+
   private void tuning(int limit, int timeoutSeconds, int maxRetryCount) {
     this.limit = limit;
     this.timeoutSeconds = timeoutSeconds;
@@ -1339,7 +1344,8 @@ public class CallBuilder {
       V1DeleteOptions deleteOptions,
       ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("deleteJob", namespace, name, deleteOptions, domainUid), deleteJob);
+        responseStep, new RequestParams("deleteJob", namespace, name, deleteOptions, domainUid),
+            deleteJob, timeoutSeconds);
   }
 
   /**
@@ -1866,6 +1872,21 @@ public class CallBuilder {
 
   private <T> Step createRequestAsync(
           ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, RetryStrategy retryStrategy) {
+    return STEP_FACTORY.createRequestAsync(
+            next,
+            requestParams,
+            factory,
+            retryStrategy,
+            helper,
+            timeoutSeconds,
+            maxRetryCount,
+            fieldSelector,
+            labelSelector,
+            resourceVersion);
+  }
+
+  private <T> Step createRequestAsync(
+          ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, int timeoutSeconds) {
     return STEP_FACTORY.createRequestAsync(
             next,
             requestParams,

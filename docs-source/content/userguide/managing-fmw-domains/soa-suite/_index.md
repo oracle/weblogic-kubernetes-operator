@@ -46,7 +46,7 @@ In this release, SOA Suite domains are supported using the “domain on a persis
 #### Prerequisites for SOA Suite domains
 
 * Kubernetes 1.13.5+, 1.14.3+ and 1.15.2+ (check with `kubectl version`).
-* Flannel networking v0.11.0-amd64 (check with `docker images | grep flannel`).
+* Flannel networking v0.11.0-amd64 (check with `docker images | grep flannel`) or Calico networking (Calico v3.16.1).
 * Docker 18.9.1 (check with `docker version`)
 * Helm 2.14.0+ (check with `helm version`).
 * Oracle Fusion Middleware Infrastructure 12.2.1.3.0 image with patch 29135930.
