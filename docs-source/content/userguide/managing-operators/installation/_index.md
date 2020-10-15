@@ -110,8 +110,8 @@ The following instructions will be applicable to upgrade operators within the 3.
 as additional versions are released.
 
 To upgrade the operator, use the `helm upgrade` command. Make sure that the
-`weblogic-kubernetes-operator` repository in your local machine is at the
-operator release that you are upgrading to. When upgrading the operator,
+`weblogic-kubernetes-operator` repository on your local machine is at the
+operator release to which you are upgrading. When upgrading the operator,
 the `helm upgrade` command requires that you supply a new Helm chart and image. For example:
 
 ```
