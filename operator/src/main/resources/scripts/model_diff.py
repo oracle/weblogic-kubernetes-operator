@@ -392,20 +392,20 @@ class ModelDiffer:
         if model.has_key(_TOPOLOGY):
             for key in [ 'Server', 'ServerTemplate']:
                 # topology.Server|ServerTemplate
-                if model[_TOPOLOGY].has_key[key]:
+                if model[_TOPOLOGY].has_key(key):
                     temp = model[_TOPOLOGY][key]
                     for server in temp:
                         for not_this in forbidden_network_attributes:
-                            if server.has_key(not_this):
+                            if temp[server].has_key(not_this):
                                 return 1
-                        if server.has_key(_NAP):
-                            nap = server[_NAP]
+                        if temp[server].has_key(_NAP):
+                            nap = temp[server][_NAP]
                             for n in nap:
                                 for not_this in forbidden_network_attributes:
-                                    if server.has_key(not_this):
+                                    if temp[server].has_key(not_this):
                                         return 1
                         # Do not allow any SSL changes
-                        if server.has_key(_SSL):
+                        if temp[server].has_key(_SSL):
                             return 1
 
         return 0
