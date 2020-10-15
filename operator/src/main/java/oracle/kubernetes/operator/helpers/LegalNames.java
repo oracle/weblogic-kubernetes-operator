@@ -16,6 +16,8 @@ import oracle.kubernetes.operator.TuningParameters;
 public class LegalNames {
 
   public static final String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
+  public static final String DEFAULT_CLUSTER_SIZE_PADDING_VALIDATION_ENABLED = "true";
+  public static final String CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM = "clusterSizePaddingValidationEnabled";
   private static final String SERVER_PATTERN = "%s-%s";
   private static final String CLUSTER_SERVICE_PATTERN = "%s-cluster-%s";
   public static final String DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX = "-introspector";

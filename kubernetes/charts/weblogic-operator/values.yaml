@@ -175,7 +175,7 @@ externalDebugHttpPort: 30999
 # characters to the name of the pod that is created by the job controller.
 # The default suffix is '-introspector'.
 # The default suffix in pre-3.1.0 is "-introspect-domain-job"
-# introspectorJobNameSuffix: "-introspector"
+introspectorJobNameSuffix: "-introspector"
 
 # externalServiceNameSuffix overrides the default suffix that the operator uses
 # to append to the domainUID and the WebLogic admin server name, to form the name
@@ -184,4 +184,10 @@ externalDebugHttpPort: 30999
 # the Kubernetes limit to the name of a service.
 # The default suffix is '-ext'.
 # The default suffix in pre-3.1.0 is "-external".
-# externalServiceNameSuffix: "-ext"
+externalServiceNameSuffix: "-ext"
+
+# clusterSizePaddingValidationEnabled specifies if additional one or two characters
+# need to be reserved to account for longer managed server names because of an increased
+# cluster size.
+# The default suffix is true.
+clusterSizePaddingValidationEnabled: true

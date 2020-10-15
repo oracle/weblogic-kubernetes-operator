@@ -58,5 +58,6 @@
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
 {{- $ignore := include "utils.verifyIntrospectorJobNameSuffix" (list $scope "introspectorJobNameSuffix" 25) -}}
 {{- $ignore := include "utils.verifyExternalServiceNameSuffix" (list $scope "externalServiceNameSuffix" 10) -}}
+{{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "clusterSizePaddingValidationEnabled") -}}
 {{- $ignore := include "utils.endValidation" $scope -}}
 {{- end -}}

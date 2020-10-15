@@ -33,6 +33,9 @@ data:
   {{- if .externalServiceNameSuffix }}
   externalServiceNameSuffix: {{ .externalServiceNameSuffix | quote }}
   {{- end }}
+  {{- if .clusterSizePaddingValidationEnabled }}
+  clusterSizePaddingValidationEnabled: {{ .clusterSizePaddingValidationEnabled | quote }}
+  {{- end }}
 kind: "ConfigMap"
 metadata:
   labels:

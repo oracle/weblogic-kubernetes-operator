@@ -29,6 +29,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.Main;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -670,7 +671,7 @@ public class Domain implements KubernetesObject {
     }
 
     private void verifyGeneratedResourceNames(WlsDomainConfig wlsDomainConfig) {
-      checkGeneratedServerServiceName(wlsDomainConfig.getAdminServerName());
+      checkGeneratedServerServiceName(wlsDomainConfig.getAdminServerName(), -1);
       if (isExternalServiceConfigured(getSpec())) {
         checkGeneratedExternalServiceName(wlsDomainConfig.getAdminServerName());
       }
@@ -680,14 +681,15 @@ public class Domain implements KubernetesObject {
           .values()
           .stream()
           .map(WlsServerConfig::getName)
-          .forEach(this::checkGeneratedServerServiceName);
+          .forEach(serverName -> checkGeneratedServerServiceName(serverName, -1));
       wlsDomainConfig.getClusterConfigs()
           .values()
           .iterator()
           .forEachRemaining(wlsClusterConfig
               // serverConfigs contains configured and dynamic servers in the cluster
               -> wlsClusterConfig.getServerConfigs().forEach(wlsServerConfig
-                  -> this.checkGeneratedServerServiceName(wlsServerConfig.getName())));
+                  -> this.checkGeneratedServerServiceName(
+                      wlsServerConfig.getName(), wlsClusterConfig.getServerConfigs().size())));
       wlsDomainConfig.getClusterConfigs()
           .values()
           .iterator()
@@ -705,14 +707,17 @@ public class Domain implements KubernetesObject {
       }
     }
 
-    private void checkGeneratedServerServiceName(String serverName) {
-      if (LegalNames.toServerServiceName(getDomainUid(), serverName).length()
-          > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
+    private void checkGeneratedServerServiceName(String serverName, int clusterSize) {
+      int limit = LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
+      if (Main.Namespaces.isClusterSizePaddingValidation() && clusterSize > 0) {
+        limit = clusterSize >= 10 ? limit - 1 : limit - 2;
+      }
+      if (LegalNames.toServerServiceName(getDomainUid(), serverName).length() > limit) {
         failures.add(DomainValidationMessages.exceedMaxServerServiceName(
             getDomainUid(),
             serverName,
             LegalNames.toServerServiceName(getDomainUid(), serverName),
-            LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH));
+            limit));
       }
     }
 

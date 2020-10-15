@@ -30,6 +30,8 @@ import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalToObject;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -54,7 +56,11 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   private final WlsDomainConfig domainConfig = createDomainConfig();
 
   private static WlsDomainConfig createDomainConfig() {
-    WlsClusterConfig clusterConfig = new WlsClusterConfig(CLUSTER);
+    return createDomainConfig(CLUSTER);
+  }
+
+  private static WlsDomainConfig createDomainConfig(String clusterName) {
+    WlsClusterConfig clusterConfig = new WlsClusterConfig(clusterName);
     return new WlsDomainConfig("base_domain")
         .withAdminServer(ADMIN_SERVER_NAME, "domain1-admin-server", 7001)
         .withCluster(clusterConfig);
@@ -856,7 +862,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   public void whenDomainUidPlusMSNameNotExceedMaxAllowed_dontReportError() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
-    String msName = "servernamecontains31characters";
+    String msName = "servernamecontains29characte";
     domainConfig.getClusterConfig(CLUSTER)
         .addServerConfig(new WlsServerConfig(msName, "domain1-" + msName, 8001));
     configureDomain(myDomain)
@@ -871,12 +877,15 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusMSNameExceedMaxAllowed_reportError() {
+  public void whenDomainUidPlusMSNameNotExceedMaxAllowedWithClusterSize9_dontReportError() {
+    WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-9");
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
-    String msName = "servernamecontains32characterss";
-    domainConfig.getClusterConfig(CLUSTER)
-        .addServerConfig(new WlsServerConfig(msName, "domain1-" + msName, 8001));
+    String msName = "servernamecontains27charact";
+    for (int i = 1; i < 10; i++) {
+      domainConfigWithCluster.getClusterConfig("CLUSTER-9")
+          .addServerConfig(new WlsServerConfig(msName + i, "domain1-" + msName + "-" + i, 8001));
+    }
     configureDomain(myDomain)
         .withDomainHomeSourceType(Image)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -885,8 +894,148 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminService()
         .withChannel("default");
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
-    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  contains(stringContainsInOrder(
-        "DomainUID ", domainUID, "server name", msName, "exceeds maximum allowed length")));
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
+  public void whenDomainUidPlusMSNameNotExceedMaxAllowedWithClusterSize99_dontReportError() {
+    WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-99-good");
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String msName = "servernamecontains27charact";
+
+    for (int i = 1; i < 100; i++) {
+      domainConfigWithCluster.getClusterConfig("CLUSTER-99-good")
+          .addServerConfig(new WlsServerConfig(msName + i, "domain1-" + msName + "-" + i, 8001));
+    }
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
+  public void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize9_reportError() {
+    WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-9-bad");
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String msNameBase = "servernamecontains28characte";
+
+    ArrayList<String> errors = new ArrayList<>();
+    for (int i = 1; i < 10; i++) {
+      String msName = msNameBase + i;
+      domainConfigWithCluster.getClusterConfig("CLUSTER-9-bad")
+          .addServerConfig(new WlsServerConfig(msName, "domain1-" + msName, 8001));
+      errors.add(String.format(
+          "DomainUID '%s' and server name '%s' combination '%s' exceeds maximum allowed length '61'.",
+          domainUID, msName, LegalNames.toServerServiceName(domainUID, msName)));
+    }
+
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
+    List<String> reported = myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket());
+    assertThat(reported, hasSize(9));
+    for (int i = 0; i < reported.size(); i++) {
+      assertThat(reported.get(i), equalToObject(errors.get(i)));
+    }
+  }
+
+  @Test
+  public void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize99_reportError() {
+    WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-99-bad");
+    String domainUID = "mydomainnamecontains32characterS";
+    Domain myDomain = createTestDomain(domainUID);
+    String msNameBase = "servernamecontains28charactE";
+    ArrayList<String> errors = new ArrayList<>();
+    for (int i = 1; i < 100; i++) {
+      String msName = msNameBase + i;
+      domainConfigWithCluster.getClusterConfig("CLUSTER-99-bad")
+          .addServerConfig(new WlsServerConfig(msName, "domain1-" + msName, 8001));
+      errors.add(String.format(
+          "DomainUID '%s' and server name '%s' combination '%s' exceeds maximum allowed length '62'.",
+          domainUID, msName, LegalNames.toServerServiceName(domainUID, msName)));
+    }
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
+    List<String> reported = myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket());
+    // the first 9 servers are fine so we only get 90 errors
+    assertThat(reported, hasSize(90));
+    for (int i = 0; i < reported.size(); i++) {
+      assertThat(reported.get(i), equalToObject(errors.get(i + 9)));
+    }
+  }
+
+  @Test
+  public void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize9ButClusterPaddingDisabled_dontReportError() {
+    WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-9-bad-ok");
+    String domainUID = "mydomainnamecontains32characters";
+    Domain myDomain = createTestDomain(domainUID);
+    String msNameBase = "servernamecontains28characte";
+
+    ArrayList<String> errors = new ArrayList<>();
+    for (int i = 1; i < 10; i++) {
+      String msName = msNameBase + i;
+      domainConfigWithCluster.getClusterConfig("CLUSTER-9-bad-ok")
+          .addServerConfig(new WlsServerConfig(msName, "domain1-" + msName, 8001));
+      errors.add(String.format(
+          "DomainUID '%s' and server name '%s' combination '%s' exceeds maximum allowed length '61'.",
+          domainUID, msName, LegalNames.toServerServiceName(domainUID, msName)));
+    }
+
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
+    TuningParameters.getInstance().put(LegalNames.CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM, "false");
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
+  public void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize99ButClusterPaddingDisabled_reportError() {
+    WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-99-bad-ok");
+    String domainUID = "mydomainnamecontains32characterS";
+    Domain myDomain = createTestDomain(domainUID);
+    String msNameBase = "servernamecontains28charactE";
+    ArrayList<String> errors = new ArrayList<>();
+    for (int i = 1; i < 100; i++) {
+      String msName = msNameBase + i;
+      domainConfigWithCluster.getClusterConfig("CLUSTER-99-bad-ok")
+          .addServerConfig(new WlsServerConfig(msName, "domain1-" + msName, 8001));
+      errors.add(String.format(
+          "DomainUID '%s' and server name '%s' combination '%s' exceeds maximum allowed length '62'.",
+          domainUID, msName, LegalNames.toServerServiceName(domainUID, msName)));
+    }
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
+    TuningParameters.getInstance().put(LegalNames.CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM, "false");
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
   }
 
   @Test
