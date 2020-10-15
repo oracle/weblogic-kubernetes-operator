@@ -60,6 +60,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVer
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -225,7 +226,7 @@ public class ItCrossDomainTransaction {
 
     logger.info("Getting admin server external service node port");
     int adminServiceNodePort = assertDoesNotThrow(
-        () -> getServiceNodePort(domain1Namespace, domain1AdminServerPodName + "-external", "default"),
+        () -> getServiceNodePort(domain1Namespace, getExternalServicePodName(domain1AdminServerPodName), "default"),
         "Getting admin server node port failed");
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
@@ -311,7 +312,7 @@ public class ItCrossDomainTransaction {
 
     logger.info("Getting node port");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(domainNamespace,
-        adminServerPodName + "-external", "default"),
+        getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
     logger.info("Validating WebLogic admin server access by login to console");

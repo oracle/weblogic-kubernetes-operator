@@ -58,6 +58,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExi
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
@@ -810,7 +811,8 @@ class ItServerStartPolicy {
    **/
   private boolean checkManagedServerConfiguration(String managedServer) {
     ExecResult result = null;
-    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/tenant-monitoring/servers/")

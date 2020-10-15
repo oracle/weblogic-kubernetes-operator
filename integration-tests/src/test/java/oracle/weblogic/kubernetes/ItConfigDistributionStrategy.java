@@ -93,6 +93,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
@@ -234,7 +236,7 @@ public class ItConfigDistributionStrategy {
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
+        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
     logger.info("Checking if the clusterview app in admin server is accessible after restart");
@@ -631,8 +633,7 @@ public class ItConfigDistributionStrategy {
   private Callable<Boolean> configUpdated(String maxMessageSize) {
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName
-            + "-external",
+        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName),
             "default"),
         "Getting admin server node port failed");
 
@@ -653,7 +654,7 @@ public class ItConfigDistributionStrategy {
 
   private void verifyConfigXMLOverride(boolean configUpdated) {
 
-    int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/";
 
     //verify server attribute MaxMessageSize
@@ -677,7 +678,7 @@ public class ItConfigDistributionStrategy {
   private void verifyResourceJDBC0Override(boolean configUpdated) {
 
     // get admin server node port and construct a base url for clusterview app
-    int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/ConfigServlet?";
 
     //verify datasource attributes of JdbcTestDataSource-0
@@ -709,7 +710,7 @@ public class ItConfigDistributionStrategy {
   private void verifyResourceJDBC1Override(boolean configUpdated) {
 
     // get admin server node port and construct a base url for clusterview app
-    int port = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/ConfigServlet?";
 
     //verify datasource attributes of JdbcTestDataSource-0
@@ -767,7 +768,7 @@ public class ItConfigDistributionStrategy {
   private void verifyIntrospectorRuns() {
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    String introspectPodName = getIntrospectJobName(domainUid);
     checkPodExists(introspectPodName, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
   }
@@ -902,7 +903,7 @@ public class ItConfigDistributionStrategy {
   private void deployApplication(String targets) {
     logger.info("Getting node port for T3 channel");
     int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "t3channel"),
+        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
         "Getting admin server t3channel node port failed");
     assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
 

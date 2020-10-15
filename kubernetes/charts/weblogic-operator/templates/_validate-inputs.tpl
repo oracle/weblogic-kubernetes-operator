@@ -5,7 +5,7 @@
 {{- $scope := include "utils.cloneDictionary" . | fromYaml -}}
 {{- $ignore:= include "utils.startValidation" $scope -}}
 {{- $ignore := include "utils.pushValidationContext" (list $scope "Release") -}}
-{{- $ignore := include "utils.verifyResourceName" (list $scope "Namespace") -}}
+{{- $ignore := include "utils.verifyResourceName" (list $scope "Namespace" 63) -}}
 {{- $ignore := include "utils.popValidationContext" $scope -}}
 {{- $ignore := include "utils.verifyString" (list $scope "serviceAccount") -}}
 {{- $ignore := include "utils.verifyK8SResource" (list $scope .serviceAccount "ServiceAccount" .Release.Namespace) -}}
@@ -56,5 +56,8 @@
 {{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceRegExp") -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
+{{- $ignore := include "utils.verifyIntrospectorJobNameSuffix" (list $scope "introspectorJobNameSuffix" 25) -}}
+{{- $ignore := include "utils.verifyExternalServiceNameSuffix" (list $scope "externalServiceNameSuffix" 10) -}}
+{{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "clusterSizePaddingValidationEnabled") -}}
 {{- $ignore := include "utils.endValidation" $scope -}}
 {{- end -}}

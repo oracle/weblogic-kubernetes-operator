@@ -167,3 +167,27 @@ externalDebugHttpPort: 30999
 # such as "name, claimName, volumeName", or leave it commented out to use 
 # the default list of field names.
 # dns1123Fields: ""
+
+# introspectorJobNameSuffix overrides the default suffix that the operator uses
+# to append to the domainUID to form the name of the domain introspector job name.
+# Note that the resultant job name should not be more than 58 characters due to
+# the Kubernetes limit to the name of a job and Kubernetes appends five additional
+# characters to the name of the pod that is created by the job controller.
+# The default suffix is '-introspector'.
+# The default suffix in pre-3.1.0 is "-introspect-domain-job"
+introspectorJobNameSuffix: "-introspector"
+
+# externalServiceNameSuffix overrides the default suffix that the operator uses
+# to append to the domainUID and the WebLogic admin server name, to form the name
+# of the domain's admin server external service.
+# Note that the resultant name should not be more than 63 characters due to
+# the Kubernetes limit to the name of a service.
+# The default suffix is '-ext'.
+# The default suffix in pre-3.1.0 is "-external".
+externalServiceNameSuffix: "-ext"
+
+# clusterSizePaddingValidationEnabled specifies if additional one or two characters
+# need to be reserved to account for longer managed server names because of an increased
+# cluster size.
+# The default value is true.
+clusterSizePaddingValidationEnabled: true
