@@ -709,7 +709,7 @@ public class Domain implements KubernetesObject {
 
     private void checkGeneratedServerServiceName(String serverName, int clusterSize) {
       int limit = LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
-      if (Main.Namespaces.isClusterSizePaddingValidation()
+      if (Main.Namespaces.isClusterSizePaddingValidationEnabled()
           && clusterSize > 0 && clusterSize < 100) {
         limit = clusterSize >= 10 ? limit - 1 : limit - 2;
       }

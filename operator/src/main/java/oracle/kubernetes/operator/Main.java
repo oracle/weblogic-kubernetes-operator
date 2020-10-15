@@ -587,7 +587,7 @@ public class Main {
      * Gets the configured boolean for enabling cluster size padding validation.
      * @return boolean enabled
      */
-    public static boolean isClusterSizePaddingValidation() {
+    public static boolean isClusterSizePaddingValidationEnabled() {
       return "true".equalsIgnoreCase(Optional.ofNullable(tuningAndConfig()
           .get(LegalNames.CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM))
           .orElse(LegalNames.DEFAULT_CLUSTER_SIZE_PADDING_VALIDATION_ENABLED));
