@@ -677,6 +677,22 @@ public class Kubernetes {
     copy.copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
 
+  /**
+   * Copy a file from Kubernetes pod to local filesystem.
+   * @param namespace namespace of the pod
+   * @param pod name of the pod where the file is copied from
+   * @param container name of the container
+   * @param srcPath source file location on the pod
+   * @param destPath destination file location on local filesystem
+   * @throws IOException when copy fails
+   * @throws ApiException when pod interaction fails
+   */
+  public static void copyFileFromPod(String namespace, String pod, String container, String srcPath, Path destPath)
+      throws IOException, ApiException {
+    Copy copy = new Copy(apiClient);
+    copy.copyFileFromPod(namespace, pod, container, srcPath, destPath);
+  }
+
   // --------------------------- namespaces -----------------------------------
   /**
    * Create a Kubernetes namespace.
