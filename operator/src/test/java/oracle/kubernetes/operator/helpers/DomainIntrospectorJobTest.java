@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -58,6 +59,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -226,6 +228,24 @@ public class DomainIntrospectorJobTest {
 
     assertThat(getDomain(), hasStatus("ServerError",
             "testcall in namespace junit, for testName: failure reported in test"));
+  }
+
+  @Test
+  public void whenJobCreated_jobNameContainsDefaultSuffix() {
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    List<V1Job> jobs = testSupport.getResources(KubernetesTestSupport.JOB);
+    assertThat(jobs.get(0).getMetadata().getName(), stringContainsInOrder(UID,"-introspector"));
+  }
+
+  @Test
+  public void whenJobCreatedWithCustomIntrospectorJobnameSuffix_jobNameContainsConfiguredSuffix() {
+    TuningParameters.getInstance().put(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "-introspector-job");
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+    List<V1Job> jobs = testSupport.getResources(KubernetesTestSupport.JOB);
+    assertThat(jobs.get(0).getMetadata().getName(), stringContainsInOrder(UID,"-introspector-job"));
   }
 
   @Test

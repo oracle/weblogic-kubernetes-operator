@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAnd
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -496,7 +497,7 @@ class ItMiiMultiModel {
       String namespace,
       String dsName) {
     int adminServiceNodePort = getServiceNodePort(
-        namespace, adminServerPodName + "-external", WLS_DEFAULT_CHANNEL_NAME);
+        namespace, getExternalServicePodName(adminServerPodName), WLS_DEFAULT_CHANNEL_NAME);
 
     String command = new StringBuffer()
         .append("curl --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
@@ -524,7 +525,7 @@ class ItMiiMultiModel {
       String namespace,
       String dsName) {
     int adminServiceNodePort = getServiceNodePort(
-        namespace, adminServerPodName + "-external", WLS_DEFAULT_CHANNEL_NAME);
+        namespace, getExternalServicePodName(adminServerPodName), WLS_DEFAULT_CHANNEL_NAME);
 
     String command = new StringBuffer()
         .append("curl --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)

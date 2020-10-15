@@ -280,7 +280,7 @@
           }
         },
         "domainUID": {
-          "pattern": "^[a-z0-9-.]{1,253}$",
+          "pattern": "^[a-z0-9-.]{1,45}$",
           "description": "Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.",
           "type": "string"
         },

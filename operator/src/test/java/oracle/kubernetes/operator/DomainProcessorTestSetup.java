@@ -84,18 +84,30 @@ public class DomainProcessorTestSetup {
   }
 
   /**
-   * Create a basic domain object that meets the needs of the domain processor.
+   * Create a basic domain object that meets the needs of the domain processor with the default test domainUID.
    *
    * @return a domain
    */
   public static Domain createTestDomain() {
+    return createTestDomain(UID);
+  }
+
+  /**
+   * Create a basic domain object that meets the needs of the domain processor with a custom domainUID.
+   *
+   * @param uid domainUid
+   * @return a domain
+
+   */
+  public static Domain createTestDomain(String uid) {
     DomainSpec ds = new DomainSpec()
-            .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME).namespace(NS));
+        .withDomainUid(uid)
+        .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME).namespace(NS));
     ds.setNodeName(NODE_NAME);
     return new Domain()
         .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
         .withKind(KubernetesConstants.DOMAIN)
-        .withMetadata(withTimestamps(new V1ObjectMeta().name(UID).namespace(NS).uid(KUBERNETES_UID)))
+        .withMetadata(withTimestamps(new V1ObjectMeta().name(uid).namespace(NS).uid(KUBERNETES_UID)))
         .withSpec(ds);
   }
 
