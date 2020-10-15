@@ -983,7 +983,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize100_noSpaceShouldBeReserved_dontReportError() {
+  public void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize100_noExtrSpaceShouldBeReserved_dontReportError() {
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-100-good");
     String domainUID = "mydomainnamecontains32charactess";
     Domain myDomain2 = createTestDomain(domainUID);
