@@ -3,6 +3,10 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,11 +28,10 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.ActionConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -46,9 +49,9 @@ import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
@@ -56,6 +59,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSec
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -70,9 +74,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test is used for testing the affinity between a web client and a WebLogic server
- * for the duration of a HTTP session.
+ * for the duration of a HTTP session using Voyager and Traefik ingress controllers.
  */
-@DisplayName("Test that Voyager is installed and the Voyager ingress is created successfully")
+@DisplayName("Test sticky sessions management with Voyager and Traefik")
 @IntegrationTest
 class ItStickySession {
 
@@ -95,23 +99,26 @@ class ItStickySession {
   private static int replicaCount = 2;
   private static String opNamespace = null;
   private static String domainNamespace = null;
+  private static String voyagerNamespace = null;
+  private static String traefikNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
 
-  // constants for Voyager
+  // constants for Voyager and Traefik
   private static String cloudProvider = "baremetal";
   private static boolean enableValidatingWebhook = false;
   private static HelmParams voyagerHelmParams = null;
+  private static HelmParams traefikHelmParams = null;
   private static LoggingFacade logger = null;
 
   /**
-   * Install Voyager and operator, create a custom image using model in image with model files
-   * and create a one cluster domain.
+   * Install Voyager, Traefik and operator, create a custom image using model in image
+   * with model files and create a one cluster domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void init(@Namespaces(3) List<String> namespaces) {
+  public static void init(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
@@ -121,21 +128,30 @@ class ItStickySession {
     // get a unique Voyager namespace
     logger.info("Get a unique namespace for Voyager");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    String voyagerNamespace = namespaces.get(0);
+    voyagerNamespace = namespaces.get(0);
+
+    // get a unique Traefik namespace
+    logger.info("Get a unique namespace for Traefik");
+    assertNotNull(namespaces.get(1), "Namespace list is null");
+    traefikNamespace = namespaces.get(1);
 
     // get a unique operator namespace
     logger.info("Get a unique namespace for operator");
-    assertNotNull(namespaces.get(1), "Namespace list is null");
-    opNamespace = namespaces.get(1);
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    opNamespace = namespaces.get(2);
 
     // get a unique domain namespace
     logger.info("Get a unique namespace for WebLogic domain");
-    assertNotNull(namespaces.get(2), "Namespace list is null");
-    domainNamespace = namespaces.get(2);
+    assertNotNull(namespaces.get(3), "Namespace list is null");
+    domainNamespace = namespaces.get(3);
 
     // install and verify Voyager
     voyagerHelmParams =
         installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
+
+    // install and verify Traefik
+    traefikHelmParams =
+        installAndVerifyTraefik(traefikNamespace, 0, 0);
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -164,27 +180,28 @@ class ItStickySession {
           .withFailMessage("uninstallVoyager() did not return true")
           .isTrue();
     }
+
+    // uninstall Traefik
+    if (traefikHelmParams != null) {
+      assertThat(uninstallTraefik(traefikHelmParams))
+          .as("Test uninstallTraefik returns true")
+          .withFailMessage("uninstallTraefik() did not return true")
+          .isTrue();
+    }
   }
 
   /**
-   * Verify that two HTTP requests sent to WebLogic are directed to same WebLogic server.
+   * Verify that using Voyager ingress controller, two HTTP requests sent to WebLogic
+   * are directed to same WebLogic server.
    * The test uses a web application deployed on WebLogic cluster to track HTTP session.
    * server-affinity is achieved by Voyager ingress controller based on HTTP session information.
    */
   @Test
-  @DisplayName("Create a Voyager ingress controller and verify that two HTTP connections are sticky to the same server")
-  @Slow
-  @MustNotRunInParallel
-  public void testSameSessionStickiness() {
+  @DisplayName("Create a Voyager ingress resource and verify that two HTTP connections are sticky to the same server")
+  public void testSameSessionStickinessUsingVoyager() {
     final String ingressName = domainUid + "-ingress-host-routing";
     final String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
     final String channelName = "tcp-80";
-    final int counterNum = 4;
-    final String webServiceSetUrl = SESSMIGR_APP_WAR_NAME + "/?setCounter=" + counterNum;
-    final String webServiceGetUrl = SESSMIGR_APP_WAR_NAME + "/?getCounter";
-    final String serverNameAttr = "servername";
-    final String sessionIdAttr = "sessionid";
-    final String countAttr = "count";
 
     // create Voyager ingress resource
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
@@ -192,47 +209,43 @@ class ItStickySession {
     List<String>  hostNames =
         installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
 
-    // get ingress service Nodeport
-    int ingressServiceNodePort = assertDoesNotThrow(
-        () -> getServiceNodePort(domainNamespace, ingressServiceName, channelName),
-        "Getting admin server node port failed");
-    logger.info("Node port for {0} is: {1} :", ingressServiceName, ingressServiceNodePort);
-
-    // send a HTTP request to set http session state(count number) and save HTTP session info
-    Map<String, String> httpDataInfo =
-        getServerAndSessionInfoAndVerify(hostNames.get(0),
-            ingressServiceNodePort, webServiceSetUrl, " -D ");
-    // get server and session info from web service deployed on the cluster
-    String serverName1 = httpDataInfo.get(serverNameAttr);
-    String sessionId1 = httpDataInfo.get(sessionIdAttr);
-    logger.info("Got the server {0} and session ID {1} from the first HTTP connection",
-        serverName1, sessionId1);
-
-    // send a HTTP request again to get server and session info
-    httpDataInfo =
-        getServerAndSessionInfoAndVerify(hostNames.get(0),
-            ingressServiceNodePort, webServiceGetUrl, " -b ");
-    // get server and session info from web service deployed on the cluster
-    String serverName2 = httpDataInfo.get(serverNameAttr);
-    String sessionId2 = httpDataInfo.get(sessionIdAttr);
-    String countStr = httpDataInfo.get(countAttr);
-    int count = Optional.ofNullable(countStr).map(Ints::tryParse).orElse(0);
-    logger.info("Got the server {0}, session ID {1} and session state {2} "
-        + "from the second HTTP connection", serverName2, sessionId2, count);
+    // get Voyager ingress service Nodeport
+    int ingressServiceNodePort =
+        getIngressServiceNodePort(domainNamespace, ingressServiceName, channelName);
 
     // verify that two HTTP connections are sticky to the same server
-    assertAll("Check that teh sticky session is supported",
-        () -> assertEquals(serverName1, serverName2,
-            "HTTP connections should be sticky to the server " + serverName1),
-        () -> assertEquals(sessionId1, sessionId2,
-            "HTTP session ID should be same for all HTTP connections " + sessionId1),
-        () -> assertEquals(count, SESSION_STATE,
-            "HTTP session state should equels " + SESSION_STATE)
-    );
+    sendHttpRequestsToTestSessionStickinessAndVerify(hostNames.get(0), ingressServiceNodePort);
+  }
 
-    logger.info("SUCCESS --- testSameSessionStickiness \n"
-        + "Two HTTP connections are sticky to server {0} The session state "
-        + "from the econd HTTP connections is {2}", serverName2, SESSION_STATE);
+  /**
+   * Verify that using Traefik ingress controller, two HTTP requests sent to WebLogic
+   * are directed to same WebLogic server.
+   * The test uses a web application deployed on WebLogic cluster to track HTTP session.
+   * server-affinity is achieved by Traefik ingress controller based on HTTP session information.
+   */
+  @Test
+  @DisplayName("Create a Traefik ingress resource and verify that two HTTP connections are sticky to the same server")
+  public void testSameSessionStickinessUsingTraefik() {
+    final String ingressServiceName = traefikHelmParams.getReleaseName();
+    final String channelName = "web";
+
+    // create Traefik ingress resource
+    createTraefikIngressRoutingRules();
+
+    String hostName = new StringBuffer()
+        .append(domainUid)
+        .append(".")
+        .append(domainNamespace)
+        .append(".")
+        .append(clusterName)
+        .append(".test").toString();
+
+    // get Traefik ingress service Nodeport
+    int ingressServiceNodePort =
+        getIngressServiceNodePort(traefikNamespace, ingressServiceName, channelName);
+
+    // verify that two HTTP connections are sticky to the same server
+    sendHttpRequestsToTestSessionStickinessAndVerify(hostName, ingressServiceNodePort);
   }
 
   private static String createAndVerifyDomainImage() {
@@ -272,39 +285,19 @@ class ItStickySession {
         domainUid, domainNamespace, miiImage);
     createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, miiImage);
 
-    // check that admin server pod exists in the domain namespace
-    logger.info("Checking that admin server pod {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
-
-    // check that admin server pod is ready
+    // check that admin server pod is ready and the service exists in the domain namespace
     logger.info("Checking that admin server pod {0} is ready in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // check that admin service exists in the domain namespace
-    logger.info("Checking that admin service {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPrefix + i;
 
-      // check that the managed server pod exists
-      logger.info("Checking that managed server pod {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodExists(managedServerPodName, domainUid, domainNamespace);
-
-      // check that the managed server pod is ready
+      // check that the managed server pod is ready and the service exists in the domain namespace
       logger.info("Checking that managed server pod {0} is ready in namespace {1}",
           managedServerPodName, domainNamespace);
-      checkPodReady(managedServerPodName, domainUid, domainNamespace);
-
-      // check that the managed server service exists in the domain namespace
-      logger.info("Checking that managed server service {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkServiceExists(managedServerPodName, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
   }
 
@@ -359,17 +352,6 @@ class ItStickySession {
     createDomainAndVerify(domain, domainNamespace);
   }
 
-  /**
-   * An util method referred by the test method testSessionMigration. It sends a HTTP request
-   * to set or get http session state (count number) and return the primary server,
-   * the secondary server, session create time and session state(count number).
-   *
-   * @param serverName server name in the cluster on which the web app is running
-   * @param webServiceUrl fully qualified URL to the server on which the web app is running
-   * @param headerOption option to save or use HTTP session info
-   *
-   * @return map that contains primary and secondary server names, session create time and session state
-   */
   private Map<String, String> getServerAndSessionInfoAndVerify(String hostName,
                                                                int ingressServiceNodePort,
                                                                String curlUrlPath,
@@ -480,5 +462,102 @@ class ItStickySession {
     }
 
     return httpAttribute;
+  }
+
+  private boolean createTraefikIngressRoutingRules() {
+    logger.info("Creating ingress resource");
+
+    // prepare Traefik ingress resource file
+    final String ingressResourceFileName = "traefik/traefik-ingress-rules-stickysession.yaml";
+    Path srcFile =
+        Paths.get(ActionConstants.RESOURCE_DIR, ingressResourceFileName);
+    Path dstFile =
+        Paths.get(TestConstants.RESULTS_ROOT, ingressResourceFileName);
+    assertDoesNotThrow(() -> {
+      Files.deleteIfExists(dstFile);
+      Files.createDirectories(dstFile.getParent());
+      Files.write(dstFile, Files.readString(srcFile).replaceAll("@NS@", domainNamespace)
+          .replaceAll("@domain1uid@", domainUid)
+          .getBytes(StandardCharsets.UTF_8));
+    });
+
+    // create Traefik ingress resource
+    String createIngressCmd = "kubectl create -f " + dstFile;
+    logger.info("Command to create Traefik ingress routing rules " + createIngressCmd);
+    ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(createIngressCmd, true),
+        String.format("Failed to create Traefik ingress routing rules %s", createIngressCmd));
+    assertEquals(0, result.exitValue(),
+        String.format("Failed to create Traefik ingress routing rules. Error is %s ", result.stderr()));
+
+    // get Traefik ingress service name
+    String  getServiceName = "kubectl get services -n " + traefikNamespace + " -o name";
+    logger.info("Command to get Traefik ingress service name " + getServiceName);
+    result = assertDoesNotThrow(() -> ExecCommand.exec(getServiceName, true),
+        String.format("Failed to get Traefik ingress service name %s", getServiceName));
+    assertEquals(0, result.exitValue(),
+        String.format("Failed to Traefik ingress service name . Error is %s ", result.stderr()));
+    String traefikServiceName = result.stdout().trim().split("/")[1];
+
+    // check that Traefik service exists in the Traefik namespace
+    logger.info("Checking that Traefik service {0} exists in namespace {1}",
+        traefikServiceName, traefikNamespace);
+    checkServiceExists(traefikServiceName, traefikNamespace);
+
+    return true;
+  }
+
+  private int getIngressServiceNodePort(String nameSpace, String ingressServiceName, String channelName) {
+    // get ingress service Nodeport
+    int ingressServiceNodePort = assertDoesNotThrow(() ->
+        getServiceNodePort(nameSpace, ingressServiceName, channelName),
+          "Getting web node port for Traefik loadbalancer failed");
+    logger.info("Node port for {0} is: {1} :", ingressServiceName, ingressServiceNodePort);
+
+    return ingressServiceNodePort;
+  }
+
+  private void sendHttpRequestsToTestSessionStickinessAndVerify(String hostname, int ingressServiceNodePort) {
+    final int counterNum = 4;
+    final String webServiceSetUrl = SESSMIGR_APP_WAR_NAME + "/?setCounter=" + counterNum;
+    final String webServiceGetUrl = SESSMIGR_APP_WAR_NAME + "/?getCounter";
+    final String serverNameAttr = "servername";
+    final String sessionIdAttr = "sessionid";
+    final String countAttr = "count";
+
+    // send a HTTP request to set http session state(count number) and save HTTP session info
+    Map<String, String> httpDataInfo =
+        getServerAndSessionInfoAndVerify(hostname,
+          ingressServiceNodePort, webServiceSetUrl, " -D ");
+    // get server and session info from web service deployed on the cluster
+    String serverName1 = httpDataInfo.get(serverNameAttr);
+    String sessionId1 = httpDataInfo.get(sessionIdAttr);
+    logger.info("Got the server {0} and session ID {1} from the first HTTP connection",
+        serverName1, sessionId1);
+
+    // send a HTTP request again to get server and session info
+    httpDataInfo =
+      getServerAndSessionInfoAndVerify(hostname,
+        ingressServiceNodePort, webServiceGetUrl, " -b ");
+    // get server and session info from web service deployed on the cluster
+    String serverName2 = httpDataInfo.get(serverNameAttr);
+    String sessionId2 = httpDataInfo.get(sessionIdAttr);
+    String countStr = httpDataInfo.get(countAttr);
+    int count = Optional.ofNullable(countStr).map(Ints::tryParse).orElse(0);
+    logger.info("Got the server {0}, session ID {1} and session state {2} "
+        + "from the second HTTP connection", serverName2, sessionId2, count);
+
+    // verify that two HTTP connections are sticky to the same server
+    assertAll("Check that the sticky session is supported",
+        () -> assertEquals(serverName1, serverName2,
+          "HTTP connections should be sticky to the server " + serverName1),
+        () -> assertEquals(sessionId1, sessionId2,
+          "HTTP session ID should be same for all HTTP connections " + sessionId1),
+        () -> assertEquals(count, SESSION_STATE,
+          "HTTP session state should equels " + SESSION_STATE)
+    );
+
+    logger.info("SUCCESS --- test same session stickiness \n"
+        + "Two HTTP connections are sticky to server {0} The session state "
+        + "from the second HTTP connections is {2}", serverName2, SESSION_STATE);
   }
 }
