@@ -31,6 +31,8 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvDoesNotExists;
@@ -295,14 +297,15 @@ public class ItSamples {
   }
 
   /**
-   * Delete the persistent volumes since the domain resources are not decorated with label.
+   * Delete the persistent volumes since the pv is not decorated with label.
    */
   @AfterAll
   public void tearDownAll() {
     for (String domainName : new String[]{"domain1", "domain2"}) {
+      deletePersistentVolumeClaim(domainName + "-weblogic-sample-pvc", domainNamespace);
       withStandardRetryPolicy
           .conditionEvaluationListener(
-              condition -> logger.info("Waiting for pv {0} to be ready in namespace {1} "
+              condition -> logger.info("Waiting for pv {0} to be deleted in namespace {1} "
                   + "(elapsed time {2}ms, remaining time {3}ms)",
                   domainName + "-weblogic-sample-pvc",
                   domainNamespace,
@@ -311,9 +314,11 @@ public class ItSamples {
           .until(assertDoesNotThrow(() -> pvcDoesNotExists(domainName + "-weblogic-sample-pvc", domainNamespace),
               String.format("pvcExists failed with ApiException for pvc %s",
                   domainName + "-weblogic-sample-pvc")));
+
+      deletePersistentVolume(domainName + "-weblogic-sample-pv");
       withStandardRetryPolicy
           .conditionEvaluationListener(
-              condition -> logger.info("Waiting for pv {0} to be ready, "
+              condition -> logger.info("Waiting for pv {0} to be deleted, "
                   + "(elapsed time {1}ms, remaining time {2}ms)",
                   domainName + "-weblogic-sample-pv",
                   condition.getElapsedTimeInMS(),
