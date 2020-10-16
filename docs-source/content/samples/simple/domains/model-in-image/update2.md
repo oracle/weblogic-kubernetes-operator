@@ -309,13 +309,13 @@ Here are the steps for this use case:
    sample-domain1-admin-server      1/1     Running   0          5d2h
    sample-domain1-managed-server1   1/1     Running   1          5d2h
    sample-domain1-managed-server2   1/1     Running   2          5d2h
-   sample-domain2-introspect-domain-job-plssr   0/1     Pending   0          0s
-   sample-domain2-introspect-domain-job-plssr   0/1     Pending   0          0s
-   sample-domain2-introspect-domain-job-plssr   0/1     ContainerCreating   0          0s
-   sample-domain2-introspect-domain-job-plssr   1/1     Running             0          2s
-   sample-domain2-introspect-domain-job-plssr   0/1     Completed           0          69s
-   sample-domain2-introspect-domain-job-plssr   0/1     Terminating         0          71s
-   sample-domain2-introspect-domain-job-plssr   0/1     Terminating         0          71s
+   sample-domain2-introspector-plssr   0/1     Pending   0          0s
+   sample-domain2-introspector-plssr   0/1     Pending   0          0s
+   sample-domain2-introspector-plssr   0/1     ContainerCreating   0          0s
+   sample-domain2-introspector-plssr   1/1     Running             0          2s
+   sample-domain2-introspector-plssr   0/1     Completed           0          69s
+   sample-domain2-introspector-plssr   0/1     Terminating         0          71s
+   sample-domain2-introspector-plssr   0/1     Terminating         0          71s
    sample-domain2-admin-server                  0/1     Pending             0          0s
    sample-domain2-admin-server                  0/1     Pending             0          0s
    sample-domain2-admin-server                  0/1     ContainerCreating   0          0s
@@ -352,14 +352,14 @@ Here are the steps for this use case:
 
    NAME                                          VERSION  IMAGE  READY  PHASE
    --------------------------------------------  -------  -----  -----  ---------
-   'sample-domain2-introspect-domain-job-plssr'  ''       ''     ''     'Running'
+   'sample-domain2-introspector-plssr'           ''       ''     ''     'Running'
 
    @@ [2020-05-13T17:07:03][seconds=64] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
    @@ [2020-05-13T17:07:03][seconds=64] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                                          VERSION  IMAGE  READY  PHASE
    --------------------------------------------  -------  -----  -----  -----------
-   'sample-domain2-introspect-domain-job-plssr'  ''       ''     ''     'Succeeded'
+   'sample-domain2-introspector-plssr'           ''       ''     ''     'Succeeded'
 
    @@ [2020-05-13T17:07:06][seconds=67] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
    @@ [2020-05-13T17:07:06][seconds=67] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:

@@ -280,22 +280,23 @@ Verify an optional enum string value
 Verify a kubernetes resource name string value
 */}}
 {{- define "utils.baseVerifyResourceName" -}}
-{{- if include "utils.baseVerifyString" . -}}
-{{/*   https://kubernetes.io/docs/concepts/overview/working-with-objects/names */}}
-{{/*     names: only lower case, numbers, dot, dash, max 253 */}}
-{{/*   https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set  */}}
-{{/*     labels/selectors - upper & lower case, numbers, dot, dash, underscore, max 63  */}}
-{{-   $scope := index . 0 -}}
-{{-   $name := index . 1 -}}
-{{-   $isRequired := index 2 -}}
+{{/* https://kubernetes.io/docs/concepts/overview/working-with-objects/names */}}
+{{/*   names: only lower case, numbers, dot, dash, max 253 */}}
+{{/* https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set  */}}
+{{/*   labels/selectors - upper & lower case, numbers, dot, dash, underscore, max 63  */}}
+{{- $scope := index . 0 -}}
+{{- $name := index . 1 -}}
+{{- $max := index . 2 -}}
+{{- $isRequired := index . 3 -}}
+{{- if include "utils.baseVerifyString" (list $scope $name $isRequired) -}}
 {{-   $parent := $scope.validationScope -}}
 {{-   if include "utils.dictionaryHasNonNullValue" (list $parent $name) -}}
 {{-     $value := index $parent $name -}}
 {{-     $len := len $value -}}
-{{-     if and (lt $len 64) (regexMatch "^[a-z0-9.-]+$" $value) -}}
+{{-     if and (le $len $max) (regexMatch "^[a-z0-9.-]+$" $value) -}}
           true
 {{-     else -}}
-{{-       $errorMsg := cat $name "must only contain lower case letters, numbers, dashes and dots, and must not contain more than 63 characters: " $value -}}
+{{-       $errorMsg := cat $name "must only contain lower case letters, numbers, dashes and dots, and must not contain more than" $max "characters: " $value -}}
 {{-       include "utils.recordValidationError" (list $scope $errorMsg) -}}
 {{-     end -}}
 {{-   end -}}
@@ -307,14 +308,28 @@ Verify a kubernetes resource name string value
 Verify a required kubernetes resource name string value
 */}}
 {{- define "utils.verifyResourceName" -}}
-{{- include "utils.baseVerifyResourceName" (append . true) -}} 
+{{- include "utils.baseVerifyResourceName" (append . true)  -}}
 {{- end -}}
 
 {{/*
 Verify an optional kubernetes resource name string value
 */}}
 {{- define "utils.verifyOptionalResourceName" -}}
-{{- include "utils.baseVerifyResourceName" (append . false) -}} 
+{{- include "utils.baseVerifyResourceName" (append . false) -}}
+{{- end -}}
+
+{{/*
+Verify external service name suffix string value
+*/}}
+{{- define "utils.verifyExternalServiceNameSuffix" -}}
+{{- include "utils.baseVerifyResourceName" (append . false) -}}
+{{- end -}}
+
+{{/*
+Verify introspector job name suffix string value
+*/}}
+{{- define "utils.verifyIntrospectorJobNameSuffix" -}}
+{{- include "utils.baseVerifyResourceName" (append . false) -}}
 {{- end -}}
 
 {{/*
