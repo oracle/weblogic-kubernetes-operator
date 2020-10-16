@@ -188,6 +188,10 @@ public class ItSamples {
 
   }
 
+  /**
+   * Test samples for domain in pv.
+   * @param model domain and script to create domain
+   */
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test sample domain in pv")
