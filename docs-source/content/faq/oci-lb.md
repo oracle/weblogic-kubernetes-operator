@@ -79,7 +79,7 @@ but initially the external IP is shown as `<pending>`.
 $ kubectl -n bob get svc
 NAME                                   TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                       AGE
 bobs-bookstore-admin-server            ClusterIP      None            <none>        8888/TCP,7001/TCP,30101/TCP   9d
-bobs-bookstore-admin-server-external   NodePort       10.96.224.13    <none>        7001:32401/TCP                9d
+bobs-bookstore-admin-server-ext        NodePort       10.96.224.13    <none>        7001:32401/TCP                9d
 bobs-bookstore-cluster-cluster-1       ClusterIP      10.96.86.113    <none>        8888/TCP,8001/TCP,31111/TCP   9d
 bobs-bookstore-managed-server1         ClusterIP      None            <none>        8888/TCP,8001/TCP,31111/TCP   9d
 bobs-bookstore-managed-server2         ClusterIP      None            <none>        8888/TCP,8001/TCP,31111/TCP   9d
@@ -93,7 +93,7 @@ external IP address will be displayed:
 $ kubectl -n bob get svc
 NAME                                   TYPE           CLUSTER-IP      EXTERNAL-IP       PORT(S)                       AGE
 bobs-bookstore-admin-server            ClusterIP      None            <none>            8888/TCP,7001/TCP,30101/TCP   9d
-bobs-bookstore-admin-server-external   NodePort       10.96.224.13    <none>            7001:32401/TCP                9d
+bobs-bookstore-admin-server-ext        NodePort       10.96.224.13    <none>            7001:32401/TCP                9d
 bobs-bookstore-cluster-cluster-1       ClusterIP      10.96.86.113    <none>            8888/TCP,8001/TCP,31111/TCP   9d
 bobs-bookstore-managed-server1         ClusterIP      None            <none>            8888/TCP,8001/TCP,31111/TCP   9d
 bobs-bookstore-managed-server2         ClusterIP      None            <none>            8888/TCP,8001/TCP,31111/TCP   9d

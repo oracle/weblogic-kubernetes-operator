@@ -161,7 +161,7 @@ Note that `domain1` is the name of the domain in the following example output.
 Events:
   Type     Reason                 Age               From               Message
   ----     ------                 ----              ----               -------
-  Normal   Scheduled              1m                default-scheduler  Successfully assigned domain1-introspect-domain-job-bz6rw to slc16ffk
+  Normal   Scheduled              1m                default-scheduler  Successfully assigned domain1-introspector-bz6rw to slc16ffk
 
   Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume "weblogic-credentials-volume"
 

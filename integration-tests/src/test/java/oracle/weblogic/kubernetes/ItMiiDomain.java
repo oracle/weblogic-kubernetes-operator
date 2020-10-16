@@ -93,6 +93,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAnd
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -234,7 +235,7 @@ class ItMiiDomain {
     logger.info("All the servers in Domain {0} are running and application is available", domainUid);
 
     int sslNodePort = getServiceNodePort(
-         domainNamespace, adminServerPodName + "-external", "default-secure");
+         domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
     assertTrue(sslNodePort != -1,
           "Could not get the default-secure external service node port");
     logger.info("Found the administration service nodePort {0}", sslNodePort);
@@ -246,7 +247,7 @@ class ItMiiDomain {
     logger.info("WebLogic console is accessible thru default-secure service");
     
     int nodePort = getServiceNodePort(
-           domainNamespace, adminServerPodName + "-external", "default");
+           domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertTrue(nodePort != -1,
           "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);

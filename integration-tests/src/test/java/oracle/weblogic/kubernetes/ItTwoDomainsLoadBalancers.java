@@ -145,6 +145,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVer
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyApache;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
@@ -999,7 +1000,7 @@ public class ItTwoDomainsLoadBalancers {
 
       logger.info("Getting admin service node port");
       int serviceNodePort =
-              getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+              getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
       logger.info("Validating WebLogic admin server access by login to console");
       assertTrue(assertDoesNotThrow(
@@ -1464,7 +1465,7 @@ public class ItTwoDomainsLoadBalancers {
       }
 
       int serviceNodePort =
-          getServiceNodePort(defaultNamespace, adminServerPodName + "-external", "default");
+          getServiceNodePort(defaultNamespace, getExternalServicePodName(adminServerPodName), "default");
       logger.info("Getting admin service node port: {0}", serviceNodePort);
 
       logger.info("Validating WebLogic admin server access by login to console");
@@ -1967,7 +1968,7 @@ public class ItTwoDomainsLoadBalancers {
   private static void deployApplication(String namespace, String domainUid, String adminServerPodName) {
     logger.info("Getting node port for admin server default channel");
     int serviceNodePort = assertDoesNotThrow(() ->
-            getServiceNodePort(namespace, adminServerPodName + "-external", "default"),
+            getServiceNodePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
     assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
     logger.info("Deploying application {0} to domain {1} cluster target cluster-1 in namespace {2}",

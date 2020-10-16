@@ -242,7 +242,7 @@ Here are the steps:
      NAME                                          VERSION  IMAGE                    READY   PHASE
      --------------------------------------------  -------  -----------------------  ------  ---------
      'sample-domain1-admin-server'                 '1'      'model-in-image:WLS-v1'  'true'  'Running'
-     'sample-domain1-introspect-domain-job-wlkpr'  ''       ''                       ''      'Pending'
+     'sample-domain1-introspector-wlkpr'           ''       ''                       ''      'Pending'
      'sample-domain1-managed-server1'              '1'      'model-in-image:WLS-v1'  'true'  'Running'
      'sample-domain1-managed-server2'              '1'      'model-in-image:WLS-v1'  'true'  'Running'
 
@@ -252,7 +252,7 @@ Here are the steps:
      NAME                                          VERSION  IMAGE                    READY   PHASE
      --------------------------------------------  -------  -----------------------  ------  ---------
      'sample-domain1-admin-server'                 '1'      'model-in-image:WLS-v1'  'true'  'Running'
-     'sample-domain1-introspect-domain-job-wlkpr'  ''       ''                       ''      'Running'
+     'sample-domain1-introspector-wlkpr'           ''       ''                       ''      'Running'
      'sample-domain1-managed-server1'              '1'      'model-in-image:WLS-v1'  'true'  'Running'
      'sample-domain1-managed-server2'              '1'      'model-in-image:WLS-v1'  'true'  'Running'
 
@@ -262,7 +262,7 @@ Here are the steps:
      NAME                                          VERSION  IMAGE                    READY   PHASE
      --------------------------------------------  -------  -----------------------  ------  -----------
      'sample-domain1-admin-server'                 '1'      'model-in-image:WLS-v1'  'true'  'Running'
-     'sample-domain1-introspect-domain-job-wlkpr'  ''       ''                       ''      'Succeeded'
+     'sample-domain1-introspector-wlkpr'           ''       ''                       ''      'Succeeded'
      'sample-domain1-managed-server1'              '1'      'model-in-image:WLS-v1'  'true'  'Running'
      'sample-domain1-managed-server2'              '1'      'model-in-image:WLS-v1'  'true'  'Running'
 
