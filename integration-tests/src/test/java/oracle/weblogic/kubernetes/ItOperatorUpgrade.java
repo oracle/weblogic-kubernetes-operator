@@ -211,7 +211,8 @@ public class ItOperatorUpgrade {
         0, opHelmParams, domainNamespace);
 
     // create domain
-    createDomainHomeInImageAndVerify(domainNamespace, operatorVersion);
+    createDomainHomeInImageAndVerify(
+        domainNamespace, operatorVersion, TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
 
     if (useHelmUpgrade) {
       // upgrade to latest operator
@@ -282,7 +283,8 @@ public class ItOperatorUpgrade {
         false, "", "", 0, "", "", null, null);
   }
 
-  private void createDomainHomeInImageAndVerify(String domainNamespace, String operatorVersion) {
+  private void createDomainHomeInImageAndVerify(
+      String domainNamespace, String operatorVersion, String externalServiceNameSuffix) {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -325,7 +327,7 @@ public class ItOperatorUpgrade {
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
         "Getting admin server node port failed");
 
     logger.info("Validating WebLogic admin server access by login to console");
