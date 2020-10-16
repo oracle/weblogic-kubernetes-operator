@@ -21,9 +21,10 @@ import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.V1UserInfo;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
-import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.rest.RestBackendImpl.TopologyRetriever;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.DomainAction;
@@ -86,7 +87,7 @@ public class RestBackendImplTest {
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
-    mementos.add(HelmAccessStub.install());
+    mementos.add(TuningParametersStub.install());
     mementos.add(
         StaticStubSupport.install(RestBackendImpl.class, "INSTANCE", new TopologyRetrieverStub()));
 
@@ -335,14 +336,13 @@ public class RestBackendImplTest {
 
   @Test
   public void vwhenUsingAccessToken_userInfoIsNull() {
-    HelmAccessStub.defineVariable("TOKEN_REVIEW_AUTHENTICATION", "false");
     RestBackendImpl restBackend = new RestBackendImpl("", "", Collections.singletonList(NS));
     assertThat(restBackend.getUserInfo(), nullValue());
   }
 
   @Test
   public void whenUsingTokenReview_userInfoNotNull() {
-    HelmAccessStub.defineVariable("TOKEN_REVIEW_AUTHENTICATION", "true");
+    TuningParameters.getInstance().put("tokenReviewAuthentication", "true");
     RestBackendImpl restBackend = new RestBackendImpl("", "", Collections.singletonList(NS));
     assertThat(restBackend.getUserInfo(), notNullValue());
   }
@@ -358,7 +358,7 @@ public class RestBackendImplTest {
 
   @Test
   public void whenUsingTokenReview_authorizationCheckCalled() {
-    HelmAccessStub.defineVariable("TOKEN_REVIEW_AUTHENTICATION", "true");
+    TuningParameters.getInstance().put("tokenReviewAuthentication", "true");
     AuthorizationProxyStub authorizationProxyStub = new AuthorizationProxyStub();
     RestBackendImpl restBackend = new RestBackendImpl("", "", Collections.singletonList(NS))
         .withAuthorizationProxy(authorizationProxyStub);
@@ -368,7 +368,6 @@ public class RestBackendImplTest {
 
   @Test
   public void whenUsingAccessToken_configureApiClient() {
-    HelmAccessStub.defineVariable("TOKEN_REVIEW_AUTHENTICATION", "false");
     RestBackendImpl restBackend = new RestBackendImpl("", "1234", Collections.singletonList(NS));
     ApiClient apiClient = restBackend.getCallBuilder().getClientPool().take();
     Authentication authentication = apiClient.getAuthentication("BearerToken");
@@ -379,7 +378,7 @@ public class RestBackendImplTest {
 
   @Test
   public void whenUsingTokenReview_configureApiClient() {
-    HelmAccessStub.defineVariable("TOKEN_REVIEW_AUTHENTICATION", "true");
+    TuningParameters.getInstance().put("tokenReviewAuthentication", "true");
     RestBackendImpl restBackend = new RestBackendImpl("", "", Collections.singletonList(NS));
     ApiClient apiClient = restBackend.getCallBuilder().getClientPool().take();
     Authentication authentication = apiClient.getAuthentication("BearerToken");

@@ -191,3 +191,9 @@ externalServiceNameSuffix: "-ext"
 # cluster size.
 # The default value is true.
 clusterSizePaddingValidationEnabled: true
+
+# tokenReviewAuthentication specifies whether the the operator's REST API should use
+#   1. Kubernetes token review API for authenticating users, and
+#   2. Kubernetes subject access review API for authorizing a user's operation (get, list,
+#      patch, etc) on a resource.
+#tokenReviewAuthentication: false

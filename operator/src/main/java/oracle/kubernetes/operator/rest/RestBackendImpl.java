@@ -26,13 +26,13 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.V1UserInfo;
 import oracle.kubernetes.operator.Main;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -428,7 +428,7 @@ public class RestBackendImpl implements RestBackend {
   }
 
   protected boolean authenticateWithTokenReview() {
-    return "true".equalsIgnoreCase(Optional.ofNullable(HelmAccess.getHelmVariable("TOKEN_REVIEW_AUTHENTICATION"))
+    return "true".equalsIgnoreCase(Optional.ofNullable(TuningParameters.getInstance().get("tokenReviewAuthentication"))
         .orElse("false"));
   }
 
