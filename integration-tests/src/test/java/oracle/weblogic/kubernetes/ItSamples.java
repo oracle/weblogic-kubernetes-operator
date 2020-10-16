@@ -213,7 +213,7 @@ public class ItSamples {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
           "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-          "domainUID: domain1", "domainUID: " + domainName);
+          "domain1", domainName);
     });
 
     // run create-domain.sh to create domain.yaml file
