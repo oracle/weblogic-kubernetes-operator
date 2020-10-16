@@ -24,11 +24,12 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
@@ -78,10 +79,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * can access the WebLogic cluster JNDI tree using the LoadBalancer tunneling 
  * approach as described in following  WebLogic Kubernetes operator faq page
  * https://oracle.github.io/weblogic-kubernetes-operator/faq/external-clients/ 
+ * Load balancer tunneling is the preferred approach for giving external 
+ * clients and servers access to a Kubernetes hosted WebLogic cluster. 
+ * In a WebLogic domain, configure a custom channel for the T3 protocol that 
+ * enables HTTP tunneling, and specifies an external address and port that 
+ * correspond to the address and port remote clients will use to access the 
+ * load balancer. Set up a load balancer that redirects HTTP(s) traffic to 
+ * the custom channel. Configure a WebLogic dynamic cluster domain using 
+ * Model In Image. Add a cluster targeted JMS distributed destination.
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test external RMI access through LoadBalncer Tunneling")
+@DisplayName("Test external RMI access through loadbalncer tunneling")
 @IntegrationTest
 class ItExternalRmiTunneling {
 
@@ -205,6 +214,12 @@ class ItExternalRmiTunneling {
     }
   }
 
+  /**
+   * The external JMS client sends 300 messages to a Uniform Distributed 
+   * Queue using load balancer HTTP url which maps to custom channel on 
+   * cluster member server on WebLogic cluster. The test also make sure that 
+   * each member destination gets an equal number of messages.
+   */
   @Order(1)
   @Test
   @DisplayName("Verify the RMI access WLS through LoadBalancer tunneling port")
@@ -230,12 +245,14 @@ class ItExternalRmiTunneling {
     StringBuffer deployIngress = new StringBuffer("kubectl apply -f ");
     deployIngress.append(Paths.get(RESULTS_ROOT, "voyager.tunneling.yaml"));
 
+    // Deploy the voyager ingress controller
     ExecResult result = assertDoesNotThrow(
         () -> exec(new String(deployIngress), true));
 
     logger.info("kubectl apply returned {0}", result.toString());
     checkServiceExists("voyager-voyager-tunneling", domainNamespace);
 
+    // Get the ingress service nodeport corresponding to non-tls service
     int httpTunnelingPort =
         getServiceNodePort(domainNamespace, "voyager-voyager-tunneling");
     assertTrue(httpTunnelingPort != -1,
@@ -264,9 +281,15 @@ class ItExternalRmiTunneling {
         .until(runJmsClient(new String(javaCmd)));
   }
 
+  /**
+   * The external JMS client sends 300 messages to a Uniform Distributed 
+   * Queue using load balancer HTTPS url which maps to custom channel on 
+   * cluster member server on WebLogic cluster. The test also make sure that 
+   * each destination member gets an equal number of messages.
+   */
   @Order(2)
   @Test
-  @DisplayName("Verify tls RMI access WLS through LoadBalancer tunneling port")
+  @DisplayName("Verify tls RMI access WLS through loadBalancer tunneling port")
   public void testExternalRmiAccessThruHttpsTunneling() {
 
     // Build the standalone JMS Client to send and receive messages
@@ -287,11 +310,17 @@ class ItExternalRmiTunneling {
             "voyager.tls.tunneling.yaml", templateMap));
     logger.info("Generated Voyager Https Tunneling file {0}", targetVoyagerHttpsFile);
 
-    // Create display SSL certificate and key using openssl with SAN extension
+    // Create SSL certificate and key using openSSL with SAN extension
     createCertKeyFiles(K8S_NODEPORT_HOST);
+    // Create kubernates secret using genereated certificate and key
     createSecretWithTLSCertKey(tlsSecretName);
-    createJksStore();
 
+    // Import the tls certificate into a JKS truststote to be used while
+    // running the standalone client.
+    importKeytoTrustStore();
+
+    // Deploy the voyager ingress controller with tls enabled service with SSL 
+    // terminating at Ingress.
     StringBuffer deployTlsIngress = new StringBuffer("kubectl apply -f ");
     deployTlsIngress.append(Paths.get(RESULTS_ROOT, "voyager.tls.tunneling.yaml"));
     ExecResult result = assertDoesNotThrow(
@@ -300,6 +329,7 @@ class ItExternalRmiTunneling {
     logger.info("kubectl apply returned {0}", result.toString());
     checkServiceExists("voyager-voyager-tls-tunneling", domainNamespace);
 
+    // Get the ingress service nodeport corresponding to tls service
     int httpsTunnelingPort =
         getServiceNodePort(domainNamespace, "voyager-voyager-tls-tunneling");
     assertTrue(httpsTunnelingPort != -1,
@@ -389,7 +419,7 @@ class ItExternalRmiTunneling {
     }
   }
 
-  // Create and display SSL certificate and key using openssl with SAN extension
+  // Create and display SSL certificate and key using openSSL with SAN extension
   private static void createCertKeyFiles(String cn) {
 
     Map<String, String> sanConfigTemplateMap  = new HashMap();
@@ -404,57 +434,47 @@ class ItExternalRmiTunneling {
 
     tlsKeyFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.key");
     tlsCertFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.cert");
-    String command = "openssl req -x509 -nodes -days 365 -newkey rsa:2048 "
+    String opcmd = "openssl req -x509 -nodes -days 365 -newkey rsa:2048 "
           + "-keyout " + tlsKeyFile + " -out " + tlsCertFile 
           + " -subj \"/CN=" + cn + "\" -extensions san"
           + " -config " + Paths.get(RESULTS_ROOT, "san.config.txt");
+    assertTrue(
+          new Command().withParams(new CommandParams()
+             .command(opcmd)).execute(), "openssl req command fails");
 
-    logger.info("Executing command: {0}", command);
-    ExecResult result = null;
-    result = assertDoesNotThrow(() -> exec(new String(command), true));
-    logger.info("openssl command (stdout) {0}", result.toString());
-    logger.info("openssl command (stderr) {0}", result.stderr());
-    assertTrue(result.exitValue() == 0, "openssl command fails");
-
-    String command2 = "openssl x509 -in " + tlsCertFile + " -noout -text ";
-    logger.info("Executing command: {0}", command2);
-    result = assertDoesNotThrow(() -> exec(new String(command2), true));
-    logger.info("openssl list command  returned {0}", result.toString());
-    assertTrue(result.exitValue() == 0, "openssl list command fails");
+    String opcmd2 = "openssl x509 -in " + tlsCertFile + " -noout -text ";
+    assertTrue(
+          new Command().withParams(new CommandParams()
+             .command(opcmd2)).execute(), "openssl list command fails");
   }
 
   // Import the certificate into a JKS TrustStore to be used while running 
   // external JMS client to send message to WebLogic.
-  private void createJksStore() {
+  private void importKeytoTrustStore() {
 
     jksTrustFile = Paths.get(RESULTS_ROOT, domainNamespace + "-trust.jks");
-    String key = "keytool -import -file " + tlsCertFile
+    String keycmd = "keytool -import -file " + tlsCertFile
         + " --keystore " + jksTrustFile
         + " -storetype jks -storepass password -noprompt ";
-    logger.info("Executing keytool command: {0}", key);
+    assertTrue(
+          new Command().withParams(new CommandParams()
+             .command(keycmd)).execute(), "keytool import command fails");
 
-    ExecResult result = null;
-    result = assertDoesNotThrow(() -> exec(new String(key), true));
-    logger.info("keytool command (stdout) {0}", result.toString());
-    logger.info("keytool command (stderr) : {0}", result.stderr());
-    assertTrue(result.exitValue() == 0, "keytool import fails");
-
-    String key2 = "keytool -list -keystore " + jksTrustFile 
+    String keycmd2 = "keytool -list -keystore " + jksTrustFile 
                    + " -storepass password -noprompt";
-    logger.info("Executing keytool command: {0}", key2);
-    result = assertDoesNotThrow(() -> exec(new String(key2), true));
-    logger.info("keytool command (stderr) : {0}", result.stderr());
-    assertTrue(result.exitValue() == 0, "keytool list fails");
+    assertTrue(
+          new Command().withParams(new CommandParams()
+             .command(keycmd2)).execute(), "keytool list command fails");
   }
 
   // Create kubernetes secret from the ssl key and certificate
   private void createSecretWithTLSCertKey(String tlsSecretName) {
-    String command = "kubectl create secret tls " + tlsSecretName + " --key " 
+    String kcmd = "kubectl create secret tls " + tlsSecretName + " --key " 
           + tlsKeyFile + " --cert " + tlsCertFile + " -n " + domainNamespace;
-    logger.info("Executing command: {0}", command);
-    assertDoesNotThrow(() -> ExecCommand.exec(command, true));
+    assertTrue(
+          new Command().withParams(new CommandParams()
+             .command(kcmd)).execute(), "kubectl create secret command fails");
   }
-
 
   private static void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
