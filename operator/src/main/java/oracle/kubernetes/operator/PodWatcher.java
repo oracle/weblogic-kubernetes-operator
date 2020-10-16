@@ -38,8 +38,6 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 
-import static oracle.kubernetes.operator.helpers.LegalNames.DOMAIN_INTROSPECTOR_JOB_SUFFIX;
-
 /**
  * Watches for changes to pods.
  */
@@ -163,7 +161,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     switch (item.type) {
       case "ADDED":
       case "MODIFIED":
-        if (getPodName(pod).contains(DOMAIN_INTROSPECTOR_JOB_SUFFIX) && isFailed(pod)) {
+        if (getPodName(pod).contains(Main.Namespaces.getIntrospectorJobNameSuffix()) && isFailed(pod)) {
           LOGGER.info(MessageKeys.INTROSPECTOR_POD_FAILED, getPodName(pod), getPodNamespace(pod), pod.getStatus());
         }
         copyOf(getOnModifiedCallbacks(getPodName(pod))).forEach(c -> c.accept(pod));
