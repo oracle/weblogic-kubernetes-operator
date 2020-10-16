@@ -119,6 +119,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.listJobs;
@@ -160,6 +161,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -669,6 +671,11 @@ public class ItTwoDomainsLoadBalancers {
       verifyAdminServerAccess(true, getNginxLbNodePort("https"), false, "",
           "/" + domainUid.substring(6) + "console");
     }
+
+    // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
+    // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
+    // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
+    verifyHeadersInAdminServerLog();
   }
 
   /**
@@ -702,6 +709,11 @@ public class ItTwoDomainsLoadBalancers {
       verifyAdminServerAccess(true, getVoyagerLbNodePort(ingressName, "tcp-443"), false, "",
           "/" + domainUid.substring(6) + "console");
     }
+
+    // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
+    // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
+    // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
+    verifyHeadersInAdminServerLog();
   }
 
   /**
@@ -735,6 +747,11 @@ public class ItTwoDomainsLoadBalancers {
       verifyAdminServerAccess(true, getTraefikLbNodePort(true), false,
           "", "/" + domainUid.substring(6) + "console");
     }
+
+    // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
+    // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
+    // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
+    verifyHeadersInAdminServerLog();
   }
 
   /**
@@ -1333,7 +1350,9 @@ public class ItTwoDomainsLoadBalancers {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                    .value("-Dweblogic.StdoutDebugEnabled=true "
+                        + "-Dweblogic.http.isWLProxyHeadersAccessible=true "
+                        + "-Dweblogic.debug.DebugHttp=true "
                         + "-Dweblogic.kernel.debug=true "
                         + "-Dweblogic.debug.DebugMessaging=true "
                         + "-Dweblogic.debug.DebugConnection=true "
@@ -1987,7 +2006,12 @@ public class ItTwoDomainsLoadBalancers {
       curlCmd = String.format("curl -ks --show-error --noproxy '*' -H 'host: %s' %s",
           ingressHostName, consoleUrl.toString());
     } else {
-      curlCmd = String.format("curl -ks --show-error --noproxy '*' %s", consoleUrl.toString());
+      if (isTLS) {
+        curlCmd = String.format("curl -ks --show-error --noproxy '*' -H 'WL-Proxy-Client-IP: 1.2.3.4' "
+            + "-H 'WL-Proxy-SSL: false' %s", consoleUrl.toString());
+      } else {
+        curlCmd = String.format("curl -ks --show-error --noproxy '*' %s", consoleUrl.toString());
+      }
     }
 
     boolean consoleAccessible = false;
@@ -2208,5 +2232,32 @@ public class ItTwoDomainsLoadBalancers {
 
     String labelSelector = String.format("apacheLabel in (%s)", "apache-custom-config");
     createPVPVCAndVerify(v1pv, v1pvc, labelSelector, apacheNamespace);
+  }
+
+  private void verifyHeadersInAdminServerLog() {
+
+    for (int i = 0; i < numberOfDomains; i++) {
+      int index = i;
+      // verify the admin server log does not contain WL-Proxy-Client-IP header
+      logger.info("Checking that the admin server log does not contain 'WL-Proxy-Client-IP' header");
+      assertFalse(assertDoesNotThrow(() ->
+          getPodLog(domainAdminServerPodNames.get(index), defaultNamespace)).contains("WL-Proxy-Client-IP"),
+          String.format("found WL-Proxy-Client-IP in the admin server pod log, pod: %s; namespace: %s",
+              domainAdminServerPodNames.get(index), defaultNamespace));
+
+      // verify the admin server log does not contain header "WL-Proxy-SSL: false"
+      logger.info("Checking that the admin server log does not contain header 'WL-Proxy-SSL: false'");
+      assertFalse(assertDoesNotThrow(() ->
+              getPodLog(domainAdminServerPodNames.get(index), defaultNamespace)).contains("WL-Proxy-SSL: false"),
+          String.format("found 'WL-Proxy-SSL: false' in the admin server pod log, pod: %s; namespace: %s",
+              domainAdminServerPodNames.get(index), defaultNamespace));
+
+      // verify the admin server log contains header "WL-Proxy-SSL: true"
+      logger.info("Checking that the admin server log contains header 'WL-Proxy-SSL: true'");
+      assertTrue(assertDoesNotThrow(() ->
+              getPodLog(domainAdminServerPodNames.get(index), defaultNamespace)).contains("WL-Proxy-SSL: true"),
+          String.format("Did not find 'WL-Proxy-SSL: true' in the admin server pod log, pod: %s; namespace: %s",
+              domainAdminServerPodNames.get(index), defaultNamespace));
+    }
   }
 }
