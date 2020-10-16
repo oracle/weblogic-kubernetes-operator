@@ -729,13 +729,13 @@ Now that we have created the AKS cluster, installed the operator, and verified t
    $ kubectl get svc --watch
    ```
 
-   The final example of servcie output is as following:
+   The final example of service output is as following:
 
    ```bash
    $ kubectl get svc --watch
    NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP      PORT(S)              AGE
    domain1-admin-server               ClusterIP      None          <none>           30012/TCP,7001/TCP   2d20h
-   domain1-admin-server-external      NodePort       10.0.182.50   <none>           7001:30701/TCP       2d20h
+   domain1-admin-server-ext           NodePort       10.0.182.50   <none>           7001:30701/TCP       2d20h
    domain1-admin-server-external-lb   LoadBalancer   10.0.67.79    52.188.176.103   7001:32227/TCP       2d20h
    domain1-cluster-1-lb               LoadBalancer   10.0.112.43   104.45.176.215   8001:30874/TCP       2d17h
    domain1-cluster-cluster-1          ClusterIP      10.0.162.19   <none>           8001/TCP             2d20h
@@ -933,7 +933,7 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
    $ kubectl get svc
    NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)              AGE
    domain1-admin-server               ClusterIP      None          <none>          30012/TCP,7001/TCP   7m3s
-   domain1-admin-server-external      NodePort       10.0.78.211   <none>          7001:30701/TCP       7m3s
+   domain1-admin-server-ext           NodePort       10.0.78.211   <none>          7001:30701/TCP       7m3s
    domain1-admin-server-external-lb   LoadBalancer   10.0.6.144    40.71.233.81    7001:32758/TCP       7m32s
    domain1-cluster-1-lb               LoadBalancer   10.0.29.231   52.142.39.152   8001:31022/TCP       7m30s
    domain1-cluster-cluster-1          ClusterIP      10.0.80.134   <none>          8001/TCP             1s

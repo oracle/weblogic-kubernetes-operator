@@ -3140,4 +3140,16 @@ public class CommonTestUtils {
     }
     return podsWithTimeStamps;
   }
+
+  public static String getExternalServicePodName(String adminServerPodName) {
+    return getExternalServicePodName(adminServerPodName, TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
+  public static String getExternalServicePodName(String adminServerPodName, String suffix) {
+    return adminServerPodName + suffix;
+  }
+
+  public static String getIntrospectJobName(String domainUid) {
+    return domainUid + TestConstants.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX;
+  }
 }

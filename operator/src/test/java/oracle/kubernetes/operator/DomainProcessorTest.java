@@ -284,6 +284,35 @@ public class DomainProcessorTest {
     assertThat(info.getExternalService(ADMIN_NAME), notNullValue());
   }
 
+  @Test
+  public void whenNoExternalServiceNameSuffixConfigured_externalServiceNameContainsDefaultSuffix() {
+    domainConfigurator.configureAdminServer().configureAdminService().withChannel("name", 30701);
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    configureDomain(domain)
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
+
+    assertThat(info.getExternalService(ADMIN_NAME).getMetadata().getName(),
+        equalTo(info.getDomainUid() + "-" + ADMIN_NAME + "-ext"));
+  }
+
+  @Test
+  public void whenExternalServiceNameSuffixConfigured_externalServiceNameContainsSuffix() {
+    domainConfigurator.configureAdminServer().configureAdminService().withChannel("name", 30701);
+    TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "-my-external-service");
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    configureDomain(domain)
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
+
+    assertThat(info.getExternalService(ADMIN_NAME).getMetadata().getName(),
+        equalTo(info.getDomainUid() + "-" + ADMIN_NAME + "-my-external-service"));
+  }
+
   private static final String OLD_INTROSPECTION_STATE = "123";
   private static final String NEW_INTROSPECTION_STATE = "124";
   private static final String INTROSPECTOR_MAP_NAME = UID + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;

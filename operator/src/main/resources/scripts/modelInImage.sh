@@ -554,8 +554,18 @@ function createPrimordialDomain() {
     # decrypt the merged model from introspect cm
     local DECRYPTED_MERGED_MODEL="/tmp/decrypted_merged_model.json"
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+
+    # Maintain backward compatibility - check first byte to see if it is a json file
+    # if yes then it is the not a gzipped and encrypted model, just use it
+    # else base64d to gzip file and unzip it
     encrypt_decrypt_model "decrypt" ${INTROSPECTCM_MERGED_MODEL}  ${MII_PASSPHRASE} \
       ${DECRYPTED_MERGED_MODEL}
+
+    if [ "{" != $(head -c 1 ${DECRYPTED_MERGED_MODEL}) ] ; then
+      base64 -d ${DECRYPTED_MERGED_MODEL} > ${DECRYPTED_MERGED_MODEL}.gz  || exitOrLoop
+      rm ${DECRYPTED_MERGED_MODEL}  || exitOrLoop
+      gunzip ${DECRYPTED_MERGED_MODEL}.gz  || exitOrLoop
+    fi
 
     diff_model ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
 
@@ -616,8 +626,8 @@ function createPrimordialDomain() {
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
     encrypt_decrypt_domain_secret "encrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
 
-    tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/lib  ${empath} \
-    ${DOMAIN_HOME}/*
+    tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/sysman/log  \
+    --exclude ${DOMAIN_HOME}/lib --exclude ${DOMAIN_HOME}/backup_config ${empath} ${DOMAIN_HOME}/*
 
     # Put back the original one so that update can continue
     mv  /tmp/sii.dat.saved ${DOMAIN_HOME}/security/SerializedSystemIni.dat
@@ -802,7 +812,9 @@ function wdtUpdateModelDomain() {
   #
   local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
 
-  encrypt_decrypt_model "encrypt" ${DOMAIN_HOME}/wlsdeploy/domain_model.json ${MII_PASSPHRASE} \
+  gzip ${DOMAIN_HOME}/wlsdeploy/domain_model.json || exitOrLoop
+  base64 ${DOMAIN_HOME}/wlsdeploy/domain_model.json.gz > ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 || exitOrLoop
+  encrypt_decrypt_model "encrypt" ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 ${MII_PASSPHRASE} \
     ${DOMAIN_HOME}/wlsdeploy/domain_model.json
 
   # restore trap
