@@ -36,8 +36,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNot
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
@@ -52,17 +51,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests related to introspectVersion attribute.
  */
-@DisplayName("Verify the samples")
+@DisplayName("Verify the domain on pv samples using wlst and wdt")
 @IntegrationTest
 public class ItSamples {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
 
-  private Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
-  private Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
+  private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
+  private final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
 
-  private static String[] params = {"wlst:domain1", "wdt:domain2"};
+  private static final String[] params = {"wlst:domain1", "wdt:domain2"};
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -78,7 +77,7 @@ public class ItSamples {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
@@ -92,10 +91,116 @@ public class ItSamples {
     installAndVerifyOperator(opNamespace, domainNamespace);
   }
 
+  /**
+   * Test domain in pv samples using domains created by wlst and wdt.
+   *
+   * @param model domain name and script type to create domain
+   */
+  @ParameterizedTest
+  @MethodSource("paramProvider")
+  @DisplayName("Test samples using domain in pv")
+  public void testSampleDomainInPv(String model) {
+
+    String domainName = model.split(":")[1];
+    String script = model.split(":")[0];
+
+    //copy the samples directory to a temporary location
+    setupSample();
+    //create PV and PVC used by the domain
+    createPvPvc(domainName);
+
+    //create WebLogic secrets for the domain
+    createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    Path sampleBase = Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
+
+    // change namespace from default to custom, set wlst or wdt, domain name, and t3PublicAddress
+    assertDoesNotThrow(() -> {
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "namespace: default", "namespace: " + domainNamespace);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "domain1", domainName);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
+    });
+
+    // run create-domain.sh to create domain.yaml file
+    CommandParams params = new CommandParams().defaults();
+    params.command("sh "
+        + Paths.get(sampleBase.toString(), "create-domain.sh").toString()
+        + " -i " + Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
+        + " -o "
+        + Paths.get(sampleBase.toString()));
+
+    boolean result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to create domain.yaml");
+
+    // run kubectl to create the domain
+    params = new CommandParams().defaults();
+    params.command("kubectl apply -f "
+        + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
+
+    result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to create domain");
+
+    // wait for the domain to exist
+    logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainExists(domainName, DOMAIN_VERSION, domainNamespace));
+
+    final String adminServerName = "admin-server";
+    final String adminServerPodName = domainName + "-" + adminServerName;
+
+    final String managedServerNameBase = "managed-server";
+    String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
+    int replicaCount = 2;
+
+    // verify the admin server service and pod is created
+    checkPodReadyAndServiceExists(adminServerPodName, domainName, domainNamespace);
+
+    // verify managed server services created and pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
+    }
+
+    //delete the domain resource
+    params = new CommandParams().defaults();
+    params.command("kubectl delete -f "
+        + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
+    result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to delete domain");
+
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
+                + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainDoesNotExist(domainName, DOMAIN_VERSION, domainNamespace));
+
+  }
+
+  // generates the stream of objects used by parametrized test.
+  private static Stream<String> paramProvider() {
+    return Arrays.stream(params);
+  }
+
   // copy samples directory to a temporary location
   private void setupSample() {
     assertDoesNotThrow(() -> {
-      // copy ITTESTS_DIR + "/kubernates/samples" to WORK_DIR + "/sample-testing"
+      // copy ITTESTS_DIR + "../kubernates/samples" to WORK_DIR + "/sample-testing"
       logger.info("Deleting and recreating {0}", tempSamplePath);
       Files.createDirectories(tempSamplePath);
       deleteDirectory(tempSamplePath.toFile());
@@ -128,10 +233,13 @@ public class ItSamples {
       // set the pvHostPath in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + pvHostPath);
+      // set the namespace in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "namespace: default", "namespace: " + domainNamespace);
+      // set the baseName to domain name in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "baseName: weblogic-sample", "baseName: " + domainName + "-weblogic-sample");
+      // set the pv storage policy to Recycle in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
     });
@@ -186,121 +294,7 @@ public class ItSamples {
   }
 
   /**
-   * Test samples for domain in pv.
-   *
-   * @param model domain and script to create domain
-   */
-  @ParameterizedTest
-  @MethodSource("paramProvider")
-  @DisplayName("Test sample domain in pv")
-  public void testSampleDomainInPv(String model) {
-
-    String domainName = model.split(":")[1];
-    String script = model.split(":")[0];
-
-    setupSample();
-    createPvPvc(domainName);
-
-    createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    Path sampleBase = Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
-
-    // change namespace from default to custom
-    assertDoesNotThrow(() -> {
-      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-          "namespace: default", "namespace: " + domainNamespace);
-      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-          "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
-      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-          "domain1", domainName);
-      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-          "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
-    });
-
-    // run create-domain.sh to create domain.yaml file
-    CommandParams params = new CommandParams().defaults();
-    params.command("sh "
-        + Paths.get(sampleBase.toString(), "create-domain.sh").toString()
-        + " -i " + Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
-        + " -o "
-        + Paths.get(sampleBase.toString()));
-
-    boolean result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to create domain.yaml");
-
-    // run kubectl to create the domain
-    params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
-        + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
-
-    result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to create domain");
-
-    final String adminServerName = "admin-server";
-    final String adminServerPodName = domainName + "-" + adminServerName;
-
-    final String managedServerNameBase = "managed-server";
-    String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
-    int replicaCount = 2;
-
-    // wait for the domain to exist
-    logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainName, DOMAIN_VERSION, domainNamespace));
-
-    // verify the admin server service created
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainName, domainNamespace);
-
-    // verify managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
-    }
-
-    // verify managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainName, domainNamespace);
-    }
-
-    //delete the domain resource
-    params = new CommandParams().defaults();
-    params.command("kubectl delete -f "
-        + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
-    result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to delete domain");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
-                + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainDoesNotExist(domainName, DOMAIN_VERSION, domainNamespace));
-
-  }
-  // generates the stream of objects used by parametrized test.
-
-  private static Stream<String> paramProvider() {
-    return Arrays.stream(params);
-  }
-
-  /**
-   * Uninstall Nginx. The cleanup framework does not uninstall Nginx release. Do it here for now.
+   * Delete the persistent volumes since the domain resources are not decorated with label.
    */
   @AfterAll
   public void tearDownAll() {
