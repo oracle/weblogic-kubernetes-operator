@@ -1,3 +1,6 @@
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 import java.util.Hashtable;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -18,6 +21,17 @@ import javax.jms.JMSContext;
 import javax.jms.JMSConsumer;
 import javax.jms.JMSProducer;
 import javax.jms.JMSRuntimeException;
+
+
+/**
+ * This JMS client that sends 300 messages to a Uniform Distributed Queue 
+ * using load balancer http(s) url which maps to custom channel on cluster 
+ * member server on WebLogic cluster.
+ * It also verifies that the messages are load balanced across 2 member.
+ * The test returns success(0) if it finds 150 messages on each member 
+ * else returns failure (-1)  
+ * Usage java JmsTestClient http(s)://host:port
+ */
 
 public class JmsTestClient {
 

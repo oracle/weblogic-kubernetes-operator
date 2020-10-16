@@ -210,6 +210,7 @@ class ItExternalRmiTunneling {
   @DisplayName("Verify the RMI access WLS through LoadBalancer tunneling port")
   public void testExternalRmiAccessThruHttpTunneling() {
 
+    // Build the standalone JMS Client to send and receive messages
     buildClient();
 
     // Prepare the voyager ingress file from the template file by replacing 
@@ -241,6 +242,7 @@ class ItExternalRmiTunneling {
         "Could not get the HttpTunnelingPort service node port");
     logger.info("HttpTunnelingPort for Voyager {0}", httpTunnelingPort);
 
+    // Generate java command to execute client with classpath
     StringBuffer httpUrl = new StringBuffer("http://");
     httpUrl.append(K8S_NODEPORT_HOST + ":" + httpTunnelingPort);
 
@@ -267,6 +269,7 @@ class ItExternalRmiTunneling {
   @DisplayName("Verify tls RMI access WLS through LoadBalancer tunneling port")
   public void testExternalRmiAccessThruHttpsTunneling() {
 
+    // Build the standalone JMS Client to send and receive messages
     buildClient();
 
     // Prepare the voyager ingress file from the template file by replacing 
@@ -284,6 +287,7 @@ class ItExternalRmiTunneling {
             "voyager.tls.tunneling.yaml", templateMap));
     logger.info("Generated Voyager Https Tunneling file {0}", targetVoyagerHttpsFile);
 
+    // Create display SSL certificate and key using openssl with SAN extension
     createCertKeyFiles(K8S_NODEPORT_HOST);
     createSecretWithTLSCertKey(tlsSecretName);
     createJksStore();
@@ -302,6 +306,7 @@ class ItExternalRmiTunneling {
         "Could not get the HttpsTunnelingPort service node port");
     logger.info("HttpsTunnelingPort for Voyager {0}", httpsTunnelingPort);
 
+    // Generate java command to execute client with classpath
     StringBuffer httpsUrl = new StringBuffer("https://");
     httpsUrl.append(K8S_NODEPORT_HOST + ":" + httpsTunnelingPort);
 
@@ -397,42 +402,49 @@ class ItExternalRmiTunneling {
         "san.config.txt", sanConfigTemplateMap));
     logger.info("Generated SAN config file {0}", targetFile);
 
-    assertDoesNotThrow(() -> {
-      tlsKeyFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.key");
-      tlsCertFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.cert");
-      String command = "openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout " + tlsKeyFile
-          + " -out " + tlsCertFile + " -subj \"/CN=" + cn + "\" -extensions san"
+    tlsKeyFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.key");
+    tlsCertFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.cert");
+    String command = "openssl req -x509 -nodes -days 365 -newkey rsa:2048 "
+          + "-keyout " + tlsKeyFile + " -out " + tlsCertFile 
+          + " -subj \"/CN=" + cn + "\" -extensions san"
           + " -config " + Paths.get(RESULTS_ROOT, "san.config.txt");
-      logger.info("Executing command: {0}", command);
-      ExecResult result = ExecCommand.exec(command, true);
-      logger.info("openssl command  returned {0}", result.toString());
-    });
 
-    assertDoesNotThrow(() -> {
-      String command2 = "openssl x509 -in " + tlsCertFile + " -noout -text ";
-      logger.info("Executing command: {0}", command2);
-      ExecResult result = ExecCommand.exec(command2, true);
-      logger.info("openssl list command  returned {0}", result.toString());
-    });
+    logger.info("Executing command: {0}", command);
+    ExecResult result = null;
+    result = assertDoesNotThrow(() -> exec(new String(command), true));
+    logger.info("openssl command (stdout) {0}", result.toString());
+    logger.info("openssl command (stderr) {0}", result.stderr());
+    assertTrue(result.exitValue() == 0, "openssl command fails");
+
+    String command2 = "openssl x509 -in " + tlsCertFile + " -noout -text ";
+    logger.info("Executing command: {0}", command2);
+    result = assertDoesNotThrow(() -> exec(new String(command2), true));
+    logger.info("openssl list command  returned {0}", result.toString());
+    assertTrue(result.exitValue() == 0, "openssl list command fails");
   }
 
   // Import the certificate into a JKS TrustStore to be used while running 
   // external JMS client to send message to WebLogic.
   private void createJksStore() {
-    assertDoesNotThrow(() -> {
-      jksTrustFile = Paths.get(RESULTS_ROOT, domainNamespace + "-trust.jks");
-      String command = "keytool -import -file " + tlsCertFile 
-             + " --keystore " + jksTrustFile 
-             + " -storetype jks -storepass password -noprompt ";
-      logger.info("Executing command: {0}", command);
-      ExecCommand.exec(command, true);
-    });
 
-    assertDoesNotThrow(() -> {
-      String command2 = "keytool -list -keystore " + jksTrustFile + " -storepass password -noprompt";
-      logger.info("Executing command: {0}", command2);
-      ExecCommand.exec(command2, true);
-    });
+    jksTrustFile = Paths.get(RESULTS_ROOT, domainNamespace + "-trust.jks");
+    String key = "keytool -import -file " + tlsCertFile
+        + " --keystore " + jksTrustFile
+        + " -storetype jks -storepass password -noprompt ";
+    logger.info("Executing keytool command: {0}", key);
+
+    ExecResult result = null;
+    result = assertDoesNotThrow(() -> exec(new String(key), true));
+    logger.info("keytool command (stdout) {0}", result.toString());
+    logger.info("keytool command (stderr) : {0}", result.stderr());
+    assertTrue(result.exitValue() == 0, "keytool import fails");
+
+    String key2 = "keytool -list -keystore " + jksTrustFile 
+                   + " -storepass password -noprompt";
+    logger.info("Executing keytool command: {0}", key2);
+    result = assertDoesNotThrow(() -> exec(new String(key2), true));
+    logger.info("keytool command (stderr) : {0}", result.stderr());
+    assertTrue(result.exitValue() == 0, "keytool list fails");
   }
 
   // Create kubernetes secret from the ssl key and certificate
