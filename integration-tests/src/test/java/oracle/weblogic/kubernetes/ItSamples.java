@@ -58,8 +58,6 @@ public class ItSamples {
   private static String opNamespace = null;
   private static String domainNamespace = null;
 
-  private static String weblogicCredentialsSecretName = "domain1-weblogic-credentials";
-
   private Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
 
@@ -91,8 +89,6 @@ public class ItSamples {
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
-    createSecretWithUsernamePassword(weblogicCredentialsSecretName, domainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
   }
 
   // copy samples directory to a temporary location
@@ -203,6 +199,9 @@ public class ItSamples {
 
     setupSample();
     createPvPvc(domainName);
+
+    createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     Path sampleBase = Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
 
