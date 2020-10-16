@@ -176,7 +176,7 @@ kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/custom-request-headers: WL-Proxy-SSL:true
+    ingress.kubernetes.io/custom-request-headers: "WL-Proxy-SSL: true"
   name: @domain1uid@-traefik-tls-console
   namespace: default
 spec:
@@ -212,7 +212,7 @@ kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/custom-request-headers: WL-Proxy-SSL:true
+    ingress.kubernetes.io/custom-request-headers: "WL-Proxy-SSL: true"
   name: @domain2uid@-traefik-tls-console
   namespace: default
 spec:
@@ -248,7 +248,7 @@ kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/custom-request-headers: WL-Proxy-SSL:true
+    ingress.kubernetes.io/custom-request-headers: "WL-Proxy-SSL: true"
   name: @domain1uid@-traefik-tls-pathrouting
   namespace: default
 spec:
@@ -284,7 +284,7 @@ kind: IngressRoute
 metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/custom-request-headers: WL-Proxy-SSL:true
+    ingress.kubernetes.io/custom-request-headers: "WL-Proxy-SSL: true"
   name: @domain2uid@-traefik-tls-pathrouting
   namespace: default
 spec:

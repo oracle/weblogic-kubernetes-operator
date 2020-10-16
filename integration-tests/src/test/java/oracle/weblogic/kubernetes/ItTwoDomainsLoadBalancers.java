@@ -73,7 +73,7 @@ import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.AfterAll;
+//import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -776,7 +776,7 @@ public class ItTwoDomainsLoadBalancers {
   /**
    * Cleanup all the remaining artifacts in default namespace created by the test.
    */
-  @AfterAll
+  //@AfterAll
   public void tearDownAll() {
     // uninstall Traefik loadbalancer
     if (traefikHelmParams != null) {
@@ -2239,24 +2239,30 @@ public class ItTwoDomainsLoadBalancers {
 
     for (int i = 0; i < numberOfDomains; i++) {
       int index = i;
+      logger.info("Getting admin server pod log from pod {0} in namespace {1}",
+          domainAdminServerPodNames.get(index), defaultNamespace);
+      String adminServerPodLog =
+          assertDoesNotThrow(() -> getPodLog(domainAdminServerPodNames.get(index), defaultNamespace));
+
+      assertNotNull(adminServerPodLog,
+          String.format("failed to get admin server log from pod %s in namespace %s, returned null",
+          domainAdminServerPodNames.get(index), defaultNamespace));
+
       // verify the admin server log does not contain WL-Proxy-Client-IP header
       logger.info("Checking that the admin server log does not contain 'WL-Proxy-Client-IP' header");
-      assertFalse(assertDoesNotThrow(() ->
-          getPodLog(domainAdminServerPodNames.get(index), defaultNamespace)).contains("WL-Proxy-Client-IP"),
+      assertFalse(adminServerPodLog.contains("WL-Proxy-Client-IP"),
           String.format("found WL-Proxy-Client-IP in the admin server pod log, pod: %s; namespace: %s",
               domainAdminServerPodNames.get(index), defaultNamespace));
 
       // verify the admin server log does not contain header "WL-Proxy-SSL: false"
       logger.info("Checking that the admin server log does not contain header 'WL-Proxy-SSL: false'");
-      assertFalse(assertDoesNotThrow(() ->
-              getPodLog(domainAdminServerPodNames.get(index), defaultNamespace)).contains("WL-Proxy-SSL: false"),
+      assertFalse(adminServerPodLog.contains("WL-Proxy-SSL: false"),
           String.format("found 'WL-Proxy-SSL: false' in the admin server pod log, pod: %s; namespace: %s",
               domainAdminServerPodNames.get(index), defaultNamespace));
 
       // verify the admin server log contains header "WL-Proxy-SSL: true"
       logger.info("Checking that the admin server log contains header 'WL-Proxy-SSL: true'");
-      assertTrue(assertDoesNotThrow(() ->
-              getPodLog(domainAdminServerPodNames.get(index), defaultNamespace)).contains("WL-Proxy-SSL: true"),
+      assertTrue(adminServerPodLog.contains("WL-Proxy-SSL: true"),
           String.format("Did not find 'WL-Proxy-SSL: true' in the admin server pod log, pod: %s; namespace: %s",
               domainAdminServerPodNames.get(index), defaultNamespace));
     }
