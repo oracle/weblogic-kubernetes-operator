@@ -96,6 +96,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
@@ -835,7 +836,8 @@ class ItMiiUpdateDomainConfig {
    **/
   private boolean checkManagedServerConfiguration(String managedServer) {
     ExecResult result = null;
-    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/tenant-monitoring/servers/")
@@ -887,7 +889,8 @@ class ItMiiUpdateDomainConfig {
   private boolean checkSystemResourceConfiguration(String resourcesType, 
          String resourcesName, String expectedStatusCode) {
 
-    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     ExecResult result = null;
     curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
@@ -909,7 +912,8 @@ class ItMiiUpdateDomainConfig {
   }
 
   private ExecResult checkJdbcRuntime(String resourcesName) {
-    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     ExecResult result = null;
 
     curlString = new StringBuffer("curl --user weblogic:welcome1 ");

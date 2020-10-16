@@ -48,6 +48,10 @@ public class DomainValidationSteps {
     return new DomainAdditionalValidationStep(podSpec);
   }
 
+  public static Step createAfterIntrospectValidationSteps(String domainUid) {
+    return new DomainAfterIntrospectValidationStep(domainUid);
+  }
+
   private static Step createListSecretsStep(String domainNamespace) {
     return new CallBuilder().listSecretsAsync(domainNamespace, new ListSecretsResponseStep());
   }
@@ -223,5 +227,33 @@ public class DomainValidationSteps {
             && Objects.equals(name, metadata.getName())
             && Objects.equals(namespace, metadata.getNamespace());
     }
+  }
+
+  private static class DomainAfterIntrospectValidationStep extends Step {
+    private String domainUid;
+
+    public DomainAfterIntrospectValidationStep(String domainUid) {
+      this.domainUid = domainUid;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      Domain domain = info.getDomain();
+      List<String> validationFailures = domain.getAfterIntrospectValidationFailures(packet);
+
+      if (validationFailures.isEmpty()) {
+        return doNext(packet);
+      }
+
+      LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
+      Step step = DomainStatusUpdater.createFailedStep(BAD_DOMAIN, perLine(validationFailures), null);
+      return doNext(step, packet);
+    }
+
+    private String perLine(List<String> validationFailures) {
+      return String.join(lineSeparator(), validationFailures);
+    }
+
   }
 }

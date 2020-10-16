@@ -50,7 +50,7 @@ public class DomainSpec extends BaseConfiguration {
       + "that this value be unique within the namespace, similarly to the names of Kubernetes resources. "
       + "This value is distinct and need not match the domain name from the WebLogic domain configuration. "
       + "Defaults to the value of `metadata.name`.")
-  @Pattern("^[a-z0-9-.]{1,253}$")
+  @Pattern("^[a-z0-9-.]{1,45}$")
   @SerializedName("domainUID")
   private String domainUid;
 

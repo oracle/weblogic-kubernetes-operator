@@ -403,7 +403,7 @@ function waitForJobComplete {
 
     # If the job is completed, there should have the following services created,
     #    ${domainUID}-${adminServerName}, e.g. domain1-admin-server
-    #    ${domainUID}-${adminServerName}-external, e.g. domain1-admin-server-external
+    #    ${domainUID}-${adminServerName}-ext, e.g. domain1-admin-server-ext
     #    ${domainUID}-${adminServerName}-external-lb, e.g domain1-admin-server-external-lb
     adminServiceCount=`kubectl get svc | grep -c "${domainUID}-${adminServerName}"`
     if [ ${adminServiceCount} -lt 3 ]; then svcState="running"; fi
