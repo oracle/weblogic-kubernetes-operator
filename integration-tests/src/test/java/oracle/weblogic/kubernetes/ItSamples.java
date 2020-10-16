@@ -31,6 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
@@ -211,6 +212,8 @@ public class ItSamples {
           "namespace: default", "namespace: " + domainNamespace);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
           "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "domainUID: domain1", "domainUID: " + domainName);
     });
 
     // run create-domain.sh to create domain.yaml file
@@ -230,7 +233,7 @@ public class ItSamples {
         + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
 
     result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to create create domain");
+    assertTrue(result, "Failed to create domain");
 
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainName + "-" + adminServerName;
@@ -270,6 +273,23 @@ public class ItSamples {
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReady(managedServerPodNamePrefix + i, domainName, domainNamespace);
     }
+
+    //delete the domain resource
+    params = new CommandParams().defaults();
+    params.command("kubectl delete -f "
+        + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
+    result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to delete domain");
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
+                + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainDoesNotExist(domainName, DOMAIN_VERSION, domainNamespace));
+
   }
   // generates the stream of objects used by parametrized test.
 
