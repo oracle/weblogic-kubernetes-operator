@@ -20,7 +20,7 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -188,7 +188,7 @@ public class ItSamples {
 
   }
 
-  @Test
+  @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test sample domain in pv")
   public void testSampleDomainInPv(String model) {
