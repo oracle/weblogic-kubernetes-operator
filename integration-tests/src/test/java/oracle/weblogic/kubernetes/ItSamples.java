@@ -57,14 +57,10 @@ public class ItSamples {
   private static String opNamespace = null;
   private static String domainNamespace = null;
 
-  private static String domainName = "domain1";
   private static String weblogicCredentialsSecretName = "domain1-weblogic-credentials";
 
   private Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
-
-  String pvName = domainName + "-weblogic-sample-pv";
-  String pvcName = domainName + "-weblogic-sample-pvc";
 
   private static String[] params = {"wlst:domain1", "wdt:domain2"};
 
@@ -114,6 +110,9 @@ public class ItSamples {
 
   // create persistent volume and persistent volume claims used by the samples
   private void createPvPvc(String domainName) {
+
+    String pvName = domainName + "-weblogic-sample-pv";
+    String pvcName = domainName + "-weblogic-sample-pvc";
 
     Path pvpvcBase = Paths.get(tempSamplePath.toString(),
         "scripts/create-weblogic-domain-pv-pvc");
@@ -190,6 +189,7 @@ public class ItSamples {
 
   /**
    * Test samples for domain in pv.
+   *
    * @param model domain and script to create domain
    */
   @ParameterizedTest
@@ -231,8 +231,6 @@ public class ItSamples {
 
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create create domain");
-
-    final String clusterName = "cluster-1";
 
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainName + "-" + adminServerName;
@@ -284,7 +282,9 @@ public class ItSamples {
    */
   @AfterAll
   public void tearDownAll() {
-    TestActions.deletePersistentVolumeClaim(pvcName, domainNamespace);
-    TestActions.deletePersistentVolume(pvName);
+    for (String domainName : new String[]{"domain1", "domain2"}) {
+      TestActions.deletePersistentVolumeClaim(domainName + "-weblogic-sample-pvc", domainNamespace);
+      TestActions.deletePersistentVolume(domainName + "-weblogic-sample-pv");
+    }
   }
 }
