@@ -134,8 +134,6 @@ public class ItSamples {
           "baseName: weblogic-sample", "baseName: " + domainName + "-weblogic-sample");
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
-      replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
     });
 
     // generate the create-pv-pvc-inputs.yaml
@@ -216,6 +214,8 @@ public class ItSamples {
           "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
           "domain1", domainName);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
     });
 
     // run create-domain.sh to create domain.yaml file
