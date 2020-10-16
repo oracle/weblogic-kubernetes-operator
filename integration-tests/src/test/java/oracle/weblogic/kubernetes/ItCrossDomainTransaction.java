@@ -308,9 +308,9 @@ public class ItCrossDomainTransaction {
    * one domain is shutdown. Domain in image with wdt is used to create 2 domains in different namespaces.
    * A servlet is deployed to the admin server of domain1. This servlet starts a transaction with
    * TMAfterTLogBeforeCommitExit transaction property set. The servlet inserts data into oracleDB table and
-   * sends a message to a JMS queue as part of a same transaction.
-   * The coordinator (server in domain2) should exit before commit and the domain1
-   * admin server should be able to re-establish connection with domain2 and the transaction should commit.
+   * sends a message to a JMS queue as part of a same transaction.The coordinator (server in domain2)
+   * should exit before commit and the domain1 admin server should be able to re-establish connection
+   * with domain2 and the transaction should commit.
    *
    */
   @Test
