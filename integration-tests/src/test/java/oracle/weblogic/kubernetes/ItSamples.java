@@ -6,7 +6,9 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -62,6 +65,8 @@ public class ItSamples {
 
   String pvName = domainName + "-weblogic-sample-pv";
   String pvcName = domainName + "-weblogic-sample-pvc";
+
+  private static String[] params = {"wlst:domain1", "wdt:domain2"};
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -108,7 +113,7 @@ public class ItSamples {
   }
 
   // create persistent volume and persistent volume claims used by the samples
-  private void createPvPvc() {
+  private void createPvPvc(String domainName) {
 
     Path pvpvcBase = Paths.get(tempSamplePath.toString(),
         "scripts/create-weblogic-domain-pv-pvc");
@@ -148,7 +153,7 @@ public class ItSamples {
     //create pv and pvc
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
-        "pv-pvcs/domain1-weblogic-sample-pv.yaml").toString());
+        "pv-pvcs/" + domainName + "-weblogic-sample-pv.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pv");
 
@@ -165,7 +170,7 @@ public class ItSamples {
 
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
-        "pv-pvcs/domain1-weblogic-sample-pvc.yaml").toString());
+        "pv-pvcs/" + domainName + "-weblogic-sample-pvc.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pvc");
 
@@ -184,11 +189,15 @@ public class ItSamples {
   }
 
   @Test
+  @MethodSource("paramProvider")
   @DisplayName("Test sample domain in pv")
-  public void testSampleDomainInPv() {
+  public void testSampleDomainInPv(String model) {
+
+    String domainName = model.split(":")[1];
+    String script = model.split(":")[0];
 
     setupSample();
-    createPvPvc();
+    createPvPvc(domainName);
 
     Path sampleBase = Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
 
@@ -196,6 +205,8 @@ public class ItSamples {
     assertDoesNotThrow(() -> {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
           "namespace: default", "namespace: " + domainNamespace);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
     });
 
     // run create-domain.sh to create domain.yaml file
@@ -209,12 +220,10 @@ public class ItSamples {
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
 
-
-
     // run kubectl to create the domain
     params = new CommandParams().defaults();
     params.command("kubectl apply -f "
-        + Paths.get(sampleBase.toString(), "weblogic-domains/domain1/domain.yaml").toString());
+        + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
 
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create create domain");
@@ -259,6 +268,11 @@ public class ItSamples {
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReady(managedServerPodNamePrefix + i, domainName, domainNamespace);
     }
+  }
+  // generates the stream of objects used by parametrized test.
+
+  private static Stream<String> paramProvider() {
+    return Arrays.stream(params);
   }
 
   /**
