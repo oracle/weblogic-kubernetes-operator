@@ -68,6 +68,7 @@ public class CdtTxServlet extends HttpServlet {
     Destination d;
     Context ctx;
     JMSContext context;
+    String jmsMsg ="(D1) A Transcated JMS Message";
 
     try {
       DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -122,14 +123,14 @@ public class CdtTxServlet extends HttpServlet {
         Xid xid = tx.getXID();
         System.out.println("xid=" + xid);
         tx.setProperty("TMAfterTLogBeforeCommitExit", Boolean.TRUE);
-        
+
         Connection conn1 = ds.getConnection();
         System.out.println("Got connection to datasource - " + conn1);
         out.println("Got connection to datasource - " + conn1);
         insertData(conn1, tableName);
         System.out.println("CdTXServlet: Inserted data");
         out.println("CdTXServlet: Inserted data");
-        context.createProducer().send(d, "(D1) A Transcated JMS Message");
+        context.createProducer().send(d, jmsMsg);
         System.out.println("CdTXServlet: sent message to jms queue");
         out.println("CdTXServlet: sent message to jms queue");
 
@@ -153,9 +154,10 @@ public class CdtTxServlet extends HttpServlet {
       String body = context.createConsumer(d).receiveBody(String.class);
       System.out.println("message received from the queue : " + body);
       out.println("message received from the queue : " + body);
+      boolean msgRecd = jmsMsg.equals(body);
 
-      boolean dataGetInserted = readData(conn, tableName);
-      if (dataGetInserted) {
+      boolean dataGotInserted = readData(conn, tableName);
+      if (dataGotInserted && msgRecd) {
         out.println("Status=SUCCESS: Transaction committed successfully with TMAfterTLogBeforeCommitExit set");
       } else {
         out.println("Status=FAILURE: Transaction failed to commit with TMAfterTLogBeforeCommitExit set");

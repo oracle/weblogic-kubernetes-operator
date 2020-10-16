@@ -1753,8 +1753,6 @@ public class CommonTestUtils {
                                             String altModelDir,
                                             String domainHome) {
 
-    //final List<String> wdtModelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
-    //final List<String> appSrcDirList = Collections.singletonList(appName);
     final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
 
     return createImageAndVerify(

@@ -18,8 +18,6 @@ resources:
         JDBCDriverParams:
           URL: 'jdbc:oracle:thin:@//@@PROP:K8S_NODEPORT_HOST@@:@@PROP:DBPORT@@/devpdb.k8s'
           PasswordEncrypted: 'Oradoc_db1'
-          #DriverName: com.mysql.cj.jdbc.MysqlXADataSource
-          #DriverName: com.mysql.cj.jdbc.Driver
           DriverName: oracle.jdbc.xa.client.OracleXADataSource
           Properties:
             user:

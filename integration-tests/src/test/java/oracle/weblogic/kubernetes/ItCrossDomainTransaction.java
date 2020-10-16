@@ -305,15 +305,16 @@ public class ItCrossDomainTransaction {
 
   /*
    * This test verifies cross domain transaction is successful and able to re-establish connection when
-   * one domain is shutdown. domain in image using wdt is used to create 2 domains in different namespaces.
+   * one domain is shutdown. Domain in image with wdt is used to create 2 domains in different namespaces.
    * A servlet is deployed to the admin server of domain1. This servlet starts a transaction with
-   * TMAfterTLogBeforeCommitExit transaction property set. Sends a message to a JMS queue and also inserts
-   * data into oracleDB table. The coordinator (server in domain2) should exit before commit and the domain1
-   * admin server should be able to establish connection with domain2 and the transaction should commit.
+   * TMAfterTLogBeforeCommitExit transaction property set. The servlet inserts data into oracleDB table and
+   * sends a message to a JMS queue as part of a same transaction.
+   * The coordinator (server in domain2) should exit before commit and the domain1
+   * admin server should be able to re-establish connection with domain2 and the transaction should commit.
    *
    */
   @Test
-  @DisplayName("Check cross domain transaction works")
+  @DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
   public void testCrossDomainTransactionWithFailInjection() {
 
     logger.info("Getting admin server external service node port");
