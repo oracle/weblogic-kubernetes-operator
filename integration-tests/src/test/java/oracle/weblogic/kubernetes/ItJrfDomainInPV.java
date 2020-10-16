@@ -175,7 +175,7 @@ public class ItJrfDomainInPV {
         "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("oracleHome", "/u01/oracle"); //default $ORACLE_HOME
-    p.setProperty("javaHome", "/u01/jdk"); //default $JAVA_HOME
+    //p.setProperty("javaHome", "/u01/jdk"); //default $JAVA_HOME
     p.setProperty("domainParentDir", "/shared/domains/");
     p.setProperty("domainName", domainUid);
     p.setProperty("domainUser", ADMIN_USERNAME_DEFAULT);
