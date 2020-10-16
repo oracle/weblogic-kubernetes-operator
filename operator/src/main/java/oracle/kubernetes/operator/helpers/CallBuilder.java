@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -40,6 +41,8 @@ import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.VersionInfo;
+import io.kubernetes.client.util.ClientBuilder;
+import io.kubernetes.client.util.credentials.AccessTokenAuthentication;
 import okhttp3.Call;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.CallBuilderTuning;
@@ -85,7 +88,7 @@ public class CallBuilder {
   private static SynchronousCallDispatcher DISPATCHER = DEFAULT_DISPATCHER;
   private static final AsyncRequestStepFactory DEFAULT_STEP_FACTORY = AsyncRequestStep::new;
   private static AsyncRequestStepFactory STEP_FACTORY = DEFAULT_STEP_FACTORY;
-  private final ClientPool helper;
+  private ClientPool helper;
   private final Boolean allowWatchBookmarks = false;
   private final String dryRun = null;
   private final String pretty = "false";
@@ -1885,5 +1888,32 @@ public class CallBuilder {
 
   private CancellableCall wrap(Call call) {
     return new CallWrapper(call);
+  }
+
+  public ClientPool getClientPool() {
+    return this.helper;
+  }
+
+  /**
+   * Create AccessTokenAuthentication component for authenticating user represented by
+   * the given token.
+   * @param accessToken - User's Bearer token
+   * @return - this CallBuilder instance
+   */
+  public CallBuilder withAuthentication(String accessToken) {
+    if (accessToken != null && !accessToken.isEmpty()) {
+      this.helper = new ClientPool().withApiClient(createApiClient(accessToken));
+    }
+    return this;
+  }
+
+  private ApiClient createApiClient(String accessToken) {
+    try {
+      ClientBuilder builder = ClientBuilder.standard();
+      return builder.setAuthentication(
+          new AccessTokenAuthentication(accessToken)).build();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

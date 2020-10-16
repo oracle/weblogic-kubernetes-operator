@@ -95,8 +95,9 @@ public class ClientPool extends Pool<ApiClient> {
     return client;
   }
 
-  public void setApiClient(ApiClient apiClient) {
+  public ClientPool withApiClient(ApiClient apiClient) {
     instance.getAndSet(apiClient);
+    return this;
   }
 
   private static class DefaultClientFactory implements ClientFactory {

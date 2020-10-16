@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.rest;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -12,7 +11,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.json.Json;
@@ -23,13 +21,10 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.V1UserInfo;
-import io.kubernetes.client.util.ClientBuilder;
-import io.kubernetes.client.util.credentials.AccessTokenAuthentication;
 import oracle.kubernetes.operator.Main;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
@@ -37,7 +32,7 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -82,7 +77,6 @@ public class RestBackendImpl implements RestBackend {
   private final Collection<String> domainNamespaces;
   private V1UserInfo userInfo;
   private CallBuilder callBuilder;
-  private static Function<String,String> getEnvVariable = System::getenv;
 
   /**
    * Construct a RestBackendImpl that is used to handle one WebLogic operator REST request.
@@ -97,31 +91,11 @@ public class RestBackendImpl implements RestBackend {
   RestBackendImpl(String principal, String accessToken, Collection<String> domainNamespaces) {
     LOGGER.entering(principal, domainNamespaces);
     this.principal = principal;
-    initializeCallBuilder(accessToken);
+    userInfo = authenticate(accessToken);
+    callBuilder = userInfo != null ? new CallBuilder() :
+        new CallBuilder().withAuthentication(accessToken);
     this.domainNamespaces = domainNamespaces;
     LOGGER.exiting();
-  }
-
-  private void initializeCallBuilder(String accessToken) {
-    if (authenticateWithTokenReview()) {
-      userInfo = authenticate(accessToken);
-      callBuilder = new CallBuilder();
-    } else {
-      ClientPool pool = new ClientPool();
-      pool.setApiClient(createApiClient(accessToken));
-      userInfo = null;
-      callBuilder = new CallBuilder(pool);
-    }
-  }
-
-  private ApiClient createApiClient(String accessToken) {
-    try {
-      ClientBuilder builder = ClientBuilder.standard();
-      return builder.setAuthentication(
-          new AccessTokenAuthentication(accessToken)).build();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   private void authorize(String domainUid, Operation operation) {
@@ -168,6 +142,9 @@ public class RestBackendImpl implements RestBackend {
 
   private V1UserInfo authenticate(String accessToken) {
     LOGGER.entering();
+    if (!authenticateWithTokenReview()) {
+      return null;
+    }
     V1TokenReviewStatus status = atn.check(principal, accessToken,
         Main.isDedicated() ? getOperatorNamespace() : null);
     if (status == null) {
@@ -451,12 +428,22 @@ public class RestBackendImpl implements RestBackend {
   }
 
   protected boolean authenticateWithTokenReview() {
-    return "true".equalsIgnoreCase(Optional.ofNullable(getEnvVariable.apply("TOKEN_REVIEW_AUTHENTICATION"))
+    return "true".equalsIgnoreCase(Optional.ofNullable(HelmAccess.getHelmVariable("TOKEN_REVIEW_AUTHENTICATION"))
         .orElse("false"));
   }
 
   V1UserInfo getUserInfo() {
     return userInfo;
+  }
+
+  // Intended for unit tests
+  RestBackendImpl withAuthorizationProxy(AuthorizationProxy authorizationProxy) {
+    this.atz = authorizationProxy;
+    return this;
+  }
+
+  CallBuilder getCallBuilder() {
+    return this.callBuilder;
   }
 
   interface TopologyRetriever {
