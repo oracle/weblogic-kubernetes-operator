@@ -88,8 +88,8 @@ public class ItJrfDomainInPV {
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
   //TODO debug:
-  private static final String FMWINFRA_IMAGE_TO_USE_IN_SPEC =
-      "phx.ocir.io/weblogick8s/stage/fmw-infrastructure:12.2.1.4";
+  /*private static final String FMWINFRA_IMAGE_TO_USE_IN_SPEC =
+      "phx.ocir.io/weblogick8s/stage/fmw-infrastructure:12.2.1.4";*/
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
