@@ -186,6 +186,7 @@ public class ItJrfDomainInPV {
     File domainPropertiesFile = assertDoesNotThrow(() ->
             File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
+    logger.info("The Property for oracleHome is: {0}, javaHome is: {1}", oracle_home, java_home);
     Properties p = new Properties();
     p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME
     p.setProperty("javaHome", java_home); //default $JAVA_HOME
