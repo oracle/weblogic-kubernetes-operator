@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+-->
+<web-app version="4.0" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd">
+    <servlet>
+        <servlet-name>cdttxservlet</servlet-name>
+        <servlet-class>application.CdtTxServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>cdttxservlet</servlet-name>
+        <url-pattern>/cdttxservlet</url-pattern>
+    </servlet-mapping>
+</web-app>

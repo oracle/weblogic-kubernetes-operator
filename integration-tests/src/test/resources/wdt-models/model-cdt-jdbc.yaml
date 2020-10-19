@@ -1,0 +1,24 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+resources:
+  JDBCSystemResource:
+    TestCdtDataSource:
+      Target: 'cluster-1'
+      JdbcResource:
+        JDBCConnectionPoolParams:
+          InitialCapacity: 0
+          MinCapacity: 0
+          MaxCapacity: 15
+          TestTableName: SQL SELECT 1
+        JDBCDataSourceParams:
+          GlobalTransactionsProtocol: TwoPhaseCommit
+          #GlobalTransactionsProtocol: LoggingLastResource
+          RowPrefetchSize: 200
+          JNDIName: jdbc/TestCdtDataSource
+        JDBCDriverParams:
+          URL: 'jdbc:oracle:thin:@//@@PROP:K8S_NODEPORT_HOST@@:@@PROP:DBPORT@@/devpdb.k8s'
+          PasswordEncrypted: 'Oradoc_db1'
+          DriverName: oracle.jdbc.xa.client.OracleXADataSource
+          Properties:
+            user:
+              Value: 'sys as sysdba'

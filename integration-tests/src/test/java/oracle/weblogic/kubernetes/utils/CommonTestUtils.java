@@ -1740,21 +1740,19 @@ public class CommonTestUtils {
    * is needed to be updated with a property that has been created by the framework, it is copied
    * onto RESULT_ROOT and updated. Hence the altModelDir. Call this method to create a domain home in image.
    * @param imageNameBase - base image name used in local or to construct image name in repository
-   * @param wdtModelFile - model file used to build the image
-   * @param appName - application to be added to the image
+   * @param wdtModelList - model file used to build the image
+   * @param appSrcDirList - application to be added to the image
    * @param modelPropFile - property file to be used with the model file above
    * @param altModelDir - directory where the property file is found if not in the default MODEL_DIR
    * @return image name with tag
    */
   public static String createImageAndVerify(String imageNameBase,
-                                            String wdtModelFile,
-                                            String appName,
+                                            List<String> wdtModelList,
+                                            List<String> appSrcDirList,
                                             String modelPropFile,
                                             String altModelDir,
                                             String domainHome) {
 
-    final List<String> wdtModelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
-    final List<String> appSrcDirList = Collections.singletonList(appName);
     final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
 
     return createImageAndVerify(
