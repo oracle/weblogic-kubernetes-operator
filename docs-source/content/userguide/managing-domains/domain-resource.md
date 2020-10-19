@@ -105,22 +105,22 @@ Here are some references you can use for the fields in these sections:
 - Swagger documentation is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
 - Use [kubectl explain](#leveraging--kubectl-explain-) from the command line.
 
-#### Restrictions to operator-created resource names
+#### Operator created Kubernetes resources
 
 When a domain resource is deployed, the operator generates the following Kubernetes resources on the behalf of the domain resource.
 
-* An introspector job: the name of an introspector job associated with a particular domain resource is formed as `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (({{< relref "/userguide/managing-operators/using-helm/using-helm.md" >}}).
+* An introspector job: the name of an introspector job associated with a particular domain resource is formed as `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (see [WebLogic domain Management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm.md#weblogic-domain-management" >}})).
 * A ClusterIP service for each WebLogic server: the name of a service is formed as `<domainUID>-<serverName>`. 
 * A NodePort service for each WebLogic cluster: the name of a cluster service is formed as `<domainUID>-cluster-<clusterName>`.
-* A NodePort service, also known as an external service, for the WebLogic admin server: the name of an external service is formed as `<domainUID>-<adminServerName>-<externalServicenameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` ({{< relref "/userguide/managing-operators/using-helm/using-helm.md" >}}).
+* A NodePort service, also known as an external service, for the WebLogic admin server: the name of an external service is formed as `<domainUID>-<adminServerName>-<externalServiceNameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` (see [WebLogic domain Management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm.md#weblogic-domain-management" >}})).
 * A pod for each webLogic server: the operator generated name for a service is `<domainUID>-<serverName>`.
 
 {{% notice note %}}
-Kubernetes requires the names of some resource types to follow the DNS label standard as defined in [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement limits the name of a job or service to have no more than 63 characters . In order to prevent an operator generated Kubernetes resource from having a name that violate the restriction, a domainUID is required to be no more than 45 characters. In addition, make sure that a domain configuration does not cause any generated resource names to exceed the limit. When a domain configuration violates the limits, the domain startup will fail with a validation error in the domain resource's status.
+Kubernetes requires the names of some resource types to follow the DNS label standard as defined in [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement limits the name of a job or service to have no more than 63 characters . In order to prevent an operator generated Kubernetes resource from having a name that violates the restriction, a domainUID is required to be no more than 45 characters. In addition, make sure that a domain configuration does not cause any generated resource names to exceed the limit. When a domain configuration violates the limits, the domain startup will fail with validation errors in the domain resource's status.
 {{% /notice %}}
 
 {{% notice note %}}
-When `clusterSizePaddingValidationEnabled` is set to true, which is the default, the domain validation for the managed servers in a cluster will be one or 1 characters more restrictive in order to make sure that the generated anmes for all managed servers are still valid even when the cluster size is later increased significantly (see {{< relref "/userguide/managing-operators/using-helm/using-helm.md" >}}).
+When the operator's `clusterSizePaddingValidationEnabled` is set to true, which is the default, the domain validation for the managed servers in a cluster will be one or two characters more restrictive in order to make sure that the generated names for all managed servers are still valid even when the cluster size is later increased significantly (see [WebLogic domain Management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm.md#weblogic-domain-management" >}})).
 {{% /notice %}}
 
 #### Using `kubectl explain`
