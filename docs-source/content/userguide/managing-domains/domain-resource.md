@@ -12,7 +12,6 @@ pre = "<b> </b>"
 - [Deploying domain resource YAML files](#deploying-domain-resource-yaml-files)
 - [Domain resource custom resource definition (CRD)](#domain-resource-custom-resource-definition-crd)
 - [Domain resource attribute references](#domain-resource-attribute-references)
-- [Restrictions to operator created Kubernetes resource names](#restrictions-to-operator-created-kubernetes-resource-names)
 - [Using `kubectl explain`](#using-kubectl-explain)
 - [Domain spec elements](#domain-spec-elements)
 - [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables)
@@ -33,6 +32,7 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 * Create a Kubernetes Namespace for the Domain unless the intention is to use the default namespace.
 * Make sure the WebLogic Server Kubernetes Operator is running and is configured to monitor the namespace.
 * Make sure any resources that the domain resource references are deployed to the same namespace. For example, all domain resources have a `spec.webLogicCredentialsSecret` field that references a Kubernetes Secret containing the `username` and `password` of the WebLogic server administrative account.
+* Make sure a domain resource configuration and its corresponding WebLogic configuration meet the [Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-names-restrictions)).
 
 For example, see the [Quick Start]({{< relref "/quickstart/_index.md" >}}).
 
@@ -105,24 +105,6 @@ Here are some references you can use for the fields in these sections:
 - See [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md).
 - Swagger documentation is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
 - Use [kubectl explain](#leveraging--kubectl-explain-) from the command line.
-
-#### Restrictions to operator created Kubernetes resource names
-
-When a domain resource is deployed, the operator generates the following Kubernetes resources on the behalf of the domain resource.
-
-* A domain introspector job with its name being formed as `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (see [WebLogic domain Management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
-* A ClusterIP type service for each WebLogic server with its name being formed as `<domainUID>-<serverName>`. 
-* A NodePort type service for each WebLogic cluster with its name being formed as `<domainUID>-cluster-<clusterName>`.
-* A NodePort type service, also known as an external service, for the WebLogic admin server with its name being formed as `<domainUID>-<adminServerName>-<externalServiceNameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` (see [WebLogic domain Management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
-* A pod for each webLogic server with its name being formed as `<domainUID>-<serverName>`.
-
-{{% notice note %}}
-Kubernetes requires the names of some resource types to follow the DNS label standard as defined in [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement limits the name of a job or service to have no more than 63 characters . In order to prevent an operator generated Kubernetes resource from having a name that violates the restriction, a domainUID is required to be no more than 45 characters. In addition, make sure that a domain configuration does not cause any generated resource names to exceed the limit. When a domain configuration violates the limits, the domain startup will fail with validation errors in the domain resource's status.
-{{% /notice %}}
-
-{{% notice note %}}
-When the operator's `clusterSizePaddingValidationEnabled` is set to true, which is the default, the domain validation for the managed servers in a cluster will be one or two characters more restrictive in order to make sure that the generated names for all managed servers are still valid even when the cluster size is later increased significantly (see [WebLogic domain Management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
-{{% /notice %}}
 
 #### Using `kubectl explain`
 

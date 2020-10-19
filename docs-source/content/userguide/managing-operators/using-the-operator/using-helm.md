@@ -320,15 +320,15 @@ Prior to the operator 3.1.0 release, the suffixes are hard-coded to `-introspect
 {{% /notice %}}
 
 {{% notice note %}}
-In order to work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters (see [Restrictions to operator created Kubernetes resource names]({{< relref "/userguide/managing-domains/domain-resource#restrictions-to-operator-created-kubernetes-resource-names" >}})).
+In order to work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters (see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})).
 {{% /notice %}}
 
 ##### `clusterSizePaddingValidationEnabled`
-Specifies if the operator needs to reserve additional padding when validating the server service names to account for longer managed server names as a result of expanding an exsiting cluster. 
+Specifies if the operator needs to reserve additional padding when validating the server service names to account for longer managed server names as a result of expanding a cluster's size in WebLogic domain configurations. 
 
 Defaults to `true`.
 
-If `clusterSizePaddingValidationEnabed` is set to true, two additional characters will be reserved if the cluster's size is between 1 and 9, and one additional character will be reserved if the cluster's size is between 10 and 99. No additional character is reserved if the cluster's size is greater than 99. For more details, see [Restrictions to operator created Kubernetes resource names]({{< relref "/userguide/managing-domains/domain-resource#restrictions-to-operator-created-kubernetes-resource-names" >}}).
+If `clusterSizePaddingValidationEnabed` is set to true, two additional characters will be reserved if the cluster's size is between 1 and 9, and one additional character will be reserved if the cluster's size is between 10 and 99. No additional character is reserved if the cluster's size is greater than 99. For more details, see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
 
 #### Elastic Stack integration
 
