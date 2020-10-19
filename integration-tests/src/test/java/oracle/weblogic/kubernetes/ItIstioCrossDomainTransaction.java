@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1Service;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
@@ -27,6 +30,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -36,13 +40,16 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -53,16 +60,19 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
@@ -86,6 +96,8 @@ public class ItIstioCrossDomainTransaction {
   private static final String WDT_IMAGE_NAME1 = "domain1-wdt-image";
   private static final String WDT_IMAGE_NAME2 = "domain2-wdt-image";
   private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/istiocrossdomaintransactiontemp";
+  private static final String WDT_MODEL_FILE_JMS = "model-cdt-jms.yaml";
+  private static final String WDT_MODEL_FILE_JDBC = "model-cdt-jdbc.yaml";
 
   private static String opNamespace = null;
   private static String domain1Namespace = null;
@@ -97,7 +109,12 @@ public class ItIstioCrossDomainTransaction {
   private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
   private String clusterName = "cluster-1";
+  private static final String ORACLEDBURLPREFIX = "oracledb.";
+  private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
   private static LoggingFacade logger = null;
+  static String dbUrl;
+  static int dbNodePort;
+  int istioIngressPort;
 
   /**
    * Install Operator.
@@ -123,6 +140,18 @@ public class ItIstioCrossDomainTransaction {
     logger.info("Assigning unique namespace for Domain");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domain2Namespace = namespaces.get(2);
+
+    dbUrl = ORACLEDBURLPREFIX + domain2Namespace + ORACLEDBSUFFIX;
+    createSecretForBaseImages(domain2Namespace);
+
+    //Start oracleDB
+    assertDoesNotThrow(() -> {
+      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, 0, domain2Namespace);
+      String.format("Failed to start Oracle DB");
+    });
+
+    dbNodePort = getDBNodePort(domain2Namespace, "oracledb");
+    logger.info("DB Node Port = {0}", dbNodePort);
 
     // Now that we got the namespaces for both the domains, we need to update the model properties
     // file with the namespaces. for cross domain transaction to work, we need to have the externalDNSName
@@ -157,19 +186,19 @@ public class ItIstioCrossDomainTransaction {
     });
 
     assertDoesNotThrow(() -> {
-      addNamespaceToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
+      addToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
       String.format("Failed to update %s with namespace %s",
             WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
     });
     assertDoesNotThrow(() -> {
-      addNamespaceToPropertyFile(WDT_MODEL_DOMAIN2_PROPS, domain2Namespace);
+      addToPropertyFile(WDT_MODEL_DOMAIN2_PROPS, domain2Namespace);
       String.format("Failed to update %s with namespace %s",
             WDT_MODEL_DOMAIN2_PROPS, domain2Namespace);
     });
 
   }
 
-  private static void addNamespaceToPropertyFile(String propFileName, String domainNamespace) throws IOException {
+  private static void addToPropertyFile(String propFileName, String domainNamespace) throws IOException {
     FileInputStream in = new FileInputStream(PROPS_TEMP_DIR + "/" + propFileName);
     Properties props = new Properties();
     props.load(in);
@@ -177,6 +206,8 @@ public class ItIstioCrossDomainTransaction {
 
     FileOutputStream out = new FileOutputStream(PROPS_TEMP_DIR + "/" + propFileName);
     props.setProperty("NAMESPACE", domainNamespace);
+    props.setProperty("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
+    props.setProperty("DBPORT", Integer.toString(dbNodePort));
     props.store(out, null);
     out.close();
   }
@@ -193,10 +224,11 @@ public class ItIstioCrossDomainTransaction {
    * complete successfully.
    */
   @Test
+  @Order(1)
   @DisplayName("Check cross domain transaction with istio works")
   public void testIstioCrossDomainTransaction() {
 
-    //build application archive
+    //build application archive - txforward
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
         "build", domain1Namespace);
     logger.info("distDir is {0}", distDir.toString());
@@ -205,6 +237,17 @@ public class ItIstioCrossDomainTransaction {
         "Application archive is not available");
     String appSource = distDir.toString() + "/txforward.ear";
     logger.info("Application is in {0}", appSource);
+
+    //build application archive - cdttxservlet
+    distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
+        "build", domain1Namespace);
+    logger.info("distDir is {0}", distDir.toString());
+    assertTrue(Paths.get(distDir.toString(),
+        "cdttxservlet.war").toFile().exists(),
+        "Application archive is not available");
+    String appSource1 = distDir.toString() + "/cdttxservlet.war";
+    logger.info("Application is in {0}", appSource1);
+
 
     // create admin credential secret for domain1
     logger.info("Create admin credential secret for domain1");
@@ -219,18 +262,32 @@ public class ItIstioCrossDomainTransaction {
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
         domain2AdminSecretName, domain2Namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         String.format("createSecret %s failed for %s", domain2AdminSecretName, domainUid2));
- 
+
+    // build the model file list for domain1
+    final List<String> modelListDomain1 = Arrays.asList(
+        MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN1,
+        MODEL_DIR + "/" + WDT_MODEL_FILE_JMS);
+
+    final List<String> appSrcDirList1 = Arrays.asList(appSource, appSource1);
+
     logger.info("Creating image with model file and verify");
     String domain1Image = createImageAndVerify(
-        WDT_IMAGE_NAME1, WDT_MODEL_FILE_DOMAIN1, appSource, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
+        WDT_IMAGE_NAME1, modelListDomain1, appSrcDirList1, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
     logger.info("Created {0} image", domain1Image);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domain1Image);
 
+    // build the model file list for domain2
+    final List<String> modelListDomain2 = Arrays.asList(
+        MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN2,
+        MODEL_DIR + "/" + WDT_MODEL_FILE_JDBC);
+
+    final List<String> appSrcDirList2 = Collections.singletonList(appSource);
+
     logger.info("Creating image with model file and verify");
     String domain2Image = createImageAndVerify(
-        WDT_IMAGE_NAME2, WDT_MODEL_FILE_DOMAIN2, appSource, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR, domainUid2);
+        WDT_IMAGE_NAME2, modelListDomain2, appSrcDirList2, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR, domainUid2);
     logger.info("Created {0} image", domain2Image);
 
     // docker login and push image to docker registry if necessary
@@ -257,7 +314,7 @@ public class ItIstioCrossDomainTransaction {
     boolean deployRes = deployHttpIstioGatewayAndVirtualservice(svcYmlTarget);
     assertTrue(deployRes, "Could not deploy Http Istio Gateway/VirtualService");
 
-    int istioIngressPort = getIstioHttpIngressPort();
+    istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
     logger.info("Validating WebLogic admin server access by login to console");
@@ -268,7 +325,6 @@ public class ItIstioCrossDomainTransaction {
     assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
     logger.info("WebLogic console on domain1 is accessible");
 
-    //+ "-H 'host:domain1-" + domain1Namespace + ".org' "
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
@@ -286,6 +342,39 @@ public class ItIstioCrossDomainTransaction {
       logger.info("\n HTTP response is \n " + result.stdout());
       logger.info("curl command returned {0}", result.toString());
       assertTrue(result.stdout().contains("Status=Committed"), "crossDomainTransaction failed");
+    }
+
+  }
+
+  /*
+   * This test verifies cross domain transaction with Istio is successful and able to re-establish connection when
+   * one domain is shutdown. Domain in image with wdt is used to create 2 domains in different namespaces.
+   * A servlet is deployed to the admin server of domain1. This servlet starts a transaction with
+   * TMAfterTLogBeforeCommitExit transaction property set. The servlet then inserts data into oracleDB table and
+   * sends a message to a JMS queue as part of a same transaction. The coordinator (server in domain2)
+   * should exit before commit and the domain1 admin server should be able to re-establish connection
+   * with domain2 and the transaction should commit.
+   */
+
+  @Test
+  @Order(2)
+  @DisplayName("Check cross domain transaction with istio and with TMAfterTLogBeforeCommitExit property commits")
+  public void testIstioCrossDomainTransactionWithFailInjection() {
+
+    String curlRequest = String.format("curl -v --show-error --noproxy '*' "
+            + "-H 'host:domain1-" + domain1Namespace + ".org' "
+            + "http://%s:%s/cdttxservlet/cdttxservlet?namespaces=%s,%s",
+        K8S_NODEPORT_HOST, istioIngressPort, domain1Namespace, domain2Namespace);
+
+    ExecResult result = null;
+    logger.info("curl command {0}", curlRequest);
+    result = assertDoesNotThrow(
+        () -> exec(curlRequest, true));
+    if (result.exitValue() == 0) {
+      logger.info("\n HTTP response is \n " + result.stdout());
+      logger.info("curl command returned {0}", result.toString());
+      assertTrue(result.stdout().contains("Status=SUCCESS"),
+          "crossDomainTransaction with TMAfterTLogBeforeCommitExit failed");
     }
 
   }
@@ -365,7 +454,10 @@ public class ItIstioCrossDomainTransaction {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false -Dweblogic.debug.DebugConnection=true "
+                    .value("-Dweblogic.transaction.EnableInstrumentedTM=true -Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.debug.DebugJTAXA=true "
+                        + "-Dweblogic.debug.DebugJTA2PC=true"
+                        + "-Dweblogic.debug.DebugConnection=true "
                         + "-Dweblogic.debug.DebugRouting=true -Dweblogic.debug.DebugMessaging=true "
                         + "-Dweblogic.kernel.debug=true -Dweblogic.log.LoggerSeverity=Debug "
                         + "-Dweblogic.log.LogSeverity=Debug -Dweblogic.StdoutDebugEnabled=true "
@@ -394,6 +486,17 @@ public class ItIstioCrossDomainTransaction {
             domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
         + "for %s in namespace %s", domainUid, domNamespace));
+  }
+
+  private static Integer getDBNodePort(String namespace, String dbName) {
+    logger.info(dump(Kubernetes.listServices(namespace)));
+    List<V1Service> services = listServices(namespace).getItems();
+    for (V1Service service : services) {
+      if (service.getMetadata().getName().startsWith(dbName)) {
+        return service.getSpec().getPorts().get(0).getNodePort();
+      }
+    }
+    return -1;
   }
 
 }
