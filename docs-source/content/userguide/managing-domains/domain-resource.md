@@ -32,7 +32,7 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 * Create a Kubernetes Namespace for the Domain unless the intention is to use the default namespace.
 * Make sure the WebLogic Server Kubernetes Operator is running and is configured to monitor the namespace.
 * Make sure any resources that the domain resource references are deployed to the same namespace. For example, all domain resources have a `spec.webLogicCredentialsSecret` field that references a Kubernetes Secret containing the `username` and `password` of the WebLogic server administrative account.
-* Make sure a domain resource configuration and its corresponding WebLogic configuration meet the [Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-names-restrictions" >}}).
+* Make sure a domain resource configuration and its corresponding WebLogic configuration meet the [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-names-restrictions" >}}).
 
 For example, see the [Quick Start]({{< relref "/quickstart/_index.md" >}}).
 

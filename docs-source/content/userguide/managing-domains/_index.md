@@ -8,7 +8,7 @@ description: "Important considerations for WebLogic domains in Kubernetes."
 #### Contents
 
 * [Important considerations for WebLogic domains in Kubernetes](#important-considerations-for-weblogic-domains-in-kubernetes)
-* [Meet Kubenertes resource name restrictions](#meet-kubernetes-resource-name-restrictions)
+* [Meet Kubernetes resource name restrictions](#meet-kubernetes-resource-name-restrictions)
 * [Creating and managing WebLogic domains](#creating-and-managing-weblogic-domains)
 * [Modifying domain configurations](#modifying-domain-configurations)
 * [About the Domain resource](#about-the-domain-resource)
@@ -89,7 +89,7 @@ For up-to-date information about the features of WebLogic Server that are suppor
 
 ### Meet Kubernetes resource name restrictions
           
-Kubernetes requires the names of some resource types to follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement restricts the characters that are allowed to be used in the name of those resources, and also limits the name of such resources to contain no more than 63 characters.
+Kubernetes requires the names of some resource types to follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement restricts the characters that are allowed in the names of those resources, and also limits the length of those names to no more than 63 characters.
 
 The following is a list of Kubernetes resources that the operator generates when a domain resource is deployed, including how their names are constructed.
           
@@ -99,12 +99,12 @@ The following is a list of Kubernetes resources that the operator generates when
 * A NodePort type service, also known as an external service, for the WebLogic admin server named as `<domainUID>-<adminServerName>-<externalServiceNameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` (see [WebLogic domain Management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
 * A pod for each webLogic server named as `<domainUID>-<serverName>`.
 
-The operator puts in place certain validation checks to prevent any resources that it generates for a domain resource from violating the Kubernetes restrictions.
+The operator puts in place certain validation checks to prevent any resources that it generates from violating the Kubernetes restrictions.
 * All names that are part of the operator created Kubernetes resource names can only contain the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`.
 * A `domainUID` is required to be no more than 45 characters. 
 * WebLogic domain configuration names, such as the cluster names, admin server name, and managed server names are kept to reasonable lengths so that the generated resource names do not exceed Kubernetes' limits. 
 
-When a domain resource or webLogic domain configuration violates the limits, the domain startup will fail, and validation errors are reported in the domain resource's status.
+When a domain resource or webLogic domain configuration violates the limits, the domain startup will fail, and actual validation errors are reported in the domain resource's status.
 
 ### Creating and managing WebLogic domains
 
