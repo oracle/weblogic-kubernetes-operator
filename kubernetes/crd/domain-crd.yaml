@@ -10167,7 +10167,7 @@ spec:
                       enum:
                       - Progressing
                       - Available
-                      - InformationOnly
+                      - WLSDomainConfigurationUpdated
                       - Failed
                     lastTransitionTime:
                       format: date-time

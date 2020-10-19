@@ -55,6 +55,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
@@ -915,20 +916,22 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private void updateDomainConditions(String message) {
-      DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.InformationOnly);
+      DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.WLSDomainConfigurationUpdated);
+      String introspectVersion = Optional.ofNullable(info)
+            .map(DomainPresenceInfo::getDomain)
+            .map(Domain::getSpec)
+            .map(DomainSpec::getIntrospectVersion)
+            .orElse("");
+
       onlineUpdateCondition
           .withMessage(message)
-          .withReason("ServersReady")
+          .withReason("IntrospectVersion " + introspectVersion)
           .withStatus("True");
 
       DomainStatus x =  Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
           .orElse(null);
-
-      if (x == null) {
-        LOGGER.info("DEBUG: updateDomainConditions status is null");
-      }
 
       Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)
