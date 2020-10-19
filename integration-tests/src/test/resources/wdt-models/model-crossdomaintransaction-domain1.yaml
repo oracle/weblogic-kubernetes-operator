@@ -33,3 +33,7 @@ appDeployments:
       SourcePath: "wlsdeploy/applications/txforward.ear"
       ModuleType: ear
       Target: 'admin-server,cluster-1'
+    cdttxservlet:
+      SourcePath: "wlsdeploy/applications/cdttxservlet.war"
+      ModuleType: war
+      Target: 'admin-server'

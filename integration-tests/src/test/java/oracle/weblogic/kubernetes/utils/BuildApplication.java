@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
@@ -90,7 +91,6 @@ public class BuildApplication {
 
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(namespace);
-
 
     // Path of temp location for application source directory
     Path tempAppPath = Paths.get(WORK_DIR, "j2eeapplications", appSrcPath.getFileName().toString());
@@ -202,7 +202,14 @@ public class BuildApplication {
         .atMost(3, MINUTES).await();
     verifyDefaultTokenExists();
 
-    final String podName = "weblogic-build-pod-" + namespace;
+    //want to create a pod with a unique name
+    //If a test calls buildApplication for 2 (or more) different applications
+    //to be built, since the pod will have been created for the first application already,
+    //this method will fail when called the second time around. Hence the need for a
+    //unique name for the pod.
+    String uniqueName = Namespace.uniqueName();
+    final String podName = "weblogic-build-pod-" + uniqueName;
+    //final String podName = "weblogic-build-pod-" + namespace;
     V1Pod podBody = new V1Pod()
         .spec(new V1PodSpec()
             .containers(Arrays.asList(container
