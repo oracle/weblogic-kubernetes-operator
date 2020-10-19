@@ -23,7 +23,7 @@ the API version in the data (weblogic.oracle/v2) does not match the expected API
 ```
 {{% /notice %}}      
 
-#### Install Helm
+### Install Helm
 
 Helm manages releases (installations) of your charts. For detailed instructions on installing Helm, see https://github.com/helm/helm.
 

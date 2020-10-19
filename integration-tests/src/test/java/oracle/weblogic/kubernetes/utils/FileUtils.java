@@ -22,7 +22,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import io.kubernetes.client.openapi.ApiException;
-import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -139,6 +139,21 @@ public class FileUtils {
   }
 
   /**
+   * Copy a file from Kubernetes pod to local filesystem.
+   * @param namespace namespace of the pod
+   * @param pod name of the pod where the file is copied from
+   * @param container name of the container
+   * @param srcPath source file location on the pod
+   * @param destPath destination file location on local filesystem
+   * @throws IOException when copy fails
+   * @throws ApiException when pod interaction fails
+   */
+  public static void copyFileFromPod(String namespace, String pod, String container, String srcPath, Path destPath)
+      throws IOException, ApiException {
+    Kubernetes.copyFileFromPod(namespace, pod, container, srcPath, destPath);
+  }
+
+  /**
    * Copy a directory to a pod in specified namespace.
    * @param namespace namespace in which the pod exists
    * @param pod name of pod where the file will be copied to
@@ -188,8 +203,7 @@ public class FileUtils {
                                      String pod,
                                      String container,
                                      boolean redirectToStdout,
-                                     List<String> directoryToCreate
-  ) throws IOException, ApiException, InterruptedException  {
+                                     List<String> directoryToCreate) {
     //Create directories.
     directoryToCreate.forEach(newDir -> {
       String mkCmd = "mkdir -p " + newDir;
@@ -270,5 +284,29 @@ public class FileUtils {
     content = content.replaceAll(regex, replacement);
     logger.info("to {0}", src.toString());
     Files.write(src, content.getBytes(charset));
+  }
+
+  /**
+   * Check whether a file exists in a pod in the given namespace.
+   *
+   * @param namespace the Kubernetes namespace that the pod is in
+   * @param podName the name of the Kubernetes pod in which the command is expected to run
+   * @param filename the filename to check
+   * @return true if the file exists, otherwise return false
+   * @throws IOException if an I/O error occurs.
+   * @throws ApiException if Kubernetes client API call fails
+   * @throws InterruptedException if any thread has interrupted the current thread
+   */
+  public static boolean doesFileExistInPod(String namespace, String podName, String filename)
+      throws IOException, ApiException, InterruptedException {
+
+    ExecResult result = execCommand(namespace, podName, null, true,
+        "/bin/sh", "-c", "find " + filename);
+
+    if (result.exitValue() == 0 && result.stdout().contains(filename)) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }

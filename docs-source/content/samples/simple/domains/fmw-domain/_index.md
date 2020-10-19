@@ -450,7 +450,7 @@ Here is an example of the output of this command:
 $ kubectl get services
 NAME                                TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
 fmw-domain-admin-server             ClusterIP   None             <none>        7001/TCP          15h
-fmw-domain-admin-server-external    NodePort    10.101.26.42     <none>        7001:30731/TCP    15h
+fmw-domain-admin-server-ext         NodePort    10.101.26.42     <none>        7001:30731/TCP    15h
 fmw-domain-cluster-cluster-1        ClusterIP   10.107.55.188    <none>        8001/TCP          15h
 fmw-domain-managed-server1          ClusterIP   None             <none>        8001/TCP          15h
 fmw-domain-managed-server2          ClusterIP   None             <none>        8001/TCP          15h

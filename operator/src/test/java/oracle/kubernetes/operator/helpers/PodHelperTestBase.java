@@ -548,11 +548,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   protected abstract void verifyPodReplaced();
 
   protected void verifyPodNotReplaced() {
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new NullPodAwaiterStepFactory(terminalStep));
-
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsFine(getExistsMessageKey()));
@@ -567,11 +562,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   private V1Pod getPatchedPod() {
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new NullPodAwaiterStepFactory(terminalStep));
-
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getPatchedMessageKey()));
@@ -1434,24 +1424,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   interface PodMutator {
     void mutate(V1Pod pod);
-  }
-
-  protected static class NullPodAwaiterStepFactory implements PodAwaiterStepFactory {
-    private final Step ne;
-
-    NullPodAwaiterStepFactory(Step next) {
-      this.ne = next;
-    }
-
-    @Override
-    public Step waitForReady(V1Pod pod, Step next) {
-      return ne;
-    }
-
-    @Override
-    public Step waitForDelete(V1Pod pod, Step next) {
-      return ne;
-    }
   }
 
   protected static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {

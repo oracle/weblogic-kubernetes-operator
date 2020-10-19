@@ -46,8 +46,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
@@ -210,7 +211,8 @@ public class ItOperatorUpgrade {
         0, opHelmParams, domainNamespace);
 
     // create domain
-    createDomainHomeInImageAndVerify(domainNamespace, operatorVersion);
+    createDomainHomeInImageAndVerify(
+        domainNamespace, operatorVersion, TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
 
     if (useHelmUpgrade) {
       // upgrade to latest operator
@@ -281,10 +283,12 @@ public class ItOperatorUpgrade {
         false, "", "", 0, "", "", null, null);
   }
 
-  private void createDomainHomeInImageAndVerify(String domainNamespace, String operatorVersion) {
+  private void createDomainHomeInImageAndVerify(
+      String domainNamespace, String operatorVersion, String externalServiceNameSuffix) {
 
     // Create the repo secret to pull the image
-    createDockerRegistrySecret(domainNamespace);
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -323,7 +327,7 @@ public class ItOperatorUpgrade {
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        domainNamespace, adminServerPodName + "-external", "default"),
+        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
         "Getting admin server node port failed");
 
     logger.info("Validating WebLogic admin server access by login to console");

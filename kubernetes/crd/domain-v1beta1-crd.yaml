@@ -149,7 +149,7 @@ spec:
                 to the names of Kubernetes resources. This value is distinct and need
                 not match the domain name from the WebLogic domain configuration.
                 Defaults to the value of `metadata.name`.
-              pattern: ^[a-z0-9-.]{1,253}$
+              pattern: ^[a-z0-9-.]{1,45}$
             serverService:
               type: object
               description: Customization affecting the generation of Kubernetes Services
@@ -318,6 +318,8 @@ spec:
                               type: string
                             gmsaCredentialSpecName:
                               type: string
+                        fsGroupChangePolicy:
+                          type: string
                         supplementalGroups:
                           type: array
                           items:
@@ -2819,6 +2821,8 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                          fsGroupChangePolicy:
+                            type: string
                           supplementalGroups:
                             type: array
                             items:
@@ -5331,6 +5335,8 @@ spec:
                           type: string
                         gmsaCredentialSpecName:
                           type: string
+                    fsGroupChangePolicy:
+                      type: string
                     supplementalGroups:
                       type: array
                       items:
@@ -7726,6 +7732,8 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                          fsGroupChangePolicy:
+                            type: string
                           supplementalGroups:
                             type: array
                             items:
