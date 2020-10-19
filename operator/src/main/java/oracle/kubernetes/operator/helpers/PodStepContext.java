@@ -54,6 +54,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
@@ -887,8 +889,7 @@ public abstract class PodStepContext extends BasePodStepContext {
                   updatedPod.getMetadata().getAnnotations().get("weblogic.sha256"));
             updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
             updatedPod.setMetadata(updatedMetaData);
-
-
+            updateDomainConditions("Online update successful. No restart necessary");
             return  doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
           }
         }
@@ -901,6 +902,9 @@ public abstract class PodStepContext extends BasePodStepContext {
             MessageKeys.CYCLING_POD,
             Objects.requireNonNull(currentPod.getMetadata()).getName(),
             getReasonToRecycle(currentPod));
+
+        updateDomainConditions("Online update rolled back. Nothing changed");
+
         return doNext(replaceCurrentPod(getNext()), packet);
       } else if (mustPatchPod(currentPod)) {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
@@ -909,6 +913,20 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(packet);
       }
     }
+
+    private void updateDomainConditions(String message) {
+      DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.Available);
+      onlineUpdateCondition
+          .withMessage(message)
+          .withReason("ServersReady")
+          .withStatus("True");
+
+      Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .ifPresent(o -> o.addCondition(onlineUpdateCondition));
+    }
+
   }
 
   private abstract class BaseResponseStep extends ResponseStep<V1Pod> {

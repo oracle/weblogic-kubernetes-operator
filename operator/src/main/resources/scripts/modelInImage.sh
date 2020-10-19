@@ -894,7 +894,7 @@ function wdtUpdateModelDomain() {
 
 function wdtHandleOnlineUpdate() {
 
-  if [ ! -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" -eq "${MII_USE_ONLINE_UPDATE}" ] \
+  if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" -eq "${MII_USE_ONLINE_UPDATE}" ] \
     || [ ! -f "/tmp/diffed_model.json" ] ; then
     trace "Not using online update: no op"
     return
@@ -955,8 +955,14 @@ function wdtHandleOnlineUpdate() {
   #TODO remove this when ready
   cat /tmp/diffed_model.json
 
+  local admin_url
+  if [ -z "${ADMIN_PORT_SECURE}" ] ; then
+    admin_url="t3://${AS_SERVICE_NAME}:${ADMIN_PORT}"
+  else
+    admin_url="t3s://${AS_SERVICE_NAME}:${ADMIN_PORT}"
+  fi
   echo ${admin_pwd} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} \
-   -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
+   -admin_url ${admin_url} -admin_user ${admin_user} -model_file \
    /tmp/diffed_model.yaml -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG} ${archive_list} \
    -discard_current_edit
 
