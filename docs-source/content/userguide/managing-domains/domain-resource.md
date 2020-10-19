@@ -12,7 +12,7 @@ pre = "<b> </b>"
 - [Deploying domain resource YAML files](#deploying-domain-resource-yaml-files)
 - [Domain resource custom resource definition (CRD)](#domain-resource-custom-resource-definition-crd)
 - [Domain resource attribute references](#domain-resource-attribute-references)
-- [Restrictions to perator created Kubernetes resource names](#restrictions-to-operator-created-kubernetes-resource-names)
+- [Restrictions to operator created Kubernetes resource names](#restrictions-to-operator-created-kubernetes-resource-names)
 - [Using `kubectl explain`](#using-kubectl-explain)
 - [Domain spec elements](#domain-spec-elements)
 - [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables)
