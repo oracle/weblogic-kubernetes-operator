@@ -593,7 +593,7 @@ function diff_model() {
   ${JAVA_HOME}/bin/java -cp ${CP} \
     ${JAVA_PROPS} \
     org.python.util.jython \
-    ${SCRIPTPATH}/model_diff.py $1 $2 > ${WDT_OUTPUT} 2>&1
+    ${SCRIPTPATH}/model_diff.py > ${WDT_OUTPUT} 2>&1
   if [ $? -ne 0 ] ; then
     trace SEVERE "Failed to compare models. Check logs for error. Comparison output:"
     cat ${WDT_OUTPUT}
@@ -906,9 +906,9 @@ function wdtUpdateModelDomain() {
 
 function wdtHandleOnlineUpdate() {
 
-  if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" -eq "${MII_USE_ONLINE_UPDATE}" ] \
+  if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" == "${MII_USE_ONLINE_UPDATE}" ] \
     || [ ! -f "/tmp/diffed_model.json" ] ; then
-    trace "Not using online update: no op"
+    trace "Not using online update"
     return
   fi
 
