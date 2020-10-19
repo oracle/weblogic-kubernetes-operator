@@ -105,6 +105,24 @@ Here are some references you can use for the fields in these sections:
 - Swagger documentation is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
 - Use [kubectl explain](#leveraging--kubectl-explain-) from the command line.
 
+#### Restrictions to operator-created resource names
+
+When a domain resource is deployed, the operator generates the following Kubernetes resources on the behalf of the domain resource.
+
+* An introspector job: the name of an introspector job associated with a particular domain resource is formed as `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (({{< relref "/userguide/managing-operators/using-helm/using-helm.md" >}}).
+* A ClusterIP service for each WebLogic server: the name of a service is formed as `<domainUID>-<serverName>`. 
+* A NodePort service for each WebLogic cluster: the name of a cluster service is formed as `<domainUID>-cluster-<clusterName>`.
+* A NodePort service, also known as an external service, for the WebLogic admin server: the name of an external service is formed as `<domainUID>-<adminServerName>-<externalServicenameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` ({{< relref "/userguide/managing-operators/using-helm/using-helm.md" >}}).
+* A pod for each webLogic server: the operator generated name for a service is `<domainUID>-<serverName>`.
+
+{{% notice note %}}
+Kubernetes requires the names of some resource types to follow the DNS label standard as defined in [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement limits the name of a job or service to have no more than 63 characters . In order to prevent an operator generated Kubernetes resource from having a name that violate the restriction, a domainUID is required to be no more than 45 characters. In addition, make sure that a domain configuration does not cause any generated resource names to exceed the limit. When a domain configuration violates the limits, the domain startup will fail with a validation error in the domain resource's status.
+{{% /notice %}}
+
+{{% notice note %}}
+When `clusterSizePaddingValidationEnabled` is set to true, which is the default, the domain validation for the managed servers in a cluster will be one or 1 characters more restrictive in order to make sure that the generated anmes for all managed servers are still valid even when the cluster size is later increased significantly (see {{< relref "/userguide/managing-operators/using-helm/using-helm.md" >}}).
+{{% /notice %}}
+
 #### Using `kubectl explain`
 
 If you are using Kubernetes 1.16 or later, you can access the description of any field of the Domain using `kubectl explain`. For instance, the following command displays the description of the `domainUID` field:
@@ -132,7 +150,7 @@ The Domain `spec` section contains elements for configuring the domain operation
 
 Elements related to domain identification, container image, and domain home:
 
-* `domainUID`: Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.
+* `domainUID`: Domain unique identifier. Thia identifier is required to be no more than 45 characters. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.
 * `image`: The WebLogic container image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
 * `imagePullPolicy`: The image pull policy for the WebLogic container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.
 * `imagePullSecrets`: A list of image pull Secrets for the WebLogic container image.

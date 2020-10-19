@@ -44,7 +44,8 @@ Be aware of the following important considerations for WebLogic domains running 
   the WebLogic Server name is `Admin_Server`, then its listen address becomes `domain1-admin-server`.
 
 * _Domain, Cluster, Server, and Network-Access-Point Names:_ WebLogic domain, cluster, server, and network-access-point (channel)
-  names must contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`.  This ensures that they can be converted to
+  names must contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`, and must be kept in a reasonable length (see 
+  [Domain resource]({{< relref "/userguide/managing-domains/domain-resource.md#restrictions-to-operator-created-resource-names" >}})).  This ensures that they can be converted to
   meet Kubernetes resource and DNS1123 naming requirements.  (When generating pod and service names, the operator will convert
   configured names to lower case and substitute a hyphen (`-`) for each underscore (`_`).)
 
