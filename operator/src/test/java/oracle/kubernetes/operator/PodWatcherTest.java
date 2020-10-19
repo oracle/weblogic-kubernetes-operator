@@ -32,7 +32,7 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
-import static oracle.kubernetes.operator.helpers.LegalNames.DOMAIN_INTROSPECTOR_JOB_SUFFIX;
+import static oracle.kubernetes.operator.helpers.LegalNames.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_POD_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.both;
@@ -123,7 +123,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   private V1Pod createIntrospectorPod() {
-    return new V1Pod().metadata(new V1ObjectMeta().namespace(NS).name(NAME + DOMAIN_INTROSPECTOR_JOB_SUFFIX));
+    return new V1Pod().metadata(new V1ObjectMeta().namespace(NS).name(NAME + DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX));
   }
 
   @Test

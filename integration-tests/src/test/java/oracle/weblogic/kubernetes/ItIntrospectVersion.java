@@ -23,8 +23,6 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -60,19 +58,15 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
@@ -81,7 +75,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
@@ -89,15 +82,18 @@ import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainR
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapForDomainCreation;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
@@ -132,12 +128,9 @@ public class ItIntrospectVersion {
   private static String nginxNamespace = null;
   private static int nodeportshttp;
   private static HelmParams nginxHelmParams = null;
-
-  private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
-  private static String imageUpdate = WLS_BASE_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG;
-
-  private static boolean isUseSecret = true;
-
+  private static String imageUpdate = KIND_REPO != null ? KIND_REPO
+      + (WEBLOGIC_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
+      : WEBLOGIC_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG;
   private final String wlSecretName = "weblogic-credentials";
 
   private Map<String, DateTime> podsWithTimeStamps = null;
@@ -181,18 +174,9 @@ public class ItIntrospectVersion {
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
 
-    //determine if the tests are running in Kind cluster. if true use images from Kind registry
-    if (KIND_REPO != null) {
-      String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      String kindRepoImageUpdate = KIND_REPO + imageUpdate.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      logger.info("Using base image {0}, update image {1}", kindRepoImage, kindRepoImageUpdate);
-      image = kindRepoImage;
-      imageUpdate = kindRepoImageUpdate;
-      isUseSecret = false;
-    } else {
-      // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-      createOCRRepoSecret(introDomainNamespace);
-    }
+    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(introDomainNamespace);
 
     // build the clusterview application
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
@@ -289,12 +273,11 @@ public class ItIntrospectVersion {
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
-            .image(image)
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
-            .imagePullSecrets(isUseSecret ? Arrays.asList(
+            .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(OCR_SECRET_NAME))
-                : null)
+                    .name(BASE_IMAGES_REPO_SECRET)))  // this secret is used only in non-kind cluster
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(introDomainNamespace))
@@ -367,7 +350,7 @@ public class ItIntrospectVersion {
     // deploy application and verify all servers functions normally
     logger.info("Getting node port for T3 channel");
     int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
         "Getting admin server t3channel node port failed");
     assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
 
@@ -431,9 +414,9 @@ public class ItIntrospectVersion {
 
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
-    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
 
     //verify the maximum cluster size is updated to expected value
     withStandardRetryPolicy.conditionEvaluationListener(new ConditionEvaluationListener() {
@@ -539,7 +522,7 @@ public class ItIntrospectVersion {
 
     logger.info("Getting node port for default channel");
     int adminServerT3Port = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
         "Getting admin server node port failed");
 
     // create a temporary WebLogic WLST property file
@@ -567,10 +550,10 @@ public class ItIntrospectVersion {
         "Failed to patch domain with new IntrospectVersion");
 
     //verify the introspector pod is created and runs
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
 
-    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
 
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
@@ -597,7 +580,7 @@ public class ItIntrospectVersion {
 
     // verify the admin port is changed to newAdminPort
     assertEquals(newAdminPort, assertDoesNotThrow(()
-        -> getServicePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        -> getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server port failed"),
         "Updated admin server port is not equal to expected value");
 
@@ -643,7 +626,8 @@ public class ItIntrospectVersion {
     int replicaCount = 3;
 
     logger.info("Getting node port for T3 channel");
-    int adminServerT3Port = getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel");
+    int adminServerT3Port
+        = getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel");
     assertNotEquals(-1, adminServerT3Port, "Couldn't get valid port for T3 channel");
 
     // get the pod creation time stamps
@@ -712,10 +696,10 @@ public class ItIntrospectVersion {
         "Failed to patch domain");
 
     //verify the introspector pod is created and runs
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
 
-    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
 
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
@@ -742,7 +726,7 @@ public class ItIntrospectVersion {
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        introDomainNamespace, adminServerPodName + "-external", "default"),
+        introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
     assertNotEquals(-1, serviceNodePort, "Couldn't get valid node port for default channel");
 
@@ -791,7 +775,8 @@ public class ItIntrospectVersion {
     final int replicaCount = 2;
 
     logger.info("Getting node port for default channel");
-    int adminServerT3Port = getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel");
+    int adminServerT3Port
+        = getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel");
 
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
@@ -828,10 +813,10 @@ public class ItIntrospectVersion {
         "Failed to patch domain");
 
     //verify the introspector pod is created and runs
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
 
-    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
 
     // verify new cluster managed server services created
     for (int i = 1; i <= replicaCount; i++) {
@@ -918,14 +903,21 @@ public class ItIntrospectVersion {
     assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
 
     //print out image name in the new patched domain
-    image = domain1.getSpec().getImage();
-    logger.info("In the new patched domain image name is: {0}", image);
+    logger.info("In the new patched domain image name is: {0}", domain1.getSpec().getImage());
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+    }
 
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
@@ -968,31 +960,9 @@ public class ItIntrospectVersion {
         .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName()); //domain property file
 
     logger.info("Running a Kubernetes job to create the domain");
-    createDomainJob(image, isUseSecret, pvName, pvcName, domainScriptConfigMapName,
+    createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
         namespace, jobCreationContainer);
 
-  }
-
-  /**
-   * Create secret for docker credentials.
-   *
-   * @param namespace name of the namespace in which to create secret
-   */
-  private static void createOCRRepoSecret(String namespace) {
-    boolean secretExists = false;
-    V1SecretList listSecrets = listSecrets(namespace);
-    if (null != listSecrets) {
-      for (V1Secret item : listSecrets.getItems()) {
-        if (item.getMetadata().getName().equals(OCR_SECRET_NAME)) {
-          secretExists = true;
-          break;
-        }
-      }
-    }
-    if (!secretExists) {
-      createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
-    }
   }
 
   private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
@@ -1000,7 +970,7 @@ public class ItIntrospectVersion {
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
     logger.info("Checking the health of servers in cluster");

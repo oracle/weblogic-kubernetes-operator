@@ -75,7 +75,6 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -92,24 +91,21 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -144,10 +140,11 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOCRRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyApache;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
@@ -164,6 +161,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -178,10 +176,12 @@ public class ItTwoDomainsLoadBalancers {
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
   private static final String wlSecretName = "weblogic-credentials";
+  private static final String defaultSharingPvcName = "default-sharing-pvc";
+  private static final String defaultSharingPvName = "default-sharing-pv";
+  private static final String apachePvcName = "apache-custom-file-pvc";
+  private static final String apachePvName = "apache-custom-file-pv";
 
-  private static boolean isUseSecret = true;
   private static String defaultNamespace = "default";
-  private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
   private static String domain1Uid = null;
   private static String domain2Uid = null;
   private static String domain1Namespace = null;
@@ -271,13 +271,7 @@ public class ItTwoDomainsLoadBalancers {
     domain1Namespace = domainNamespaces.get(0);
     domain2Namespace = domainNamespaces.get(1);
 
-    //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
-      String kindRepoImage = KIND_REPO + image.substring(OCR_REGISTRY.length() + 1);
-      logger.info("Using image {0}", kindRepoImage);
-      image = kindRepoImage;
-      isUseSecret = false;
-
       // The kind clusters can't pull Apache webtier image from OCIR using the image pull secret.
       // Try the following instead:
       //   1. docker login
@@ -290,7 +284,7 @@ public class ItTwoDomainsLoadBalancers {
                       + "(elapsed time {0} ms, remaining time {1} ms)",
                   condition.getElapsedTimeInMS(),
                   condition.getRemainingTimeInMS()))
-          .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
+          .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
 
       withStandardRetryPolicy
           .conditionEvaluationListener(
@@ -421,17 +415,19 @@ public class ItTwoDomainsLoadBalancers {
     createVoyagerIngressPathRoutingRules();
     createNginxIngressPathRoutingForTwoDomains();
 
-    // install and verify Apache
+    // install and verify Apache for default sample
     apacheHelmParams1 = assertDoesNotThrow(
         () -> installAndVerifyApache(domain1Namespace, kindRepoApacheImage, 0, 0, domain1Uid));
 
+    // install and verify Apache for custom sample
     LinkedHashMap<String, String> clusterNamePortMap = new LinkedHashMap<>();
     for (int i = 0; i < numberOfDomains; i++) {
       clusterNamePortMap.put(domainUids.get(i) + "-cluster-cluster-1", "" + MANAGED_SERVER_PORT);
     }
+    createPVPVCForApacheCustomConfiguration(defaultNamespace);
     apacheHelmParams2 = assertDoesNotThrow(
         () -> installAndVerifyApache(defaultNamespace, kindRepoApacheImage, 0, 0, domain1Uid,
-            PV_ROOT + "/" + this.getClass().getSimpleName(), "apache-sample-host", clusterNamePortMap));
+            apachePvcName, "apache-sample-host", ADMIN_SERVER_PORT, clusterNamePortMap));
   }
 
   /**
@@ -583,7 +579,6 @@ public class ItTwoDomainsLoadBalancers {
    * For more details, please check:
    * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/custom-sample
    */
-  @Disabled("Disabled the test due to intermittent test failure, see JIRA OWLS-84928")
   @Order(12)
   @Test
   @DisplayName("verify Apache load balancer custom sample through HTTP and HTTPS channel")
@@ -756,10 +751,14 @@ public class ItTwoDomainsLoadBalancers {
     }
 
     // delete pv and pvc in default namespace
-    logger.info("deleting pvc default-sharing-pvc");
-    logger.info("deleting pv default-sharing-pv");
-    assertTrue(deletePersistentVolumeClaim("default-sharing-pvc", defaultNamespace));
-    assertTrue(deletePersistentVolume("default-sharing-pv"));
+    logger.info("deleting pvc {0}", defaultSharingPvcName);
+    assertTrue(deletePersistentVolumeClaim(defaultSharingPvcName, defaultNamespace));
+    logger.info("deleting pv {0}", defaultSharingPvName);
+    assertTrue(deletePersistentVolume(defaultSharingPvName));
+    logger.info("deleting pvc {0}", apachePvcName);
+    assertTrue(deletePersistentVolumeClaim(apachePvcName, defaultNamespace));
+    logger.info("deleting pv {0}", apachePvName);
+    assertTrue(deletePersistentVolume(apachePvName));
 
     // delete ingressroute in namespace
     if (dstFile != null) {
@@ -806,10 +805,8 @@ public class ItTwoDomainsLoadBalancers {
 
     for (int i = 0; i < numberOfDomains; i++) {
 
-      if (isUseSecret) {
-        // create pull secrets for WebLogic image
-        createOCRRepoSecret(domainNamespaces.get(i));
-      }
+      // this secret is used only for non-kind cluster
+      createSecretForBaseImages(domainNamespaces.get(i));
 
       t3ChannelPort = getNextFreePort(32001, 32700);
       logger.info("t3ChannelPort for domain {0} is {1}", domainUids.get(i), t3ChannelPort);
@@ -883,7 +880,7 @@ public class ItTwoDomainsLoadBalancers {
 
       logger.info("Getting admin service node port");
       int serviceNodePort =
-              getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+              getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
       logger.info("Validating WebLogic admin server access by login to console");
       assertTrue(assertDoesNotThrow(
@@ -949,7 +946,7 @@ public class ItTwoDomainsLoadBalancers {
                     .restartPolicy("Never")
                     .initContainers(Collections.singletonList(new V1Container()
                         .name("fix-pvc-owner")
-                        .image(image)
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
                         .addArgsItem("chown -R 1000:1000 /shared")
@@ -962,7 +959,7 @@ public class ItTwoDomainsLoadBalancers {
                             .runAsUser(0L))))
                     .containers(Collections.singletonList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")
-                        .image(image)
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .ports(Collections.singletonList(new V1ContainerPort()
                             .containerPort(ADMIN_SERVER_PORT)))
                         .volumeMounts(Arrays.asList(
@@ -989,10 +986,9 @@ public class ItTwoDomainsLoadBalancers {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptConfigMapName))))  //ConfigMap containing domain scripts
-                    .imagePullSecrets(isUseSecret ? Collections.singletonList(
+                    .imagePullSecrets(Collections.singletonList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))
-                        : null))));
+                            .name(BASE_IMAGES_REPO_SECRET))))));  // this secret is used only for non-kind cluster
 
     assertNotNull(jobBody.getMetadata());
     logger.info("Running a job {0} to create a domain on PV for domain {1} in namespace {2}",
@@ -1220,11 +1216,10 @@ public class ItTwoDomainsLoadBalancers {
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
-            .image(image)
-            .imagePullSecrets(isUseSecret ? Collections.singletonList(
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .imagePullSecrets(Collections.singletonList(
                 new V1LocalObjectReference()
-                    .name(OCR_SECRET_NAME))
-                : null)
+                    .name(BASE_IMAGES_REPO_SECRET)))  // this secret is used only for non-kind cluster
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
@@ -1272,13 +1267,9 @@ public class ItTwoDomainsLoadBalancers {
    */
   private void createTwoDomainsSharingPVUsingWlstAndVerify() {
 
-    String pvName = "default-sharing-pv";
-    String pvcName = "default-sharing-pvc";
-
-    if (isUseSecret) {
-      // create pull secrets for WebLogic image
-      createOCRRepoSecret(defaultNamespace);
-    }
+    // create pull secrets for WebLogic image
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(defaultNamespace);
 
     // create WebLogic credentials secret
     createSecretWithUsernamePassword(wlSecretName, defaultNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
@@ -1300,7 +1291,7 @@ public class ItTwoDomainsLoadBalancers {
             .hostPath(new V1HostPathVolumeSource()
                 .path(pvHostPath.toString())))
         .metadata(new V1ObjectMetaBuilder()
-            .withName(pvName)
+            .withName(defaultSharingPvName)
             .build()
             .putLabelsItem("sharing-pv", "true"));
 
@@ -1308,11 +1299,11 @@ public class ItTwoDomainsLoadBalancers {
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
             .storageClassName("default-sharing-weblogic-domain-storage-class")
-            .volumeName(pvName)
+            .volumeName(defaultSharingPvName)
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("6Gi"))))
         .metadata(new V1ObjectMetaBuilder()
-            .withName(pvcName)
+            .withName(defaultSharingPvcName)
             .withNamespace(defaultNamespace)
             .build()
             .putLabelsItem("sharing-pvc", "true"));
@@ -1330,13 +1321,13 @@ public class ItTwoDomainsLoadBalancers {
       logger.info("t3ChannelPort for domain {0} is {1}", domainUid, t3ChannelPort);
 
       // run create a domain on PV job using WLST
-      runCreateDomainOnPVJobUsingWlst(pvName, pvcName, domainUid, defaultNamespace, domainScriptConfigMapName,
-          createDomainInPVJobName);
+      runCreateDomainOnPVJobUsingWlst(defaultSharingPvName, defaultSharingPvcName, domainUid, defaultNamespace,
+          domainScriptConfigMapName, createDomainInPVJobName);
 
       // create the domain custom resource configuration object
       logger.info("Creating domain custom resource");
-      Domain domain =
-          createDomainCustomResource(domainUid, defaultNamespace, pvName, pvcName, t3ChannelPort);
+      Domain domain = createDomainCustomResource(domainUid, defaultNamespace, defaultSharingPvName,
+          defaultSharingPvcName, t3ChannelPort);
 
       logger.info("Creating domain custom resource {0} in namespace {1}", domainUid, defaultNamespace);
       createDomainAndVerify(domain, defaultNamespace);
@@ -1351,9 +1342,9 @@ public class ItTwoDomainsLoadBalancers {
         checkPodReadyAndServiceExists(managedServerPodName, domainUid, defaultNamespace);
       }
 
-      logger.info("Getting admin service node port");
       int serviceNodePort =
-          getServiceNodePort(defaultNamespace, adminServerPodName + "-external", "default");
+          getServiceNodePort(defaultNamespace, getExternalServicePodName(adminServerPodName), "default");
+      logger.info("Getting admin service node port: {0}", serviceNodePort);
 
       logger.info("Validating WebLogic admin server access by login to console");
       assertTrue(assertDoesNotThrow(
@@ -1757,9 +1748,9 @@ public class ItTwoDomainsLoadBalancers {
   private static void deployApplication(String namespace, String domainUid, String adminServerPodName) {
     logger.info("Getting node port for admin server default channel");
     int serviceNodePort = assertDoesNotThrow(() ->
-            getServiceNodePort(namespace, adminServerPodName + "-external", "default"),
+            getServiceNodePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
-
+    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
     logger.info("Deploying application {0} to domain {1} cluster target cluster-1 in namespace {2}",
         clusterViewAppPath, domainUid, namespace);
     ExecResult result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,
@@ -1914,7 +1905,7 @@ public class ItTwoDomainsLoadBalancers {
 
   private static Callable<Boolean> pullImageFromOcirAndPushToKind(String apacheImage) {
     return (() -> {
-      kindRepoApacheImage = KIND_REPO + apacheImage.substring(REPO_DEFAULT.length());
+      kindRepoApacheImage = KIND_REPO + apacheImage.substring(OCIR_REGISTRY.length() + 1);
       logger.info("pulling image {0} from OCIR, tag it as image {1} and push to KIND repo",
           apacheImage, kindRepoApacheImage);
       return dockerPull(apacheImage) && dockerTag(apacheImage, kindRepoApacheImage) && dockerPush(kindRepoApacheImage);
@@ -1955,5 +1946,47 @@ public class ItTwoDomainsLoadBalancers {
       logger.info("Executing curl command {0}", curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
     }
+  }
+
+  /**
+   * Create PV and PVC for Apache custom configuration file in specified namespace.
+   * @param apacheNamespace namespace in which to create PVC
+   */
+  private void createPVPVCForApacheCustomConfiguration(String apacheNamespace) {
+    Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), "apache-persistentVolume");
+
+    logger.info("Creating PV directory {0}", pvHostPath);
+    assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
+    assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
+
+    V1PersistentVolume v1pv = new V1PersistentVolume()
+        .spec(new V1PersistentVolumeSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName("apache-storage-class")
+            .volumeMode("Filesystem")
+            .putCapacityItem("storage", Quantity.fromString("1Gi"))
+            .persistentVolumeReclaimPolicy("Retain")
+            .hostPath(new V1HostPathVolumeSource()
+                .path(pvHostPath.toString())))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(apachePvName)
+            .build()
+            .putLabelsItem("apacheLabel", "apache-custom-config"));
+
+    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
+        .spec(new V1PersistentVolumeClaimSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName("apache-storage-class")
+            .volumeName(apachePvName)
+            .resources(new V1ResourceRequirements()
+                .putRequestsItem("storage", Quantity.fromString("1Gi"))))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(apachePvcName)
+            .withNamespace(apacheNamespace)
+            .build()
+            .putLabelsItem("apacheLabel", "apache-custom-config"));
+
+    String labelSelector = String.format("apacheLabel in (%s)", "apache-custom-config");
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, apacheNamespace);
   }
 }

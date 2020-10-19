@@ -32,6 +32,8 @@ spec:
             prefix: /console
         - uri:
             prefix: /TxForward
+        - uri:
+            prefix: /cdttxservlet
         - port: 7001
       route:
         - destination:
@@ -48,3 +50,5 @@ spec:
             host: CLUSTER_SERVICE
             port:
               number: 8001
+
+
