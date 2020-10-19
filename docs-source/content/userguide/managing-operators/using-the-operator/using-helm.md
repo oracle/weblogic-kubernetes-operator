@@ -320,7 +320,7 @@ Prior to the operator 3.1.0 release, the suffixes are hard-coded to `-introspect
 {{% /notice %}}
 
 {{% notice note %}}
-In order to work with Kubernetes limits to resource names, the resultant names for the introspector job and the external service should not be more than 63 characters (see [Operator created Kubernetes resources]({{< relref "/userguide/managing-domains/domain-resource.md#operator-created-kubernetes-resources" >}})).
+In order to work with Kubernetes limits to resource names, the resultant names for the introspector job and the external service should not be more than 63 characters (see [Operator created Kubernetes resources]({{< relref "/userguide/managing-domains/domain-resource#operator-created-kubernetes-resources" >}})).
 {{% /notice %}}
 
 ##### `clusterSizePaddingValidationEnabled`
@@ -328,7 +328,7 @@ Specifies if the operator needs to reserve additional padding when validating th
 
 Defaults to `true`.
 
-If `clusterSizePaddingValidationEnabed` is set to true, two additional characters will be reserved if the cluster's size is between 1 and 9, and one additional character will be reserved if the cluster's size is between 10 and 99. No additional character is reserved if the cluster's size is greater than 99. For more details, see [Operator created Kubernetes resources]({{< relref "/userguide/managing-domains/domain-resource.md#operator-created-kubernetes-resources" >}}).
+If `clusterSizePaddingValidationEnabed` is set to true, two additional characters will be reserved if the cluster's size is between 1 and 9, and one additional character will be reserved if the cluster's size is between 10 and 99. No additional character is reserved if the cluster's size is greater than 99. For more details, see [Operator created Kubernetes resources]({{< relref "/userguide/managing-domains/domain-resource#operator-created-kubernetes-resources" >}}).
 
 #### Elastic Stack integration
 
