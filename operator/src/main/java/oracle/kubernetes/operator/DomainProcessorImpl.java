@@ -61,6 +61,7 @@ import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.model.AdminServer;
 import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -705,6 +706,27 @@ public class DomainProcessorImpl implements DomainProcessor {
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
+        DomainSourceType domainSourceType = Optional.ofNullable(liveInfo)
+            .map(DomainPresenceInfo::getDomain)
+            .map(Domain::getDomainHomeSourceType)
+            .orElse(DomainSourceType.Image);
+
+        // For MII, reset the useOnlineUpdate to false if chnages in the spec involves more than introspectVersion and
+        // useOnlineUpdate
+
+        if (domainSourceType.equals(DomainSourceType.FromModel) && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo)) {
+          LOGGER.info("DomainType is FromModel and Online changes requested in the spec involves more than "
+              + "introspectVersion, overridden to use offline");
+          // TODO: flag it in domain status ?
+          Configuration c = Optional.ofNullable(liveInfo)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getSpec)
+              .map(DomainSpec::getConfiguration)
+              .orElse(null);
+          if (c != null) {
+            c.setUseOnlineUpdate(false);
+          }
+        }
         if (exceededFailureRetryCount) {
           Optional.ofNullable(liveInfo)
               .map(DomainPresenceInfo::getDomain)
@@ -784,6 +806,24 @@ public class DomainProcessorImpl implements DomainProcessor {
           .map(Domain::getSpec)
           .map(spec -> !spec.equals(cachedInfo.getDomain().getSpec()))
           .orElse(true);
+  }
+
+  private static boolean isSpecChgOk4OnlineUpdate(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
+    // Returns true if configuration.sepc.useOnlineUdpate = not set or false
+    // false is useOnline is true but there are other changes in spec other than the introspectVersion
+    boolean isOnlineUpdate = Optional.ofNullable(liveInfo.getDomain())
+        .map(Domain::getSpec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getUseOnlineUpdate)
+        .orElse(false);
+
+    if (isOnlineUpdate) {
+      return Optional.ofNullable(liveInfo.getDomain())
+          .map(Domain::getSpec)
+          .map(spec -> spec.isSpecChangeForOnlineUpdateOnly(cachedInfo.getDomain().getSpec()))
+          .orElse(true);
+    }
+    return true;
   }
 
   private static boolean isImgRestartIntrospectVerChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {

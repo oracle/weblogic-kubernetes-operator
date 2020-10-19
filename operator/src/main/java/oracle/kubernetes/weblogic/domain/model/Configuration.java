@@ -202,5 +202,35 @@ public class Configuration {
 
     return builder.isEquals();
   }
+
+  /**
+   * Check to see if the only change in the spec is introspectVersion.
+   * @param other - another DomainSpec object for comparison
+   * @return true if the change is only introspectVersion and/or useOnlineUpdate
+   */
+
+  public boolean isSpecChangeForOnlineUpdateOnly(Object other) {
+    if (other == this) {
+      return true;
+    } else if (!(other instanceof Configuration)) {
+      return false;
+    }
+
+    Configuration rhs = ((Configuration) other);
+    EqualsBuilder builder =
+        new EqualsBuilder()
+            .append(model, rhs.model)
+            .append(opss, rhs.opss)
+            .append(secrets, rhs.secrets)
+            .append(overrideDistributionStrategy, rhs.overrideDistributionStrategy)
+            .append(overridesConfigMap, rhs.overridesConfigMap)
+            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
+            .append(rollBackIfRestartRequired, rhs.rollBackIfRestartRequired)
+            .append(istio, rhs.istio);
+
+    return builder.isEquals();
+  }
+
+
 }
 

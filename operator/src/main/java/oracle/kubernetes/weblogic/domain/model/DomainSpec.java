@@ -931,6 +931,56 @@ public class DomainSpec extends BaseConfiguration {
     return builder.isEquals();
   }
 
+  /**
+   * Check to see if the only change in the spec is introspectVersion.
+   * @param other - another DomainSpec object for comparison
+   * @return true if the change is only introspectVersion and/or useOnlineUpdate
+   */
+  public boolean isSpecChangeForOnlineUpdateOnly(Object other) {
+    if (other == this) {
+      return true;
+    }
+    if (!(other instanceof DomainSpec)) {
+      return false;
+    }
+
+    DomainSpec rhs = ((DomainSpec) other);
+    // Note: This builder excluded introspectVersion
+    // and configuration
+    EqualsBuilder builder =
+        new EqualsBuilder()
+            .appendSuper(super.equals(other))
+            .append(domainUid, rhs.domainUid)
+            .append(domainHome, rhs.domainHome)
+            .append(domainHomeInImage, rhs.domainHomeInImage)
+            .append(domainHomeSourceType, rhs.domainHomeSourceType)
+            .append(serverStartPolicy, rhs.serverStartPolicy)
+            .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
+            .append(getImage(), rhs.getImage())
+            .append(getImagePullPolicy(), rhs.getImagePullPolicy())
+            .append(imagePullSecrets, rhs.imagePullSecrets)
+            .append(adminServer, rhs.adminServer)
+            .append(managedServers, rhs.managedServers)
+            .append(clusters, rhs.clusters)
+            .append(replicas, rhs.replicas)
+            .append(logHome, rhs.logHome)
+            .append(logHomeEnabled, rhs.logHomeEnabled)
+            .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
+            .append(configOverrides, rhs.configOverrides)
+            .append(configOverrideSecrets, rhs.configOverrideSecrets)
+            .append(isAllowReplicasBelowMinDynClusterSize(), rhs.isAllowReplicasBelowMinDynClusterSize())
+            .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
+            .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown());
+
+    boolean isEqual = builder.isEquals();
+    if (!isEqual) {
+      return isEqual;
+    } else {
+      return configuration.isSpecChangeForOnlineUpdateOnly(((DomainSpec) other).getConfiguration());
+    }
+  }
+
+
   ManagedServer getManagedServer(String serverName) {
     if (serverName != null) {
       for (ManagedServer s : managedServers) {
