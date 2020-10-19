@@ -89,7 +89,8 @@ For up-to-date information about the features of WebLogic Server that are suppor
 
 ### Meet Kubernetes resource name restrictions
           
-Kubernetes requires the names of some resource types to follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement restricts the characters that are allowed to be used in the name of those resources, and also limits the name of such resources to have no more than 63 characters.
+Kubernetes requires the names of some resource types to follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement restricts the characters that are allowed to be used in the name of those resources, and also limits the name of such resources to contain no more than 63 characters.
+
 The following is a list of Kubernetes resources that the operator generates when a domain resource is deployed, including how their names are constructed.
           
 * A domain introspector job named as `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (see [WebLogic domain Management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
@@ -103,7 +104,7 @@ The operator puts in place certain validation checks to prevent any resources th
 * A `domainUID` is required to be no more than 45 characters. 
 * WebLogic domain configuration names, such as the cluster names, admin server name, and managed server names are kept to reasonable lengths so that the generated resource names do not exceed Kubernetes' limits. 
 
-When a domain resource or webLogic domain configuration violates the limits, the domain startup will fail with validation errors in the domain resource's status.
+When a domain resource or webLogic domain configuration violates the limits, the domain startup will fail, and validation errors are reported in the domain resource's status.
 
 ### Creating and managing WebLogic domains
 
