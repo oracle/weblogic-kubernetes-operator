@@ -335,7 +335,7 @@ public class RestBackendImplTest {
   }
 
   @Test
-  public void vwhenUsingAccessToken_userInfoIsNull() {
+  public void whenUsingAccessToken_userInfoIsNull() {
     RestBackendImpl restBackend = new RestBackendImpl("", "", Collections.singletonList(NS));
     assertThat(restBackend.getUserInfo(), nullValue());
   }

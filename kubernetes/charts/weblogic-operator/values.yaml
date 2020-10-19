@@ -196,4 +196,5 @@ clusterSizePaddingValidationEnabled: true
 #   1. Kubernetes token review API for authenticating users, and
 #   2. Kubernetes subject access review API for authorizing a user's operation (get, list,
 #      patch, etc) on a resource.
+# The default value is false.
 #tokenReviewAuthentication: false

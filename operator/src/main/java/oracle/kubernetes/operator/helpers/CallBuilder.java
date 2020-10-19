@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import com.google.common.base.Strings;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
@@ -1922,7 +1923,7 @@ public class CallBuilder {
    * @return - this CallBuilder instance
    */
   public CallBuilder withAuthentication(String accessToken) {
-    if (accessToken != null && !accessToken.isEmpty()) {
+    if (!Strings.isNullOrEmpty(accessToken)) {
       this.helper = new ClientPool().withApiClient(createApiClient(accessToken));
     }
     return this;
