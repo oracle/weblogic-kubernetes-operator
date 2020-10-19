@@ -52,6 +52,10 @@ This diagram shows the following details:
 *	A `ClusterIP` type service is created for each Managed Server pod that contains a Managed Server that is not part of a WebLogic cluster.  These services are intended to be used to access applications running on the Managed Servers.  These services are labeled with `weblogic.domainUID` and `weblogic.domainName`.  Customers must expose these services using a load balancer or `NodePort` type service to expose these endpoints outside the Kubernetes cluster.
 *	An Ingress may optionally be created by the customer for each WebLogic cluster.  An Ingress provides load balanced HTTP access to all Managed Servers in that WebLogic cluster.  The load balancer updates its routing table for an Ingress every time a Managed Server in the WebLogic cluster becomes “ready” or ceases to be able to service requests, such that the Ingress always points to just those Managed Servers that are able to handle user requests.
 
+{{% notice note %}}
+Kubernetes requires the names of some resource types to follow the DNS label standard as defined in [RFC 1123](https://tools.ietf.org/html/rfc1123). As are result, the operator enforces the maximum allowed number of characters to the names of the Kubernetes resource that illustrated above (see [Restrictions to operator created Kubernetes resource names]({{< relref "/userguide/managing-domains/domain-resource#restrictions-to-operator-created-kubernetes-resource-names" >}})).
+{{% /notice %}}
+
 The diagram below shows the components inside the containers running WebLogic Server instances:
 
 ![Inside a container](/weblogic-kubernetes-operator/images/inside-a-container.png)

@@ -12,7 +12,7 @@ pre = "<b> </b>"
 - [Deploying domain resource YAML files](#deploying-domain-resource-yaml-files)
 - [Domain resource custom resource definition (CRD)](#domain-resource-custom-resource-definition-crd)
 - [Domain resource attribute references](#domain-resource-attribute-references)
-- [Operator created Kubernetes resources](#operator-created-kubernetes-resources)
+- [Restrictions to perator created Kubernetes resource names](#restrictions-to-operator-created-kubernetes-resource-names)
 - [Using `kubectl explain`](#using-kubectl-explain)
 - [Domain spec elements](#domain-spec-elements)
 - [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables)
@@ -106,15 +106,15 @@ Here are some references you can use for the fields in these sections:
 - Swagger documentation is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
 - Use [kubectl explain](#leveraging--kubectl-explain-) from the command line.
 
-#### Operator created Kubernetes resources
+#### Restrictions to operator created Kubernetes resource names
 
 When a domain resource is deployed, the operator generates the following Kubernetes resources on the behalf of the domain resource.
 
-* An introspector job: the name of an introspector job associated with a particular domain resource is formed as `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (see [WebLogic domain Management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
-* A ClusterIP service for each WebLogic server: the name of a service is formed as `<domainUID>-<serverName>`. 
-* A NodePort service for each WebLogic cluster: the name of a cluster service is formed as `<domainUID>-cluster-<clusterName>`.
-* A NodePort service, also known as an external service, for the WebLogic admin server: the name of an external service is formed as `<domainUID>-<adminServerName>-<externalServiceNameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` (see [WebLogic domain Management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
-* A pod for each webLogic server: the operator generated name for a service is `<domainUID>-<serverName>`.
+* A domain introspector job with its name being formed as `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (see [WebLogic domain Management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
+* A ClusterIP type service for each WebLogic server with its name being formed as `<domainUID>-<serverName>`. 
+* A NodePort type service for each WebLogic cluster with its name being formed as `<domainUID>-cluster-<clusterName>`.
+* A NodePort type service, also known as an external service, for the WebLogic admin server with its name being formed as `<domainUID>-<adminServerName>-<externalServiceNameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` (see [WebLogic domain Management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
+* A pod for each webLogic server with its name being formed as `<domainUID>-<serverName>`.
 
 {{% notice note %}}
 Kubernetes requires the names of some resource types to follow the DNS label standard as defined in [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement limits the name of a job or service to have no more than 63 characters . In order to prevent an operator generated Kubernetes resource from having a name that violates the restriction, a domainUID is required to be no more than 45 characters. In addition, make sure that a domain configuration does not cause any generated resource names to exceed the limit. When a domain configuration violates the limits, the domain startup will fail with validation errors in the domain resource's status.
