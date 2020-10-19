@@ -328,7 +328,7 @@ Specifies if the operator needs to reserve additional padding when validating th
 
 Defaults to `true`.
 
-If `clusterSizePaddingValidationEnabed` is set to true, two additional characters will be reserved if the cluster's size is between 1 and 9, and one additional character will be reserved if the cluster's size is between 10 and 99. No additional character is reserved if the cluster's size is greater than 99. For more details, see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
+If `clusterSizePaddingValidationEnabed` is set to true, two additional characters will be reserved if the configured cluster's size is between 1 and 9, and one additional character will be reserved if the configured cluster's size is between 10 and 99. No additional character is reserved if the configured cluster's size is greater than 99.
 
 #### Elastic Stack integration
 
