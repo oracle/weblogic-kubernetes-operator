@@ -56,6 +56,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
@@ -915,11 +916,20 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private void updateDomainConditions(String message) {
-      DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.Available);
+      DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.InformationOnly);
       onlineUpdateCondition
           .withMessage(message)
           .withReason("ServersReady")
           .withStatus("True");
+
+      DomainStatus x =  Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .orElse(null);
+
+      if (x == null) {
+        LOGGER.info("DEBUG: updateDomainConditions status is null");
+      }
 
       Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)

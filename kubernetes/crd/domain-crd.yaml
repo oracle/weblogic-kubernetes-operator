@@ -10159,6 +10159,7 @@ spec:
                       enum:
                       - Progressing
                       - Available
+                      - InformationOnly
                       - Failed
                     lastTransitionTime:
                       format: date-time

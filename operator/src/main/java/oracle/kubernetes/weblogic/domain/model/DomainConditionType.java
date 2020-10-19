@@ -11,6 +11,7 @@ public enum DomainConditionType {
     }
   },
   Available,
+  InformationOnly,
   Failed {
     @Override
     String getStatusMessage(DomainCondition condition) {
