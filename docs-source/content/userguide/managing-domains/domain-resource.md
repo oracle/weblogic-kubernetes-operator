@@ -12,6 +12,7 @@ pre = "<b> </b>"
 - [Deploying domain resource YAML files](#deploying-domain-resource-yaml-files)
 - [Domain resource custom resource definition (CRD)](#domain-resource-custom-resource-definition-crd)
 - [Domain resource attribute references](#domain-resource-attribute-references)
+- [Operator created Kubernetes resources](#operator-created-kubernetes-resources)
 - [Using `kubectl explain`](#using-kubectl-explain)
 - [Domain spec elements](#domain-spec-elements)
 - [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables)
@@ -150,7 +151,7 @@ The Domain `spec` section contains elements for configuring the domain operation
 
 Elements related to domain identification, container image, and domain home:
 
-* `domainUID`: Domain unique identifier. Thia identifier is required to be no more than 45 characters. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.
+* `domainUID`: Domain unique identifier. This identifier is required to be no more than 45 characters. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.
 * `image`: The WebLogic container image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
 * `imagePullPolicy`: The image pull policy for the WebLogic container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.
 * `imagePullSecrets`: A list of image pull Secrets for the WebLogic container image.
