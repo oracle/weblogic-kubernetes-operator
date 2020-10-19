@@ -130,7 +130,7 @@ public class Docker {
    * Get environment variable from docker image.
    * @param imageName image name
    * @param envVarName environment variable name
-   * @return
+   * @return environment variable in the image
    */
   public static String getImageEnvVar(String imageName, String envVarName) {
     LoggingFacade logger = getLogger();

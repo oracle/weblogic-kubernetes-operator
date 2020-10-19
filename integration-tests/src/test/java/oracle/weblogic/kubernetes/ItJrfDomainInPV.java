@@ -87,9 +87,6 @@ public class ItJrfDomainInPV {
   private final String domainUid = "jrfdomain-inpv";
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
-  //TODO debug:
-  /*private static final String FMWINFRA_IMAGE_TO_USE_IN_SPEC =
-      "phx.ocir.io/weblogick8s/stage/fmw-infrastructure:12.2.1.4";*/
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -110,12 +107,6 @@ public class ItJrfDomainInPV {
 
     logger = getLogger();
     logger.info("Assign a unique namespace for DB and RCU");
-
-    //TODO for debugging only
-    oracle_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "ORACLE_HOME");
-    logger.info("ORACLE_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, oracle_home);
-    java_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "JAVA_HOME");
-    logger.info("JAVA_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, java_home);
 
     assertNotNull(namespaces.get(0), "Namespace is null");
     dbNamespace = namespaces.get(0);
@@ -186,7 +177,13 @@ public class ItJrfDomainInPV {
     File domainPropertiesFile = assertDoesNotThrow(() ->
             File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
-    logger.info("The Property for oracleHome is: {0}, javaHome is: {1}", oracle_home, java_home);
+
+    //get ENV variable from the image
+    oracle_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "ORACLE_HOME");
+    logger.info("ORACLE_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, oracle_home);
+    java_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "JAVA_HOME");
+    logger.info("JAVA_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, java_home);
+
     Properties p = new Properties();
     p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME
     p.setProperty("javaHome", java_home); //default $JAVA_HOME
