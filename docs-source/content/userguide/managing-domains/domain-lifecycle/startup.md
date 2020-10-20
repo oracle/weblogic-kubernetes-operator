@@ -116,8 +116,9 @@ domain.weblogic.oracle/domain1 patched
 
 ```
 
-#### Clustered Managed Server start and stop scenarios
-| Script Name | Keep Replica Count Constant (-k) parameter  | Current Server State | New Server Start Policy | New Server State | Replica Count Value |
+#### Clustered Managed Server start and stop behavior
+Below table describes the behavior of server start and stop scripts and how server start policy and replica count is updated.
+| Script Name | Keep Replica Count Constant (-k) Parameter  | Current Clustered Server State | New Clustered Server Start Policy | New Clustered Server State | Cluster's Replica Count Value |
 | --- | --- | --- | --- | --- | --- |
 | `startServer.sh`| Unspecified | Stopped | `ALWAYS` | Started | `Incremented by 1` |
 | `startServer.sh`| Specified | Stopped | `ALWAYS` | Started | Unchanged |
