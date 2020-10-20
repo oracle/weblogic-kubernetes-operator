@@ -8,18 +8,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1EventList;
+import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -53,12 +56,15 @@ import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_ACCESS_REVIEW;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.TOKEN_REVIEW;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -541,6 +547,46 @@ public class KubernetesTestSupportTest {
     testSupport.runSteps(new CallBuilder().readPodLogAsync("name", "namespace", "", endStep));
 
     assertThat(endStep.callResponse.getResult(), equalTo(POD_LOG_CONTENTS));
+  }
+
+  @Test
+  public void deleteNamespace_deletesAllMatchingNamespacedResources() {
+    V1Namespace n1 = createNamespace("ns1");
+    V1Namespace n2 = createNamespace("ns2");
+    Domain dom1 = createDomain("ns1", "domain1");
+    Domain dom2 = createDomain("ns2", "domain2");
+    V1Service s1 = createService("ns1", "service1");
+    V1Service s2 = createService("ns2", "service2");
+    V1Pod p1 = createPod("ns1", "pod1");
+    V1Pod p2 = createPod("ns2", "pod2");
+    testSupport.defineResources(dom1, dom2, s1, s2, p1, p2);
+
+    testSupport.deleteNamespace("ns1");
+
+    assertThat(getResourcesInNamespace("ns1"), empty());
+    assertThat(getResourcesInNamespace("ns2"), hasSize(3));
+  }
+
+  private List<KubernetesObject> getResourcesInNamespace(String name) {
+    List<KubernetesObject> result = new ArrayList<>();
+    result.addAll(getResourcesInNamespace(DOMAIN, name));
+    result.addAll(getResourcesInNamespace(SERVICE, name));
+    result.addAll(getResourcesInNamespace(POD, name));
+    return result;
+  }
+
+  private List<KubernetesObject> getResourcesInNamespace(String resourceType, String name) {
+    return testSupport.<KubernetesObject>getResources(resourceType).stream()
+          .filter(n -> name.equals(getNamespace(n)))
+          .collect(Collectors.toList());
+  }
+
+  private String getNamespace(KubernetesObject object) {
+    return object.getMetadata().getNamespace();
+  }
+
+  private V1Namespace createNamespace(String name) {
+    return new V1Namespace().metadata(new V1ObjectMeta().name(name));
   }
 
   static class TestResponseStep<T> extends DefaultResponseStep<T> {

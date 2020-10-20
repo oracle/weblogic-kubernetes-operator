@@ -54,6 +54,15 @@ public abstract class TuningParametersStub implements TuningParameters {
         INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS);
   }
 
+  /**
+   * Sets a tuning parameter for testing purposes.
+   * @param key the parameter to set
+   * @param value its test value
+   */
+  public static void setParameter(String key, String value) {
+    namedParameters.put(key, value);
+  }
+
   @Override
   public MainTuning getMainTuning() {
     return new MainTuning(2, 2, 2, 2, 2, 2, 2L, 2L);

@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -25,16 +24,15 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
   private WatchTuning watch = null;
   private PodTuning pod = null;
 
-  private TuningParametersImpl(ScheduledExecutorService executorService, String mountPoint)
-      throws IOException {
-    super(executorService, mountPoint, TuningParametersImpl::updateTuningParameters);
-    update();
+  private TuningParametersImpl(ScheduledExecutorService executorService) {
+    super(executorService);
   }
 
-  static synchronized TuningParameters initializeInstance(
-      ScheduledExecutorService executorService, String mountPoint) throws IOException {
+  static synchronized TuningParameters initializeInstance(ScheduledExecutorService executorService, String mountPoint) {
     if (INSTANCE == null) {
-      INSTANCE = new TuningParametersImpl(executorService, mountPoint);
+      final TuningParametersImpl impl = new TuningParametersImpl(executorService);
+      INSTANCE = impl;
+      impl.scheduleUpdates(mountPoint, TuningParametersImpl::updateTuningParameters);
     }
     return INSTANCE;
   }
