@@ -238,7 +238,7 @@ function validateJqAvailable {
   fi
 }
 
-# try to execute jq to see whether jq is available
+# try to execute kubernetes cli to see whether cli is available
 function validateKubernetesCliAvailable {
   if ! [ -x "$(command -v ${kubernetesCli})" ]; then
     validationError "${kubernetesCli} is not installed"
