@@ -99,7 +99,7 @@ The following is a list of such Kubernetes resources that the operator generates
 * An optional NodePort type service, also known as an external service, for the WebLogic Administration Server named `<domainUID>-<adminServerName>-<externalServiceNameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` (see [WebLogic domain management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
 
 The operator puts in place certain validation checks and conversions to prevent these resources from violating Kubernetes restrictions.
-* All the names that are discussed above can contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`, and must start and end with an alphanumeric character. Note that when generating pod and service names, the operator will convert configured names to lower case and substitute a hyphen (`-`) for each underscore (`_`).
+* All the names previously described can contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`, and must start and end with an alphanumeric character. Note that when generating pod and service names, the operator will convert configured names to lower case and substitute a hyphen (`-`) for each underscore (`_`).
 * A `domainUID` is required to be no more than 45 characters. 
 * WebLogic domain configuration names, such as the cluster names, Administration Server name, and Managed Server names must be kept to a legal length so that the resultant resource names do not exceed Kubernetes' limits. 
 
