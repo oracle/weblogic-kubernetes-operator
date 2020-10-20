@@ -142,7 +142,10 @@ public class Docker {
                                 .saveResults(true)
                                 .redirect(true)
                             ).executeAndReturnResult();
-    String envVar  = result.stdout();
+    String envVar  = null;
+    if (result != null && result.exitValue() == 0) {
+      envVar = result.stdout();
+    }
     logger.info("getImageEnvVar returns result: {0}, envVar: {1} ", result, envVar);
     return envVar;
 
