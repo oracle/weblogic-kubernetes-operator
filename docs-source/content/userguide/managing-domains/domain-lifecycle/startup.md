@@ -11,10 +11,13 @@ started, or restarted. To start, stop, or restart servers, modify these fields o
 
 * [Starting and stopping servers](#starting-and-stopping-servers)
     * [Common starting and stopping scenarios](#common-starting-and-stopping-scenarios)
+    * [Scripts for starting and stopping a managed server](#scripts-for-starting-and-stopping-a-managed-server)
 * [Shutdown options](#shutdown-options)
 * [Restarting servers](#restarting-servers)
     * [Rolling restarts](#rolling-restarts)
     * [Common restarting scenarios](#common-restarting-scenarios)
+* [Starting and stopping clusters](#starting-and-stopping-clusters)
+* [Starting and stopping domains](#starting-and-stopping-domains)
 
 There are fields on the Domain that specify which servers should be running,
 which servers should be restarted, and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain
@@ -29,6 +32,8 @@ The operator monitors these fields and creates or deletes the corresponding WebL
 
 {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers.
 {{% /notice %}}
+
+Beginning with operator version 3.1.0, the WebLogic Server Kubernetes Operator project provides a set of scripts to shut-down or start-up a specific managed-server, cluster or the entire domain. These scripts are located in the `kubernetes/samples/scripts/domain-lifecycle` directory. These can be helpful when scripting the lifecycle of a WebLogic Server Domain.
 
 #### `serverStartPolicy` rules
 
@@ -81,6 +86,45 @@ progress only to the administrative state.  Then you could use the WebLogic Serv
 updates before advancing the server to the running state.
 
 Changes to the `serverStartState` property do not affect already started servers.
+
+### Scripts for starting and stopping a managed server
+The [`startServer.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/startServer.sh) and [`stopServer.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/stopServer.sh) scripts located in the `kubernetes/samples/scripts/domain-lifecycle` directory can be used to start-up or shut down a specific managed server in a WebLogic Server Domain. These scripts accept below four input parameters.
+1) Name of the managed server to start or stop
+2) Domain unique-id (for managed server's Domain)
+3) Namespace (for managed server's Domain)
+4) `-k` parameter to keep the replica count for the cluster constant.
+
+The [`startServer.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/startServer.sh) script starts a managed server by patching it's server start policy to `ALWAYS`. It also increases the replica count value for the managed server's cluster by `1`. If you want to keep the replica count value constant, you can do so by specifying the `-k` option. When `-k` option is specified, the script will NOT change the cluster's replica count value. The operator will start the WebLogic Server instance Pod once it's server start policy is updated to `ALWAYS` (if Pod is not already running). Use `-h` option to see script `usage` information.
+```
+$ startServer.sh -d domain1 -n weblogic-domain-1 -s managed-server1
+[INFO] Patching start policy of server 'managed-server1' from 'NEVER' to 'ALWAYS' and incrementing replica count for cluster 'cluster-1'.
+domain.weblogic.oracle/domain1 patched
+[INFO] Successfully patched server 'managed-server1' with 'ALWAYS' start policy!
+
+       The replica count for cluster 'cluster-1' updated to 3.
+```
+
+The [`stopServer.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/stopServer.sh) script shuts down a managed server by patching it's server start policy to `NEVER`. It also decreases the replica count for the managed server's cluster by 1. If you want to keep the replica count value constant, you can do so by specifying the `-k` option. When `-k` option is specified, the script will NOT change the cluster's replica count value. Use `-h` option to see script `usage` information.
+
+```
+$ stopServer.sh -d domain1 -n weblogic-domain-1 -s managed-server1
+[INFO] Patching start policy of server 'managed-server1' from 'ALWAYS' to 'NEVER' and decrementing replica count for cluster 'cluster-1'.
+domain.weblogic.oracle/domain1 patched
+[INFO] Successfully patched server 'managed-server1' with 'NEVER' start policy!
+
+       The replica count for cluster 'cluster-1' updated to 2.
+
+```
+
+#### Clustered Managed Server start and stop scenarios
+| Script Name | Keep Replica Count Constant (-k) parameter  | Current Server State | New Server Start Policy | New Server State | Replica Count Value |
+| --- | --- | --- | --- | --- | --- |
+| `startServer.sh`| Unspecified | Stopped | `ALWAYS` | Started | `Incremented by 1` |
+| `startServer.sh`| Specified | Stopped | `ALWAYS` | Started | Unchanged |
+| `startServer.sh`| Any | Started | Unchanged | Started | Unchanged |
+| `stopServer.sh`| Unspecified | Started | `NEVER` | Stopped | `Decremented by 1` |
+| `stopServer.sh`| Specified | Started | `NEVER` | Stopped | Unchanged |
+| `stopServer.sh`| Any | Stopped | Unchanged | Stopped | Unchanged |
 
 ### Common starting and stopping scenarios
 
@@ -396,3 +440,51 @@ have to specify the `serverStartPolicy` as the default value is `IF_NEEDED`.
 ```
 
 4. The operator will restart all the servers in the domain.
+
+## Starting and stopping clusters
+The [`startCluster.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/startCluster.sh) and [`stopCluster.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/stopCluster.sh) scripts located in the `kubernetes/samples/scripts/domain-lifecycle` directory can be used to shut down or start-up a specific cluster in a WebLogic Server Domain. These scripts accept below three input parameters.
+1) Name of the cluster to start or shutdown
+2) Domain unique-id
+3) Namespace
+
+The [`startCluster.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/startCluster.sh) script starts a cluster by patching it's server start policy to `IF_NEEDED`. Once the cluster's server start policy is updated to `IF_NEEDED`, the operator will start the WebLogic Server instance Pods that are part of the cluster if they are not already running based on replica count value. Use `-h` option to see script `usage` information.
+
+```
+$ startCluster.sh -d domain1 -n weblogic-domain-1 -c cluster-1
+[INFO]Patching start policy of cluster 'cluster-1' from 'NEVER' to 'IF_NEEDED'.
+domain.weblogic.oracle/domain1 patched
+[INFO] Successfully patched cluster 'cluster-1' with 'IF_NEEDED' start policy!.
+```
+
+The [`stopCluster.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/stopCluster.sh) script shuts down a cluster by patching it's server start policy to `NEVER`. Once the cluster's server start policy is updated to `NEVER`, the operator will shut down the WebLogic Server instance Pods that are part of the cluster if they are in running state. Use `-h` option to see script `usage` information.
+
+```
+$ stopCluster.sh -d domain1 -n weblogic-domain-1 -c cluster-1
+[INFO] Patching start policy of cluster 'cluster-1' from 'IF_NEEDED' to 'NEVER'.
+domain.weblogic.oracle/domain1 patched
+[INFO] Successfully patched cluster 'cluster-1' with 'NEVER' start policy!
+
+```
+
+## Starting and stopping Domains
+The [`startDomain.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/startDomain.sh) and [`stopDomain.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/stopDomain.sh) located in the `kubernetes/samples/scripts/domain-lifecycle` directory can be used to shut down or start-up a specific WebLogic Server Domain. These scripts accept below two input parameters.
+1) Domain unique-id
+2) Domain namespace
+
+The [`startDomain.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/startDomain.sh) script starts a Domain by patching it's server start policy to `IF_NEEDED`. Once the Domain's server start policy is updated to `IF_NEEDED`, the operator will start the WebLogic Server instance Pods that are part of the Domain if they are not already running. Use `-h` option to see script `usage` information.
+
+```
+$ startDomain.sh -d domain1 -n weblogic-domain-1
+[INFO] Patching domain 'domain1' from serverStartPolicy='NEVER' to 'IF_NEEDED'.
+domain.weblogic.oracle/domain1 patched
+[INFO] Successfully patched domain 'domain1' in namespace 'weblogic-domain-1' with 'IF_NEEDED' start policy!
+```
+
+The [`stopDomain.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/stopDomain.sh) script shuts down a Domain by patching it's server start policy to `NEVER`. Once the Domain's server start policy is updated to `NEVER`, the operator will shut down the WebLogic Server instance Pods that are part of the Domain if they are in running state. Use `-h` option to see script `usage` information.
+
+```
+$ stopDomain.sh -d domain1 -n weblogic-domain-1
+[INFO] Patching domain 'domain1' in namespace 'weblogic-domain-1' from serverStartPolicy='IF_NEEDED' to 'NEVER'.
+domain.weblogic.oracle/domain1 patched
+[INFO] Successfully patched domain 'domain1' in namespace 'weblogic-domain-1' with 'NEVER' start policy!
+```
