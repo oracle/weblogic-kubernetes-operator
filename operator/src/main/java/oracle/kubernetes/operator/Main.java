@@ -91,7 +91,6 @@ public class Main {
   private static String principal;
   private static KubernetesVersion version = null;
   private static SemanticVersion productVersion = null;
-  private static Main main = new Main();
 
   private static TuningParameters tuningAndConfig() {
     return TuningParameters.getInstance();
@@ -204,7 +203,7 @@ public class Main {
   private static void completeBegin() {
     try {
       // start the REST server
-      startRestServer(principal, DomainNamespaces.getNamespaces());
+      startRestServer(principal);
 
       // start periodic retry and recheck
       int recheckInterval = tuningAndConfig().getMainTuning().domainNamespaceRecheckIntervalSeconds;
@@ -275,10 +274,7 @@ public class Main {
   }
 
   static Step readExistingResources(String ns) {
-    NamespacedResources resources = new NamespacedResources(ns, null);
-    resources.addProcessing(new DomainResourcesValidation(ns, processor).getProcessors());
-    resources.addProcessing(DomainNamespaces.createWatcherStartupProcessing(ns, processor));
-    return Step.chain(ConfigMapHelper.createScriptConfigMapStep(ns), resources.createListSteps());
+    return DomainNamespaces.readExistingResources(ns, processor);
   }
 
 
@@ -516,9 +512,9 @@ public class Main {
     }
   }
 
-  private static void startRestServer(String principal, Collection<String> domainNamespaces)
+  private static void startRestServer(String principal)
       throws Exception {
-    RestServer.create(new RestConfigImpl(principal, domainNamespaces));
+    RestServer.create(new RestConfigImpl(principal, DomainNamespaces::getNamespaces));
     RestServer.getInstance().start(container);
   }
 
@@ -684,7 +680,7 @@ public class Main {
       return Step.chain(
           new NamespaceRulesReviewStep(ns),
           new StartNamespaceBeforeStep(namespaces, ns),
-          readExistingResources(ns));
+          DomainNamespaces.readExistingResources(ns, processor));
     }
   }
 

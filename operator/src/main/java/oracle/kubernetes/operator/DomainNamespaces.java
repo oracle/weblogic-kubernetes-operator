@@ -24,7 +24,9 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
+import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.watcher.WatchListener;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
@@ -132,6 +134,20 @@ public class DomainNamespaces {
 
   private static ThreadFactory getThreadFactory() {
     return ThreadFactorySingleton.getInstance();
+  }
+
+  /**
+   * Returns a set up steps to update the specified namespace.
+   * This will include adding any existing domains, pod, services,
+   * and will also start watchers for the namespace if they aren't already running.
+   * @param ns the name of the namespace
+   * @param processor processing to be done to bring up any found domains
+   */
+  public static Step readExistingResources(String ns, DomainProcessor processor) {
+    NamespacedResources resources = new NamespacedResources(ns, null);
+    resources.addProcessing(new DomainResourcesValidation(ns, processor).getProcessors());
+    resources.addProcessing(createWatcherStartupProcessing(ns, processor));
+    return Step.chain(ConfigMapHelper.createScriptConfigMapStep(ns), resources.createListSteps());
   }
 
   interface WatcherFactory<T, W extends Watcher<T>> {

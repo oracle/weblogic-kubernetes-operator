@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiCallback;
@@ -607,7 +608,7 @@ public class CallBuilder {
    * @return Domain list
    * @throws ApiException API exception
    */
-  public DomainList listDomain(String namespace) throws ApiException {
+  public @Nonnull DomainList listDomain(String namespace) throws ApiException {
     RequestParams requestParams = new RequestParams("listDomain", namespace, null, null, callParams);
     return executeSynchronousCall(requestParams, listDomainCall);
   }
