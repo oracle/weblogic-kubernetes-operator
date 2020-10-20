@@ -20,7 +20,6 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -47,7 +46,6 @@ class NamespacedResources {
 
   Step createListSteps() {
     return Step.chain(
-          getScriptConfigMapSteps(),
           getConfigMapListSteps(),
           getEventListSteps(),
           getJobListSteps(),
@@ -62,13 +60,6 @@ class NamespacedResources {
    * A class which describes some processing to be performed on the resources as they are read.
    */
   abstract static class Processors {
-
-    /**
-     * Return the processing to be performed on the script config map. May be null.
-     */
-    Consumer<Packet> getConfigMapProcessing() {
-      return null;
-    }
 
     /**
      * Return the processing to be performed on a list of config maps found in Kubernetes. May be null.
@@ -118,17 +109,6 @@ class NamespacedResources {
      */
     void completeProcessing(Packet packet) {
     }
-  }
-
-  private Step getScriptConfigMapSteps() {
-    return getResourceProcessing(Processors::getConfigMapProcessing).map(this::createConfigMapSteps).orElse(null);
-  }
-
-  private Step createConfigMapSteps(List<Consumer<Packet>> processing) {
-    return Step.chain(
-          ConfigMapHelper.createScriptConfigMapStep(namespace),
-          new Main.ConfigMapAfterStep(processing)
-    );
   }
 
   private Step getConfigMapListSteps() {
@@ -192,10 +172,6 @@ class NamespacedResources {
 
   private <L extends KubernetesListObject>
         Optional<List<Consumer<L>>> getListProcessing(Function<Processors, Consumer<L>> method) {
-    return nullIfEmpty(processors.stream().map(method).filter(Objects::nonNull).collect(Collectors.toList()));
-  }
-
-  private Optional<List<Consumer<Packet>>> getResourceProcessing(Function<Processors, Consumer<Packet>> method) {
     return nullIfEmpty(processors.stream().map(method).filter(Objects::nonNull).collect(Collectors.toList()));
   }
 

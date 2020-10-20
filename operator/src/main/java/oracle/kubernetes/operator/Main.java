@@ -278,7 +278,7 @@ public class Main {
     NamespacedResources resources = new NamespacedResources(ns, null);
     resources.addProcessing(new DomainResourcesValidation(ns, processor).getProcessors());
     resources.addProcessing(DomainNamespaces.createWatcherStartupProcessing(ns, processor));
-    return resources.createListSteps();
+    return Step.chain(ConfigMapHelper.createScriptConfigMapStep(ns), resources.createListSteps());
   }
 
 
