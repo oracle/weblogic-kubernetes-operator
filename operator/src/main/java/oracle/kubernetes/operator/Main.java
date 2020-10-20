@@ -838,6 +838,11 @@ public class Main {
     }
 
     @Override
+    public JobAwaiterStepFactory getJobAwaiterStepFactory(String namespace) {
+      return DomainNamespaces.getJobWatcher(namespace);
+    }
+
+    @Override
     public V1SubjectRulesReviewStatus getSubjectRulesReviewStatus(String namespace) {
       return DomainNamespaces.getNamespaceStatus(namespace).getRulesReviewStatus().get();
     }

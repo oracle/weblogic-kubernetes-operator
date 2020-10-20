@@ -29,6 +29,14 @@ public interface DomainProcessorDelegate {
    */
   PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace);
 
+  /**
+   * Returns a factory that creates a step to wait for a pod in the specified namespace to be ready.
+   *
+   * @param namespace the namespace for the pod
+   * @return a step-creating factory
+   */
+  JobAwaiterStepFactory getJobAwaiterStepFactory(String namespace);
+
   V1SubjectRulesReviewStatus getSubjectRulesReviewStatus(String namespace);
 
   /**

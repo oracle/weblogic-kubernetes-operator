@@ -698,6 +698,7 @@ public class DomainProcessorImpl implements DomainProcessor {
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
               Component.createFor(liveInfo, delegate.getVersion(),
                   PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
+                  JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace()),
                   V1SubjectRulesReviewStatus.class, delegate.getSubjectRulesReviewStatus(getNamespace())));
       runDomainPlan(
             getDomain(),
