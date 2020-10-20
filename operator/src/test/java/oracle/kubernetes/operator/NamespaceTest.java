@@ -196,10 +196,6 @@ public class NamespaceTest {
   abstract static class DomainProcessorStub implements DomainProcessor {
     List<String> nameSpaces = new ArrayList<>();
 
-    @Override
-    public void stopNamespace(String ns) {
-      throw new RuntimeException("Should not be calling this");
-    }
   }
 
 }
