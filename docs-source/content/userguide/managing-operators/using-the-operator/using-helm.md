@@ -311,7 +311,7 @@ domainPresenceFailureRetrySeconds: 30
 ```
 
 ##### `introspectorJobNameSuffix` and `externalServiceNameSuffix`
-Specify the suffixes that the operator uses to form the name of the Kubernetes job for the domain introspector, and the name of the external service for the webLogic admin server, if the external service is enabled.
+Specify the suffixes that the operator uses to form the name of the Kubernetes job for the domain introspector, and the name of the external service for the WebLogic Administration Server, if the external service is enabled.
 
 Defaults to `-introspector` and `-ext` respectively. The values cannot be more than 25 and 10 characters respectively. 
 
@@ -324,11 +324,11 @@ In order to work with Kubernetes limits to resource names, the resultant names f
 {{% /notice %}}
 
 ##### `clusterSizePaddingValidationEnabled`
-Specifies if the operator needs to reserve additional padding when validating the server service names to account for longer managed server names as a result of expanding a cluster's size in WebLogic domain configurations. 
+Specifies if the operator needs to reserve additional padding when validating the server service names to account for longer Managed Server names as a result of expanding a cluster's size in WebLogic domain configurations. 
 
 Defaults to `true`.
 
-If `clusterSizePaddingValidationEnabed` is set to true, two additional characters will be reserved if the configured cluster's size is between 1 and 9, and one additional character will be reserved if the configured cluster's size is between 10 and 99. No additional character is reserved if the configured cluster's size is greater than 99.
+If `clusterSizePaddingValidationEnabed` is set to true, two additional characters will be reserved if the configured cluster's size is between one and nine, and one additional character will be reserved if the configured cluster's size is between 10 and 99. No additional character is reserved if the configured cluster's size is greater than 99.
 
 #### Elastic Stack integration
 
