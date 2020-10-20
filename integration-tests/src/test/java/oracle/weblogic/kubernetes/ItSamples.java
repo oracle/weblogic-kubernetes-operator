@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests related to introspectVersion attribute.
+ * Tests related to samples.
  */
 @DisplayName("Verify the domain on pv samples using wlst and wdt")
 @IntegrationTest
@@ -83,7 +83,7 @@ public class ItSamples {
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);
-    logger.info("Assign a unique namespace for Introspect Version WebLogic domain");
+    logger.info("Assign a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
 
@@ -94,7 +94,7 @@ public class ItSamples {
   /**
    * Test domain in pv samples using domains created by wlst and wdt.
    *
-   * @param model domain name and script type to create domain
+   * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
    */
   @ParameterizedTest
   @MethodSource("paramProvider")
@@ -144,7 +144,7 @@ public class ItSamples {
         + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
 
     result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to create domain");
+    assertTrue(result, "Failed to create domain custom resource");
 
     // wait for the domain to exist
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
@@ -178,7 +178,7 @@ public class ItSamples {
     params.command("kubectl delete -f "
         + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
     result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to delete domain");
+    assertTrue(result, "Failed to delete domain custom resource");
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
