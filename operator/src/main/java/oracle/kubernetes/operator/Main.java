@@ -449,11 +449,11 @@ public class Main {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
-        final String intialResourceVersion = KubernetesUtils.getResourceVersion(callResponse.getResult());
+        final String initialResourceVersion = KubernetesUtils.getResourceVersion(callResponse.getResult());
         final Set<String> domainNamespaces = getNamespacesToStart(getNames(callResponse.getResult()));
         getFoundDomainNamespaces(packet).addAll(domainNamespaces);
 
-        return doContinueListOrNext(callResponse, packet, createNextSteps(intialResourceVersion, domainNamespaces));
+        return doContinueListOrNext(callResponse, packet, createNextSteps(initialResourceVersion, domainNamespaces));
       }
 
       private Step createNextSteps(String intialResourceVersion, Set<String> namespacesToStartNow) {
@@ -565,7 +565,7 @@ public class Main {
         new AtomicBoolean(false));
   }
 
-  private static void dispatchNamespaceWatch(Watch.Response<V1Namespace> item) {
+  static void dispatchNamespaceWatch(Watch.Response<V1Namespace> item) {
     String ns = Optional.ofNullable(item.object).map(V1Namespace::getMetadata).map(V1ObjectMeta::getName).orElse(null);
     if (ns == null) {
       return;

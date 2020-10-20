@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -22,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.Main.Namespaces.SelectionStrategy;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -47,6 +49,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -60,6 +63,7 @@ public class MainTest extends ThreadFactoryTestBase {
   private static final int LAST_NAMESPACE_NUM = DEFAULT_CALL_LIMIT - 1;
 
   private static final String NS = "default";
+  private static final String NS1 = "ns73";
   private static final String DOMAIN_UID = "domain-uid-for-testing";
 
   private static final String NAMESPACE_STATUS_MAP = "namespaceStatuses";
@@ -90,6 +94,7 @@ public class MainTest extends ThreadFactoryTestBase {
   private final List<Memento> mementos = new ArrayList<>();
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
+  private final String ns = "nsrand" + new Random().nextInt(100);
 
   @Before
   public void setUp() throws Exception {
@@ -309,8 +314,7 @@ public class MainTest extends ThreadFactoryTestBase {
     assertThat(DomainNamespaces.getPodWatcher(NS), notNullValue());
     assertThat(DomainNamespaces.getServiceWatcher(NS), notNullValue());
   }
-
-
+  
   @Test
   public void afterReadingExistingResourcesForNamespace_ScriptConfigMapIsDefined() {
     testSupport.runSteps(Main.readExistingResources(NS));
@@ -334,5 +338,63 @@ public class MainTest extends ThreadFactoryTestBase {
   private boolean isScriptConfigMapMetadata(V1ObjectMeta meta, String ns) {
     return SCRIPT_CONFIG_MAP_NAME.equals(meta.getName()) && ns.equals(meta.getNamespace());
   }
-  // when namespace added, resources defined, config map is defined and watchers are started (?)
+
+  @Test
+  public void beforeNamespaceAdded_watchersAreNotDefined() {
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
+
+    verifyWatchersNotDefined(ns);
+  }
+
+  private void verifyWatchersNotDefined(String ns) {
+    assertThat(DomainNamespaces.getConfigMapWatcher(ns), nullValue());
+    assertThat(DomainNamespaces.getDomainWatcher(ns), nullValue());
+    assertThat(DomainNamespaces.getEventWatcher(ns), nullValue());
+    assertThat(DomainNamespaces.getJobWatcher(ns), nullValue());
+    assertThat(DomainNamespaces.getPodWatcher(ns), nullValue());
+    assertThat(DomainNamespaces.getServiceWatcher(ns), nullValue());
+  }
+
+  @Test
+  public void afterNullNamespaceAdded_WatchersAreNotDefined() {
+    V1Namespace namespace = null;
+    Main.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+
+    verifyWatchersNotDefined(ns);
+  }
+  @Test
+  public void afterNonDomainNamespaceAdded_WatchersAreNotDefined() {
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, NS_WEBLOGIC1);
+    V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
+    Main.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+
+    verifyWatchersNotDefined(ns);
+  }
+  
+  @Test
+  public void afterNamespaceAdded_WatchersAreDefined() {
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
+    V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
+    Main.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+
+    verifyWatchersDefined(ns);
+  }
+
+  private void verifyWatchersDefined(String ns) {
+    assertThat(DomainNamespaces.getConfigMapWatcher(ns), notNullValue());
+    assertThat(DomainNamespaces.getDomainWatcher(ns), notNullValue());
+    assertThat(DomainNamespaces.getEventWatcher(ns), notNullValue());
+    assertThat(DomainNamespaces.getJobWatcher(ns), notNullValue());
+    assertThat(DomainNamespaces.getPodWatcher(ns), notNullValue());
+    assertThat(DomainNamespaces.getServiceWatcher(ns), notNullValue());
+  }
+
+  @Test
+  public void afterNamespaceAdded_scriptConfigMapIsDefined() {
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
+    V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
+    Main.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+
+    assertThat(getScriptMap(ns), notNullValue());
+  }
 }
