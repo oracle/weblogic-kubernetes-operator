@@ -297,6 +297,17 @@ public class KubernetesTestSupport extends FiberTestSupport {
     repositories.get(PODLOG).createResourceInNamespace(name, namespace, contents);
   }
 
+  /**
+   * Deletes the specified namespace and all resources in that namespace.
+   * @param namespaceName the name of the namespace to delete
+   */
+  public void deleteNamespace(String namespaceName) {
+    repositories.get(NAMESPACE).data.remove(namespaceName);
+    repositories.values().stream()
+          .filter(r -> r instanceof NamespacedDataRepository)
+          .forEach(r -> ((NamespacedDataRepository<?>) r).deleteNamespace(namespaceName));
+  }
+
   @SuppressWarnings("unchecked")
   private <T> DataRepository<T> getDataRepository(T resource) {
     return (DataRepository<T>) repositories.get(dataTypes.get(resource.getClass()));
@@ -594,7 +605,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     private final Map<String, T> data = new HashMap<>();
     private final Class<?> resourceType;
     private Function<List<T>, Object> listFactory;
-    private Map<String, List<T>> continuations = new HashMap<>();
+    private final Map<String, List<T>> continuations = new HashMap<>();
     private List<Consumer<T>> onCreateActions = new ArrayList<>();
     private List<Consumer<T>> onUpdateActions = new ArrayList<>();
     private Method getStatusMethod;
@@ -935,6 +946,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
     NamespacedDataRepository(Class<?> resourceType, Function<List<T>, Object> listFactory) {
       super(resourceType, listFactory);
       this.resourceType = resourceType;
+    }
+
+    void deleteNamespace(String namespace) {
+      repositories.remove(namespace);
     }
 
     @Override

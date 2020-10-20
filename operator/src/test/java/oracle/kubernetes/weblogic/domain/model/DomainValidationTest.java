@@ -13,7 +13,6 @@ import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
-import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -45,10 +44,9 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   private static final String BAD_MOUNT_PATH_2 = "$(DOMAIN_HOME/servers/$(SERVER_NAME";
   private static final String BAD_MOUNT_PATH_3 = "$()DOMAIN_HOME/servers/SERVER_NAME";
 
-  private Domain domain = createTestDomain();
-  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
+  private final Domain domain = createTestDomain();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
 
   private static final String ADMIN_SERVER_NAME = "admin";
   private static final String CLUSTER = "cluster";
@@ -1029,7 +1027,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminService()
         .withChannel("default");
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
-    TuningParameters.getInstance().put(LegalNames.CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM, "false");
+    TuningParametersStub.setParameter(Domain.CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM, "false");
     assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
   }
 
@@ -1056,7 +1054,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .configureAdminService()
         .withChannel("default");
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
-    TuningParameters.getInstance().put(LegalNames.CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM, "false");
+    TuningParametersStub.setParameter(Domain.CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM, "false");
     assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
   }
 

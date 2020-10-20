@@ -3,50 +3,44 @@
 
 package oracle.kubernetes.operator;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static java.util.function.Function.identity;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.helpers.HelmAccess.OPERATOR_DOMAIN_NAMESPACES;
-import static org.hamcrest.Matchers.aMapWithSize;
-import static org.hamcrest.Matchers.anEmptyMap;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.hasSize;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class NamespaceTest {
 
-  private static final String NAMESPACES_PROPERTY = "OPERATOR_DOMAIN_NAMESPACES";
-  private static final String ADDITIONAL_NAMESPACE = "NS3";
+  private static final String ADDITIONAL_NS1 = "EXTRA_NS1";
+  private static final String ADDITIONAL_NS2 = "EXTRA_NS2";
   public static final String NAMESPACE_STOPPING_MAP = "namespaceStoppingMap";
 
   KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -55,19 +49,17 @@ public class NamespaceTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final Set<String> currentNamespaces = new HashSet<>();
   private final DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
-  private Method stopNamespace = null;
 
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(StaticStubSupport.preserve(Main.class, "namespaceStatuses"));
-    mementos.add(StaticStubSupport.preserve(Main.class, NAMESPACE_STOPPING_MAP));
+    mementos.add(StaticStubSupport.preserve(DomainNamespaces.class, "namespaceStatuses"));
+    mementos.add(StaticStubSupport.preserve(DomainNamespaces.class, NAMESPACE_STOPPING_MAP));
     mementos.add(HelmAccessStub.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(StaticStubSupport.install(Main.class, "processor", dp));
     mementos.add(testSupport.install());
     AtomicBoolean stopping = new AtomicBoolean(true);
-    JobWatcher.defineFactory(r -> createDaemonThread(), tuning, ns -> stopping);
   }
 
   private Thread createDaemonThread() {
@@ -82,95 +74,112 @@ public class NamespaceTest {
   }
 
   @Test
-  public void givenJobWatcherForNamespace_afterNamespaceDeletedAndRecreatedHaveDifferentWatcher()
-      throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    addDomainNamespace(NS);
-    addDomainNamespace(ADDITIONAL_NAMESPACE);
-    cacheStartedNamespaces();
-    JobWatcher oldWatcher = JobWatcher.getOrCreateFor(domain);
+  public void givenJobWatcherForNamespace_afterNamespaceDeletedAndRecreatedHaveDifferentWatcher() {
+    initializeNamespaces();
+    JobWatcher oldWatcher = DomainNamespaces.getJobWatcher(NS);
 
-    // Stop the namespace before removing as a domain namespace so operator will stop it.
-    invoke_stopNamespace(NS, true);
-    deleteDomainNamespace(NS);
+    deleteNamespace(NS);
+    processNamespaces();
+    defineNamespaces(NS);
+
     testSupport.runSteps(Main.createDomainRecheckSteps(DateTime.now()));
-
-    assertThat(JobWatcher.getOrCreateFor(domain), not(sameInstance(oldWatcher)));
+    assertThat(DomainNamespaces.getJobWatcher(NS), not(sameInstance(oldWatcher)));
   }
 
   @Test
-  public void whenNamespaceNotInDomainNamespaceList_namespaceRemovedFromNamespaceStoppingMap()
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, NoSuchFieldException {
-    addDomainNamespace(NS);
-    cacheStartedNamespaces();
+  public void whenDomainNamespaceRemovedFromDomainNamespaces_stopDomainWatchers() {
+    initializeNamespaces();
+    AtomicBoolean stopping = DomainNamespaces.isStopping(NS);
 
-    // Stop the namespace that is not in domainNamespace list
-    invoke_stopNamespace(NS, false);
+    unspecifyDomainNamespace(NS);
+    processNamespaces();
 
-    Map<String, AtomicBoolean> namespaceStoppingMap = getNamespaceStoppingMap();
+    assertThat(stopping.get(), is(true));
+  }
 
-    // Verify 'namespace' removed from 'namespaceStoppingMap'
-    assertThat(namespaceStoppingMap, anEmptyMap());
+  private void initializeNamespaces() {
+    defineNamespaces(NS, ADDITIONAL_NS1, ADDITIONAL_NS2);
+    specifyDomainNamespaces(NS, ADDITIONAL_NS2);
+    processNamespaces();
+  }
+
+  private void defineNamespaces(String... namespaces) {
+    Arrays.stream(namespaces).forEach(ns -> testSupport.defineResources(createNamespace(ns), createDomain(ns)));
+  }
+
+  private V1Namespace createNamespace(String n) {
+    return new V1Namespace().metadata(new V1ObjectMeta().name(n));
+  }
+
+  private Domain createDomain(String ns) {
+    return new Domain().withMetadata(new V1ObjectMeta().namespace(ns).name(createUid(ns)));
+  }
+
+  @NotNull
+  private String createUid(String ns) {
+    return "uid-" + ns;
+  }
+
+  private void specifyDomainNamespaces(String... namespaces) {
+    Arrays.stream(namespaces).forEach(this::addDomainNamespace);
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private void deleteNamespace(String namespaceName) {
+    testSupport.deleteNamespace(namespaceName);
+  }
+
+  private void processNamespaces() {
+    testSupport.withClearPacket().runSteps(new Main.Namespaces(false).readExistingNamespaces());
   }
 
   @Test
-  public void whenNamespaceInDomainNamespaceList_namespaceExistsInNamespaceStoppingMap()
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, NoSuchFieldException {
-    addDomainNamespace(NS);
-    addDomainNamespace(ADDITIONAL_NAMESPACE);
-    cacheStartedNamespaces();
+  public void whenDomainNamespaceRemovedFromDomainNamespaces_isNoLongerInManagedNamespaces() {
+    initializeNamespaces();
 
-    // Stop the namespace that is in domainNamespace list
-    invoke_stopNamespace(ADDITIONAL_NAMESPACE, true);
+    unspecifyDomainNamespace(NS);
+    processNamespaces();
 
-    // Stop the namespace that is NOT in domainNamespace list
-    invoke_stopNamespace(NS, false);
-
-    Map<String, AtomicBoolean> namespaceStoppingMap = getNamespaceStoppingMap();
-
-    // Verify that 'namespaceStoppingMap' has only namespace that was in domainNamespace list
-    assertThat(namespaceStoppingMap, aMapWithSize(1));
-    assertThat(namespaceStoppingMap, hasKey(ADDITIONAL_NAMESPACE));
+    assertThat(DomainNamespaces.getNamespaces(), not(contains(NS)));
   }
 
   @Test
-  public void whenNamespaceStopping_domainProcessorStopNamespaceInvoked()
-      throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    addDomainNamespace(NS);
-    addDomainNamespace(ADDITIONAL_NAMESPACE);
-    cacheStartedNamespaces();
+  public void whenDomainNamespaceRemovedFromDomainNamespaces_doNotShutdownDomain() {
+    initializeNamespaces();
 
-    Map<String, AtomicBoolean> namespaceStoppingMap = getNamespaceStoppingMap();
+    unspecifyDomainNamespace(NS);
+    processNamespaces();
 
-    // set 'namespace' to stopping
-    namespaceStoppingMap.put(NS, new AtomicBoolean(true));
+    assertThat(getDomainsInNamespace(NS), notNullValue());
+  }
 
-    // Stop the namespace
-    invoke_stopNamespace(NS, false);
-
-    assertThat(dp.nameSpaces, hasSize(1));
-    assertThat(NS, equalTo(dp.nameSpaces.get(0)));
+  @SuppressWarnings("SameParameterValue")
+  private Domain getDomainsInNamespace(String namespace) {
+    return testSupport.<Domain>getResources(DOMAIN).stream()
+          .filter(d -> d.getDomainUid().equals(createUid(namespace)))
+          .findFirst()
+          .orElse(null);
   }
 
   @Test
-  public void whenNamespaceNotStopping_domainProcessorStopNamespaceNotInvoked()
-      throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    addDomainNamespace(NS);
-    cacheStartedNamespaces();
+  public void whenDomainNamespaceDeleted_stopDomainWatchers() {
+    initializeNamespaces();
+    AtomicBoolean stopping = DomainNamespaces.isStopping(NS);
 
-    Map<String, AtomicBoolean> namespaceStoppingMap = getNamespaceStoppingMap();
+    deleteNamespace(NS);
+    processNamespaces();
 
-    // Stop the namespace not in domainNamespace list
-    invoke_stopNamespace(NS, false);
-
-    // Verify DomainProcessor::stopNamespace not called since namespace is active (i.e. not stopping)
-    assertThat(dp.nameSpaces, is(empty()));
+    assertThat(stopping.get(), is(true));
   }
 
-  private Map<String, AtomicBoolean> getNamespaceStoppingMap()
-      throws NoSuchFieldException, IllegalAccessException {
-    Field field = Main.class.getDeclaredField(NAMESPACE_STOPPING_MAP);
-    field.setAccessible(true);
-    return (Map<String, AtomicBoolean>) field.get(null);
+  @Test
+  public void whenDomainNamespaceDeleted_isNoLongerInManagedNamespaces() {
+    initializeNamespaces();
+
+    deleteNamespace(NS);
+    processNamespaces();
+
+    assertThat(DomainNamespaces.getNamespaces(), not(contains(NS)));
   }
 
   private void addDomainNamespace(String namespace) {
@@ -179,42 +188,14 @@ public class NamespaceTest {
   }
 
   @SuppressWarnings("SameParameterValue")
-  private void deleteDomainNamespace(String namespace) {
+  private void unspecifyDomainNamespace(String namespace) {
     currentNamespaces.remove(namespace);
     HelmAccessStub.defineVariable(OPERATOR_DOMAIN_NAMESPACES, String.join(",", currentNamespaces));
   }
 
-  private void cacheStartedNamespaces() throws NoSuchFieldException {
-    StaticStubSupport.install(Main.class, "namespaceStatuses", createNamespaceStatuses());
-    StaticStubSupport.install(Main.class, NAMESPACE_STOPPING_MAP, createNamespaceFlags());
-  }
-
-  private Map<String, NamespaceStatus> createNamespaceStatuses() {
-    return currentNamespaces.stream()
-        .collect(Collectors.toMap(identity(), a -> new NamespaceStatus()));
-  }
-
-  private Map<String, AtomicBoolean> createNamespaceFlags() {
-    return currentNamespaces.stream()
-        .collect(Collectors.toMap(identity(), a -> new AtomicBoolean()));
-  }
-
-  private void invoke_stopNamespace(String namespace, boolean inDomainNamespaceList)
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    if (stopNamespace == null) {
-      stopNamespace =
-          Main.class.getDeclaredMethod("stopNamespace", String.class, Boolean.TYPE);
-      stopNamespace.setAccessible(true);
-    }
-    stopNamespace.invoke(null, namespace, inDomainNamespaceList);
-  }
-
   abstract static class DomainProcessorStub implements DomainProcessor {
-    ArrayList<String> nameSpaces = new ArrayList<>();
+    List<String> nameSpaces = new ArrayList<>();
 
-    @Override
-    public void stopNamespace(String ns) {
-      Optional.ofNullable(ns).ifPresent(nspace -> nameSpaces.add(nspace));
-    }
   }
+
 }
