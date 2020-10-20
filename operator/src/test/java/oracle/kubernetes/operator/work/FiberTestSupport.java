@@ -123,6 +123,11 @@ public class FiberTestSupport {
     return packet;
   }
 
+  public FiberTestSupport withClearPacket() {
+    packet.clear();
+    return this;
+  }
+
   public FiberTestSupport addToPacket(String key, Object value) {
     packet.put(key, value);
     return this;
