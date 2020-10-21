@@ -110,7 +110,8 @@ public class DomainProcessorTest {
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final Domain newDomain = DomainProcessorTestSetup.createTestDomain();
   private final DomainConfigurator domainConfigurator = configureDomain(newDomain);
-  private final MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newDomain);
+  private final MakeRightDomainOperation makeRightOperation
+        = processor.createMakeRightOperation(new DomainPresenceInfo(newDomain));
   private final WlsDomainConfig domainConfig = createDomainConfig();
 
   private static WlsDomainConfig createDomainConfig() {

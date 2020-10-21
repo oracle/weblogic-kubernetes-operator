@@ -310,6 +310,26 @@ domainPresenceFailureRetryMaxCount: 10
 domainPresenceFailureRetrySeconds: 30
 ```
 
+##### `introspectorJobNameSuffix` and `externalServiceNameSuffix`
+Specify the suffixes that the operator uses to form the name of the Kubernetes job for the domain introspector, and the name of the external service for the WebLogic Administration Server, if the external service is enabled.
+
+Defaults to `-introspector` and `-ext` respectively. The values cannot be more than 25 and 10 characters respectively. 
+
+{{% notice note %}}
+Prior to the operator 3.1.0 release, the suffixes are hard-coded to `-introspect-domain-job` and `-external`. The defaults are shortened in newer releases to support longer names in the domain resource and WebLogic domain configurations, such as the `domainUID`, and WebLogic cluster and server names.
+{{% /notice %}}
+
+{{% notice note %}}
+In order to work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters (see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})).
+{{% /notice %}}
+
+##### `clusterSizePaddingValidationEnabled`
+Specifies if the operator needs to reserve additional padding when validating the server service names to account for longer Managed Server names as a result of expanding a cluster's size in WebLogic domain configurations. 
+
+Defaults to `true`.
+
+If `clusterSizePaddingValidationEnabed` is set to true, two additional characters will be reserved if the configured cluster's size is between one and nine, and one additional character will be reserved if the configured cluster's size is between 10 and 99. No additional character is reserved if the configured cluster's size is greater than 99.
+
 #### Elastic Stack integration
 
 ##### `elkIntegrationEnabled`

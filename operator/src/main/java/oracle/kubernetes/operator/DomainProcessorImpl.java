@@ -208,30 +208,6 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   /**
-   * Stop namespace.
-   * @param ns namespace
-   */
-  public void stopNamespace(String ns) {
-    try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
-      Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
-      if (map != null) {
-        for (DomainPresenceInfo dpi : map.values()) {
-          stack.domainUid(dpi.getDomainUid());
-
-          Domain dom = dpi.getDomain();
-          DomainPresenceInfo value =
-              (dom != null)
-                  ? new DomainPresenceInfo(dom)
-                  : new DomainPresenceInfo(dpi.getNamespace(), dpi.getDomainUid());
-          value.setDeleting(true);
-          value.setPopulated(true);
-          createMakeRightOperation(value).withExplicitRecheck().forDeletion().execute();
-        }
-      }
-    }
-  }
-
-  /**
    * Report on currently suspended fibers. This is the first step toward diagnosing if we need special handling
    * to kill or kick these fibers.
    */
@@ -528,11 +504,6 @@ public class DomainProcessorImpl implements DomainProcessor {
   @Override
   public MakeRightDomainOperationImpl createMakeRightOperation(DomainPresenceInfo liveInfo) {
     return new MakeRightDomainOperationImpl(liveInfo);
-  }
-
-  @Override
-  public MakeRightDomainOperation createMakeRightOperation(Domain liveDomain) {
-    return createMakeRightOperation(new DomainPresenceInfo(liveDomain));
   }
 
   public Step createPopulatePacketServerMapsStep(oracle.kubernetes.operator.work.Step next) {
@@ -998,7 +969,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private Step getRecordExistingResourcesSteps() {
       NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid());
 
-      resources.addProcessor(new NamespacedResources.Processors() {
+      resources.addProcessing(new NamespacedResources.Processors() {
         @Override
         Consumer<V1PodList> getPodListProcessing() {
           return list -> list.getItems().forEach(this::addPod);

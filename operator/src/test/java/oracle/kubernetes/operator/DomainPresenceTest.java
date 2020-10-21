@@ -58,6 +58,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final DomainProcessorStub dp = createStub(DomainProcessorStub.class);
   private Map<String, AtomicBoolean> namespaceStoppingMap;
 
   private static Memento installStub(Class<?> containingClass, String fieldName, Object newValue)
@@ -81,7 +82,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   private Map<String, AtomicBoolean> getStoppingVariable() throws NoSuchFieldException {
-    Memento stoppingMemento = StaticStubSupport.preserve(Main.class, "namespaceStoppingMap");
+    Memento stoppingMemento = StaticStubSupport.preserve(DomainNamespaces.class, "namespaceStoppingMap");
     return stoppingMemento.getOriginalValue();
   }
 
@@ -95,10 +96,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   public void whenNoPreexistingDomains_createEmptyDomainPresenceInfoMap() {
-    DomainProcessorStub dp = createStub(DomainProcessorStub.class);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-
-    readExistingResources();
+    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
 
     assertThat(dp.getDomainPresenceInfos(), is(anEmptyMap()));
   }
@@ -108,16 +107,10 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     Domain domain = createDomain(UID, NS);
     testSupport.defineResources(domain);
 
-    DomainProcessorStub dp = createStub(DomainProcessorStub.class);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-
-    readExistingResources();
+    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID).getDomain(), equalTo(domain));
-  }
-
-  private void readExistingResources() {
-    testSupport.runSteps(Main.readExistingResources(NS));
   }
 
   private void addDomainResource(String uid, String namespace) {
@@ -177,10 +170,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     V1Service service = createServerService(UID, NS, "admin");
     testSupport.defineResources(service);
 
-    DomainProcessorStub dp = createStub(DomainProcessorStub.class);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-
-    readExistingResources();
+    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID).getServerService("admin"), equalTo(service));
   }
@@ -191,10 +182,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     V1Pod pod = createPodResource(UID, NS, "admin");
     testSupport.defineResources(pod);
 
-    DomainProcessorStub dp = createStub(DomainProcessorStub.class);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-
-    readExistingResources();
+    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID).getServerPod("admin"), equalTo(pod));
   }
@@ -213,10 +202,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     addPodResource(UID, NS, "admin");
     addEventResource(UID, "admin", "ignore this event");
 
-    DomainProcessorStub dp = createStub(DomainProcessorStub.class);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-
-    readExistingResources();
+    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID).getLastKnownServerStatus("admin"), nullValue());
   }
@@ -243,7 +230,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
     namespaceStoppingMap.get(NS).set(false);
 
-    readExistingResources();
+    testSupport.runSteps(Main.readExistingResources(NS));
 
     assertThat(testSupport.getResources(SERVICE), empty());
   }
@@ -256,8 +243,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(service1, service2);
 
     namespaceStoppingMap.get(NS).set(false);
-
-    readExistingResources();
+    testSupport.runSteps(Main.readExistingResources(NS));
 
     assertThat(testSupport.getResources(SERVICE), both(hasItem(service1)).and(hasItem(service2)));
   }
