@@ -241,6 +241,7 @@ Once a new `introspectVersion` is specified in the domain resource YAML file and
   |Unsupported changes for dynamic updates|Error in the introspect job, job will retry until error is corrected or cancel|Use offline updates or recreate the domain|
   |Errors in the model|Error in the introspect job, job will retry for 6 times until error is corrected or cancel|Correct the model|
   |Additional changes in domain resource YAML other than `userOnlineUpdate` and `introspectVersion`|Change are automatically switch to offline as before|No action required|
+  |Errors while updating the domain|Error in the introspect job, job will retry for 6 times until error is corrected or cancel|Check the introspection job or domain status|
   
 Example use cases:
 
