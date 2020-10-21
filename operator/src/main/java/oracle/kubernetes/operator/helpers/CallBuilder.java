@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiCallback;
@@ -23,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -606,7 +608,7 @@ public class CallBuilder {
    * @return Domain list
    * @throws ApiException API exception
    */
-  public DomainList listDomain(String namespace) throws ApiException {
+  public @Nonnull DomainList listDomain(String namespace) throws ApiException {
     RequestParams requestParams = new RequestParams("listDomain", namespace, null, null, callParams);
     return executeSynchronousCall(requestParams, listDomainCall);
   }
@@ -1261,6 +1263,40 @@ public class CallBuilder {
         responseStep,
         new RequestParams("deletePodCollection", namespace, null, null, callParams),
         deletecollectionPod);
+  }
+
+  private Call listJobAsync(
+      ApiClient client, String namespace, String cont, ApiCallback<V1JobList> callback)
+      throws ApiException {
+    return new BatchV1Api(client)
+        .listNamespacedJobAsync(
+            namespace,
+            pretty,
+            allowWatchBookmarks,
+            cont,
+            fieldSelector,
+            labelSelector,
+            limit,
+            resourceVersion,
+            timeoutSeconds,
+            watch,
+            callback);
+  }
+
+  private final CallFactory<V1JobList> listJob =
+      (requestParams, usage, cont, callback) ->
+          wrap(listJobAsync(usage, requestParams.namespace, cont, callback));
+
+  /**
+   * Asynchronous step for listing jobs.
+   *
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listJobAsync(String namespace, ResponseStep<V1JobList> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("listJob", namespace, null, null, callParams), listJob);
   }
 
   private Call createJobAsync(
