@@ -23,9 +23,9 @@ import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -58,7 +58,7 @@ public class DomainValidationStepTest {
    * Setup test.
    * @throws Exception on failure
    */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, DOMAIN_VALIDATION_FAILED,
         NO_CLUSTER_IN_DOMAIN, NO_MANAGED_SERVER_IN_DOMAIN);
@@ -72,7 +72,7 @@ public class DomainValidationStepTest {
     topologyValidationStep = DomainValidationSteps.createValidateDomainTopologyStep(terminalStep);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }

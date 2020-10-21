@@ -18,9 +18,9 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -70,7 +70,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
    * Setup test.
    * @throws Exception on failure
    */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
@@ -84,7 +84,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   /**
    * Tear down test.
    */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();

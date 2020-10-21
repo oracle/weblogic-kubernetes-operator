@@ -8,8 +8,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
@@ -34,7 +34,7 @@ public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
    * Setup deletion test.
    * @throws NoSuchFieldException if no such field
    */
-  @Before
+  @BeforeEach
   public void setUpDeletionTest() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());

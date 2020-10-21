@@ -27,9 +27,9 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -68,7 +68,7 @@ public class IntrospectorConfigMapTest {
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
@@ -79,7 +79,7 @@ public class IntrospectorConfigMapTest {
     testSupport.addToPacket(JobHelper.START_TIME, System.currentTimeMillis() - 10);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }

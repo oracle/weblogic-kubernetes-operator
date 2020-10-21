@@ -24,8 +24,8 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
 import org.hamcrest.Matcher;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
@@ -61,7 +61,7 @@ public class DomainV2Test extends DomainTestBase {
   private static final V1Sysctl CLUSTER_SYSCTL =
       new V1Sysctl().name("kernel.shm_rmid_forced").value("0");
 
-  @Before
+  @BeforeEach
   public void setUp() {
     configureDomain(domain);
   }

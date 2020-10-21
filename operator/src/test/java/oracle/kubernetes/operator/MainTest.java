@@ -32,9 +32,9 @@ import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.MainTest.NamespaceStatusMatcher.isNamespaceStarting;
 import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
@@ -89,7 +89,7 @@ public class MainTest extends ThreadFactoryTestBase {
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private Collection<LogRecord> logRecords = new ArrayList<>();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(loggerControl);
     mementos.add(testSupport.install());
@@ -104,7 +104,7 @@ public class MainTest extends ThreadFactoryTestBase {
     mementos.add(NoopWatcherStarter.install());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     for (Memento memento : mementos) {
       memento.revert();

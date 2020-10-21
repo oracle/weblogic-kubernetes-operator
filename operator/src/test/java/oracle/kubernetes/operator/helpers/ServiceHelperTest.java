@@ -40,9 +40,9 @@ import oracle.kubernetes.weblogic.domain.ServiceConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
@@ -150,7 +150,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
    * Setup test.
    * @throws Exception on failure
    */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     configureAdminServer()
         .configureAdminService()
@@ -191,7 +191,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     testFacade.configureService(configureDomain()).withServiceAnnotation(OLD_ANNOTATION, "value");
   }
 
-  @After
+  @AfterEach
   public void tearDownServiceHelperTest() throws Exception {
     testSupport.throwOnCompletionFailure();
   }

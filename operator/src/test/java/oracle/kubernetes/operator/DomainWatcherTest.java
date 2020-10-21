@@ -12,7 +12,7 @@ import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;

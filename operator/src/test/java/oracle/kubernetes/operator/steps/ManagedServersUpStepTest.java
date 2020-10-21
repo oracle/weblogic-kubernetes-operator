@@ -40,9 +40,9 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getPreCreateServers;
@@ -123,7 +123,7 @@ public class ManagedServersUpStepTest {
    * Setup env for tests.
    * @throws NoSuchFieldException if TestStepFactory fails to install
    */
-  @Before
+  @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(consoleHandlerMemento = TestUtils.silenceOperatorLogger());
     mementos.add(factoryMemento = TestStepFactory.install());
@@ -134,7 +134,7 @@ public class ManagedServersUpStepTest {
    * Cleanup env after tests.
    * @throws Exception if test support failed
    */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     for (Memento memento : mementos) {
       memento.revert();

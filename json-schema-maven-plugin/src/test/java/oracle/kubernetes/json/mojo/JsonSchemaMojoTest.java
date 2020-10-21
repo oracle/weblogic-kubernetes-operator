@@ -24,9 +24,9 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -45,6 +45,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.objectweb.asm.Opcodes.ASM7;
 
 @SuppressWarnings("SameParameterValue")
@@ -95,7 +96,7 @@ public class JsonSchemaMojoTest {
    * Setup test.
    * @throws Exception on failure
    */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     ClassReader classReader = new ClassReader(JsonSchemaMojo.class.getName());
     classReader.accept(new Visitor(JsonSchemaMojo.class), 0);
@@ -131,7 +132,7 @@ public class JsonSchemaMojoTest {
   /**
    * Tear down test.
    */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();
@@ -268,19 +269,19 @@ public class JsonSchemaMojoTest {
         equalTo(toModuleUrl("src/cache/schema.json")));
   }
 
-  @Test(expected = MojoExecutionException.class)
+  @Test
   public void whenUnableToUseDefineSchema_haltTheBuild() throws Exception {
     setMojoParameter(
         "externalSchemas",
         singletonList(new ExternalSchema("abcd://schema.json", "src/cache/schema.json")));
 
-    mojo.execute();
+    assertThrows(MojoExecutionException.class, () -> mojo.execute());
   }
 
-  @Test(expected = MojoExecutionException.class)
+  @Test
   public void whenNoClassSpecified_haltTheBuild() throws Exception {
     setMojoParameter("rootClass", null);
-    mojo.execute();
+    assertThrows(MojoExecutionException.class, () -> mojo.execute());
   }
 
   @Test
@@ -290,10 +291,10 @@ public class JsonSchemaMojoTest {
     assertThat(main.getResourceName(), equalTo(classNameToPath(TEST_ROOT_CLASS) + ".class"));
   }
 
-  @Test(expected = MojoExecutionException.class)
+  @Test
   public void whenRootClassNotFound_haltTheBuild() throws Exception {
     main.setClasspathResource(null);
-    mojo.execute();
+    assertThrows(MojoExecutionException.class, () -> mojo.execute());
   }
 
   @Test

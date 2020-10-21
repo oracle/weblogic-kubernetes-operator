@@ -24,9 +24,9 @@ import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
@@ -112,7 +112,7 @@ public class ConfigMapHelperTest {
    * Setup test.
    * @throws Exception on failure
    */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(
         TestUtils.silenceOperatorLogger()
@@ -126,7 +126,7 @@ public class ConfigMapHelperTest {
    * Tear down test.
    * @throws Exception on failure
    */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     for (Memento memento : mementos) {
       memento.revert();

@@ -24,9 +24,9 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
@@ -58,7 +58,7 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
   /**
    * Checkstyle insists on a javadoc comment here. In a unit test *headdesk*.
    */
-  @Before
+  @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(consoleMemento = TestUtils.silenceOperatorLogger()
           .collectLogMessages(logRecords, HTTP_METHOD_FAILED, HTTP_REQUEST_TIMED_OUT)
@@ -69,7 +69,7 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
     requestStep = createStep();
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }

@@ -18,9 +18,9 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Description;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_WLS_SERVER_IN_CLUSTER;
@@ -355,7 +355,7 @@ public class WlsDomainConfigTest {
   /**
    * Setup test.
    */
-  @Before
+  @BeforeEach
   public void setup() {
     mementos.add(
         TestUtils.silenceOperatorLogger()
@@ -367,7 +367,7 @@ public class WlsDomainConfigTest {
   /**
    * Tear down test.
    */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();

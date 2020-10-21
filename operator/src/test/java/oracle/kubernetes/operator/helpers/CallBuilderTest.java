@@ -27,14 +27,15 @@ import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("SameParameterValue")
 public class CallBuilderTest extends HttpUserAgentTest {
@@ -54,7 +55,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
     return new GsonBuilder().create().toJson(object);
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(PseudoServletCallDispatcher.install(getHostPath()));
@@ -63,7 +64,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   /**
    * Tear down test.
    */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();
@@ -97,20 +98,20 @@ public class CallBuilderTest extends HttpUserAgentTest {
     assertThat(requestBody, equalTo(domain));
   }
 
-  @Test(expected = ApiException.class)
+  @Test
   public void replaceDomain_errorResonseCode_throws() throws ApiException {
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_BAD_REQUEST));
 
-    callBuilder.replaceDomain(UID, NAMESPACE, domain);
+    assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
   }
 
-  @Test(expected = ApiException.class)
+  @Test
   public void replaceDomain_conflictResponseCode_throws() throws ApiException {
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_CONFLICT));
 
-    callBuilder.replaceDomain(UID, NAMESPACE, domain);
+    assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
   }
 
   private V1PersistentVolumeClaimSpec createSpec() {

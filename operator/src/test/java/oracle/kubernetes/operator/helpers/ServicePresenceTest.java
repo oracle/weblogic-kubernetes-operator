@@ -26,9 +26,9 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -64,7 +64,7 @@ public class ServicePresenceTest {
    * Setup test.
    * @throws Exception on failure
    */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", domains));
@@ -95,7 +95,7 @@ public class ServicePresenceTest {
   /**
    * Tear down test.
    */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();

@@ -20,9 +20,9 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -54,7 +54,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Override
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
 
@@ -235,7 +235,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void whenWaitForReadyAppliedToTimedOutJobWithBackoffLimitExceeded_terminateWithException() {
     startWaitForReady(job -> markJobTimedOut(job, "BackoffLimitExceeded"));
 

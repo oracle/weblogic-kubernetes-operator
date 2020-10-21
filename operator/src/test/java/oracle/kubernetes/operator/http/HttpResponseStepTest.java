@@ -11,7 +11,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static org.hamcrest.Matchers.is;

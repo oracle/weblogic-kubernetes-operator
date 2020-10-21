@@ -45,9 +45,9 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
@@ -63,6 +63,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class KubernetesTestSupportTest {
 
@@ -75,7 +76,7 @@ public class KubernetesTestSupportTest {
    * Setup test.
    * @throws Exception on failure
    */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
@@ -86,7 +87,7 @@ public class KubernetesTestSupportTest {
    * Tear down test.
    * @throws Exception on failure
    */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
@@ -315,12 +316,12 @@ public class KubernetesTestSupportTest {
     new CallBuilder().createTokenReview(tokenReview);
   }
 
-  @Test(expected = ApiException.class)
+  @Test
   public void whenHttpErrorAssociatedWithResource_throwException() throws ApiException {
     testSupport.failOnResource(TOKEN_REVIEW, "tr", HTTP_BAD_REQUEST);
     V1TokenReview tokenReview = new V1TokenReview().metadata(new V1ObjectMeta().name("tr"));
 
-    new CallBuilder().createTokenReview(tokenReview);
+    assertThrows(ApiException.class, () -> new CallBuilder().createTokenReview(tokenReview));
   }
 
   @Test

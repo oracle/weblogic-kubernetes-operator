@@ -15,9 +15,9 @@ import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -121,7 +121,7 @@ public class VersionCheckTest {
    * Setup test.
    * @throws Exception on failure
    */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS);
     mementos.add(consoleControl);
@@ -132,7 +132,7 @@ public class VersionCheckTest {
   /**
    * Tear down test.
    */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();

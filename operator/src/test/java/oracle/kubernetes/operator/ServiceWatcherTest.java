@@ -11,7 +11,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;

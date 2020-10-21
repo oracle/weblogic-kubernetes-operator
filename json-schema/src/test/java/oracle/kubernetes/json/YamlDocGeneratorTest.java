@@ -11,7 +11,7 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static org.hamcrest.Matchers.containsString;

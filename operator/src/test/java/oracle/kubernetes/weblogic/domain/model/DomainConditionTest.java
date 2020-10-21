@@ -8,9 +8,9 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.utils.SystemClockTestSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
@@ -22,7 +22,7 @@ public class DomainConditionTest {
 
   private List<Memento> mementos = new ArrayList<>();
 
-  @Before
+  @BeforeAll
   public void setUp() throws Exception {
     mementos.add(SystemClockTestSupport.installClock());
   }
@@ -30,7 +30,7 @@ public class DomainConditionTest {
   /**
    * Tear down test.
    */
-  @After
+  @AfterAll
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();

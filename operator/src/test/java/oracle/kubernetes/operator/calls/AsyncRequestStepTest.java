@@ -25,9 +25,9 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -79,7 +79,7 @@ public class AsyncRequestStepTest {
    * Setup test.
    * @throws NoSuchFieldException if StaticStubSupport fails to install
    */
-  @Before
+  @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(ClientFactoryStub.install());
@@ -90,7 +90,7 @@ public class AsyncRequestStepTest {
   /**
    * Tear down test.
    */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();

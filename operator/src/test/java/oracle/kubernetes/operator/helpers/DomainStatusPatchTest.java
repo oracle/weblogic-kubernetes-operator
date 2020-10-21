@@ -27,7 +27,7 @@ import oracle.kubernetes.weblogic.domain.model.SubsystemHealth;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;

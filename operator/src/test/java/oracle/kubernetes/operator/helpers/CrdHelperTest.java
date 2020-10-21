@@ -33,10 +33,10 @@ import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.BETA_CRD;
@@ -124,7 +124,7 @@ public class CrdHelperTest {
                 .shortNames(Collections.singletonList(KubernetesConstants.DOMAIN_SHORT)));
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(
         TestUtils.silenceOperatorLogger()
@@ -137,7 +137,7 @@ public class CrdHelperTest {
     defaultBetaCrd = defineDefaultBetaCrd();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
@@ -240,7 +240,7 @@ public class CrdHelperTest {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void whenExistingCrdHasFutureVersion_dontReplaceIt() {
     V1CustomResourceDefinition existing = defineCrd("v500", PRODUCT_VERSION_FUTURE);
     existing
@@ -255,7 +255,7 @@ public class CrdHelperTest {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void whenExistingCrdHasFutureVersionButNotCurrentStorage_updateIt() {
     testSupport.defineResources(defineCrd("v500", PRODUCT_VERSION_FUTURE));
 

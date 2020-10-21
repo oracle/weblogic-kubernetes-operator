@@ -8,16 +8,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+
 import org.junit.Assert;
-import org.junit.Ignore;
+import org.junit.jupiter.api.Disabled;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 /**
  * Tests for the create domain kubernetes job.
  */
-@Ignore
+@Disabled
 public class CreateDomainTest {
 
   @Rule public TemporaryFolder folder = new TemporaryFolder();

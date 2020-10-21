@@ -45,9 +45,9 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -105,7 +105,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
    * Setup test environment.
    * @throws Exception if setup fails
    */
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(TuningParametersStub.install());
@@ -119,7 +119,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   /**
    * Cleanup test environment.
    */
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }

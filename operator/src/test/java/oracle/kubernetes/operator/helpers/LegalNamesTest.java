@@ -8,9 +8,9 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.operator.TuningParameters;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.helpers.LegalNames.DNS_1123_FIELDS_PARAM;
 import static oracle.kubernetes.operator.helpers.LegalNames.toClusterServiceName;
@@ -23,7 +23,7 @@ public class LegalNamesTest {
 
   private List<Memento> mementos = new ArrayList<>();
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     mementos.add(TuningParametersStub.install());
   }
@@ -31,7 +31,7 @@ public class LegalNamesTest {
   /**
    * Tear down test.
    */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();

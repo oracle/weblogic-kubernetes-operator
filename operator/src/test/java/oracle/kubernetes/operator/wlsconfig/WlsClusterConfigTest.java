@@ -16,9 +16,9 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_WLS_SERVER_IN_CLUSTER;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS;
@@ -62,7 +62,7 @@ public class WlsClusterConfigTest {
   /**
    * Setup test.
    */
-  @Before
+  @BeforeEach
   public void setup() {
     consoleControl =
         TestUtils.silenceOperatorLogger()
@@ -73,7 +73,7 @@ public class WlsClusterConfigTest {
   /**
    * Tear down test.
    */
-  @After
+  @AfterEach
   public void tearDown() {
     consoleControl.revert();
   }

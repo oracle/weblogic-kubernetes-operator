@@ -39,9 +39,9 @@ import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
@@ -130,7 +130,7 @@ public class ServerDownIteratorStepTest {
    * Setup env for tests.
    * @throws NoSuchFieldException if TestStepFactory fails to install
    */
-  @Before
+  @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
     mementos.add(TuningParametersStub.install());
@@ -150,7 +150,7 @@ public class ServerDownIteratorStepTest {
    * Cleanup env after tests.
    * @throws Exception if test support failed
    */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     for (Memento memento : mementos) {
       memento.revert();

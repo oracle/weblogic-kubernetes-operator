@@ -16,9 +16,9 @@ import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.singletonList;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.create;
@@ -104,7 +104,7 @@ public class HealthCheckHelperTest {
    * Setup test.
    * @throws Exception if failure occurs
    */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS));
     mementos.add(ClientFactoryStub.install());
@@ -114,7 +114,7 @@ public class HealthCheckHelperTest {
   /**
    * Tear down test.
    */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();

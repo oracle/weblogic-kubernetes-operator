@@ -11,9 +11,9 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
@@ -33,7 +33,7 @@ public class CertificatesTest {
    * Setup test environment.
    * @throws Exception if test support fails to install.
    */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(consoleHandlerMemento
           .collectLogMessages(logRecords, NO_INTERNAL_CERTIFICATE, NO_EXTERNAL_CERTIFICATE)
@@ -44,7 +44,7 @@ public class CertificatesTest {
   /**
    * Cleanup test environment.
    */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();

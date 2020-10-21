@@ -5,7 +5,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.helpers.ConfigMapHelperTest.SCRIPT_NAMES;
 import static org.hamcrest.Matchers.containsInAnyOrder;

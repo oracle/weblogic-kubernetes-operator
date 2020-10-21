@@ -7,8 +7,8 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpRequest;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static org.hamcrest.Matchers.equalTo;
@@ -53,7 +53,7 @@ public class HttpAsyncTestSupportTest {
   }
 
   @Test
-  @Ignore("See if we're actually going to need this")
+  @Disabled("See if we're actually going to need this")
   public void whenMultiplePostRequestsDefined_selectBasedOnBody() {
     support.defineResponse(createPostRequest("http://here", "abc"), createStub(HttpResponseStub.class, 200, "First"));
     support.defineResponse(createPostRequest("http://here", "def"), createStub(HttpResponseStub.class, 200, "Second"));
