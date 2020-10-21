@@ -1,0 +1,38 @@
+<!-- Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+     Licensed under the Universal Permissive License v 1.0 as shown at
+          https://oss.oracle.com/licenses/upl.-->
+
+<project name="cdttxApp" default="build">
+    <description>
+      ant script to build the cdttx servlet
+    </description>
+
+    <dirname file="${ant.file.cdttxApp}" property="cdttxApp.dir" />
+
+    <property environment="env" />
+    <property name="tempdir" location="temp" />
+    <property name="builddir" location="build" />
+    <property name="app" value="cdttxservlet" />
+
+    <path id="build.classpath">
+        <pathelement path="${env.ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
+    </path>
+
+    <target name="build">
+        <delete dir="${builddir}" quiet="true" />
+        <sleep seconds="2"/>
+        <mkdir dir="${builddir}" />
+        <delete dir="${tempdir}" quiet="true" />
+        <mkdir dir="${tempdir}" />
+        <mkdir dir="${tempdir}/WEB-INF"/>
+        <mkdir dir="${tempdir}/WEB-INF/classes"/>
+        <javac debug="${javac.debug}" srcdir="src"
+               destdir="${tempdir}/WEB-INF/classes">
+            <classpath refid="build.classpath"/>
+        </javac>
+        <copy file="descriptors/web.xml"
+              tofile="${tempdir}/WEB-INF/web.xml"/>
+        <jar destfile="${builddir}/${app}.war" basedir="${tempdir}" />
+        <delete dir="${tempdir}" quiet="true" />
+    </target>
+</project>

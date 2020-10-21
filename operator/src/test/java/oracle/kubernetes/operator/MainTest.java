@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -16,6 +17,7 @@ import java.util.stream.IntStream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.Main.Namespaces.SelectionStrategy;
@@ -36,6 +38,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.MainTest.NamespaceStatusMatcher.isNamespaceStarting;
 import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
@@ -83,11 +86,10 @@ public class MainTest extends ThreadFactoryTestBase {
   private static final V1Namespace NAMESPACE_WEBLOGIC5
           = new V1Namespace().metadata(new V1ObjectMeta().name(NS_WEBLOGIC5).putLabelsItem(LABEL, VALUE));
 
-  private final Main main = new Main();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
-  private Collection<LogRecord> logRecords = new ArrayList<>();
+  private final Collection<LogRecord> logRecords = new ArrayList<>();
 
   @Before
   public void setUp() throws Exception {
@@ -99,8 +101,8 @@ public class MainTest extends ThreadFactoryTestBase {
     mementos.add(StaticStubSupport.install(Main.class, "version", new KubernetesVersion(1, 16)));
     mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "INSTANCE", this));
     mementos.add(StaticStubSupport.install(Main.class, "engine", testSupport.getEngine()));
-    mementos.add(StaticStubSupport.install(Main.class, NAMESPACE_STATUS_MAP, createNamespaceStatuses()));
-    mementos.add(StaticStubSupport.install(Main.class, NAMESPACE_STOPPING_MAP, createNamespaceFlags()));
+    mementos.add(StaticStubSupport.install(DomainNamespaces.class, NAMESPACE_STATUS_MAP, createNamespaceStatuses()));
+    mementos.add(StaticStubSupport.install(DomainNamespaces.class, NAMESPACE_STOPPING_MAP, createNamespaceFlags()));
     mementos.add(NoopWatcherStarter.install());
   }
 
@@ -116,7 +118,7 @@ public class MainTest extends ThreadFactoryTestBase {
   @SuppressWarnings("unchecked")
   private Map<String, NamespaceStatus> getNamespaceStatusMap()
           throws NoSuchFieldException, IllegalAccessException {
-    Field field = Main.class.getDeclaredField(NAMESPACE_STATUS_MAP);
+    Field field = DomainNamespaces.class.getDeclaredField(NAMESPACE_STATUS_MAP);
     field.setAccessible(true);
     return (Map<String, NamespaceStatus>) field.get(null);
   }
@@ -237,8 +239,6 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
   }
 
-  // todo add unit tests for namespace shutdown. Must manipulate the namespaceStopping map. Can that be abstracted?
-
   private void defineSelectionStrategy(SelectionStrategy selectionStrategy) {
     TuningParameters.getInstance().put(Main.Namespaces.SELECTION_STRATEGY_KEY, selectionStrategy.toString());
   }
@@ -300,13 +300,39 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void afterReadingExistingResourcesForNamespace_WatcheraAreDefined() {
-    testSupport.runSteps(main.readExistingResources(NS));
+  public void afterReadingExistingResourcesForNamespace_WatchersAreDefined() {
+    testSupport.runSteps(Main.readExistingResources(NS));
 
-    assertThat(main.getConfigMapWatcher(NS), notNullValue());
-    assertThat(main.getDomainWatcher(NS), notNullValue());
-    assertThat(main.getEventWatcher(NS), notNullValue());
-    assertThat(main.getPodWatcher(NS), notNullValue());
-    assertThat(main.getServiceWatcher(NS), notNullValue());
+    assertThat(DomainNamespaces.getConfigMapWatcher(NS), notNullValue());
+    assertThat(DomainNamespaces.getDomainWatcher(NS), notNullValue());
+    assertThat(DomainNamespaces.getEventWatcher(NS), notNullValue());
+    assertThat(DomainNamespaces.getPodWatcher(NS), notNullValue());
+    assertThat(DomainNamespaces.getServiceWatcher(NS), notNullValue());
   }
+
+
+  @Test
+  public void afterReadingExistingResourcesForNamespace_ScriptConfigMapIsDefined() {
+    testSupport.runSteps(Main.readExistingResources(NS));
+
+    assertThat(getScriptMap(NS), notNullValue());
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private V1ConfigMap getScriptMap(String ns) {
+    return testSupport.<V1ConfigMap>getResources(KubernetesTestSupport.CONFIG_MAP).stream()
+          .filter(m -> isScriptConfigMap(m, ns))
+          .findFirst()
+          .orElse(null);
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private boolean isScriptConfigMap(V1ConfigMap configMap, String ns) {
+    return Optional.ofNullable(configMap.getMetadata()).filter(meta -> isScriptConfigMapMetadata(meta, ns)).isPresent();
+  }
+
+  private boolean isScriptConfigMapMetadata(V1ObjectMeta meta, String ns) {
+    return SCRIPT_CONFIG_MAP_NAME.equals(meta.getName()) && ns.equals(meta.getNamespace());
+  }
+  // when namespace added, resources defined, config map is defined and watchers are started (?)
 }

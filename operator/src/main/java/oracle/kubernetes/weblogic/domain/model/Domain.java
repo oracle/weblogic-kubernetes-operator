@@ -29,10 +29,10 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.Main;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -58,6 +58,8 @@ public class Domain implements KubernetesObject {
    * The ending marker of a token that needs to be substituted with a matching env var.
    */
   public static final String TOKEN_END_MARKER = ")";
+
+  public static final String CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM = "clusterSizePaddingValidationEnabled";
 
   /**
    * The pattern for computing the default shared logs directory.
@@ -709,10 +711,10 @@ public class Domain implements KubernetesObject {
 
     private void checkGeneratedServerServiceName(String serverName, int clusterSize) {
       int limit = LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
-      if (Main.Namespaces.isClusterSizePaddingValidationEnabled()
-          && clusterSize > 0 && clusterSize < 100) {
+      if (isClusterSizePaddingValidationEnabled() && clusterSize > 0 && clusterSize < 100) {
         limit = clusterSize >= 10 ? limit - 1 : limit - 2;
       }
+
       if (LegalNames.toServerServiceName(getDomainUid(), serverName).length() > limit) {
         failures.add(DomainValidationMessages.exceedMaxServerServiceName(
             getDomainUid(),
@@ -720,6 +722,20 @@ public class Domain implements KubernetesObject {
             LegalNames.toServerServiceName(getDomainUid(), serverName),
             limit));
       }
+    }
+
+    /**
+     * Gets the configured boolean for enabling cluster size padding validation.
+     * @return boolean enabled
+     */
+    public boolean isClusterSizePaddingValidationEnabled() {
+      return "true".equalsIgnoreCase(getClusterSizePaddingValidationEnabledParameter());
+    }
+
+    private String getClusterSizePaddingValidationEnabledParameter() {
+      return Optional.ofNullable(TuningParameters.getInstance())
+            .map(t -> t.get(CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM))
+            .orElse("true");
     }
 
     private void checkGeneratedClusterServiceName(String clusterName) {

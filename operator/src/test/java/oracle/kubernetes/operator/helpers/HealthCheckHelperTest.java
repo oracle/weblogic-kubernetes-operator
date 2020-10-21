@@ -106,6 +106,7 @@ public class HealthCheckHelperTest {
    */
   @Before
   public void setUp() throws Exception {
+    mementos.add(TuningParametersStub.install());
     mementos.add(TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS));
     mementos.add(ClientFactoryStub.install());
     mementos.add(testSupport.installSynchronousCallDispatcher());
