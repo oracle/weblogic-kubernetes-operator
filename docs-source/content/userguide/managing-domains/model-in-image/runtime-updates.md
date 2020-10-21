@@ -260,7 +260,23 @@ Example use cases:
 
 Unsupported Changes:
 
+For any of these unsupported changes, the introspect job will fail and automatically retry up to 6 times.  You can either cancel the job, correct the problem, and wait for the job retry interval.
+
 - Topology changes. The introspection job will fail and automatically retry up to 6 times.
 - Dependency deletion. For example, trying to delete a datasource that is referenced by a persistent store, even if both of them are deleting at the same time. The introspection job will fail and automatically retry up to 6 times
- 
-If you are not sure which attributes are dynamic or non-dynamic, specifying domain.spec.configuration.rollBackIfRestartRequired` to `true` will rollback all changes as if no changes have been applied. The changes in your configmap and domain resources need to be reverted manually. 
+
+Safeguarding domain restart 
+
+In general, changes to a mission critical production running domain should be tested and make sure the changes do not accidentally restart the domain.
+
+If you set domain.spec.configuration.rollBackIfRestartRequired` to `true`, then the operator will rollback all changes if changes require restart (i.e. involving non dynamic changes) 
+The changes in your configmap and domain resources need to be reverted manually, the introspection job will not retry and the domain will remain unchanged.   
+If the changes do not require restart then all changes are effective immediately. 
+
+Status updates
+
+|Scenarios|Domain status |
+  |---------------------|-------------|-------|
+  |Successful updates|Domain status will have a condition WLSDomainConfigurationStatus with message Successfully updated, reason with introspectionVersion|
+  |Changes rolled back per request|Domain status will have a condition WLSDomainConfigurationStatus with message Online update rolledback, reason with introspectionVersion|
+  |Any other errors| Domain status message will display the error message. No condition is set in the status|

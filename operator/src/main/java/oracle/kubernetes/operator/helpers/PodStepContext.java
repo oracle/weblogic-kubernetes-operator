@@ -916,7 +916,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private void updateDomainConditions(String message) {
-      DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.WLSDomainConfigurationUpdated);
+      DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.WLSDomainConfigurationStatus);
       String introspectVersion = Optional.ofNullable(info)
             .map(DomainPresenceInfo::getDomain)
             .map(Domain::getSpec)

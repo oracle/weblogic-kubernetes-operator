@@ -11,7 +11,7 @@ public enum DomainConditionType {
     }
   },
   Available,
-  WLSDomainConfigurationUpdated,
+  WLSDomainConfigurationStatus,
   Failed {
     @Override
     String getStatusMessage(DomainCondition condition) {
