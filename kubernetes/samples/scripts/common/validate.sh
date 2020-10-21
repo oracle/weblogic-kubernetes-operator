@@ -231,20 +231,6 @@ function validateKubectlAvailable {
   fi
 }
 
-# try to execute jq to see whether jq is available
-function validateJqAvailable {
-  if ! [ -x "$(command -v jq)" ]; then
-    validationError "jq is not installed"
-  fi
-}
-
-# try to execute kubernetes cli to see whether cli is available
-function validateKubernetesCliAvailable {
-  if ! [ -x "$(command -v ${kubernetesCli})" ]; then
-    validationError "${kubernetesCli} is not installed"
-  fi
-}
-
 # Function to validate the server start policy value
 #
 function validateServerStartPolicy {

@@ -11,11 +11,11 @@
 # $4 - Return value containing server start policy patch string
 #
 function createServerStartPolicyPatch {
-  domainJson=$1
-  serverName=$2
-  policy=$3
-  __result=$4
-  __currentPolicy=$5
+  local domainJson=$1
+  local serverName=$2
+  local policy=$3
+  local __result=$4
+  local __currentPolicy=$5
 
   # Get server start policy for this server
   managedServers=$(echo ${domainJson} | jq -cr '(.spec.managedServers)')
@@ -49,11 +49,12 @@ function createServerStartPolicyPatch {
 # $5 - Retrun value containing updated replica count
 #
 function createReplicaPatch {
-domainJson=$1
-clusterName=$2
-operation=$3
-__result=$4
-__relicaCount=$5
+local domainJson=$1
+local clusterName=$2
+local operation=$3
+local __result=$4
+local __relicaCount=$5
+maxReplicas=""
 local errorMessage="@@ ERROR: Maximum number of servers allowed (maxReplica = ${maxReplicas}) \
 are already running. Please increase cluster size to start new servers."
 
@@ -88,10 +89,10 @@ are already running. Please increase cluster size to start new servers."
 # $4 - Retrun value containting cluster name to which this server belongs.
 #
 function validateServerAndFindCluster {
-domainUid=$1
-domainNamespace=$2 
-__isValidServer=$3
-__clusterName=$4
+local domainUid=$1
+local domainNamespace=$2 
+local __isValidServer=$3
+local __clusterName=$4
 local errorMessage="Server name is outside the range of allowed servers. \
 Please make sure server name is correct."
 
@@ -148,4 +149,55 @@ checkStringInArray() {
       [[ $str = "$arr" ]] && return
     done
     return 1
+}
+
+# try to execute jq to see whether jq is available
+function validateJqAvailable {
+  if ! [ -x "$(command -v jq)" ]; then
+    validationError "jq is not installed"
+  fi
+}
+
+# try to execute python to see whether python is available
+function validatePythonAvailable {
+  if ! [ -x "$(command -v python)" ]; then
+    validationError "python is not installed"
+  fi
+}
+
+# try to execute kubernetes cli to see whether cli is available
+function validateKubernetesCliAvailable {
+  if ! [ -x "$(command -v ${kubernetesCli})" ]; then
+    validationError "${kubernetesCli} is not installed"
+  fi
+}
+
+#
+# Function to exit and print an error message
+# $1 - text of message
+function fail {
+  printError $*
+  exit 1
+}
+
+# Function to print an error message
+function printError {
+  echo [ERROR] $*
+}
+
+#
+# Function to note that a validate error has occurred
+#
+function validationError {
+  printError $*
+  validateErrors=true
+}
+
+#
+# Function to cause the script to fail if there were any validation errors
+#
+function failIfValidationErrors {
+  if [ "$validateErrors" = true ]; then
+    fail 'The errors listed above must be resolved before the script can continue'
+  fi
 }

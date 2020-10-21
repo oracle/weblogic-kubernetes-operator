@@ -5,8 +5,6 @@
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/../common/utility.sh
-source ${scriptDir}/../common/validate.sh
 source ${scriptDir}/helper.sh
 
 function usage() {
@@ -14,13 +12,13 @@ function usage() {
   cat << EOF
 
   This is a helper script for starting a cluster by patching
-  it's 'spec.serverStartPolicy' field to 'IF_NEEDED'. This change will cause
-  the operator to initiate startup of cluster's WebLogic server pods if the 
-  pods are not already running.
+  it's 'serverStartPolicy' field to 'IF_NEEDED'. This change will cause
+  the operator to initiate startup of cluster's WebLogic server instance 
+  pods if the pods are not already running.
  
   Usage:
  
-    $(basename $0) -c mycluster [-n mynamespace] [-d mydomainuid]
+    $(basename $0) -c mycluster [-n mynamespace] [-d mydomainuid] [-m kubecli]
   
     -c <cluster>        : Cluster name parameter is required.
 
@@ -36,7 +34,7 @@ EOF
 exit $1
 }
 
-set -e
+set -eu
 
 kubernetesCli=${KUBERNETES_CLI:-kubectl}
 clusterName=""
@@ -83,7 +81,7 @@ initialize
 # Get the domain in json format
 domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
 
-# Get server start policy for this server
+# Get server start policy for this cluster
 startPolicy=$(echo ${domainJson} | jq -r '(.spec.clusters[] | select (.clusterName == "'${clusterName}'") | .serverStartPolicy)')
 
 if [ -z ${startPolicy} ]; then
@@ -99,7 +97,4 @@ fi
 patchServerStartPolicy="{\"spec\": {\"clusters\": "${startPolicy}"}}"
 ${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type='merge' --patch "${patchServerStartPolicy}"
 
-if [ $? != 0 ]; then
-  exit $?
-fi
 echo "[INFO] Successfully patched cluster '${clusterName}' with 'IF_NEEDED' start policy!."

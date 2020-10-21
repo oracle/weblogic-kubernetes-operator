@@ -5,8 +5,6 @@
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/../common/utility.sh
-source ${scriptDir}/../common/validate.sh
 source ${scriptDir}/helper.sh
 
 function usage() {
@@ -20,7 +18,7 @@ function usage() {
  
   Usage:
  
-    $(basename $0) [-n mynamespace] [-d mydomainuid]
+    $(basename $0) [-n mynamespace] [-d mydomainuid] [-m kubecli]
   
     -d <domain_uid>     : Default is 'sample-domain1'.
 
@@ -33,8 +31,6 @@ function usage() {
 EOF
 exit $1
 }
-
-set -e
 
 kubernetesCli=${KUBERNETES_CLI:-kubectl}
 domainUid="sample-domain1"

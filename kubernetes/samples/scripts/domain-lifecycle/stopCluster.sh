@@ -5,8 +5,6 @@
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/../common/utility.sh
-source ${scriptDir}/../common/validate.sh
 source ${scriptDir}/helper.sh
 
 function usage() {
@@ -14,13 +12,13 @@ function usage() {
   cat << EOF
 
   This is a helper script for stopping a cluster in a domain by patching
-  it's 'spec.serverStartPolicy' field to 'NEVER'. This change will cause
-  the operator to initiate shutdown of cluster's WebLogic pods if the pods 
-  are running.
+  it's 'serverStartPolicy' field to 'NEVER'. This change will cause
+  the operator to initiate shutdown of cluster's WebLogic server instance 
+  pods if the pods are running.
  
   Usage:
  
-    $(basename $0) [-n mynamespace] [-d mydomainuid]
+    $(basename $0) -c mycluster [-n mynamespace] [-d mydomainuid] [-m kubecli]
   
     -c <cluster>        : Cluster name parameter is required.
 
@@ -35,8 +33,6 @@ function usage() {
 EOF
 exit $1
 }
-
-set -e
 
 kubernetesCli=${KUBERNETES_CLI:-kubectl}
 clusterName=""
@@ -59,6 +55,9 @@ while getopts "c:n:m:d:h" opt; do
     ;;
   esac
 done
+
+set -eu
+
 #
 # Function to perform validations, read files and initialize workspace
 #
@@ -98,7 +97,4 @@ fi
 patch="{\"spec\": {\"clusters\": "${startPolicy}"}}"
 ${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type='merge' --patch "${patch}"
 
-if [ $? != 0 ]; then
-  exit $?
-fi
 echo "[INFO] Successfully patched cluster '${clusterName}' with 'NEVER' start policy!"
