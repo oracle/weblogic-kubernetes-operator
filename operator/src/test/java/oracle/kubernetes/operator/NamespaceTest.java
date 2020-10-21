@@ -15,9 +15,9 @@ import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -44,11 +44,10 @@ public class NamespaceTest {
   public static final String NAMESPACE_STOPPING_MAP = "namespaceStoppingMap";
 
   KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
-  private final WatchTuning tuning = new WatchTuning(30, 0, 5);
   private final List<Memento> mementos = new ArrayList<>();
   private final Set<String> currentNamespaces = new HashSet<>();
   private final DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
+
 
   @Before
   public void setUp() throws Exception {
@@ -59,13 +58,6 @@ public class NamespaceTest {
     mementos.add(TuningParametersStub.install());
     mementos.add(StaticStubSupport.install(Main.class, "processor", dp));
     mementos.add(testSupport.install());
-    AtomicBoolean stopping = new AtomicBoolean(true);
-  }
-
-  private Thread createDaemonThread() {
-    Thread thread = new Thread();
-    thread.setDaemon(true);
-    return thread;
   }
 
   @After
@@ -82,7 +74,7 @@ public class NamespaceTest {
     processNamespaces();
     defineNamespaces(NS);
 
-    testSupport.runSteps(Main.createDomainRecheckSteps(DateTime.now()));
+    testSupport.runSteps(new Main(null).createDomainRecheckSteps(DateTime.now()));
     assertThat(DomainNamespaces.getJobWatcher(NS), not(sameInstance(oldWatcher)));
   }
 
@@ -196,6 +188,14 @@ public class NamespaceTest {
   abstract static class DomainProcessorStub implements DomainProcessor {
     List<String> nameSpaces = new ArrayList<>();
 
+  }
+
+  class MainDelegateImpl implements MainDelegate {
+
+    @Override
+    public SemanticVersion getProductVersion() {
+      return null;
+    }
   }
 
 }

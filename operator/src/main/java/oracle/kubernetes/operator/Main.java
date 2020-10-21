@@ -134,6 +134,16 @@ public class Main {
 
   static class MainDelegateImpl implements MainDelegate {
 
+    private final SemanticVersion productVersion;
+
+    public MainDelegateImpl(SemanticVersion productVersion) {
+      this.productVersion = productVersion;
+    }
+
+    @Override
+    public SemanticVersion getProductVersion() {
+      return productVersion;
+    }
   }
 
   /**
@@ -142,29 +152,13 @@ public class Main {
    * @param args none, ignored
    */
   public static void main(String[] args) {
-    try (final InputStream stream = Main.class.getResourceAsStream("/version.properties")) {
-      Properties buildProps = new Properties();
-      buildProps.load(stream);
-
-      String operatorVersion = buildProps.getProperty("git.build.version");
-      if (operatorVersion != null) {
-        productVersion = new SemanticVersion(operatorVersion);
-      }
-      String operatorImpl =
-          buildProps.getProperty("git.branch")
-              + "."
-              + buildProps.getProperty("git.commit.id.abbrev");
-      String operatorBuildTime = buildProps.getProperty("git.build.time");
-
-      // print startup log message
-      LOGGER.info(MessageKeys.OPERATOR_STARTED, operatorVersion, operatorImpl, operatorBuildTime);
-    } catch (IOException e) {
-      LOGGER.warning(MessageKeys.EXCEPTION, e);
+    Main main = createMain();
+    if (main == null) {
+      System.exit(0);
     }
 
     try {
-      Main main = new Main(new MainDelegateImpl());
-      engine.getExecutor().execute(main::begin);
+      main.startOperator(main::completeBegin);
 
       // now we just wait until the pod is terminated
       waitForDeath();
@@ -176,16 +170,47 @@ public class Main {
     }
   }
 
+  static Main createMain() {
+    Main main = null;
+    try (final InputStream stream = Main.class.getResourceAsStream("/version.properties")) {
+      Properties buildProps = new Properties();
+      buildProps.load(stream);
+
+      String operatorVersion = buildProps.getProperty("git.build.version");
+      if (operatorVersion != null) {
+        productVersion = new SemanticVersion(operatorVersion);
+        main = new Main(new MainDelegateImpl(productVersion));
+      }
+
+      String operatorImpl =
+          buildProps.getProperty("git.branch")
+              + "."
+              + buildProps.getProperty("git.commit.id.abbrev");
+      String operatorBuildTime = buildProps.getProperty("git.build.time");
+
+      // print startup log message
+      LOGGER.info(MessageKeys.OPERATOR_STARTED, operatorVersion, operatorImpl, operatorBuildTime);
+    } catch (IOException e) {
+      LOGGER.warning(MessageKeys.EXCEPTION, e);
+    }
+    return main;
+  }
+
   Main(MainDelegate delegate) {
     this.delegate = delegate;
   }
 
   private void begin() {
+    final Runnable completionAction = this::completeBegin;
+    startOperator(completionAction);
+  }
+
+  private void startOperator(Runnable completionAction) {
     logStartupInfo(serviceAccountName);
 
     try {
       version = HealthCheckHelper.performK8sVersionCheck();
-      runSteps(createDomainRecheckSteps(DateTime.now()), this::completeBegin);
+      runSteps(createDomainRecheckSteps(DateTime.now()), completionAction);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
@@ -245,13 +270,12 @@ public class Main {
     return new NullCompletionCallback(completionAction);
   }
 
-  static Runnable recheckDomains() {
+  Runnable recheckDomains() {
     return () -> runSteps(createDomainRecheckSteps(DateTime.now()));
   }
 
-  static Step createDomainRecheckSteps(DateTime now) {
-    Namespaces.SelectionStrategy selectionStrategy = Namespaces.getSelectionStrategy();
-    Collection<String> configuredDomainNamespaces = selectionStrategy.getConfiguredDomainNamespaces();
+  Step createDomainRecheckSteps(DateTime now) {
+    Collection<String> configuredDomainNamespaces = Namespaces.getSelectionStrategy().getConfiguredDomainNamespaces();
 
     int recheckInterval = tuningAndConfig().getMainTuning().domainPresenceRecheckIntervalSeconds;
     boolean isFullRecheck = false;
@@ -266,13 +290,17 @@ public class Main {
         new InitializeNamespacesSecurityStep(configuredDomainNamespaces),
         NamespaceRulesReviewStep.forOperatorNamespace(),
         CrdHelper.createDomainCrdStep(version, productVersion),
-        Namespaces.getSelectionStrategy().getSelection(new DomainRecheckStepsVisitor(namespaces)));
+        createReadNamespacesStep(namespaces));
   }
 
-  static class DomainRecheckStepsVisitor implements NamespaceStrategyVisitor<Step> {
+  private static Step createReadNamespacesStep(Namespaces namespaces) {
+    return Namespaces.getSelectionStrategy().getSelection(new ReadNamespacesStepsVisitor(namespaces));
+  }
+
+  static class ReadNamespacesStepsVisitor implements NamespaceStrategyVisitor<Step> {
     private final Namespaces namespaces;
 
-    DomainRecheckStepsVisitor(Namespaces namespaces) {
+    ReadNamespacesStepsVisitor(Namespaces namespaces) {
       this.namespaces = namespaces;
     }
 

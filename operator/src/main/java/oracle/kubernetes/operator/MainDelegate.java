@@ -3,9 +3,15 @@
 
 package oracle.kubernetes.operator;
 
+import oracle.kubernetes.operator.helpers.SemanticVersion;
+
 /**
  * Definition of an interface that returns values that the Main class requires.
  */
 interface MainDelegate {
 
+  /**
+   * Returns the version of the operator.
+   */
+  SemanticVersion getProductVersion();
 }
