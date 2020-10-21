@@ -468,7 +468,21 @@ Example:
 ```
 externalOperatorKey: QmFnIEF0dHJpYnV0ZXMKICAgIGZyaWVuZGx5TmFtZTogd2VibG9naWMtb3B ...
 ```
-
+##### `tokenReviewAuthentication`
+tokenReviewAuthentication, if set to `true`, specifies whether the the operator's REST API should use
+   1. Kubernetes token review API for authenticating users, and
+   2. Kubernetes subject access review API for authorizing a user's operation (get, list,
+      patch, etc) on a resource.
+   3. Update the Domain resource using the operator's privileges.
+ This parameter, if set to `false`, will use the caller's bearer token for any update
+ to the Domain resource so that it is done using the caller's privileges.
+ 
+ Defaults to `false`.
+ 
+ Example:
+ ```
+ tokenReviewAuthentication: true
+ ```
 #### Debugging options
 
 ##### `remoteDebugNodePortEnabled`
