@@ -36,27 +36,27 @@ For example, assuming your domain UID is `sample-domain1` and your domain namesp
   $ kubectl -n sample-domain1-ns get pods -l weblogic.domainUID=sample-domain1
   NAME                                         READY   STATUS    RESTARTS   AGE
   sample-domain1-admin-server                  1/1     Running   0          19h
-  sample-domain1-introspect-domain-job-v2l7k   0/1     Error     0          75m
+  sample-domain1-introspector-v2l7k            0/1     Error     0          75m
   sample-domain1-managed-server1               1/1     Running   0          19h
   sample-domain1-managed-server2               1/1     Running   0          19h
 
   $ # let's look at the job's describe
-  $ kubectl -n sample-domain1-ns describe job/sample-domain1-introspect-domain-job
+  $ kubectl -n sample-domain1-ns describe job/sample-domain1-introspector
 
   ...
 
   $ # now let's look at the job's pod describe, in particular look at its 'events'
-  $ kubectl -n sample-domain1-ns describe pod/sample-domain1-introspect-domain-job-v2l7k
+  $ kubectl -n sample-domain1-ns describe pod/sample-domain1-introspector-v2l7k
 
   ...
 
   $ # finally let's look at job's pod's log
-  $ kubectl -n sample-domain1-ns logs job/sample-domain1-introspect-domain-job
+  $ kubectl -n sample-domain1-ns logs job/sample-domain1-introspector
 
   ...
 
   $ # alternative log command (will have same output as previous)
-  # kubectl -n sample-domain1-ns logs pod/sample-domain1-introspect-domain-job-v2l7k
+  # kubectl -n sample-domain1-ns logs pod/sample-domain1-introspector-v2l7k
   ```
 
   A common reason for the introspector job to fail is because of an error in a model file. Here's some sample log output from an introspector job that shows such a failure:

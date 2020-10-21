@@ -373,7 +373,7 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
 
 * If WebLogic Server instance Pods do not come up at all, then:
   * Examine your Domain resource status: `kubectl -n MYDOMAINNAMESPACE describe domain MYDOMAIN`
-  * In the domain's namespace, see if you can find a job named `DOMAIN_UID-introspect-domain-job` and a corresponding pod named something like `DOMAIN_UID-introspect-domain-job-xxxx`.  If so, examine:
+  * In the domain's namespace, see if you can find a job named `DOMAIN_UID-introspector` and a corresponding pod named something like `DOMAIN_UID-introspector-xxxx`.  If so, examine:
       * `kubectl -n MYDOMAINNAMESPACE describe job INTROSPECTJOBNAME`
       * `kubectl -n MYDOMAINNAMESPACE logs INTROSPECTPODNAME`
   * Check your operator log for Warning/Error/Severe messages.
@@ -439,7 +439,7 @@ when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
 ### Internal design flow
 
 * The operator generates the final configuration overrides, which include the merging of operator-generated overrides and the processing of any customer-provided configuration overrides templates and Secrets, during its introspection phase.
-* The operator creates a Kubernetes Job for introspection named `DOMAIN_UID-introspect-domain-job`.
+* The operator creates a Kubernetes Job for introspection named `DOMAIN_UID-introspector`.
 * The introspector Job's Pod:
   * Mounts the Kubernetes ConfigMap and Secrets specified by using the operator Domain `configuration.overridesConfigMap`, `webLogicCredentialsSecret`, and `configuration.secrets` fields.
   * Reads the mounted configuration overrides templates from the ConfigMap and expands them to create the actual configuration overrides files for the domain:

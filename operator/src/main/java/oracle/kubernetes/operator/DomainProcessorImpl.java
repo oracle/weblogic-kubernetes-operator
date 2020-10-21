@@ -58,9 +58,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
-import oracle.kubernetes.weblogic.domain.model.AdminServer;
-import oracle.kubernetes.weblogic.domain.model.AdminService;
-import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -190,14 +187,9 @@ public class DomainProcessorImpl implements DomainProcessor {
     steps.add(new BeforeAdminServiceStep(null));
     steps.add(PodHelper.createAdminPodStep(null));
 
-    Domain dom = info.getDomain();
-    AdminServer adminServer = dom.getSpec().getAdminServer();
-    AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
-    List<Channel> channels = adminService != null ? adminService.getChannels() : null;
-    if (channels != null && !channels.isEmpty()) {
+    if (Domain.isExternalServiceConfigured(info.getDomain().getSpec())) {
       steps.add(ServiceHelper.createForExternalServiceStep(null));
     }
-
     steps.add(ServiceHelper.createForServerStep(null));
     steps.add(new WatchPodReadyAdminStep(podAwaiterStepFactory, null));
     return Step.chain(steps.toArray(new Step[0]));
@@ -213,30 +205,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private FiberGate getStatusFiberGate(String ns) {
     return statusFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
-  }
-
-  /**
-   * Stop namespace.
-   * @param ns namespace
-   */
-  public void stopNamespace(String ns) {
-    try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
-      Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
-      if (map != null) {
-        for (DomainPresenceInfo dpi : map.values()) {
-          stack.domainUid(dpi.getDomainUid());
-
-          Domain dom = dpi.getDomain();
-          DomainPresenceInfo value =
-              (dom != null)
-                  ? new DomainPresenceInfo(dom)
-                  : new DomainPresenceInfo(dpi.getNamespace(), dpi.getDomainUid());
-          value.setDeleting(true);
-          value.setPopulated(true);
-          createMakeRightOperation(value).withExplicitRecheck().forDeletion().execute();
-        }
-      }
-    }
   }
 
   /**
@@ -536,11 +504,6 @@ public class DomainProcessorImpl implements DomainProcessor {
   @Override
   public MakeRightDomainOperationImpl createMakeRightOperation(DomainPresenceInfo liveInfo) {
     return new MakeRightDomainOperationImpl(liveInfo);
-  }
-
-  @Override
-  public MakeRightDomainOperation createMakeRightOperation(Domain liveDomain) {
-    return createMakeRightOperation(new DomainPresenceInfo(liveDomain));
   }
 
   public Step createPopulatePacketServerMapsStep(oracle.kubernetes.operator.work.Step next) {
@@ -924,6 +887,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     Step domainUpStrategy =
         Step.chain(
             domainIntrospectionSteps(info),
+            DomainValidationSteps.createAfterIntrospectValidationSteps(info.getDomainUid()),
             new DomainStatusStep(info, null),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
@@ -1005,7 +969,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private Step getRecordExistingResourcesSteps() {
       NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid());
 
-      resources.addProcessor(new NamespacedResources.Processors() {
+      resources.addProcessing(new NamespacedResources.Processors() {
         @Override
         Consumer<V1PodList> getPodListProcessing() {
           return list -> list.getItems().forEach(this::addPod);

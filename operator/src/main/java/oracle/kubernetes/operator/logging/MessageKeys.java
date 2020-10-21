@@ -150,6 +150,10 @@ public class MessageKeys {
   public static final String CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO = "WLSDO-0013";
   public static final String INTROSPECT_JOB_FAILED = "WLSDO-0014";
   public static final String INTROSPECT_JOB_FAILED_RETRY_COUNT = "WLSDO-0015";
+  public static final String ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH = "WLSDO-0016";
+  public static final String ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH = "WLSDO-0017";
+  public static final String ILLEGAL_SERVER_SERVICE_NAME_LENGTH = "WLSDO-0018";
+  public static final String ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH = "WLSDO-0019";
 
   private MessageKeys() {
   }

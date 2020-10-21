@@ -14,13 +14,16 @@ import oracle.kubernetes.operator.TuningParameters;
 /** A class to create DNS-1123 legal names for Kubernetes objects. */
 public class LegalNames {
 
+  public static final String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
   private static final String SERVER_PATTERN = "%s-%s";
   private static final String CLUSTER_SERVICE_PATTERN = "%s-cluster-%s";
-  public static final String DOMAIN_INTROSPECTOR_JOB_SUFFIX = "-introspect-domain-job";
-  private static final String DOMAIN_INTROSPECTOR_JOB_PATTERN = "%s" + DOMAIN_INTROSPECTOR_JOB_SUFFIX;
-  private static final String EXTERNAL_SERVICE_PATTERN = "%s-%s-external";
+  public static final String DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX = "-introspector";
+  private static final String DOMAIN_INTROSPECTOR_JOB_PATTERN = "%s%s";
+  private static final String EXTERNAL_SERVICE_PATTERN = "%s-%s%s";
 
   public static final String DNS_1123_FIELDS_PARAM = "dns1123Fields";
+  public static final String INTROSPECTOR_JOB_NAME_SUFFIX_PARAM = "introspectorJobNameSuffix";
+  public static final String EXTERNAL_SERVICE_NAME_SUFFIX_PARAM = "externalServiceNameSuffix";
 
   // Fields that requires values to be DNS1123 legal
   private static final String[] DEFAULT_DNS1123_FIELDS = {
@@ -46,6 +49,9 @@ public class LegalNames {
       "VolumeName"         // V1PersistentVolumeClaimSpec, etc
   };
 
+  // The maximum length of a legal DNS label name
+  public static final int LEGAL_DNS_LABEL_NAME_MAX_LENGTH = 63;
+
   static String[] dns1123Fields;
 
   public static String toServerServiceName(String domainUid, String serverName) {
@@ -68,12 +74,52 @@ public class LegalNames {
     return toDns1123LegalName(String.format(CLUSTER_SERVICE_PATTERN, domainUid, clusterName));
   }
 
+  /**
+   * Generates the introspector job name based on the given domainUid.
+   *
+   * @param domainUid domainUid
+   * @return String introspector job name
+   */
   public static String toJobIntrospectorName(String domainUid) {
-    return toDns1123LegalName(String.format(DOMAIN_INTROSPECTOR_JOB_PATTERN, domainUid));
+    return toDns1123LegalName(String.format(
+        DOMAIN_INTROSPECTOR_JOB_PATTERN,
+        domainUid,
+        getIntrospectorJobNameSuffix()));
   }
 
+  /**
+   * Gets the configured domain introspector job name suffix.
+   * @return String suffix
+   */
+  public static String getIntrospectorJobNameSuffix() {
+    return Optional.ofNullable(TuningParameters.getInstance())
+          .map(t -> t.get(INTROSPECTOR_JOB_NAME_SUFFIX_PARAM))
+          .orElse(LegalNames.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX);
+  }
+
+  /**
+   * Generates the introspector job name based on the given domainUid.
+   *
+   * @param domainUid domainUid
+   * @param serverName WebLogic server name
+   * @return String introspector job name
+   */
   public static String toExternalServiceName(String domainUid, String serverName) {
-    return toDns1123LegalName(String.format(EXTERNAL_SERVICE_PATTERN, domainUid, serverName));
+    return toDns1123LegalName(String.format(
+        EXTERNAL_SERVICE_PATTERN,
+        domainUid,
+        serverName,
+        getExternalServiceNameSuffix()));
+  }
+
+  /**
+   * Gets the configured external service name suffix.
+   * @return String suffix
+   */
+  private static String getExternalServiceNameSuffix() {
+    return Optional.ofNullable(TuningParameters.getInstance())
+        .map(t -> t.get(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM))
+        .orElse(LegalNames.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -142,5 +188,5 @@ public class LegalNames {
     }
     return false;
   }
-
 }
+

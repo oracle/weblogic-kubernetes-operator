@@ -110,7 +110,8 @@ public class DomainProcessorTest {
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final Domain newDomain = DomainProcessorTestSetup.createTestDomain();
   private final DomainConfigurator domainConfigurator = configureDomain(newDomain);
-  private final MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newDomain);
+  private final MakeRightDomainOperation makeRightOperation
+        = processor.createMakeRightOperation(new DomainPresenceInfo(newDomain));
   private final WlsDomainConfig domainConfig = createDomainConfig();
 
   private static WlsDomainConfig createDomainConfig() {
@@ -282,6 +283,35 @@ public class DomainProcessorTest {
     processor.createMakeRightOperation(info).withExplicitRecheck().execute();
 
     assertThat(info.getExternalService(ADMIN_NAME), notNullValue());
+  }
+
+  @Test
+  public void whenNoExternalServiceNameSuffixConfigured_externalServiceNameContainsDefaultSuffix() {
+    domainConfigurator.configureAdminServer().configureAdminService().withChannel("name", 30701);
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    configureDomain(domain)
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
+
+    assertThat(info.getExternalService(ADMIN_NAME).getMetadata().getName(),
+        equalTo(info.getDomainUid() + "-" + ADMIN_NAME + "-ext"));
+  }
+
+  @Test
+  public void whenExternalServiceNameSuffixConfigured_externalServiceNameContainsSuffix() {
+    domainConfigurator.configureAdminServer().configureAdminService().withChannel("name", 30701);
+    TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "-my-external-service");
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    configureDomain(domain)
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
+
+    assertThat(info.getExternalService(ADMIN_NAME).getMetadata().getName(),
+        equalTo(info.getDomainUid() + "-" + ADMIN_NAME + "-my-external-service"));
   }
 
   private static final String OLD_INTROSPECTION_STATE = "123";

@@ -141,7 +141,7 @@ public interface TestConstants {
       .orElse("");
 
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
-        .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostName()));
+        .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostAddress()));
   public static final String RESULTS_ROOT = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/ittestsresults";
   public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
@@ -263,4 +263,8 @@ public interface TestConstants {
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";
 
+  // default name suffixes
+  public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
+  public String DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX = "-introspector";
+  public String OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-external";
 }

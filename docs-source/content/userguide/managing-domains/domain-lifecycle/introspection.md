@@ -10,7 +10,7 @@ description: "This document describes domain introspection in the Oracle WebLogi
 This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in Kubernetes environment.
 
 In order to manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic
-domain configuration using an "introspection" job. This Job will be named `DOMAIN_UID-introspect-domain-job`, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances. Because each of the
+domain configuration using an "introspection" job. This Job will be named `DOMAIN_UID-introspector`, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances. Because each of the
 [domain home source types]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) are different (for instance, Domain in PV uses a domain home on a PersistentVolume while Model in Image generates the domain home dynamically from a WDT model), the Pod created by this Job will be
 as similar as possible to the Pod that will later be generated for the Administration Server. This guarantees that the operator is
 analyzing the same WebLogic domain configuration that WebLogic Server instances will use.
@@ -46,7 +46,7 @@ As with `restartVersion`, the `introspectVersion` field has no required format; 
 
 #### Failed introspection
 
-Sometimes the Kubernetes Job, named `DOMAIN_UID-introspect-domain-job`, created for the introspection will fail.
+Sometimes the Kubernetes Job, named `DOMAIN_UID-introspector`, created for the introspection will fail.
 
 When introspection fails, the operator will not start any WebLogic Server instances. If this is not the initial introspection and there are already WebLogic Server instances running, then a failed introspection will leave the existing WebLogic Server instances running without making any changes to the operational state of the domain.
 

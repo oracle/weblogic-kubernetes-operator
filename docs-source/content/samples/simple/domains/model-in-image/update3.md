@@ -235,7 +235,7 @@ Here are the steps for this use case:
    NAME                                          VERSION  IMAGE                    READY   PHASE
    --------------------------------------------  -------  -----------------------  ------  ---------
    'sample-domain1-admin-server'                 '2'      'model-in-image:WLS-v1'  'true'  'Running'
-   'sample-domain1-introspect-domain-job-g5kzn'  ''       ''                       ''      'Running'
+   'sample-domain1-introspector-g5kzn'           ''       ''                       ''      'Running'
    'sample-domain1-managed-server1'              '2'      'model-in-image:WLS-v1'  'true'  'Running'
    'sample-domain1-managed-server2'              '2'      'model-in-image:WLS-v1'  'true'  'Running'
 

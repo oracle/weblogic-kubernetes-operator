@@ -350,6 +350,64 @@ public class CommonTestUtils {
                                                     HelmParams opHelmParams,
                                                     boolean elkIntegrationEnabled,
                                                     String... domainNamespace) {
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
+        withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled,
+        null, null, false, domainNamespace);
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opHelmParams the Helm parameters to install operator
+   * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
+   * @param domainNamespaceSelectionStrategy value to tell the operator
+   *                                         how to select the set of namespaces that it will manage
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String opServiceAccount,
+                                                    boolean withRestAPI,
+                                                    int externalRestHttpsPort,
+                                                    HelmParams opHelmParams,
+                                                    String domainNamespaceSelectionStrategy,
+                                                    boolean elkIntegrationEnabled,
+                                                    String... domainNamespace) {
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
+        withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled,
+        domainNamespaceSelectionStrategy, null, false, domainNamespace);
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opHelmParams the Helm parameters to install operator
+   * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
+   * @param domainNamespaceSelectionStrategy SelectLabel, RegExp or List, value to tell the operator
+   *                                  how to select the set of namespaces that it will manage
+   * @param domainNamespaceSelector the label or expression value to manage namespaces
+   * @param enableClusterRoleBinding operator cluster role binding
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String opServiceAccount,
+                                                    boolean withRestAPI,
+                                                    int externalRestHttpsPort,
+                                                    HelmParams opHelmParams,
+                                                    boolean elkIntegrationEnabled,
+                                                    String domainNamespaceSelectionStrategy,
+                                                    String domainNamespaceSelector,
+                                                    boolean enableClusterRoleBinding,
+                                                    String... domainNamespace) {
     LoggingFacade logger = getLogger();
 
     // Create a service account for the unique opNamespace
@@ -382,6 +440,10 @@ public class CommonTestUtils {
         .domainNamespaces(Arrays.asList(domainNamespace))
         .serviceAccount(opServiceAccount);
 
+    if (domainNamespaceSelectionStrategy != null) {
+      opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
+    }
+
     // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
     if (opHelmParams.getRepoUrl() == null) {
       opParams.image(operatorImage);
@@ -409,6 +471,18 @@ public class CommonTestUtils {
           .externalRestEnabled(true)
           .externalRestHttpsPort(externalRestHttpsPort)
           .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME);
+    }
+    // operator chart values to override
+    if (enableClusterRoleBinding) {
+      opParams.enableClusterRoleBinding(enableClusterRoleBinding);
+    }
+    if (domainNamespaceSelectionStrategy != null) {
+      opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
+      if (domainNamespaceSelectionStrategy.equalsIgnoreCase("LabelSelector")) {
+        opParams.domainNamespaceLabelSelector(domainNamespaceSelector);
+      } else if (domainNamespaceSelectionStrategy.equalsIgnoreCase("RegExp")) {
+        opParams.domainNamespaceRegExp(domainNamespaceSelector);
+      }
     }
 
     // install operator
@@ -451,6 +525,32 @@ public class CommonTestUtils {
               "operator external service is not running"));
     }
     return opHelmParams;
+  }
+
+  /**
+   * Install WebLogic operator and wait up to two minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opReleaseName the operator release name
+   * @param domainNamespaceSelectionStrategy SelectLabel, RegExp or List
+   * @param domainNamespaceSelector the label or expression value to manage namespaces
+   * @param enableClusterRoleBinding operator cluster role binding
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   *                        (only in case of List selector)
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opReleaseName, String opNamespace,
+                                                     String domainNamespaceSelectionStrategy,
+                                                     String domainNamespaceSelector,
+                                                     boolean enableClusterRoleBinding,
+                                                     String... domainNamespace) {
+
+    HelmParams opHelmParams = new HelmParams().releaseName(opReleaseName)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+    return installAndVerifyOperator(opNamespace, opReleaseName + "-sa",
+        true, 0, opHelmParams, false,
+        domainNamespaceSelectionStrategy, domainNamespaceSelector, enableClusterRoleBinding, domainNamespace);
   }
 
   /**
@@ -1640,21 +1740,19 @@ public class CommonTestUtils {
    * is needed to be updated with a property that has been created by the framework, it is copied
    * onto RESULT_ROOT and updated. Hence the altModelDir. Call this method to create a domain home in image.
    * @param imageNameBase - base image name used in local or to construct image name in repository
-   * @param wdtModelFile - model file used to build the image
-   * @param appName - application to be added to the image
+   * @param wdtModelList - model file used to build the image
+   * @param appSrcDirList - application to be added to the image
    * @param modelPropFile - property file to be used with the model file above
    * @param altModelDir - directory where the property file is found if not in the default MODEL_DIR
    * @return image name with tag
    */
   public static String createImageAndVerify(String imageNameBase,
-                                            String wdtModelFile,
-                                            String appName,
+                                            List<String> wdtModelList,
+                                            List<String> appSrcDirList,
                                             String modelPropFile,
                                             String altModelDir,
                                             String domainHome) {
 
-    final List<String> wdtModelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
-    final List<String> appSrcDirList = Collections.singletonList(appName);
     final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
 
     return createImageAndVerify(
@@ -3090,5 +3188,17 @@ public class CommonTestUtils {
                   managedServerPodName, domainNamespace)));
     }
     return podsWithTimeStamps;
+  }
+
+  public static String getExternalServicePodName(String adminServerPodName) {
+    return getExternalServicePodName(adminServerPodName, TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
+  public static String getExternalServicePodName(String adminServerPodName, String suffix) {
+    return adminServerPodName + suffix;
+  }
+
+  public static String getIntrospectJobName(String domainUid) {
+    return domainUid + TestConstants.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX;
   }
 }

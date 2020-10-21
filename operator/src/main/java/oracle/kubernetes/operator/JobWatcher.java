@@ -11,7 +11,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -35,9 +34,9 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 
 /** Watches for Jobs to become Ready or leave Ready state. */
 public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
+  public static final WatchListener<V1Job> NULL_LISTENER = r -> {};
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final Map<String, JobWatcher> JOB_WATCHERS = new ConcurrentHashMap<>();
-  private static JobWatcherFactory factory;
 
   private final String namespace;
 
@@ -66,20 +65,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     completeCallbackRegistrations.remove(jobName, callback);
   }
 
-  /**
-   * Returns a cached JobWatcher, if present; otherwise, creates a new one.
-   *
-   * @param domain the domain for which the job watcher is to be returned
-   * @return a cached jobwatcher.
-   */
-  public static @Nonnull JobWatcher getOrCreateFor(Domain domain) {
-    return JOB_WATCHERS.computeIfAbsent(getNamespace(domain), n -> factory.createFor(domain));
-  }
-
-  static void removeNamespace(String ns) {
-    JOB_WATCHERS.remove(ns);
-  }
-
   private static String getNamespace(Domain domain) {
     return domain.getMetadata().getNamespace();
   }
@@ -96,31 +81,26 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   }
 
   /**
-   * Creates a new JobWatcher and caches it by namespace.
+   * Creates a new JobWatcher.
    *
    * @param factory thread factory
    * @param ns Namespace
    * @param initialResourceVersion Initial resource version or empty string
    * @param tuning Tuning parameters for the watch, for example watch lifetime
+   * @param listener a null listener to keep the same signature as other watcher create methods
    * @param isStopping Stop signal
    * @return Job watcher for the namespace
    */
   public static JobWatcher create(
-      ThreadFactory factory,
-      String ns,
-      String initialResourceVersion,
-      WatchTuning tuning,
-      AtomicBoolean isStopping) {
+        ThreadFactory factory,
+        String ns,
+        String initialResourceVersion,
+        WatchTuning tuning,
+        @SuppressWarnings("unused") WatchListener<V1Job> listener,
+        AtomicBoolean isStopping) {
     JobWatcher watcher = new JobWatcher(ns, initialResourceVersion, tuning, isStopping);
     watcher.start(factory);
     return watcher;
-  }
-
-  static void defineFactory(
-      ThreadFactory threadFactory,
-      WatchTuning tuning,
-      Function<String, AtomicBoolean> isNamespaceStopping) {
-    factory = new JobWatcherFactory(threadFactory, tuning, isNamespaceStopping);
   }
 
   /**
@@ -245,6 +225,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
           namespace,
           domain.getMetadata().getResourceVersion(),
           watchTuning,
+          NULL_LISTENER,
           isNamespaceStopping.apply(namespace));
     }
   }

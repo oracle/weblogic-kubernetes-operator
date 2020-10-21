@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiCallback;
@@ -23,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -311,7 +313,7 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1DeleteOptions) requestParams.body,
                   callback));
-  private final CallFactory<V1Status> deletePod =
+  private final CallFactory<V1Pod> deletePod =
       (requestParams, usage, cont, callback) ->
           wrap(
               deletePodAsync(
@@ -339,7 +341,7 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1DeleteOptions) requestParams.body,
                   callback));
-  private final CallFactory<V1Status> deletePersistentvolume =
+  private final CallFactory<V1PersistentVolume> deletePersistentvolume =
       (requestParams, client, cont, callback) ->
           wrap(
               new CoreV1Api(client)
@@ -352,7 +354,7 @@ public class CallBuilder {
                       propagationPolicy,
                       (V1DeleteOptions) requestParams.body,
                       callback));
-  private final CallFactory<V1Status> deletePersistentvolumeclaim =
+  private final CallFactory<V1PersistentVolumeClaim> deletePersistentvolumeclaim =
       (requestParams, client, cont, callback) ->
           wrap(
               new CoreV1Api(client)
@@ -404,7 +406,7 @@ public class CallBuilder {
       (client, requestParams) ->
           new CoreV1Api(client)
               .createPersistentVolume((V1PersistentVolume) requestParams.body, pretty, null, null);
-  private SynchronousCallFactory<V1Status> deletePvCall =
+  private SynchronousCallFactory<V1PersistentVolume> deletePvCall =
       (client, requestParams) ->
           new CoreV1Api(client)
               .deletePersistentVolume(
@@ -424,7 +426,7 @@ public class CallBuilder {
                   pretty,
                   null,
                   null);
-  private SynchronousCallFactory<V1Status> deletePvcCall =
+  private SynchronousCallFactory<V1PersistentVolumeClaim> deletePvcCall =
       (client, requestParams) ->
           new CoreV1Api(client)
               .deleteNamespacedPersistentVolumeClaim(
@@ -525,6 +527,11 @@ public class CallBuilder {
     return this;
   }
 
+  public CallBuilder withTimeoutSeconds(int timeoutSeconds) {
+    this.timeoutSeconds = timeoutSeconds;
+    return this;
+  }
+
   private void tuning(int limit, int timeoutSeconds, int maxRetryCount) {
     this.limit = limit;
     this.timeoutSeconds = timeoutSeconds;
@@ -601,7 +608,7 @@ public class CallBuilder {
    * @return Domain list
    * @throws ApiException API exception
    */
-  public DomainList listDomain(String namespace) throws ApiException {
+  public @Nonnull DomainList listDomain(String namespace) throws ApiException {
     RequestParams requestParams = new RequestParams("listDomain", namespace, null, null, callParams);
     return executeSynchronousCall(requestParams, listDomainCall);
   }
@@ -1162,7 +1169,7 @@ public class CallBuilder {
       String name,
       String namespace,
       V1DeleteOptions deleteOptions,
-      ApiCallback<V1Status> callback)
+      ApiCallback<V1Pod> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .deleteNamespacedPodAsync(
@@ -1192,7 +1199,7 @@ public class CallBuilder {
       String namespace,
       String domainUid,
       V1DeleteOptions deleteOptions,
-      ResponseStep<V1Status> responseStep) {
+      ResponseStep<V1Pod> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid),
             deletePod, retryStrategy);
@@ -1256,6 +1263,40 @@ public class CallBuilder {
         responseStep,
         new RequestParams("deletePodCollection", namespace, null, null, callParams),
         deletecollectionPod);
+  }
+
+  private Call listJobAsync(
+      ApiClient client, String namespace, String cont, ApiCallback<V1JobList> callback)
+      throws ApiException {
+    return new BatchV1Api(client)
+        .listNamespacedJobAsync(
+            namespace,
+            pretty,
+            allowWatchBookmarks,
+            cont,
+            fieldSelector,
+            labelSelector,
+            limit,
+            resourceVersion,
+            timeoutSeconds,
+            watch,
+            callback);
+  }
+
+  private final CallFactory<V1JobList> listJob =
+      (requestParams, usage, cont, callback) ->
+          wrap(listJobAsync(usage, requestParams.namespace, cont, callback));
+
+  /**
+   * Asynchronous step for listing jobs.
+   *
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listJobAsync(String namespace, ResponseStep<V1JobList> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("listJob", namespace, null, null, callParams), listJob);
   }
 
   private Call createJobAsync(
@@ -1339,7 +1380,8 @@ public class CallBuilder {
       V1DeleteOptions deleteOptions,
       ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("deleteJob", namespace, name, deleteOptions, domainUid), deleteJob);
+        responseStep, new RequestParams("deleteJob", namespace, name, deleteOptions, domainUid),
+            deleteJob, timeoutSeconds);
   }
 
   /**
@@ -1866,6 +1908,21 @@ public class CallBuilder {
 
   private <T> Step createRequestAsync(
           ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, RetryStrategy retryStrategy) {
+    return STEP_FACTORY.createRequestAsync(
+            next,
+            requestParams,
+            factory,
+            retryStrategy,
+            helper,
+            timeoutSeconds,
+            maxRetryCount,
+            fieldSelector,
+            labelSelector,
+            resourceVersion);
+  }
+
+  private <T> Step createRequestAsync(
+          ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, int timeoutSeconds) {
     return STEP_FACTORY.createRequestAsync(
             next,
             requestParams,

@@ -27,6 +27,15 @@ data:
   {{- if .dns1123Fields }}
   dns1123Fields: {{ .dns1123Fields | quote }}
   {{- end }}
+  {{- if .introspectorJobNameSuffix }}
+  introspectorJobNameSuffix: {{ .introspectorJobNameSuffix | quote }}
+  {{- end }}
+  {{- if .externalServiceNameSuffix }}
+  externalServiceNameSuffix: {{ .externalServiceNameSuffix | quote }}
+  {{- end }}
+  {{- if .clusterSizePaddingValidationEnabled }}
+  clusterSizePaddingValidationEnabled: {{ .clusterSizePaddingValidationEnabled | quote }}
+  {{- end }}
 kind: "ConfigMap"
 metadata:
   labels:
