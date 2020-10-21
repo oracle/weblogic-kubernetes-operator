@@ -362,6 +362,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
     verifyWatchersNotDefined(ns);
   }
+  
   @Test
   public void afterNonDomainNamespaceAdded_WatchersAreNotDefined() {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, NS_WEBLOGIC1);
