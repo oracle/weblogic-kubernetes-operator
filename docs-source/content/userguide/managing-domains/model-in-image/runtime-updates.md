@@ -15,6 +15,7 @@ description = "Updating a running Model in Image domain's images and model files
  - [Changing a Domain `restartVersion`](#changing-a-domain-restartversion)
  - [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools)
  - [Example of adding a data source](#example-of-adding-a-data-source)
+ - [Dynamic updates of a running domain](#Updating-a-running-domain)
 
 #### Overview
 
@@ -226,3 +227,39 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
 
 For details on how to add a data source, see the [Update1 use case]({{% relref "/samples/simple/domains/model-in-image/_index.md#update1-use-case" %}})
 in the Model in Image sample.
+
+#### Updating a running domain
+
+When `useOnlineUpdate` is enabled in the `domain.spec.configuration`.  Operator will attempt to use the online update to the running domain, this 
+feature is useful or changing any dynamic attribute of the Weblogic Domain, no restart is necessary, and the change is immediate take effect.
+Once a new `introspectVersion` is specified in the domain resource YAML file and applied, the operator will start the introspection job to update the domain.
+
+|Scenarios|Expected Outcome|Actions Required|
+  |---------------------|-------------|-------|
+  |Changing a dynamic attribute|Changes are committed in running domain and effective immediately| No action required|
+  |Changing a non-dynamic attribute|Changes are committed, domain will rolling restart|No action required|
+  |Unsupported changes for dynamic updates|Error in the introspect job, job will retry until error is corrected or cancel|Use offline updates or recreate the domain|
+  |Errors in the model|Error in the introspect job, job will retry for 6 times until error is corrected or cancel|Correct the model|
+  |Additional changes in domain resource YAML other than `userOnlineUpdate` and `introspectVersion`|Change are automatically switch to offline as before|No action required|
+  
+Example use cases:
+
+|Scenarios|Expected Outcome|Actions Required|
+  |---------------------|-------------|-------|
+  |Changing a data source connection pool capacity (dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
+  |Changing a data source credentials (dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
+  |Changing a data source driver parameters properties (non dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
+  |Changing an application targeting (dynamic attribute)|Changes are committed in running domain and effective immediately|No action required|
+  |Changing the listen port on a server or channel (non supported online changes)|Error in the introspect job, job will retry until error is corrected or cancel|Use offline updates or recreate the domain|
+  |Adding a data source (dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
+  |Remove all targets of a datasource (dynamic changes)|Changes are committed in running domain and effective immediately| No action required|
+  |Deleting an application|Changes are committed in running domain and effective immediately| No action required|
+  |Changing weblogic administrator credentials (non dynamic changes)|Changes are committed, domain will rolling restart|No action required|
+  |Changing image in the domain resource YAML at the same time|Offline changes are applied and domain will rolling restart|No action required|
+
+Unsupported Changes:
+
+- Topology changes. The introspection job will fail and automatically retry up to 6 times.
+- Dependency deletion. For example, trying to delete a datasource that is referenced by a persistent store, even if both of them are deleting at the same time. The introspection job will fail and automatically retry up to 6 times
+ 
+If you are not sure which attributes are dynamic or non-dynamic, specifying domain.spec.configuration.rollBackIfRestartRequired` to `true` will rollback all changes as if no changes have been applied. The changes in your configmap and domain resources need to be reverted manually. 
