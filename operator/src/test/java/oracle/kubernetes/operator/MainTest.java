@@ -87,7 +87,7 @@ public class MainTest extends ThreadFactoryTestBase {
   private static final String GIT_BUILD_VERSION = "3.1.0";
   private static final String GIT_BRANCH = "master";
   private static final String GIT_COMMIT = "a987654";
-  private static final String GIT_BUILD_TIME = "Jan-27-2018";
+  private static final String GIT_BUILD_TIME = "Sep-10-2015";
   private static final String IMPL = GIT_BRANCH + "." + GIT_COMMIT;
 
   private static final String LABEL = "weblogic-operator";
@@ -257,7 +257,7 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
                                 NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
-    testSupport.runSteps(new Main.Namespaces(delegate, false).readExistingNamespaces());
+    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
 
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
@@ -297,7 +297,7 @@ public class MainTest extends ThreadFactoryTestBase {
           NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
-    testSupport.runSteps(new Main.Namespaces(delegate, false).readExistingNamespaces());
+    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
 
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC2), isNamespaceStarting()),
@@ -313,7 +313,7 @@ public class MainTest extends ThreadFactoryTestBase {
           NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
-    testSupport.runSteps(new Main.Namespaces(delegate, false).readExistingNamespaces());
+    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
 
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
@@ -339,7 +339,7 @@ public class MainTest extends ThreadFactoryTestBase {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(LAST_NAMESPACE_NUM - 1);
 
-    testSupport.runSteps(new Main.Namespaces(delegate, false).readExistingNamespaces());
+    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
 
     assertThat(logRecords, containsWarning(MessageKeys.NAMESPACE_IS_MISSING));
   }
@@ -353,7 +353,7 @@ public class MainTest extends ThreadFactoryTestBase {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(LAST_NAMESPACE_NUM);
 
-    testSupport.runSteps(new Main.Namespaces(delegate, false).readExistingNamespaces());
+    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
   }
 
   private void defineSelectionStrategy(SelectionStrategy selectionStrategy) {
@@ -369,7 +369,7 @@ public class MainTest extends ThreadFactoryTestBase {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(MULTICHUNK_LAST_NAMESPACE_NUM);
 
-    testSupport.runSteps(new Main.Namespaces(delegate, false).readExistingNamespaces());
+    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
   }
 
   private void createNamespaces(int lastNamespaceNum) {

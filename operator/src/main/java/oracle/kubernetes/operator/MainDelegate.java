@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 
@@ -20,4 +21,6 @@ interface MainDelegate {
   String getPrincipal();
 
   DomainProcessor getProcessor();
+
+  KubernetesVersion getKubernetesVersion();
 }

@@ -135,6 +135,7 @@ public class Main {
     private final String operatorImpl;
     private final String operatorBuildTime;
     private final SemanticVersion productVersion;
+    private final KubernetesVersion kubernetesVersion;
 
     public MainDelegateImpl(Properties buildProps) {
       buildVersion = buildProps.getProperty("git.build.version");
@@ -142,6 +143,7 @@ public class Main {
       operatorBuildTime = buildProps.getProperty("git.build.time");
 
       productVersion = (buildVersion == null) ? null : new SemanticVersion(buildVersion);
+      kubernetesVersion = HealthCheckHelper.performK8sVersionCheck();
     }
 
     @Override
@@ -179,6 +181,11 @@ public class Main {
     @Override
     public DomainProcessor getProcessor() {
       return processor;
+    }
+
+    @Override
+    public KubernetesVersion getKubernetesVersion() {
+      return kubernetesVersion;
     }
   }
 
@@ -235,7 +242,7 @@ public class Main {
 
   private void startOperator(Runnable completionAction) {
     try {
-      version = HealthCheckHelper.performK8sVersionCheck();
+      version = delegate.getKubernetesVersion();
       runSteps(createDomainRecheckSteps(DateTime.now()), completionAction);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -296,12 +303,12 @@ public class Main {
       isFullRecheck = true;
       lastFullRecheck.set(now);
     }
-    Namespaces namespaces = new Namespaces(delegate, isFullRecheck);
+    Namespaces namespaces = new Namespaces(isFullRecheck);
 
     return Step.chain(
         new InitializeNamespacesSecurityStep(configuredDomainNamespaces),
         NamespaceRulesReviewStep.forOperatorNamespace(),
-        CrdHelper.createDomainCrdStep(version, delegate.getProductVersion()),
+        CrdHelper.createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion()),
         createReadNamespacesStep(namespaces));
   }
 
@@ -340,16 +347,10 @@ public class Main {
     /** The key in a Packet of the collection of existing namespaces that are designated as domain namespaces. */
     static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
 
-    private final MainDelegate delegate;
     boolean isFullRecheck;
 
-    public Namespaces(MainDelegate delegate, boolean isFullRecheck) {
-      this.delegate = delegate;
+    public Namespaces(boolean isFullRecheck) {
       this.isFullRecheck = isFullRecheck;
-    }
-
-    MainDelegate getDelegate() {
-      return delegate;
     }
 
     public enum SelectionStrategy {
@@ -679,7 +680,7 @@ public class Main {
           return;
         }
 
-        Namespaces namespaces = new Namespaces(null, true);
+        Namespaces namespaces = new Namespaces(true);
         Step strategy = new StartNamespacesStep(namespaces, Collections.singletonList(ns));
         runSteps(strategy, createPacketWithLoggingContext(ns));
         break;

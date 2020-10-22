@@ -123,7 +123,7 @@ public class NamespaceTest {
   }
 
   private void processNamespaces() {
-    testSupport.withClearPacket().runSteps(new Main.Namespaces(delegate, false).readExistingNamespaces());
+    testSupport.withClearPacket().runSteps(new Main.Namespaces(false).readExistingNamespaces());
   }
 
   @Test
