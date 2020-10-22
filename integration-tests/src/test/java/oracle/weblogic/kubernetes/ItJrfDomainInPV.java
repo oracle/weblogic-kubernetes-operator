@@ -46,6 +46,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -69,6 +70,8 @@ public class ItJrfDomainInPV {
   private static String dbNamespace = null;
   private static String opNamespace = null;
   private static String jrfDomainNamespace = null;
+  private static String oracle_home = null;
+  private static String java_home = null;
 
   private static final String RCUSCHEMAPREFIX = "jrfdomainpv";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
@@ -173,9 +176,20 @@ public class ItJrfDomainInPV {
     File domainPropertiesFile = assertDoesNotThrow(() ->
             File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
+
+    //get ENV variable from the image
+    assertNotNull(getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "ORACLE_HOME"),
+        "envVar ORACLE_HOME from image is null");
+    oracle_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "ORACLE_HOME");
+    logger.info("ORACLE_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, oracle_home);
+    assertNotNull(getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "JAVA_HOME"),
+        "envVar JAVA_HOME from image is null");
+    java_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "JAVA_HOME");
+    logger.info("JAVA_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, java_home);
+
     Properties p = new Properties();
-    p.setProperty("oracleHome", "/u01/oracle"); //default $ORACLE_HOME
-    p.setProperty("javaHome", "/u01/jdk"); //default $JAVA_HOME
+    p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME
+    p.setProperty("javaHome", java_home); //default $JAVA_HOME
     p.setProperty("domainParentDir", "/shared/domains/");
     p.setProperty("domainName", domainUid);
     p.setProperty("domainUser", ADMIN_USERNAME_DEFAULT);
