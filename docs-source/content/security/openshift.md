@@ -7,16 +7,9 @@ description: "OpenShift information for the operator"
 
 #### Security requirements to run WebLogic in OpenShift
 
-WebLogic Server Docker images obtained from Oracle Container Registry have an `oracle` user with
-UID 1000 and it is in a group, which is also called `oracle` and has GID 1000.
-The WebLogic Server Kubernetes Operator Docker images use the same UID and GID.
-
-OpenShift, by default, allocates a high, random UID for each container and this
-UID may not have the necessary permissions to run the programs in the container.
-
-Since August 2020, the standard WebLogic Server images that are published in
-Oracle Container Registry set the file system group ownership to
-allow the high UIDs allocated by OpenShift to have the necessary permissions.
+WebLogic Server Kubernetes Operator Docker images starting with version 3.1 and
+WebLogic Server Docker images obtained from Oracle Container Registry after August 2020
+have an `oracle` user with UID 1000 with the default group set to `root`.
 
 Here is an excerpt from a standard WebLogic [Dockerfile](https://github.com/oracle/docker-images/blob/master/OracleWebLogic/dockerfiles/12.2.1.4/Dockerfile.generic#L89)
 that demonstrates how the file system group ownership is configured in the standard WebLogic Server images:
@@ -33,16 +26,27 @@ RUN mkdir -p /u01 && \
 COPY --from=builder --chown=oracle:root /u01 /u01
 ```
 
-However, if you build your own image, or obtain an image from another source, it
-may not have the necessary permissions.  You may need to configure similar file
-system permissions to allow your image to work in OpenShift.
+OpenShift, by default, enforces the `restricted` security context constraint which
+allocates a high, random UID in the `root` group for each container.  The standard
+images mentioned above are designed to work with the `restricted` security context constraint.
 
-Alternatively, you may choose to configure OpenShift to allow use of UID 1000.  This
-can be done using a security context constraint.  Oracle recommends that you define
+However, if you build your own image, have an older version of an image, or obtain an
+image from another source, it may not have the necessary permissions.  You may need to
+configure similar file system permissions to allow your image to work in OpenShift.
+Specifically, you need to make sure the following directories have `root` as their
+group, and that the group read and group write permissions are enabled:
+
+* For the operator, `/operator` and `/logs`.
+* For WebLogic Server images, `/u01` (or the ultimate parent directory of your
+  Oracle Home and domain if you put them in different locations).
+
+If your OpenShift environment has a different default security context constraint,
+you may need to configure OpenShift to allow use of UID 1000 by creating
+a security context constraint.  Oracle recommends that you define
 a custom security context constraint that has just the permissions that are required
-and apply that to WebLogic pods.  If you prefer, you can use the built-in `anyuid`
-Security Context Constraint, but you should be aware that it provides more permissions
-than are needed, and is therefore a less secure option.
+and apply that to WebLogic pods.  Oracle does not recommend using the built-in `anyuid`
+Security Context Constraint, because it provides more permissions
+than are needed, and is therefore less secure.
 
 #### Create a custom Security Context Constraint
 
@@ -103,39 +107,6 @@ After you have created the security context constraint, you can install the WebL
 Make sure you use the same service account to which you granted permission in the security
 context constraint (`weblogic-operator` in the preceding example).  The operator will then run
 with UID 1000, and any WebLogic domain it creates will also run with UID 1000.
-
-#### Use the `anyuid` Security Context Constraint
-
-The built-in `anyuid` security context constraint
-will also ensure proper access to the file system within the
-Docker image, however this security context constraint grants more permissions
-than are needed. This means that the administrator must:
-
-1. Ensure the `anyuid` security content is granted
-2. Ensure that WebLogic containers are annotated with `openshift.io/scc: anyuid`
-
-For example, to update the OpenShift policy, use:
-
-```bash
-$ oc adm policy add-scc-to-user anyuid -z default
-```
-
-To annotate the WebLogic containers, update the WebLogic `Domain` resource
-to include `annotations` for the `serverPod`. For example:
-
-``` yaml
-kind: Domain
-metadata:
-  name: domain1
-spec:
-  domainUID: domain1
-  serverPod:
-    env:
-      - name: var1
-        value: value1
-    annotations:
-      openshift.io/scc: anyuid
-```
 
 {{% notice note %}}
 For additional information about OpenShift requirements and the operator,
