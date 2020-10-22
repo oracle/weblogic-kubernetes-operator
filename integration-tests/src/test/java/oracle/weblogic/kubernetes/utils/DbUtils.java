@@ -103,7 +103,7 @@ public class DbUtils {
    * @param dbPort NodePort of DB
    * @param dbNamespace namespace where DB instance is going to start
    */
-  public static void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace)
+  public static synchronized void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace)
       throws ApiException {
     LoggingFacade logger = getLogger();
     Map labels = new HashMap<String, String>();
