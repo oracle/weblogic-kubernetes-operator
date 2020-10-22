@@ -73,7 +73,7 @@ import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
-//import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -676,7 +676,7 @@ public class ItTwoDomainsLoadBalancers {
     // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
     // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
     // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
-    verifyHeadersInAdminServerLog();
+    verifyHeadersInAdminServerLog(2);
   }
 
   /**
@@ -714,7 +714,7 @@ public class ItTwoDomainsLoadBalancers {
     // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
     // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
     // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
-    verifyHeadersInAdminServerLog();
+    verifyHeadersInAdminServerLog(2);
   }
 
   /**
@@ -744,15 +744,14 @@ public class ItTwoDomainsLoadBalancers {
   @DisplayName("Verify WebLogic admin console is accessible through Traefik path routing with HTTPS protocol")
   public void testTraefikTLSPathRoutingAdminServer() {
     logger.info("Verifying WebLogic admin console is accessible through Traefik path routing with HTTPS protocol");
-    for (String domainUid : domainUids) {
-      verifyAdminServerAccess(true, getTraefikLbNodePort(true), false,
-          "", "/" + domainUid.substring(6) + "console");
-    }
+
+    verifyAdminServerAccess(true, getTraefikLbNodePort(true), false,
+        "", "");
 
     // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
     // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
     // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
-    verifyHeadersInAdminServerLog();
+    verifyHeadersInAdminServerLog(1);
   }
 
   /**
@@ -776,7 +775,7 @@ public class ItTwoDomainsLoadBalancers {
   /**
    * Cleanup all the remaining artifacts in default namespace created by the test.
    */
-  //@AfterAll
+  @AfterAll
   public void tearDownAll() {
     // uninstall Traefik loadbalancer
     if (traefikHelmParams != null) {
@@ -1354,6 +1353,7 @@ public class ItTwoDomainsLoadBalancers {
                     .value("-Dweblogic.StdoutDebugEnabled=true "
                         + "-Dweblogic.http.isWLProxyHeadersAccessible=true "
                         + "-Dweblogic.debug.DebugHttp=true "
+                        + "-Dweblogic.rjvm.allowUnknownHost=true "
                         + "-Dweblogic.kernel.debug=true "
                         + "-Dweblogic.debug.DebugMessaging=true "
                         + "-Dweblogic.debug.DebugConnection=true "
@@ -2235,7 +2235,7 @@ public class ItTwoDomainsLoadBalancers {
     createPVPVCAndVerify(v1pv, v1pvc, labelSelector, apacheNamespace);
   }
 
-  private void verifyHeadersInAdminServerLog() {
+  private void verifyHeadersInAdminServerLog(int numberOfDomains) {
 
     for (int i = 0; i < numberOfDomains; i++) {
       int index = i;
