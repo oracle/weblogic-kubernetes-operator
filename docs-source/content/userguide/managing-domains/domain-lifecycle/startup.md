@@ -11,7 +11,7 @@ started, or restarted. To start, stop, or restart servers, modify these fields o
 
 * [Starting and stopping servers](#starting-and-stopping-servers)
     * [Common starting and stopping scenarios](#common-starting-and-stopping-scenarios)
-    * [Domain Lifecycle sample scripts](#domain-lifecycle-sample-scripts)
+    * [Domain lifecycle sample scripts](#domain-lifecycle-sample-scripts)
 * [Shutdown options](#shutdown-options)
 * [Restarting servers](#restarting-servers)
     * [Rolling restarts](#rolling-restarts)
@@ -83,7 +83,7 @@ updates before advancing the server to the running state.
 
 Changes to the `serverStartState` property do not affect already started servers.
 
-### Domain Lifecycle sample scripts
+### Domain lifecycle sample scripts
 Beginning with operator version 3.1.0, the WebLogic Server Kubernetes Operator project provides a set of sample scripts to shut-down or start-up a specific managed-server, cluster or the entire domain. These scripts are located in the `kubernetes/samples/scripts/domain-lifecycle` directory. These can be helpful when scripting the lifecycle of a WebLogic Server Domain.
 
 #### Scripts to start and stop a managed server
@@ -94,17 +94,17 @@ $ startServer.sh -d domain1 -n weblogic-domain-1 -s managed-server1
 domain.weblogic.oracle/domain1 patched
 [INFO] Successfully patched server 'managed-server1' with 'ALWAYS' start policy!
 
-       The replica count for cluster 'cluster-1' updated to 3.
+       The replica count for cluster 'cluster-1' updated to 1.
 ```
 
-The [`stopServer.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/stopServer.sh) script shuts down a managed server by patching it's server start policy to `NEVER`. It also decreases the replica count for the managed server's cluster by `1`. The script provides an option to keep the replica count value constant. Please see script `usage` information using `-h` option. 
+The [`stopServer.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/stopServer.sh) script shuts down a running managed server by patching it's server start policy to `NEVER`. It also decreases the replica count for the managed server's cluster by `1`. The script provides an option to keep the replica count value constant. Please see script `usage` information using `-h` option. 
 ```
 $ stopServer.sh -d domain1 -n weblogic-domain-1 -s managed-server1
 [INFO] Patching start policy of server 'managed-server1' from 'ALWAYS' to 'NEVER' and decrementing replica count for cluster 'cluster-1'.
 domain.weblogic.oracle/domain1 patched
 [INFO] Successfully patched server 'managed-server1' with 'NEVER' start policy!
 
-       The replica count for cluster 'cluster-1' updated to 2.
+       The replica count for cluster 'cluster-1' updated to 0.
 ```
 
 #### Script behavior when starting or stopping a clustered managed server
@@ -136,7 +136,7 @@ domain.weblogic.oracle/domain1 patched
 ```
 
 ### Scripts to start and stop a Domain
-The [`startDomain.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/startDomain.sh) script starts a Domain by patching it's server start policy to `IF_NEEDED`. Once the Domain's server start policy is updated to `IF_NEEDED`, the operator will start the WebLogic Server instance Pods that are part of the Domain if they are not already running. Please see script `usage` information using `-h` option.
+The [`startDomain.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/domain-lifecycle/startDomain.sh) script starts a deployed Domain by patching it's server start policy to `IF_NEEDED`. Once the Domain's server start policy is updated to `IF_NEEDED`, the operator will start the WebLogic Server instance Pods that are part of the Domain if they are not already running. Please see script `usage` information using `-h` option.
 ```
 $ startDomain.sh -d domain1 -n weblogic-domain-1
 [INFO] Patching domain 'domain1' from serverStartPolicy='NEVER' to 'IF_NEEDED'.

@@ -11,18 +11,18 @@ function usage() {
 
   cat << EOF
 
-  This is a helper script for shutting down a deployed domain by patching
-  it's 'spec.serverStartPolicy' field to 'NEVER'. This change will cause
-  the operator to initiate shutdown of domain's WebLogic server instance 
-  pods if the pods are already running.
+  This script stops a deployed WebLogic domain by patching it's
+  'spec.serverStartPolicy' field to 'NEVER'. This change will cause
+  the operator to initiate shutdown of the domain's WebLogic server
+  instance pods if the pods are running.
  
   Usage:
  
     $(basename $0) [-n mynamespace] [-d mydomainuid] [-m kubecli]
   
-    -d <domain_uid>     : Default is 'sample-domain1'.
+    -d <domain_uid>     : Domain unique-id. Default is 'sample-domain1'.
 
-    -n <namespace>      : Default is 'sample-domain1-ns'.
+    -n <namespace>      : Domain namespace. Default is 'sample-domain1-ns'.
 
     -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl'.
 

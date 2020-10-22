@@ -13,10 +13,10 @@ function usage() {
 
   cat << EOF
 
-  This is a script for stopping a managed server in a domain by patching
-  it's 'serverStartPolicy' field to 'NEVER'. This change will cause
-  the operator to initiate shutdown of WebLogic managed server pod if the
-  pod is already running.
+  This script stops a running WebLogic managed server in a domain by
+  patching it's 'serverStartPolicy' field to 'NEVER'. This change will
+  cause the operator to initiate shutdown of the WebLogic managed server
+  pod if the pod is running.
  
   Usage:
  
@@ -24,9 +24,9 @@ function usage() {
   
     -s <server_name>           : Server name parameter is required.
 
-    -d <domain_uid>            : Default is 'sample-domain1'.
+    -d <domain_uid>            : Domain unique-id. Default is 'sample-domain1'.
 
-    -n <namespace>             : Default is 'sample-domain1-ns'.
+    -n <namespace>             : Domain namespace. Default is 'sample-domain1-ns'.
     
     -k <keep_replica_constant> : Keep replica count constant. Default behavior is to decrement replica count.
 
@@ -45,7 +45,7 @@ domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
 keepReplicaConstant=false
 
-while getopts "ks:m:n:d:h:" opt; do
+while getopts "ks:m:n:d:h" opt; do
   case $opt in
     s) serverName="${OPTARG}"
     ;;

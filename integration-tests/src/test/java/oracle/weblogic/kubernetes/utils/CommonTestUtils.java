@@ -1635,7 +1635,7 @@ public class CommonTestUtils {
    * Check whether cluster replica count matches with input parameter value.
    * @param clusterName Name of cluster to check
    * @param domainName Name of domain to which cluster belongs
-   * @param namespace the namespace in which to check the service does not exist
+   * @param namespace cluster's namespace 
    * @param replicaCount replica count value to match
    * @return
    */

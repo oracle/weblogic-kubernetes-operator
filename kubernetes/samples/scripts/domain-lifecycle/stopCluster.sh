@@ -11,7 +11,7 @@ function usage() {
 
   cat << EOF
 
-  This is a helper script for stopping a cluster in a domain by patching
+  This script stops a WebLogic cluster in a domain by patching
   it's 'serverStartPolicy' field to 'NEVER'. This change will cause
   the operator to initiate shutdown of cluster's WebLogic server instance 
   pods if the pods are running.
@@ -22,13 +22,13 @@ function usage() {
   
     -c <cluster>        : Cluster name parameter is required.
 
-    -d <domain_uid>     : Default is 'sample-domain1'.
+    -d <domain_uid>     : Domain unique-id. Default is 'sample-domain1'.
 
-    -n <namespace>      : Default is 'sample-domain1-ns'.
+    -n <namespace>      : Domain namespace. Default is 'sample-domain1-ns'.
 
     -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl'.
 
-    -?                  : This help.
+    -h                  : This help.
    
 EOF
 exit $1

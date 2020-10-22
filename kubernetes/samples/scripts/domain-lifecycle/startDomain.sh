@@ -11,18 +11,17 @@ function usage() {
 
   cat << EOF
 
-  This is a helper script for starting a domain by patching
-  it's 'spec.serverStartPolicy' field to 'IF_NEEDED'. This change will cause
-  the operator to initiate startup of domain's WebLogic pods if the pods 
-  are not already running.
+  This script starts a deployed WebLogic domain by patching it's 'spec.serverStartPolicy'
+  field to 'IF_NEEDED'. This change will cause the operator to initiate startup of
+  domain's WebLogic server instance pods if the pods are not already running.
  
   Usage:
  
     $(basename $0) [-n mynamespace] [-d mydomainuid] [-m kubecli]
   
-    -d <domain_uid>     : Default is 'sample-domain1'.
+    -d <domain_uid>     : Domain unique-id. Default is 'sample-domain1'.
 
-    -n <namespace>      : Default is 'sample-domain1-ns'.
+    -n <namespace>      : Domain namespace. Default is 'sample-domain1-ns'.
 
     -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl'.
 

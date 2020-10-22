@@ -12,7 +12,7 @@ function usage() {
 
   cat << EOF
 
-  This is a helper script for starting a managed server in a domain by patching
+  This script starts a WebLogic managed server in a domain by patching
   it's 'serverStartPolicy' field to 'ALWAYS'. This change will cause
   the operator to initiate start of WebLogic managed server pod if the pod 
   is not already running.
@@ -23,9 +23,9 @@ function usage() {
   
     -s <server_name>           : Server name parameter is required.
 
-    -d <domain_uid>            : Default is 'sample-domain1'.
+    -d <domain_uid>            : Domain unique-id. Default is 'sample-domain1'.
 
-    -n <namespace>             : Default is 'sample-domain1-ns'.
+    -n <namespace>             : Domain namespace. Default is 'sample-domain1-ns'.
 
     -k <keep_replica_constant> : Keep replica count constant. Default behavior is to increment replica count.
 
@@ -40,12 +40,11 @@ exit $1
 kubernetesCli=${KUBERNETES_CLI:-kubectl}
 serverName=""
 clusterName=""
-domainName=""
 domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
 keepReplicaConstant=false
 
-while getopts "kd:n:m:s:h:" opt; do
+while getopts "kd:n:m:s:h" opt; do
   case $opt in
     s) serverName="${OPTARG}"
     ;;
