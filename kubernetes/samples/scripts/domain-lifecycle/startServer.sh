@@ -13,9 +13,11 @@ function usage() {
   cat << EOF
 
   This script starts a WebLogic managed server in a domain by patching
-  it's 'serverStartPolicy' field to 'ALWAYS'. This change will cause
-  the operator to initiate start of WebLogic managed server pod if the pod 
-  is not already running.
+  it's 'serverStartPolicy' field to 'ALWAYS'. It also increases the replica
+  count value for the managed server's cluster by '1'.  The replica count
+  value can be kept constant by using '-k' option. If the server pod is
+  already running, script exits without updating 'serverStartPolicy' or
+  replica count value.
  
   Usage:
  
@@ -76,7 +78,7 @@ function initialize {
 
   # Validate that server name parameter is specified.
   if [ -z "${serverName}" ]; then
-    validationError "Please specify server name using '-s' parameter e.g. '-s managed-server1'."
+    validationError "Please specify a server name using '-s' parameter e.g. '-s managed-server1'."
   fi
 
   failIfValidationErrors

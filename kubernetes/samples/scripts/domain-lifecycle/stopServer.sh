@@ -14,9 +14,11 @@ function usage() {
   cat << EOF
 
   This script stops a running WebLogic managed server in a domain by
-  patching it's 'serverStartPolicy' field to 'NEVER'. This change will
-  cause the operator to initiate shutdown of the WebLogic managed server
-  pod if the pod is running.
+  patching it's 'serverStartPolicy' field to 'NEVER'. It also decreases
+  the replica count value for the managed server's cluster by '1'. The
+  replica count value can be kept constant by using '-k' option. If the
+  server pod is not running, script exits without updating 'serverStartPolicy'
+  or replica count value.
  
   Usage:
  
@@ -76,7 +78,7 @@ function initialize {
 
   # Validate that server name parameter is specified.
   if [ -z "${serverName}" ]; then
-    validationError "Please specify name of server to start using '-s' parameter e.g. '-s managed-server1'."
+    validationError "Please specify the server name using '-s' parameter e.g. '-s managed-server1'."
   fi
 
   failIfValidationErrors
