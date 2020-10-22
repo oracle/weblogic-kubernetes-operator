@@ -469,12 +469,13 @@ Example:
 externalOperatorKey: QmFnIEF0dHJpYnV0ZXMKICAgIGZyaWVuZGx5TmFtZTogd2VibG9naWMtb3B ...
 ```
 ##### `tokenReviewAuthentication`
-tokenReviewAuthentication, if set to `true`, specifies whether the the operator's REST API should use
-   1. Kubernetes token review API for authenticating users, and
-   2. Kubernetes subject access review API for authorizing a user's operation (get, list,
-      patch, etc) on a resource.
-   3. Update the Domain resource using the operator's privileges.
- This parameter, if set to `false`, will use the caller's bearer token for any update
+If set to `true`, tokenReviewAuthentication specifies whether the the operator's REST API should use:
+   * Kubernetes token review API for authenticating users and
+   * Kubernetes subject access review API for authorizing a user's operation (get, list,
+      patch, and such) on a resource.
+   * Update the Domain resource using the operator's privileges.
+ 
+ If set to `false`, the operator's REST API will use the caller's bearer token for any update
  to the Domain resource so that it is done using the caller's privileges.
  
  Defaults to `false`.

@@ -87,10 +87,10 @@ For example, when using `curl`:
 curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H "Authorization:Bearer ..." -d '{ "managedServerCount": 3 }' https://.../scaling
 ```
 
-If you omit the header, you'll get a `400 (bad request)` response. If you omit the Bearer Authentication header, then you'll get a `401 (Unauthorized)` response.  If the service account or user associated to the `Bearer` token does not have permission to `patch` the WebLogic domain resource, you'll get a `403 (Forbidden)` response.
+If you omit the header, you'll get a `400 (bad request)` response. If you omit the Bearer Authentication header, then you'll get a `401 (Unauthorized)` response.  If the service account or user associated with the `Bearer` token does not have permission to `patch` the WebLogic domain resource, then you'll get a `403 (Forbidden)` response.
 
 {{% notice note %}}
-To resolve a `403 (Forbidden)` response, when calling the operator's REST scaling API, you may need to add the `patch` request verb to the cluster role associated to the WebLogic `domains` resource.
+To resolve a `403 (Forbidden)` response, when calling the operator's REST scaling API, you may need to add the `patch` request verb to the cluster role associated with the WebLogic `domains` resource.
 The example ClusterRole definition below grants `get`, `list`, `patch` and `update` access to the WebLogic `domains` resource 
 {{% /notice %}}
 
