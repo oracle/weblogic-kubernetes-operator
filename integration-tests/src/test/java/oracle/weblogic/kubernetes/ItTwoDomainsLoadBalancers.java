@@ -745,8 +745,7 @@ public class ItTwoDomainsLoadBalancers {
   public void testTraefikTLSPathRoutingAdminServer() {
     logger.info("Verifying WebLogic admin console is accessible through Traefik path routing with HTTPS protocol");
 
-    verifyAdminServerAccess(true, getTraefikLbNodePort(true), false,
-        "", "");
+    verifyAdminServerAccess(true, getTraefikLbNodePort(true), false, "", "");
 
     // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
     // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
