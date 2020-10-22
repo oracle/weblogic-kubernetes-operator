@@ -303,34 +303,33 @@ public class Main {
       isFullRecheck = true;
       lastFullRecheck.set(now);
     }
-    Namespaces namespaces = new Namespaces(isFullRecheck);
 
     return Step.chain(
         new InitializeNamespacesSecurityStep(configuredDomainNamespaces),
         NamespaceRulesReviewStep.forOperatorNamespace(),
         CrdHelper.createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion()),
-        createReadNamespacesStep(namespaces));
+        createReadNamespacesStep(isFullRecheck));
   }
 
-  private static Step createReadNamespacesStep(Namespaces namespaces) {
-    return Namespaces.getSelectionStrategy().getSelection(new ReadNamespacesStepsVisitor(namespaces));
+  private static Step createReadNamespacesStep(boolean fullRecheck) {
+    return Namespaces.getSelectionStrategy().getSelection(new ReadNamespacesStepsVisitor(fullRecheck));
   }
 
   static class ReadNamespacesStepsVisitor implements NamespaceStrategyVisitor<Step> {
-    private final Namespaces namespaces;
+    private final boolean fullRecheck;
 
-    ReadNamespacesStepsVisitor(Namespaces namespaces) {
-      this.namespaces = namespaces;
+    ReadNamespacesStepsVisitor(boolean fullRecheck) {
+      this.fullRecheck = fullRecheck;
     }
 
     @Override
     public Step getDefaultSelection() {
-      return namespaces.readExistingNamespaces();
+      return Namespaces.readExistingNamespaces(fullRecheck);
     }
 
     @Override
     public Step getDedicatedStrategySelection() {
-      return new StartNamespacesStep(namespaces, Collections.singletonList(getOperatorNamespace()));
+      return new StartNamespacesStep(fullRecheck, Collections.singletonList(getOperatorNamespace()));
     }
   }
 
@@ -500,16 +499,18 @@ public class Main {
      * Reads the existing namespaces from Kubernetes and performs appropriate processing on those
      * identified as domain namespaces.
       */
-    Step readExistingNamespaces() {
+    static Step readExistingNamespaces(boolean fullRecheck) {
       return new CallBuilder()
-            .withLabelSelectors(getSelectionStrategy().getLabelSelectors())
-            .listNamespaceAsync(new NamespaceListStep());
+            .withLabelSelectors(Namespaces.getSelectionStrategy().getLabelSelectors())
+            .listNamespaceAsync(new NamespaceListStep(fullRecheck));
     }
 
-    private class NamespaceListStep extends DefaultResponseStep<V1NamespaceList> {
+    private static class NamespaceListStep extends DefaultResponseStep<V1NamespaceList> {
+      private final boolean fullRecheck;
 
-      NamespaceListStep() {
+      NamespaceListStep(boolean fullRecheck) {
         super(new NamespaceListAfterStep());
+        this.fullRecheck = fullRecheck;
       }
 
       // If unable to list the namespaces, we may still be able to start them if we are using
@@ -517,7 +518,7 @@ public class Main {
       @Override
       protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1NamespaceList> callResponse) {
         return getConfiguredDomainNamespaces() != null && isNotAuthorizedOrForbidden(callResponse)
-                ? doNext(startNamespaces(Namespaces.this, getConfiguredDomainNamespaces()), packet) :
+                ? doNext(startNamespaces(getConfiguredDomainNamespaces(), fullRecheck), packet) :
                 super.onFailureNoRetry(packet, callResponse);
       }
 
@@ -537,7 +538,7 @@ public class Main {
       private Step createNextSteps(String intialResourceVersion, Set<String> namespacesToStartNow) {
         List<Step> nextSteps = new ArrayList<>();
         if (!namespacesToStartNow.isEmpty()) {
-          nextSteps.add(startNamespaces(Namespaces.this, namespacesToStartNow));
+          nextSteps.add(startNamespaces(namespacesToStartNow, fullRecheck));
           if (getConfiguredDomainNamespaces() == null) {
             nextSteps.add(new InitializeNamespacesSecurityStep(namespacesToStartNow, null));
           }
@@ -551,8 +552,8 @@ public class Main {
         return namespaceNames.stream().filter(getSelectionStrategy()::isDomainNamespace).collect(Collectors.toSet());
       }
 
-      private Step startNamespaces(Namespaces namespaces, Collection<String> namespacesToStart) {
-        return new StartNamespacesStep(namespaces, namespacesToStart);
+      private Step startNamespaces(Collection<String> namespacesToStart, boolean fullRecheck) {
+        return new StartNamespacesStep(fullRecheck, namespacesToStart);
       }
 
       private List<String> getNames(V1NamespaceList result) {
@@ -681,7 +682,7 @@ public class Main {
         }
 
         Namespaces namespaces = new Namespaces(true);
-        Step strategy = new StartNamespacesStep(namespaces, Collections.singletonList(ns));
+        Step strategy = new StartNamespacesStep(namespaces.isFullRecheck, Collections.singletonList(ns));
         runSteps(strategy, createPacketWithLoggingContext(ns));
         break;
 
@@ -758,35 +759,35 @@ public class Main {
   }
 
   private static class StartNamespacesStep extends ForEachNamespaceStep {
-    private final Namespaces namespaces;
+    private final boolean fullRecheck;
 
-    StartNamespacesStep(Namespaces namespaces, Collection<String> domainNamespaces) {
+    StartNamespacesStep(boolean fullRecheck, Collection<String> domainNamespaces) {
       super(domainNamespaces);
-      this.namespaces = namespaces;
+      this.fullRecheck = fullRecheck;
     }
 
     @Override
     protected Step action(String ns) {
       return Step.chain(
           NamespaceRulesReviewStep.forNamespace(ns),
-          new StartNamespaceBeforeStep(namespaces, ns),
+          new StartNamespaceBeforeStep(ns, fullRecheck),
           DomainNamespaces.readExistingResources(ns, processor));
     }
   }
 
   private static class StartNamespaceBeforeStep extends Step {
-    private final Namespaces namespaces;
     private final String ns;
+    private final boolean fullRecheck;
 
-    StartNamespaceBeforeStep(Namespaces namespaces, String ns) {
-      this.namespaces = namespaces;
+    StartNamespaceBeforeStep(String ns, boolean fullRecheck) {
       this.ns = ns;
+      this.fullRecheck = fullRecheck;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       NamespaceStatus nss = DomainNamespaces.getNamespaceStatus(ns);
-      if (namespaces.isFullRecheck || !nss.isNamespaceStarting().getAndSet(true)) {
+      if (fullRecheck || !nss.isNamespaceStarting().getAndSet(true)) {
         return doNext(packet);
       } else {
         return doEnd(packet);

@@ -17,6 +17,8 @@ import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -26,7 +28,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.helpers.HelmAccess.OPERATOR_DOMAIN_NAMESPACES;
@@ -75,7 +76,7 @@ public class NamespaceTest {
     processNamespaces();
     defineNamespaces(NS);
 
-    testSupport.runSteps(new Main(createNiceStub(MainDelegate.class)).createDomainRecheckSteps(DateTime.now()));
+    testSupport.runSteps(new Main(delegate).createDomainRecheckSteps(DateTime.now()));
     assertThat(DomainNamespaces.getJobWatcher(NS), not(sameInstance(oldWatcher)));
   }
 
@@ -123,7 +124,7 @@ public class NamespaceTest {
   }
 
   private void processNamespaces() {
-    testSupport.withClearPacket().runSteps(new Main.Namespaces(false).readExistingNamespaces());
+    testSupport.withClearPacket().runSteps(Main.Namespaces.readExistingNamespaces(false));
   }
 
   @Test
@@ -187,10 +188,26 @@ public class NamespaceTest {
   }
 
   abstract static class DomainProcessorStub implements DomainProcessor {
+    @Override
+    public void reportSuspendedFibers() {
+    }
   }
 
   abstract static class MainDelegateStub implements MainDelegate {
+    @Override
+    public DomainProcessor getProcessor() {
+      return createStrictStub(DomainProcessorStub.class);
+    }
 
+    @Override
+    public KubernetesVersion getKubernetesVersion() {
+      return KubernetesVersion.TEST_VERSION;
+    }
+
+    @Override
+    public SemanticVersion getProductVersion() {
+      return SemanticVersion.TEST_VERSION;
+    }
   }
 
 }
