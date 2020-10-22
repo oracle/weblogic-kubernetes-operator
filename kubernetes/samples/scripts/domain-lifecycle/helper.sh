@@ -16,6 +16,7 @@ function createServerStartPolicyPatch {
   local policy=$3
   local __result=$4
   local __currentPolicy=$5
+  local currentServerStartPolicy=""
 
   # Get server start policy for this server
   managedServers=$(echo ${domainJson} | jq -cr '(.spec.managedServers)')
@@ -64,6 +65,9 @@ are already running. Please increase cluster size to start new servers."
     | .maximumReplicas"
   if [ "${operation}" == "DECREMENT" ]; then
     replica=$(($(echo ${domainJson} | jq "${replicasCmd}")-1))
+    if [ ${replica} -lt 0 ]; then
+      replica=0
+    fi
   elif [ "${operation}" == "INCREMENT" ]; then
     replica=$(($(echo ${domainJson} | jq "${replicasCmd}")+1))
     maxReplicas=$(echo ${domainJson} | jq "${maxReplicaCmd}")
