@@ -6,9 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -20,7 +18,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -70,9 +67,8 @@ public class ItLifecycleSampleScripts {
   public static final String START_CLUSTER_SCRIPT = "startCluster.sh";
   public static final String STOP_DOMAIN_SCRIPT = "stopDomain.sh";
   public static final String START_DOMAIN_SCRIPT = "startDomain.sh";
-  private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static String domainName = "domain1";
+  private static final String domainName = "domain1";
   private final int replicaCount = 2;
   private final String clusterName = "cluster-1";
   private final String adminServerName = "admin-server";
@@ -85,8 +81,6 @@ public class ItLifecycleSampleScripts {
   private final Path tempSamplePath = Paths.get(WORK_DIR, "lifecycle-scripts-testing");
   private final Path sampleBase =
           Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
-
-  private static final String[] params = {"wlst:domain1"};
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -103,11 +97,12 @@ public class ItLifecycleSampleScripts {
    */
   @BeforeAll
   public void initAll(@Namespaces(2) List<String> namespaces) {
+    String opNamespace = namespaces.get(0);
+
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
-    opNamespace = namespaces.get(0);
     logger.info("Assign a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
@@ -127,7 +122,6 @@ public class ItLifecycleSampleScripts {
    * Test scripts for stopping and starting a managed server.
    */
   @Test
-  @MethodSource("paramProvider")
   @DisplayName("Test server lifecycle samples scripts")
   public void testServerLifecycleScripts() {
 
@@ -151,7 +145,6 @@ public class ItLifecycleSampleScripts {
    * Test scripts for stopping and starting a managed server while keeping replica count constant.
    */
   @Test
-  @MethodSource("paramProvider")
   @DisplayName("Test server lifecycle samples scripts with constant replica count")
   public void testServerLifecycleScriptsWithConstantReplicaCount() {
     String serverName = managedServerNameBase + "1";
@@ -177,7 +170,6 @@ public class ItLifecycleSampleScripts {
    * Test scripts for stopping and starting a cluster.
    */
   @Test
-  @MethodSource("paramProvider")
   @DisplayName("Test cluster lifecycle scripts")
   public void testClusterLifecycleScripts() {
 
@@ -198,7 +190,6 @@ public class ItLifecycleSampleScripts {
    * Test scripts for stopping and starting a domain.
    */
   @Test
-  @MethodSource("paramProvider")
   @DisplayName("Test domain lifecycle scripts")
   public void testDomainLifecycleScripts() {
     // Verify all WebLogic server instance pods are shut down after stopDomain script execution
@@ -244,17 +235,12 @@ public class ItLifecycleSampleScripts {
     assertTrue(result, "Failed to execute script " + script);
   }
 
-  // generates the stream of objects used by parametrized test.
-  private static Stream<String> paramProvider() {
-    return Arrays.stream(params);
-  }
-
   // Create domain using doamain-home-on-pv sample script and verify admin/managed pods are ready
   private void createDomain(Path sampleBase) {
     //copy the samples directory to a temporary location
     setupSample();
     //create PV and PVC used by the domain
-    createPvPvc(domainName);
+    createPvPvc();
 
     //create WebLogic secrets for the domain
     createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
@@ -329,10 +315,10 @@ public class ItLifecycleSampleScripts {
   }
 
   // create persistent volume and persistent volume claims used by the samples
-  private void createPvPvc(String domainName) {
+  private void createPvPvc() {
 
-    String pvName = domainName + "-weblogic-sample-pv";
-    String pvcName = domainName + "-weblogic-sample-pvc";
+    String pvName = ItLifecycleSampleScripts.domainName + "-weblogic-sample-pv";
+    String pvcName = ItLifecycleSampleScripts.domainName + "-weblogic-sample-pvc";
 
     Path pvpvcBase = Paths.get(tempSamplePath.toString(),
         "scripts/create-weblogic-domain-pv-pvc");
@@ -340,7 +326,7 @@ public class ItLifecycleSampleScripts {
     // create pv and pvc
     assertDoesNotThrow(() -> {
       // when tests are running in local box the PV directories need to exist
-      Path pvHostPath = null;
+      Path pvHostPath;
       pvHostPath = Files.createDirectories(Paths.get(PV_ROOT, this.getClass().getSimpleName(), pvName));
 
       logger.info("Creating PV directory host path {0}", pvHostPath);
@@ -355,7 +341,7 @@ public class ItLifecycleSampleScripts {
           "namespace: default", "namespace: " + domainNamespace);
       // set the baseName to domain name in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "baseName: weblogic-sample", "baseName: " + domainName + "-weblogic-sample");
+          "baseName: weblogic-sample", "baseName: " + ItLifecycleSampleScripts.domainName + "-weblogic-sample");
       // set the pv storage policy to Recycle in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
@@ -375,7 +361,7 @@ public class ItLifecycleSampleScripts {
     //create pv and pvc
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
-        "pv-pvcs/" + domainName + "-weblogic-sample-pv.yaml").toString());
+        "pv-pvcs/" + ItLifecycleSampleScripts.domainName + "-weblogic-sample-pv.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pv");
 
@@ -392,7 +378,7 @@ public class ItLifecycleSampleScripts {
 
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
-        "pv-pvcs/" + domainName + "-weblogic-sample-pvc.yaml").toString());
+        "pv-pvcs/" + ItLifecycleSampleScripts.domainName + "-weblogic-sample-pvc.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pvc");
 
