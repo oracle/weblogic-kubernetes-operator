@@ -19,7 +19,7 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -82,7 +82,7 @@ public class ItLifecycleSampleScripts {
   private final String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
-  private final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
+  private final Path tempSamplePath = Paths.get(WORK_DIR, "lifecycle-scripts-testing");
   private final Path sampleBase =
           Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
 
@@ -126,7 +126,7 @@ public class ItLifecycleSampleScripts {
   /**
    * Test scripts for stopping and starting a managed server.
    */
-  @ParameterizedTest
+  @Test
   @MethodSource("paramProvider")
   @DisplayName("Test server lifecycle samples scripts")
   public void testServerLifecycleScripts() {
@@ -150,7 +150,7 @@ public class ItLifecycleSampleScripts {
   /**
    * Test scripts for stopping and starting a managed server while keeping replica count constant.
    */
-  @ParameterizedTest
+  @Test
   @MethodSource("paramProvider")
   @DisplayName("Test server lifecycle samples scripts with constant replica count")
   public void testServerLifecycleScriptsWithConstantReplicaCount() {
@@ -176,7 +176,7 @@ public class ItLifecycleSampleScripts {
   /**
    * Test scripts for stopping and starting a cluster.
    */
-  @ParameterizedTest
+  @Test
   @MethodSource("paramProvider")
   @DisplayName("Test cluster lifecycle scripts")
   public void testClusterLifecycleScripts() {
@@ -197,7 +197,7 @@ public class ItLifecycleSampleScripts {
   /**
    * Test scripts for stopping and starting a domain.
    */
-  @ParameterizedTest
+  @Test
   @MethodSource("paramProvider")
   @DisplayName("Test domain lifecycle scripts")
   public void testDomainLifecycleScripts() {
@@ -416,9 +416,7 @@ public class ItLifecycleSampleScripts {
   @AfterAll
   public void tearDownAll() {
     deleteDomain();
-    for (String domainName : new String[]{"domain1", "domain2"}) {
-      deletePersistentVolume(domainName + "-weblogic-sample-pv");
-    }
+    deletePersistentVolume(domainName + "-weblogic-sample-pv");
   }
 
   // Delete domain and verify admin/managed pods are shut down
