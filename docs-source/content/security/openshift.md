@@ -34,7 +34,7 @@ However, if you build your own image, have an older version of an image, or obta
 image from another source, it may not have the necessary permissions.  You may need to
 configure similar file system permissions to allow your image to work in OpenShift.
 Specifically, you need to make sure the following directories have `root` as their
-group, and that the group read and group write permissions are enabled:
+group, and that the group read, write and execute permissions are set (enabled):
 
 * For the operator, `/operator` and `/logs`.
 * For WebLogic Server images, `/u01` (or the ultimate parent directory of your
