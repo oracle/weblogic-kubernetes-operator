@@ -26,13 +26,11 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -41,7 +39,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
-import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.HelmAccess;
@@ -88,10 +85,7 @@ public class Main {
   private static final Engine engine = new Engine(wrappedExecutorService);
 
   private static KubernetesVersion version = null;
-  private static SemanticVersion productVersion = null;
 
-  private final String serviceAccountName = Optional.ofNullable(getConfiguredServiceAccount()).orElse("default");
-  private final String principal = "system:serviceaccount:" + getOperatorNamespace() + ":" + serviceAccountName;
   private final MainDelegate delegate;
 
   private static String getConfiguredServiceAccount() {
@@ -134,15 +128,57 @@ public class Main {
 
   static class MainDelegateImpl implements MainDelegate {
 
+    private final String serviceAccountName = Optional.ofNullable(getConfiguredServiceAccount()).orElse("default");
+    private final String principal = "system:serviceaccount:" + getOperatorNamespace() + ":" + serviceAccountName;
+
+    private final String buildVersion;
+    private final String operatorImpl;
+    private final String operatorBuildTime;
     private final SemanticVersion productVersion;
 
-    public MainDelegateImpl(SemanticVersion productVersion) {
-      this.productVersion = productVersion;
+    public MainDelegateImpl(Properties buildProps) {
+      buildVersion = buildProps.getProperty("git.build.version");
+      operatorImpl = buildProps.getProperty("git.branch") + "." + buildProps.getProperty("git.commit.id.abbrev");
+      operatorBuildTime = buildProps.getProperty("git.build.time");
+
+      productVersion = (buildVersion == null) ? null : new SemanticVersion(buildVersion);
+    }
+
+    @Override
+    public void logStartup(LoggingFacade loggingFacade) {
+      loggingFacade.info(MessageKeys.OPERATOR_STARTED, buildVersion, operatorImpl, operatorBuildTime);
+      loggingFacade.info(MessageKeys.OP_CONFIG_NAMESPACE, getOperatorNamespace());
+      loggingFacade.info(MessageKeys.OP_CONFIG_SERVICE_ACCOUNT, serviceAccountName);
+      Optional.ofNullable(getConfiguredDomainNamespaces())
+            .ifPresent(strings -> logConfiguredNamespaces(loggingFacade, strings));
+    }
+
+    private Collection<String> getConfiguredDomainNamespaces() {
+      return Namespaces.getSelectionStrategy().getConfiguredDomainNamespaces();
+    }
+
+    private void logConfiguredNamespaces(LoggingFacade loggingFacade, Collection<String> configuredDomainNamespaces) {
+      loggingFacade.info(MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES, StringUtils.join(configuredDomainNamespaces, ", "));
     }
 
     @Override
     public SemanticVersion getProductVersion() {
       return productVersion;
+    }
+
+    @Override
+    public String getServiceAccountName() {
+      return serviceAccountName;
+    }
+
+    @Override
+    public String getPrincipal() {
+      return principal;
+    }
+
+    @Override
+    public DomainProcessor getProcessor() {
+      return processor;
     }
   }
 
@@ -170,44 +206,34 @@ public class Main {
     }
   }
 
-  static Main createMain() {
-    Main main = null;
+  private static Main createMain() {
     try (final InputStream stream = Main.class.getResourceAsStream("/version.properties")) {
       Properties buildProps = new Properties();
       buildProps.load(stream);
 
-      String operatorVersion = buildProps.getProperty("git.build.version");
-      if (operatorVersion != null) {
-        productVersion = new SemanticVersion(operatorVersion);
-        main = new Main(new MainDelegateImpl(productVersion));
-      }
-
-      String operatorImpl =
-          buildProps.getProperty("git.branch")
-              + "."
-              + buildProps.getProperty("git.commit.id.abbrev");
-      String operatorBuildTime = buildProps.getProperty("git.build.time");
-
-      // print startup log message
-      LOGGER.info(MessageKeys.OPERATOR_STARTED, operatorVersion, operatorImpl, operatorBuildTime);
+      return createMain(buildProps);
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
+      return null;
     }
-    return main;
+  }
+
+  static Main createMain(Properties buildProps) {
+    final MainDelegateImpl delegate = new MainDelegateImpl(buildProps);
+
+    if (delegate.getProductVersion() == null) {
+      return null;
+    } else {
+      delegate.logStartup(LOGGER);
+      return new Main(delegate);
+    }
   }
 
   Main(MainDelegate delegate) {
     this.delegate = delegate;
   }
 
-  private void begin() {
-    final Runnable completionAction = this::completeBegin;
-    startOperator(completionAction);
-  }
-
   private void startOperator(Runnable completionAction) {
-    logStartupInfo(serviceAccountName);
-
     try {
       version = HealthCheckHelper.performK8sVersionCheck();
       runSteps(createDomainRecheckSteps(DateTime.now()), completionAction);
@@ -216,24 +242,10 @@ public class Main {
     }
   }
 
-  private void logStartupInfo(String serviceAccountName) {
-    LOGGER.info(MessageKeys.OP_CONFIG_NAMESPACE, getOperatorNamespace());
-    LOGGER.info(MessageKeys.OP_CONFIG_SERVICE_ACCOUNT, serviceAccountName);
-    Optional.ofNullable(getConfiguredDomainNamespaces()).ifPresent(this::logConfiguredNamespaces);
-  }
-
-  private Collection<String> getConfiguredDomainNamespaces() {
-    return Namespaces.getSelectionStrategy().getConfiguredDomainNamespaces();
-  }
-
-  private void logConfiguredNamespaces(Collection<String> configuredDomainNamespaces) {
-    LOGGER.info(MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES, StringUtils.join(configuredDomainNamespaces, ", "));
-  }
-
   private void completeBegin() {
     try {
       // start the REST server
-      startRestServer(principal);
+      startRestServer(delegate.getPrincipal());
 
       // start periodic retry and recheck
       int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
@@ -280,16 +292,16 @@ public class Main {
     int recheckInterval = tuningAndConfig().getMainTuning().domainPresenceRecheckIntervalSeconds;
     boolean isFullRecheck = false;
     if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {
-      processor.reportSuspendedFibers();
+      delegate.getProcessor().reportSuspendedFibers();
       isFullRecheck = true;
       lastFullRecheck.set(now);
     }
-    Namespaces namespaces = new Namespaces(isFullRecheck);
+    Namespaces namespaces = new Namespaces(delegate, isFullRecheck);
 
     return Step.chain(
         new InitializeNamespacesSecurityStep(configuredDomainNamespaces),
         NamespaceRulesReviewStep.forOperatorNamespace(),
-        CrdHelper.createDomainCrdStep(version, productVersion),
+        CrdHelper.createDomainCrdStep(version, delegate.getProductVersion()),
         createReadNamespacesStep(namespaces));
   }
 
@@ -315,10 +327,6 @@ public class Main {
     }
   }
 
-  static Step readExistingResources(String ns) {
-    return DomainNamespaces.readExistingResources(ns, processor);
-  }
-
 
   /**
    * Returns true if the operator is configured to use a single dedicated namespace for both itself any any domains.
@@ -332,10 +340,16 @@ public class Main {
     /** The key in a Packet of the collection of existing namespaces that are designated as domain namespaces. */
     static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
 
+    private final MainDelegate delegate;
     boolean isFullRecheck;
 
-    public Namespaces(boolean isFullRecheck) {
+    public Namespaces(MainDelegate delegate, boolean isFullRecheck) {
+      this.delegate = delegate;
       this.isFullRecheck = isFullRecheck;
+    }
+
+    MainDelegate getDelegate() {
+      return delegate;
     }
 
     public enum SelectionStrategy {
@@ -665,11 +679,8 @@ public class Main {
           return;
         }
 
-        Namespaces namespaces = new Namespaces(true);
+        Namespaces namespaces = new Namespaces(null, true);
         Step strategy = new StartNamespacesStep(namespaces, Collections.singletonList(ns));
-        if (!DomainNamespaces.isStopping(ns).getAndSet(false)) {
-          strategy = Step.chain(getScriptCreationSteps(ns), strategy);
-        }
         runSteps(strategy, createPacketWithLoggingContext(ns));
         break;
 
@@ -692,17 +703,6 @@ public class Main {
         LoggingContext.LOGGING_CONTEXT_KEY,
         Component.createFor(new LoggingContext().namespace(ns)));
     return packet;
-  }
-
-  private static Step getScriptCreationSteps(String ns) {
-    try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns)) {
-      return Step.chain(
-          ConfigMapHelper.createScriptConfigMapStep(ns), createConfigMapStep(ns));
-    }
-  }
-
-  private static ConfigMapAfterStep createConfigMapStep(String ns) {
-    return new ConfigMapAfterStep(ns);
   }
 
   private static class WrappedThreadFactory implements ThreadFactory {
@@ -741,7 +741,9 @@ public class Main {
     public NextAction apply(Packet packet) {
       // check for any existing resources and add the watches on them
       // this would happen when the Domain was running BEFORE the Operator starts up
-      if (domainNamespaces != null) {
+      if (domainNamespaces == null) {
+        return doNext(packet);
+      } else {
         Collection<StepAndPacket> startDetails = new ArrayList<>();
 
         for (String ns : domainNamespaces) {
@@ -751,7 +753,6 @@ public class Main {
         }
         return doForkJoin(getNext(), packet, startDetails);
       }
-      return doNext(packet);
     }
   }
 
@@ -940,36 +941,4 @@ public class Main {
     }
   }
 
-  public static class ConfigMapAfterStep extends Step {
-    private final List<Consumer<Packet>> processors;
-
-    /**
-     * Construct config map after step.
-     * @param ns namespace
-     */
-    ConfigMapAfterStep(String ns) {
-      this(Collections.singletonList(
-          packet -> DomainNamespaces.startConfigMapWatcher(ns, getInitialResourceVersion(packet), processor)));
-    }
-
-    @Nonnull
-    private static String getInitialResourceVersion(Packet packet) {
-      return KubernetesUtils.getResourceVersion(getScriptConfigMap(packet));
-    }
-
-    public ConfigMapAfterStep(List<Consumer<Packet>> processors) {
-      this.processors = processors;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      processors.forEach(p -> p.accept(packet));
-      return doNext(packet);
-    }
-
-    private static V1ConfigMap getScriptConfigMap(Packet packet) {
-      return (V1ConfigMap) packet.get(ProcessingConstants.SCRIPT_CONFIG_MAP);
-    }
-
-  }
 }

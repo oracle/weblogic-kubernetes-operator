@@ -75,6 +75,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static org.hamcrest.Matchers.allOf;
@@ -201,7 +202,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenMakeRightRun_updateSDomainStatus() {
+  public void whenMakeRightRun_updateDomainStatus() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
 
     processor.createMakeRightOperation(new DomainPresenceInfo(domain)).execute();
@@ -239,6 +240,17 @@ public class DomainProcessorTest {
 
     assertThat((int) getServerServices().count(), equalTo(MAX_SERVERS + NUM_ADMIN_SERVERS));
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
+  }
+
+  @Test
+  public void whenStrandedResourcesExist_removeThem() {
+    V1Service service1 = createServerService("admin");
+    V1Service service2 = createServerService("ms1");
+    testSupport.defineResources(service1, service2);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(NS, UID)).withExplicitRecheck().forDeletion().execute();
+
+    assertThat(testSupport.getResources(SERVICE), empty());
   }
 
   @Test

@@ -4,14 +4,20 @@
 package oracle.kubernetes.operator;
 
 import oracle.kubernetes.operator.helpers.SemanticVersion;
+import oracle.kubernetes.operator.logging.LoggingFacade;
 
 /**
  * Definition of an interface that returns values that the Main class requires.
  */
 interface MainDelegate {
 
-  /**
-   * Returns the version of the operator.
-   */
-  SemanticVersion getProductVersion();
+  void logStartup(LoggingFacade loggingFacade);
+
+  abstract SemanticVersion getProductVersion();
+
+  String getServiceAccountName();
+
+  String getPrincipal();
+
+  DomainProcessor getProcessor();
 }
