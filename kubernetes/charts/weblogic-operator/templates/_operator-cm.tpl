@@ -36,6 +36,9 @@ data:
   {{- if .clusterSizePaddingValidationEnabled }}
   clusterSizePaddingValidationEnabled: {{ .clusterSizePaddingValidationEnabled | quote }}
   {{- end }}
+  {{- if .tokenReviewAuthentication }}
+  tokenReviewAuthentication: {{ .tokenReviewAuthentication | quote }}
+  {{- end }}
 kind: "ConfigMap"
 metadata:
   labels:
