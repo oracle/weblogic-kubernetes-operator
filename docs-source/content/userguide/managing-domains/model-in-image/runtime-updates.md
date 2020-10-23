@@ -284,4 +284,15 @@ Status updates
   |---------------------|-------------|-------|
   |Successful updates|Domain status will have a condition WLSDomainConfigurationStatus with message Successfully updated, reason with introspectionVersion|
   |Changes rolled back per request|Domain status will have a condition WLSDomainConfigurationStatus with message Online update rolledback, reason with introspectionVersion|
-  |Any other errors| Domain status message will display the error message. No condition is set in the status|
+  |Any other errors| Domain status message will display the error message. No condition is set in the status condition|
+
+Error Recovery
+
+- When updating a domain it involves changes to the following, while user has an option to rollback the changes for changes that require restart. Any successful changes
+to the domain are immediate.  
+- Changes to the image, configmap and domain resource YAML are under user control.  The operator cannot revert the changes automatically just like offline updates.
+- In case of any failure in online updates, no changes will be made to running domain.  However, since the introspect job runs periodically against the domain resources up to 6 times.
+You can delete the introspect job, correct the error and re-apply the changes; or just correct the error and wait for the next introspect job retry.
+
+
+
