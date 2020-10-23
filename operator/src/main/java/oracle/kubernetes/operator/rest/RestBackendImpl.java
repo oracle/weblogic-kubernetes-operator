@@ -26,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.V1UserInfo;
 import oracle.kubernetes.operator.Main;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
@@ -55,7 +56,7 @@ public class RestBackendImpl implements RestBackend {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String NEW_CLUSTER_REPLICAS =
       "{'clusterName':'%s','replicas':%d}".replaceAll("'", "\"");
-  public static final String INITIAL_VERSION = "1";
+  private static final String INITIAL_VERSION = "1";
 
   @SuppressWarnings("FieldMayBeFinal") // used by unit test
   private static TopologyRetriever INSTANCE =
@@ -68,10 +69,11 @@ public class RestBackendImpl implements RestBackend {
       };
 
   private final AuthenticationProxy atn = new AuthenticationProxy();
-  private final AuthorizationProxy atz = new AuthorizationProxy();
+  private AuthorizationProxy atz = new AuthorizationProxy();
   private final String principal;
   private final Supplier<Collection<String>> domainNamespaces;
   private V1UserInfo userInfo;
+  private CallBuilder callBuilder;
 
   /**
    * Construct a RestBackendImpl that is used to handle one WebLogic operator REST request.
@@ -85,10 +87,16 @@ public class RestBackendImpl implements RestBackend {
     this.domainNamespaces = domainNamespaces;
     this.principal = principal;
     userInfo = authenticate(accessToken);
+    callBuilder = userInfo != null ? new CallBuilder() :
+        new CallBuilder().withAuthentication(accessToken);
+    LOGGER.exiting();
   }
 
   private void authorize(String domainUid, Operation operation) {
     LOGGER.entering(domainUid, operation);
+    if (!authenticateWithTokenReview()) {
+      return;
+    }
     boolean authorized;
     if (domainUid == null) {
       authorized =
@@ -128,6 +136,9 @@ public class RestBackendImpl implements RestBackend {
 
   private V1UserInfo authenticate(String accessToken) {
     LOGGER.entering();
+    if (!authenticateWithTokenReview()) {
+      return null;
+    }
     V1TokenReviewStatus status = atn.check(principal, accessToken,
         Main.isDedicated() ? getOperatorNamespace() : null);
     if (status == null) {
@@ -170,7 +181,7 @@ public class RestBackendImpl implements RestBackend {
 
   private List<Domain> getDomains(String ns) {
     try {
-      return new CallBuilder().listDomain(ns).getItems();
+      return callBuilder.listDomain(ns).getItems();
     } catch (ApiException e) {
       throw handleApiException(e);
     }
@@ -315,7 +326,7 @@ public class RestBackendImpl implements RestBackend {
 
   private void patchDomain(Domain domain, JsonPatchBuilder patchBuilder) {
     try {
-      new CallBuilder()
+      callBuilder
           .patchDomain(
               domain.getDomainUid(), domain.getMetadata().getNamespace(),
               new V1Patch(patchBuilder.build().toString()));
@@ -399,6 +410,25 @@ public class RestBackendImpl implements RestBackend {
       rb.entity(msg);
     }
     return new WebApplicationException(rb.build());
+  }
+
+  protected boolean authenticateWithTokenReview() {
+    return "true".equalsIgnoreCase(Optional.ofNullable(TuningParameters.getInstance().get("tokenReviewAuthentication"))
+        .orElse("false"));
+  }
+
+  V1UserInfo getUserInfo() {
+    return userInfo;
+  }
+
+  // Intended for unit tests
+  RestBackendImpl withAuthorizationProxy(AuthorizationProxy authorizationProxy) {
+    this.atz = authorizationProxy;
+    return this;
+  }
+
+  CallBuilder getCallBuilder() {
+    return this.callBuilder;
   }
 
   interface TopologyRetriever {
