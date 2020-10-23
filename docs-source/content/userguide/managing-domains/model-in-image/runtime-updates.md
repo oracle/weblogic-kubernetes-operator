@@ -231,8 +231,12 @@ in the Model in Image sample.
 #### Updating a running domain
 
 When `useOnlineUpdate` is enabled in the `domain.spec.configuration`.  Operator will attempt to use the online update to the running domain, this 
-feature is useful or changing any dynamic attribute of the Weblogic Domain, no restart is necessary, and the change is immediate take effect.
-Once a new `introspectVersion` is specified in the domain resource YAML file and applied, the operator will start the introspection job to update the domain.
+feature is useful or changing any dynamic attribute of the Weblogic Domain, no restart is necessary, and the changes are immediate take effect.
+
+You can update the configmap specified in `domain.spec.configuration.model.configmap` in the domain resource YAML or any associated secrets in the mdoel(s)
+and a new `introspectVersion`, then apply the YAML, the operator will start the introspection job to update the domain.  Once the job is finished, you can use
+
+`kubectl -n <namespace> dsecribe domain <domain uid>` to view the condition or message in the status section to see the results.
 
 |Scenarios|Expected Outcome|Actions Required|
   |---------------------|-------------|-------|
