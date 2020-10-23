@@ -11,16 +11,17 @@ function usage() {
 
   cat << EOF
 
-  This script starts a WebLogic cluster in a domain by patching it's
-  'serverStartPolicy' field to 'IF_NEEDED'. This change will cause the
-  operator to initiate startup of cluster's WebLogic server instance pods
-  if the pods are not already running.
+  This script starts a WebLogic cluster in a domain by patching
+  'spec.clusters.<cluster-name>.serverStartPolicy' attribute of the domain
+  resource to 'IF_NEEDED'. This change will cause the operator to initiate
+  startup of cluster's WebLogic server instance pods if the pods are not
+  already running.
  
   Usage:
  
     $(basename $0) -c mycluster [-n mynamespace] [-d mydomainuid] [-m kubecli]
   
-    -c <cluster>        : Cluster name parameter is required.
+    -c <cluster-name>   : Cluster name parameter is required.
 
     -d <domain_uid>     : Domain unique-id. Default is 'sample-domain1'.
 
@@ -71,6 +72,13 @@ function initialize {
 
   if [ -z "${clusterName}" ]; then
     validationError "Please specify cluster name using '-c' parameter e.g. '-c cluster-1'."
+  fi
+
+  isValidCluster=""
+  validateClusterName "${domainUid}" "${domainNamespace}" "${clusterName}" isValidCluster
+
+  if [ "${isValidCluster}" != 'true' ]; then
+    validationError "cluster ${clusterName} is not part of domain ${domainUid} in namespace ${domainNamespace}."
   fi
 
   failIfValidationErrors

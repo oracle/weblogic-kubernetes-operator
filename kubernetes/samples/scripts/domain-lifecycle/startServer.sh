@@ -13,11 +13,10 @@ function usage() {
   cat << EOF
 
   This script starts a WebLogic managed server in a domain by patching
-  it's 'serverStartPolicy' field to 'ALWAYS'. It also increases the replica
-  count value for the managed server's cluster by '1'.  The replica count
-  value can be kept constant by using '-k' option. If the server pod is
-  already running, script exits without updating 'serverStartPolicy' or
-  replica count value.
+  'spec.managedServers.<server-name>.serverStartPolicy' attribute of the domain
+  resource to 'ALWAYS'. It also increases the 'spec.clusters.<cluster-name>.replicas'
+  value for the managed server's cluster by '1'.  The 'spec.clusters.<cluster-name>.replicas'
+  value can be kept constant by using '-k' option.
  
   Usage:
  
@@ -103,7 +102,7 @@ fi
 # Validate that specified server is either part of a cluster or is an independent managed server
 validateServerAndFindCluster "${domainUid}" "${domainNamespace}" isValidServer clusterName
 if [ "${isValidServer}" != 'true' ]; then
-  echo "Server ${serverName} is not part of any cluster and it's not an independent managed server. Please make sure that server name specified is correct."
+  printError "Server ${serverName} is not part of any cluster and it's not an independent managed server. Please make sure that server name specified is correct."
   exit 1
 fi
 

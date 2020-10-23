@@ -11,10 +11,10 @@ function usage() {
 
   cat << EOF
 
-  This script stops a deployed WebLogic domain by patching it's
-  'spec.serverStartPolicy' field to 'NEVER'. This change will cause
-  the operator to initiate shutdown of the domain's WebLogic server
-  instance pods if the pods are running.
+  This script stops a deployed WebLogic domain by patching
+  'spec.serverStartPolicy' attribute of domain resource to 'NEVER'.
+  This change will cause the operator to initiate shutdown of the
+  domain's WebLogic server instance pods if the pods are running.
  
   Usage:
  

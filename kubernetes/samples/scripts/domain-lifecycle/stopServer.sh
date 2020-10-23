@@ -14,11 +14,10 @@ function usage() {
   cat << EOF
 
   This script stops a running WebLogic managed server in a domain by
-  patching it's 'serverStartPolicy' field to 'NEVER'. It also decreases
-  the replica count value for the managed server's cluster by '1'. The
-  replica count value can be kept constant by using '-k' option. If the
-  server pod is not running, script exits without updating 'serverStartPolicy'
-  or replica count value.
+  patching 'spec.managedServers.<server-name>.serverStartPolicy' attribute
+  of the domain resource to 'NEVER'. It also decreases the 'spec.clusters.<cluster-name>.replicas'
+  value for the managed server's cluster by `1`. The 'spec.clusters.<cluster-name>.replicas'
+  value can be kept constant by using '-k' option.
  
   Usage:
  

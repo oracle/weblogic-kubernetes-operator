@@ -63,13 +63,17 @@ are already running. Please increase cluster size to start new servers."
     | select (.clusterName == \"${clusterName}\")).replicas"
   maxReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
     | .maximumReplicas"
+  replica=$(echo ${domainJson} | jq "${replicasCmd}")
+  if [[ -z "${replica}" || "${replica}" == "null" ]]; then
+    replica=$(echo ${domainJson} | jq .spec.replicas)
+  fi
   if [ "${operation}" == "DECREMENT" ]; then
-    replica=$(($(echo ${domainJson} | jq "${replicasCmd}")-1))
+    replica=$((replica-1))
     if [ ${replica} -lt 0 ]; then
       replica=0
     fi
   elif [ "${operation}" == "INCREMENT" ]; then
-    replica=$(($(echo ${domainJson} | jq "${replicasCmd}")+1))
+    replica=$((replica+1))
     maxReplicas=$(echo ${domainJson} | jq "${maxReplicaCmd}")
     if [ ${replica} -gt ${maxReplicas} ]; then
       echo "${errorMessage}"
@@ -139,6 +143,32 @@ Please make sure server name is correct."
         break
       fi
     done
+  fi
+}
+
+#
+# Function to validate whether a cluster is valid and part of the domain
+# $1 - Domain unique id.
+# $2 - Domain namespace.
+# $3 - cluster name
+# $4 - Retrun value indicating whether cluster name is valid
+#
+function validateClusterName {
+local domainUid=$1
+local domainNamespace=$2
+local clusterName=$3
+local __isValidCluster=$4
+local errorMessage="Server name is outside the range of allowed servers. \
+Please make sure server name is correct."
+
+  configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
+    -n ${domainNamespace} -o json)
+  topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
+  jsonTopology=$(python -c \
+    'import sys, yaml, json; print json.dumps(yaml.safe_load('"${topology}"'), indent=4)')
+  clusters=($(echo $jsonTopology | jq -cr .domain.configuredClusters[].name))
+  if  checkStringInArray "${clusterName}" "${clusters[@]}" ; then
+    eval $__isValidCluster=true
   fi
 }
 
