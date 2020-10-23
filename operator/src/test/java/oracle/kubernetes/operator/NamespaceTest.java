@@ -124,7 +124,7 @@ public class NamespaceTest {
   }
 
   private void processNamespaces() {
-    testSupport.withClearPacket().runSteps(Main.Namespaces.readExistingNamespaces(false));
+    testSupport.withClearPacket().runSteps(new Main.DomainRecheck().readExistingNamespaces());
   }
 
   @Test

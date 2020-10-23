@@ -22,7 +22,7 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.kubernetes.operator.Main.Namespaces.SelectionStrategy;
+import oracle.kubernetes.operator.Namespaces.SelectionStrategy;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.helpers.HelmAccess;
@@ -257,7 +257,7 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
                                 NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
-    testSupport.runSteps(Main.Namespaces.readExistingNamespaces(false));
+    testSupport.runSteps(new Main.DomainRecheck().readExistingNamespaces());
 
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
@@ -297,7 +297,7 @@ public class MainTest extends ThreadFactoryTestBase {
           NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
-    testSupport.runSteps(Main.Namespaces.readExistingNamespaces(false));
+    testSupport.runSteps(new Main.DomainRecheck().readExistingNamespaces());
 
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC2), isNamespaceStarting()),
@@ -313,7 +313,7 @@ public class MainTest extends ThreadFactoryTestBase {
           NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
-    testSupport.runSteps(Main.Namespaces.readExistingNamespaces(false));
+    testSupport.runSteps(new Main.DomainRecheck().readExistingNamespaces());
 
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
@@ -339,7 +339,7 @@ public class MainTest extends ThreadFactoryTestBase {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(LAST_NAMESPACE_NUM - 1);
 
-    testSupport.runSteps(Main.Namespaces.readExistingNamespaces(false));
+    testSupport.runSteps(new Main.DomainRecheck().readExistingNamespaces());
 
     assertThat(logRecords, containsWarning(MessageKeys.NAMESPACE_IS_MISSING));
   }
@@ -353,11 +353,11 @@ public class MainTest extends ThreadFactoryTestBase {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(LAST_NAMESPACE_NUM);
 
-    testSupport.runSteps(Main.Namespaces.readExistingNamespaces(false));
+    testSupport.runSteps(new Main.DomainRecheck().readExistingNamespaces());
   }
 
   private void defineSelectionStrategy(SelectionStrategy selectionStrategy) {
-    TuningParameters.getInstance().put(Main.Namespaces.SELECTION_STRATEGY_KEY, selectionStrategy.toString());
+    TuningParameters.getInstance().put(Namespaces.SELECTION_STRATEGY_KEY, selectionStrategy.toString());
   }
 
   @Test
@@ -369,7 +369,7 @@ public class MainTest extends ThreadFactoryTestBase {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(MULTICHUNK_LAST_NAMESPACE_NUM);
 
-    testSupport.runSteps(Main.Namespaces.readExistingNamespaces(false));
+    testSupport.runSteps(new Main.DomainRecheck().readExistingNamespaces());
   }
 
   private void createNamespaces(int lastNamespaceNum) {

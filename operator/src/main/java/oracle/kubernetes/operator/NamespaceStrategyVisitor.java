@@ -5,13 +5,10 @@ package oracle.kubernetes.operator;
 
 /**
  * A class which implements different behavior based on the strategy defined for finding domain namespaces.
- * Uses the Visitor pattern (see https://en.wikipedia.org/wiki/Visitor_pattern)
+ * Uses the Visitor pattern (see https://en.wikipedia.org/wiki/Visitor_pattern). Implementations should
+ * either define all of the strategy-specific methods or at least one of them as well as the default selection.
  */
 public interface NamespaceStrategyVisitor<T> {
-
-  default T getDefaultSelection() {
-    return null;
-  }
 
   default T getListStrategySelection() {
     return getDefaultSelection();
@@ -27,5 +24,9 @@ public interface NamespaceStrategyVisitor<T> {
 
   default T getLabelSelectorStrategySelection() {
     return getDefaultSelection();
+  }
+
+  default T getDefaultSelection() {
+    return null;
   }
 }
