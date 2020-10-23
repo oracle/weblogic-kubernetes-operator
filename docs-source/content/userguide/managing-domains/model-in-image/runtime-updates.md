@@ -255,18 +255,19 @@ Example use cases:
   |Changing a data source credentials (dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
   |Changing a data source driver parameters properties (non dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
   |Changing an application targeting (dynamic attribute)|Changes are committed in running domain and effective immediately|No action required|
-  |Changing the listen port on a server or channel (non supported online changes)|Error in the introspect job, job will retry until error is corrected or cancel|Use offline updates or recreate the domain|
-  |Adding a data source (dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
+  |Changing the listen port, address, SSL on a server or channel (unsupported online changes)|Error in the introspect job, job will retry until error is corrected or cancel|Use offline updates or recreate the domain|
+  |Adding a data source (dynamic changes)|Changes are committed in running domain and effective immediately| No action required|
   |Remove all targets of a datasource (dynamic changes)|Changes are committed in running domain and effective immediately| No action required|
   |Deleting an application|Changes are committed in running domain and effective immediately| No action required|
-  |Changing weblogic administrator credentials (non dynamic changes)|Changes are committed, domain will rolling restart|No action required|
+  |Changing Weblogic administrator credentials (non dynamic changes)|Changes are committed, domain will rolling restart|No action required|
   |Changing image in the domain resource YAML at the same time|Offline changes are applied and domain will rolling restart|No action required|
+  |Changing security settings under domainInfo or SecurityConfiguration section (non dynamic changes)|Changes are committed, domain will rolling restart|No action required|
 
 Unsupported Changes:
 
 For any of these unsupported changes, the introspect job will fail and automatically retry up to 6 times.  You can either cancel the job, correct the problem, and wait for the job retry interval.
 
-- Topology changes. The introspection job will fail and automatically retry up to 6 times.
+- Topology changes including SSL. The introspection job will fail and automatically retry up to 6 times.
 - Dependency deletion. For example, trying to delete a datasource that is referenced by a persistent store, even if both of them are deleting at the same time. The introspection job will fail and automatically retry up to 6 times
 
 Safeguarding domain restart 
