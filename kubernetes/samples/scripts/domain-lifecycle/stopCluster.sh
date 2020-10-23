@@ -12,7 +12,7 @@ function usage() {
   cat << EOF
 
   This script stops a WebLogic cluster in a domain by patching
-  'spec.clusters.<cluster-name>.serverStartPolicy' attribute of the domain
+  'spec.clusters[<cluster-name>].serverStartPolicy' attribute of the domain
   resource to 'NEVER'. This change will cause the operator to initiate shutdown
   of cluster's WebLogic server instance pods if the pods are running.
  

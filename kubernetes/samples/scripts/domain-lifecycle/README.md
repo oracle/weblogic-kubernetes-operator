@@ -7,7 +7,7 @@ The operator provides sample scripts to start up or shut down a specific Managed
 These scripts can be helpful when scripting the life cycle of a WebLogic Server domain. For information on how to start, stop, restart, and scale WebLogic Server instances in your domain, see [Domain Life Cycle](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle).
 
 #### Scripts to start and stop a Managed Server
-The `startServer.sh` script starts a Managed Server by patching the `spec.managedServers.<server-name>.serverStartPolicy` attribute of the domain resource to `ALWAYS`. For clustered servers, it also increases the `spec.clusters.<cluster-name>.replicas` value for the Managed Server's cluster by `1`. The script provides an option to keep the `spec.clusters.<cluster-name>.replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
+The `startServer.sh` script starts a Managed Server by patching the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource to `ALWAYS`. For clustered servers, it also increases the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1`. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
 
 ```
 $ startServer.sh -d domain1 -n weblogic-domain-1 -s managed-server1
@@ -18,7 +18,7 @@ domain.weblogic.oracle/domain1 patched
        The replica count for cluster 'cluster-1' updated to 1.
 ```
 
-The `stopServer.sh` script shuts down a running Managed Server by patching the  `spec.managedServers.<server-name>.serverStartPolicy` attribute of the domain resource to `NEVER`. For clustered servers, it also decreases the `spec.clusters.<cluster-name>.replicas` for the Managed Server's cluster by `1`. The script provides an option to keep the `spec.clusters.<cluster-name>.replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
+The `stopServer.sh` script shuts down a running Managed Server by patching the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource to `NEVER`. For clustered servers, it also decreases the `spec.clusters[<cluster-name>].replicas` for the Managed Server's cluster by `1`. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
 
 ```
 $ stopServer.sh -d domain1 -n weblogic-domain-1 -s managed-server1
@@ -30,7 +30,7 @@ domain.weblogic.oracle/domain1 patched
 ```
 
 #### Script behavior when starting or stopping a clustered Managed Server
-The following table shows the new values of `spec.managedServers.<server-name>.serverStartPolicy` and `spec.clusters.<cluster-name>.replicas` as updated by the server start and stop scripts.
+The following table shows the new values of `spec.managedServers[<server-name>].serverStartPolicy` and `spec.clusters[<cluster-name>].replicas` as updated by the server start and stop scripts.
 
 | Script Name | Keep Replicas Constant? | Previous Clustered Server State | New serverStartPolicy value | New Clustered Server State | Cluster's Replicas Value |
 | --- | --- | --- | --- | --- | --- |
@@ -43,14 +43,14 @@ The following table shows the new values of `spec.managedServers.<server-name>.s
 
 ### Scripts to start and stop a cluster
 
-The `startCluster.sh` script starts a cluster by patching the `spec.clusters.<cluster-name>.serverStartPolicy` attribute of the domain resource to `IF_NEEDED`. The operator will start the WebLogic Server instance Pods that are part of the cluster after the `serverStartPolicy` attribute is updated to `IF_NEEDED`. See the script `usage` information by using the `-h` option.
+The `startCluster.sh` script starts a cluster by patching the `spec.clusters[<cluster-name>].serverStartPolicy` attribute of the domain resource to `IF_NEEDED`. The operator will start the WebLogic Server instance Pods that are part of the cluster after the `serverStartPolicy` attribute is updated to `IF_NEEDED`. See the script `usage` information by using the `-h` option.
 ```
 $ startCluster.sh -d domain1 -n weblogic-domain-1 -c cluster-1
 [INFO]Patching start policy of cluster 'cluster-1' from 'NEVER' to 'IF_NEEDED'.
 domain.weblogic.oracle/domain1 patched
 [INFO] Successfully patched cluster 'cluster-1' with 'IF_NEEDED' start policy!.
 ```
-The `stopCluster.sh` script shuts down a cluster by patching the `spec.clusters.<cluster-name>.serverStartPolicy` attribute of the domain resource to `NEVER`. The operator will shut down the WebLogic Server instance Pods that are part of the cluster after the `serverStartPolicy` attribute is updated to `NEVER`. See the script `usage` information by using the `-h` option.
+The `stopCluster.sh` script shuts down a cluster by patching the `spec.clusters[<cluster-name>].serverStartPolicy` attribute of the domain resource to `NEVER`. The operator will shut down the WebLogic Server instance Pods that are part of the cluster after the `serverStartPolicy` attribute is updated to `NEVER`. See the script `usage` information by using the `-h` option.
 ```
 $ stopCluster.sh -d domain1 -n weblogic-domain-1 -c cluster-1
 [INFO] Patching start policy of cluster 'cluster-1' from 'IF_NEEDED' to 'NEVER'.

@@ -13,9 +13,9 @@ function usage() {
   cat << EOF
 
   This script starts a WebLogic managed server in a domain by patching
-  'spec.managedServers.<server-name>.serverStartPolicy' attribute of the domain
-  resource to 'ALWAYS'. It also increases the 'spec.clusters.<cluster-name>.replicas'
-  value for the managed server's cluster by '1'.  The 'spec.clusters.<cluster-name>.replicas'
+  'spec.managedServers[<server-name>].serverStartPolicy' attribute of the domain
+  resource to 'ALWAYS'. It also increases the 'spec.clusters[<cluster-name>].replicas'
+  value for the managed server's cluster by '1'.  The 'spec.clusters[<cluster-name>].replicas'
   value can be kept constant by using '-k' option.
  
   Usage:

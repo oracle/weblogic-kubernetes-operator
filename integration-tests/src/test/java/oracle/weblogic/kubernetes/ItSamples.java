@@ -6,7 +6,9 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -14,10 +16,12 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -30,8 +34,6 @@ import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
@@ -52,11 +54,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests related to domain lifecycle sample scripts.
+ * Tests related to samples.
  */
-@DisplayName("Verify the domain lifecycle sample scripts")
+@DisplayName("Verify the domain on pv samples using wlst and wdt")
 @IntegrationTest
-public class ItLifecycleSampleScripts {
+public class ItSamples {
 
   public static final String SERVER_LIFECYCLE = "Server";
   public static final String CLUSTER_LIFECYCLE = "Cluster";
@@ -67,20 +69,20 @@ public class ItLifecycleSampleScripts {
   public static final String START_CLUSTER_SCRIPT = "startCluster.sh";
   public static final String STOP_DOMAIN_SCRIPT = "stopDomain.sh";
   public static final String START_DOMAIN_SCRIPT = "startDomain.sh";
+
+  private static String opNamespace = null;
   private static String domainNamespace = null;
   private static final String domainName = "domain1";
   private final int replicaCount = 2;
   private final String clusterName = "cluster-1";
-  private final String adminServerName = "admin-server";
   private final String managedServerNameBase = "managed-server";
-
-  private final String adminServerPodName = domainName + "-" + adminServerName;
   private final String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
+
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
+  private final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
-  private final Path tempSamplePath = Paths.get(WORK_DIR, "lifecycle-scripts-testing");
-  private final Path sampleBase =
-          Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
+
+  private static final String[] params = {"wlst:domain1", "wdt:domain2"};
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -96,13 +98,12 @@ public class ItLifecycleSampleScripts {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public void initAll(@Namespaces(2) List<String> namespaces) {
-    String opNamespace = namespaces.get(0);
-
+  public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
+    opNamespace = namespaces.get(0);
     logger.info("Assign a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
@@ -113,9 +114,95 @@ public class ItLifecycleSampleScripts {
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
+  }
 
-    //create and start WebLogic domain using domain-home-on-pv sample scripts
-    createDomain(sampleBase);
+  /**
+   * Test domain in pv samples using domains created by wlst and wdt.
+   *
+   * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
+   */
+  @ParameterizedTest
+  @MethodSource("paramProvider")
+  @DisplayName("Test samples using domain in pv")
+  @Order(1)
+  public void testSampleDomainInPv(String model) {
+
+    String domainName = model.split(":")[1];
+    String script = model.split(":")[0];
+
+    //copy the samples directory to a temporary location
+    setupSample();
+    //create PV and PVC used by the domain
+    createPvPvc(domainName);
+
+    //create WebLogic secrets for the domain
+    createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    Path sampleBase = Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
+
+    // change namespace from default to custom, set wlst or wdt, domain name, and t3PublicAddress
+    assertDoesNotThrow(() -> {
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "namespace: default", "namespace: " + domainNamespace);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "domain1", domainName);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4",
+          "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
+    });
+
+    // run create-domain.sh to create domain.yaml file
+    CommandParams params = new CommandParams().defaults();
+    params.command("sh "
+        + Paths.get(sampleBase.toString(), "create-domain.sh").toString()
+        + " -i " + Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
+        + " -o "
+        + Paths.get(sampleBase.toString()));
+
+    boolean result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to create domain.yaml");
+
+    // run kubectl to create the domain
+    params = new CommandParams().defaults();
+    params.command("kubectl apply -f "
+        + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
+
+    result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to create domain custom resource");
+
+    // wait for the domain to exist
+    logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainExists(domainName, DOMAIN_VERSION, domainNamespace));
+
+    final String adminServerName = "admin-server";
+    final String adminServerPodName = domainName + "-" + adminServerName;
+
+    final String managedServerNameBase = "managed-server";
+    String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
+    int replicaCount = 2;
+
+    // verify the admin server service and pod is created
+    checkPodReadyAndServiceExists(adminServerPodName, domainName, domainNamespace);
+
+    // verify managed server services created and pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
+    }
   }
 
   /**
@@ -123,6 +210,7 @@ public class ItLifecycleSampleScripts {
    */
   @Test
   @DisplayName("Test server lifecycle samples scripts")
+  @Order(2)
   public void testServerLifecycleScripts() {
 
     // Verify that stopServer script execution shuts down server pod and replica count is decremented
@@ -146,6 +234,7 @@ public class ItLifecycleSampleScripts {
    */
   @Test
   @DisplayName("Test server lifecycle samples scripts with constant replica count")
+  @Order(3)
   public void testServerLifecycleScriptsWithConstantReplicaCount() {
     String serverName = managedServerNameBase + "1";
     String keepReplicaCountConstantParameter = "-k";
@@ -171,6 +260,7 @@ public class ItLifecycleSampleScripts {
    */
   @Test
   @DisplayName("Test cluster lifecycle scripts")
+  @Order(4)
   public void testClusterLifecycleScripts() {
 
     // Verify all clustered server pods are shut down after stopCluster script execution
@@ -191,12 +281,15 @@ public class ItLifecycleSampleScripts {
    */
   @Test
   @DisplayName("Test domain lifecycle scripts")
+  @Order(5)
   public void testDomainLifecycleScripts() {
     // Verify all WebLogic server instance pods are shut down after stopDomain script execution
     executeLifecycleScript(STOP_DOMAIN_SCRIPT, DOMAIN, null);
     for (int i = 1; i <= replicaCount; i++) {
       checkPodDoesNotExist(managedServerPodNamePrefix + i, domainName, domainNamespace);
     }
+    String adminServerName = "admin-server";
+    String adminServerPodName = domainName + "-" + adminServerName;
     checkPodDoesNotExist(adminServerPodName, domainName, domainNamespace);
 
     // Verify all WebLogic server instance pods are started after startDomain script execution
@@ -235,69 +328,10 @@ public class ItLifecycleSampleScripts {
     assertTrue(result, "Failed to execute script " + script);
   }
 
-  // Create domain using doamain-home-on-pv sample script and verify admin/managed pods are ready
-  private void createDomain(Path sampleBase) {
-    //copy the samples directory to a temporary location
-    setupSample();
-    //create PV and PVC used by the domain
-    createPvPvc();
 
-    //create WebLogic secrets for the domain
-    createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // change namespace from default to custom, set wlst or wdt, domain name, and t3PublicAddress
-    assertDoesNotThrow(() -> {
-      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "namespace: default", "namespace: " + domainNamespace);
-      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
-      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4",
-              "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
-      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
-    });
-
-    // run create-domain.sh to create domain.yaml file
-    CommandParams params = new CommandParams().defaults();
-    params.command("sh "
-            + Paths.get(sampleBase.toString(), "create-domain.sh").toString()
-            + " -i " + Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
-            + " -o "
-            + Paths.get(sampleBase.toString()));
-
-    boolean result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to create domain.yaml");
-
-    // run kubectl to create the domain
-    params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
-            + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
-
-    result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to create domain custom resource");
-
-    // wait for the domain to exist
-    logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                                  + "(elapsed time {2}ms, remaining time {3}ms)",
-                            domainName,
-                            domainNamespace,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-              .until(domainExists(domainName, DOMAIN_VERSION, domainNamespace));
-
-    // verify the admin server service and pod is created
-    checkPodReadyAndServiceExists(adminServerPodName, domainName, domainNamespace);
-
-    // verify managed server services created and pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
-    }
-
+  // generates the stream of objects used by parametrized test.
+  private static Stream<String> paramProvider() {
+    return Arrays.stream(params);
   }
 
   // copy samples directory to a temporary location
@@ -315,10 +349,10 @@ public class ItLifecycleSampleScripts {
   }
 
   // create persistent volume and persistent volume claims used by the samples
-  private void createPvPvc() {
+  private void createPvPvc(String domainName) {
 
-    String pvName = ItLifecycleSampleScripts.domainName + "-weblogic-sample-pv";
-    String pvcName = ItLifecycleSampleScripts.domainName + "-weblogic-sample-pvc";
+    String pvName = domainName + "-weblogic-sample-pv";
+    String pvcName = domainName + "-weblogic-sample-pvc";
 
     Path pvpvcBase = Paths.get(tempSamplePath.toString(),
         "scripts/create-weblogic-domain-pv-pvc");
@@ -339,12 +373,11 @@ public class ItLifecycleSampleScripts {
       // set the namespace in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "namespace: default", "namespace: " + domainNamespace);
-      // set the baseName to domain name in create-pv-pvc-inputs.yaml
-      replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "baseName: weblogic-sample", "baseName: " + ItLifecycleSampleScripts.domainName + "-weblogic-sample");
       // set the pv storage policy to Recycle in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
+      replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+          "domainUID:", "domainUID: " + domainName);
     });
 
     // generate the create-pv-pvc-inputs.yaml
@@ -361,7 +394,7 @@ public class ItLifecycleSampleScripts {
     //create pv and pvc
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
-        "pv-pvcs/" + ItLifecycleSampleScripts.domainName + "-weblogic-sample-pv.yaml").toString());
+        "pv-pvcs/" + domainName + "-weblogic-sample-pv.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pv");
 
@@ -378,7 +411,7 @@ public class ItLifecycleSampleScripts {
 
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
-        "pv-pvcs/" + ItLifecycleSampleScripts.domainName + "-weblogic-sample-pvc.yaml").toString());
+        "pv-pvcs/" + domainName + "-weblogic-sample-pvc.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pvc");
 
@@ -395,38 +428,4 @@ public class ItLifecycleSampleScripts {
                 pvcName)));
 
   }
-
-  /**
-   * Delete the persistent volumes since the pv is not decorated with label.
-   */
-  @AfterAll
-  public void tearDownAll() {
-    deleteDomain();
-    deletePersistentVolume(domainName + "-weblogic-sample-pv");
-  }
-
-  // Delete domain and verify admin/managed pods are shut down
-  private void deleteDomain() {
-    //delete the domain resource
-    CommandParams params = new CommandParams().defaults();
-    params.command("kubectl delete -f "
-            + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
-    boolean result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to delete domain custom resource");
-    // verify managed servers pods are shut down
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainName, domainNamespace);
-    }
-
-    withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
-                                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                            domainName,
-                            domainNamespace,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-              .until(domainDoesNotExist(domainName, DOMAIN_VERSION, domainNamespace));
-  }
-
 }
