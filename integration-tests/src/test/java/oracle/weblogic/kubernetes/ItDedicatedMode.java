@@ -201,7 +201,6 @@ class ItDedicatedMode {
    * scaling up cluster-1 in domain1Namespace succeeds.
    */
   @Test
-  @Disabled("Disable the test due to JIRA OWLS-84741")
   @Order(3)
   @DisplayName("Scale up cluster-1 in domain1Namespace and verify it succeeds")
   public void testDedicatedModeSameNamespaceScale() {
