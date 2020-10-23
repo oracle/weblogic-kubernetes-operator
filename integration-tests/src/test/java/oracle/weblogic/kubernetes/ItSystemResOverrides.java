@@ -93,7 +93,7 @@ public class ItSystemResOverrides {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  final String domainUid = "mydomain";
+  final String domainUid = "mysitconfigdomain";
   final String clusterName = "mycluster";
   final String adminServerName = "admin-server";
   final String adminServerPodName = domainUid + "-" + adminServerName;
