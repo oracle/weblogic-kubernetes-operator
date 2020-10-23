@@ -54,19 +54,7 @@ public class AnnotationHelper {
   }
 
   private static V1Pod addHash(V1Pod pod) {
-    Map<String, String> labels =
-        Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getLabels).orElse(Collections.emptyMap());
-    String introspectVersion = null;
-    boolean restoreNeeded = false;
-    if (!labels.isEmpty() && labels.containsKey(LabelConstants.INTROSPECTION_STATE_LABEL)) {
-      restoreNeeded = true;
-      introspectVersion = pod.getMetadata().getLabels().remove(LabelConstants.INTROSPECTION_STATE_LABEL);
-    }
-
     pod.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, HASH_FUNCTION.apply(pod));
-    if (restoreNeeded) {
-      pod.getMetadata().getLabels().put(LabelConstants.INTROSPECTION_STATE_LABEL, introspectVersion);
-    }
     return pod;
   }
 

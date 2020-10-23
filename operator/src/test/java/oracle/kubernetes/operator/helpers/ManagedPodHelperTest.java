@@ -46,6 +46,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_CREATED
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_PATCHED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_UPDATED;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
@@ -102,6 +103,9 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   String getReplacedMessageKey() {
     return MANAGED_POD_REPLACED;
   }
+
+  @Override
+  String getUpdatedMessageKey() { return MANAGED_POD_UPDATED; }
 
   @Override
   String getDomainValidationFailedKey() {

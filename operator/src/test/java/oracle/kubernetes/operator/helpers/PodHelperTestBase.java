@@ -241,6 +241,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         getExistsMessageKey(),
         getPatchedMessageKey(),
         getReplacedMessageKey(),
+        getUpdatedMessageKey(),
         getDomainValidationFailedKey()
     };
   }
@@ -546,6 +547,13 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   // todo set property to indicate dynamic/on_restart copying
   protected abstract void verifyPodReplaced();
+
+  protected void verifyPodUpdated() {
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsFine(getExistsMessageKey()));
+    assertThat(logRecords, containsInfo(getUpdatedMessageKey()));
+  }
 
   protected void verifyPodNotReplaced() {
     testSupport.runSteps(getStepFactory(), terminalStep);
@@ -954,12 +962,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerConfigurationAddsIntrospectionVersion_dontReplacePod() {
+  public void whenServerConfigurationAddsIntrospectionVersion_updatePod() {
     initializeExistingPod();
 
     configurator.withIntrospectVersion("123");
 
-    verifyPodNotReplaced();
+    verifyPodUpdated();
   }
 
   @Test
@@ -1036,6 +1044,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   abstract String getPatchedMessageKey();
 
   abstract String getReplacedMessageKey();
+
+  abstract String getUpdatedMessageKey();
 
   abstract String getDomainValidationFailedKey();
 

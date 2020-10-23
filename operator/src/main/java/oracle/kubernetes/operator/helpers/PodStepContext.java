@@ -493,6 +493,9 @@ public abstract class PodStepContext extends BasePodStepContext {
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
 
+    Optional.ofNullable(getDomain().getSpec().getIntrospectVersion())
+        .ifPresent(version -> metadata.putLabelsItem(INTROSPECTION_STATE_LABEL, version));
+
     setTerminationGracePeriod(pod);
     getContainer(pod).map(V1Container::getEnv).ifPresent(this::updateEnv);
 
@@ -575,8 +578,6 @@ public abstract class PodStepContext extends BasePodStepContext {
         .putLabelsItem(
             LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
 
-    Optional.ofNullable(getDomain().getSpec().getIntrospectVersion())
-        .ifPresent(version -> addIntrospectVersionLabel(metadata, version));
     Optional.ofNullable(miiDomainZipHash)
           .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
     Optional.ofNullable(miiModelSecretsHash)
@@ -587,10 +588,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     // in the Prometheus Chart values yaml under the "extraScrapeConfigs:" section.
     AnnotationHelper.annotateForPrometheus(metadata, getDefaultPort() != null ? getDefaultPort() : getSSLPort());
     return metadata;
-  }
-
-  private void addIntrospectVersionLabel(V1ObjectMeta metadata, String introspectVersion) {
-    metadata.putLabelsItem(INTROSPECTION_STATE_LABEL, introspectVersion);
   }
 
   private void addHashLabel(V1ObjectMeta metadata, String label, String hash) {
@@ -965,65 +962,56 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
   }
 
-  private class ReplacePodResponseStep extends BaseResponseStep {
+  private class ReplacePodResponseStep extends PatchPodResponseStep {
 
     ReplacePodResponseStep(Step next) {
       super(next);
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-
-      V1Pod newPod = callResponse.getResult();
+    public void logPodChanged() {
       logPodReplaced();
-      if (newPod != null) {
-        setRecordedPod(newPod);
-      }
+    }
 
-      PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
-      return doNext(pw.waitForReady(newPod, getNext()), packet);
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+      return doNext(
+          packet.getSpi(PodAwaiterStepFactory.class).waitForReady(processResponse(callResponse), getNext()),
+          packet);
     }
   }
 
   private class PatchPodResponseStep extends BaseResponseStep {
-    private final Step next;
 
-    PatchPodResponseStep(Step next) {
-      super(next);
-      this.next = next;
+    PatchPodResponseStep(Step next) { super(next); }
+
+    public void logPodChanged() {
+      logPodPatched();
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+      processResponse(callResponse);
+      return doNext(getNext(), packet);
+    }
 
+    protected V1Pod processResponse(CallResponse<V1Pod> callResponse) {
       V1Pod newPod = callResponse.getResult();
-      logPodPatched();
+      logPodChanged();
       if (newPod != null) {
         setRecordedPod(newPod);
       }
-
-      return doNext(next, packet);
+      return newPod;
     }
   }
 
-  private class UpdatePodResponseStep extends BaseResponseStep {
-    private final Step next;
+  private class UpdatePodResponseStep extends PatchPodResponseStep {
 
-    UpdatePodResponseStep(Step next) {
-      super(next);
-      this.next = next;
-    }
+    UpdatePodResponseStep(Step next) { super(next); }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-
-      V1Pod newPod = callResponse.getResult();
+    public void logPodChanged() {
       logPodUpdated();
-      if (newPod != null) {
-        setRecordedPod(newPod);
-      }
-
-      return doNext(next, packet);
     }
   }
 
