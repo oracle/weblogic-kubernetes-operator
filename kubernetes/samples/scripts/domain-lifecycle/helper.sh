@@ -9,6 +9,7 @@
 # $2 - Name of server whose policy will be patched
 # $3 - Policy value 
 # $4 - Return value containing server start policy patch string
+# $5 - Return value of current server start policy
 #
 function createServerStartPolicyPatch {
   local domainJson=$1
@@ -54,7 +55,7 @@ function createReplicaPatch {
   local clusterName=$2
   local operation=$3
   local __result=$4
-  local __relicaCount=$5
+  local __replicaCount=$5
   local errorMessage="@@ ERROR: Maximum number of servers allowed (maxReplica = ${maxReplicas}) \
 are already running. Please increase cluster size to start new servers."
   maxReplicas=""
@@ -86,7 +87,7 @@ are already running. Please increase cluster size to start new servers."
     | .replicas) |= ${replica}"
   replicaPatch=$(echo ${domainJson} | jq "${cmd}" | jq -cr '(.spec.clusters)')
   eval $__result="'${replicaPatch}'"
-  eval $__relicaCount="'${replica}'"
+  eval $__replicaCount="'${replica}'"
 }
 
 #
