@@ -50,14 +50,14 @@ function createServerStartPolicyPatch {
 # $5 - Retrun value containing updated replica count
 #
 function createReplicaPatch {
-local domainJson=$1
-local clusterName=$2
-local operation=$3
-local __result=$4
-local __relicaCount=$5
-maxReplicas=""
-local errorMessage="@@ ERROR: Maximum number of servers allowed (maxReplica = ${maxReplicas}) \
+  local domainJson=$1
+  local clusterName=$2
+  local operation=$3
+  local __result=$4
+  local __relicaCount=$5
+  local errorMessage="@@ ERROR: Maximum number of servers allowed (maxReplica = ${maxReplicas}) \
 are already running. Please increase cluster size to start new servers."
+  maxReplicas=""
 
   replicasCmd="(.spec.clusters[] \
     | select (.clusterName == \"${clusterName}\")).replicas"
@@ -97,11 +97,11 @@ are already running. Please increase cluster size to start new servers."
 # $4 - Retrun value containting cluster name to which this server belongs.
 #
 function validateServerAndFindCluster {
-local domainUid=$1
-local domainNamespace=$2 
-local __isValidServer=$3
-local __clusterName=$4
-local errorMessage="Server name is outside the range of allowed servers. \
+  local domainUid=$1
+  local domainNamespace=$2 
+  local __isValidServer=$3
+  local __clusterName=$4
+  local errorMessage="Server name is outside the range of allowed servers. \
 Please make sure server name is correct."
 
   configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
@@ -154,11 +154,11 @@ Please make sure server name is correct."
 # $4 - Retrun value indicating whether cluster name is valid
 #
 function validateClusterName {
-local domainUid=$1
-local domainNamespace=$2
-local clusterName=$3
-local __isValidCluster=$4
-local errorMessage="Server name is outside the range of allowed servers. \
+  local domainUid=$1
+  local domainNamespace=$2
+  local clusterName=$3
+  local __isValidCluster=$4
+  local errorMessage="Server name is outside the range of allowed servers. \
 Please make sure server name is correct."
 
   configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
