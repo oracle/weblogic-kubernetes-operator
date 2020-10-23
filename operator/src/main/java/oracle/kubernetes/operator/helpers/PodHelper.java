@@ -306,6 +306,10 @@ public class PodHelper {
     }
 
     @Override
+    String getPodUpdatedMessageKey() {
+      return MessageKeys.ADMIN_POD_UPDATED;
+    }
+    @Override
     String getPodReplacedMessageKey() {
       return MessageKeys.ADMIN_POD_REPLACED;
     }
@@ -453,6 +457,11 @@ public class PodHelper {
     @Override
     String getPodPatchedMessageKey() {
       return MessageKeys.MANAGED_POD_PATCHED;
+    }
+
+    @Override
+    String getPodUpdatedMessageKey() {
+      return MessageKeys.MANAGED_POD_UPDATED;
     }
 
     @Override

@@ -3,14 +3,17 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Yaml;
+import oracle.kubernetes.operator.LabelConstants;
 import org.apache.commons.codec.digest.DigestUtils;
 
 /** Annotates pods, services with details about the Domain instance and checks these annotations. */
@@ -51,7 +54,19 @@ public class AnnotationHelper {
   }
 
   private static V1Pod addHash(V1Pod pod) {
+    Map<String, String> labels =
+        Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getLabels).orElse(Collections.emptyMap());
+    String introspectVersion = null;
+    boolean restoreNeeded = false;
+    if (!labels.isEmpty() && labels.containsKey(LabelConstants.INTROSPECTION_STATE_LABEL)) {
+      restoreNeeded = true;
+      introspectVersion = pod.getMetadata().getLabels().remove(LabelConstants.INTROSPECTION_STATE_LABEL);
+    }
+
     pod.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, HASH_FUNCTION.apply(pod));
+    if (restoreNeeded) {
+      pod.getMetadata().getLabels().put(LabelConstants.INTROSPECTION_STATE_LABEL, introspectVersion);
+    }
     return pod;
   }
 

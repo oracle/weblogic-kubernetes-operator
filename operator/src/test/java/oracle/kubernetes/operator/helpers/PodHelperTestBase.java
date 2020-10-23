@@ -765,8 +765,18 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     initializeExistingPod(createPodModel());
   }
 
+  void initializeExistingPodWithIntrospectVersion(String introspectVersion) {
+    initializeExistingPodWithIntrospectVersion(createPodModel(), introspectVersion);
+  }
+
   void initializeExistingPod(V1Pod pod) {
     testSupport.defineResources(pod);
+    domainPresenceInfo.setServerPod(getServerName(), pod);
+  }
+
+  void initializeExistingPodWithIntrospectVersion(V1Pod pod, String introspectVersion) {
+    testSupport.defineResources(pod);
+    pod.getMetadata().getLabels().put(LabelConstants.INTROSPECTION_STATE_LABEL, introspectVersion);
     domainPresenceInfo.setServerPod(getServerName(), pod);
   }
 
@@ -946,6 +956,15 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   @Test
   public void whenServerConfigurationAddsIntrospectionVersion_dontReplacePod() {
     initializeExistingPod();
+
+    configurator.withIntrospectVersion("123");
+
+    verifyPodNotReplaced();
+  }
+
+  @Test
+  public void whenServerConfigurationIntrospectionVersionTheSame_dontReplacePod() {
+    initializeExistingPodWithIntrospectVersion("123");
 
     configurator.withIntrospectVersion("123");
 

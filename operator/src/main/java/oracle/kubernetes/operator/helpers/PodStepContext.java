@@ -7,6 +7,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -57,6 +58,8 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
+
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -364,6 +367,24 @@ public abstract class PodStepContext extends BasePodStepContext {
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 
+  private Step updateCurrentPod(V1Pod currentPod, Step next) {
+    return createProgressingStep(updatePod(currentPod, next));
+  }
+
+  protected Step updatePod(V1Pod currentPod, Step next) {
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    String baseName = "/metadata/labels/";
+    if (!getPodLabels().containsKey(INTROSPECTION_STATE_LABEL)) {
+      patchBuilder.add(baseName + INTROSPECTION_STATE_LABEL, getDomain().getSpec().getIntrospectVersion());
+    } else {
+      patchBuilder.replace(baseName + INTROSPECTION_STATE_LABEL, getDomain().getSpec().getIntrospectVersion());
+    }
+
+    return new CallBuilder()
+        .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
+            new V1Patch(patchBuilder.build().toString()), updateResponse(next));
+  }
+
   private Map<String, String> getLabels(V1Pod pod) {
     return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getLabels).orElseGet(Collections::emptyMap);
   }
@@ -384,6 +405,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     LOGGER.info(getPodPatchedMessageKey(), getDomainUid(), getServerName());
   }
 
+  private void logPodUpdated() {
+    LOGGER.info(getPodUpdatedMessageKey(), getDomainUid(), getServerName(), getDomain().getIntrospectVersion());
+  }
+
   private void logPodReplaced() {
     LOGGER.info(getPodReplacedMessageKey(), getDomainUid(), getServerName());
   }
@@ -393,6 +418,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   abstract String getPodExistsMessageKey();
 
   abstract String getPodPatchedMessageKey();
+
+  abstract String getPodUpdatedMessageKey();
 
   abstract String getPodReplacedMessageKey();
 
@@ -437,6 +464,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private ResponseStep<V1Pod> patchResponse(Step next) {
     return new PatchPodResponseStep(next);
+  }
+
+  private ResponseStep<V1Pod> updateResponse(Step next) {
+    return new UpdatePodResponseStep(next);
   }
 
   V1Pod createPodModel() {
@@ -544,6 +575,8 @@ public abstract class PodStepContext extends BasePodStepContext {
         .putLabelsItem(
             LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
 
+    Optional.ofNullable(getDomain().getSpec().getIntrospectVersion())
+        .ifPresent(version -> addIntrospectVersionLabel(metadata, version));
     Optional.ofNullable(miiDomainZipHash)
           .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
     Optional.ofNullable(miiModelSecretsHash)
@@ -554,6 +587,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     // in the Prometheus Chart values yaml under the "extraScrapeConfigs:" section.
     AnnotationHelper.annotateForPrometheus(metadata, getDefaultPort() != null ? getDefaultPort() : getSSLPort());
     return metadata;
+  }
+
+  private void addIntrospectVersionLabel(V1ObjectMeta metadata, String introspectVersion) {
+    metadata.putLabelsItem(INTROSPECTION_STATE_LABEL, introspectVersion);
   }
 
   private void addHashLabel(V1ObjectMeta metadata, String label, String hash) {
@@ -847,6 +884,10 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else {
         logPodExists();
+        if (!Objects.equals(currentPod.getMetadata().getLabels().get(INTROSPECTION_STATE_LABEL),
+            getDomain().getSpec().getIntrospectVersion())) {
+          return doNext(updateCurrentPod(currentPod, getNext()), packet);
+        }
         return doNext(packet);
       }
     }
@@ -957,6 +998,27 @@ public abstract class PodStepContext extends BasePodStepContext {
 
       V1Pod newPod = callResponse.getResult();
       logPodPatched();
+      if (newPod != null) {
+        setRecordedPod(newPod);
+      }
+
+      return doNext(next, packet);
+    }
+  }
+
+  private class UpdatePodResponseStep extends BaseResponseStep {
+    private final Step next;
+
+    UpdatePodResponseStep(Step next) {
+      super(next);
+      this.next = next;
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+
+      V1Pod newPod = callResponse.getResult();
+      logPodUpdated();
       if (newPod != null) {
         setRecordedPod(newPod);
       }

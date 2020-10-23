@@ -133,6 +133,8 @@ public class MessageKeys {
   public static final String INTROSPECTOR_JOB_FAILED = "WLSKO-0175";
   public static final String INTROSPECTOR_JOB_FAILED_DETAIL = "WLSKO-0176";
   public static final String INTROSPECTOR_POD_FAILED = "WLSKO-0177";
+  public static final String ADMIN_POD_UPDATED = "WLSKO-0178";
+  public static final String MANAGED_POD_UPDATED = "WLSKO-0179";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
