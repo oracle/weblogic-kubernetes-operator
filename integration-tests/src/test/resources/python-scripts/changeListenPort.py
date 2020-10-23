@@ -48,6 +48,5 @@ def change_listenportenabled():
     apply(traceback.print_exception, sys.exc_info())
     exit(exitcode=1)
 
-if __name__== "main":
-  change_listenportenabled()
-  exit()
+change_listenportenabled()
+exit()
