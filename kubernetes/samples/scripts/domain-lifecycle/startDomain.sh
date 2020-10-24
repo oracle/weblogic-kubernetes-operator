@@ -61,6 +61,11 @@ fi
 
 serverStartPolicy=`${kubernetesCli} -n ${domainNamespace} get domain ${domainUid} -o=jsonpath='{.spec.serverStartPolicy}'`
 
+if [ "${serverStartPolicy}" == 'IF_NEEDED' ]; then 
+  echo "[INFO] The domain '${domainUid}' is already started as 'spec.serverStartPolicy' attribute value of the domain resource is 'IF_NEEDED'. The $(basename $0) script will exit without making any changes."
+  exit 0
+fi
+
 echo "[INFO] Patching domain '${domainUid}' from serverStartPolicy='${serverStartPolicy}' to 'IF_NEEDED'."
 
 ${kubernetesCli} -n ${domainNamespace} patch domain ${domainUid} --type='json' \

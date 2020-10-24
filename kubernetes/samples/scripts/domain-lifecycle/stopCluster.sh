@@ -91,6 +91,11 @@ domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o j
 # Get server start policy for this server
 startPolicy=$(echo ${domainJson} | jq -r '(.spec.clusters[] | select (.clusterName == "'${clusterName}'") | .serverStartPolicy)')
 
+if [ "${startPolicy}" == 'NEVER' ]; then 
+  echo "[INFO] The cluster '${clusterName}' is already stopped as spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy attribute value of the domain resource is 'NEVER'. The $(basename $0) script will exit without making any changes."
+  exit 0
+fi
+
 if [ -z ${startPolicy} ]; then
   # cluster start policy doesn't exist, add a new NEVER policy
   echo "[INFO] Patching start policy of cluster '${clusterName}' to 'NEVER'."

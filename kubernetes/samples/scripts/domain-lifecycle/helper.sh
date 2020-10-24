@@ -56,9 +56,9 @@ function createReplicaPatch {
   local operation=$3
   local __result=$4
   local __replicaCount=$5
+  local maxReplicas=""
   local errorMessage="@@ ERROR: Maximum number of servers allowed (maxReplica = ${maxReplicas}) \
 are already running. Please increase cluster size to start new servers."
-  maxReplicas=""
 
   replicasCmd="(.spec.clusters[] \
     | select (.clusterName == \"${clusterName}\")).replicas"
