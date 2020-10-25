@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.lang.reflect.Field;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -30,8 +31,12 @@ import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
@@ -41,16 +46,20 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.MainTest.NamespaceStatusMatcher.isNamespaceStarting;
 import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.logging.MessageKeys.CRD_NOT_INSTALLED;
 import static oracle.kubernetes.operator.logging.MessageKeys.OPERATOR_STARTED;
 import static oracle.kubernetes.operator.logging.MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES;
 import static oracle.kubernetes.operator.logging.MessageKeys.OP_CONFIG_NAMESPACE;
 import static oracle.kubernetes.operator.logging.MessageKeys.OP_CONFIG_SERVICE_ACCOUNT;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.allOf;
@@ -110,7 +119,7 @@ public class MainTest extends ThreadFactoryTestBase {
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
   private final String ns = "nsrand" + new Random().nextInt(10000);
-  private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class);
+  private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, testSupport);
 
   static {
     buildProperties = new PropertiesBuilder()
@@ -190,6 +199,33 @@ public class MainTest extends ThreadFactoryTestBase {
     Main.createMain(buildProperties);
 
     assertThat(logRecords, containsInfo(OP_CONFIG_SERVICE_ACCOUNT, "default"));
+  }
+
+  @Test
+  public void whenOperatorStarted_namespaceWatcherIsCreated() {
+    final Main main = new Main(delegate);
+    main.startOperator(null);
+
+    assertThat(main.getNamespaceWatcher(), notNullValue());
+  }
+
+  @Test
+  public void whenDedicatedNamespaceButNoCRD_failToCreateTheOperator() {
+    testSupport.failOnResource(DOMAIN, null, getOperatorNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+
+    assertThat(Main.createMain(buildProperties), nullValue());
+  }
+
+  @Test
+  public void whenDedicatedNamespaceButNoCRD_logReasonForFailure() {
+    loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
+    testSupport.failOnResource(DOMAIN, null, getOperatorNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+
+    Main.createMain(buildProperties);
+    
+    assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
   }
 
   @Test
@@ -469,8 +505,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void afterNullNamespaceAdded_WatchersAreNotDefined() {
-    V1Namespace namespace = null;
-    Main.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+    new Main(delegate).dispatchNamespaceWatch(WatchEvent.createAddedEvent((V1Namespace) null).toWatchResponse());
 
     verifyWatchersNotDefined(ns);
   }
@@ -479,7 +514,7 @@ public class MainTest extends ThreadFactoryTestBase {
   public void afterNonDomainNamespaceAdded_WatchersAreNotDefined() {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, NS_WEBLOGIC1);
     V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
-    Main.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+    new Main(delegate).dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
 
     verifyWatchersNotDefined(ns);
   }
@@ -488,7 +523,7 @@ public class MainTest extends ThreadFactoryTestBase {
   public void afterNamespaceAdded_WatchersAreDefined() {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
     V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
-    Main.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+    new Main(delegate).dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
 
     verifyWatchersDefined(ns);
   }
@@ -506,12 +541,38 @@ public class MainTest extends ThreadFactoryTestBase {
   public void afterNamespaceAdded_scriptConfigMapIsDefined() {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
     V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
-    Main.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+    new Main(delegate).dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
 
     assertThat(getScriptMap(ns), notNullValue());
   }
 
   abstract static class MainDelegateStub implements MainDelegate {
+    private final FiberTestSupport testSupport;
 
+    public MainDelegateStub(FiberTestSupport testSupport) {
+      this.testSupport = testSupport;
+    }
+
+    @Override
+    public void runSteps(Packet packet, Step firstStep, Runnable completionAction) {
+      testSupport.withPacket(packet)
+                 .withCompletionAction(completionAction)
+                 .runSteps(firstStep);
+    }
+
+    @Override
+    public DomainProcessor getProcessor() {
+      return createNiceStub(DomainProcessor.class);
+    }
+
+    @Override
+    public KubernetesVersion getKubernetesVersion() {
+      return KubernetesVersion.TEST_VERSION;
+    }
+
+    @Override
+    public SemanticVersion getProductVersion() {
+      return SemanticVersion.TEST_VERSION;
+    }
   }
 }

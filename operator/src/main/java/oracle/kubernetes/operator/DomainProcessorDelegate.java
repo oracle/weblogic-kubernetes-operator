@@ -12,12 +12,6 @@ import oracle.kubernetes.operator.work.Step;
 
 /** A set of underlying services required during domain processing. */
 public interface DomainProcessorDelegate {
-  /**
-   * Returns the namespace associated with the operator itself.
-   *
-   * @return a namespace string
-   */
-  String getOperatorNamespace();
 
   /**
    * Returns a factory that creates a step to wait for a pod in the specified namespace to be ready.
