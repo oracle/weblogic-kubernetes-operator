@@ -61,7 +61,7 @@ fi
 serverStartPolicy=`${kubernetesCli} -n ${domainNamespace} get domain ${domainUid} -o=jsonpath='{.spec.serverStartPolicy}'`
 
 if [ "${serverStartPolicy}" == 'NEVER' ]; then 
-  echo "[INFO] The domain '${domainUid}' is already stopped as 'spec.serverStartPolicy' attribute value of the domain resource is 'NEVER'. The $(basename $0) script will exit without making any changes."
+  echo "[INFO] The domain '${domainUid}' is already stopped or stopping. The value of 'spec.serverStartPolicy' attribute on the domain resource is 'NEVER'. The $(basename $0) script will exit without making any changes."
   exit 0
 fi
 

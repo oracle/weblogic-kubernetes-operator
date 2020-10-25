@@ -90,9 +90,12 @@ domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o j
 
 # Get server start policy for this server
 startPolicy=$(echo ${domainJson} | jq -r '(.spec.clusters[] | select (.clusterName == "'${clusterName}'") | .serverStartPolicy)')
+if [ "${startPolicy}" == "null" ]; then
+  startPolicy=$(echo ${domainJson} | jq -r .spec.serverStartPolicy)
+fi
 
 if [ "${startPolicy}" == 'NEVER' ]; then 
-  echo "[INFO] The cluster '${clusterName}' is already stopped as spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy attribute value of the domain resource is 'NEVER'. The $(basename $0) script will exit without making any changes."
+  echo "[INFO] The cluster '${clusterName}' is already stopped or stopping. The effective value of spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy attribute on the domain resource is 'NEVER'. The $(basename $0) script will exit without making any changes."
   exit 0
 fi
 

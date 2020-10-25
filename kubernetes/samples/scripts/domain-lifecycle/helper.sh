@@ -94,14 +94,16 @@ are already running. Please increase cluster size to start new servers."
 # Function to validate whether a server belongs to a  cluster or is an independent managed server
 # $1 - Domain unique id.
 # $2 - Domain namespace.
-# $3 - Return value indicating if server is valid (i.e. if it's part of a cluster or independent server).
-# $4 - Retrun value containting cluster name to which this server belongs.
+# $3 - Server name.
+# $4 - Return value indicating if server is valid (i.e. if it's part of a cluster or independent server).
+# $5 - Retrun value containting cluster name to which this server belongs.
 #
 function validateServerAndFindCluster {
   local domainUid=$1
   local domainNamespace=$2 
-  local __isValidServer=$3
-  local __clusterName=$4
+  local serverName=$3
+  local __isValidServer=$4
+  local __clusterName=$5
   local errorMessage="Server name is outside the range of allowed servers. \
 Please make sure server name is correct."
 
@@ -159,8 +161,6 @@ function validateClusterName {
   local domainNamespace=$2
   local clusterName=$3
   local __isValidCluster=$4
-  local errorMessage="Server name is outside the range of allowed servers. \
-Please make sure server name is correct."
 
   configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
     -n ${domainNamespace} -o json)

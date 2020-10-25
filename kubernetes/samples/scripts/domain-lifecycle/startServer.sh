@@ -100,7 +100,7 @@ if [ $? -eq 0 ]; then
 fi
 
 # Validate that specified server is either part of a cluster or is an independent managed server
-validateServerAndFindCluster "${domainUid}" "${domainNamespace}" isValidServer clusterName
+validateServerAndFindCluster "${domainUid}" "${domainNamespace}" "${serverName}" isValidServer clusterName
 if [ "${isValidServer}" != 'true' ]; then
   printError "Server ${serverName} is not part of any cluster and it's not an independent managed server. Please make sure that server name specified is correct."
   exit 1
@@ -110,6 +110,12 @@ fi
 currentPolicy=""
 serverStartPolicy=ALWAYS
 createServerStartPolicyPatch "${domainJson}" "${serverName}" "${serverStartPolicy}" serverStartPolicyPatch currentPolicy
+
+# check if current policy of server pod is ALWAYS
+if [ "${currentPolicy}" == 'ALWAYS' ]; then 
+  echo "[INFO] The server '${serverName}' is already started or starting. The effective value of 'spec.managedServers[?(serverName="${serverName}"].serverStartPolicy' attribute on the domain resource is 'ALWAYS'. The $(basename $0) script will exit without making any changes."
+  exit 0
+fi
 
 if [[ -n ${clusterName} && "${keepReplicaConstant}" != 'true' ]]; then
   # if server is part of a cluster and replica count needs to be updated, patch the replica count and server start policy
