@@ -555,6 +555,13 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(logRecords, containsInfo(getUpdatedMessageKey()));
   }
 
+  protected void verifyPodNotUpdated() {
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsFine(getExistsMessageKey()));
+    assertThat(logRecords, not(containsInfo(getUpdatedMessageKey())));
+  }
+
   protected void verifyPodNotReplaced() {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -773,13 +780,13 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     initializeExistingPod(createPodModel());
   }
 
-  void initializeExistingPodWithIntrospectVersion(String introspectVersion) {
-    initializeExistingPodWithIntrospectVersion(createPodModel(), introspectVersion);
-  }
-
   void initializeExistingPod(V1Pod pod) {
     testSupport.defineResources(pod);
     domainPresenceInfo.setServerPod(getServerName(), pod);
+  }
+
+  void initializeExistingPodWithIntrospectVersion(String introspectVersion) {
+    initializeExistingPodWithIntrospectVersion(createPodModel(), introspectVersion);
   }
 
   void initializeExistingPodWithIntrospectVersion(V1Pod pod, String introspectVersion) {
@@ -971,12 +978,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerConfigurationIntrospectionVersionTheSame_dontReplacePod() {
+  public void whenServerConfigurationIntrospectionVersionTheSame_dontUpdatePod() {
     initializeExistingPodWithIntrospectVersion("123");
 
     configurator.withIntrospectVersion("123");
 
-    verifyPodNotReplaced();
+    verifyPodNotUpdated();
   }
 
   @Test

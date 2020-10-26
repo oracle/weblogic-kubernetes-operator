@@ -105,7 +105,9 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  String getUpdatedMessageKey() { return MANAGED_POD_UPDATED; }
+  String getUpdatedMessageKey() {
+    return MANAGED_POD_UPDATED;
+  }
 
   @Override
   String getDomainValidationFailedKey() {

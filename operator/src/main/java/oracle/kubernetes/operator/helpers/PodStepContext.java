@@ -7,7 +7,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -881,12 +880,24 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else {
         logPodExists();
-        if (!Objects.equals(currentPod.getMetadata().getLabels().get(INTROSPECTION_STATE_LABEL),
-            getDomain().getSpec().getIntrospectVersion())) {
+        if (introspectVersionChanged(currentPod)) {
           return doNext(updateCurrentPod(currentPod, getNext()), packet);
         }
         return doNext(packet);
       }
+    }
+
+    private boolean introspectVersionChanged(V1Pod currentPod) {
+      return !Objects.equals(getPodIntrospectVersionLabel(currentPod), getDomain().getSpec().getIntrospectVersion());
+    }
+
+    private Object getPodIntrospectVersionLabel(V1Pod pod) {
+      return getIntrospectVersionlabel(Optional.ofNullable(pod.getMetadata())
+          .map(V1ObjectMeta::getLabels).orElse(Collections.emptyMap()));
+    }
+
+    private Object getIntrospectVersionlabel(Map<String, String> labels) {
+      return labels.get(INTROSPECTION_STATE_LABEL);
     }
   }
 
@@ -983,7 +994,9 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private class PatchPodResponseStep extends BaseResponseStep {
 
-    PatchPodResponseStep(Step next) { super(next); }
+    PatchPodResponseStep(Step next) {
+      super(next);
+    }
 
     public void logPodChanged() {
       logPodPatched();
@@ -1007,7 +1020,9 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private class UpdatePodResponseStep extends PatchPodResponseStep {
 
-    UpdatePodResponseStep(Step next) { super(next); }
+    UpdatePodResponseStep(Step next) {
+      super(next);
+    }
 
     @Override
     public void logPodChanged() {
