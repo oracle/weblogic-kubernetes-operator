@@ -24,7 +24,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
-//import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -210,27 +209,28 @@ public class ItJrfMiiDomain {
     // create model in image domain
     createDomainAndVerify(domain, jrfDomainNamespace);
 
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, jrfDomainNamespace);
-    checkPodReady(adminServerPodName, domainUid, jrfDomainNamespace);
-
+    //check admin service created
     logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName, jrfDomainNamespace);
     checkServiceExists(adminServerPodName, jrfDomainNamespace);
 
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i + "-c1", jrfDomainNamespace);
-      checkPodReady(managedServerPrefix + i + "-c1", domainUid, jrfDomainNamespace);
-    }
+    // check admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, jrfDomainNamespace);
+    checkPodReady(adminServerPodName, domainUid, jrfDomainNamespace);
 
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed service {0} is created in namespace {1}",
           managedServerPrefix + i + "-c1", jrfDomainNamespace);
       checkServiceExists(managedServerPrefix + i + "-c1", jrfDomainNamespace);
+    }
+
+    // check managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i + "-c1", jrfDomainNamespace);
+      checkPodReady(managedServerPrefix + i + "-c1", domainUid, jrfDomainNamespace);
     }
 
   }
