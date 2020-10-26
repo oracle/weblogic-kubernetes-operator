@@ -44,6 +44,8 @@ Set `introspectVersion` to a new value.
 
 As with `restartVersion`, the `introspectVersion` field has no required format; however, we recommend using a value likely to be unique such as a continually increasing number or a timestamp.
 
+Starting from release 3.1.0, if the domain resource's `spec.introspectVersion` is set, the WebLogic Server pods in the domain will contain a label in the metadata with the key `weblogic.IntrospectVersion` to indicate which introspectVersion that the pod is running at. When the domain's `spec.intrsopectVersion` is changed, the WebLogic Server pods that have been restarted or that will not be restarted will have the new label value, and all WebLogic Server pods that are yet to be restarted will continue have the old value until they are restarted. 
+
 #### Failed introspection
 
 Sometimes the Kubernetes Job, named `DOMAIN_UID-introspector`, created for the introspection will fail.
