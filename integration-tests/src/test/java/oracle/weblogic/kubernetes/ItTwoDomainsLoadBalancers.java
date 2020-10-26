@@ -2240,8 +2240,8 @@ public class ItTwoDomainsLoadBalancers {
       int index = i;
       logger.info("Getting admin server pod log from pod {0} in namespace {1}",
           domainAdminServerPodNames.get(index), defaultNamespace);
-      String adminServerPodLog =
-          assertDoesNotThrow(() -> getPodLog(domainAdminServerPodNames.get(index), defaultNamespace));
+      String adminServerPodLog = assertDoesNotThrow(() ->
+          getPodLog(domainAdminServerPodNames.get(index), defaultNamespace, "weblogic-server")).toLowerCase();
 
       assertNotNull(adminServerPodLog,
           String.format("failed to get admin server log from pod %s in namespace %s, returned null",
@@ -2249,19 +2249,19 @@ public class ItTwoDomainsLoadBalancers {
 
       // verify the admin server log does not contain WL-Proxy-Client-IP header
       logger.info("Checking that the admin server log does not contain 'WL-Proxy-Client-IP' header");
-      assertFalse(adminServerPodLog.contains("WL-Proxy-Client-IP"),
+      assertFalse(adminServerPodLog.contains("WL-Proxy-Client-IP".toLowerCase()),
           String.format("found WL-Proxy-Client-IP in the admin server pod log, pod: %s; namespace: %s",
               domainAdminServerPodNames.get(index), defaultNamespace));
 
       // verify the admin server log does not contain header "WL-Proxy-SSL: false"
       logger.info("Checking that the admin server log does not contain header 'WL-Proxy-SSL: false'");
-      assertFalse(adminServerPodLog.contains("WL-Proxy-SSL: false"),
+      assertFalse(adminServerPodLog.contains("WL-Proxy-SSL: false".toLowerCase()),
           String.format("found 'WL-Proxy-SSL: false' in the admin server pod log, pod: %s; namespace: %s",
               domainAdminServerPodNames.get(index), defaultNamespace));
 
       // verify the admin server log contains header "WL-Proxy-SSL: true"
       logger.info("Checking that the admin server log contains header 'WL-Proxy-SSL: true'");
-      assertTrue(adminServerPodLog.contains("WL-Proxy-SSL: true"),
+      assertTrue(adminServerPodLog.contains("WL-Proxy-SSL: true".toLowerCase()),
           String.format("Did not find 'WL-Proxy-SSL: true' in the admin server pod log, pod: %s; namespace: %s",
               domainAdminServerPodNames.get(index), defaultNamespace));
     }
