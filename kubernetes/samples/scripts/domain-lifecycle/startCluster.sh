@@ -93,6 +93,9 @@ domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o j
 startPolicy=$(echo ${domainJson} | jq -r '(.spec.clusters[] | select (.clusterName == "'${clusterName}'") | .serverStartPolicy)')
 if [ "${startPolicy}" == "null" ]; then
   startPolicy=$(echo ${domainJson} | jq -r .spec.serverStartPolicy)
+  if [ "${startPolicy}" == "null" ]; then
+    startPolicy=IF_NEEDED
+  fi
 fi
 
 if [ "${startPolicy}" == 'IF_NEEDED' ]; then 
