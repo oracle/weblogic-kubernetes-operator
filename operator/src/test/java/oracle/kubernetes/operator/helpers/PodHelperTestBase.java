@@ -551,7 +551,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   protected void verifyPodUpdated() {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(logRecords, containsFine(getExistsMessageKey()));
+    assertThat(logRecords, not(containsFine(getExistsMessageKey())));
     assertThat(logRecords, containsInfo(getUpdatedMessageKey()));
   }
 

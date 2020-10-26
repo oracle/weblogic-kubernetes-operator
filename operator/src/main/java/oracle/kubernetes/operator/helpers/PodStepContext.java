@@ -879,10 +879,10 @@ public abstract class PodStepContext extends BasePodStepContext {
       } else if (mustPatchPod(currentPod)) {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else {
-        logPodExists();
         if (introspectVersionChanged(currentPod)) {
           return doNext(updateCurrentPod(currentPod, getNext()), packet);
         }
+        logPodExists();
         return doNext(packet);
       }
     }
