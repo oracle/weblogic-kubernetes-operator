@@ -29,7 +29,8 @@ abstract class WaitForReadyStep<T> extends Step {
 
   static int getWatchBackstopRecheckDelaySeconds() {
     return Optional.ofNullable(TuningParameters.getInstance())
-            .map(parameters -> parameters.getWatchTuning().watchBackstopRecheckDelay)
+            .map(TuningParameters::getWatchTuning)
+            .map(tuning -> tuning.watchBackstopRecheckDelay)
             .orElse(DEFAULT_RECHECK_SECONDS);
   }
 
