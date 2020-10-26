@@ -380,6 +380,8 @@ class TopologyGenerator(Generator):
   def getDynamicServersOrNone(self,cluster):
     try:
       ret = cluster.getDynamicServers()
+      if ret.getDynamicClusterSize() == 0:
+        ret = None
     except:
       trace("Ignoring getDynamicServers() exception, this is expected.")
       ret = None
