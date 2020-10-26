@@ -892,12 +892,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private Object getPodIntrospectVersionLabel(V1Pod pod) {
-      return getIntrospectVersionlabel(Optional.ofNullable(pod.getMetadata())
-          .map(V1ObjectMeta::getLabels).orElse(Collections.emptyMap()));
-    }
-
-    private Object getIntrospectVersionlabel(Map<String, String> labels) {
-      return labels.get(INTROSPECTION_STATE_LABEL);
+      return Optional.ofNullable(pod.getMetadata())
+          .map(V1ObjectMeta::getLabels)
+          .map(labels -> labels.get(INTROSPECTION_STATE_LABEL))
+          .orElse(null);
     }
   }
 
