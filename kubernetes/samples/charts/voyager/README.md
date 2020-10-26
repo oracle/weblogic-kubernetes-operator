@@ -7,7 +7,7 @@ AppsCode has provided a Helm chart and instructions to install Voyager. See the 
 Also check the Kubernetes version support matrix based on your Kubernetes installation at:
 - https://github.com/appscode/voyager#supported-versions
 
-As a *demonstration*, the following are steps to install the Voyager operator by using Helm 2 on a Linux OS.
+As a *demonstration*, the following are steps to install the Voyager operator by using Helm 3 on a Linux OS.
 
 ### 1. Add the AppsCode chart repository
 ```
@@ -16,23 +16,17 @@ $ helm repo update
 ```
 Verify that the chart repository has been added.
 
-Using Helm 3:
 ```
 $ helm search repo appscode/voyager
+NAME               CHART VERSION APP VERSION	DESCRIPTION
+appscode/voyager   v12.0.0       v12.0.0    	Voyager by AppsCode - Secure HAProxy In.gress Co...
 ```
-Using Helm 2:
-```
-$ helm search appscode/voyager
-NAME                    CHART VERSION   APP VERSION     DESCRIPTION
-appscode/voyager        v10.0.0    v10.0.0    Voyager by AppsCode - Secure HAProxy Ingress Controller f...
-```
-> **NOTE**: After updating the helm repository, the Voyager version listed maybe newer that the one appearing here, please check with the Voyager site for the lastest supported versions.
+> **NOTE**: After updating the Helm repository, the Voyager version listed may be newer that the one appearing here. Please check with the Voyager site for the latest supported versions.
 
 ### 2. Install the Voyager operator
 
 > **NOTE**: The Voyager version used for the install should match the version found with `helm search`.
 
-Using Helm 3:
 ```
 $ kubectl create ns voyager
 $ helm install voyager-operator appscode/voyager --version 10.0.0 \
@@ -40,16 +34,8 @@ $ helm install voyager-operator appscode/voyager --version 10.0.0 \
   --set cloudProvider=baremetal \
   --set apiserver.enableValidatingWebhook=false
 ```
-Using Helm 2:
-```
-$ kubectl create ns voyager
-$ helm install appscode/voyager --name voyager-operator --version 10.0.0 \
-  --namespace voyager \
-  --set cloudProvider=baremetal \
-  --set apiserver.enableValidatingWebhook=false
-```
 
-Wait until the Voyager Operator is running.
+Wait until the Voyager operator is running.
 ```
 $ kubectl -n voyager get all
 NAME                                    READY   STATUS    RESTARTS   AGE
@@ -79,13 +65,12 @@ We'll demonstrate how to use Voyager to handle traffic to backend WebLogic domai
 Now we need to prepare some domains for Voyager load balancing.
 
 Create two WebLogic domains:
-- One domain with name `domain1` under namespace `default`.
-- One domain with name `domain2` under namespace `test1`.
-- Each domain has a web application installed with the URL context `testwebapp`.
+- One domain with name `domain1` under namespace `weblogic-domain1`.
+- One domain with name `domain2` under namespace `weblogic-domain2`.
+Each domain has a web application installed with the URL context `testwebapp`.
 
-
-### 2. Install the Voyager Ingress
-#### Install a host-routing Ingress
+### 2. Install the Voyager ingress
+#### Install a host-routing ingress
 ```
 $ kubectl create -f samples/host-routing.yaml
 ```
@@ -97,10 +82,9 @@ $ curl -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
 To see the Voyager host-routing stats web page, access the URL `http://${HOSTNAME}:30315` in your web browser.
 
 > **NOTE**: When using a web browser with a `NodePort` for the Voyager load balancer, the `Host` header is set to the host name including the `NodePort` value.
-> For example, if you type into the address bar `http://app.myhost.com:30305/testwebapp` then the host name in `Ingress` YAML file would be `- host: app.myhost.com:30305`
+> For example, if you type into the address bar `http://app.myhost.com:30305/testwebapp` then the host name in `ingress` YAML file would be `- host: app.myhost.com:30305`
 
-
-#### Install a path-routing Ingress
+#### Install a path-routing ingress
 ```
 $ kubectl create -f samples/path-routing.yaml
 ```
@@ -111,20 +95,20 @@ $ curl http://${HOSTNAME}:30307/domain2/
 ```
 To see the Voyager path-routing stats web page, access URL `http://${HOSTNAME}:30317` in your web browser.
 
-#### Install a TLS-enabled Ingress
+#### Install a TLS-enabled ingress
 This sample demonstrates accessing the two WebLogic domains using an HTTPS endpoint and the WebLogic domains are protected by different TLS certificates.
 
 First, you need to create two secrets with TLS certificates, one with the common name `domain1.org`, the other with the common name `domain2.org`. We use `openssl` to generate self-signed certificates for demonstration purposes. Note that the TLS secret needs to be in the same namespace as the WebLogic domain.
 ```
 # create a TLS secret for domain1
 $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out /tmp/tls1.crt -subj "/CN=domain1.org"
-$ kubectl create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
+$ kubectl -n weblogic-domain1 create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
 
 # create a TLS secret for domain2
 $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls2.key -out /tmp/tls2.crt -subj "/CN=domain2.org"
-$ kubectl -n test1 create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
+$ kubectl -n weblogic-domain1 create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
 ```
-Then deploy the TLS Ingress.
+Then deploy the TLS ingress.
 ```
 $ kubectl create -f samples/tls.yaml
 ```
@@ -134,26 +118,83 @@ $ curl -k -H 'host: domain1.org' https://${HOSTNAME}:30305/testwebapp/
 $ curl -k -H 'host: domain2.org' https://${HOSTNAME}:30307/testwebapp/
 ```
 
-## Uninstall the Voyager Operator
-After removing all the Voyager Ingress resources, uninstall the Voyager operator:
+## SSL termination at ingress controller
+This sample demonstrates how to terminate SSL traffic at the ingress controller to access the WebLogic Server Administration Console through the SSL port. 
 
-Using Helm 3:
+### 1. Enable "WebLogic Plugin Enabled" on the WebLogic domain level
+
+If you are using WDT to configure the WebLogic domain, you need to add the following resource section at the domain level to the model YAML file.
+```
+resources:
+     WebAppContainer:
+         WeblogicPluginEnabled: true
+```
+If you are using a WLST script to configure the domain, then the following modifications are needed to the respective PY script.
+```
+# Configure the Administration Server
+cd('/Servers/AdminServer')
+set('WeblogicPluginEnabled',true)
+...
+cd('/Clusters/%s' % cluster_name)
+set('WeblogicPluginEnabled',true)
+```
+### 2. Update the frontendRules section ingress resource
+Replace the string `weblogic-domain` with namespace of the WebLogic domain, the string `domain1` with domain UID and the string `adminserver` with name of the Administration Server in the WebLogic domain.
+
+**NOTE**: If you also have HTTP requests coming into an ingress, make sure that you remove any incoming `WL-Proxy-SSL` header. This protects you from a malicious user sending in a request to appear to WebLogic as secure when it isn't. Add the following rules in the Voyager ingress configuration to block `WL-Proxy` headers coming from the client. In the following example, the ingress resource will eliminate the client headers `WL-Proxy-Client-IP` and `WL-Proxy-SSL`.
+```
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: voyager-console-ssl
+  namespace: weblogic-domain
+  annotations:
+    ingress.appscode.com/type: 'NodePort'
+    ingress.appscode.com/stats: 'true'
+    ingress.appscode.com/affinity: 'cookie'
+spec:
+  tls:
+  - secretName: domain1-tls-cert
+    hosts: 
+    - '*'
+  frontendRules:
+  - port: 443
+    rules:
+    - http-request del-header WL-Proxy-Client-IP
+    - http-request del-header WL-Proxy-SSL
+    - http-request set-header WL-Proxy-SSL true
+  rules:
+  - host: '*'
+    http:
+      nodePort: 30443
+      paths:
+      - backend:
+          serviceName: domain1-adminserver
+          servicePort: '7001'
+```
+### 3. Create ingress resource
+Save the above configuration as `voyager-tls-console.yaml`.
+```
+ kubectl create -f voyager-tls-console.yaml
+```
+### 4. Access the WebLogic Server Administration Console using the HTTPS port
+In a web browser type `https://${HOSTNAME}:30443/console` in the address bar to access the WebLogic Server Administration Console. 
+
+## Uninstall the Voyager operator
+After removing all the Voyager ingress resources, uninstall the Voyager operator:
+
 ```
 $ helm uninstall voyager-operator --namespace voyager
 ```
-Using Helm 2:
-```
-$ helm delete --purge voyager-operator
-```
 
-## Install and uninstall the Voyager operator with setup.sh
-Alternatively, you can run the helper script `setup.sh` when using Helm 2, under the `kubernetes/samples/charts/util` folder, to install and uninstall Voyager.
+## Install and uninstall the Voyager operator with setupLoadBalancer.sh
+Alternatively, you can run the helper script `setupLoadBalancer.sh` under the `kubernetes/samples/charts/util` folder, to install and uninstall Voyager.
 
 To install Voyager:
 ```
-$ ./setup.sh create voyager
+$ ./ setupLoadBalancer.sh create voyager [voyager-version]
 ```
 To uninstall Voyager:
 ```
-$ ./setup.sh delete voyager
+$ ./ setupLoadBalancer.sh delete voyager
 ```

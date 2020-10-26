@@ -50,7 +50,7 @@ but the shortest distances, almost always requires using a single database
 server to consolidate and replicate data (DataGuard).
 
 There are three common approaches on how to structure these components:
- * The first, "domain on persistent volume" or Domain in PV,
+ * The first, "domain on a persistent volume" or Domain in PV,
    places the JDK and WebLogic binaries
    in the Docker image, but the domain home is kept on a separate persistent storage
    outside of the image.

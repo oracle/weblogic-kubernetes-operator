@@ -38,7 +38,7 @@ as described in [Creating a custom image with your domain inside the image](#cre
 This version of the operator requires WebLogic Server 12.2.1.3.0 plus patch 29135930; the standard image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, already includes this patch pre-applied. Images for WebLogic Server 12.2.1.4.0 do not require any patches.
 {{% /notice %}}  
 
-In order for Kubernetes to obtain the WebLogic Server Docker image from the Oracle Container Registry (OCR), which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with the OCR credentials, issue the following command:
+In order for Kubernetes to obtain the WebLogic Server Docker image from the Oracle Container Registry (OCR), which requires authentication, a Kubernetes Secret containing the registry credentials must be created. To create a secret with the OCR credentials, issue the following command:
 
 ```
 $ kubectl create secret docker-registry SECRET_NAME \
@@ -52,7 +52,7 @@ $ kubectl create secret docker-registry SECRET_NAME \
 In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the first domain will be deployed, otherwise, Kubernetes will not be able to find it.  
 
 It may be preferable to manually pull the image in advance, on each Kubernetes worker node, as described in the next section.
-If you choose this approach, you do not require the Kubernetes secret.
+If you choose this approach, you do not require the Kubernetes Secret.
 
 #### Obtaining standard images from the Oracle Container Registry
 

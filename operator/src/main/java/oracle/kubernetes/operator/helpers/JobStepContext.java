@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.google.common.base.Strings;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -26,7 +27,6 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -42,11 +42,10 @@ public abstract class JobStepContext extends BasePodStepContext {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
         "/weblogic-operator/scripts/introspectDomain.sh";
-  private final DomainPresenceInfo info;
   private V1Job jobModel;
 
   JobStepContext(Packet packet) {
-    info = packet.getSpi(DomainPresenceInfo.class);
+    super(packet.getSpi(DomainPresenceInfo.class));
   }
 
   private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {
@@ -63,7 +62,7 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   // ------------------------ data methods ----------------------------
 
-  private V1Job getJobModel() {
+  protected V1Job getJobModel() {
     return jobModel;
   }
 
@@ -137,7 +136,7 @@ public abstract class JobStepContext extends BasePodStepContext {
    * @return a step to be scheduled.
    */
   Step createJob(Step next) {
-    return new CallBuilder().createJobAsync(getNamespace(), getJobModel(), createResponse(next));
+    return new CallBuilder().createJobAsync(getNamespace(), getDomainUid(), getJobModel(), createResponse(next));
   }
 
   private void logJobCreated() {
@@ -155,16 +154,24 @@ public abstract class JobStepContext extends BasePodStepContext {
     return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
   }
 
+  protected String getModelHome() {
+    return getDomain().getModelHome();
+  }
+
   protected String getWdtDomainType() {
     return getDomain().getWdtDomainType();
   }
 
-  protected String getDomainHomeSourceType() {
+  protected DomainSourceType getDomainHomeSourceType() {
     return getDomain().getDomainHomeSourceType();
   }
 
-  private boolean isIstioEnabled() {
+  public boolean isIstioEnabled() {
     return getDomain().isIstioEnabled();
+  }
+
+  public int getIstioReadinessPort() {
+    return getDomain().getIstioReadinessPort();
   }
 
   String getEffectiveLogHome() {
@@ -188,7 +195,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private String getConfigOverrides() {
-    return getDomain().getConfigOverrides();
+    return Strings.emptyToNull(getDomain().getConfigOverrides());
   }
 
   private long getIntrospectorJobActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
@@ -199,7 +206,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   // ---------------------- model methods ------------------------------
 
   String getWdtConfigMap() {
-    return getDomain().getWdtConfigMap();
+    return Strings.emptyToNull(getDomain().getWdtConfigMap());
   }
 
   private ResponseStep<V1Job> createResponse(Step next) {
@@ -213,12 +220,12 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   V1ObjectMeta createMetadata() {
-    return new V1ObjectMeta()
+    return updateForOwnerReference(
+        new V1ObjectMeta()
           .name(getJobName())
           .namespace(getNamespace())
-          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
-          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
   }
 
   private long getActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
@@ -287,33 +294,46 @@ public abstract class JobStepContext extends BasePodStepContext {
       podSpec.addVolumesItem(additionalVolume);
     }
 
-    List<String> configOverrideSecrets = getConfigOverrideSecrets();
-    for (String secretName : configOverrideSecrets) {
-      podSpec.addVolumesItem(
-            new V1Volume()
-                  .name(secretName + "-volume")
-                  .secret(getOverrideSecretVolumeSource(secretName)));
-    }
-    if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
-      podSpec.addVolumesItem(
-            new V1Volume()
-                  .name(getConfigOverrides() + "-volume")
-                  .configMap(getOverridesVolumeSource(getConfigOverrides())));
-    }
-    // For WDT
-    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
-      if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
-        podSpec.addVolumesItem(
-            new V1Volume()
-                .name(getWdtConfigMap() + "-volume")
-                .configMap(getWdtConfigMapVolumeSource(getWdtConfigMap())));
-      }
-      podSpec.addVolumesItem(
-          new V1Volume()
-              .name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
-              .secret(getRuntimeEncryptionSecretVolume()));
+    getConfigOverrideSecrets().forEach(secretName -> addConfigOverrideSecretVolume(podSpec, secretName));
+    Optional.ofNullable(getConfigOverrides()).ifPresent(overrides -> addConfigOverrideVolume(podSpec, overrides));
+
+    if (isSourceWdt()) {
+      Optional.ofNullable(getWdtConfigMap()).ifPresent(mapName -> addWdtConfigMapVolume(podSpec, mapName));
+      addWdtSecretVolume(podSpec);
     }
     return podSpec;
+  }
+
+  private void addConfigOverrideSecretVolume(V1PodSpec podSpec, String secretName) {
+    podSpec.addVolumesItem(
+          new V1Volume()
+                .name(secretName + "-volume")
+                .secret(getOverrideSecretVolumeSource(secretName)));
+  }
+
+  private void addConfigOverrideVolume(V1PodSpec podSpec, String configOverrides) {
+    podSpec.addVolumesItem(
+          new V1Volume()
+                .name(configOverrides + "-volume")
+                .configMap(getOverridesVolumeSource(configOverrides)));
+  }
+
+  private boolean isSourceWdt() {
+    return getDomainHomeSourceType() == DomainSourceType.FromModel;
+  }
+
+  private void addWdtConfigMapVolume(V1PodSpec podSpec, String configMapName) {
+    podSpec.addVolumesItem(
+        new V1Volume()
+            .name(configMapName + "-volume")
+            .configMap(getWdtConfigMapVolumeSource(configMapName)));
+  }
+
+  private void addWdtSecretVolume(V1PodSpec podSpec) {
+    podSpec.addVolumesItem(
+        new V1Volume()
+            .name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
+            .secret(getRuntimeEncryptionSecretVolume()));
   }
 
   protected V1Container createContainer(TuningParameters tuningParameters) {
@@ -349,8 +369,8 @@ public abstract class JobStepContext extends BasePodStepContext {
                   secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
 
-    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
-      if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
+    if (isSourceWdt()) {
+      if (getWdtConfigMap() != null) {
         container.addVolumeMountsItem(
             readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
       }
@@ -419,7 +439,7 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   private V1ConfigMapVolumeSource getConfigMapVolumeSource() {
     return new V1ConfigMapVolumeSource()
-          .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
+          .name(KubernetesConstants.SCRIPT_CONFIG_MAP_NAME)
           .defaultMode(ALL_READ_AND_EXECUTE);
   }
 

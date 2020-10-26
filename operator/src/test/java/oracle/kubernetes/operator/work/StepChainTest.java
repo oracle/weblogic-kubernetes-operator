@@ -82,6 +82,41 @@ public class StepChainTest {
     Step.chain();
   }
 
+  @Test
+  public void doNotChainGroupThatContainsDuplicateStep() throws Exception {
+    Step duplicateStep = new NamedStep("duplicate", new NamedStep("two"));
+    Step group1 = new NamedStep("one", duplicateStep);
+    Step group2 = new NamedStep("three", duplicateStep);
+
+    Step chain = Step.chain(group1, group2);
+
+    assertThat(stepNamesInStepChain(chain), contains("one", "duplicate", "two"));
+  }
+
+  @Test
+  public void addGroupThatContainsStepsWithSameName() throws Exception {
+    Step group1 = new NamedStep("one", new NamedStep("two"));
+    Step group2 = new NamedStep("two", new NamedStep("three"));
+
+    Step chain = Step.chain(group1, group2);
+
+    assertThat(stepNamesInStepChain(chain), contains("one", "two", "two", "three"));
+  }
+
+  private static List<String> stepNamesInStepChain(Step steps) {
+    return stepNamesInStepChain(steps, 10);
+  }
+
+  private static List<String> stepNamesInStepChain(Step steps, int maxNumSteps) {
+    List<String> stepNames = new ArrayList<>(maxNumSteps);
+    Step s = steps;
+    while (s != null && stepNames.size() < maxNumSteps) {
+      stepNames.add(s.getName());
+      s = s.getNext();
+    }
+    return stepNames;
+  }
+
   private static class NamedStep extends Step {
     private static final String NAMES = "names";
     private String name;
@@ -93,6 +128,10 @@ public class StepChainTest {
     NamedStep(String name, Step next) {
       super(next);
       this.name = name;
+    }
+
+    public String getName() {
+      return name;
     }
 
     @SuppressWarnings("unchecked")

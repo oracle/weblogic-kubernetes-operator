@@ -14,17 +14,21 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Model {
+  static final String DEFAULT_WDT_MODEL_HOME = "/u01/wdt/models";
 
   @EnumClass(value = ModelInImageDomainType.class)
-  @Description("WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
+  @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
   private String domainType;
 
-  @Description("WDT config map name.")
+  @Description("Name of a ConfigMap containing the WebLogic Deploy Tooling model.")
   private String configMap;
+
+  @Description("Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.")
+  private String modelHome;
 
   @Valid
   @Nullable
-  @Description("Runtime encryption secret. Required when domainHomeSourceType is set to FromModel.")
+  @Description("Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel.")
   private String runtimeEncryptionSecret;
 
   @Nullable
@@ -68,12 +72,26 @@ public class Model {
     return this;
   }
 
+  String getModelHome() {
+    return modelHome;
+  }
+
+  void setModelHome(String modelHome) {
+    this.modelHome = modelHome;
+  }
+
+  public Model withModelHome(String modelHome) {
+    this.modelHome = modelHome;
+    return this;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .append("domainType", domainType)
             .append("configMap", configMap)
+            .append("modelHome", modelHome)
             .append("runtimeEncryptionSecret", runtimeEncryptionSecret);
 
     return builder.toString();
@@ -84,6 +102,7 @@ public class Model {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(domainType)
         .append(configMap)
+        .append(modelHome)
         .append(runtimeEncryptionSecret);
 
     return builder.toHashCode();
@@ -103,6 +122,7 @@ public class Model {
         new EqualsBuilder()
             .append(domainType, rhs.domainType)
             .append(configMap,rhs.configMap)
+            .append(modelHome,rhs.modelHome)
             .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret);
 
     return builder.isEquals();

@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
@@ -32,6 +33,7 @@ public class LoggingFormatter extends Formatter {
   private static final String THREAD = "thread";
   private static final String FIBER = "fiber";
   private static final String DOMAIN_UID = "domainUID";
+  private static final String DOMAIN_NAMESPACE = "namespace";
   private static final String SOURCE_CLASS = "class";
   private static final String SOURCE_METHOD = "method";
   private static final String TIME_IN_MILLIS = "timeInMillis";
@@ -112,6 +114,7 @@ public class LoggingFormatter extends Formatter {
     map.put(TIMESTAMP, dateString);
     map.put(THREAD, thread);
     map.put(FIBER, fiber != null ? fiber.toString() : "");
+    map.put(DOMAIN_NAMESPACE, getNamespace(fiber));
     map.put(DOMAIN_UID, getDomainUid(fiber));
     map.put(LOG_LEVEL, level);
     map.put(SOURCE_CLASS, sourceClassName);
@@ -145,19 +148,60 @@ public class LoggingFormatter extends Formatter {
   }
 
   /**
-   * Get the domain UID currently being used by the step executing for the Fiber.
+   * Get the domain UID associated with the current log message.
+   * Check the fiber that is currently being used to execute the step that initiates the log.
+   * If there is no fiber associated with this log, check the ThreadLocal.
    *
    * @param fiber The current Fiber
    * @return the domain UID or empty string
    */
   private String getDomainUid(Fiber fiber) {
-
-    Packet packet = fiber == null ? null : fiber.getPacket();
-    if (packet != null) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      return info == null ? "" : info.getDomainUid();
-    } else {
-      return "";
-    }
+    return Optional.ofNullable(fiber)
+          .map(Fiber::getPacket)
+          .map(this::getDomainPresenceInfo)
+          .map(DomainPresenceInfo::getDomainUid)
+          .orElse(getDomainUidFromLoggingContext(fiber));
   }
+
+  private String getDomainUidFromLoggingContext(Fiber fiber) {
+    return Optional.ofNullable(fiber)
+        .map(Fiber::getPacket)
+        .map(p -> p.getSpi(LoggingContext.class))
+        .map(LoggingContext::domainUid)
+        .orElse(getDomainUidFromThreadContext());
+  }
+
+  private String getDomainUidFromThreadContext() {
+    return LoggingContext.optionalContext().map(LoggingContext::domainUid).orElse("");
+  }
+
+  private DomainPresenceInfo getDomainPresenceInfo(Packet packet) {
+    return packet.getSpi(DomainPresenceInfo.class);
+  }
+
+  /**
+   * Get the namespace associated with the current log message.
+   * Check the fiber that is currently being used to execute the step that initiate the log.
+   * If there is no fiber associated with this log, check the ThreadLocal.
+   *
+   * @param fiber The current Fiber
+   * @return the namespace or empty string
+   */
+  private String getNamespace(Fiber fiber) {
+    return Optional.ofNullable(fiber)
+          .map(Fiber::getPacket)
+          .map(this::getDomainPresenceInfo)
+          .map(DomainPresenceInfo::getNamespace)
+          .orElse(getNamespaceFromLoggingContext(fiber));
+  }
+
+  private String getNamespaceFromLoggingContext(Fiber fiber) {
+    return Optional.ofNullable(fiber)
+          .map(Fiber::getPacket)
+          .map(p -> p.getSpi(LoggingContext.class))
+          .or(LoggingContext::optionalContext)
+          .map(LoggingContext::namespace)
+          .orElse("");
+  }
+
 }

@@ -2,13 +2,19 @@
 title: "Using OCI File Storage (FSS) for persistent volumes"
 date: 2020-02-12T12:12:12-05:00
 draft: false
-weight: 40
+weight: 7
+description: "If you are running your Kubernetes cluster on Oracle Container Engine
+for Kubernetes (OKE), and you use OCI File Storage (FSS)
+for persistent volumes to store the WebLogic domain home, then the file system
+handling, as demonstrated in the operator persistent volume sample, will require
+an update to properly initialize the file ownership on the persistent volume
+when the domain is initially created."
 ---
 
 If you are running your Kubernetes cluster on Oracle Container Engine
 for Kubernetes (commonly known as OKE), and you use OCI File Storage (FSS)
 for persistent volumes to store the WebLogic domain home, then the file system
-handling demonstrated in the operator persistent volume sample will require
+handling, as demonstrated in the operator persistent volume sample, will require
 an update to properly initialize the file ownership on the persistent volume
 when the domain is initially created.
 
@@ -26,13 +32,13 @@ see [Persistent storage]({{< relref "/userguide/managing-domains/persistent-stor
 #### Failure during domain creation with persistent volume sample
 
 The existing sample for [creation of a domain home on persistent volume](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv)
-uses a Kubernetes job to create the domain. The sample uses an
+uses a Kubernetes Job to create the domain. The sample uses an
 `initContainers` section to change the file ownership which will
 fail for OCI FSS created volumes used with an OKE cluster.
 
 The OCI FSS volume contains some files that are not modifiable thus
-causing the Kubernetes job to fail. The failure is seen in the
-description of the Kubernetes job pod:
+causing the Kubernetes Job to fail. The failure is seen in the
+description of the Kubernetes Job pod:
 ```bash
 $ kubectl describe -n domain1-ns pod domain1-create-weblogic-sample-domain-job-wdkvs
    :

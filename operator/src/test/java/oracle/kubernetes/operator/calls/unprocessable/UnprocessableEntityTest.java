@@ -6,15 +6,13 @@ package oracle.kubernetes.operator.calls.unprocessable;
 import java.util.Collections;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.FailureStatusSource;
 import oracle.kubernetes.operator.calls.RequestParams;
 import org.junit.Test;
 
-import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
-import static oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder.HTTP_UNPROCESSABLE_ENTITY;
-import static oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder.isUnprocessableEntity;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class UnprocessableEntityTest {
@@ -35,7 +33,7 @@ public class UnprocessableEntityTest {
          + "\"causes\":[{" + CAUSE + "}]},"
          + "\"code\":422}\n";
   private static RequestParams REQUEST_PARAMS
-      = new RequestParams("testcall", "junit", "testName", "body");
+      = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
 
   private static String escape(String s) {
     return s.replaceAll("\"", "\\\\\"");
@@ -46,20 +44,10 @@ public class UnprocessableEntityTest {
   }
 
   @Test
-  public void whenErrorIsNotUnprocessableEntity_returnFalse() {
-    assertThat(isUnprocessableEntity(new ApiException(HTTP_FORBIDDEN, "")), is(false));
-  }
-
-  @Test
-  public void whenErrorIsUnprocessableEntity_returnTrue() {
-    assertThat(isUnprocessableEntity(new ApiException(HTTP_UNPROCESSABLE_ENTITY, "")), is(true));
-  }
-
-  @Test
   public void extractReasonFromException() {
-    ApiException exception = new ApiException(HTTP_UNPROCESSABLE_ENTITY, Collections.emptyMap(), SAMPLE_MESSAGE_BODY);
+    ApiException exception = new ApiException(422, Collections.emptyMap(), SAMPLE_MESSAGE_BODY);
 
-    UnprocessableEntityBuilder builder = UnprocessableEntityBuilder.fromFailedCall(
+    FailureStatusSource builder = UnrecoverableErrorBuilderImpl.fromFailedCall(
         CallResponse.createFailure(REQUEST_PARAMS, exception, 422));
 
     assertThat(builder.getReason(), equalTo("FieldValueNotFound"));
@@ -67,9 +55,9 @@ public class UnprocessableEntityTest {
 
   @Test
   public void extractMessageFromException() {
-    ApiException exception = new ApiException(HTTP_UNPROCESSABLE_ENTITY, Collections.emptyMap(), SAMPLE_MESSAGE_BODY);
+    ApiException exception = new ApiException(422, Collections.emptyMap(), SAMPLE_MESSAGE_BODY);
 
-    UnprocessableEntityBuilder builder = UnprocessableEntityBuilder.fromFailedCall(
+    FailureStatusSource builder = UnrecoverableErrorBuilderImpl.fromFailedCall(
         CallResponse.createFailure(REQUEST_PARAMS, exception, 422));
 
     assertThat(builder.getMessage(), equalTo("testcall in namespace junit, for testName: " + MESSAGE_1));
@@ -77,12 +65,12 @@ public class UnprocessableEntityTest {
 
   @Test
   public void constructTestException() {
-    ApiException exception = new UnprocessableEntityBuilder()
+    ApiException exception = new UnrecoverableErrorBuilderImpl()
         .withReason("SomethingWrong")
         .withMessage("This explanation")
         .build();
 
-    UnprocessableEntityBuilder builder = UnprocessableEntityBuilder.fromFailedCall(
+    FailureStatusSource builder = UnrecoverableErrorBuilderImpl.fromFailedCall(
         CallResponse.createFailure(REQUEST_PARAMS, exception, 422));
 
     assertThat(builder.getReason(), equalTo("SomethingWrong"));

@@ -2,11 +2,11 @@
 title: "Service accounts"
 date: 2019-02-23T17:36:12-05:00
 weight: 4
-description: "Kubernetes service accounts for the operator"
+description: "Kubernetes ServiceAccounts for the operator"
 ---
 
 
-#### WebLogic Server Kubernetes Operator service accounts
+#### WebLogic Server Kubernetes Operator ServiceAccounts
 
 When the operator is installed, the Helm chart property, `serviceAccount`, can
 be specified where the value contains the name of the Kubernetes `ServiceAccount`
@@ -33,5 +33,5 @@ look for the `serviceAccount` value using the Helm command:
 $ helm get values --all weblogic-operator
 ```
 #### Additional reading
-* [Helm service account]({{<relref "userguide/managing-operators/_index.md#install-helm-and-tiller">}})
+* [Helm service account]({{<relref "userguide/managing-operators/_index.md#install-helm">}})
 * [Operator Helm chart service account configuration]({{<relref "/userguide/managing-operators/using-the-operator/using-helm/_index.md#serviceaccount">}})

@@ -2,13 +2,13 @@
 title: "Storage"
 date: 2019-02-23T17:32:31-05:00
 weight: 1
-description: "Sample for creating a PV or PVC that can be used by a domain resource as the persistent storage for the WebLogic domain home or log files."
+description: "Sample for creating a PV or PVC that can be used by a Domain YAML file as the persistent storage for the WebLogic domain home or log files."
 ---
 
 
-### Sample persistent volume and persistent volume claim
+### Sample PersistentVolume and PersistentVolumeClaim
 
-The sample scripts demonstrate the creation of a Kubernetes persistent volume (PV) and persistent volume claim (PVC), which can then be used in a domain resource as a persistent storage for the WebLogic domain home or log files.
+The sample scripts demonstrate the creation of a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC), which can then be used in a Domain YAML file as a persistent storage for the WebLogic domain home or log files.
 
 A PV and PVC can be shared by multiple WebLogic domains or dedicated to a particular domain.
 
@@ -57,8 +57,8 @@ The PV and PVC creation inputs can be customized by editing the `create-pv-pvc-i
 
 | Parameter | Definition | Default |
 | --- | --- | --- |
-| `domainUID` | ID of the domain resource to which the generated PV and PVC will be dedicated. Leave it empty if the PV and PVC are going to be shared by multiple domains. | no default |
-| `namespace` | Kubernetes namespace to create the PVC. | `default` |
+| `domainUID` | ID of the Domain to which the generated PV and PVC will be dedicated. Leave it empty if the PV and PVC are going to be shared by multiple domains. | no default |
+| `namespace` | Kubernetes Namespace to create the PVC. | `default` |
 | `baseName` | Base name of the PV and PVC. The generated PV and PVC will be `<baseName>-pv` and `<baseName>-pvc` respectively. | `weblogic-sample` |
 | `weblogicDomainStoragePath` | Physical path of the storage for the PV.  When `weblogicDomainStorageType` is set to `HOST_PATH`, this value should be set the to path to the domain storage on the Kubernetes host.  When `weblogicDomainStorageType` is set to NFS, then `weblogicDomainStorageNFSServer` should be set to the IP address or name of the DNS server, and this value should be set to the exported path on that server.  Note that the path where the domain is mounted in the WebLogic containers is not affected by this setting; that is determined when you create your domain. | no default |
 | `weblogicDomainStorageReclaimPolicy` | Kubernetes PVC policy for the persistent storage. The valid values are: `Retain`, `Delete`, and `Recycle`. | `Retain` |
@@ -68,7 +68,7 @@ The PV and PVC creation inputs can be customized by editing the `create-pv-pvc-i
 
 #### Shared versus dedicated PVC
 
-By default, the `domainUID` is left empty in the inputs file, which means the generated PV and PVC will not be associated with a particular domain, but can be shared by multiple domain resources in the same Kubernetes namespaces as the PV and PVC. If the PV/PVC is being shared across domains, then, as a best practice, you should specify a unique `baseName`.
+By default, the `domainUID` is left empty in the inputs file, which means the generated PV and PVC will not be associated with a particular domain, but can be shared by multiple Domains in the same Kubernetes Namespaces as the PV and PVC. If the PV/PVC is being shared across domains, then, as a best practice, you should specify a unique `baseName`.
 
 For the use cases where dedicated PV and PVC are desired for a particular domain, the `domainUID` needs to be set in the `create-pv-pvc-inputs.yaml` file. The presence of a non-empty `domainUID` in the inputs file will cause the generated PV and PVC to be associated with the specified `domainUID`. The association includes that the names of the generated YAML files and the Kubernetes PV and PVC objects are decorated with the `domainUID`, and the PV and PVC objects are also labeled with the `domainUID`.
 
@@ -89,8 +89,6 @@ apiVersion: v1
 metadata:
   name: weblogic-sample-pvc
   namespace: default
-  labels:
-    weblogic.resourceVersion: domain-v2
 
   storageClassName: weblogic-sample-storage-class
   accessModes:
@@ -109,9 +107,8 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: weblogic-sample-pv
-  labels:
-    weblogic.resourceVersion: domain-v2
-    # weblogic.domainUID:
+  # labels:
+  #   weblogic.domainUID:
 spec:
   storageClassName: weblogic-sample-storage-class
   capacity:
@@ -141,7 +138,6 @@ metadata:
   name: domain1-weblogic-sample-pvc
   namespace: default
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
 spec:
   storageClassName: domain1-weblogic-sample-storage-class
@@ -162,7 +158,6 @@ kind: PersistentVolume
 metadata:
   name: domain1-weblogic-sample-pv
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
 spec:
   storageClassName: domain1-weblogic-sample-storage-class
@@ -180,13 +175,12 @@ spec:
 
 #### Verify the PV and PVC objects
 
-You can use this command to verify the persistent volume was created. Note that the `Status` field
-should have the value `Bound`, indicating the that persistent volume has been claimed:
+You can use this command to verify the PersistentVolume was created. Note that the `Status` field
+should have the value `Bound`, indicating the that PersistentVolume has been claimed:
 
 ```
 $ kubectl describe pv weblogic-sample-pv
 Name:            weblogic-sample-pv
-Labels:          weblogic.resourceVersion=domain-v2
 Annotations:     pv.kubernetes.io/bound-by-controller=yes
 StorageClass:    weblogic-sample-storage-class
 Status:          Bound
@@ -203,7 +197,7 @@ Events:            <none>
 
 ```
 
-You can use this command to verify the persistent volume claim was created:
+You can use this command to verify the PersistentVolumeClaim was created:
 
 ```
 $ kubectl describe pvc weblogic-sample-pvc
@@ -212,7 +206,6 @@ Namespace:     default
 StorageClass:  weblogic-sample-storage-class
 Status:        Bound
 Volume:        weblogic-sample-pv
-Labels:        weblogic.resourceVersion=domain-v2
 Annotations:   pv.kubernetes.io/bind-completed=yes
                pv.kubernetes.io/bound-by-controller=yes
 Finalizers:    []

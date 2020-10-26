@@ -13,16 +13,36 @@ data:
     {{- end }}
   {{- end }}
   serviceaccount: {{ .serviceAccount | quote }}
-  targetNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
+  domainNamespaceSelectionStrategy: {{ (default "List" .domainNamespaceSelectionStrategy) | quote }}
+  domainNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
+  {{- if .dedicated }}
   dedicated: {{ .dedicated | quote }}
+  {{- end }}
+  {{- if .domainNamespaceLabelSelector }}
+  domainNamespaceLabelSelector: {{ .domainNamespaceLabelSelector | quote }}
+  {{- end }}
+  {{- if .domainNamespaceRegExp }}
+  domainNamespaceRegExp: {{ .domainNamespaceRegExp | quote }}
+  {{- end }}
   {{- if .dns1123Fields }}
   dns1123Fields: {{ .dns1123Fields | quote }}
+  {{- end }}
+  {{- if .introspectorJobNameSuffix }}
+  introspectorJobNameSuffix: {{ .introspectorJobNameSuffix | quote }}
+  {{- end }}
+  {{- if .externalServiceNameSuffix }}
+  externalServiceNameSuffix: {{ .externalServiceNameSuffix | quote }}
+  {{- end }}
+  {{- if .clusterSizePaddingValidationEnabled }}
+  clusterSizePaddingValidationEnabled: {{ .clusterSizePaddingValidationEnabled | quote }}
+  {{- end }}
+  {{- if .tokenReviewAuthentication }}
+  tokenReviewAuthentication: {{ .tokenReviewAuthentication | quote }}
   {{- end }}
 kind: "ConfigMap"
 metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
-    weblogic.resourceVersion: "operator-v2"
   name: "weblogic-operator-cm"
   namespace: {{ .Release.Namespace | quote }}
 {{- end }}

@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -24,18 +25,17 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
  * DomainStatus represents information about the status of a domain. Status may trail the actual
  * state of a system.
  */
-@Description(
-    "DomainStatus represents information about the status of a domain. "
-        + "Status may trail the actual state of a system.")
+@Description("The current status of the operation of the WebLogic domain. Updated automatically by the operator.")
 public class DomainStatus {
 
-  @Description("Current service state of domain.")
+  @Description("Current service state of the domain.")
   @Valid
   private List<DomainCondition> conditions = new ArrayList<>();
 
@@ -47,13 +47,24 @@ public class DomainStatus {
       "A brief CamelCase message indicating details about why the domain is in this state.")
   private String reason;
 
+  @Description(
+      "Non-zero if the introspector job fails for any reason. "
+          + "You can configure an introspector job retry limit for jobs that log script failures using "
+          + "the Operator tuning parameter 'domainPresenceFailureRetryMaxCount' (default 5). "
+          + "You cannot configure a limit for other types of failures, such as a Domain resource reference "
+          + "to an unknown secret name; in which case, the retries are unlimited.")
+  @Range(minimum = 0)
+  private Integer introspectJobFailureCount = new Integer(0);
+
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
-  private List<ServerStatus> servers = new ArrayList<>();
+  // sorted list of ServerStatus
+  private final List<ServerStatus> servers;
 
   @Description("Status of WebLogic clusters in this domain.")
   @Valid
-  private List<ClusterStatus> clusters = new ArrayList<>();
+  // sorted list of ClusterStatus
+  List<ClusterStatus> clusters = new ArrayList<>();
 
   @Description(
       "RFC 3339 date and time at which the operator started the domain. This will be when "
@@ -62,13 +73,15 @@ public class DomainStatus {
   private DateTime startTime = SystemClock.now();
 
   @Description(
-      "The number of running Managed Servers in the WebLogic cluster if there is "
-          + "only one cluster in the domain and where the cluster does not explicitly "
-          + "configure its replicas in a cluster specification.")
+      "The number of running cluster member Managed Servers in the WebLogic cluster if there is "
+      + "exactly one cluster defined in the domain configuration and where the `replicas` field is set at the `spec` "
+      + "level rather than for the specific cluster under `clusters`. This field is provided to support use of "
+      + "Kubernetes scaling for this limited use case.")
   @Range(minimum = 0)
   private Integer replicas;
 
   public DomainStatus() {
+    servers = new ArrayList<>();
   }
 
   /**
@@ -83,6 +96,7 @@ public class DomainStatus {
     clusters = that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList());
     startTime = that.startTime;
     replicas = that.replicas;
+    introspectJobFailureCount = that.introspectJobFailureCount;
   }
 
   /**
@@ -273,41 +287,107 @@ public class DomainStatus {
   }
 
   /**
-   * Status of WebLogic servers in this domain.
+   * The number of times the introspect job failed.
    *
-   * @return a sorted list of ServerStatus containing status of WebLogic servers in this domain
+   * @return introspectJobFailureRetryCount
    */
-  public List<ServerStatus> getServers() {
-    List<ServerStatus> sortedServers = new ArrayList<>(servers);
-    sortedServers.sort(Comparator.naturalOrder());
-    return sortedServers;
+  public Integer getIntrospectJobFailureCount() {
+    return this.introspectJobFailureCount;
   }
 
   /**
-   * Status of WebLogic servers in this domain.
+   * Increment the number of introspect job failure count.
+   *
+   * @return retryCount
+   */
+  public Integer incrementIntrospectJobFailureCount() {
+    return this.introspectJobFailureCount = this.introspectJobFailureCount.intValue() + 1;
+  }
+
+
+  /**
+   * Reset the number of introspect job failure to default.
+   *
+   * @return this
+   */
+  public DomainStatus resetIntrospectJobFailureCount() {
+    this.introspectJobFailureCount = 0;
+    return this;
+  }
+
+  /**
+   * Set the number of introspect job failure and return the DomainStatus.
+   * @param retryCount retryCount
+   * @return this
+   */
+  public DomainStatus withIntrospectJobFailureCount(Integer retryCount) {
+    this.introspectJobFailureCount = retryCount;
+    return this;
+  }
+
+  /**
+   * Status of WebLogic Servers in this domain.
+   *
+   * @return a sorted list of ServerStatus containing status of WebLogic Servers in this domain
+   */
+  public List<ServerStatus> getServers() {
+    synchronized (servers) {
+      return new ArrayList<>(servers);
+    }
+  }
+
+  /**
+   * Status of WebLogic Servers in this domain.
    *
    * @param servers servers
    */
   public void setServers(List<ServerStatus> servers) {
-    if (isServersEqualIgnoringOrder(servers, this.servers)) {
-      return;
+    synchronized (this.servers) {
+      if (this.servers.equals(servers)) {
+        return;
+      }
+
+      List<ServerStatus> newServers = servers
+            .stream()
+            .map(ServerStatus::new)
+            .map(this::adjust)
+            .sorted(Comparator.naturalOrder())
+            .collect(Collectors.toList());
+
+      this.servers.clear();
+      this.servers.addAll(newServers);
     }
-
-    this.servers = servers;
   }
 
-  private boolean isServersEqualIgnoringOrder(List<ServerStatus> servers1, List<ServerStatus> servers2) {
-    return new HashSet<>(servers1).equals(new HashSet<>(servers2));
+  private ServerStatus adjust(ServerStatus server) {
+    if (server.getState() == null) {
+      ServerStatus oldServer = getMatchingServer(server);
+      if ((oldServer != null) && (oldServer.getHealth() == null)) {
+        return server;
+      }
+      server.setState(oldServer == null ? SHUTDOWN_STATE : oldServer.getState());
+    }
+    return server;
   }
+
+  private ServerStatus getMatchingServer(ServerStatus server) {
+    return getServers()
+          .stream()
+          .filter(s -> Objects.equals(s.getClusterName(), server.getClusterName()))
+          .filter(s -> Objects.equals(s.getServerName(), server.getServerName()))
+          .findFirst()
+          .orElse(null);
+  }
+
 
   /**
-   * Status of WebLogic servers in this domain.
+   * Status of WebLogic Servers in this domain.
    *
    * @param servers servers
    * @return this
    */
   public DomainStatus withServers(List<ServerStatus> servers) {
-    this.servers = servers;
+    setServers(servers);
     return this;
   }
 
@@ -317,13 +397,16 @@ public class DomainStatus {
    * @return this object
    */
   public DomainStatus addServer(ServerStatus server) {
-    for (ListIterator<ServerStatus> it = servers.listIterator(); it.hasNext(); ) {
-      if (Objects.equals(it.next().getServerName(), server.getServerName())) {
-        it.remove();
+    synchronized (servers) {
+      for (ListIterator<ServerStatus> it = servers.listIterator(); it.hasNext(); ) {
+        if (Objects.equals(it.next().getServerName(), server.getServerName())) {
+          it.remove();
+        }
       }
-    }
 
-    servers.add(server);
+      servers.add(server);
+      Collections.sort(servers);
+    }
     return this;
   }
 
@@ -333,9 +416,9 @@ public class DomainStatus {
    * @return a sorted list of ClusterStatus containing status of WebLogic clusters in this domain
    */
   public List<ClusterStatus> getClusters() {
-    List<ClusterStatus> sortedClusters = new ArrayList<>(clusters);
-    sortedClusters.sort(Comparator.naturalOrder());
-    return sortedClusters;
+    synchronized (clusters) {
+      return new ArrayList<>(clusters);
+    }
   }
 
   /**
@@ -343,11 +426,16 @@ public class DomainStatus {
    * @param clusters the list of clusters to use
    */
   public void setClusters(List<ClusterStatus> clusters) {
-    if (isClustersEqualIgnoringOrder(clusters, this.clusters)) {
-      return;
-    }
+    synchronized (this.clusters) {
+      if (isClustersEqualIgnoringOrder(clusters, this.clusters)) {
+        return;
+      }
 
-    this.clusters = clusters;
+      List<ClusterStatus> sortedClusters = new ArrayList<>(clusters);
+      sortedClusters.sort(Comparator.naturalOrder());
+
+      this.clusters = sortedClusters;
+    }
   }
 
   private boolean isClustersEqualIgnoringOrder(List<ClusterStatus> clusters1, List<ClusterStatus> clusters2) {
@@ -360,13 +448,16 @@ public class DomainStatus {
    * @return this object
    */
   public DomainStatus addCluster(ClusterStatus cluster) {
-    for (ListIterator<ClusterStatus> it = clusters.listIterator(); it.hasNext(); ) {
-      if (Objects.equals(it.next().getClusterName(), cluster.getClusterName())) {
-        it.remove();
+    synchronized (clusters) {
+      for (ListIterator<ClusterStatus> it = clusters.listIterator(); it.hasNext(); ) {
+        if (Objects.equals(it.next().getClusterName(), cluster.getClusterName())) {
+          it.remove();
+        }
       }
-    }
 
-    clusters.add(cluster);
+      clusters.add(cluster);
+      Collections.sort(clusters);
+    }
     return this;
   }
 
@@ -389,6 +480,7 @@ public class DomainStatus {
         .append("servers", servers)
         .append("clusters", clusters)
         .append("startTime", startTime)
+        .append("introspectJobFailureCount", introspectJobFailureCount)
         .toString();
   }
 
@@ -401,6 +493,7 @@ public class DomainStatus {
         .append(Domain.sortOrNull(clusters))
         .append(Domain.sortOrNull(conditions))
         .append(message)
+        .append(introspectJobFailureCount)
         .toHashCode();
   }
 
@@ -416,10 +509,11 @@ public class DomainStatus {
     return new EqualsBuilder()
         .append(reason, rhs.reason)
         .append(startTime, rhs.startTime)
-        .append(Domain.sortOrNull(servers), Domain.sortOrNull(rhs.servers))
+        .append(servers, rhs.servers)
         .append(Domain.sortOrNull(clusters), Domain.sortOrNull(rhs.clusters))
         .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
         .append(message, rhs.message)
+        .append(introspectJobFailureCount, rhs.introspectJobFailureCount)
         .isEquals();
   }
 
@@ -427,6 +521,7 @@ public class DomainStatus {
         .withConstructor(DomainStatus::new)
         .withStringField("message", DomainStatus::getMessage)
         .withStringField("reason", DomainStatus::getReason)
+        .withIntegerField("introspectJobFailureCount", DomainStatus::getIntrospectJobFailureCount)
         .withIntegerField("replicas", DomainStatus::getReplicas)
         .withListField("conditions", DomainCondition.getObjectPatch(), DomainStatus::getConditions)
         .withListField("clusters", ClusterStatus.getObjectPatch(), DomainStatus::getClusters)

@@ -9,10 +9,11 @@ import java.util.List;
 import java.util.Optional;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -27,13 +28,13 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Description;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainUpPlanTest.ContainerPortMatcher.hasContainerPort;
 import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStep;
 import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStepsInOrder;
@@ -45,20 +46,16 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 public class DomainUpPlanTest {
-  private static final String NS = "namespace";
-  private static final String UID = "test-uid";
-  private static final V1SecretReference SECRET = new V1SecretReference().name("secret");
+
   private final TerminalStep adminStep = new TerminalStep();
   private final TerminalStep managedServersStep = new TerminalStep();
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
-  private Domain domain =
-      new Domain()
-          .withMetadata(new V1ObjectMeta().namespace(NS))
-          .withSpec(new DomainSpec().withDomainUid(UID).withWebLogicCredentialsSecret(SECRET));
-  private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
-  private DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
-  private DomainProcessorImpl processor =
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain)
+                    .withWebLogicCredentialsSecret("secret", NS);
+  private final DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
+  private final DomainProcessorImpl processor =
       new DomainProcessorImpl(createStrictStub(DomainProcessorDelegateStub.class));
 
   private DomainPresenceStep getDomainPresenceStep() {
@@ -71,10 +68,14 @@ public class DomainUpPlanTest {
    */
   @Before
   public void setUp() throws NoSuchFieldException {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(TestUtils.silenceOperatorLogger()
+        .ignoringLoggedExceptions(ApiException.class));
+    mementos.add(ClientFactoryStub.install());
     mementos.add(testSupport.install());
     mementos.add(InMemoryCertificates.install());
+    mementos.add(TuningParametersStub.install());
 
+    testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
 
@@ -148,12 +149,7 @@ public class DomainUpPlanTest {
         plan,
         hasChainWithStepsInOrder(
             "DomainPresenceStep",
-            // "DeleteIntrospectorJobStep",
             "DomainIntrospectorJobStep",
-            // "WatchDomainIntrospectorJobReadyStep",
-            // "ReadDomainIntrospectorPodStep",
-            // "ReadDomainIntrospectorPodLogStep",
-            // "SitConfigMapStep",
             "BeforeAdminServiceStep",
             "AdminPodStep",
             "ForServerStep",
@@ -164,7 +160,6 @@ public class DomainUpPlanTest {
 
   @Test
   public void whenAdminPodCreated_hasListenPort() throws NoSuchFieldException {
-    mementos.add(TuningParametersStub.install());
     mementos.add(UnitTestHash.install());
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("domain");
@@ -172,7 +167,7 @@ public class DomainUpPlanTest {
     configSupport.setAdminServerName("admin");
     Step plan =
         DomainProcessorImpl.bringAdminServerUp(
-            new DomainPresenceInfo(domain), new NullPodWaiter(), null);
+            new DomainPresenceInfo(domain), new NullPodWaiter());
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     testSupport.runSteps(plan);
 
@@ -195,7 +190,7 @@ public class DomainUpPlanTest {
   @SuppressWarnings("unused")
   static class ContainerPortMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Pod> {
-    private int expectedPort;
+    private final int expectedPort;
 
     private ContainerPortMatcher(int expectedPort) {
       this.expectedPort = expectedPort;
@@ -216,8 +211,11 @@ public class DomainUpPlanTest {
     }
 
     private List<V1ContainerPort> getContainerPorts(V1Pod item) {
-      return Optional.ofNullable(item.getSpec().getContainers().get(0).getPorts())
-          .orElse(Collections.emptyList());
+      return Optional.ofNullable(item.getSpec())
+            .map(V1PodSpec::getContainers)
+            .map(c -> c.get(0))
+            .map(V1Container::getPorts)
+            .orElse(Collections.emptyList());
     }
 
     @Override
@@ -229,7 +227,7 @@ public class DomainUpPlanTest {
   @SuppressWarnings("unused")
   static class StepChainMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<oracle.kubernetes.operator.work.Step> {
-    private String[] expectedSteps;
+    private final String[] expectedSteps;
 
     private StepChainMatcher(String[] expectedSteps) {
       this.expectedSteps = expectedSteps;

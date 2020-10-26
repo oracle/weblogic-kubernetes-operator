@@ -4,16 +4,22 @@
 package oracle.kubernetes.operator;
 
 import java.lang.reflect.Method;
+import java.math.BigInteger;
+import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.Watch;
+import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
-import oracle.kubernetes.operator.builders.WatchI;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -29,13 +35,17 @@ import static java.net.HttpURLConnection.HTTP_GONE;
  * @param <T> The type of the object to be watched.
  */
 abstract class Watcher<T> {
+  @SuppressWarnings("FieldMayBeFinal") // not final so unit tests can set it
+  private static WatcherStarter STARTER = Watcher::startAsynchronousWatch;
+
   static final String HAS_NEXT_EXCEPTION_MESSAGE = "IO Exception during hasNext method.";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final long IGNORED_RESOURCE_VERSION = 0;
+  private static final String IGNORED = "0";
+  private static final Pattern RESOURCE_VERSION_PATTERN = Pattern.compile("\\((\\d+)\\)");
 
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
   private final WatchTuning tuning;
-  private Long resourceVersion;
+  private String resourceVersion;
   private final AtomicBoolean stopping;
   private WatchListener<T> listener;
   private Thread thread = null;
@@ -50,8 +60,7 @@ abstract class Watcher<T> {
    * @param stopping an atomic boolean to watch to determine when to stop the watcher
    */
   Watcher(String resourceVersion, WatchTuning tuning, AtomicBoolean stopping) {
-    this.resourceVersion =
-        !isNullOrEmpty(resourceVersion) ? Long.parseLong(resourceVersion) : 0;
+    this.resourceVersion = resourceVersion;
     this.tuning = tuning;
     this.stopping = stopping;
   }
@@ -84,6 +93,11 @@ abstract class Watcher<T> {
     }
   }
 
+  // for test
+  String getResourceVersion() {
+    return resourceVersion;
+  }
+
   /**
    * Sets the listener for watch events.
    *
@@ -95,8 +109,13 @@ abstract class Watcher<T> {
 
   /** Kick off the watcher processing that runs in a separate thread. */
   void start(ThreadFactory factory) {
-    thread = factory.newThread(this::doWatch);
+    thread = STARTER.startWatcher(factory, this::doWatch);
+  }
+
+  public static Thread startAsynchronousWatch(ThreadFactory factory, Runnable doWatch) {
+    final Thread thread = factory.newThread(doWatch);
     thread.start();
+    return thread;
   }
 
   private void doWatch() {
@@ -139,10 +158,10 @@ abstract class Watcher<T> {
     } else {
       lastInitialize = now;
     }
-    try (WatchI<T> watch =
+    try (Watchable<T> watch =
         initiateWatch(
             new WatchBuilder()
-                .withResourceVersion(resourceVersion.toString())
+                .withResourceVersion(resourceVersion)
                 .withTimeoutSeconds(tuning.watchLifetime))) {
       while (hasNext(watch)) {
         Watch.Response<T> item = watch.next();
@@ -154,10 +173,13 @@ abstract class Watcher<T> {
           continue;
         }
 
-        if (isError(item)) {
-          handleErrorResponse(item);
-        } else {
-          handleRegularUpdate(item);
+        try (LoggingContext ignored =
+                 LoggingContext.setThreadContext().namespace(getNamespace()).domainUid(getDomainUid(item))) {
+          if (isError(item)) {
+            handleErrorResponse(item);
+          } else {
+            handleRegularUpdate(item);
+          }
         }
       }
     } catch (Throwable ex) {
@@ -165,7 +187,7 @@ abstract class Watcher<T> {
     }
   }
 
-  private boolean hasNext(WatchI<T> watch) {
+  private boolean hasNext(Watchable<T> watch) {
     try {
       return watch.hasNext();
     } catch (Throwable ex) {
@@ -181,7 +203,21 @@ abstract class Watcher<T> {
    * @return Watch object or null if the operation should end
    * @throws ApiException if there is an API error.
    */
-  public abstract WatchI<T> initiateWatch(WatchBuilder watchBuilder) throws ApiException;
+  public abstract Watchable<T> initiateWatch(WatchBuilder watchBuilder) throws ApiException;
+
+  /**
+   * Gets the Kubernetes namespace associated with the watcher.
+   *
+   * @return String object or null if the watcher is not namespaced
+   */
+  public abstract String getNamespace();
+
+  /**
+   * Gets the domainUID associated with a watch response.
+   *
+   * @return String object or null if the watch response is not associated with a domain
+   */
+  public abstract String getDomainUid(Watch.Response<T> item);
 
   private boolean isError(Watch.Response<T> item) {
     return item.type.equalsIgnoreCase("ERROR");
@@ -196,32 +232,16 @@ abstract class Watcher<T> {
   }
 
   private void handleErrorResponse(Watch.Response<T> item) {
-    V1Status status = item.status;
-    if (status == null) {
-      // The kubernetes client parsing logic can mistakenly parse a status as a type
-      // with similar fields, such as V1ConfigMap. In this case, the actual status is
-      // not available to our layer, so respond defensively by resetting resource version.
-      resourceVersion = 0L;
-    } else if (status.getCode() == HTTP_GONE) {
-      resourceVersion = computeNextResourceVersionFromMessage(status);
+    if (Optional.ofNullable(item.status).map(V1Status::getCode).orElse(0) != HTTP_GONE) {
+      resourceVersion = IGNORED;
+    } else {
+      resourceVersion = Optional.of(item.status).map(V1Status::getMessage).map(this::resourceVersion).orElse(IGNORED);
     }
   }
 
-  private long computeNextResourceVersionFromMessage(V1Status status) {
-    String message = status.getMessage();
-    if (message != null) {
-      int index1 = message.indexOf('(');
-      if (index1 > 0) {
-        int index2 = message.indexOf(')', index1 + 1);
-        if (index2 > 0) {
-          String val = message.substring(index1 + 1, index2);
-          if (!isNullOrEmpty(val)) {
-            return Long.parseLong(val);
-          }
-        }
-      }
-    }
-    return 0L;
+  private String resourceVersion(String message) {
+    final Matcher matcher = RESOURCE_VERSION_PATTERN.matcher(message);
+    return matcher.find() ? matcher.group(1) : null;
   }
 
   /**
@@ -236,32 +256,37 @@ abstract class Watcher<T> {
     updateResourceVersion(getNewResourceVersion(type, object));
   }
 
-  private long getNewResourceVersion(String type, Object object) {
-    long newResourceVersion = getResourceVersionFromMetadata(object);
+  private String getNewResourceVersion(String type, Object object) {
+    String newResourceVersion = getResourceVersionFromMetadata(object);
     if (type.equalsIgnoreCase("DELETED")) {
-      return 1 + newResourceVersion;
-    } else {
-      return newResourceVersion;
+      BigInteger biResourceVersion = KubernetesUtils.getResourceVersion(newResourceVersion);
+      if (biResourceVersion.compareTo(BigInteger.ZERO) > 0) {
+        return biResourceVersion.add(BigInteger.ONE).toString();
+      }
     }
+    return newResourceVersion;
   }
 
-  private long getResourceVersionFromMetadata(Object object) {
+  private String getResourceVersionFromMetadata(Object object) {
     try {
       Method getMetadata = object.getClass().getDeclaredMethod("getMetadata");
-      V1ObjectMeta metadata = (V1ObjectMeta) getMetadata.invoke(object);
-      String val = metadata.getResourceVersion();
-      return !isNullOrEmpty(val) ? Long.parseLong(val) : 0;
+      return Optional.ofNullable((V1ObjectMeta) getMetadata.invoke(object))
+              .map(V1ObjectMeta::getResourceVersion).orElse(IGNORED);
     } catch (Exception e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
-      return IGNORED_RESOURCE_VERSION;
+      return IGNORED;
     }
   }
 
-  private void updateResourceVersion(long newResourceVersion) {
-    if (resourceVersion == 0) {
+  private void updateResourceVersion(String newResourceVersion) {
+    if (isNullOrEmpty(resourceVersion) || resourceVersion.equals(IGNORED)) {
       resourceVersion = newResourceVersion;
-    } else if (newResourceVersion > resourceVersion) {
-      resourceVersion = newResourceVersion;
+    } else {
+      BigInteger biNewResourceVersion = KubernetesUtils.getResourceVersion(newResourceVersion);
+      BigInteger biResourceVersion = KubernetesUtils.getResourceVersion(resourceVersion);
+      if (biNewResourceVersion.compareTo(biResourceVersion) > 0) {
+        resourceVersion = newResourceVersion;
+      }
     }
   }
 }

@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.wlsconfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -237,7 +238,7 @@ public class WlsDynamicServersConfig {
    * @return minimum size of the dynamic cluster
    */
   public Integer getMinDynamicClusterSize() {
-    return minDynamicClusterSize;
+    return Optional.ofNullable(minDynamicClusterSize).orElse(-1);
   }
 
   public void setMinDynamicClusterSize(Integer minDynamicClusterSize) {
@@ -270,26 +271,6 @@ public class WlsDynamicServersConfig {
 
   public void setServerConfigs(List<WlsServerConfig> serverConfigs) {
     this.serverConfigs = serverConfigs;
-  }
-
-  /**
-   * Returns the configuration for the dynamic WLS server with the given name.
-   *
-   * @param serverName name of the WLS server
-   * @return The WlsServerConfig object containing configuration of the WLS server with the given
-   *     name. This methods return null if no WLS configuration is found for the given server name.
-   */
-  public synchronized WlsServerConfig getServerConfig(String serverName) {
-    WlsServerConfig result = null;
-    if (serverName != null && serverConfigs != null) {
-      for (WlsServerConfig serverConfig : serverConfigs) {
-        if (serverConfig.getName().equals(serverName)) {
-          result = serverConfig;
-          break;
-        }
-      }
-    }
-    return result;
   }
 
   /**

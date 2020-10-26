@@ -9,22 +9,27 @@ metadata:
   name: "weblogic-operator"
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    weblogic.resourceVersion: "operator-v2"
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 spec:
   selector:
     matchLabels:
-      weblogic.resourceVersion: "operator-v2"
       weblogic.operatorName: {{ .Release.Namespace | quote }}
   replicas: 1
   template:
     metadata:
      labels:
-        weblogic.resourceVersion: "operator-v2"
         weblogic.operatorName: {{ .Release.Namespace | quote }}
         app: "weblogic-operator"
     spec:
       serviceAccountName: {{ .serviceAccount | quote }}
+      {{- with .nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
       - name: "weblogic-operator"
         image: {{ .image | quote }}
@@ -58,8 +63,15 @@ spec:
         {{- end }}
         resources:
           requests:
-            cpu: "100m"
-            memory: "512Mi"
+            cpu: {{ .cpuRequests | default "250m" }}
+            memory: {{ .memoryRequests | default "512Mi" }}
+          limits:
+            {{- if .cpuLimits}}
+            cpu: {{ .cpuLimits }}
+            {{- end }}
+            {{- if .memoryLimits}}
+            memory: {{ .memoryLimits }}
+            {{- end }}
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
           mountPath: "/operator/config"

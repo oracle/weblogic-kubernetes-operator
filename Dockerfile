@@ -20,21 +20,23 @@ RUN set -eux; \
 # Default to UTF-8 file.encoding
 ENV LANG en_US.UTF-8
 
-ENV JAVA_HOME /usr/local/openjdk-11
+ENV JAVA_HOME /usr/local/java
 ENV PATH /operator:$JAVA_HOME/bin:$PATH
 
-ENV JAVA_VERSION 11.0.7
-ENV JAVA_URL https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jre_x64_linux_11.0.7_10.tar.gz
+ENV JAVA_VERSION 14.0.2
+ENV JAVA_URL https://download.java.net/java/GA/jdk14.0.2/205943a0976c4ed48cb16f1043c5c647/12/GPL/openjdk-14.0.2_linux-x64_bin.tar.gz
 
 # Install Java and make the operator run with a non-root user id (1000 is the `oracle` user)
 RUN set -eux; \
-    curl -fL -o /openjdk.tgz "$JAVA_URL"; \
+    curl -fL -o /jdk.tar.gz "$JAVA_URL"; \
     mkdir -p "$JAVA_HOME"; \
-    tar --extract --file /openjdk.tgz --directory "$JAVA_HOME" --strip-components 1; \
-    rm /openjdk.tgz; \
+    tar --extract --file /jdk.tar.gz --directory "$JAVA_HOME" --strip-components 1; \
+    rm /jdk.tar.gz; \
     mkdir /usr/java; \
     ln -sfT "$JAVA_HOME" /usr/java/default; \
     ln -sfT "$JAVA_HOME" /usr/java/latest; \
+    rm -Rf "$JAVA_HOME/include" "$JAVA_HOME/jmods"; \
+    rm -f "$JAVA_HOME/lib/src.zip"; \
     for bin in "$JAVA_HOME/bin/"*; do \
         base="$(basename "$bin")"; \
         [ ! -e "/usr/bin/$base" ]; \

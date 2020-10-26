@@ -95,6 +95,7 @@ tmp_scriptdir=os.path.dirname(tmp_info[0])
 sys.path.append(tmp_scriptdir)
 
 from utils import *
+from weblogic.management.configuration import LegalHelper
 
 class OfflineWlstEnv(object):
 
@@ -137,7 +138,7 @@ class OfflineWlstEnv(object):
     self.EWALLET                  = self.INTROSPECT_HOME + '/ewallet.p12'
     self.WLS_VERSION              = self.INTROSPECT_HOME + "/wls.version"
     self.JDK_PATH                 = self.INTROSPECT_HOME + "/jdk.path"
-    self.SECRETS_MD5              = self.INTROSPECT_HOME + "/secrets.md5"
+    self.SECRETS_AND_ENV_MD5      = self.INTROSPECT_HOME + "/secrets_and_env.md5"
     self.DOMAINZIP_HASH           = self.INTROSPECT_HOME + "/domainzip_hash"
     self.WDT_CONFIGMAP_PATH      = self.getEnvOrDef('WDT_CONFIGMAP_PATH',
                                                     '/weblogic-operator/wdt-config-map')
@@ -189,20 +190,12 @@ class OfflineWlstEnv(object):
   def handle_ModelInImageDomain(self):
     self.WDT_DOMAIN_TYPE = self.getEnvOrDef('WDT_DOMAIN_TYPE', 'WLS')
 
-    try:
-      # find the em ear source path
-      cd('Application/em')
-      em_attrs = ls(returnMap='true', returnType='a')
-      self.empath = em_attrs['SourcePath']
-    except:
-      self.empath = None
-      pass
-
     if self.WDT_DOMAIN_TYPE == 'JRF':
       try:
         # Only export if it is not there already (i.e. have not been copied from the secrets
         if not os.path.exists('/tmp/opsswallet/ewallet.p12'):
-          opss_passphrase = self.getEnv('OPSS_PASSPHRASE')
+          opss_passphrase_file = self.getEnv('OPSS_KEY_PASSPHRASE')
+          opss_passphrase = self.readFile(opss_passphrase_file).strip()
           os.mkdir('/tmp/opsswallet')
           exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml', \
                               keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)
@@ -210,9 +203,6 @@ class OfflineWlstEnv(object):
         trace("SEVERE","Error in exporting OPSS key ")
         dumpStack()
         sys.exit(1)
-
-  def getEmPath(self):
-    return self.empath
 
   def close(self):
     closeDomain()
@@ -395,14 +385,6 @@ class TopologyGenerator(Generator):
       ret = None
     return ret
 
-  def getSSLOrNone(self,server):
-    try:
-      ret = server.getSSL()
-    except:
-      trace("Ignoring getSSL() exception, this is expected.")
-      ret = None
-    return ret
-
   def validateAdminServer(self):
     adminServerName = self.env.getDomain().getAdminServerName()
     if adminServerName is None:
@@ -417,7 +399,7 @@ class TopologyGenerator(Generator):
       return
     cluster = self.env.getClusterOrNone(adminServer)
     if cluster is not None:
-      self.addError("The admin server " + self.name(adminServer) + " belongs to the cluster " + self.name(cluster) + ".")
+      self.addError("The admin server " + self.name(adminServer) + " belongs to the WebLogic cluster " + self.name(cluster) + ", the operator does not support having an admin server participate in a cluster.")
 
   def validateClusters(self):
     for cluster in self.env.getDomain().getClusters():
@@ -428,7 +410,7 @@ class TopologyGenerator(Generator):
       self.validateNonDynamicCluster(cluster)
     else:
       if self.env.isFMWInfraDomain() and not self.env.allowDynamicClusterInFMWInfraDomain():
-        self.addError("Dynamic clusters are not supported in FMW Infrastructure domains. Set ALLOW_DYNAMIC_CLUSTER_IN_FMW environment variable to true to bypass this validation.")
+        self.addError("WebLogic dynamic clusters are not supported in FMW Infrastructure domains. Set ALLOW_DYNAMIC_CLUSTER_IN_FMW environment variable to true to bypass this validation.")
       else:
         self.validateDynamicCluster(cluster)
 
@@ -442,12 +424,12 @@ class TopologyGenerator(Generator):
     for server in self.env.getDomain().getServers():
       if self.env.getClusterOrNone(server) is cluster:
         return
-    self.addError("The non-dynamic cluster " + self.name(cluster) + " is not referenced by any servers.")
+    self.addError("The WebLogic configured cluster " + self.name(cluster) + " is not referenced by any servers.")
 
   def validateNonDynamicClusterNotReferencedByAnyServerTemplates(self, cluster):
     for template in self.env.getDomain().getServerTemplates():
       if self.env.getClusterOrNone(template) is cluster:
-        self.addError("The non-dynamic cluster " + self.name(cluster) + " is referenced by the server template " + self.name(template) + ".")
+        self.addError("The WebLogic configured cluster " + self.name(cluster) + " is referenced by the server template " + self.name(template) + ", the operator does not support 'mixed clusters' that host both dynamic (templated) servers and configured servers.")
 
   LISTEN_PORT = 'listen port'
   LISTEN_PORT_ENABLED = 'listen port enabled'
@@ -458,19 +440,22 @@ class TopologyGenerator(Generator):
 
   def getServerClusterPortPropertyValue(self, server, clusterListenPortProperty):
     sslListenPort = None
-    ssl = self.getSSLOrNone(server)
+    sslListenPortEnabled = None
+    ssl = getSSLOrNone(server)
     if ssl is not None:
       sslListenPort = ssl.getListenPort()
-    sslListenPortEnabled = None
-    if ssl is not None:
-      sslListenPortEnabled = ssl.isListenPortEnabled()
+      sslListenPortEnabled = ssl.isEnabled()
+    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
+      sslListenPort = "7002"
+      sslListenPortEnabled = True
+
     return {
              LISTEN_PORT: server.getListenPort(),
-             LISTEN_PORT_ENABLED: server.isListenPortEnabled(),
+             LISTEN_PORT_ENABLED: isListenPortEnabledForServer(server, self.env.getDomain()),
              SSL_LISTEN_PORT: sslListenPort,
              SSL_LISTEN_PORT_ENABLED: sslListenPortEnabled,
-             ADMIN_LISTEN_PORT: server.getAdministrationPort(),
-             ADMIN_LISTEN_PORT_ENABLED: server.isAdministrationPortEnabled()
+             ADMIN_LISTEN_PORT: getAdministrationPort(server, self.env.getDomain()),
+             ADMIN_LISTEN_PORT_ENABLED: isAdministrationPortEnabledForServer(server, self.env.getDomain())
      }[clusterListenPortProperty]
 
   def validateNonDynamicClusterServersHaveSameListenPort(self, cluster):
@@ -484,15 +469,19 @@ class TopologyGenerator(Generator):
     for server in self.env.getDomain().getServers():
       if cluster is self.env.getClusterOrNone(server):
         listenPort = server.getListenPort()
-        listenPortEnabled = server.isListenPortEnabled()
-        ssl = self.getSSLOrNone(server)
+        listenPortEnabled = isListenPortEnabledForServer(server, self.env.getDomain())
+        ssl = getSSLOrNone(server)
         sslListenPort = None
         sslListenPortEnabled = None
         if ssl is not None:
-              sslListenPort = ssl.getListenPort()
-              sslListenPortEnabled = ssl.isEnabled()
-        adminPort = server.getAdministrationPort()
-        adminPortEnabled = server.isAdministrationPortEnabled()
+          sslListenPort = ssl.getListenPort()
+          sslListenPortEnabled = ssl.isEnabled()
+        elif isSecureModeEnabledForDomain(self.env.getDomain()):
+          sslListenPort = 7002
+          sslListenPortEnabled = True
+
+        adminPort = getAdministrationPort(server, self.env.getDomain())
+        adminPortEnabled = isAdministrationPortEnabledForServer(server, self.env.getDomain())
         if firstServer is None:
           firstServer = server
           firstListenPort = listenPort
@@ -503,19 +492,17 @@ class TopologyGenerator(Generator):
           firstAdminPortEnabled = adminPortEnabled
         else:
           if listenPort != firstListenPort:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstListenPort) + " but its server " + self.name(server) + "'s listen port is " + str(listenPort) + ". All ports for the same channel in a cluster must be the same.")
+            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstListenPort) + " but its server " + self.name(server) + "'s listen port is " + str(listenPort) + ". All ports for the same channel in a cluster must be the same.")
           if listenPortEnabled != firstListenPortEnabled:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has listen port enabled: " + self.booleanToString(firstListenPortEnabled) + " but its server " + self.name(server) + "'s listen port enabled: " + self.booleanToString(listenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
+            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has listen port enabled: " + self.booleanToString(firstListenPortEnabled) + " but its server " + self.name(server) + "'s listen port enabled: " + self.booleanToString(listenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
           if sslListenPort != firstSslListenPort:
-             self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstSslListenPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(sslListenPort) + ".  All ports for the same channel in a cluster must be the same.")
+             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstSslListenPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(sslListenPort) + ".  All ports for the same channel in a cluster must be the same.")
           if sslListenPortEnabled != firstSslListenPortEnabled:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstSslListenPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(sslListenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
+            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstSslListenPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(sslListenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
           if adminPort != firstAdminPort:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstAdminPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(adminPort) + ".  All ports for the same channel in a cluster must be the same.")
+            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstAdminPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(adminPort) + ".  All ports for the same channel in a cluster must be the same.")
           if adminPortEnabled != firstAdminPortEnabled:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstAdminPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(adminPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
-
-
+            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstAdminPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(adminPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
 
   def validateClusterServersListenPortProperty(self, cluster, errorMsg, clusterListenPortProperty):
     firstServer = None
@@ -538,21 +525,21 @@ class TopologyGenerator(Generator):
        if cluster is self.env.getClusterOrNone(server):
          if firstServer is None:
            for nap in server.getNetworkAccessPoints():
-             serverNap[nap.getName()] = nap.getProtocol() + "~" + str(nap.getListenPort());
+             serverNap[nap.getName()] = getNAPProtocol(nap, server, self.env.getDomain()) + "~" + str(nap.getListenPort());
            firstServer = server
          else:
            naps = server.getNetworkAccessPoints()
            if len(naps) != len(serverNap):
-             self.addError("The non-dynamic cluster " + self.name(cluster) + " has mismatched number of network access points in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+             self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched number of network access points in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
              return
            else:
              for nap in naps:
                if nap.getName() in serverNap:
-                 if serverNap[nap.getName()] != nap.getProtocol() + "~" + str(nap.getListenPort()):
-                   self.addError("The non-dynamic cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+                 if serverNap[nap.getName()] != getNAPProtocol(nap, server, self.env.getDomain()) + "~" + str(nap.getListenPort()):
+                   self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
                    return
                else:
-                 self.addError("The non-dynamic cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+                 self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
                  return
 
 
@@ -569,19 +556,19 @@ class TopologyGenerator(Generator):
           server_template = template
         else:
           if server_template is not None:
-            self.addError("The dynamic cluster " + self.name(cluster) + " is referenced the server template " + self.name(server_template) + " and the server template " + self.name(template) + ".")
+            self.addError("The WebLogic dynamic cluster " + self.name(cluster) + " is referenced the server template " + self.name(server_template) + " and the server template " + self.name(template) + ".")
             return
     if server_template is None:
-      self.addError("The dynamic cluster " + self.name(cluster) + "' is not referenced by any server template.")
+      self.addError("The WebLogic dynamic cluster " + self.name(cluster) + "' is not referenced by any server template.")
 
   def validateDynamicClusterNotReferencedByAnyServers(self, cluster):
     for server in self.env.getDomain().getServers():
       if self.env.getClusterOrNone(server) is cluster:
-        self.addError("The dynamic cluster " + self.name(cluster) + " is referenced by the server " + self.name(server) + ".")
+        self.addError("The WebLogic dynamic cluster " + self.name(cluster) + " is referenced by configured server " + self.name(server) + ", the operator does not support 'mixed clusters' that host both dynamic (templated) servers and configured servers.")
 
   def validateDynamicClusterDynamicServersDoNotUseCalculatedListenPorts(self, cluster):
     if cluster.getDynamicServers().isCalculatedListenPorts() == True:
-      self.addError("The dynamic cluster " + self.name(cluster) + "'s dynamic servers use calculated listen ports.")
+      self.addError("The WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers use calculated listen ports.")
 
   def validateServerCustomChannelName(self):
     reservedNames = ['default','default-secure','default-admin']
@@ -672,25 +659,26 @@ class TopologyGenerator(Generator):
         rtn.append(server)
     return rtn
 
-  def addServer(self, server):
+  def addServer(self, server, is_server_template=False):
     name=self.name(server)
     self.writeln("- name: " + name)
-    if server.isListenPortEnabled():
+    if isListenPortEnabledForServer(server, self.env.getDomain(), is_server_template):
       self.writeln("  listenPort: " + str(server.getListenPort()))
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
-    if server.isAdministrationPortEnabled():
-      self.writeln("  adminPort: " + str(server.getAdministrationPort()))
-    else:
-      if self.env.getDomain().isAdministrationPortEnabled():
-        self.writeln("  adminPort: " + str(self.env.getDomain().getAdministrationPort()))
+    if isAdministrationPortEnabledForServer(server, self.env.getDomain(), is_server_template):
+      self.writeln("  adminPort: " + str(getAdministrationPort(server, self.env.getDomain())))
     self.addSSL(server)
-    self.addNetworkAccessPoints(server)
+    self.addNetworkAccessPoints(server, is_server_template)
 
   def addSSL(self, server):
-    ssl = self.getSSLOrNone(server)
+    ssl = getSSLOrNone(server)
     if ssl is not None and ssl.isEnabled():
       self.indent()
       self.writeln("sslListenPort: " + str(ssl.getListenPort()))
+      self.undent()
+    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
+      self.indent()
+      self.writeln("sslListenPort: 7002")
       self.undent()
 
   def addServerTemplates(self):
@@ -705,7 +693,7 @@ class TopologyGenerator(Generator):
     self.undent()
 
   def addServerTemplate(self, serverTemplate):
-    self.addServer(serverTemplate)
+    self.addServer(serverTemplate, is_server_template=True)
     self.writeln("  clusterName: " + self.quote(serverTemplate.getCluster().getName()))
 
   def addDynamicClusters(self):
@@ -753,22 +741,96 @@ class TopologyGenerator(Generator):
         self.addServer(server)
     self.undent()
 
-  def addNetworkAccessPoints(self, server):
+  def addNetworkAccessPoints(self, server, is_server_template=False):
+    """
+    Add network access points for server or server template
+    :param server:  server or server template
+    """
     naps = server.getNetworkAccessPoints()
-    if len(naps) == 0:
-      return
-    self.writeln("  networkAccessPoints:")
-    self.indent()
-    for nap in naps:
-      self.addNetworkAccessPoint(nap)
-    self.undent()
+    added_nap = False
+    if len(naps) != 0:
+      added_nap = True
+      self.writeln("  networkAccessPoints:")
+      self.indent()
+      for nap in naps:
+        self.addNetworkAccessPoint(server, nap, is_server_template)
 
-  def addNetworkAccessPoint(self, nap):
-    name=self.name(nap)
+    added_istio_yaml = self.addIstioNetworkAccessPoints(server, is_server_template, added_nap)
+    if len(naps) != 0 or added_istio_yaml:
+      self.undent()
+
+  def addNetworkAccessPoint(self, server, nap, is_server_template):
+
+    # Change the name to follow the istio port naming convention
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    nap_protocol = getNAPProtocol(nap, server, self.env.getDomain(), is_server_template)
+
+    if istio_enabled == 'true':
+      http_protocol = [ 'http' ]
+      https_protocol = ['https','admin']
+      tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop']
+      tls_protocol = [ 't3s', 'iiops', 'cluster-broadcast-secure']
+      if nap_protocol in http_protocol:
+        name = 'http-' + nap.getName().replace(' ', '_')
+      elif nap_protocol in https_protocol:
+        name = 'https-' + nap.getName().replace(' ', '_')
+      elif nap_protocol in tcp_protocol:
+        name = 'tcp-' + nap.getName().replace(' ', '_')
+      elif nap_protocol in tls_protocol:
+        name = 'tls-' + nap.getName().replace(' ', '_')
+      else:
+        name = 'tcp-' + nap.getName().replace(' ', '_')
+    else:
+      name=self.name(nap)
     self.writeln("  - name: " + name)
-    self.writeln("    protocol: " + self.quote(nap.getProtocol()))
+    self.writeln("    protocol: " + self.quote(nap_protocol))
     self.writeln("    listenPort: " + str(nap.getListenPort()))
     self.writeln("    publicPort: " + str(nap.getPublicPort()))
+
+  def addIstioNetworkAccessPoints(self, server, is_server_template, added_nap):
+    '''
+    Write the container ports information for operator to create the container ports
+    :param server:   server or template mbean
+    :param is_server_template:  true if it is from ServerTemplate
+    :param added_nap:  true if there are existing nap section in the output
+    '''
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    if istio_enabled == 'false':
+      return False
+
+    if not added_nap:
+      self.writeln("  networkAccessPoints:")
+      self.indent()
+
+    self.addIstioNetworkAccessPoint("tcp-ldap", "ldap", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-default", "t3", server.getListenPort(), 0)
+    # No need to to http default, PodStepContext already handle it
+    self.addIstioNetworkAccessPoint("http-default", "http", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-snmp", "snmp", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-iiop", "iiop", server.getListenPort(), 0)
+
+    ssl = getSSLOrNone(server)
+    ssl_listen_port = None
+    if ssl is not None and ssl.isEnabled():
+      ssl_listen_port = ssl.getListenPort()
+    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
+      ssl_listen_port = "7002"
+
+    if ssl_listen_port is not None:
+      self.addIstioNetworkAccessPoint("https-secure", "https", ssl_listen_port, 0)
+      self.addIstioNetworkAccessPoint("tls-ldaps", "ldaps", ssl_listen_port, 0)
+      self.addIstioNetworkAccessPoint("tls-default", "t3s", ssl_listen_port, 0)
+      self.addIstioNetworkAccessPoint("tls-iiops", "iiops", ssl_listen_port, 0)
+
+    if isAdministrationPortEnabledForServer(server, self.env.getDomain(), is_server_template):
+      self.addIstioNetworkAccessPoint("https-admin", "https", getAdministrationPort(server, self.env.getDomain()), 0)
+    return True
+
+  def addIstioNetworkAccessPoint(self, name, protocol, listen_port, public_port):
+    self.writeln("  - name: " + name)
+    self.writeln("    protocol: " + protocol)
+    self.writeln("    listenPort: " + str(listen_port))
+    self.writeln("    publicPort: " + str(public_port))
 
   def booleanToString(self, bool):
     if bool == 0:
@@ -858,17 +920,13 @@ class MII_DomainConfigGenerator(Generator):
       self.close()
 
   def addDomainConfig(self):
-    em_ear_path = self.env.getEmPath()
-    empath = ''
-    if em_ear_path is not None and os.path.exists(em_ear_path):
-      empath = em_ear_path
     # Note: only config type is needed fmwconfig, security is excluded because it's in the primordial and contain
     # all the many policies files
     packcmd = "tar -pczf /tmp/domain.tar.gz %s/config/config.xml %s/config/jdbc/ %s/config/jms %s/config/coherence " \
               "%s/config/diagnostics %s/config/startup %s/config/configCache %s/config/nodemanager " \
-              "%s/config/security %s" % (
+              "%s/config/security %s/config/fmwconfig/servers/*/logging.xml" % (
               self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home,
-              self.domain_home, self.domain_home, self.domain_home, self.domain_home, empath)
+              self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home)
     os.system(packcmd)
     domain_data = self.env.readBinaryFile("/tmp/domain.tar.gz")
     b64 = ""
@@ -1024,6 +1082,7 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(server)
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
+    self.customizeServerIstioNetworkAccessPoint(listen_address, server)
     self.undent()
     self.writeln("</d:server>")
 
@@ -1044,6 +1103,7 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(template)
     self.writeListenAddress(template.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(template,listen_address)
+    self.customizeManagedIstioNetworkAccessPoint(listen_address, template)
     self.undent()
     self.writeln("</d:server-template>")
 
@@ -1057,14 +1117,177 @@ class SitConfigGenerator(Generator):
     #   'add' PublicAddress/Port via custom sit-cfg.
     # FWIW there's theoretically no need to 'add' or 'replace' when empty
     #   since the runtime default is the server listen-address.
+
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+
     nap_name=nap.getName()
-    if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0 and not (nap_name.startswith('istio-')):
+    if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0:
         self.writeln("<d:network-access-point>")
         self.indent()
         self.writeln("<d:name>" + nap_name + "</d:name>")
-        self.writeListenAddress("force a replace",listen_address)
+        if istio_enabled == 'true':
+          self.writeListenAddress("force a replace", '127.0.0.1')
+        else:
+          self.writeListenAddress("force a replace",listen_address)
+
         self.undent()
         self.writeln("</d:network-access-point>")
+
+  def _getNapConfigOverrideAction(self, svr, testname):
+    replace_action = 'f:combine-mode="replace"'
+    add_action = 'f:combine-mode="add"'
+    found = False
+    for nap in svr.getNetworkAccessPoints():
+      if nap.getName() == testname:
+        found = True
+        break
+
+    if found:
+      trace("SEVERE","Found NetWorkAccessPoint with name %s in the WebLogic Domain, this is an internal name used by the WebLogic Kubernetes Operator, please remove it from your domain and try again." % testname)
+      sys.exit(1)
+    else:
+      return add_action, "add"
+
+  def _writeIstioNAP(self, name, server, listen_address, listen_port, protocol, http_enabled="true"):
+
+    action, type = self._getNapConfigOverrideAction(server, "http-probe")
+
+    # For add, we must put the combine mode as add
+    # For replace, we must omit it
+    if type == "add":
+      self.writeln('<d:network-access-point %s>' % action)
+    else:
+      self.writeln('<d:network-access-point>')
+
+    self.indent()
+    if type == "add":
+      self.writeln('<d:name %s>%s</d:name>' % (action, name))
+    else:
+      self.writeln('<d:name>%s</d:name>' % name)
+
+    self.writeln('<d:protocol %s>%s</d:protocol>' % (action, protocol))
+    self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
+    self.writeln('<d:public-address %s>%s.%s</d:public-address>' % (action, listen_address,
+                                                          self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
+    self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
+    self.writeln('<d:http-enabled-for-this-protocol %s>%s</d:http-enabled-for-this-protocol>' %
+                 (action, http_enabled))
+    self.writeln('<d:tunneling-enabled %s>false</d:tunneling-enabled>' % action)
+    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % action)
+    self.writeln('<d:enabled %s>true</d:enabled>' % action)
+    self.writeln('<d:two-way-ssl-enabled %s>false</d:two-way-ssl-enabled>' % action)
+    self.writeln('<d:client-certificate-enforced %s>false</d:client-certificate-enforced>' % action)
+    self.undent()
+    self.writeln('</d:network-access-point>')
+
+  def customizeServerIstioNetworkAccessPoint(self, listen_address, server):
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    if istio_enabled == 'false':
+      return
+    istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
+    if istio_readiness_port is None:
+      return
+    admin_server_port = server.getListenPort()
+    # readiness probe
+    self._writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
+                        listen_port=istio_readiness_port, protocol='http', http_enabled="true")
+
+    # Generate NAP for each protocols
+    self._writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
+                        listen_port=admin_server_port, protocol='ldap')
+
+    self._writeIstioNAP(name='tcp-default', server=server, listen_address=listen_address,
+                        listen_port=admin_server_port, protocol='t3')
+
+    self._writeIstioNAP(name='http-default', server=server, listen_address=listen_address,
+                        listen_port=admin_server_port, protocol='http')
+
+    self._writeIstioNAP(name='tcp-snmp', server=server, listen_address=listen_address,
+                        listen_port=admin_server_port, protocol='snmp')
+
+    self._writeIstioNAP(name='tcp-cbt', server=server, listen_address=listen_address,
+                        listen_port=admin_server_port, protocol='CLUSTER-BROADCAST')
+
+    self._writeIstioNAP(name='tcp-iiop', server=server, listen_address=listen_address,
+                        listen_port=admin_server_port, protocol='iiop')
+
+    ssl = getSSLOrNone(server)
+    ssl_listen_port = None
+    if ssl is not None and ssl.isEnabled():
+      ssl_listen_port = ssl.getListenPort()
+    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
+      ssl_listen_port = "7002"
+
+    if ssl_listen_port is not None:
+      self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
+                        listen_port=ssl_listen_port, protocol='https', http_enabled="true")
+
+      self._writeIstioNAP(name='tls-ldaps', server=server, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='ldaps')
+
+      self._writeIstioNAP(name='tls-default', server=server, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='t3s')
+
+      self._writeIstioNAP(name='tls-cbts', server=server, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
+
+      self._writeIstioNAP(name='tls-iiops', server=server, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='iiops')
+
+    if isAdministrationPortEnabledForServer(server, self.env.getDomain()):
+      self._writeIstioNAP(name='https-admin', server=server, listen_address=listen_address,
+                          listen_port=getAdministrationPort(server, self.env.getDomain()), protocol='https', http_enabled="true")
+
+
+  def customizeManagedIstioNetworkAccessPoint(self, listen_address, template):
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    if istio_enabled == 'false':
+      return
+    istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
+    if istio_readiness_port is None:
+      return
+
+    listen_port = template.getListenPort()
+    self._writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
+                        listen_port=istio_readiness_port, protocol='http')
+
+    self._writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
+                        listen_port=listen_port, protocol='t3', http_enabled='false')
+
+    self._writeIstioNAP(name='http-default', server=template, listen_address=listen_address,
+                        listen_port=listen_port, protocol='http')
+
+    self._writeIstioNAP(name='tcp-snmp', server=template, listen_address=listen_address,
+                        listen_port=listen_port, protocol='snmp')
+
+    self._writeIstioNAP(name='tcp-cbt', server=template, listen_address=listen_address,
+                        listen_port=listen_port, protocol='CLUSTER-BROADCAST')
+
+    self._writeIstioNAP(name='tcp-iiop', server=template, listen_address=listen_address,
+                        listen_port=listen_port, protocol='iiop')
+
+    ssl = getSSLOrNone(template)
+    ssl_listen_port = None
+    if ssl is not None and ssl.isEnabled():
+      ssl_listen_port = ssl.getListenPort()
+    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
+      ssl_listen_port = "7002"
+
+    if ssl_listen_port is not None:
+      self._writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='https')
+
+      self._writeIstioNAP(name='tls-ldaps', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='ldaps')
+
+      self._writeIstioNAP(name='tls-default', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='t3s', http_enabled='false')
+
+      self._writeIstioNAP(name='tls-cbts', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
+
+      self._writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='iiops')
 
   def getLogOrNone(self,server):
     try:
@@ -1268,7 +1491,7 @@ class CustomSitConfigIntrospector(SecretManager):
           + " is configured with DescriptorFileName='" + mfile + "'.")      
 
       if mfile.count(".xml") != 1 or mfile.find(".xml") + 4 != len(mfile):
-        self.env.AddError(
+        self.env.addError(
           "Error, the operator expects system resource module files"
           + " to end in '.xml'"
           + ", but the " + moduleTypeStr + " system resource module '" + mname + "'"
@@ -1419,7 +1642,7 @@ class DomainIntrospector(SecretManager):
         trace("cfgmap write jdk_path")
         MII_IntrospectCMFileGenerator(self.env, self.env.JDK_PATH, '/tmp/jdk_path').generate()
         trace("cfgmap write md5 secrets")
-        MII_IntrospectCMFileGenerator(self.env, self.env.SECRETS_MD5, '/tmp/secrets.md5').generate()
+        MII_IntrospectCMFileGenerator(self.env, self.env.SECRETS_AND_ENV_MD5, '/tmp/secrets_and_env.md5').generate()
         trace("cfgmap write model hash")
         # Must be called after MII_PrimordialDomainGenerator
         MII_IntrospectCMFileGenerator(self.env, self.env.DOMAINZIP_HASH, '/tmp/domainzip_hash').generate()
@@ -1437,6 +1660,94 @@ class DomainIntrospector(SecretManager):
   
     tg.generate()
 
+# Work-around bugs in off-line WLST when accessing an SSL mbean
+def getSSLOrNone(server):
+  try:
+    # this can throw if SSL mbean not there
+    ret = server.getSSL()
+    # this can throw if SSL mbean is there but enabled is false
+    ret.getListenPort()
+    # this can throw if SSL mbean is there but enabled is false
+    ret.isEnabled()
+  except:
+    trace("Ignoring getSSL() exception, this is expected.")
+    ret = None
+  return ret
+
+# Derive the default value for SecureMode of a domain
+def isSecureModeEnabledForDomain(domain):
+  secureModeEnabled = false
+  if domain.getSecurityConfiguration().getSecureMode() != None:
+    secureModeEnabled = domain.getSecurityConfiguration().getSecureMode().isSecureModeEnabled()
+  else:
+    secureModeEnabled = domain.isProductionModeEnabled() and not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0")
+  return secureModeEnabled
+
+def isAdministrationPortEnabledForDomain(domain):
+  administrationPortEnabled = false
+  #"if domain.isSet('AdministrationPortEnabled'):" does not work in off-line WLST!
+  # Go to the domain root
+  cd('/')
+  if isSet('AdministrationPortEnabled'):
+    administrationPortEnabled = domain.isAdministrationPortEnabled()
+  else:
+    # AdministrationPortEnabled is not explicitly set so going with the default
+    # Starting with 14.1.2.0, the domain's AdministrationPortEnabled default is derived from the domain's SecureMode
+    administrationPortEnabled = isSecureModeEnabledForDomain(domain)
+  return administrationPortEnabled
+
+def isAdministrationPortEnabledForServer(server, domain, isServerTemplate=False):
+  administrationPortEnabled = false
+  #"if server.isSet('AdministrationPortEnabled'):" does not work in off-line WLST!
+  cd('/')
+  if isServerTemplate:
+    cd('ServerTemplate')
+  else:
+    cd('Server')
+  cd(server.getName())
+  if isSet('AdministrationPortEnabled'):
+    administrationPortEnabled = server.isAdministrationPortEnabled()
+  else:
+    administrationPortEnabled = isAdministrationPortEnabledForDomain(domain)
+  return administrationPortEnabled
+
+def getAdministrationPort(server, domain):
+  port = server.getAdministrationPort()
+  # In off-line WLST, the server's AdministrationPort default value is 0
+  if port == 0:
+    port = domain.getAdministrationPort()
+  return port
+
+def getNAPProtocol(nap, server, domain, is_server_template=False):
+  protocol = nap.getProtocol()
+  if len(server.getNetworkAccessPoints()) > 0:
+    if is_server_template:
+      cd('/ServerTemplate/' + server.getName() + '/NetworkAccessPoint/' + nap.getName())
+    else:
+      cd('/Server/' + server.getName() + '/NetworkAccessPoint/' + nap.getName())
+    if not isSet('Protocol') and isSecureModeEnabledForDomain(domain):
+      protocol = "t3s"
+  return protocol
+
+def isListenPortEnabledForServer(server, domain, is_server_template=False):
+  enabled = server.isListenPortEnabled()
+  if is_server_template:
+    cd('/ServerTemplate')
+  else:
+    cd('/Server')
+  cd(server.getName())
+  if not isSet('ListenPortEnabled') and isSecureModeEnabledForDomain(domain):
+    enabled = False
+  return enabled
+
+def isSSLListenPortEnabled(ssl, domain):
+  enabled = False
+  if ssl is not None:
+    enabled = ssl.isEnabled()
+  else:
+    if isSecureModeEnabledForDomain(domain):
+      enabled = True
+  return enabled
 
 def main(env):
   try:

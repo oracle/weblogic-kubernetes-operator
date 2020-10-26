@@ -52,7 +52,7 @@ serverPod:
   env:
   [...]
   nodeSelector:
-    node-for-weblogic: true
+    node-for-weblogic: "true"
 ```
 Be careful with the indentation. You can double check the syntax in the sample [domain.yaml](../domain.yaml) where this part is in a comment.
 

@@ -10,7 +10,7 @@ Let's review what we have discussed and talk about when we might want to use
 various approaches.  We can start by asking ourselves questions like these:
 
 
-- *Can you make the desired change with a configuration override or Model in Image config map?*  
+- *Can you make the desired change with a configuration override or Model in Image ConfigMap?*  
 
   When your domain home source type is Domain in PV or Domain in Image,
   the operator allows you to inject a number of [configuration
@@ -30,7 +30,7 @@ various approaches.  We can start by asking ourselves questions like these:
   want to have different credentials.  You may want to change the service name, and
   so on. All of these kinds of updates can be made with configuration overrides
   for Domain in PV and Domain in Image, and with model updates for Model in Image.
-  These are placed in a Kubernetes config map, meaning that they are outside of the image, so
+  These are placed in a Kubernetes ConfigMap, meaning that they are outside of the image, so
   they do not require rebuilding the Docker image.  If all of your changes fit into
   this category, it is probably much better to just use configuration overrides
   for Domain in PV and Domain in Image, and use model updates for Model in Image.

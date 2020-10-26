@@ -298,7 +298,7 @@ These instructions are for Oracle Linux 7u2+.  If you are using a different flav
     fi
     ```
 
-1. Enable and start the Kubernetes service:
+1. Enable and start the Kubernetes Service:
 
     ```
     systemctl enable kubelet && systemctl start kubelet

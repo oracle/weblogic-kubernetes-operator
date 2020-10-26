@@ -8,7 +8,7 @@ description: "The operator consists of several parts: the operator runtime, the 
 
 The operator consists of the following parts:
 
-*	The operator runtime, a process that runs in a Docker container deployed into a Kubernetes pod and which performs the actual management tasks.
+*	The operator runtime, a process that runs in a Docker container deployed into a Kubernetes Pod and which performs the actual management tasks.
 * The model for a Kubernetes custom resource definition (CRD) that when installed in a Kubernetes cluster allows the Kubernetes API server to manage instances of this new type representing the operational details and status of WebLogic domains.
 *	A Helm chart for installing the operator runtime and related resources.
 * A variety of sample shell scripts for preparing or packaging  WebLogic domains for running in Kubernetes.
@@ -18,12 +18,12 @@ The operator is packaged in a [Docker image](https://hub.docker.com/r/oracle/web
 
 ```
 $ docker login
-$ docker pull oracle/weblogic-kubernetes-operator:2.5.0
+$ docker pull oracle/weblogic-kubernetes-operator:3.1.0
 ```
 
 For more details on acquiring the operator image and prerequisites for installing the operator, consult the [Quick Start guide]({{< relref "/quickstart/_index.md" >}}).
 
-The operator registers a Kubernetes custom resource definition called `domain.weblogic.oracle` (shortname `domain`, plural `domains`).  More details about the domain resource type defined by this CRD, including its schema, are available [here]({{< relref "/userguide/managing-domains/domain-resource.md" >}}).
+The operator registers a Kubernetes custom resource definition called `domain.weblogic.oracle` (shortname `domain`, plural `domains`).  More details about the Domain type defined by this CRD, including its schema, are available [here]({{< relref "/userguide/managing-domains/domain-resource.md" >}}).
 
 The diagram below shows the general layout of high-level components, including optional components, in a Kubernetes cluster that is hosting WebLogic domains and the operator:
 
@@ -52,13 +52,17 @@ This diagram shows the following details:
 *	A `ClusterIP` type service is created for each Managed Server pod that contains a Managed Server that is not part of a WebLogic cluster.  These services are intended to be used to access applications running on the Managed Servers.  These services are labeled with `weblogic.domainUID` and `weblogic.domainName`.  Customers must expose these services using a load balancer or `NodePort` type service to expose these endpoints outside the Kubernetes cluster.
 *	An Ingress may optionally be created by the customer for each WebLogic cluster.  An Ingress provides load balanced HTTP access to all Managed Servers in that WebLogic cluster.  The load balancer updates its routing table for an Ingress every time a Managed Server in the WebLogic cluster becomes “ready” or ceases to be able to service requests, such that the Ingress always points to just those Managed Servers that are able to handle user requests.
 
+{{% notice note %}}
+Kubernetes requires that the names of some resource types follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). Therefore, the operator enforces that the names of the Kubernetes resources do not exceed Kubernetes limits (see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})).
+{{% /notice %}}
+
 The diagram below shows the components inside the containers running WebLogic Server instances:
 
 ![Inside a container](/weblogic-kubernetes-operator/images/inside-a-container.png)
 
-The domain resource specifies a Docker image, defaulting to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. All containers running WebLogic Server use this same Docker image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory.
+The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. All containers running WebLogic Server use this same Docker image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory.
 {{% notice note %}}
-During a rolling event caused by a change to the domain resource's `image` field, containers will be using a mix of the updated value of the `image` field and its previous value.
+During a rolling event caused by a change to the Domain's `image` field, containers will be using a mix of the updated value of the `image` field and its previous value.
 {{% /notice %}}
 Within the container, the following aspects are configured by the operator:
 
@@ -68,7 +72,7 @@ Within the container, the following aspects are configured by the operator:
 *	A shutdown hook is configured that will execute a script that performs a graceful shutdown of the server.  This ensures that servers have an opportunity to shut down cleanly before they are killed.
 
 ### Domain state stored outside Docker images
-The operator expects (and requires) that all state be stored outside of the Docker images that are used to run the domain.  This means either in a persistent file system, or in a database.  The WebLogic configuration, that is, the domain directory and the applications directory may come from the Docker image or a persistent volume.  However, other state, such as file-based persistent stores, and such, must be stored on a persistent volume or in a database.  All of the containers that are participating in the WebLogic domain use the same image, and take on their personality; that is, which server they execute, at startup time.  Each pod mounts storage, according to the domain resource, and has access to the state information that it needs to fulfill its role in the domain.
+The operator expects (and requires) that all state be stored outside of the Docker images that are used to run the domain.  This means either in a persistent file system, or in a database.  The WebLogic configuration, that is, the domain directory and the applications directory may come from the Docker image or a persistent volume.  However, other state, such as file-based persistent stores, and such, must be stored on a persistent volume or in a database.  All of the containers that are participating in the WebLogic domain use the same image, and take on their personality; that is, which server they execute, at startup time. Each Pod mounts storage, according to the Domain, and has access to the state information that it needs to fulfill its role in the domain.
 
 It is worth providing some background information on why this approach was adopted, in addition to the fact that this separation is consistent with other existing operators (for other products) and the Kubernetes “cattle, not pets” philosophy when it comes to containers.
 

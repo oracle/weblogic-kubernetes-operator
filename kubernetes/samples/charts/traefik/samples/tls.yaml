@@ -1,43 +1,43 @@
-apiVersion: extensions/v1beta1
-kind: Ingress
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
-  name: traefik-tls
-  namespace: default
   annotations:
     kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/ssl-redirect: "true"
+  name: traefik-tls-1
+  namespace: weblogic-domain1
 spec:
-  rules:
-  - host: domain1.org 
-    http:
-      paths:
-      - path:
-        backend:
-          serviceName: 'domain1-cluster-cluster-1'
-          servicePort: 8001
+  entryPoints: 
+   - websecure
+  routes:
+  - kind: Rule
+    match: Host(`domain1.org`)
+    services:
+    - kind: Service
+      name: domain1-cluster-cluster-1
+      port: 8001
   tls:
-  - hosts:
-    - domain1.org
-    secretName: domain1-tls-cert
+     secretName: domain1-tls-cert
 ---
-apiVersion: extensions/v1beta1
-kind: Ingress
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
-  name: traefik-tls-2
-  namespace: test1
   annotations:
     kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/ssl-redirect: "true"
+  name: traefik-tls-2
+  namespace: weblogic-domain2
 spec:
-  rules:
-  - host: domain2.org
-    http:
-     paths:
-      - path:
-        backend:
-          serviceName: 'domain2-cluster-cluster-1'
-          servicePort: 8001
+  entryPoints: 
+   - websecure
+  routes:
+  - kind: Rule
+    match: Host(`domain2.org`)
+    priority: 0
+    services:
+    - kind: Service
+      name: domain2-cluster-cluster-1
+      port: 8001
   tls:
-  - hosts:
-    - domain2.org
-    secretName: domain2-tls-cert
+     secretName: domain2-tls-cert

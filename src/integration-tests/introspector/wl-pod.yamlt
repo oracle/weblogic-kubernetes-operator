@@ -8,7 +8,6 @@ metadata:
     weblogic.createdByOperator: "true"
     weblogic.domainName: ${DOMAIN_NAME}
     weblogic.domainUID: ${DOMAIN_UID}
-    weblogic.resourceVersion: domain-v1
     weblogic.serverName: ${SERVER_NAME}
   name: ${SERVICE_NAME}
   namespace: ${NAMESPACE}
@@ -19,6 +18,8 @@ spec:
     env:
     - name: JAVA_OPTIONS
       value: "-Djava.security.egd=file:/dev/./urandom "
+      #value: "-Djava.security.egd=file:/dev/./urandom -Dweblogic.log.StdoutSeverityLevel=Debug -Dweblogic.log.LogSeverity=Debug -Dweblogic.StdoutDebugEnabled=true -Dweblogic.debug.DebugStoreIOPhysicalVerbose=true -Dweblogic.kernel.debug=true -Dweblogic.debug.DebugConnection=true -Dweblogic.debug.DebugMessaging=true -Dweblogic.debug.DebugJNDI=true -Dweblogic.debug.DebugJNDIFactories=true -Dweblogic.debug.DebugJNDIResolution=true"
+      #value: "-Djava.security.egd=file:/dev/./urandom -Dweblogic.log.RotateLogOnStartup=true -Dweblogic.log.FileMinSize=1 -Dweblogic.log.FileCount=1 -Dweblogic.log.StdoutSeverityLevel=Debug -Dweblogic.log.LogSeverity=Debug -Dweblogic.StdoutDebugEnabled=true -Dweblogic.debug.DebugStoreIOPhysicalVerbose=true -Dweblogic.kernel.debug=true -Dweblogic.debug.DebugConnection=true -Dweblogic.debug.DebugMessaging=true -Dweblogic.debug.DebugJNDI=true -Dweblogic.debug.DebugJNDIFactories=true -Dweblogic.debug.DebugJNDIResolution=true"
     - name: USER_MEM_ARGS
       value: "-XX:MaxRAMFraction=1 "
     - name: NODEMGR_JAVA_OPTIONS
@@ -110,7 +111,7 @@ spec:
   #    name: weblogic-credentials-volume
   #    readOnly: true
     - mountPath: /weblogic-operator/scripts
-      name: weblogic-domain-cm-volume
+      name: weblogic-script-cm-volume
       readOnly: true
     - mountPath: /weblogic-operator/introspector
       name: introspect-domain-cm-volume
@@ -134,8 +135,8 @@ spec:
   #    secretName: ${WEBLOGIC_CREDENTIALS_SECRET_NAME}
   - configMap:
       defaultMode: 365
-      name: weblogic-domain-cm
-    name: weblogic-domain-cm-volume
+      name: weblogic-script-cm
+    name: weblogic-script-cm-volume
   - configMap:
       defaultMode: 365
       name: ${DOMAIN_UID}-weblogic-domain-introspect-cm

@@ -20,7 +20,6 @@ import io.kubernetes.client.openapi.models.V1Status;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -41,6 +40,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
@@ -376,16 +376,15 @@ public class ServiceHelper {
     return true;
   }
 
-  private abstract static class ServiceStepContext {
+  private abstract static class ServiceStepContext extends StepContextBase {
     private final Step conflictStep;
     protected List<V1ServicePort> ports;
-    final DomainPresenceInfo info;
     final WlsDomainConfig domainTopology;
     private final OperatorServiceType serviceType;
 
     ServiceStepContext(Step conflictStep, Packet packet, OperatorServiceType serviceType) {
+      super(packet.getSpi(DomainPresenceInfo.class));
       this.conflictStep = conflictStep;
-      info = packet.getSpi(DomainPresenceInfo.class);
       domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       this.serviceType = serviceType;
     }
@@ -395,7 +394,13 @@ public class ServiceHelper {
     }
 
     V1Service createModel() {
-      return AnnotationHelper.withSha256Hash(createRecipe());
+      return withNonHashedElements(AnnotationHelper.withSha256Hash(createRecipe()));
+    }
+
+    V1Service withNonHashedElements(V1Service service) {
+      V1ObjectMeta metadata = service.getMetadata();
+      updateForOwnerReference(metadata);
+      return service;
     }
 
     V1Service createRecipe() {
@@ -413,9 +418,13 @@ public class ServiceHelper {
 
     void addServicePorts(WlsServerConfig serverConfig) {
       getNetworkAccessPoints(serverConfig).forEach(this::addNapServicePort);
-      addServicePortIfNeeded("default", serverConfig.getListenPort());
-      addServicePortIfNeeded("default-secure", serverConfig.getSslListenPort());
-      addServicePortIfNeeded("default-admin", serverConfig.getAdminPort());
+      boolean istioEnabled = this.getDomain().isIstioEnabled();
+      if (!istioEnabled) {
+        addServicePortIfNeeded("default", serverConfig.getListenPort());
+        addServicePortIfNeeded("default-secure", serverConfig.getSslListenPort());
+        addServicePortIfNeeded("default-admin", serverConfig.getAdminPort());
+      }
+
     }
 
     List<NetworkAccessPoint> getNetworkAccessPoints(@Nonnull WlsServerConfig config) {
@@ -439,11 +448,6 @@ public class ServiceHelper {
     abstract void addServicePortIfNeeded(String portName, Integer port);
 
     V1ServicePort createServicePort(String portName, Integer port) {
-      StringBuffer sb = new StringBuffer();
-      StackTraceElement[] stes = Thread.currentThread().getStackTrace();
-      for (StackTraceElement ste : stes) {
-        sb.append(ste.toString()).append("\r\n");
-      }
       return new V1ServicePort()
           .name(LegalNames.toDns1123LegalName(portName))
           .port(port)
@@ -458,15 +462,12 @@ public class ServiceHelper {
       getServiceLabels().forEach(metadata::putLabelsItem);
 
       metadata
-          .putLabelsItem(
-              LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
 
       // Add custom annotations
       getServiceAnnotations().forEach(metadata::putAnnotationsItem);
-
       return metadata;
     }
 
@@ -529,7 +530,7 @@ public class ServiceHelper {
       V1DeleteOptions deleteOptions = new V1DeleteOptions();
       return new CallBuilder()
           .deleteServiceAsync(
-              createServiceName(), getNamespace(), deleteOptions, new DeleteServiceResponse(next));
+              createServiceName(), getNamespace(), getDomainUid(), deleteOptions, new DeleteServiceResponse(next));
     }
 
     private Step createReplacementService(Step next) {
@@ -549,7 +550,7 @@ public class ServiceHelper {
         return doNext(
             new CallBuilder()
                 .readServiceAsync(
-                    createServiceName(), getNamespace(), new ReadServiceResponse(conflictStep)),
+                    createServiceName(), getNamespace(), getDomainUid(), new ReadServiceResponse(conflictStep)),
             packet);
       }
 
@@ -657,15 +658,17 @@ public class ServiceHelper {
 
       if (oldService != null) {
         return doNext(
-            deleteService(oldService.getMetadata().getName(), info.getNamespace()), packet);
+            deleteService(oldService.getMetadata()), packet);
       }
       return doNext(packet);
     }
 
-    Step deleteService(String name, String namespace) {
+    Step deleteService(V1ObjectMeta metadata) {
       V1DeleteOptions deleteOptions = new V1DeleteOptions();
       return new CallBuilder()
-          .deleteServiceAsync(name, namespace, deleteOptions, new DefaultResponseStep<>(getNext()));
+          .deleteServiceAsync(metadata.getName(),
+              metadata.getNamespace(), getDomainUidLabel(metadata), deleteOptions,
+              new DefaultResponseStep<>(getNext()));
     }
   }
 
@@ -877,6 +880,19 @@ public class ServiceHelper {
 
     void addServicePortIfNeeded(String channelName, Integer internalPort) {
       Channel channel = getChannel(channelName);
+
+      if (channel == null && getDomain().isIstioEnabled()) {
+        if (channelName != null) {
+          String[] tokens = channelName.split("-");
+          if (tokens.length > 0) {
+            if ("http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
+                  || "tls".equals(tokens[0])) {
+              int index = channelName.indexOf('-');
+              channel = getChannel(channelName.substring(index + 1));
+            }
+          }
+        }
+      }
       if (channel == null || internalPort == null) {
         return;
       }

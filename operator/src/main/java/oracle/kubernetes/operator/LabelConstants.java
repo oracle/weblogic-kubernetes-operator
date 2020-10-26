@@ -5,7 +5,7 @@ package oracle.kubernetes.operator;
 
 public interface LabelConstants {
 
-  String RESOURCE_VERSION_LABEL = "weblogic.resourceVersion";
+  String OPERATOR_VERISON = "weblogic.operatorVersion";
   String DOMAINUID_LABEL = "weblogic.domainUID";
   String DOMAINNAME_LABEL = "weblogic.domainName";
   String DOMAINHOME_LABEL = "weblogic.domainHome";
@@ -16,11 +16,11 @@ public interface LabelConstants {
   String JOBNAME_LABEL = "job-name";
   String APP_LABEL = "app";
   String DOMAINRESTARTVERSION_LABEL = "weblogic.domainRestartVersion";
-  String DOMAININTROSPECTVERSION_LABEL = "weblogic.domainIntrospectVersion";
   String CLUSTERRESTARTVERSION_LABEL = "weblogic.clusterRestartVersion";
   String SERVERRESTARTVERSION_LABEL = "weblogic.serverRestartVersion";
   String MODEL_IN_IMAGE_MODEL_SECRETS_HASH = "weblogic.modelInImageModelSecretsHash";
   String MODEL_IN_IMAGE_DOMAINZIP_HASH = "weblogic.modelInImageDomainZipHash";
+  String INTROSPECTION_STATE_LABEL = "weblogic.introspectVersion";
 
   static String forDomainUidSelector(String uid) {
     return String.format("%s=%s", DOMAINUID_LABEL, uid);

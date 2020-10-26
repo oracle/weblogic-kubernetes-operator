@@ -135,4 +135,12 @@ public class ServerStatusTest {
         cluster1ServerA.compareTo(adminServer), greaterThan(0));
   }
 
+  // We use the volatile adminServer flag to control sorting, but it is not part of the JSON schema of the status,
+  // therefore it cannot figure in the equals() test, which is used to decide whether we need to update the status.
+  @Test
+  public void equalsMethodsIgnoresIsAdminServer() {
+    assertThat(
+          new ServerStatus().withClusterName("1").withServerName("1"),
+          equalTo(new ServerStatus().withClusterName("1").withServerName("1").withIsAdminServer(true)));
+  }
 }

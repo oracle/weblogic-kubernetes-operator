@@ -6,25 +6,28 @@ pre = "<b> </b>"
 description = "Debugging a deployed Model in Image domain."
 +++
 
+Here are some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed.
+
 #### Contents
 
- - [Introduction](#introduction)
- - [Check the domain resource status](#check-the-domain-resource-status)
+ - [Check the Domain status](#check-the-domain-status)
  - [Check the introspector job](#check-the-introspector-job)
  - [Check the WebLogic Server pods](#check-the-weblogic-server-pods)
- - [Check an operator log](#check-an-operator-log)
+ - [Check the operator log](#check-the-operator-log)
+ - [Check the FAQ](#check-the-faq)
 
-#### Introduction
 
-Here are some suggestions for debugging problems with Model in Image after your domain resource is deployed.
+#### Check the Domain status
 
-#### Check the domain resource status
-
-To check the domain resource status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID`.
+To check the Domain status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID`.
 
 #### Check the introspector job
 
 If your introspector job failed, then examine the `kubectl describe` of the job and its pod, and also examine its log, if one exists.
+
+{{% notice tip %}}
+To prevent the introspector job from retrying while you are debugging a failure, set the operator's Helm `domainPresenceFailureRetryMaxCount` parameter to `0`. For more information, see  [Manage operators -> Use the operator -> Use Helm]({{<relref "/userguide/managing-operators/using-the-operator/using-helm">}}).
+{{% /notice %}}
 
 For example, assuming your domain UID is `sample-domain1` and your domain namespace is `sample-domain1-ns`:
 
@@ -33,30 +36,30 @@ For example, assuming your domain UID is `sample-domain1` and your domain namesp
   $ kubectl -n sample-domain1-ns get pods -l weblogic.domainUID=sample-domain1
   NAME                                         READY   STATUS    RESTARTS   AGE
   sample-domain1-admin-server                  1/1     Running   0          19h
-  sample-domain1-introspect-domain-job-v2l7k   0/1     Error     0          75m
+  sample-domain1-introspector-v2l7k            0/1     Error     0          75m
   sample-domain1-managed-server1               1/1     Running   0          19h
   sample-domain1-managed-server2               1/1     Running   0          19h
 
   $ # let's look at the job's describe
-  $ kubectl -n sample-domain1-ns describe job/sample-domain1-introspect-domain-job
+  $ kubectl -n sample-domain1-ns describe job/sample-domain1-introspector
 
   ...
 
   $ # now let's look at the job's pod describe, in particular look at its 'events'
-  $ kubectl -n sample-domain1-ns describe pod/sample-domain1-introspect-domain-job-v2l7k
+  $ kubectl -n sample-domain1-ns describe pod/sample-domain1-introspector-v2l7k
 
   ...
 
   $ # finally let's look at job's pod's log
-  $ kubectl -n sample-domain1-ns logs job/sample-domain1-introspect-domain-job
+  $ kubectl -n sample-domain1-ns logs job/sample-domain1-introspector
 
   ...
 
   $ # alternative log command (will have same output as previous)
-  # kubectl -n sample-domain1-ns logs pod/sample-domain1-introspect-domain-job-v2l7k
+  # kubectl -n sample-domain1-ns logs pod/sample-domain1-introspector-v2l7k
   ```
 
-  A common reason for the introspector job to fail is because of a typo in a model file. Here's some sample log output from an introspector job that shows such a failure:
+  A common reason for the introspector job to fail is because of an error in a model file. Here's some sample log output from an introspector job that shows such a failure:
 
   ```
   ...
@@ -65,13 +68,22 @@ For example, assuming your domain UID is `sample-domain1` and your domain namesp
         1. WLSDPLY-05007: Model file /u01/wdt/models/model1.yaml,/weblogic-operator/wdt-config-map/..2020_03_19_15_43_05.993607882/datasource.yaml contains an unrecognized section: TYPOresources. The recognized sections are domainInfo, topology, resources, appDeployments, kubernetes
   ```
 
+{{% notice tip %}}
+The introspector log is mirrored to the Domain resource `spec.logHome` directory
+when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
+{{% /notice %}}
+
+{{% notice tip %}}
+If a model file error references a model file in your `spec.configuration.model.configMap`, then you can correct the error by redeploying the ConfigMap with a corrected model file and then initiating a domain restart or roll. Similarly, if a model file error references a model file in your model image, then you can correct the error by deploying a corrected image, modifying your Domain YAML file to reference the new image, and then initiating a domain restart or roll.
+{{% /notice %}}
+
 #### Check the WebLogic Server pods
 
-If your introspector job succeeded, then there will be no introspector job or pod, the operator will create a `MY_DOMAIN_UID-weblogic-domain-introspect-cm` config map for your domain, and the operator will then run the domain's WebLogic pods.
+If your introspector job succeeded, then there will be no introspector job or pod, the operator will create a `MY_DOMAIN_UID-weblogic-domain-introspect-cm` ConfigMap for your domain, and the operator will then run the domain's WebLogic Server pods.
 
-If `kubectl -n MY_NAMESPACE get pods` reveals that your WebLogic pods have errors, then use `kubectl -n MY_NAMESPACE describe pod POD_NAME` and `kubectl -n MY_NAMESPACE logs POD_NAME` to debug.
+If `kubectl -n MY_NAMESPACE get pods` reveals that your WebLogic Server pods have errors, then use `kubectl -n MY_NAMESPACE describe pod POD_NAME` and `kubectl -n MY_NAMESPACE logs POD_NAME` to debug.
 
-#### Check an operator log
+#### Check the operator log
 
 Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
 
@@ -96,3 +108,9 @@ Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
     | egrep -e "level...(SEVERE|WARNING)" \
     | grep "domainUID...sample-domain1"
   ```
+
+#### Check the FAQ
+
+Common issues that have corresponding FAQ entries include:
+- When a Domain YAML file is deployed and no introspector or WebLogic Server pods start, plus the operator log contains no mention of the domain, then check to make sure that the Domain's namespace has been set up to be monitored by an operator. See the [Managing domain namespaces FAQ]({{<relref "/faq/namespace-management">}}).
+- If a `describe` of an introspector job or WebLogic Server pod reveals image access errors, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).

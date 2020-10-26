@@ -63,7 +63,7 @@ public class MessageKeys {
   public static final String HTTP_METHOD_FAILED = "WLSKO-0081";
   public static final String NOT_STARTING_DOMAINUID_THREAD = "WLSKO-0082";
   public static final String OP_CONFIG_NAMESPACE = "WLSKO-0083";
-  public static final String OP_CONFIG_TARGET_NAMESPACES = "WLSKO-0084";
+  public static final String OP_CONFIG_DOMAIN_NAMESPACES = "WLSKO-0084";
   public static final String OP_CONFIG_SERVICE_ACCOUNT = "WLSKO-0085";
   public static final String WAITING_FOR_POD_READY = "WLSKO-0087";
   public static final String POD_IS_READY = "WLSKO-0088";
@@ -125,6 +125,14 @@ public class MessageKeys {
   public static final String REQUEST_PARAMS_WITH = "WLSKO-0167";
   public static final String CALL_FAILED = "WLSKO-0168";
   public static final String JOB_CREATION_TIMESTAMP_MESSAGE = "WLSKO-0169";
+  public static final String HTTP_REQUEST_TIMED_OUT = "WLSKO-0170";
+  public static final String NAMESPACE_IS_MISSING = "WLSKO-0171";
+  public static final String CM_PATCHED = "WLSKO-0172";
+  public static final String REPLACE_CRD_FAILED = "WLSKO-0173";
+  public static final String CREATE_CRD_FAILED = "WLSKO-0174";
+  public static final String INTROSPECTOR_JOB_FAILED = "WLSKO-0175";
+  public static final String INTROSPECTOR_JOB_FAILED_DETAIL = "WLSKO-0176";
+  public static final String INTROSPECTOR_POD_FAILED = "WLSKO-0177";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
@@ -139,6 +147,13 @@ public class MessageKeys {
   public static final String OPSS_SECRET_NOT_SPECIFIED = "WLSDO-0010";
   public static final String NO_CLUSTER_IN_DOMAIN = "WLSDO-0011";
   public static final String NO_MANAGED_SERVER_IN_DOMAIN = "WLSDO-0012";
+  public static final String CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO = "WLSDO-0013";
+  public static final String INTROSPECT_JOB_FAILED = "WLSDO-0014";
+  public static final String INTROSPECT_JOB_FAILED_RETRY_COUNT = "WLSDO-0015";
+  public static final String ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH = "WLSDO-0016";
+  public static final String ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH = "WLSDO-0017";
+  public static final String ILLEGAL_SERVER_SERVICE_NAME_LENGTH = "WLSDO-0018";
+  public static final String ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH = "WLSDO-0019";
 
   private MessageKeys() {
   }

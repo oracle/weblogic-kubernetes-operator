@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -23,21 +24,33 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ModelInImageDomainType;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
+import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
+
 /** DomainSpec is a description of a domain. */
-@Description("DomainSpec is a description of a domain.")
+@Description("The specification of the operation of the WebLogic domain. Required.")
 public class DomainSpec extends BaseConfiguration {
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
   @Description(
-      "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required."
-          + " Defaults to the value of metadata.name.")
-  @Pattern("^[a-z0-9-.]{1,253}$")
+      "Domain unique identifier. It is recommended that this value be unique to assist in future work to "
+      + "identify related domains in active-passive scenarios across data centers; however, it is only required "
+      + "that this value be unique within the namespace, similarly to the names of Kubernetes resources. "
+      + "This value is distinct and need not match the domain name from the WebLogic domain configuration. "
+      + "Defaults to the value of `metadata.name`.")
+  @Pattern("^[a-z0-9-.]{1,45}$")
   @SerializedName("domainUID")
   private String domainUid;
 
@@ -47,10 +60,10 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "The folder for the WebLogic Domain. Not required."
-          + " Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume."
-          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image."
-          + " Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel.")
+      "The directory containing the WebLogic domain configuration inside the container."
+          + " Defaults to /shared/domains/domains/<domainUID> if `domainHomeSourceType` is PersistentVolume."
+          + " Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image."
+          + " Defaults to /u01/domains/<domainUID> if `domainHomeSourceType` is FromModel.")
   private String domainHome;
 
   /**
@@ -62,31 +75,33 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @EnumClass(value = ServerStartPolicy.class, qualifier = "forDomain")
-  @Description(
-      "The strategy for deciding whether to start a server. "
-          + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.")
+  @Description("The strategy for deciding whether to start a WebLogic Server instance. "
+      + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
+      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
+      + "domain-lifecycle/startup/#starting-and-stopping-servers.")
   private String serverStartPolicy;
 
   /**
-   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * Reference to secret containing WebLogic startup credentials user name and password. Secret must
    * contain keys names 'username' and 'password'. Required.
    */
   @Description(
-      "The name of a pre-created Kubernetes secret, in the domain's namespace, that holds"
-          + " the username and password needed to boot WebLogic Server under the 'username' and "
-          + "'password' fields.")
+      "Reference to a Kubernetes Secret that contains"
+          + " the user name and password needed to boot a WebLogic Server under the `username` and "
+          + "`password` fields.")
   @Valid
   @NotNull
   private V1SecretReference webLogicCredentialsSecret;
 
   /**
    * The in-pod name of the directory to store the domain, Node Manager, server logs, server
-   * .out, and HTTP access log files in.
+   * .out, introspector.out, and HTTP access log files in.
    */
   @Description(
-      "The in-pod name of the directory in which to store the domain, Node Manager, server logs, "
-          + "server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. "
-          + "Ignored if logHomeEnabled is false.")
+      "The directory in a server's container in which to store the domain, Node Manager, server logs, "
+          + "server *.out, introspector .out, and optionally HTTP access log files "
+          + "if `httpAccessLogInLogHome` is true. "
+          + "Ignored if `logHomeEnabled` is false.")
   private String logHome;
 
   /**
@@ -95,8 +110,8 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "Specified whether the log home folder is enabled. Not required. "
-          + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
+      "Specifies whether the log home folder is enabled. "
+          + "Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
   /**
@@ -105,20 +120,21 @@ public class DomainSpec extends BaseConfiguration {
    * directories are determined from the WebLogic domain home configuration.
    */
   @Description(
-      "An optional, in-pod location for data storage of default and custom file stores. "
-          + "If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") "
-          + "then the data storage directories are determined from the WebLogic domain home configuration.")
+      "An optional directory in a server's container for data storage of default and custom file stores. "
+          + "If `dataHome` is not specified or its value is either not set or empty, "
+          + "then the data storage directories are determined from the WebLogic domain configuration.")
   private String dataHome;
 
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
-  @Description("If true (the default), then the server .out file will be included in the pod's stdout.")
+  @Description("Specifies whether the server .out file will be included in the Pod's log. "
+          + "Defaults to true.")
   private Boolean includeServerOutInPodLog;
 
   /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
    *  if {@link #logHomeEnabled} is true. Default is true. */
-  @Description("If true (the default), then server HTTP access log files will be written to the same "
+  @Description("Specifies whether the server HTTP access log files will be written to the same "
       + "directory specified in `logHome`. Otherwise, server HTTP access log files will be written to "
-      + "the directory configured in the WebLogic domain home configuration.")
+      + "the directory configured in the WebLogic domain configuration. Defaults to true.")
   private Boolean httpAccessLogInLogHome;
 
   /**
@@ -127,22 +143,22 @@ public class DomainSpec extends BaseConfiguration {
    * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4
    */
   @Description(
-      "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; "
+      "The WebLogic container image; required when `domainHomeSourceType` is Image or FromModel; "
           + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
   private String image;
 
   /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
+   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and,
    * IfNotPresent.
    *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
+   * <p>Defaults to Always if image ends in :latest; IfNotPresent, otherwise.
    *
    * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
    */
   @Description(
-      "The image pull policy for the WebLogic Docker image. "
-          + "Legal values are Always, Never and IfNotPresent. "
-          + "Defaults to Always if image ends in :latest, IfNotPresent otherwise.")
+      "The image pull policy for the WebLogic container image. "
+          + "Legal values are Always, Never, and IfNotPresent. "
+          + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
 
@@ -154,17 +170,53 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("A list of image pull secrets for the WebLogic Docker image.")
+  @Description("A list of image pull Secrets for the WebLogic container image.")
   private List<V1LocalObjectReference> imagePullSecrets;
 
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in a cluster specification.
    */
+
   @Description(
-      "The number of managed servers to run in any cluster that does not specify a replica count.")
+      "The default number of cluster member Managed Server instances to start for each WebLogic cluster in the "
+      + "domain configuration, unless `replicas` is specified for that cluster under the `clusters` field. "
+      + "For each cluster, the operator will sort cluster member Managed Server names from the WebLogic domain "
+      + "configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. "
+      + "This is done so that server names such as \"managed-server10\" come after \"managed-server9\". "
+      + "The operator will then start Managed Servers from the sorted list, "
+      + "up to the `replicas` count, unless specific Managed Servers are specified as "
+      + "starting in their entry under the `managedServers` field. In that case, the specified Managed Servers "
+      + "will be started and then additional cluster members "
+      + "will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are "
+      + "not already started. If cluster members are started "
+      + "because of their entries under `managedServers`, then a cluster may have more cluster members "
+      + "running than its `replicas` count. Defaults to 0.")
   @Range(minimum = 0)
   private Integer replicas;
+
+  @Description("Whether to allow the number of running cluster member Managed Server instances to drop "
+      + "below the minimum dynamic cluster size configured in the WebLogic domain configuration, "
+      + "if this is not specified for a specific cluster under the `clusters` field. Defaults to true."
+  )
+  private Boolean allowReplicasBelowMinDynClusterSize;
+
+  @Description(
+      "The maximum number of cluster member Managed Server instances that the operator will start in parallel "
+          + "for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the "
+          + "`clusters` field. A value of 0 means there is no configured limit. Defaults to 0."
+  )
+  @Range(minimum = 0)
+  private Integer maxClusterConcurrentStartup;
+
+  @Description(
+          "The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it "
+                  + "is being partially shut down by lowering its replica count. You can override this default on a "
+                  + "per cluster basis by setting the cluster's `maxConcurrentShutdown` field. A value of 0 means "
+                  + "there is no limit. Defaults to 1."
+  )
+  @Range(minimum = 0)
+  private Integer maxClusterConcurrentShutdown;
 
   /**
    * Whether the domain home is part of the image.
@@ -173,22 +225,21 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Deprecated
   @Description(
-      "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
-          + " True indicates that the domain home file system is contained in the Docker image"
+      "Deprecated. Use `domainHomeSourceType` instead. Ignored if `domainHomeSourceType` is specified."
+          + " True indicates that the domain home file system is present in the container image"
           + " specified by the image field. False indicates that the domain home file system is located"
-          + " on a persistent volume.")
+          + " on a persistent volume. Defaults to unset.")
   private Boolean domainHomeInImage;
 
-  @EnumClass(value = DomainSourceType.class)
   @Description(
       "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
-          + " Image indicates that the domain home file system is contained in the Docker image"
-          + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
-          + " on a persistent volume.  FromModel indicates that the domain home file system will be created"
+          + " Image indicates that the domain home file system is present in the container image"
+          + " specified by the `image` field. PersistentVolume indicates that the domain home file system is located"
+          + " on a persistent volume. FromModel indicates that the domain home file system will be created"
           + " and managed by the operator based on a WDT domain model."
-          + " If this field is specified it overrides the value of domainHomeInImage. If both fields are"
-          + " unspecified then domainHomeSourceType defaults to Image.")
-  private String domainHomeSourceType;
+          + " If this field is specified, it overrides the value of `domainHomeInImage`. If both fields are"
+          + " unspecified, then `domainHomeSourceType` defaults to Image.")
+  private DomainSourceType domainHomeSourceType;
 
   /**
    * Tells the operator to start the introspect domain job.
@@ -196,7 +247,16 @@ public class DomainSpec extends BaseConfiguration {
    * @since 3.0.0
    */
   @Description(
-      "If present, every time this value is updated, the operator will start introspect domain job")
+      "Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. "
+      + "Repeating introspection is required for the operator to recognize changes to the domain configuration, "
+      + "such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, "
+      + "or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs "
+      + "automatically, without requiring change to this field, when servers are first started or restarted after a "
+      + "full domain shut down. For the FromModel `domainHomeSourceType`, introspection also occurs when a running "
+      + "server must be restarted because of changes to any of the fields listed here: "
+      + "https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
+      + "domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. "
+      + "See also `domains.spec.configuration.overridesConfigurationStrategy`.")
   private String introspectVersion;
 
   @Description("Models and overrides affecting the WebLogic domain configuration.")
@@ -208,9 +268,9 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Deprecated
-  @Description("Deprecated. Use configuration.overridesConfigMap instead."
-      + " Ignored if configuration.overridesConfigMap is specified."
-      + " The name of the config map for optional WebLogic configuration overrides.")
+  @Description("Deprecated. Use `configuration.overridesConfigMap` instead."
+      + " Ignored if `configuration.overridesConfigMap` is specified."
+      + " The name of the ConfigMap for optional WebLogic configuration overrides.")
   private String configOverrides;
 
   /**
@@ -219,8 +279,8 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Deprecated
-  @Description("Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
-      + " A list of names of the secrets for optional WebLogic configuration overrides.")
+  @Description("Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified."
+      + " A list of names of the Secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets;
 
   /**
@@ -228,7 +288,9 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for the Administration Server.")
+  @Description("Lifecycle options for the Administration Server, including Java options, environment variables, "
+          + "additional Pod content, and which channels or network access points should be exposed using "
+          + "a NodePort Service.")
   private AdminServer adminServer;
 
   /**
@@ -236,7 +298,10 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for individual Managed Servers.")
+  @Description("Lifecycle options for individual Managed Servers, including Java options, environment variables, "
+          + "additional Pod content, and the ability to explicitly start, stop, or restart a named server instance. "
+          + "The `serverName` field of each entry must match a Managed Server that already exists in the WebLogic "
+          + "domain configuration or that matches a dynamic cluster member based on the server template.")
   private final List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
@@ -244,12 +309,13 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for the clusters.")
+  @Description("Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, "
+          + "environment variables, additional Pod content, and the ability to explicitly start, stop, or restart "
+          + "cluster members. The `clusterName` field of each entry must match a cluster that already exists in the "
+          + "WebLogic domain configuration.")
   protected final List<Cluster> clusters = new ArrayList<>();
 
-  @Description("Experimental feature configurations.")
-  private Experimental experimental;
-
+  /**
   /**
    * Adds a Cluster to the DomainSpec.
    *
@@ -277,7 +343,7 @@ public class DomainSpec extends BaseConfiguration {
 
   @SuppressWarnings("unused")
   EffectiveConfigurationFactory getEffectiveConfigurationFactory(
-      String apiVersion, String resourceVersionLabel) {
+      String apiVersion) {
     return new CommonEffectiveConfigurationFactory();
   }
 
@@ -319,7 +385,7 @@ public class DomainSpec extends BaseConfiguration {
    * @return domain home
    */
   String getDomainHome() {
-    return domainHome;
+    return Optional.ofNullable(domainHome).orElse(getDomainHomeSourceType().getDefaultDomainHome(getDomainUid()));
   }
 
   /**
@@ -365,7 +431,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * Reference to secret containing WebLogic startup credentials user name and password. Secret must
    * contain keys names 'username' and 'password'. Required.
    *
    * @param webLogicCredentialsSecret WebLogic startup credentials secret
@@ -377,7 +443,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * Reference to secret containing WebLogic startup credentials user name and password. Secret must
    * contain keys names 'username' and 'password'. Required.
    *
    * @param opssKeyPassPhrase WebLogic startup credentials secret
@@ -388,18 +454,24 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  @Nullable
   public String getImage() {
-    return image;
+    return Optional.ofNullable(image).orElse(DEFAULT_IMAGE);
   }
 
   public void setImage(@Nullable String image) {
     this.image = image;
   }
 
-  @Nullable
   public String getImagePullPolicy() {
-    return imagePullPolicy;
+    return Optional.ofNullable(imagePullPolicy).orElse(getInferredPullPolicy());
+  }
+
+  private String getInferredPullPolicy() {
+    return useLatestImage() ? ALWAYS_IMAGEPULLPOLICY : IFNOTPRESENT_IMAGEPULLPOLICY;
+  }
+
+  private boolean useLatestImage() {
+    return getImage().endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX);
   }
 
   public void setImagePullPolicy(@Nullable String imagePullPolicy) {
@@ -515,19 +587,19 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(KubernetesConstants.DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME);
   }
 
-  public DomainSpec withHttpAccessLogInLogHome(boolean httpAccessLogInLogHome) {
+  public void setHttpAccessLogInLogHome(boolean httpAccessLogInLogHome) {
     this.httpAccessLogInLogHome = httpAccessLogInLogHome;
-    return this;
   }
 
   /**
    * Returns true if this domain's home is defined in the default docker image for the domain.
+   * Defaults to true.
    *
    * @return true or false
    * @since 2.0
    */
-  Boolean isDomainHomeInImage() {
-    return domainHomeInImage;
+  boolean isDomainHomeInImage() {
+    return Optional.ofNullable(domainHomeInImage).orElse(true);
   }
 
   /**
@@ -544,30 +616,30 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  public String getDomainHomeSourceType() {
-    return domainHomeSourceType;
+  @Nonnull DomainSourceType getDomainHomeSourceType() {
+    return Optional.ofNullable(domainHomeSourceType).orElse(inferDomainSourceType());
   }
 
-  public void setDomainHomeSourceType(String domainHomeSourceType) {
-    this.domainHomeSourceType = domainHomeSourceType;
+  private DomainSourceType inferDomainSourceType() {
+    if (getModel() != null) {
+      return DomainSourceType.FromModel;
+    } else if (isDomainHomeInImage()) {
+      return DomainSourceType.Image;
+    } else {
+      return DomainSourceType.PersistentVolume;
+    }
   }
 
-  public DomainSpec withDomainHomeSourceType(String domainHomeSourceType) {
+  public void setDomainHomeSourceType(DomainSourceType domainHomeSourceType) {
     this.domainHomeSourceType = domainHomeSourceType;
-    return this;
   }
 
   public String getIntrospectVersion() {
     return introspectVersion;
   }
 
-  public void setIntrospectVersionn(String introspectVersion) {
+  public void setIntrospectVersion(String introspectVersion) {
     this.introspectVersion = introspectVersion;
-  }
-
-  public DomainSpec withIntrospectVersion(String introspectVersion) {
-    this.introspectVersion = introspectVersion;
-    return this;
   }
 
   public Configuration getConfiguration() {
@@ -576,11 +648,6 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setConfiguration(Configuration configuration) {
     this.configuration = configuration;
-  }
-
-  public DomainSpec withConfiguration(Configuration configuration) {
-    this.configuration = configuration;
-    return this;
   }
 
   /**
@@ -615,13 +682,24 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  @Nullable
-  String getConfigOverrides() {
-    return configOverrides;
+  public boolean isAllowReplicasBelowMinDynClusterSize() {
+    return Optional.ofNullable(allowReplicasBelowMinDynClusterSize)
+        .orElse(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
   }
 
-  void setConfigOverrides(@Nullable String overrides) {
-    this.configOverrides = overrides;
+  public Integer getMaxClusterConcurrentStartup() {
+    return Optional.ofNullable(maxClusterConcurrentStartup)
+        .orElse(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP);
+  }
+
+  public Integer getMaxClusterConcurrentShutdown() {
+    return Optional.ofNullable(maxClusterConcurrentShutdown)
+            .orElse(DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN);
+  }
+
+  @Nullable
+  String getConfigOverrides() {
+    return Optional.ofNullable(configuration).map(Configuration::getOverridesConfigMap).orElse(configOverrides);
   }
 
   public DomainSpec withConfigOverrides(@Nullable String overrides) {
@@ -639,13 +717,27 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
+   * Returns the strategy used for distributing changed config overrides.
+   * @return the set or computed strategy
+   */
+  public OverrideDistributionStrategy getOverrideDistributionStrategy() {
+    return Optional.ofNullable(configuration)
+          .map(Configuration::getOverrideDistributionStrategy)
+          .orElse(OverrideDistributionStrategy.DEFAULT);
+  }
+
+  Model getModel() {
+    return Optional.ofNullable(configuration).map(Configuration::getModel).orElse(null);
+  }
+
+  /**
    * Test if the domain is deployed under Istio environment.
    *
    * @return istioEnabled
    */
   boolean isIstioEnabled() {
-    return Optional.ofNullable(experimental)
-        .map(Experimental::getIstio)
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getIstio)
         .map(Istio::getEnabled)
         .orElse(false);
   }
@@ -656,8 +748,8 @@ public class DomainSpec extends BaseConfiguration {
    * @return readinessPort
    */
   int getIstioReadinessPort() {
-    return Optional.ofNullable(experimental)
-        .map(Experimental::getIstio)
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getIstio)
         .map(Istio::getReadinessPort)
         .orElse(8888);
   }
@@ -705,6 +797,16 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(null);
   }
 
+  /**
+   * Returns the model home directory of the domain.
+   *
+   * @return model home directory
+   */
+  public String getModelHome() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getModel).map(Model::getModelHome).orElse(DEFAULT_WDT_MODEL_HOME);
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -730,7 +832,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets)
-            .append("experimental", experimental);
+            .append("maxClusterConcurrentStartup",maxClusterConcurrentStartup)
+            .append("maxClusterConcurrentShutdown",maxClusterConcurrentShutdown);
 
     return builder.toString();
   }
@@ -760,7 +863,9 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog)
             .append(configOverrides)
             .append(configOverrideSecrets)
-            .append(experimental);
+            .append(allowReplicasBelowMinDynClusterSize)
+            .append(maxClusterConcurrentStartup)
+            .append(maxClusterConcurrentShutdown);
 
     return builder.toHashCode();
   }
@@ -786,8 +891,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(configuration, rhs.configuration)
             .append(serverStartPolicy, rhs.serverStartPolicy)
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
-            .append(image, rhs.image)
-            .append(imagePullPolicy, rhs.imagePullPolicy)
+            .append(getImage(), rhs.getImage())
+            .append(getImagePullPolicy(), rhs.getImagePullPolicy())
             .append(imagePullSecrets, rhs.imagePullSecrets)
             .append(adminServer, rhs.adminServer)
             .append(managedServers, rhs.managedServers)
@@ -798,7 +903,9 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
-            .append(experimental, rhs.experimental);
+            .append(isAllowReplicasBelowMinDynClusterSize(), rhs.isAllowReplicasBelowMinDynClusterSize())
+            .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
+            .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown());
     return builder.isEquals();
   }
 
@@ -840,6 +947,43 @@ public class DomainSpec extends BaseConfiguration {
 
   private boolean hasMaxUnavailable(Cluster cluster) {
     return cluster != null && cluster.getMaxUnavailable() != null;
+  }
+
+  private boolean isAllowReplicasBelowDynClusterSizeFor(Cluster cluster) {
+    return hasAllowReplicasBelowMinDynClusterSize(cluster)
+        ? cluster.isAllowReplicasBelowMinDynClusterSize()
+        : isAllowReplicasBelowMinDynClusterSize();
+  }
+
+  private boolean hasAllowReplicasBelowMinDynClusterSize(Cluster cluster) {
+    return cluster != null && cluster.isAllowReplicasBelowMinDynClusterSize() != null;
+  }
+
+  public void setAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
+    this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
+  }
+
+  private int getMaxConcurrentStartupFor(Cluster cluster) {
+    return hasMaxConcurrentStartup(cluster)
+        ? cluster.getMaxConcurrentStartup()
+        : getMaxClusterConcurrentStartup();
+  }
+
+  private boolean hasMaxConcurrentStartup(Cluster cluster) {
+    return cluster != null && cluster.getMaxConcurrentStartup() != null;
+  }
+
+  public void setMaxClusterConcurrentStartup(Integer maxClusterConcurrentStartup) {
+    this.maxClusterConcurrentStartup = maxClusterConcurrentStartup;
+  }
+
+  private int getMaxConcurrentShutdownFor(Cluster cluster) {
+    return Optional.ofNullable(cluster).map(Cluster::getMaxConcurrentShutdown)
+            .orElse(getMaxClusterConcurrentShutdown());
+  }
+
+  public void setMaxClusterConcurrentShutdown(Integer maxClusterConcurrentShutdown) {
+    this.maxClusterConcurrentShutdown = maxClusterConcurrentShutdown;
   }
 
   public AdminServer getAdminServer() {
@@ -905,6 +1049,21 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public List<String> getAdminServerChannelNames() {
       return adminServer != null ? adminServer.getChannelNames() : Collections.emptyList();
+    }
+
+    @Override
+    public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
+      return isAllowReplicasBelowDynClusterSizeFor(getCluster(clusterName));
+    }
+
+    @Override
+    public int getMaxConcurrentStartup(String clusterName) {
+      return getMaxConcurrentStartupFor(getCluster(clusterName));
+    }
+
+    @Override
+    public int getMaxConcurrentShutdown(String clusterName) {
+      return getMaxConcurrentShutdownFor(getCluster(clusterName));
     }
 
     private Cluster getOrCreateCluster(String clusterName) {

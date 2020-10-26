@@ -5,7 +5,7 @@ package oracle.kubernetes.operator.utils;
 
 import java.nio.file.Path;
 
-import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 
@@ -28,7 +28,7 @@ public class ParsedApacheYaml extends ParsedKubernetesYaml {
     return getServiceAccounts().find(getApacheName());
   }
 
-  public ExtensionsV1beta1Deployment getApacheDeployment() {
+  public V1Deployment getApacheDeployment() {
     return getDeployments().find(getApacheName());
   }
 

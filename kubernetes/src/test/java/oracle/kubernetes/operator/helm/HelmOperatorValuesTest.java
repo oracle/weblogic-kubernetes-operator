@@ -410,7 +410,7 @@ public class HelmOperatorValuesTest {
 
   @Test
   public void whenSingleTargetNamespaceDefined_createdMapContainsValue() {
-    operatorValues.targetNamespaces(stringValue);
+    operatorValues.domainNamespaces(stringValue);
 
     assertThat(getDomainNamespaces(), hasItem(stringValue));
   }
@@ -422,7 +422,7 @@ public class HelmOperatorValuesTest {
 
   @Test
   public void whenMultipleTargetNamespaceDefined_createdMapContainsValue() {
-    operatorValues.targetNamespaces("aaa,bbb");
+    operatorValues.domainNamespaces("aaa,bbb");
 
     assertThat(getDomainNamespaces(), hasItems("aaa", "bbb"));
   }
@@ -431,7 +431,7 @@ public class HelmOperatorValuesTest {
   public void whenCreatedFromMapWithoutDomainNamespaces_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
-    assertThat(values.getTargetNamespaces(), equalTo(""));
+    assertThat(values.getDomainNamespaces(), equalTo(""));
   }
 
   @Test
@@ -439,7 +439,7 @@ public class HelmOperatorValuesTest {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("domainNamespaces", ImmutableList.of("namespace1")));
 
-    assertThat(values.getTargetNamespaces(), equalTo("namespace1"));
+    assertThat(values.getDomainNamespaces(), equalTo("namespace1"));
   }
 
   @Test
@@ -448,7 +448,7 @@ public class HelmOperatorValuesTest {
         new HelmOperatorValues(
             ImmutableMap.of("domainNamespaces", ImmutableList.of("namespace1", "namespace2")));
 
-    assertThat(values.getTargetNamespaces(), equalTo("namespace1,namespace2"));
+    assertThat(values.getDomainNamespaces(), equalTo("namespace1,namespace2"));
   }
 
   // ----- externalDebugHttpPort

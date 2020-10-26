@@ -3,18 +3,18 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script contains the all the function of model in image
-# It is used by introspectDomain.sh job and starServer.sh
+# It is used by introspectDomain.sh job and startServer.sh
 
 source ${SCRIPTPATH}/utils.sh
 
-
+WDT_MINIMUM_VERSION="1.7.3"
 INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormii/inventory_image.md5"
 INTROSPECTCM_CM_MD5="/weblogic-operator/introspectormii/inventory_cm.md5"
 INTROSPECTCM_PASSPHRASE_MD5="/weblogic-operator/introspectormii/inventory_passphrase.md5"
 INTROSPECTCM_MERGED_MODEL="/weblogic-operator/introspectormii/merged_model.json"
 INTROSPECTCM_WLS_VERSION="/weblogic-operator/introspectormii/wls.version"
 INTROSPECTCM_JDK_PATH="/weblogic-operator/introspectormii/jdk.path"
-INTROSPECTCM_SECRETS_MD5="/weblogic-operator/introspectormii/secrets.md5"
+INTROSPECTCM_SECRETS_AND_ENV_MD5="/weblogic-operator/introspectormii/secrets_and_env.md5"
 DOMAIN_ZIPPED="/weblogic-operator/introspectormii/domainzip.secure"
 PRIMORDIAL_DOMAIN_ZIPPED="/weblogic-operator/introspectormii/primordial_domainzip.secure"
 INTROSPECTJOB_IMAGE_MD5="/tmp/inventory_image.md5"
@@ -25,9 +25,10 @@ LOCAL_PRIM_DOMAIN_TAR="/tmp/prim_domain.tar"
 NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 RUNTIME_ENCRYPTION_SECRET_PASSWORD="/weblogic-operator/model-runtime-secret/password"
-OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
+# we export the opss password file location because it's also used by introspectDomain.py
+export OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
 OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
-IMG_MODELS_HOME="/u01/wdt/models"
+IMG_MODELS_HOME="${WDT_MODEL_HOME:-/u01/wdt/models}"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
@@ -105,7 +106,7 @@ function compareArtifactsMD5() {
   if [ -f ${INTROSPECTCM_IMAGE_MD5} ] ; then
     has_md5=1
     # introspectorDomain py put two blank lines in the configmap, use -B to ignore blank lines
-    diff -B ${INTROSPECTCM_IMAGE_MD5} ${INTROSPECTJOB_IMAGE_MD5} > /tmp/imgmd5diff
+    diff -wB ${INTROSPECTCM_IMAGE_MD5} ${INTROSPECTJOB_IMAGE_MD5} > /tmp/imgmd5diff
     if [ $? -ne 0 ] ; then
       trace "WDT artifacts in image changed: create domain again"
       WDT_ARTIFACTS_CHANGED=1
@@ -116,7 +117,7 @@ function compareArtifactsMD5() {
   trace "Checking wdt artifacts in config map"
   if [ -f ${INTROSPECTCM_CM_MD5} ] ; then
     has_md5=1
-    diff -B  ${INTROSPECTCM_CM_MD5} ${INTROSPECTJOB_CM_MD5}
+    diff -wB  ${INTROSPECTCM_CM_MD5} ${INTROSPECTJOB_CM_MD5}
     if [ $? -ne 0 ] ; then
       trace "WDT artifacts in wdt config map changed: create domain again"
       WDT_ARTIFACTS_CHANGED=1
@@ -238,16 +239,11 @@ function buildWDTParams_MD5() {
     model_list="-model_file ${model_list}"
   fi
 
-  if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
-    if [ ! -f "${OPSS_KEY_PASSPHRASE}" ] ; then
-      trace SEVERE "Domain Source Type is 'FromModel' and domain type JRF which requires specifying a " \
-         "walletPasswordSecret in your domain resource and deploying this secret with a 'walletPassword' key, " \
-         " but the secret does not have this key."
-      exit 1
-    else
-      # Set it for introspectDomain.py to use
-      export OPSS_PASSPHRASE=$(cat ${OPSS_KEY_PASSPHRASE})
-    fi
+  if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] && [ ! -f "${OPSS_KEY_PASSPHRASE}" ] ; then
+    trace SEVERE "Domain Source Type is 'FromModel' and domain type JRF which requires specifying a " \
+       "walletPasswordSecret in your domain resource and deploying this secret with a 'walletPassword' key, " \
+       " but the secret does not have this key."
+    exit 1
   fi
 
   #  We cannot strictly run create domain for JRF type because it's tied to a database schema
@@ -255,10 +251,10 @@ function buildWDTParams_MD5() {
   #
   opss_wallet=$(get_opss_key_wallet)
   if [ -f "${opss_wallet}" ] ; then
-      trace "keeping rcu schema"
-      mkdir -p /tmp/opsswallet
-      base64 -d  ${opss_wallet} > /tmp/opsswallet/ewallet.p12
-      OPSS_FLAGS="-opss_wallet /tmp/opsswallet -opss_wallet_passphrase ${OPSS_PASSPHRASE}"
+    trace "A wallet file was passed in using walletFileSecret, so we're using an existing rcu schema."
+    mkdir -p /tmp/opsswallet
+    base64 -d  ${opss_wallet} > /tmp/opsswallet/ewallet.p12
+    OPSS_FLAGS="-opss_wallet /tmp/opsswallet"
   else
     OPSS_FLAGS=""
   fi
@@ -278,10 +274,15 @@ function createWLDomain() {
     "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
     exitOrLoop
   fi
-  # Check if /u01/wdt/models and /u01/wdt/weblogic-deploy exists
+  # Check if modelHome (default /u01/wdt/models) and /u01/wdt/weblogic-deploy exists
 
   checkDirNotExistsOrEmpty ${IMG_MODELS_HOME}
   checkDirNotExistsOrEmpty ${WDT_BINDIR}
+
+  checkModelDirectoryExtensions
+  if [ "true" != "${WDT_BYPASS_WDT_VERSION_CHECK}" ] ; then
+    checkWDTVersion
+  fi
 
   # copy the filter related files to the wdt lib
 
@@ -298,19 +299,19 @@ function createWLDomain() {
 
   local version_changed=0
   local jdk_changed=0
-  local secrets_changed=0
+  local secrets_and_env_changed=0
   trace "current version "${current_version}
 
-  getSecretsMD5
-  local current_secrets_md5=$(cat /tmp/secrets.md5)
+  getSecretsAndEnvMD5
+  local current_secrets_and_env_md5=$(cat /tmp/secrets_and_env.md5)
 
   trace "Checking changes in secrets and jdk path"
 
-  if [ -f ${INTROSPECTCM_SECRETS_MD5} ] ; then
-    previous_secrets_md5=$(cat ${INTROSPECTCM_SECRETS_MD5})
-    if [ "${current_secrets_md5}" != "${previous_secrets_md5}" ]; then
-      trace "secrets different: before: ${previous_secrets_md5} current: ${current_secrets_md5}"
-      secrets_changed=1
+  if [ -f ${INTROSPECTCM_SECRETS_AND_ENV_MD5} ] ; then
+    previous_secrets_and_env_md5=$(cat ${INTROSPECTCM_SECRETS_AND_ENV_MD5})
+    if [ "${current_secrets_and_env_md5}" != "${previous_secrets_and_env_md5}" ]; then
+      trace "Secrets and env different: old_md5=${previous_secrets_and_env_md5} new_md5=${current_secrets_and_env_md5}"
+      secrets_and_env_changed=1
     fi
   fi
 
@@ -351,7 +352,7 @@ function createWLDomain() {
   # create domain again
 
   if  [ ${WDT_ARTIFACTS_CHANGED} -ne 0 ] || [ ${jdk_changed} -eq 1 ] \
-    || [ ${secrets_changed} -ne 0 ] ; then
+    || [ ${secrets_and_env_changed} -ne 0 ] ; then
 
     trace "Need to create domain ${WDT_DOMAIN_TYPE}"
     createModelDomain
@@ -384,38 +385,102 @@ function checkDirNotExistsOrEmpty() {
   trace "Exiting checkDirNotExistsOrEmpty"
 }
 
-# getSecretsMD5
+# limit the file extensions in the model directories
+
+function checkModelDirectoryExtensions() {
+  trace "Entering checkModelDirectoryExtensions"
+
+  cd ${IMG_MODELS_HOME}
+  counter=$(ls  -I  "*.yaml" -I "*.zip" -I "*.properties" | wc -l)
+  if [ $counter -ne 0 ] ; then
+    trace SEVERE "Model image directory ${IMG_MODELS_HOME} contains files with unsupported extensions. " \
+      "Expected extensions: .yaml, .properties, or .zip"
+    trace SEVERE "Model image directory files with unsupported extensions: " \
+      "'$(ls -I "*.yaml" -I "*.zip" -I "*.properties")'"
+    exitOrLoop
+  fi
+  if [ -d ${WDT_CONFIGMAP_ROOT} ] ; then
+    cd ${WDT_CONFIGMAP_ROOT}
+    counter=$(ls  -I  "*.yaml" -I "*.properties" | wc -l)
+    if [ $counter -ne 0 ] ; then
+      trace SEVERE "Model configmap directory ${WDT_CONFIGMAP_ROOT} contains files with unsupported extensions. " \
+      "Expected extensions: .yaml or .properties"
+      trace SEVERE "Model configmap directory files with unsupported extensions: " \
+        "'$(ls -I "*.yaml" -I "*.properties")'"
+      exitOrLoop
+    fi
+  fi
+
+  trace "Exiting checkModelDirectoryExtensions"
+}
+
+# Check for WDT version
+
+function checkWDTVersion() {
+  trace "Entering checkWDTVersion"
+  unzip -c ${WDT_ROOT}/lib/weblogic-deploy-core.jar META-INF/MANIFEST.MF > /tmp/wdtversion.txt || exitOrLoop
+  local wdt_version="$(grep "Implementation-Version" /tmp/wdtversion.txt | cut -f2 -d' ' | tr -d '\r' )" || exitOrLoop
+  if  [ ! -z ${wdt_version} ]; then
+    versionGE ${wdt_version} ${WDT_MINIMUM_VERSION}
+    if [ $? != "0" ] ; then
+      trace SEVERE "Domain Source Type is 'FromModel' and it requires WebLogic Deploy Tool with a minimum " \
+      "version of ${WDT_MINIMUM_VERSION} installed in the image. The version of the WebLogic Deploy Tool installed " \
+      "in the image is ${wdt_version}, you can create another image with an updated version of the WebLogic Deploy " \
+      "Tool and redeploy the domain again. To bypass this check, set environment variable " \
+      "'WDT_BYPASS_WDT_VERSION_CHECK' to 'true'"
+      exitOrLoop
+    fi
+  else
+      trace SEVERE "Domain Source Type is 'FromModel' and it requires WebLogic Deploy Tool with a minimum " \
+      "version of ${WDT_MINIMUM_VERSION} installed in the image. The version of the WebLogic Deploy Tool installed " \
+      "in the image cannot be determined, you can create another image with an updated version of the WebLogic Deploy" \
+      " Tool and redeploy the domain again. To bypass this check, set environment variable " \
+      "'WDT_BYPASS_WDT_VERSION_CHECK' to 'true'"
+    exitOrLoop
+  fi
+
+  trace "Exiting checkWDTVersion"
+}
+
+# getSecretsAndEnvMD5
 #
-# concatenate all the secrets, calculate the md5 and delete the file.
+# concatenate all the secrets and env, calculate the md5 and delete the file.
 # The md5 is used to determine whether the domain needs to be recreated
 # Note: the secrets are two levels indirections, so use find and filter out the ..data
-# output:  /tm/secrets.md5
+# output:  /tmp/secrets_and_env.md5
 
-function getSecretsMD5() {
-  trace "Entering getSecretsMD5"
+function getSecretsAndEnvMD5() {
+  trace "Entering getSecretsAndEnvMD5"
 
-  local secrets_text="/tmp/secrets.txt"
+  local secrets_and_env_text="/tmp/secrets.txt"
   local override_secrets="/weblogic-operator/config-overrides-secrets/"
   local weblogic_secrets="/weblogic-operator/secrets/"
+  local env_var
+
+  rm -f ${secrets_and_env_text}
+
+  for env_var in ${OPERATOR_ENVVAR_NAMES//,/ }; do
+    echo "$env_var='${!env_var}'"
+  done | sort >> ${secrets_and_env_text}
 
   if [ -d "${override_secrets}" ] ; then
     # find the link and exclude ..data so that the normalized file name will be found
     # otherwise it will return ../data/xxx ..etc. Note: the actual file is in a timestamp linked directory
-    find ${override_secrets} -type l -not -name "..data" -print  | sort  | xargs cat >> ${secrets_text}
+    find ${override_secrets} -type l -not -name "..data" -print  | sort  | xargs cat >> ${secrets_and_env_text}
   fi
 
   if [ -d "${weblogic_secrets}" ] ; then
-    find ${weblogic_secrets} -type l -not -name "..data" -print |  sort  | xargs cat >> ${secrets_text}
+    find ${weblogic_secrets} -type l -not -name "..data" -print |  sort  | xargs cat >> ${secrets_and_env_text}
   fi
 
-  if [ ! -f "${secrets_text}" ] ; then
-    echo "0" > ${secrets_text}
+  if [ ! -f "${secrets_and_env_text}" ] ; then
+    echo "0" > ${secrets_and_env_text}
   fi
-  local secrets_md5=$(md5sum ${secrets_text} | cut -d' ' -f1)
-  echo ${secrets_md5} > /tmp/secrets.md5
-  trace "Found secrets ${secrets_md5}"
-  rm ${secrets_text}
-  trace "Exiting getSecretsMD5"
+  local secrets_and_env_md5=$(md5sum ${secrets_and_env_text} | cut -d' ' -f1)
+  echo ${secrets_and_env_md5} > /tmp/secrets_and_env.md5
+  trace "Found secrets and env: md5=${secrets_and_env_md5}"
+  rm ${secrets_and_env_text}
+  trace "Exiting getSecretsAndEnvMD5"
 }
 
 
@@ -462,8 +527,8 @@ function diff_model() {
     org.python.util.jython \
     ${SCRIPTPATH}/model_diff.py $1 $2 > ${WDT_OUTPUT} 2>&1
   if [ $? -ne 0 ] ; then
-    trace SEVERE "Failed to compare models. Check logs for error."
-    trace SEVERE "$(cat ${WDT_OUTPUT})"
+    trace SEVERE "Failed to compare models. Check logs for error. Comparison output:"
+    cat ${WDT_OUTPUT}
     exitOrLoop
   fi
   trace "Exiting diff_model"
@@ -489,8 +554,18 @@ function createPrimordialDomain() {
     # decrypt the merged model from introspect cm
     local DECRYPTED_MERGED_MODEL="/tmp/decrypted_merged_model.json"
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+
+    # Maintain backward compatibility - check first byte to see if it is a json file
+    # if yes then it is the not a gzipped and encrypted model, just use it
+    # else base64d to gzip file and unzip it
     encrypt_decrypt_model "decrypt" ${INTROSPECTCM_MERGED_MODEL}  ${MII_PASSPHRASE} \
       ${DECRYPTED_MERGED_MODEL}
+
+    if [ "{" != $(head -c 1 ${DECRYPTED_MERGED_MODEL}) ] ; then
+      base64 -d ${DECRYPTED_MERGED_MODEL} > ${DECRYPTED_MERGED_MODEL}.gz  || exitOrLoop
+      rm ${DECRYPTED_MERGED_MODEL}  || exitOrLoop
+      gunzip ${DECRYPTED_MERGED_MODEL}.gz  || exitOrLoop
+    fi
 
     diff_model ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
 
@@ -551,8 +626,8 @@ function createPrimordialDomain() {
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
     encrypt_decrypt_domain_secret "encrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
 
-    tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/lib  ${empath} \
-    ${DOMAIN_HOME}/*
+    tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/sysman/log  \
+    --exclude ${DOMAIN_HOME}/lib --exclude ${DOMAIN_HOME}/backup_config ${empath} ${DOMAIN_HOME}/*
 
     # Put back the original one so that update can continue
     mv  /tmp/sii.dat.saved ${DOMAIN_HOME}/security/SerializedSystemIni.dat
@@ -578,11 +653,8 @@ function generateMergedModel() {
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT}
   ret=$?
   if [ $ret -ne 0 ]; then
-    trace SEVERE "WDT Failed: Validate Model Failed "
-    if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
-      cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_validateDomain.log
-    fi
-    trace SEVERE "$(cat ${WDT_OUTPUT})"
+    trace SEVERE "WDT Failed: Validate Model Failed:"
+    cat ${WDT_OUTPUT}
     exitOrLoop
   fi
 
@@ -604,17 +676,85 @@ function wdtCreatePrimordialDomain() {
 
   export __WLSDEPLOY_STORE_MODEL__=1
 
-  ${WDT_BINDIR}/createDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}  ${UPDATE_RCUPWD_FLAG}  \
-    > ${WDT_OUTPUT}
+  if [ "JRF" == "$WDT_DOMAIN_TYPE" ] ; then
+    if [ -z "${OPSS_FLAGS}" ] ; then
+      trace INFO "An OPSS wallet was not supplied for the Model in Image JRF domain in its " \
+        "'spec.configuration.opss.walletFileSecret' attribute; therefore, it's assumed that this is the first time " \
+        "the OPSS RCU database is being accessed by the domain, so a schema and a wallet file will be created. " \
+        "Consult the Model in Image documentation for instructions about preserving the OPSS wallet file."
+    else
+      trace "Creating JRF Primordial Domain"
+    fi
+  fi
+  
+  local wdtArgs=""
+  wdtArgs+=" -oracle_home ${ORACLE_HOME}"
+  wdtArgs+=" -domain_home ${DOMAIN_HOME}" 
+  wdtArgs+=" ${model_list} ${archive_list} ${variable_list}"
+  wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
+  wdtArgs+=" ${OPSS_FLAGS}"
+  wdtArgs+=" ${UPDATE_RCUPWD_FLAG}"
+
+  trace "About to call '${WDT_BINDIR}/createDomain.sh ${wdtArgs}'."
+
+  if [ -z "${OPSS_FLAGS}" ]; then
+
+    # We get here for WLS domains, and for the JRF 'first time' case
+
+    # JRF wallet generation note:
+    #  If this is JRF, the unset OPSS_FLAGS indicates no wallet file was specified
+    #  via spec.configuration.opss.walletFileSecret and so we assume that this is
+    #  the first time this domain started for this RCU database. We also assume 
+    #  that 'createDomain.sh' will perform the one time initialization of the 
+    #  empty RCU schema for the domain in the database (where the empty schema
+    #  itself must be setup external to the Operator by calling 'create_rcu_schema.sh'
+    #  or similar prior to deploying the domain for the first time).
+    #
+    #  The 'introspectDomain.py' script, which runs later, will create a wallet
+    #  file using the spec.configuration.opss.walletPasswordSecret as its passphrase
+    #  so that an administrator can then retrieve the file from the introspector's
+    #  output configmap and save it for reuse.
+
+    ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
+
+  else
+
+    # We get here only for JRF domain 'second time' (or more) case.
+
+    # JRF wallet reuse note:
+    #  The set OPSS_FLAGS indicates a wallet file was specified
+    #  via spec.configuration.opss.walletFileSecret on the domain resource.
+    #  So we assume that this domain already
+    #  has its RCU tables and the wallet file will give us access to them.
+
+    echo $(cat ${OPSS_KEY_PASSPHRASE}) | \
+      ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
+
+  fi
+
   ret=$?
   if [ $ret -ne 0 ]; then
-    trace SEVERE "WDT Create Domain Failed ${ret}"
+    #
+    # FatalIntrospectorError is detected by DomainProcessorImpl.isShouldContinue
+    # If it is detected then it will stop the periodic retry
+    # We need to prevent retries with a "MII Fatal Error" because JRF without the OPSS_FLAGS indicates
+    # a likely attempt to initialize the RCU DB schema for this domain, and we don't want to retry when this fails
+    # without admin intervention (retrying can compound the problem and obscure the original issue).
+    #
+    if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] ; then
+      trace SEVERE "FatalIntrospectorError: WDT Create Primordial Domain Failed ${ret}"
+    else
+      trace SEVERE "WDT Create Primordial Domain Failed ${ret}"
+    fi
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
       cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
     fi
-    trace SEVERE "$(cat ${WDT_OUTPUT})"
+    trace SEVERE "WDT Create Domain Failed, ret=${ret}:"
+    cat ${WDT_OUTPUT}
     exitOrLoop
+  else
+    trace "WDT Create Domain Succeeded, ret=${ret}:"
+    cat ${WDT_OUTPUT}
   fi
 
   # restore trap
@@ -642,11 +782,8 @@ function wdtUpdateModelDomain() {
   ret=$?
 
   if [ $ret -ne 0 ]; then
-    trace SEVERE "WDT Update Domain Failed "
-    if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
-      cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_updateDomain.log
-    fi
-    trace SEVERE "$(cat ${WDT_OUTPUT})"
+    trace SEVERE "WDT Update Domain Failed:"
+    cat ${WDT_OUTPUT}
     exitOrLoop
   fi
 
@@ -675,7 +812,9 @@ function wdtUpdateModelDomain() {
   #
   local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
 
-  encrypt_decrypt_model "encrypt" ${DOMAIN_HOME}/wlsdeploy/domain_model.json ${MII_PASSPHRASE} \
+  gzip ${DOMAIN_HOME}/wlsdeploy/domain_model.json || exitOrLoop
+  base64 ${DOMAIN_HOME}/wlsdeploy/domain_model.json.gz > ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 || exitOrLoop
+  encrypt_decrypt_model "encrypt" ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 ${MII_PASSPHRASE} \
     ${DOMAIN_HOME}/wlsdeploy/domain_model.json
 
   # restore trap
@@ -718,8 +857,8 @@ function encrypt_decrypt_model() {
     trace SEVERE "Fatal Error: Failed to $1 domain model. This error is irrecoverable.  Check to see if the secret " \
     "described in the configuration.model.runtimeEncryptionSecret domain resource field has been changed since the " \
     "creation of the domain. You can either reset the password to the original one and try again or delete "\
-    "and recreate the domain."
-    trace SEVERE "$(cat ${WDT_OUTPUT})"
+    "and recreate the domain. Failure output:"
+    cat ${WDT_OUTPUT}
     exitOrLoop
   fi
 
@@ -759,8 +898,8 @@ function encrypt_decrypt_domain_secret() {
     trace SEVERE "Fatal Error: Failed to $1 domain secret. This error is irrecoverable.  Check to see if the secret " \
     "described in the configuration.model.runtimeEncryptionSecret domain resource field has been changed since the " \
     "creation of the domain. You can either reset the password to the original one and try again or delete "\
-    "and recreate the domain."
-    trace SEVERE "$(cat ${WDT_OUTPUT})"
+    "and recreate the domain. Failure output:"
+    cat ${WDT_OUTPUT}
     exitOrLoop
   fi
 

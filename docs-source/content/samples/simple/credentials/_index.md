@@ -2,13 +2,13 @@
 title: "Credentials"
 date: 2019-02-23T17:32:31-05:00
 weight: 1
-description: "Sample for creating a Kubernetes secret that contains the Administration Server credentials. This secret can be used in creating a WebLogic domain resource."
+description: "Sample for creating a Kubernetes Secret that contains the Administration Server credentials. This Secret can be used in creating a WebLogic Domain YAML file."
 ---
 
 
 ### Creating credentials for a WebLogic domain
 
-This sample demonstrates how to create a Kubernetes secret containing the
+This sample demonstrates how to create a Kubernetes Secret containing the
 credentials for a WebLogic domain.  The operator expects this secret to be
 named following the pattern `domainUID-weblogic-credentials`, where `domainUID`
 is the unique identifier of the domain.  It must be in the same namespace

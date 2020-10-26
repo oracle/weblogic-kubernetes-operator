@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.util.ClientBuilder;
@@ -96,6 +95,11 @@ public class ClientPool extends Pool<ApiClient> {
     return client;
   }
 
+  public ClientPool withApiClient(ApiClient apiClient) {
+    instance.getAndSet(apiClient);
+    return this;
+  }
+
   private static class DefaultClientFactory implements ClientFactory {
     private final AtomicBoolean first = new AtomicBoolean(true);
 
@@ -103,7 +107,7 @@ public class ClientPool extends Pool<ApiClient> {
     public ApiClient get() {
       ApiClient client;
       try {
-        client = ClientBuilder.standard().setOverridePatchFormat(V1Patch.PATCH_FORMAT_JSON_PATCH).build();
+        client = ClientBuilder.standard().build();
         if (first.getAndSet(false)) {
           Configuration.setDefaultApiClient(client);
         }

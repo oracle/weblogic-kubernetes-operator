@@ -1,10 +1,11 @@
 ---
-title: "Providing access to a Persistent Volume Claim"
+title: "Providing access to a PersistentVolumeClaim"
 date: 2020-01-07T15:02:28-05:00
 draft: false
-weight: 60
+weight: 9
+description: "I need to provide an instance with access to a PersistentVolumeClaim."
 ---
-> I need to provide an instance with access to a Persistent Volume Claim.
+> I need to provide an instance with access to a PersistentVolumeClaim.
 
 Some applications need access to a file, either to read data or to provide additional logging beyond what is
 built into the operator. One common way of doing that within Kubernetes is to create a
@@ -33,7 +34,7 @@ spec:
 ```
 
 To provide access to this claim to all Managed Servers in the `cluster-1` cluster, specify the following
-in your [domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md):
+in your [Domain](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md):
 
 ```
   clusters:

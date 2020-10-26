@@ -30,4 +30,10 @@ public interface EffectiveConfigurationFactory {
   boolean isShuttingDown();
 
   List<String> getAdminServerChannelNames();
+
+  boolean isAllowReplicasBelowMinDynClusterSize(String clusterName);
+
+  int getMaxConcurrentStartup(String clusterName);
+
+  int getMaxConcurrentShutdown(String clusterName);
 }

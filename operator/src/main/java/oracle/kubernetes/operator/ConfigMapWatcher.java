@@ -3,14 +3,17 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.util.Watch.Response;
+import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
-import oracle.kubernetes.operator.builders.WatchI;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 /**
@@ -54,9 +57,21 @@ public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
   }
 
   @Override
-  public WatchI<V1ConfigMap> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+  public Watchable<V1ConfigMap> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder
         .withLabelSelector(LabelConstants.CREATEDBYOPERATOR_LABEL)
         .createConfigMapWatch(ns);
   }
+
+  @Override
+  public String getNamespace() {
+    return ns;
+  }
+
+  @Override
+  public String getDomainUid(Response<V1ConfigMap> item) {
+    return KubernetesUtils.getDomainUidLabel(
+          Optional.ofNullable(item.object).map(V1ConfigMap::getMetadata).orElse(null));
+  }
+
 }

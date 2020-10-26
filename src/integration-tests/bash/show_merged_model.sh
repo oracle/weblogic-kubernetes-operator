@@ -5,9 +5,9 @@
 #  This script show the model in image merged model of the running domain in clear text
 #
 DOMAIN_NAMESPACE=sample-domain1-ns
-DOMAIN_UID=domain1
-PASSWORD=weblogic
-IMAGE=model-in-image:v1
+DOMAIN_UID=sample-domain1
+PASSWORD=my_runtime_password
+IMAGE=model-in-image:JRF-v1
 IMAGEPULLPOLICY=IfNotPresent
 IMAGEPULLSECRETSTAG=''
 IMGPS=''
@@ -100,6 +100,6 @@ kubectl -n ${DOMAIN_NAMESPACE} get configmap ${DOMAIN_UID}-weblogic-domain-intro
 kubectl cp encrypted_model.json ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
 kubectl cp decrypt_model.sh ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
 kubectl cp encryption_util.py ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
-kubectl -n ${DOMAIN_NAMESPACE} exec decryptmodel -- bash -c "/tmp/decrypt_model.sh decrypt /tmp/encrypted_model.json ${PASSWORD} /tmp/decrypted_model.json && cat /tmp/decrypted_model.json"
+kubectl -n ${DOMAIN_NAMESPACE} exec decryptmodel -- bash -c "/tmp/decrypt_model.sh decrypt /tmp/encrypted_model.json ${PASSWORD} /tmp/decrypted_model.json && if [ '{' == $(head -c 1 /tmp/decrypted_model.json) ] ; then   cat /tmp/decrypted_model.json; else  base64 -d /tmp/decrypted_model.json | gunzip ; fi"
 kubectl -n ${DOMAIN_NAMESPACE} delete -f decrypt_model.yaml
 

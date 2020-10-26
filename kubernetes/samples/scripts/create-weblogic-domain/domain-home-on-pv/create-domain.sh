@@ -175,7 +175,7 @@ function createDomainConfigmap {
     fail "The configmap ${cmName} was not created"
   fi
 
-  kubectl label configmap ${cmName} -n $namespace weblogic.resourceVersion=domain-v2 weblogic.domainUID=$domainUID weblogic.domainName=$domainName
+  kubectl label configmap ${cmName} -n $namespace weblogic.domainUID=$domainUID weblogic.domainName=$domainName
 
   rm -rf $externalFilesTmpDir
   rm -f domain.properties
@@ -219,7 +219,7 @@ function createDomainHome {
 
   echo "Waiting for the job to complete..."
   JOB_STATUS="0"
-  max=20
+  max=30
   count=0
   while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
     sleep 30

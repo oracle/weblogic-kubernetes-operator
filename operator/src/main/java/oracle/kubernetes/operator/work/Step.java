@@ -59,18 +59,49 @@ public abstract class Step {
   }
 
   private static void addLink(Step stepGroup1, Step stepGroup2) {
-    lastStep(stepGroup1).next = stepGroup2;
+    Step lastStep = lastStepIfNoDuplicate(stepGroup1, stepGroup2);
+    if (lastStep != null) {
+      // add steps in stepGroup2 to the end of stepGroup1 only if no steps
+      // appears in both groups to avoid introducing a loop
+      lastStep.next = stepGroup2;
+    }
   }
 
-  private static Step lastStep(Step stepGroup) {
-    Step s = stepGroup;
+  /**
+   * Return last step in stepGroup1, or null if any step appears in both step groups.
+   *
+   * @param stepGroup1 Step that we want to find the last step for
+   * @param stepGroup2 Step to check for duplicates
+   *
+   * @return last step in stepGroup1, or null if any step appears in both step groups.
+   */
+  private static Step lastStepIfNoDuplicate(Step stepGroup1, Step stepGroup2) {
+    Step s = stepGroup1;
+    List<Step> stepGroup2Array = stepToArray(stepGroup2);
     while (s.next != null) {
+      if (stepGroup2Array.contains(s.next)) {
+        return null;
+      }
       s = s.next;
     }
     return s;
   }
 
-  String getName() {
+  private static List<Step> stepToArray(Step stepGroup) {
+    ArrayList<Step> stepsArray = new ArrayList<>();
+    Step s = stepGroup;
+    while (s != null) {
+      stepsArray.add(s);
+      s = s.next;
+    }
+    return stepsArray;
+  }
+
+  /**
+   * The name of the step. This will default to the class name minus "Step".
+   * @return The name of the step
+   */
+  public String getName() {
     String name = getClass().getName();
     int idx = name.lastIndexOf('.');
     if (idx >= 0) {
@@ -204,7 +235,7 @@ public abstract class Step {
    * @param onExit Called after fiber is suspended
    * @return Next action
    */
-  protected NextAction doSuspend(Consumer<Fiber> onExit) {
+  protected NextAction doSuspend(Consumer<AsyncFiber> onExit) {
     NextAction na = new NextAction();
     na.suspend(next, onExit);
     return na;
@@ -219,7 +250,7 @@ public abstract class Step {
    * @param onExit Called after fiber is suspended
    * @return Next action
    */
-  protected NextAction doSuspend(Step step, Consumer<Fiber> onExit) {
+  protected NextAction doSuspend(Step step, Consumer<AsyncFiber> onExit) {
     NextAction na = new NextAction();
     na.suspend(step, onExit);
     return na;
@@ -248,7 +279,8 @@ public abstract class Step {
               new JoinCompletionCallback(fiber, packet, startDetails.size()) {
                 @Override
                 public void onCompletion(Packet p) {
-                  if (count.decrementAndGet() == 0) {
+                  int current = count.decrementAndGet();
+                  if (current == 0) {
                     // no need to synchronize throwables as all fibers are done
                     if (throwables.isEmpty()) {
                       fiber.resume(packet);
@@ -256,43 +288,6 @@ public abstract class Step {
                       fiber.terminate(throwables.get(0), packet);
                     } else {
                       fiber.terminate(new MultiThrowable(throwables), packet);
-                    }
-                  }
-                }
-              };
-          // start forked fibers
-          for (StepAndPacket sp : startDetails) {
-            fiber.createChildFiber().start(sp.step, sp.packet, callback);
-          }
-        });
-  }
-
-  /**
-   * Create a {@link NextAction} that suspends the current {@link Fiber} and that starts child
-   * fibers for each step and packet pair. When at least one of the created child fibers completes,
-   * then this fiber is resumed with the indicated step and packet and any other child fibers are
-   * cancelled.
-   *
-   * @param step Step to invoke next when resumed after at least one child fiber completes
-   * @param packet Resume packet
-   * @param startDetails Pairs of step and packet to use when starting child fibers
-   * @return Next action
-   */
-  protected NextAction doForkAtLeastOne(
-      Step step, Packet packet, Collection<StepAndPacket> startDetails) {
-    return doSuspend(
-        step,
-        (fiber) -> {
-          Collection<Fiber> createdFibers = new ArrayList<>();
-          CompletionCallback callback =
-              new JoinCompletionCallback(fiber, packet, startDetails.size()) {
-                @Override
-                public void onCompletion(Packet p) {
-                  count.decrementAndGet();
-                  fiber.resume(packet);
-                  synchronized (createdFibers) {
-                    for (Fiber f : createdFibers) {
-                      f.cancel(true);
                     }
                   }
                 }
@@ -325,12 +320,12 @@ public abstract class Step {
   }
 
   private abstract static class JoinCompletionCallback implements CompletionCallback {
-    protected final Fiber fiber;
+    protected final AsyncFiber fiber;
     protected final Packet packet;
     protected final AtomicInteger count;
     protected final List<Throwable> throwables = new ArrayList<Throwable>();
 
-    JoinCompletionCallback(Fiber fiber, Packet packet, int initialCount) {
+    JoinCompletionCallback(AsyncFiber fiber, Packet packet, int initialCount) {
       this.fiber = fiber;
       this.packet = packet;
       this.count = new AtomicInteger(initialCount);
@@ -341,7 +336,8 @@ public abstract class Step {
       synchronized (throwables) {
         throwables.add(throwable);
       }
-      if (count.decrementAndGet() == 0) {
+      int current = count.decrementAndGet();
+      if (current == 0) {
         // no need to synchronize throwables as all fibers are done
         if (throwables.size() == 1) {
           fiber.terminate(throwable, packet);

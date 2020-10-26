@@ -1,0 +1,44 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+# 
+#  This is a Traefik ingress for service 'sample-domain2-cluster-cluster-1'.
+# 
+#  Sample curl access:
+# 
+#   Using 'localhost':
+#    curl -s -S -m 10 -H 'host: sample-domain2-cluster-cluster-1.mii-sample.org' \
+#      http://localhost:30305/myapp_war/index.jsp
+#                          - or -
+#   Using 'machine host':
+#    curl -s -S -m 10 -H 'host: sample-domain2-cluster-cluster-1.mii-sample.org' \
+#      http://$(hostname).$(dnsdomainname):30305/myapp_war/index.jsp
+#                          - or -
+#   Using 'kubernetes cluster host':
+#    curl -s -S -m 10 -H 'host: sample-domain2-cluster-cluster-1.mii-sample.org' \
+#      http://$(kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'):30305/myapp_war/index.jsp
+# 
+#  If Traefik is unavailable and your admin server pod is running, try 'kubectl exec':
+# 
+#    kubectl exec -n sample-domain1-ns sample-domain2-admin-server -- bash -c \
+#      "curl -s -S -m 10 http://sample-domain2-cluster-cluster-1:8001/myapp_war/index.jsp"
+# 
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-ingress-sample-domain2-cluster-cluster-1
+  namespace: sample-domain1-ns
+  labels:
+    weblogic.domainUID: sample-domain2
+  annotations:
+    kubernetes.io/ingress.class: traefik
+
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`sample-domain2-cluster-cluster-1.mii-sample.org`)
+    services:
+    - kind: Service
+      name: sample-domain2-cluster-cluster-1
+      port: 8001

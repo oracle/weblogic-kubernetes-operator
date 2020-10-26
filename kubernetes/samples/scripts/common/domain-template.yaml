@@ -3,13 +3,12 @@
 #
 # This is an example of how to define a Domain resource.
 #
-apiVersion: "weblogic.oracle/v7"
+apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
   name: %DOMAIN_UID%
   namespace: %NAMESPACE%
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: %DOMAIN_UID%
 spec:
   # The WebLogic Domain Home
@@ -43,18 +42,13 @@ spec:
   # Whether to write HTTP access log file to log home
   %LOG_HOME_ON_PV_PREFIX%httpAccessLogInLogHome: %HTTP_ACCESS_LOG_IN_LOG_HOME%
 
-  # The in-pod location for domain log, server logs, server out, and Node Manager log files
+  # The in-pod location for domain log, server logs, server out, introspector out, and Node Manager log files
   %LOG_HOME_ON_PV_PREFIX%logHome: %LOG_HOME%
   # An (optional) in-pod location for data storage of default and custom file stores.
   # If not specified or the value is either not set or empty (e.g. dataHome: "") then the
   # data storage directories are determined from the WebLogic domain home configuration.
   dataHome: "%DATA_HOME%"
 
-  # Istio service mesh support is experimental.
-  %ISTIO_PREFIX%experimental:
-  %ISTIO_PREFIX%  istio:
-  %ISTIO_PREFIX%    enabled: %ISTIO_ENABLED%
-  %ISTIO_PREFIX%    readinessPort: %ISTIO_READINESS_PORT%
 
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
@@ -69,7 +63,7 @@ spec:
     - name: JAVA_OPTIONS
       value: "%JAVA_OPTIONS%"
     - name: USER_MEM_ARGS
-      value: "-Djava.security.egd=file:/dev/./urandom "
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
     %OPTIONAL_SERVERPOD_RESOURCES%
     %LOG_HOME_ON_PV_PREFIX%volumes:
     %LOG_HOME_ON_PV_PREFIX%- name: weblogic-domain-storage-volume
@@ -98,6 +92,28 @@ spec:
   clusters:
   - clusterName: %CLUSTER_NAME%
     serverStartState: "RUNNING"
+    serverPod:
+      # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
+      # already members of the same cluster.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "weblogic.clusterName"
+                      operator: In
+                      values:
+                        - $(CLUSTER_NAME)
+                topologyKey: "kubernetes.io/hostname"
     replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
+
+  # Istio
+  %ISTIO_PREFIX%configuration:
+  %ISTIO_PREFIX%  istio:
+  %ISTIO_PREFIX%    enabled: %ISTIO_ENABLED%
+  %ISTIO_PREFIX%    readinessPort: %ISTIO_READINESS_PORT%
+

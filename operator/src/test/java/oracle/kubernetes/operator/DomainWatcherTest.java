@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -15,11 +16,13 @@ import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
 
 /** This test class verifies the behavior of the DomainWatcher. */
 public class DomainWatcherTest extends WatcherTestBase implements WatchListener<Domain> {
 
-  private static final int INITIAL_RESOURCE_VERSION = 456;
+  private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("456");
+  private static final String BOOKMARK_RESOURCE_VERSION = "987";
   private static final String UID = "uid";
 
   private Domain domain = createDomain();
@@ -39,7 +42,14 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
 
     assertThat(
         StubWatchFactory.getRequestParameters().get(0),
-        hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)));
+        hasEntry("resourceVersion", INITIAL_RESOURCE_VERSION.toString()));
+  }
+
+  @Test
+  public void whenWatcherReceivesBookmarkEvent_updateResourceVersion() {
+    Watcher<?> watcher = sendBookmarkRequest(INITIAL_RESOURCE_VERSION, BOOKMARK_RESOURCE_VERSION);
+
+    assertThat(watcher.getResourceVersion(), is(BOOKMARK_RESOURCE_VERSION));
   }
 
   @Test
@@ -54,7 +64,7 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
   }
 
   @Override
-  protected DomainWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
-    return DomainWatcher.create(this, ns, Integer.toString(rv), tuning, this, stopping);
+  protected DomainWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
+    return DomainWatcher.create(this, ns, rv.toString(), tuning, this, stopping);
   }
 }

@@ -25,3 +25,8 @@ voyager:
   webPort: 30305
   # stats port
   statsPort: 30315
+
+# NGINX specific values
+nginx:
+  # hostname used by host-routing
+  hostname: domain1.org

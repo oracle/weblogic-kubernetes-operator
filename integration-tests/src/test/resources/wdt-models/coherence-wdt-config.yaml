@@ -1,0 +1,56 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+    AdminUserName: '@@PROP:AdminUserName@@'
+    AdminPassword: '@@PROP:AdminPassword@@'
+    ServerStartMode: 'prod'
+topology:
+    AdminServerName: 'admin-server'
+    ProductionModeEnabled: true
+    Log:
+        FileName: domain1.log
+    NMProperties:
+        JavaHome: /usr/java/jdk1.8.0_211
+        LogFile: '@@PROP:DomainHome@@/nodemanager/nodemanager.log'
+        DomainsFile: '@@PROP:DomainHome@@/nodemanager/nodemanager.domains'
+        NodeManagerHome: '@@PROP:DomainHome@@/nodemanager'
+        weblogic.StartScriptName: startWebLogic.sh
+    Cluster:
+        'cluster-1':
+            CoherenceClusterSystemResource: CoherenceCluster
+            DynamicServers:
+                ServerNamePrefix: 'managed-server'
+                MaxDynamicClusterSize: 5
+                CalculatedListenPorts: false
+                MaximumDynamicServerCount: 5
+                ServerTemplate: 'cluster-1-template'
+                DynamicClusterSize: 5
+    Server:
+        'admin-server':
+            NetworkAccessPoint:
+                T3Channel:
+                    PublicPort: 30012
+                    ListenPort: 30012
+                    PublicAddress: kubernetes
+    ServerTemplate:
+        'cluster-1-template':
+            ListenPort: 8001
+            Cluster: 'cluster-1'
+            JTAMigratableTarget:
+                Cluster: 'cluster-1'
+            SSL:
+                ListenPort: 8100
+resources:
+    CoherenceClusterSystemResource:
+        CoherenceCluster:
+            CoherenceResource:
+                CoherenceClusterParams:
+                    ClusteringMode: unicast
+                    ClusterListenPort: 7574
+appDeployments:
+    Application:
+        'coh-proxy':
+            SourcePath: 'wlsdeploy/applications/coherence-proxy-server.gar'
+            ModuleType: gar
+            Target: 'cluster-1'

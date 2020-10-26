@@ -2,14 +2,19 @@
 title: "Using an OCI load balancer"
 date: 2019-09-25T12:41:38-04:00
 draft: false
-weight: 50
+weight: 8
+description: "If you are running your Kubernetes cluster on Oracle Container Engine
+for Kubernetes (OKE), then you can have OCI automatically
+provision load balancers for you by creating a `Service` of type
+`LoadBalancer` instead of (or in addition to) installing an
+ingress controller like Traefik or Voyager."
 ---
 
 If you are running your Kubernetes cluster on Oracle Container Engine
-for Kubernetes (commonly known as OKE), you can have OCI automatically
+for Kubernetes (commonly known as OKE), then you can have OCI automatically
 provision load balancers for you by creating a `Service` of type
 `LoadBalancer` instead of (or in addition to) installing an
-Ingress controller like Traefik or Voyager.
+ingress controller like Traefik or Voyager.
 
 OKE Kubernetes worker nodes typically do not have public IP addresses.
 This means that the `NodePort` services created by the operator are
@@ -20,8 +25,8 @@ to services running in OKE.
 
 {{% notice note %}}
 It is also possible, if desirable, to have an OCI load balancer route
-traffic to an Ingress controller running inside the Kubernetes cluster
-and have that Ingress controller in turn route traffic to services in the
+traffic to an ingress controller running inside the Kubernetes cluster
+and have that ingress controller in turn route traffic to services in the
 cluster.
 {{% /notice %}}
 
@@ -74,7 +79,7 @@ but initially the external IP is shown as `<pending>`.
 $ kubectl -n bob get svc
 NAME                                   TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                       AGE
 bobs-bookstore-admin-server            ClusterIP      None            <none>        8888/TCP,7001/TCP,30101/TCP   9d
-bobs-bookstore-admin-server-external   NodePort       10.96.224.13    <none>        7001:32401/TCP                9d
+bobs-bookstore-admin-server-ext        NodePort       10.96.224.13    <none>        7001:32401/TCP                9d
 bobs-bookstore-cluster-cluster-1       ClusterIP      10.96.86.113    <none>        8888/TCP,8001/TCP,31111/TCP   9d
 bobs-bookstore-managed-server1         ClusterIP      None            <none>        8888/TCP,8001/TCP,31111/TCP   9d
 bobs-bookstore-managed-server2         ClusterIP      None            <none>        8888/TCP,8001/TCP,31111/TCP   9d
@@ -88,7 +93,7 @@ external IP address will be displayed:
 $ kubectl -n bob get svc
 NAME                                   TYPE           CLUSTER-IP      EXTERNAL-IP       PORT(S)                       AGE
 bobs-bookstore-admin-server            ClusterIP      None            <none>            8888/TCP,7001/TCP,30101/TCP   9d
-bobs-bookstore-admin-server-external   NodePort       10.96.224.13    <none>            7001:32401/TCP                9d
+bobs-bookstore-admin-server-ext        NodePort       10.96.224.13    <none>            7001:32401/TCP                9d
 bobs-bookstore-cluster-cluster-1       ClusterIP      10.96.86.113    <none>            8888/TCP,8001/TCP,31111/TCP   9d
 bobs-bookstore-managed-server1         ClusterIP      None            <none>            8888/TCP,8001/TCP,31111/TCP   9d
 bobs-bookstore-managed-server2         ClusterIP      None            <none>            8888/TCP,8001/TCP,31111/TCP   9d

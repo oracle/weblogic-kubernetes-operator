@@ -7,13 +7,13 @@ description: "WebLogic domain encryption and the operator"
 #### Contents
 
 * [Introspector encryption](#introspector-encryption)
-* [Encryption of Kubernetes secrets](#encryption-of-kubernetes-secrets)
+* [Encryption of Kubernetes Secrets](#encryption-of-kubernetes-secrets)
 * [Additional reading](#additional-reading)
 
 #### Introspector encryption
 
 The operator has an introspection job that handles WebLogic domain encryption.
-The introspection job also addresses the use of Kubernetes secrets with configuration overrides.
+The introspection job also addresses the use of Kubernetes Secrets with configuration overrides.
 For additional information on the configuration handling, see
 [Configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md">}}).
 
@@ -27,7 +27,7 @@ the unique identifier of the domain, for example, `mydomain-weblogic-credentials
 For more information about the WebLogic credentials secret, see [Secrets]({{<relref "/security/secrets.md">}}).
 {{% /notice %}}
 
-#### Encryption of Kubernetes secrets
+#### Encryption of Kubernetes Secrets
 
 {{% notice tip %}}
 To better protect your credentials and private keys, the Kubernetes cluster should be set up with encryption.

@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.builders;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigInteger;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
@@ -48,6 +49,10 @@ public class WatchEvent<T> {
     return new WatchEvent<>("DELETED", object);
   }
 
+  public static <S> WatchEvent<S> createBookmarkEvent(S object) {
+    return new WatchEvent<>("BOOKMARK", object);
+  }
+
   public static <S> WatchEvent<S> createErrorEventWithoutStatus() {
     return new WatchEvent<>(null);
   }
@@ -56,12 +61,12 @@ public class WatchEvent<T> {
     return new WatchEvent<>(new V1Status().code(statusCode).message("Oops"));
   }
 
-  public static <S> WatchEvent<S> createErrorEvent(int statusCode, int resourceVersion) {
+  public static <S> WatchEvent<S> createErrorEvent(int statusCode, BigInteger resourceVersion) {
     return new WatchEvent<>(
         new V1Status().code(statusCode).message(createMessageWithResourceVersion(resourceVersion)));
   }
 
-  private static String createMessageWithResourceVersion(int resourceVersion) {
+  private static String createMessageWithResourceVersion(BigInteger resourceVersion) {
     return String.format("Something wrong: continue from (%d)", resourceVersion);
   }
 

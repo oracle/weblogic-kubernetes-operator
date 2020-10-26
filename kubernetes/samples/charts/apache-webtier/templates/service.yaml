@@ -6,15 +6,16 @@ kind: Service
 metadata:
   name: {{ template "apache.fullname" . }}
   namespace: {{ .Release.Namespace | quote }}
-  labels:
-    weblogic.resourceVersion: "loadbalancer-v2"
 spec:
   type: NodePort
   selector:
     app: {{ template "apache.fullname" . }}
-    weblogic.resourceVersion: "loadbalancer-v2"
   ports:
+{{- if ( .Values.useNonPriviledgedPorts ) and eq .Values.useNonPriviledgedPorts "true"}}
+    - port: 8080
+{{- else}}
     - port: 80
+{{- end }}
       nodePort: {{ .Values.httpNodePort }}
       name: http
 {{- if .Values.virtualHostName }}

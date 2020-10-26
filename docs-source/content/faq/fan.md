@@ -2,7 +2,10 @@
 title: "Disabling Fast Application Notifications"
 date: 2019-10-11T17:20:00-05:00
 draft: false
-weight: 30
+weight: 6
+description: "To support Fast Application Notifications (FAN), Oracle databases configure GRID (Oracle Grid Infrastructure).
+GRID is typically associated with (and required by) Oracle RAC databases but can
+also be used in other configurations.  Oracle Autonomous Database-Serverless (ATP-S) does not provide GRID."
 ---
 
 To support Fast Application Notifications (FAN), Oracle databases configure GRID (Oracle Grid Infrastructure).
@@ -36,6 +39,8 @@ to `false` as shown in the following example:
     env:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false -Doracle.jdbc.fanEnabled=false"
+    - name: WLSDEPLOY_PROPERTIES
+      value: "-Doracle.jdbc.fanEnabled=false"
 ```
 
 2) Configure the data source connection pool properties.  
@@ -65,4 +70,4 @@ The following WLST script adds the
        ls()
 ```
 After changing the data source connection pool configuration, for the attribute to take effect,
-make sure to undeploy and redeploy the data source, or restart WebLogic Server. 
+make sure to undeploy and redeploy the data source, or restart WebLogic Server.

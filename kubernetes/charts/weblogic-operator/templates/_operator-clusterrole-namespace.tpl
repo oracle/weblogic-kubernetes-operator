@@ -3,21 +3,20 @@
 
 {{- define "operator.operatorClusterRoleNamespace" }}
 ---
-{{- if .dedicated }}
+{{- if (or (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") (and .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "List"))) }}
 kind: "Role"
 {{- else }}
 kind: "ClusterRole"
 {{- end }}
 apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
-  {{- if .dedicated }}
+  {{- if (or (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") (and .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "List"))) }}
   name: "weblogic-operator-role-namespace"
   namespace: {{ .Release.Namespace | quote }}
   {{- else }}
   name: {{ list .Release.Namespace "weblogic-operator-clusterrole-namespace" | join "-" | quote }}
   {{- end }}
   labels:
-    weblogic.resourceVersion: "operator-v2"
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 rules:
 - apiGroups: [""]
@@ -31,7 +30,7 @@ rules:
   verbs: ["get", "list"]
 - apiGroups: [""]
   resources: ["pods/exec"]
-  verbs: ["create"]
+  verbs: ["get", "create"]
 - apiGroups: ["batch"]
   resources: ["jobs"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]

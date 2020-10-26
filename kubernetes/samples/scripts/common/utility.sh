@@ -346,8 +346,6 @@ function createFiles {
     weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
   fi
 
-  wdtVersion="${WDT_VERSION}"
-
   if [ "${domainHomeInImage}" == "true" ]; then
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
     domainHome="/u01/oracle/user_projects/domains/${domainName}"
@@ -389,6 +387,9 @@ function createFiles {
       sed -i -e "s|%IMAGE_NAME%|${image}|g" ${domainPropertiesOutput}
     fi
   else
+    # we're in the domain in PV case
+
+    wdtVersion="${WDT_VERSION:-${wdtVersion}}"
 
     createJobOutput="${domainOutputDir}/create-domain-job.yaml"
     deleteJobOutput="${domainOutputDir}/delete-domain-job.yaml"
@@ -446,6 +447,8 @@ function createFiles {
     sed -i -e "s:%CUSTOM_RCUPREFIX%:${rcuSchemaPrefix}:g" ${createJobOutput}
     sed -i -e "s|%CUSTOM_CONNECTION_STRING%|${rcuDatabaseURL}|g" ${createJobOutput}
     sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3Channel}:g" ${createJobOutput}
+    sed -i -e "s:%FRONTEND_HOST%:${frontEndHost}:g" ${createJobOutput}
+    sed -i -e "s:%FRONTEND_PORT%:${frontEndPort}:g" ${createJobOutput}
     # entries for Istio
     sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
@@ -511,10 +514,15 @@ function createFiles {
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
+
+  if [ "${istioEnabled}" == "true" ]; then
+      exposeAdminNodePortPrefix="${disabledPrefix}"
+  fi
+
+  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
-  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
@@ -530,7 +538,13 @@ function createFiles {
   if [ -z "${serverPodResources}" ]; then
     sed -i -e "/%OPTIONAL_SERVERPOD_RESOURCES%/d" ${dcrOutput}
   else
-    sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
+    if [[ $(uname) -eq "Darwin" ]]; then
+      serverPodResources=$(echo "${serverPodResources}" | sed -e 's/\\n/%NEWLINE%/g')
+      sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
+      sed -i -e $'s|%NEWLINE%|\\\n|g' ${dcrOutput}
+    else
+      sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
+    fi
   fi
 
   if [ "${domainHomeInImage}" == "true" ]; then
@@ -625,7 +639,7 @@ function checkPodDelete(){
   exit -2 
  fi
 
- echo "Checking Status for Pod [$pod] in namesapce [${ns}]"
+ echo "Checking Status for Pod [$pod] in namespace [${ns}]"
  max=10
  count=1
  while [ $count -le $max ] ; do
@@ -686,7 +700,7 @@ function checkPodState(){
  kubectl -n ${ns} get po ${pname}
 }
 
-# Checks if a pod is available in a given namesapce 
+# Checks if a pod is available in a given namespace 
 function checkPod(){
 
  max=20
@@ -720,4 +734,22 @@ function checkPod(){
   echo "[ERROR] Could not find Pod [$pod] after 120s";
   exit 1
  fi
+}
+
+# Checks if a service is available in a given namespace 
+function checkService(){
+ svc=$1
+ ns=$2
+ startSecs=$SECONDS
+ maxWaitSecs=20
+ while [ -z "`kubectl get service -n ${ns} | grep -w ${svc}`" ]; do
+   if [ $((SECONDS - startSecs)) -lt $maxWaitSecs ]; then
+     echo "Service [$svc] not found after $((SECONDS - startSecs)) seconds, retrying ..."
+     sleep 5
+   else
+     echo "[Error] Could not find Service [$svc] after $((SECONDS - startSecs)) seconds"
+     exit 1
+   fi
+ done
+ echo "Service [$svc] found"
 }

@@ -7,7 +7,7 @@
   <parent>
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
-    <version>3.0.0</version>
+    <version>3.1.0</version>
   </parent>
 
   <artifactId>weblogic-kubernetes-operator</artifactId>
@@ -280,11 +280,7 @@
     </dependency>
     <dependency>
       <groupId>org.glassfish</groupId>
-      <artifactId>javax.json</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>joda-time</groupId>
-      <artifactId>joda-time</artifactId>
+      <artifactId>jakarta.json</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -321,21 +317,11 @@
       <groupId>javax</groupId>
       <artifactId>javaee-web-api</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-    </dependency>
 
     <!--  not included with jdk 9 -->
     <dependency>
       <groupId>javax.xml.bind</groupId>
       <artifactId>jaxb-api</artifactId>
-    </dependency>
-
-    <!-- for mvn exec:java -->
-    <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
     </dependency>
 
     <!-- test dependencies -->

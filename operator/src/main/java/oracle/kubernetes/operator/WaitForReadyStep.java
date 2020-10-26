@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -10,10 +12,12 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.work.Fiber;
+import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+
+import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 
 /**
  * This class is the base for steps that must suspend while waiting for a resource to become ready. It is typically
@@ -21,6 +25,14 @@ import oracle.kubernetes.operator.work.Step;
  * @param <T> the type of resource handled by this step
  */
 abstract class WaitForReadyStep<T> extends Step {
+  private static final int DEFAULT_RECHECK_SECONDS = 5;
+
+  static int getWatchBackstopRecheckDelaySeconds() {
+    return Optional.ofNullable(TuningParameters.getInstance())
+            .map(parameters -> parameters.getWatchTuning().watchBackstopRecheckDelay)
+            .orElse(DEFAULT_RECHECK_SECONDS);
+  }
+
   private final T initialResource;
 
   /**
@@ -77,10 +89,11 @@ abstract class WaitForReadyStep<T> extends Step {
    * Creates a {@link Step} that reads the specified resource asynchronously and then invokes the specified response.
    * @param name the name of the resource
    * @param namespace the namespace containing the resource
+   * @param domainUid the identifier of the domain that the resource is associated with
    * @param responseStep the step which should be invoked once the resource has been read
    * @return the created step
    */
-  abstract Step createReadAsyncStep(String name, String namespace, ResponseStep<T> responseStep);
+  abstract Step createReadAsyncStep(String name, String namespace, String domainUid, ResponseStep<T> responseStep);
 
   /**
    * Updates the packet when the resource is declared ready. The default implementation does nothing.
@@ -133,7 +146,7 @@ abstract class WaitForReadyStep<T> extends Step {
 
   // Registers a callback for updates to the specified resource and
   // verifies that we haven't already missed the update.
-  private void resumeWhenReady(Packet packet, Fiber fiber) {
+  private void resumeWhenReady(Packet packet, AsyncFiber fiber) {
     Callback callback = new Callback(fiber, packet);
     addCallback(getName(), callback);
     checkUpdatedResource(packet, fiber, callback);
@@ -142,20 +155,28 @@ abstract class WaitForReadyStep<T> extends Step {
   // It is possible that the watch event was received between the time the step was created, and the time the callback
   // was registered. Just in case, we will check the latest resource value in Kubernetes and process the resource
   // if it is now ready
-  private void checkUpdatedResource(Packet packet, Fiber fiber, Callback callback) {
+  private void checkUpdatedResource(Packet packet, AsyncFiber fiber, Callback callback) {
     fiber
         .createChildFiber()
         .start(
-            createReadAsyncStep(getName(), getNamespace(), resumeIfReady(callback)),
+            createReadAndIfReadyCheckStep(callback),
             packet.clone(),
             null);
+  }
+
+  private Step createReadAndIfReadyCheckStep(Callback callback) {
+    return createReadAsyncStep(getName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
   }
 
   private String getNamespace() {
     return getMetadata(initialResource).getNamespace();
   }
 
-  private String getName() {
+  private String getDomainUid() {
+    return getDomainUidLabel(getMetadata(initialResource));
+  }
+
+  public String getName() {
     return getMetadata(initialResource).getName();
   }
 
@@ -165,18 +186,20 @@ abstract class WaitForReadyStep<T> extends Step {
       public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
         if (isReady(callResponse.getResult())) {
           callback.proceedFromWait(callResponse.getResult());
+          return doNext(packet);
         }
-        return doNext(packet);
+        return doDelay(createReadAndIfReadyCheckStep(callback), packet,
+                getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
       }
     };
   }
 
   private class Callback implements Consumer<T> {
-    private final Fiber fiber;
+    private final AsyncFiber fiber;
     private final Packet packet;
     private final AtomicBoolean didResume = new AtomicBoolean(false);
 
-    Callback(Fiber fiber, Packet packet) {
+    Callback(AsyncFiber fiber, Packet packet) {
       this.fiber = fiber;
       this.packet = packet;
     }
@@ -205,7 +228,7 @@ abstract class WaitForReadyStep<T> extends Step {
     }
   }
 
-  private void handleResourceReady(Fiber fiber, Packet packet, T resource) {
+  private void handleResourceReady(AsyncFiber fiber, Packet packet, T resource) {
     updatePacket(packet, resource);
     if (shouldTerminateFiber(resource)) {
       fiber.terminate(createTerminationException(resource), packet);

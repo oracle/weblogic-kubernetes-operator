@@ -9,38 +9,58 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 
+import com.google.common.base.Strings;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ModelInImageDomainType;
-import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static java.util.stream.Collectors.toSet;
+
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
  */
-@Description(
-    "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.")
-public class Domain {
+public class Domain implements KubernetesObject {
+  /**
+   * The starting marker of a token that needs to be substituted with a matching env var.
+   */
+  public static final String TOKEN_START_MARKER = "$(";
+
+  /**
+   * The ending marker of a token that needs to be substituted with a matching env var.
+   */
+  public static final String TOKEN_END_MARKER = ")";
+
+  public static final String CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM = "clusterSizePaddingValidationEnabled";
+
   /**
    * The pattern for computing the default shared logs directory.
    */
@@ -53,7 +73,7 @@ public class Domain {
    */
   @SerializedName("apiVersion")
   @Expose
-  @Description("The API version for the Domain.")
+  @Description("The API version defines the versioned schema of this Domain. Required.")
   private String apiVersion;
 
   /**
@@ -63,7 +83,7 @@ public class Domain {
    */
   @SerializedName("kind")
   @Expose
-  @Description("The type of resource. Must be 'Domain'.")
+  @Description("The type of the REST resource. Must be \"Domain\". Required.")
   private String kind;
 
   /**
@@ -73,7 +93,7 @@ public class Domain {
   @SerializedName("metadata")
   @Expose
   @Valid
-  @Description("The domain meta-data. Must include the name and namespace.")
+  @Description("The resource metadata. Must include the `name` and `namespace`. Required.")
   @Nonnull
   private V1ObjectMeta metadata = new V1ObjectMeta();
 
@@ -83,7 +103,7 @@ public class Domain {
   @SerializedName("spec")
   @Expose
   @Valid
-  @Description("The specification of the domain. Required.")
+  @Description("The specification of the operation of the WebLogic domain. Required.")
   @Nonnull
   private DomainSpec spec = new DomainSpec();
 
@@ -94,7 +114,7 @@ public class Domain {
   @SerializedName("status")
   @Expose
   @Valid
-  @Description("The current status of the domain. Updated by the operator.")
+  @Description("The current status of the operation of the WebLogic domain. Updated automatically by the operator.")
   private DomainStatus status;
 
   @SuppressWarnings({"rawtypes"})
@@ -110,6 +130,22 @@ public class Domain {
       return Arrays.asList(a);
     }
     return null;
+  }
+
+  /**
+   * check if the external service is configured for the admin server.
+   *
+   * @return true if the external service is configured
+   */
+
+  public static boolean isExternalServiceConfigured(DomainSpec domainSpec) {
+    AdminServer adminServer = domainSpec.getAdminServer();
+    AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
+    List<Channel> channels = adminService != null ? adminService.getChannels() : null;
+    if (channels != null && !channels.isEmpty()) {
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -231,15 +267,7 @@ public class Domain {
   }
 
   private EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
-    return spec.getEffectiveConfigurationFactory(apiVersion, getResourceVersion());
-  }
-
-  private String getResourceVersion() {
-    Map<String, String> labels = metadata.getLabels();
-    if (labels == null) {
-      return VersionConstants.DEFAULT_DOMAIN_VERSION;
-    }
-    return labels.get(LabelConstants.RESOURCE_VERSION_LABEL);
+    return spec.getEffectiveConfigurationFactory(apiVersion);
   }
 
   /**
@@ -295,6 +323,26 @@ public class Domain {
    */
   public int getMinAvailable(String clusterName) {
     return Math.max(getReplicaCount(clusterName) - getMaxUnavailable(clusterName), 0);
+  }
+
+  /**
+   * Returns whether the specified cluster is allowed to have replica count below the minimum
+   * dynamic cluster size configured in WebLogic domain configuration.
+   *
+   * @param clusterName the name of the cluster
+   * @return whether the specified cluster is allowed to have replica count below the minimum
+   *     dynamic cluster size configured in WebLogic domain configuration
+   */
+  public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
+    return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterName);
+  }
+
+  public int getMaxConcurrentStartup(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxConcurrentStartup(clusterName);
+  }
+
+  public int getMaxConcurrentShutdown(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxConcurrentShutdown(clusterName);
   }
 
   /**
@@ -359,7 +407,7 @@ public class Domain {
   }
 
   /**
-   * Name of the secret containing WebLogic startup credentials username and password.
+   * Name of the secret containing WebLogic startup credentials user name and password.
    *
    * @return the secret name
    */
@@ -418,8 +466,7 @@ public class Domain {
   }
 
   boolean isLogHomeEnabled() {
-    return Optional.ofNullable(spec.isLogHomeEnabled())
-        .orElse(DomainSourceType.PersistentVolume.toString().equals(getDomainHomeSourceType()));
+    return Optional.ofNullable(spec.isLogHomeEnabled()).orElse(getDomainHomeSourceType().hasLogHomeByDefault());
   }
 
   public String getDataHome() {
@@ -435,26 +482,23 @@ public class Domain {
   }
 
   /**
-   * Get domain home source type.
+   * Returns a description of how the domain is defined.
    * @return source type
    */
-  public String getDomainHomeSourceType() {
-    return Optional.ofNullable(spec.getDomainHomeSourceType()).orElseGet(
-        () -> getModel() != null ? DomainSourceType.FromModel.toString()
-            : (Optional.ofNullable(spec.isDomainHomeInImage())
-            .orElse(true) ? DomainSourceType.Image.toString() : DomainSourceType.PersistentVolume.toString()));
+  public DomainSourceType getDomainHomeSourceType() {
+    return spec.getDomainHomeSourceType();
+  }
+
+  public boolean isNewIntrospectionRequiredForNewServers() {
+    return getDomainHomeSourceType() == DomainSourceType.FromModel;
   }
 
   public Model getModel() {
-    return Optional.ofNullable(spec.getConfiguration()).map(Configuration::getModel).orElse(null);
+    return spec.getModel();
   }
 
   public boolean isHttpAccessLogInLogHome() {
     return spec.getHttpAccessLogInLogHome();
-  }
-
-  boolean isDomainHomeInImage() {
-    return spec.isDomainHomeInImage();
   }
 
   public boolean isIstioEnabled() {
@@ -465,28 +509,13 @@ public class Domain {
     return spec.getIstioReadinessPort();
   }
 
-  public boolean isDomainSourceFromModel(String type) {
-    return DomainSourceType.FromModel.toString().equals(type);
-  }
-
   /**
-   * Returns the domain home.
-   *
-   * <p>Defaults to either /u01/oracle/user_projects/domains or /shared/domains/domainUID
+   * Returns the domain home. May be null, but will not be an empty string.
    *
    * @return domain home
    */
   public String getDomainHome() {
-    if (spec.getDomainHome() != null) {
-      return spec.getDomainHome();
-    }
-    if (DomainSourceType.Image.toString().equals(getDomainHomeSourceType())) {
-      return "/u01/oracle/user_projects/domains";
-    } else if (DomainSourceType.PersistentVolume.toString().equals(getDomainHomeSourceType())) {
-      return "/shared/domains/" + getDomainUid();
-    } else { // FromModel
-      return "/u01/domains/" + getDomainUid();
-    }
+    return Strings.emptyToNull(spec.getDomainHome());
   }
 
   public boolean isShuttingDown() {
@@ -508,8 +537,23 @@ public class Domain {
    * @return name of the config map
    */
   public String getConfigOverrides() {
-    return Optional.ofNullable(spec.getConfiguration())
-        .map(Configuration::getOverridesConfigMap).orElse(spec.getConfigOverrides());
+    return spec.getConfigOverrides();
+  }
+
+  /**
+   * Returns the strategy for applying changes to configuration overrides.
+   * @return the selected strategy
+   */
+  public OverrideDistributionStrategy getOverrideDistributionStrategy() {
+    return spec.getOverrideDistributionStrategy();
+  }
+
+  /**
+   * Returns the strategy for applying changes to configuration overrides.
+   * @return the selected strategy
+   */
+  public boolean distributeOverridesDynamically() {
+    return spec.getOverrideDistributionStrategy() == OverrideDistributionStrategy.DYNAMIC;
   }
 
   /**
@@ -536,6 +580,14 @@ public class Domain {
         .map(Configuration::getSecrets).orElse(spec.getConfigOverrideSecrets());
   }
 
+  /**
+   * Returns the model home directory of the domain.
+   *
+   * @return model home directory
+   */
+  public String getModelHome() {
+    return spec.getModelHome();
+  }
 
   @Override
   public String toString() {
@@ -581,6 +633,14 @@ public class Domain {
     return new Validator().getValidationFailures(kubernetesResources);
   }
 
+  public List<String> getAdditionalValidationFailures(V1PodSpec podSpec) {
+    return new Validator().getAdditionalValidationFailures(podSpec);
+  }
+
+  public List<String> getAfterIntrospectValidationFailures(Packet packet) {
+    return new Validator().getAfterIntrospectValidationFailures(packet);
+  }
+
   class Validator {
     private final List<String> failures = new ArrayList<>();
     private final Set<String> clusterNames = new HashSet<>();
@@ -595,7 +655,102 @@ public class Domain {
       addIllegalSitConfigForMii();
       verifyNoAlternateSecretNamespaceSpecified();
       addMissingModelConfigMap(kubernetesResources);
+      verifyIstioExposingDefaultChannel();
+      verifyIntrospectorJobName();
 
+      return failures;
+    }
+
+    private void verifyIntrospectorJobName() {
+      // K8S adds a 5 character suffix to an introspector job name
+      if (LegalNames.toJobIntrospectorName(getDomainUid()).length()
+          > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5) {
+        failures.add(DomainValidationMessages.exceedMaxIntrospectorJobName(
+            getDomainUid(),
+            LegalNames.toJobIntrospectorName(getDomainUid()),
+            LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5));
+      }
+    }
+
+    private void verifyGeneratedResourceNames(WlsDomainConfig wlsDomainConfig) {
+      checkGeneratedServerServiceName(wlsDomainConfig.getAdminServerName(), -1);
+      if (isExternalServiceConfigured(getSpec())) {
+        checkGeneratedExternalServiceName(wlsDomainConfig.getAdminServerName());
+      }
+
+      // domain level serverConfigs do not contain servers in dynamic clusters
+      wlsDomainConfig.getServerConfigs()
+          .values()
+          .stream()
+          .map(WlsServerConfig::getName)
+          .forEach(serverName -> checkGeneratedServerServiceName(serverName, -1));
+      wlsDomainConfig.getClusterConfigs()
+          .values()
+          .iterator()
+          .forEachRemaining(wlsClusterConfig
+              // serverConfigs contains configured and dynamic servers in the cluster
+              -> wlsClusterConfig.getServerConfigs().forEach(wlsServerConfig
+                  -> this.checkGeneratedServerServiceName(
+                      wlsServerConfig.getName(), wlsClusterConfig.getServerConfigs().size())));
+      wlsDomainConfig.getClusterConfigs()
+          .values()
+          .iterator()
+          .forEachRemaining(wlsClusterConfig -> this.checkGeneratedClusterServiceName(wlsClusterConfig.getName()));
+    }
+
+    private void checkGeneratedExternalServiceName(String adminServerName) {
+      if (LegalNames.toExternalServiceName(getDomainUid(), adminServerName).length()
+          > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
+        failures.add(DomainValidationMessages.exceedMaxExternalServiceName(
+            getDomainUid(),
+            adminServerName,
+            LegalNames.toExternalServiceName(getDomainUid(), adminServerName),
+            LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH));
+      }
+    }
+
+    private void checkGeneratedServerServiceName(String serverName, int clusterSize) {
+      int limit = LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
+      if (isClusterSizePaddingValidationEnabled() && clusterSize > 0 && clusterSize < 100) {
+        limit = clusterSize >= 10 ? limit - 1 : limit - 2;
+      }
+
+      if (LegalNames.toServerServiceName(getDomainUid(), serverName).length() > limit) {
+        failures.add(DomainValidationMessages.exceedMaxServerServiceName(
+            getDomainUid(),
+            serverName,
+            LegalNames.toServerServiceName(getDomainUid(), serverName),
+            limit));
+      }
+    }
+
+    /**
+     * Gets the configured boolean for enabling cluster size padding validation.
+     * @return boolean enabled
+     */
+    public boolean isClusterSizePaddingValidationEnabled() {
+      return "true".equalsIgnoreCase(getClusterSizePaddingValidationEnabledParameter());
+    }
+
+    private String getClusterSizePaddingValidationEnabledParameter() {
+      return Optional.ofNullable(TuningParameters.getInstance())
+            .map(t -> t.get(CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM))
+            .orElse("true");
+    }
+
+    private void checkGeneratedClusterServiceName(String clusterName) {
+      if (LegalNames.toClusterServiceName(getDomainUid(), clusterName).length()
+          > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
+        failures.add(DomainValidationMessages.exceedMaxClusterServiceName(
+            getDomainUid(),
+            clusterName,
+            LegalNames.toClusterServiceName(getDomainUid(), clusterName),
+            LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH));
+      }
+    }
+
+    public List<String> getAdditionalValidationFailures(V1PodSpec podSpec) {
+      addInvalidMountPathsForPodSpec(podSpec);
       return failures;
     }
 
@@ -603,23 +758,13 @@ public class Domain {
       getSpec().getManagedServers()
           .stream()
           .map(ManagedServer::getServerName)
-          .map(this::toDns1123LegalName)
+          .map(LegalNames::toDns1123LegalName)
           .forEach(this::checkDuplicateServerName);
       getSpec().getClusters()
           .stream()
           .map(Cluster::getClusterName)
-          .map(this::toDns1123LegalName)
+          .map(LegalNames::toDns1123LegalName)
           .forEach(this::checkDuplicateClusterName);
-    }
-
-    /**
-     * Converts value to nearest DNS-1123 legal name, which can be used as a Kubernetes identifier.
-     *
-     * @param value Input value
-     * @return nearest DNS-1123 legal name
-     */
-    String toDns1123LegalName(String value) {
-      return value.toLowerCase().replace('_', '-');
     }
 
     private void checkDuplicateServerName(String serverName) {
@@ -640,12 +785,58 @@ public class Domain {
 
     private void addInvalidMountPaths() {
       getSpec().getAdditionalVolumeMounts().forEach(this::checkValidMountPath);
+      if (getSpec().getAdminServer() != null) {
+        getSpec().getAdminServer().getAdditionalVolumeMounts().forEach(this::checkValidMountPath);
+      }
+      if (getSpec().getClusters() != null) {
+        getSpec().getClusters().forEach(
+            cluster -> cluster.getAdditionalVolumeMounts().forEach(this::checkValidMountPath));
+      }
+    }
+
+    private void addInvalidMountPathsForPodSpec(V1PodSpec podSpec) {
+      podSpec.getContainers()
+          .forEach(container ->
+              Optional.ofNullable(container.getVolumeMounts())
+                  .ifPresent(volumes -> volumes.forEach(this::checkValidMountPath)));
     }
 
     private void checkValidMountPath(V1VolumeMount mount) {
+      if (skipValidation(mount.getMountPath())) {
+        return;
+      }
+
       if (!new File(mount.getMountPath()).isAbsolute()) {
         failures.add(DomainValidationMessages.badVolumeMountPath(mount));
       }
+    }
+
+    private boolean skipValidation(String mountPath) {
+      List<V1EnvVar> envVars = spec.getEnv();
+      Set<String> varNames = envVars.stream().map(V1EnvVar::getName).collect(toSet());
+      StringTokenizer nameList = new StringTokenizer(mountPath, TOKEN_START_MARKER);
+      if (!nameList.hasMoreElements()) {
+        return false;
+      }
+      while (nameList.hasMoreElements()) {
+        String token = nameList.nextToken();
+        if (noMatchingEnvVarName(varNames, token)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    private boolean noMatchingEnvVarName(Set<String> varNames, String token) {
+      int index = token.indexOf(TOKEN_END_MARKER);
+      if (index != -1) {
+        String str = token.substring(0, index);
+        // IntrospectorJobEnvVars.isReserved() checks env vars in ServerEnvVars too
+        if (varNames.contains(str) || IntrospectorJobEnvVars.isReserved(str)) {
+          return false;
+        }
+      }
+      return true;
     }
 
     private void addUnmappedLogHome() {
@@ -673,9 +864,25 @@ public class Domain {
     }
 
     private void addIllegalSitConfigForMii() {
-      if (isDomainSourceFromModel(getDomainHomeSourceType())
+      if (getDomainHomeSourceType() == DomainSourceType.FromModel
           && getConfigOverrides() != null) {
         failures.add(DomainValidationMessages.illegalSitConfigForMii(getConfigOverrides()));
+      }
+    }
+
+    private void verifyIstioExposingDefaultChannel() {
+      if (spec.isIstioEnabled()) {
+        Optional.ofNullable(spec.getAdminServer())
+            .map(AdminServer::getAdminService)
+            .map(AdminService::getChannels)
+            .ifPresent(cs -> cs.forEach(this::checkForDefaultNameExposed));
+      }
+    }
+
+    private void checkForDefaultNameExposed(Channel channel) {
+      if ("default".equals(channel.getChannelName()) || "default-admin".equals(channel.getChannelName())
+            || "default-secure".equals(channel.getChannelName())) {
+        failures.add(DomainValidationMessages.cannotExposeDefaultChannelIstio(channel.getChannelName()));
       }
     }
 
@@ -688,6 +895,11 @@ public class Domain {
           .forEach(s -> checkReservedEnvironmentVariables(s, "spec.managedServers[" + s.getServerName() + "]"));
       spec.getClusters()
           .forEach(s -> checkReservedEnvironmentVariables(s, "spec.clusters[" + s.getClusterName() + "]"));
+    }
+
+    public List<String> getAfterIntrospectValidationFailures(Packet packet) {
+      verifyGeneratedResourceNames((WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY));
+      return failures;
     }
 
     class EnvironmentVariableCheck {
@@ -735,7 +947,7 @@ public class Domain {
       verifySecretExists(resourceLookup, getOpssWalletPasswordSecret(), SecretType.OpssWalletPassword);
       verifySecretExists(resourceLookup, getOpssWalletFileSecret(), SecretType.OpssWalletFile);
 
-      if (isDomainSourceFromModel(getDomainHomeSourceType())) {
+      if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
         if (getRuntimeEncryptionSecret() == null) {
           failures.add(DomainValidationMessages.missingRequiredSecret(
               "spec.configuration.model.runtimeEncryptionSecret"));
@@ -779,7 +991,7 @@ public class Domain {
 
     @SuppressWarnings("SameParameterValue")
     private void verifyModelConfigMapExists(KubernetesResourceLookup resources, String modelConfigMapName) {
-      if (isDomainSourceFromModel(getDomainHomeSourceType())
+      if (getDomainHomeSourceType() == DomainSourceType.FromModel
           && modelConfigMapName != null && !resources.isConfigMapExists(modelConfigMapName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName, getNamespace()));
       }

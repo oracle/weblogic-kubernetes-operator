@@ -1,0 +1,20 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-ingress-sample-domain1-admin-server
+  namespace: sample-domain1-ns
+  labels:
+    weblogic.domainUID: sample-domain1
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  routes:
+  - kind: Rule
+    match: PathPrefix(`/console`)
+    services:
+    - kind: Service
+      name: sample-domain1-admin-server
+      port: 7001

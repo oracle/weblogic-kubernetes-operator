@@ -23,8 +23,8 @@ The samples in this document assume an existing domain is being edited.  However
 For sample purposes, this document will assume a domain with the following attributes is being configured:
 
 * Domain name is `bobs-bookstore`
-* Kubernetes namespace is `bob`
-* Kubernetes secret is `bobs-bookstore-weblogic-credentials`
+* Kubernetes Namespace is `bob`
+* Kubernetes Secret is `bobs-bookstore-weblogic-credentials`
 
 The sample Elasticsearch configuration is:
 ```text
@@ -89,7 +89,6 @@ kind: ConfigMap
 metadata:
   labels:
     weblogic.domainUID: bobs-bookstore
-    weblogic.resourceVersion: domain-v2
   name: fluentd-config
   namespace: bob
 data:
@@ -256,12 +255,11 @@ _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
 The following is a complete example of a domain custom resource with a `fluentd` container configured.
 
 ```yaml
-apiVersion: weblogic.oracle/v7
+apiVersion: weblogic.oracle/v8
 kind: Domain
 metadata:
   labels:
     weblogic.domainUID: bobs-bookstore
-    weblogic.resourceVersion: domain-v2
   name: bobs-bookstore
   namespace: bob
 spec:

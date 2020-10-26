@@ -141,7 +141,7 @@ function initialize {
     validationError "The template file ${domainPropertiesInput} for creating a WebLogic domain was not found"
   fi
 
-  dcrInput="${scriptDir}/../../common/domain-template.yaml"
+  dcrInput="${scriptDir}/../../common/jrf-domain-template.yaml"
   if [ ! -f ${dcrInput} ]; then
     validationError "The template file ${dcrInput} for creating the domain resource was not found"
   fi
@@ -213,6 +213,9 @@ function createDomainHome {
   cp -f ${scriptDir}/common/createFMWDomain.py \
         ${dockerDir}/container-scripts/createFMWDomain.py
 
+  # Set WDT_VERSION in case dockerDir references a WDT sample
+  # (wdtVersion comes from the inputs file)
+  export WDT_VERSION="${WDT_VERSION:-${wdtVersion:-1.9.1}}"
   bash ${dockerDir}/build.sh
 
   if [ "$?" != "0" ]; then

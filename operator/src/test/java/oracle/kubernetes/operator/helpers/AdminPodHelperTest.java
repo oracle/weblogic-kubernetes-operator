@@ -7,15 +7,15 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
-import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
@@ -36,8 +37,10 @@ import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_PATCHED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_REPLACED;
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -45,6 +48,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -52,8 +56,10 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class AdminPodHelperTest extends PodHelperTestBase {
   private static final String INTERNAL_OPERATOR_CERT_ENV_NAME = "INTERNAL_OPERATOR_CERT";
 
-  static final String RAW_VALUE_1 = "value-$(SERVER_NAME)";
-  static final String END_VALUE_1 = "value-ADMIN_SERVER";
+  private static final String RAW_VALUE_1 = "value-$(SERVER_NAME)";
+  private static final String END_VALUE_1 = "value-ADMIN_SERVER";
+  private static final String RAW_MOUNT_PATH_1 = "$(DOMAIN_HOME)/servers/$(SERVER_NAME)";
+  private static final String END_MOUNT_PATH_1 = "/u01/oracle/user_projects/domains/servers/ADMIN_SERVER";
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -99,6 +105,10 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getServerTopology().setAdminPort(port);
   }
 
+  String getDomainValidationFailedKey() {
+    return DOMAIN_VALIDATION_FAILED;
+  }
+
   @Test // REG I don't understand why this is only true for the admin server
   public void whenConfigurationAddsEnvironmentVariable_replacePod() {
     initializeExistingPod();
@@ -110,11 +120,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Override
   protected void verifyPodReplaced() {
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new NullPodAwaiterStepFactory(terminalStep));
-
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getReplacedMessageKey()));
@@ -122,11 +127,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Override
   protected void verifyPodNotReplacedWhen(PodMutator mutator) {
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new NullPodAwaiterStepFactory(terminalStep));
-
     V1Pod existingPod = createPod(testSupport.getPacket());
     mutator.mutate(existingPod);
     initializeExistingPod(existingPod);
@@ -143,11 +143,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenDeleteReportsNotFound_replaceAdminPod() {
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new NullPodAwaiterStepFactory(terminalStep));
-
     initializeExistingPod(getIncompatiblePod());
     testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, CallBuilder.NOT_FOUND);
 
@@ -158,7 +153,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   private V1Pod getIncompatiblePod() {
     V1Pod existingPod = createTestPodModel();
-    existingPod.getSpec().setContainers(null);
+    Objects.requireNonNull(existingPod.getSpec()).setContainers(null);
     return existingPod;
   }
 
@@ -185,12 +180,17 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     Step initialStep = stepFactory.createStepList(terminalStep);
     testSupport.runSteps(initialStep);
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    assertThat(getDomain(), hasStatus("ServerError",
+            "testcall in namespace junit, for testName: failure reported in test"));
   }
 
   @Test
   public void whenAdminPodCreated_specHasPodNameAsHostName() {
-    assertThat(getCreatedPod().getSpec().getHostname(), equalTo(getPodName()));
+    assertThat(getCreatedPodSpec().getHostname(), equalTo(getPodName()));
+  }
+
+  private V1PodSpec getCreatedPodSpec() {
+    return getCreatedPod().getSpec();
   }
 
   @Test
@@ -338,6 +338,66 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenAdminServerHasAdditionalVolumesWithReservedVariables_createAdminPodStartupWithSubstitutions() {
+    configureAdminServer()
+        .withAdditionalVolume("volume1", "/source-$(SERVER_NAME)")
+        .withAdditionalVolume("volume2", "/source-$(DOMAIN_NAME)");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(
+            hasVolume("volume1", "/source-ADMIN_SERVER"),
+            hasVolume("volume2", "/source-domain1")));
+  }
+
+  @Test
+  public void whenAdminServerHasAdditionalVolumeMountsWithReservedVariables_createAdminPodStartupWithSubstitutions() {
+    configureAdminServer()
+        .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
+
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", END_MOUNT_PATH_1)));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithCustomVariables_createAdminPodStartupWithSubstitutions() {
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+
+    configureAdminServer()
+        .withEnvironmentVariable(ENV_NAME1, GOOD_MY_ENV_VALUE)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+
+    testSupport.runSteps(PodHelper.createAdminPodStep(terminalStep));
+
+    assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(false));
+    assertThat(logRecords, containsInfo(getCreatedMessageKey()));
+    assertThat(getCreatedPod().getSpec().getContainers().get(0).getVolumeMounts(),
+        hasVolumeMount("volume1", END_VOLUME_MOUNT_PATH_1));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_reportValidationError() {
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+
+    configureAdminServer()
+        .withEnvironmentVariable(ENV_NAME1, BAD_MY_ENV_VALUE)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+
+        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+
+    testSupport.runSteps(PodHelper.createAdminPodStep(terminalStep));
+
+    assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(true));
+    assertThat(getDomain().getStatus().getReason(), is(DomainStatusUpdater.BAD_DOMAIN));
+    assertThat(logRecords, containsSevere(getDomainValidationFailedKey()));
+  }
+
+  @Test
   public void createAdminPodStartupWithNullAdminUsernamePasswordEnvVarsValues() {
     configureAdminServer();
 
@@ -352,8 +412,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withAdditionalPvClaimVolume("volume-$(SERVER_NAME)", "$(SERVER_NAME)-claim");
 
     assertThat(
-        getCreatedPod().getSpec().getVolumes(),
-        allOf(hasPvClaimVolume("volume-admin-server", "admin-server-claim")));
+        getCreatedPodSpec().getVolumes(),
+        hasPvClaimVolume("volume-admin-server", "admin-server-claim"));
   }
 
   @Test
@@ -363,7 +423,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withAdditionalVolume("volume2", "/source-path2");
 
     assertThat(
-        getCreatedPod().getSpec().getVolumes(),
+        getCreatedPodSpec().getVolumes(),
         allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
   }
 
@@ -389,7 +449,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withAdditionalVolume("volume2", "/server-path");
 
     assertThat(
-        getCreatedPod().getSpec().getVolumes(),
+        getCreatedPodSpec().getVolumes(),
         allOf(hasVolume("volume1", "/domain-path1"), hasVolume("volume2", "/server-path")));
   }
 
@@ -540,9 +600,13 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator()
         .withPodLabel("label1", "domain-label-value1")
         .withPodLabel("label2", "domain-label-value2");
-    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    Map<String, String> podLabels = getCreatedPodMetadata().getLabels();
     assertThat(podLabels, hasEntry("label1", "domain-label-value1"));
     assertThat(podLabels, hasEntry("label2", "domain-label-value2"));
+  }
+
+  private V1ObjectMeta getCreatedPodMetadata() {
+    return getCreatedPod().getMetadata();
   }
 
   @Test
@@ -550,7 +614,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator()
         .withPodAnnotation("annotation1", "domain-annotation-value1")
         .withPodAnnotation("annotation2", "domain-annotation-value2");
-    Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
+    Map<String, String> podAnnotations = getCreatedPodMetadata().getAnnotations();
 
     assertThat(podAnnotations, hasEntry("annotation1", "domain-annotation-value1"));
     assertThat(podAnnotations, hasEntry("annotation2", "domain-annotation-value2"));
@@ -562,7 +626,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withPodLabel("label1", "server-label-value1")
         .withPodLabel("label2", "server-label-value2");
 
-    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    Map<String, String> podLabels = getCreatedPodMetadata().getLabels();
     assertThat(podLabels, hasEntry("label1", "server-label-value1"));
     assertThat(podLabels, hasEntry("label2", "server-label-value2"));
   }
@@ -573,7 +637,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withPodAnnotation("annotation1", "server-annotation-value1")
         .withPodAnnotation("annotation2", "server-annotation-value2");
 
-    Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
+    Map<String, String> podAnnotations = getCreatedPodMetadata().getAnnotations();
     assertThat(podAnnotations, hasEntry("annotation1", "server-annotation-value1"));
     assertThat(podAnnotations, hasEntry("annotation2", "server-annotation-value2"));
   }
@@ -586,7 +650,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .configureAdminServer()
         .withPodLabel("label2", "server-label-value1");
 
-    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    Map<String, String> podLabels = getCreatedPodMetadata().getLabels();
     assertThat(podLabels, hasEntry("label1", "domain-label-value1"));
     assertThat(podLabels, hasEntry("label2", "server-label-value1"));
   }
@@ -599,7 +663,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .configureAdminServer()
         .withPodAnnotation("annotation2", "server-annotation-value1");
 
-    Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
+    Map<String, String> podAnnotations = getCreatedPodMetadata().getAnnotations();
     assertThat(podAnnotations, hasEntry("annotation1", "domain-annotation-value1"));
     assertThat(podAnnotations, hasEntry("annotation2", "server-annotation-value1"));
   }
@@ -607,15 +671,11 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenPodHasCustomLabelConflictWithInternal_createAdminPodWithInternal() {
     getConfigurator()
-        .withPodLabel(LabelConstants.RESOURCE_VERSION_LABEL, "domain-label-value1")
         .configureAdminServer()
         .withPodLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "server-label-value1")
         .withPodLabel("label1", "server-label-value1");
 
-    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
-    assertThat(
-        podLabels,
-        hasEntry(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION));
+    Map<String, String> podLabels = getCreatedPodMetadata().getLabels();
     assertThat(podLabels, hasEntry(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
     assertThat(podLabels, hasEntry("label1", "server-label-value1"));
   }
@@ -627,7 +687,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .configureAdminServer()
         .withRestartVersion("adminRestartV1");
 
-    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    Map<String, String> podLabels = getCreatedPodMetadata().getLabels();
     assertThat(podLabels, hasEntry(LabelConstants.DOMAINRESTARTVERSION_LABEL, "domainRestartV1"));
     assertThat(podLabels, hasEntry(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
     assertThat(podLabels, hasKey(not(LabelConstants.CLUSTERRESTARTVERSION_LABEL)));

@@ -4,7 +4,7 @@
 # This is an example of how to define a Domain resource.  Please read through the comments which explain
 # what updates are needed.
 #
-apiVersion: "weblogic.oracle/v7"
+apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
   # Update this with the `domainUID` of your domain:
@@ -12,7 +12,6 @@ metadata:
   # Update this with the namespace your domain will run in:
   namespace: weblogic
   labels:
-    weblogic.resourceVersion: domain-v2
     # Update this with the `domainUID` of your domain:
     weblogic.domainUID: domain1
 
@@ -49,7 +48,7 @@ spec:
   # logHomeEnabled: false
   # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
   # files in.
-  # If not specified or empty, domain log file, server logs, server out, and node manager log files
+  # If not specified or empty, domain log file, server logs, server out, introspector out, and node manager log files
   # will be stored in the default logHome location of /shared/logs/<domainUID>/.
   # logHome: /shared/logs/domain1
 
@@ -66,7 +65,10 @@ spec:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
-      value: "-Xms64m -Xmx256m "
+      value: "-Xms256m -Xmx512m -Djava.security.egd=file:/dev/./urandom "
+    requests:
+      cpu: "250m"
+      memory: "768Mi"
 
     # If you are storing your domain on a persistent volume (as opposed to inside the Docker image),
     # then uncomment this section and provide the PVC details and mount path here (standard images
@@ -99,6 +101,21 @@ spec:
   clusters:
   - clusterName: cluster-1
     serverStartState: "RUNNING"
+    serverPod:
+      # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
+      # already members of the same cluster.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "weblogic.clusterName"
+                      operator: In
+                      values:
+                        - $(CLUSTER_NAME)
+                topologyKey: "kubernetes.io/hostname"
     replicas: 2
 
   # The number of managed servers to start for any unlisted clusters

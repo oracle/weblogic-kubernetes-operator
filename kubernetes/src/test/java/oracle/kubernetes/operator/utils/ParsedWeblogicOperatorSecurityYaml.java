@@ -89,7 +89,7 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
   public int getExpectedObjectCount() {
     int rtn = 9;
     // add one role binding for each namespace
-    for (String targetNamespace : inputs.getTargetNamespaces().split(",")) {
+    for (String domainNamespace : inputs.getDomainNamespaces().split(",")) {
       rtn++;
     }
     return rtn;

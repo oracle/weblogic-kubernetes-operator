@@ -1,0 +1,55 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+topology:
+    ServerTemplate:
+        'cluster-1-template':
+            ListenPort: 8001
+            Cluster: 'cluster-1'
+            NetworkAccessPoint:
+               CustomChannel:
+                  ListenPort: '7788'
+                  Protocol: 't3'
+                  PublicAddress: 'INGRESS_HOST'
+                  HttpEnabledForThisProtocol: true
+                  TunnelingEnabled: true
+                  OutboundEnabled: false
+               CustomChannel2:
+                  ListenPort: '8877'
+                  Protocol: 't3'
+                  PublicAddress: 'INGRESS_HOST'
+                  HttpEnabledForThisProtocol: true
+                  TunnelingEnabled: true
+                  OutboundEnabled: false
+resources:
+    WebAppContainer:
+         WeblogicPluginEnabled: true
+
+    FileStore:
+        ClusterFileStore:
+           Target: 'cluster-1'
+    JMSServer:
+        ClusterJmsServer:
+            ProductionPausedAtStartup: false
+            ConsumptionPausedAtStartup: false
+            Target: 'cluster-1'
+            PersistentStore: 'ClusterFileStore'
+
+    JMSSystemResource:
+        ClusterJmsModule:
+            Target: 'cluster-1'
+            SubDeployment:
+                ClusterSubDeployment:
+                    Target: ClusterJmsServer
+            JmsResource:
+              ConnectionFactory:
+                ClusterConnectionFactory:
+                   JNDIName: jms/ClusterConnectionFactory
+                   DefaultTargetingEnabled: true
+                   LoadBalancingParams:
+                       ServerAffinityEnabled: false
+                       LoadBalancingEnabled: true
+              UniformDistributedQueue:
+                DistributedQueue:
+                   SubDeploymentName: ClusterSubDeployment
+                   JNDIName: jms/DistributedQueue

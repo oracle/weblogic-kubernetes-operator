@@ -1,38 +1,28 @@
 # Oracle WebLogic Server Kubernetes Operator Tutorial #
 
-### Deploy a WebLogic domain  ###
+### Deploy a WebLogic Server domain  ###
 
-#### Prepare the Kubernetes cluster to run WebLogic domains ####
+#### Prepare the Kubernetes cluster to run WebLogic Server domains ####
 
 Create the domain namespace:
 ```bash
 kubectl create namespace sample-domain1-ns
 ```
-Create a Kubernetes secret containing the Administration Server boot credentials:
+Create a Kubernetes Secret containing the Administration Server boot credentials:
 ```bash
 kubectl -n sample-domain1-ns create secret generic sample-domain1-weblogic-credentials \
   --from-literal=username=weblogic \
   --from-literal=password=welcome1
 ```
 
-#### Update the Traefik load balancer and operator configuration ####
-
-After you have your domain namespace (the WebLogic domain is not deployed yet), you have to update the load balancer and operator configuration to specify where the domain will be deployed.
-
-Before executing the domain `helm` install, be sure that you are in the WebLogic operator local Git repository folder.
-
+Label the domain namespace:
 ```bash
-cd ~/weblogic-kubernetes-operator/
+kubectl label ns sample-domain1-ns weblogic-operator=enabled
 ```
-To update the operator, execute the following `helm upgrade` command:
-```bash
-helm upgrade sample-weblogic-operator \
-  kubernetes/charts/weblogic-operator \
-  --namespace sample-weblogic-operator-ns \
-  --reuse-values \
-  --set "domainNamespaces={sample-domain1-ns}" \
-  --wait
-```
+
+#### Update the Traefik ingress controller configuration ####
+
+After you have your domain namespace (the WebLogic domain is not deployed yet), you have to update the ingress controller configuration to specify where the domain will be deployed.
 
 To update Traefik, execute the following `helm upgrade` command:
 ```bash
@@ -43,11 +33,11 @@ helm upgrade traefik-operator \
   --set "kubernetes.namespaces={traefik,sample-domain1-ns}" \
   --wait
 ```
-Note that in both cases, the only updated parameter is the domain namespace.
+Note that the only updated parameter is to add the domain namespace.
 
 #### Deploy a WebLogic domain on Kubernetes ####
 
-To deploy WebLogic domain, you need to create a domain resource definition which contains the necessary parameters for the operator to start the WebLogic domain properly.
+To deploy WebLogic domain, you need to create a Domain resource definition which contains the necessary parameters for the operator to start the WebLogic Server domain properly.
 
 We provided for you a `domain.yaml` file that contains a YAML representation of the custom resource object. Please copy it locally:
 ```bash
@@ -59,7 +49,7 @@ Create the domain custom resource object with the following command:
 ```bash
 kubectl apply -f ~/domain.yaml
 ```
-Check the introspector job, which needs to be run first:
+Check the introspector job, which will run first:
 ```bash
 $ kubectl get pod -n sample-domain1-ns
 NAME                                         READY     STATUS              RESTARTS   AGE
@@ -82,7 +72,7 @@ As a simple solution, it's best to configure path routing, which will route exte
 Execute the following Ingress resource definition:
 ```bash
 cat << EOF | kubectl apply -f -
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: traefik-pathrouting-1

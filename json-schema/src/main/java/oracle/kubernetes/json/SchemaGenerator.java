@@ -59,6 +59,9 @@ public class SchemaGenerator {
   // if true, generate the top-level schema version reference
   private boolean includeSchemaReference = true;
 
+  // suppress descriptions for any contained packages
+  private Collection<String> suppressDescriptionForPackages = new ArrayList<>();
+
   /**
    * Returns a pretty-printed string corresponding to a generated schema.
    *
@@ -150,6 +153,14 @@ public class SchemaGenerator {
   }
 
   /**
+   * Suppress descriptions for fields from these packages.
+   * @param packageName Package name
+   */
+  public void addPackageToSuppressDescriptions(String packageName) {
+    this.suppressDescriptionForPackages.add(packageName);
+  }
+
+  /**
    * Generates an object representing a JSON schema for the specified class.
    *
    * @param someClass the class for which the schema should be generated
@@ -237,11 +248,18 @@ public class SchemaGenerator {
     return type.equals(DateTime.class);
   }
 
+  private boolean isMapType(Class<?> type) {
+    return Map.class.isAssignableFrom(type);
+  }
+
   private boolean isNumeric(Class<?> type) {
     return Number.class.isAssignableFrom(type) || PRIMITIVE_NUMBERS.contains(type);
   }
 
   private String getDescription(Field field) {
+    if (suppressDescriptionForPackages.contains(field.getDeclaringClass().getPackageName())) {
+      return null;
+    }
     Description description = field.getAnnotation(Description.class);
     if (description != null) {
       return description.value();
@@ -264,6 +282,9 @@ public class SchemaGenerator {
   }
 
   private String getDescription(Class<?> someClass) {
+    if (suppressDescriptionForPackages.contains(someClass.getPackageName())) {
+      return null;
+    }
     Description description = someClass.getAnnotation(Description.class);
     if (description != null) {
       return description.value();
@@ -404,6 +425,13 @@ public class SchemaGenerator {
     if (isDateTime(type)) {
       result.put("type", "string");
       result.put("format", "date-time");
+    } else if (isMapType(type)) {
+      // reached here if the type is a Map
+      final Map<String, Object> properties = new HashMap<>();
+      Optional.ofNullable(getDescription(type)).ifPresent(s -> result.put("description", s));
+      result.put("type", "object");
+      properties.put("type", "string");
+      result.put("additionalProperties", properties);
     } else {
       final Map<String, Object> properties = new HashMap<>();
       List<String> requiredFields = new ArrayList<>();

@@ -36,6 +36,9 @@
 #         export DOMAIN_SOURCE_TYPE=FromModel
 #         introspectTest.sh
 #
+#     To check for ISTIO
+#         export ISTIO_ENABELD=true - this only test for Non Model in Image
+#
 #############################################################################
 #
 # Initialize basic globals
@@ -102,6 +105,8 @@ export CLUSTER_TYPE="${CLUSTER_TYPE:-DYNAMIC}"
 export T3CHANNEL1_PORT=${T3CHANNEL1_PORT:-30012}
 export T3CHANNEL2_PORT=${T3CHANNEL2_PORT:-30013}
 export T3CHANNEL3_PORT=${T3CHANNEL3_PORT:-30014}
+export ISTIO_ENABLED=${ISTIO_ENABLED:-false}
+export ISTIO_READINESS_PORT=${ISTIO_READINESS_PORT:-8888}
 export T3_PUBLIC_ADDRESS=${T3_PUBLIC_ADDRESS:-}
 export PRODUCTION_MODE_ENABLED=${PRODUCTION_MODE_ENABLED:-true}
 export ALLOW_DYNAMIC_CLUSTER_IN_FMW=${ALLOW_DYNAMIC_CLUSTER_IN_FMW:-false}
@@ -235,7 +240,6 @@ createConfigMapFromDir() {
   kubectl -n $NAMESPACE label cm ${cm_name} \
     weblogic.createdByOperator=true \
     weblogic.operatorName=look-ma-no-hands \
-    weblogic.resourceVersion=domain-v2 \
     weblogic.domainUID=$DOMAIN_UID \
     2>&1 | tracePipe "Info: kubectl output: " || exit 1
 }
@@ -263,13 +267,13 @@ function toDNS1123Legal {
 #
 
 function deployDomainConfigMap() {
-  trace "Info: Deploying 'weblogic-domain-cm'."
+  trace "Info: Deploying 'weblogic-script-cm'."
 
-  kubectl -n $NAMESPACE delete cm weblogic-domain-cm \
+  kubectl -n $NAMESPACE delete cm weblogic-script-cm \
     --ignore-not-found  \
     2>&1 | tracePipe "Info: kubectl output: "
 
-  createConfigMapFromDir weblogic-domain-cm ${SOURCEPATH}/operator/src/main/resources/scripts
+  createConfigMapFromDir weblogic-script-cm ${SOURCEPATH}/operator/src/main/resources/scripts
 }
 
 #############################################################################
@@ -435,13 +439,13 @@ function deployCreateDomainJobPod() {
 function createMII_Image() {
   trace "Info: Create MII Image"
 
+  (
   mkdir -p ${test_home}/mii/workdir/models || exit 1
   cp ${SCRIPTPATH}/mii/models/*  ${test_home}/mii/workdir/models || exit 1
   cd ${test_home}/mii/workdir  || exit 1
   echo "place holder" > dummy.txt || exit 1
   zip ${test_home}/mii/workdir/models/archive.zip dummy.txt > /dev/null 2>&1 || exit 1
 
-  (
   export WORKDIR=${test_home}/mii/workdir  || exit 1
   export MODEL_IMAGE_TAG=it || exit 1
   export MODEL_IMAGE_NAME=model-in-image || exit 1
@@ -451,8 +455,7 @@ function createMII_Image() {
 
   tracen "Info: Downloading WDT and WIT"
   printdots_start
-  ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_download.sh \
-   > ${test_home}/miibuild_download.out 2>&1
+  ${SCRIPTPATH}/util_download_mii_tools.sh > ${test_home}/miibuild_download.out 2>&1
   local rc=$?
   printdots_end
   if [ $rc -ne 0 ] ; then
@@ -464,8 +467,7 @@ function createMII_Image() {
   tracen "Info: Launching WIT to build the image"
   printdots_start
 
-  ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_image_model.sh \
-   > ${test_home}/miibuild_image.out  2>&1
+  ${SCRIPTPATH}/util_build_mii_image.sh > ${test_home}/miibuild_image.out  2>&1
   local rc=$?
   printdots_end
 
@@ -713,9 +715,14 @@ function checkOverrides() {
   local src_input_file=checkBeans.inputt
   if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
     src_input_file=checkMIIBeans.inputt
+  elif [ "${ISTIO_ENABLED}" == "true" ]; then
+    src_input_file=checkBeansIstio.inputt
   fi
+
   rm -f ${test_home}/checkBeans.input
+
   ${SCRIPTPATH}/util_subst.sh -g ${src_input_file} ${test_home}/checkBeans.input || exit 1
+
   kubectl -n ${NAMESPACE} cp ${test_home}/checkBeans.input ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.input || exit 1
   kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/checkBeans.py ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.py || exit 1
   tracen "Info: Waiting for WLST checkBeans.py to complete."
@@ -735,6 +742,8 @@ function checkOverrides() {
   if [ $status -ne 0 ] || [ $logstatus -ne 0 ]; then
     exit 1
   fi
+
+  rm ${src_input_file}_2
 }
 
 
@@ -861,7 +870,7 @@ function checkFileStores() {
 
 function checkNodeManagerMemArg() {
 
-  trace "Verifying node manager memory arguments"
+  trace "Info: Verifying node manager memory arguments"
 
   # Verify that default NODEMGR_MEM_ARGS environment value (-Xms64m -Xmx100m) was applied to the Node Manager
   # command line when NODEMGR_MEM_ARGS was not defined.
@@ -934,7 +943,7 @@ function checkNodeManagerMemArg() {
 #
 function checkManagedServer1MemArg() {
 
-  trace "Verifying managed server memory arguments"
+  trace "Info: Verifying managed server memory arguments"
 
   # Verify that USER_MEM_ARGS environment value was applied to the Managed Server 1 command line
   maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
@@ -975,7 +984,7 @@ function checkManagedServer1MemArg() {
 
 function checkNodeManagerJavaOptions() {
 
-  trace "Verifying node manager java options"
+  trace "Info: Verifying node manager java options"
 
   # Verify that NODEMGR_JAVA_OPTIONS environment value was applied to the Node Manager command line
   nodeMgrlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \

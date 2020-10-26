@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -17,32 +18,31 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.joda.time.DateTime;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.JobWatcher.NULL_LISTENER;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** This test class verifies the behavior of the JobWatcher. */
 public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
-  private static final int INITIAL_RESOURCE_VERSION = 234;
+  private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
   private static final String NS = "ns1";
   private static final String VERSION = "123";
-  private V1Job cachedJob = createJob();
+  private final V1Job cachedJob = createJob();
   private long clock;
 
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
 
   @Override
@@ -78,7 +78,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
 
     assertThat(
         StubWatchFactory.getRequestParameters().get(0),
-        both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
+        both(hasEntry("resourceVersion", INITIAL_RESOURCE_VERSION.toString()))
             .and(hasEntry("labelSelector", asList(DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL))));
   }
 
@@ -93,12 +93,12 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Override
-  protected JobWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
-    return JobWatcher.create(this, ns, Integer.toString(rv), tuning, stopping);
+  protected JobWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
+    return JobWatcher.create(this, ns, rv.toString(), tuning, NULL_LISTENER, stopping);
   }
 
   private JobWatcher createWatcher(AtomicBoolean stopping) {
-    return JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), tuning, stopping);
+    return createWatcher("ns", stopping, INITIAL_RESOURCE_VERSION);
   }
 
   @Test
@@ -152,7 +152,11 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   private V1Job markJobTimedOut(V1Job job) {
-    return setFailedWithReason(job, "DeadlineExceeded");
+    return markJobTimedOut(job, "DeadlineExceeded");
+  }
+
+  private V1Job markJobTimedOut(V1Job job, String reason) {
+    return setFailedWithReason(job, reason);
   }
 
   private V1Job setFailedWithReason(V1Job job, String reason) {
@@ -221,8 +225,17 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  public void whenWaitForReadyAppliedToTimedOutJob_terminateWithException() {
-    startWaitForReady(this::markJobTimedOut);
+  public void whenWaitForReadyAppliedToTimedOutJobWithDeadlineExceeded_terminateWithException() {
+    startWaitForReady(job -> markJobTimedOut(job, "DeadlineExceeded"));
+
+    assertThat(terminalStep.wasRun(), is(false));
+    testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
+  }
+
+  @Test
+  @Ignore
+  public void whenWaitForReadyAppliedToTimedOutJobWithBackoffLimitExceeded_terminateWithException() {
+    startWaitForReady(job -> markJobTimedOut(job, "BackoffLimitExceeded"));
 
     assertThat(terminalStep.wasRun(), is(false));
     testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
@@ -349,27 +362,6 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
     }
   }
 
-  @Test
-  public void afterFactoryDefined_createWatcherForDomain() {
-    AtomicBoolean stopping = new AtomicBoolean(true);
-    JobWatcher.defineFactory(this, tuning, s -> stopping);
-    Domain domain = new Domain().withMetadata(new V1ObjectMeta().namespace(NS).resourceVersion(VERSION));
-
-    assertThat(JobWatcher.getOrCreateFor(domain), notNullValue());
-  }
-
-  @Test
-  public void afterWatcherCreated_itIsCached() {
-    AtomicBoolean stopping = new AtomicBoolean(true);
-    JobWatcher.defineFactory(this, tuning, ns -> stopping);
-    Domain domain =
-        new Domain().withMetadata(new V1ObjectMeta().namespace(NS).resourceVersion(VERSION));
-    JobWatcher firstWatcher = JobWatcher.getOrCreateFor(domain);
-
-    assertThat(JobWatcher.getOrCreateFor(domain), sameInstance(firstWatcher));
-  }
-
-  @SuppressWarnings({"rawtypes"})
   public void receivedEvents_areSentToListeners() {
     // Override as JobWatcher doesn't currently implement listener for callback
   }
