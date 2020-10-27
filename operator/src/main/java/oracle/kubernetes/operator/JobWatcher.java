@@ -10,7 +10,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -33,7 +32,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 /** Watches for Jobs to become Ready or leave Ready state. */
-public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
+public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, JobAwaiterStepFactory {
   public static final WatchListener<V1Job> NULL_LISTENER = r -> {};
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -199,35 +198,9 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
    * @param next Next processing step once Job is ready
    * @return Asynchronous step
    */
+  @Override
   public Step waitForReady(V1Job job, Step next) {
     return new WaitForJobReadyStep(job, next);
-  }
-
-  static class JobWatcherFactory {
-    private final ThreadFactory threadFactory;
-    private final WatchTuning watchTuning;
-
-    private final Function<String, AtomicBoolean> isNamespaceStopping;
-
-    JobWatcherFactory(
-        ThreadFactory threadFactory,
-        WatchTuning watchTuning,
-        Function<String, AtomicBoolean> isNamespaceStopping) {
-      this.threadFactory = threadFactory;
-      this.watchTuning = watchTuning;
-      this.isNamespaceStopping = isNamespaceStopping;
-    }
-
-    JobWatcher createFor(Domain domain) {
-      String namespace = getNamespace(domain);
-      return create(
-          threadFactory,
-          namespace,
-          domain.getMetadata().getResourceVersion(),
-          watchTuning,
-          NULL_LISTENER,
-          isNamespaceStopping.apply(namespace));
-    }
   }
 
   private class WaitForJobReadyStep extends WaitForReadyStep<V1Job> {

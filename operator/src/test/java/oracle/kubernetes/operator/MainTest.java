@@ -4,11 +4,14 @@
 package oracle.kubernetes.operator;
 
 import java.lang.reflect.Field;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -20,15 +23,20 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.kubernetes.operator.Main.Namespaces.SelectionStrategy;
+import oracle.kubernetes.operator.Namespaces.SelectionStrategy;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
@@ -38,15 +46,28 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.meterware.simplestub.Stub.createNiceStub;
+import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.MainTest.NamespaceStatusMatcher.isNamespaceStarting;
 import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.logging.MessageKeys.CRD_NOT_INSTALLED;
+import static oracle.kubernetes.operator.logging.MessageKeys.OPERATOR_STARTED;
+import static oracle.kubernetes.operator.logging.MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES;
+import static oracle.kubernetes.operator.logging.MessageKeys.OP_CONFIG_NAMESPACE;
+import static oracle.kubernetes.operator.logging.MessageKeys.OP_CONFIG_SERVICE_ACCOUNT;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -72,9 +93,16 @@ public class MainTest extends ThreadFactoryTestBase {
   private static final String NS_WEBLOGIC4 = "other-alpha-" + REGEXP;
   private static final String NS_WEBLOGIC5 = "other-beta";
 
+  private static final String GIT_BUILD_VERSION = "3.1.0";
+  private static final String GIT_BRANCH = "master";
+  private static final String GIT_COMMIT = "a987654";
+  private static final String GIT_BUILD_TIME = "Sep-10-2015";
+  private static final String IMPL = GIT_BRANCH + "." + GIT_COMMIT;
+
   private static final String LABEL = "weblogic-operator";
   private static final String VALUE = "enabled";
 
+  private static final Properties buildProperties;
   private static final V1Namespace NAMESPACE_WEBLOGIC1
       = new V1Namespace().metadata(new V1ObjectMeta().name(NS_WEBLOGIC1).putLabelsItem(LABEL, VALUE));
   private static final V1Namespace NAMESPACE_WEBLOGIC2
@@ -90,6 +118,18 @@ public class MainTest extends ThreadFactoryTestBase {
   private final List<Memento> mementos = new ArrayList<>();
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
+  private final String ns = "nsrand" + new Random().nextInt(10000);
+  private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, testSupport);
+
+  static {
+    buildProperties = new PropertiesBuilder()
+              .withProperty("git.build.version", GIT_BUILD_VERSION)
+              .withProperty("git.branch", GIT_BRANCH)
+              .withProperty("git.commit.id.abbrev", GIT_COMMIT)
+              .withProperty("git.build.time", GIT_BUILD_TIME)
+              .build();
+  }
+
 
   @Before
   public void setUp() throws Exception {
@@ -108,11 +148,9 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
-
     testSupport.throwOnCompletionFailure();
+
+    mementos.forEach(Memento::revert);
   }
 
   @SuppressWarnings("unchecked")
@@ -132,15 +170,130 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
+  public void whenOperatorVersionNotDefined_failToCreateTheOperator() {
+    assertThat(Main.createMain(new Properties()), nullValue());
+  }
+
+  @Test
+  public void whenOperatorCreated_logStartupMessage() {
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OPERATOR_STARTED);
+
+    Main.createMain(buildProperties);
+
+    assertThat(logRecords, containsInfo(OPERATOR_STARTED, GIT_BUILD_VERSION, IMPL, GIT_BUILD_TIME));
+  }
+
+  @Test
+  public void whenOperatorCreated_logOperatorNamespace() {
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_NAMESPACE);
+
+    Main.createMain(buildProperties);
+
+    assertThat(logRecords, containsInfo(OP_CONFIG_NAMESPACE, getOperatorNamespace()));
+  }
+
+  @Test
+  public void whenOperatorCreated_logServiceAccountName() {
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_SERVICE_ACCOUNT);
+
+    Main.createMain(buildProperties);
+
+    assertThat(logRecords, containsInfo(OP_CONFIG_SERVICE_ACCOUNT, "default"));
+  }
+
+  @Test
+  public void whenOperatorStarted_namespaceWatcherIsCreated() {
+    final Main main = new Main(delegate);
+    main.startOperator(null);
+
+    assertThat(main.getNamespaceWatcher(), notNullValue());
+  }
+
+  @Test
+  public void whenDedicatedNamespaceButNoCRD_failToCreateTheOperator() {
+    testSupport.failOnResource(DOMAIN, null, getOperatorNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+
+    assertThat(Main.createMain(buildProperties), nullValue());
+  }
+
+  @Test
+  public void whenDedicatedNamespaceButNoCRD_logReasonForFailure() {
+    loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
+    testSupport.failOnResource(DOMAIN, null, getOperatorNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+
+    Main.createMain(buildProperties);
+    
+    assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
+  }
+
+  @Test
+  public void whenOperatorCreatedWithListNamespaceStrategy_logConfiguredNamespaces() {
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_DOMAIN_NAMESPACES);
+    defineSelectionStrategy(SelectionStrategy.List);
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES,
+          String.join(",", NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3));
+
+    Main.createMain(buildProperties);
+
+    assertThat(logRecords, containsInfo(OP_CONFIG_DOMAIN_NAMESPACES,
+          String.join(", ", NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3)));
+  }
+
+  @Test
+  public void whenOperatorCreatedWithDedicatedNamespaceStrategy_logConfiguredNamespaces() {
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_DOMAIN_NAMESPACES);
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+
+    Main.createMain(buildProperties);
+
+    assertThat(logRecords, containsInfo(OP_CONFIG_DOMAIN_NAMESPACES, getOperatorNamespace()));
+  }
+
+  @Test
+  public void whenOperatorCreatedWithRegExpNamespaceStrategy_dontLogConfiguredNamespaces() {
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_DOMAIN_NAMESPACES);
+    defineSelectionStrategy(SelectionStrategy.RegExp);
+
+    Main.createMain(buildProperties);
+
+    assertThat(logRecords, not(containsInfo(OP_CONFIG_DOMAIN_NAMESPACES)));
+  }
+
+  @Test
+  public void whenOperatorCreatedWithLabelSelectorNamespaceStrategy_dontLogConfiguredNamespaces() {
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_DOMAIN_NAMESPACES);
+    defineSelectionStrategy(SelectionStrategy.LabelSelector);
+
+    Main.createMain(buildProperties);
+
+    assertThat(logRecords, not(containsInfo(OP_CONFIG_DOMAIN_NAMESPACES)));
+  }
+
+  static class PropertiesBuilder {
+    private final Properties properties = new Properties();
+
+    private PropertiesBuilder withProperty(String name, String value) {
+      properties.put(name, value);
+      return this;
+    }
+
+    private Properties build() {
+      return properties;
+    }
+  }
+
+  @Test
   public void withNamespaceList_onReadExistingNamespaces_startsNamespaces()
       throws IllegalAccessException, NoSuchFieldException {
-    defineSelectionStrategy(Main.Namespaces.SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.List);
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES,
           String.join(",", NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3));
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
                                 NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
-    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
+    testSupport.runSteps(new Main.DomainRecheck().readExistingNamespaces());
 
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
@@ -175,12 +328,12 @@ public class MainTest extends ThreadFactoryTestBase {
   @Test
   public void withRegExp_onReadExistingNamespaces_startsNamespaces()
           throws IllegalAccessException, NoSuchFieldException {
-    defineSelectionStrategy(Main.Namespaces.SelectionStrategy.RegExp);
+    defineSelectionStrategy(SelectionStrategy.RegExp);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
           NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
-    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
+    testSupport.runSteps(new Main.DomainRecheck().readExistingNamespaces());
 
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC2), isNamespaceStarting()),
@@ -191,12 +344,12 @@ public class MainTest extends ThreadFactoryTestBase {
   @Test
   public void withLabelSelector_onReadExistingNamespaces_startsNamespaces()
           throws IllegalAccessException, NoSuchFieldException {
-    defineSelectionStrategy(Main.Namespaces.SelectionStrategy.LabelSelector);
+    defineSelectionStrategy(SelectionStrategy.LabelSelector);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
           NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
-    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
+    testSupport.runSteps(new Main.DomainRecheck().readExistingNamespaces());
 
     assertThat(getNamespaceStatusMap(),
                allOf(hasEntry(is(NS_WEBLOGIC1), isNamespaceStarting()),
@@ -217,12 +370,12 @@ public class MainTest extends ThreadFactoryTestBase {
   public void whenConfiguredDomainNamespaceMissing_logWarning() {
     loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
 
-    defineSelectionStrategy(Main.Namespaces.SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.List);
     String namespaceString = "NS1,NS" + LAST_NAMESPACE_NUM;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(LAST_NAMESPACE_NUM - 1);
 
-    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
+    testSupport.runSteps(new Main.DomainRecheck().readExistingNamespaces());
 
     assertThat(logRecords, containsWarning(MessageKeys.NAMESPACE_IS_MISSING));
   }
@@ -231,28 +384,28 @@ public class MainTest extends ThreadFactoryTestBase {
   public void whenNamespacesListedInOneChunk_dontDeclarePresentNamespacesAsMissing() {
     loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
 
-    defineSelectionStrategy(Main.Namespaces.SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.List);
     String namespaceString = "NS1,NS" + LAST_NAMESPACE_NUM;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(LAST_NAMESPACE_NUM);
 
-    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
+    testSupport.runSteps(new Main.DomainRecheck().readExistingNamespaces());
   }
 
   private void defineSelectionStrategy(SelectionStrategy selectionStrategy) {
-    TuningParameters.getInstance().put(Main.Namespaces.SELECTION_STRATEGY_KEY, selectionStrategy.toString());
+    TuningParameters.getInstance().put(Namespaces.SELECTION_STRATEGY_KEY, selectionStrategy.toString());
   }
 
   @Test
   public void whenNamespacesListedInMultipleChunks_dontDeclarePresentNamespacesAsMissing() {
     loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
 
-    defineSelectionStrategy(Main.Namespaces.SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.List);
     String namespaceString = "NS1,NS" + MULTICHUNK_LAST_NAMESPACE_NUM;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(MULTICHUNK_LAST_NAMESPACE_NUM);
 
-    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
+    testSupport.runSteps(new Main.DomainRecheck().readExistingNamespaces());
   }
 
   private void createNamespaces(int lastNamespaceNum) {
@@ -301,7 +454,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void afterReadingExistingResourcesForNamespace_WatchersAreDefined() {
-    testSupport.runSteps(Main.readExistingResources(NS));
+    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, createStrictStub(DomainProcessor.class)));
 
     assertThat(DomainNamespaces.getConfigMapWatcher(NS), notNullValue());
     assertThat(DomainNamespaces.getDomainWatcher(NS), notNullValue());
@@ -309,11 +462,10 @@ public class MainTest extends ThreadFactoryTestBase {
     assertThat(DomainNamespaces.getPodWatcher(NS), notNullValue());
     assertThat(DomainNamespaces.getServiceWatcher(NS), notNullValue());
   }
-
-
+  
   @Test
   public void afterReadingExistingResourcesForNamespace_ScriptConfigMapIsDefined() {
-    testSupport.runSteps(Main.readExistingResources(NS));
+    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, createStrictStub(DomainProcessor.class)));
 
     assertThat(getScriptMap(NS), notNullValue());
   }
@@ -334,5 +486,93 @@ public class MainTest extends ThreadFactoryTestBase {
   private boolean isScriptConfigMapMetadata(V1ObjectMeta meta, String ns) {
     return SCRIPT_CONFIG_MAP_NAME.equals(meta.getName()) && ns.equals(meta.getNamespace());
   }
-  // when namespace added, resources defined, config map is defined and watchers are started (?)
+
+  @Test
+  public void beforeNamespaceAdded_watchersAreNotDefined() {
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
+
+    verifyWatchersNotDefined(ns);
+  }
+
+  private void verifyWatchersNotDefined(String ns) {
+    assertThat(DomainNamespaces.getConfigMapWatcher(ns), nullValue());
+    assertThat(DomainNamespaces.getDomainWatcher(ns), nullValue());
+    assertThat(DomainNamespaces.getEventWatcher(ns), nullValue());
+    assertThat(DomainNamespaces.getJobWatcher(ns), nullValue());
+    assertThat(DomainNamespaces.getPodWatcher(ns), nullValue());
+    assertThat(DomainNamespaces.getServiceWatcher(ns), nullValue());
+  }
+
+  @Test
+  public void afterNullNamespaceAdded_WatchersAreNotDefined() {
+    new Main(delegate).dispatchNamespaceWatch(WatchEvent.createAddedEvent((V1Namespace) null).toWatchResponse());
+
+    verifyWatchersNotDefined(ns);
+  }
+  
+  @Test
+  public void afterNonDomainNamespaceAdded_WatchersAreNotDefined() {
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, NS_WEBLOGIC1);
+    V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
+    new Main(delegate).dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+
+    verifyWatchersNotDefined(ns);
+  }
+  
+  @Test
+  public void afterNamespaceAdded_WatchersAreDefined() {
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
+    V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
+    new Main(delegate).dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+
+    verifyWatchersDefined(ns);
+  }
+
+  private void verifyWatchersDefined(String ns) {
+    assertThat(DomainNamespaces.getConfigMapWatcher(ns), notNullValue());
+    assertThat(DomainNamespaces.getDomainWatcher(ns), notNullValue());
+    assertThat(DomainNamespaces.getEventWatcher(ns), notNullValue());
+    assertThat(DomainNamespaces.getJobWatcher(ns), notNullValue());
+    assertThat(DomainNamespaces.getPodWatcher(ns), notNullValue());
+    assertThat(DomainNamespaces.getServiceWatcher(ns), notNullValue());
+  }
+
+  @Test
+  public void afterNamespaceAdded_scriptConfigMapIsDefined() {
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
+    V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
+    new Main(delegate).dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+
+    assertThat(getScriptMap(ns), notNullValue());
+  }
+
+  abstract static class MainDelegateStub implements MainDelegate {
+    private final FiberTestSupport testSupport;
+
+    public MainDelegateStub(FiberTestSupport testSupport) {
+      this.testSupport = testSupport;
+    }
+
+    @Override
+    public void runSteps(Packet packet, Step firstStep, Runnable completionAction) {
+      testSupport.withPacket(packet)
+                 .withCompletionAction(completionAction)
+                 .runSteps(firstStep);
+    }
+
+    @Override
+    public DomainProcessor getProcessor() {
+      return createNiceStub(DomainProcessor.class);
+    }
+
+    @Override
+    public KubernetesVersion getKubernetesVersion() {
+      return KubernetesVersion.TEST_VERSION;
+    }
+
+    @Override
+    public SemanticVersion getProductVersion() {
+      return SemanticVersion.TEST_VERSION;
+    }
+  }
 }
