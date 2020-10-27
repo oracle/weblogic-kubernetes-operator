@@ -241,7 +241,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         getExistsMessageKey(),
         getPatchedMessageKey(),
         getReplacedMessageKey(),
-        getUpdatedMessageKey(),
         getDomainValidationFailedKey()
     };
   }
@@ -548,23 +547,24 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   // todo set property to indicate dynamic/on_restart copying
   protected abstract void verifyPodReplaced();
 
-  protected void verifyPodUpdated() {
+  protected void verifyPodPatched() {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, not(containsFine(getExistsMessageKey())));
-    assertThat(logRecords, containsInfo(getUpdatedMessageKey()));
+    assertThat(logRecords, containsInfo(getPatchedMessageKey()));
   }
 
-  protected void verifyPodNotUpdated() {
+  protected void verifyPodNotPatched() {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsFine(getExistsMessageKey()));
-    assertThat(logRecords, not(containsInfo(getUpdatedMessageKey())));
+    assertThat(logRecords, not(containsInfo(getPatchedMessageKey())));
   }
 
   protected void verifyPodNotReplaced() {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
+    assertThat(logRecords, not(containsInfo(getReplacedMessageKey())));
     assertThat(logRecords, containsFine(getExistsMessageKey()));
   }
 
@@ -969,21 +969,21 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerConfigurationAddsIntrospectionVersion_updatePod() {
+  public void whenServerConfigurationAddsIntrospectionVersion_patchPod() {
     initializeExistingPod();
 
     configurator.withIntrospectVersion("123");
 
-    verifyPodUpdated();
+    verifyPodPatched();
   }
 
   @Test
-  public void whenServerConfigurationIntrospectionVersionTheSame_dontUpdatePod() {
+  public void whenServerConfigurationIntrospectionVersionTheSame_dontPatchPod() {
     initializeExistingPodWithIntrospectVersion("123");
 
     configurator.withIntrospectVersion("123");
 
-    verifyPodNotUpdated();
+    verifyPodNotPatched();
   }
 
   @Test
@@ -1051,8 +1051,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   abstract String getPatchedMessageKey();
 
   abstract String getReplacedMessageKey();
-
-  abstract String getUpdatedMessageKey();
 
   abstract String getDomainValidationFailedKey();
 

@@ -37,7 +37,6 @@ import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_PATCHED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_UPDATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
@@ -100,12 +99,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   String getReplacedMessageKey() {
     return ADMIN_POD_REPLACED;
   }
-
-  @Override
-  String getUpdatedMessageKey() {
-    return ADMIN_POD_UPDATED;
-  }
-
 
   @Override
   void setServerPort(int port) {

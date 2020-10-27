@@ -361,27 +361,18 @@ public abstract class PodStepContext extends BasePodStepContext {
     KubernetesUtils.addPatches(
         patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
 
-    return new CallBuilder()
-            .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
-            new V1Patch(patchBuilder.build().toString()), patchResponse(next));
-  }
-
-  private Step updateCurrentPod(V1Pod currentPod, Step next) {
-    return createProgressingStep(updatePod(currentPod, next));
-  }
-
-  protected Step updatePod(V1Pod currentPod, Step next) {
-    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    String pathName = "/metadata/labels/" + INTROSPECTION_STATE_LABEL;
-    if (!getPodLabels().containsKey(INTROSPECTION_STATE_LABEL)) {
-      patchBuilder.add(pathName, getDomain().getSpec().getIntrospectVersion());
-    } else {
-      patchBuilder.replace(pathName, getDomain().getSpec().getIntrospectVersion());
+    if (introspectVersionChanged(currentPod)) {
+      String pathName = "/metadata/labels/" + INTROSPECTION_STATE_LABEL;
+      if (!getPodLabels().containsKey(INTROSPECTION_STATE_LABEL)) {
+        patchBuilder.add(pathName, getDomain().getSpec().getIntrospectVersion());
+      } else {
+        patchBuilder.replace(pathName, getDomain().getSpec().getIntrospectVersion());
+      }
     }
 
     return new CallBuilder()
-        .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
-            new V1Patch(patchBuilder.build().toString()), updateResponse(next));
+            .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
+            new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 
   private Map<String, String> getLabels(V1Pod pod) {
@@ -404,10 +395,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     LOGGER.info(getPodPatchedMessageKey(), getDomainUid(), getServerName());
   }
 
-  private void logPodUpdated() {
-    LOGGER.info(getPodUpdatedMessageKey(), getDomainUid(), getServerName(), getDomain().getIntrospectVersion());
-  }
-
   private void logPodReplaced() {
     LOGGER.info(getPodReplacedMessageKey(), getDomainUid(), getServerName());
   }
@@ -418,8 +405,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract String getPodPatchedMessageKey();
 
-  abstract String getPodUpdatedMessageKey();
-
   abstract String getPodReplacedMessageKey();
 
   Step createCyclePodStep(Step next) {
@@ -428,7 +413,19 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private boolean mustPatchPod(V1Pod currentPod) {
     return KubernetesUtils.isMissingValues(getLabels(currentPod), getPodLabels())
-        || KubernetesUtils.isMissingValues(getAnnotations(currentPod), getPodAnnotations());
+        || KubernetesUtils.isMissingValues(getAnnotations(currentPod), getPodAnnotations())
+        || introspectVersionChanged(currentPod);
+  }
+
+  private boolean introspectVersionChanged(V1Pod currentPod) {
+    return !Objects.equals(getPodIntrospectVersionLabel(currentPod), getDomain().getSpec().getIntrospectVersion());
+  }
+
+  private Object getPodIntrospectVersionLabel(V1Pod pod) {
+    return Optional.ofNullable(pod.getMetadata())
+        .map(V1ObjectMeta::getLabels)
+        .map(labels -> labels.get(INTROSPECTION_STATE_LABEL))
+        .orElse(null);
   }
 
   private boolean canUseCurrentPod(V1Pod currentPod) {
@@ -463,10 +460,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private ResponseStep<V1Pod> patchResponse(Step next) {
     return new PatchPodResponseStep(next);
-  }
-
-  private ResponseStep<V1Pod> updateResponse(Step next) {
-    return new UpdatePodResponseStep(next);
   }
 
   V1Pod createPodModel() {
@@ -879,9 +872,6 @@ public abstract class PodStepContext extends BasePodStepContext {
       } else if (mustPatchPod(currentPod)) {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else {
-        if (introspectVersionChanged(currentPod)) {
-          return doNext(updateCurrentPod(currentPod, getNext()), packet);
-        }
         logPodExists();
         return doNext(packet);
       }
@@ -1015,17 +1005,4 @@ public abstract class PodStepContext extends BasePodStepContext {
       return newPod;
     }
   }
-
-  private class UpdatePodResponseStep extends PatchPodResponseStep {
-
-    UpdatePodResponseStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public void logPodChanged() {
-      logPodUpdated();
-    }
-  }
-
 }
