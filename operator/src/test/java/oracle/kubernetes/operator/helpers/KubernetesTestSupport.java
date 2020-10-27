@@ -86,6 +86,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
@@ -467,6 +468,12 @@ public class KubernetesTestSupport extends FiberTestSupport {
       @Override
       <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
         return callContext.deleteCollection(dataRepository);
+      }
+    },
+    getVersion {
+      @Override
+      <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
+        return KubernetesVersion.TEST_VERSION_INFO;
       }
     };
 
@@ -1047,15 +1054,22 @@ public class KubernetesTestSupport extends FiberTestSupport {
     private void parseCallName(String callName) {
       int i = indexOfFirstCapital(callName);
       resourceType = callName.substring(i);
-      String operationName = callName.substring(0, i);
-      if (callName.endsWith("Status")) {
-        operationName = operationName + "Status";
-      }
-      operation = Operation.valueOf(operationName);
+      operation = getOperation(callName, i);
 
       if (isDeleteCollection()) {
         selectDeleteCollectionOperation();
       }
+    }
+
+    @NotNull
+    private Operation getOperation(String callName, int numChars) {
+      String operationName = callName.substring(0, numChars);
+      if (callName.endsWith("Status")) {
+        operationName = operationName + "Status";
+      } else if (callName.equals("getVersion")) {
+        return Operation.getVersion;
+      }
+      return Operation.valueOf(operationName);
     }
 
     private boolean isDeleteCollection() {

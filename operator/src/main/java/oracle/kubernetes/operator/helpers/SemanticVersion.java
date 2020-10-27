@@ -8,6 +8,8 @@ import javax.validation.constraints.NotNull;
 
 /** Major, minor and revision version specification for a product. */
 public class SemanticVersion implements Comparable<SemanticVersion> {
+  public static final SemanticVersion TEST_VERSION = new SemanticVersion(3,1);
+
   private final int major;
   private final int minor;
   private final int revision;

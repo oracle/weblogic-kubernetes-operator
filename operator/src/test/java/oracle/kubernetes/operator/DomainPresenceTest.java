@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.stream.IntStream;
@@ -38,13 +39,9 @@ import org.junit.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.CALL_REQUEST_LIMIT;
 import static org.hamcrest.Matchers.anEmptyMap;
-import static org.hamcrest.Matchers.both;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -230,9 +227,9 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
     namespaceStoppingMap.get(NS).set(false);
 
-    testSupport.runSteps(Main.readExistingResources(NS));
+    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(testSupport.getResources(SERVICE), empty());
+    assertThat(dp.isDeletingStrandedResources(UID), is(true));
   }
 
   @Test
@@ -243,9 +240,10 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(service1, service2);
 
     namespaceStoppingMap.get(NS).set(false);
-    testSupport.runSteps(Main.readExistingResources(NS));
+    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(testSupport.getResources(SERVICE), both(hasItem(service1)).and(hasItem(service2)));
+    assertThat(dp.isEstablishingDomain("UID1"), is(true));
+    assertThat(dp.isEstablishingDomain("UID" + LAST_DOMAIN_NUM), is(true));
   }
 
   private void createDomains(int lastDomainNum) {
@@ -258,33 +256,74 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   public abstract static class DomainProcessorStub implements DomainProcessor {
     private final Map<String, DomainPresenceInfo> dpis = new HashMap<>();
+    private final List<MakeRightDomainOperationStub> operationStubs = new ArrayList<>();
 
     Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
       return dpis;
     }
 
+    boolean isDeletingStrandedResources(String uid) {
+      return Optional.ofNullable(getMakeRightOperations(uid))
+            .map(MakeRightDomainOperationStub::isDeletingStrandedResources)
+            .orElse(false);
+    }
+
+    private MakeRightDomainOperationStub getMakeRightOperations(String uid) {
+      return operationStubs.stream().filter(s -> uid.equals(s.getUid())).findFirst().orElse(null);
+    }
+
+    boolean isEstablishingDomain(String uid) {
+      return Optional.ofNullable(getMakeRightOperations(uid))
+            .map(MakeRightDomainOperationStub::isEstablishingDomain)
+            .orElse(false);
+    }
+
 
     @Override
     public MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo liveInfo) {
-      return createStrictStub(MakeRightDomainOperationImpl.class, liveInfo, dpis);
+      final MakeRightDomainOperationStub stub = createStrictStub(MakeRightDomainOperationStub.class, liveInfo, dpis);
+      operationStubs.add(stub);
+      return stub;
     }
 
-    abstract static class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
+    abstract static class MakeRightDomainOperationStub implements MakeRightDomainOperation {
       private final DomainPresenceInfo info;
       private final Map<String, DomainPresenceInfo> dpis;
+      private boolean explicitRecheck;
+      private boolean deleting;
 
-      MakeRightDomainOperationImpl(DomainPresenceInfo info, Map<String, DomainPresenceInfo> dpis) {
+      MakeRightDomainOperationStub(DomainPresenceInfo info, Map<String, DomainPresenceInfo> dpis) {
         this.info = info;
         this.dpis = dpis;
       }
 
+      boolean isDeletingStrandedResources() {
+        return explicitRecheck && deleting;
+      }
+
+      boolean isEstablishingDomain() {
+        return explicitRecheck && !deleting;
+      }
+
+      String getUid() {
+        return info.getDomainUid();
+      }
+
       @Override
       public MakeRightDomainOperation withExplicitRecheck() {
+        explicitRecheck = true;
         return this;
       }
 
       @Override
       public MakeRightDomainOperation forDeletion() {
+        deleting = true;
+        return this;
+      }
+
+      @Override
+      public MakeRightDomainOperation withDeleting(boolean deleting) {
+        this.deleting = deleting;
         return this;
       }
 
