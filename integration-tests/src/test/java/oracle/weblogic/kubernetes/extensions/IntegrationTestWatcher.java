@@ -211,8 +211,15 @@ public class IntegrationTestWatcher implements
   @Override
   public void handleTestExecutionException(ExtensionContext context, Throwable throwable)
       throws Throwable {
-    printHeader(String.format("Test failed %s()", methodName), "!");
-    getLogger().severe(getStackTraceAsString(throwable));
+    getLogger().info("!!!!!DEBUGGING" + throwable.getMessage());
+    if (throwable.getMessage().contains("assumption is not true")) {
+      printHeader(String.format("Test aborted %s()", methodName), "!");
+      printHeader(String.format("Please check assumeTrue condition for test method %s()", methodName), "!");
+      getLogger().warning(getStackTraceAsString(throwable));
+    } else {
+      printHeader(String.format("Test failed %s()", methodName), "!");
+      getLogger().severe(getStackTraceAsString(throwable));
+    }
     collectLogs(context, "test");
     throw throwable;
   }

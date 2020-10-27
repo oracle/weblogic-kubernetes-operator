@@ -63,6 +63,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -111,6 +112,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Tests related to introspectVersion attribute.
@@ -848,12 +850,15 @@ public class ItIntrospectVersion {
    * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
+   * This test will be aborted if the image tag is: 14.1.1.0-11
    */
   @Order(5)
   @Test
   @DisplayName("Verify server pods are restarted by updating image name")
   public void testUpdateImageName() {
-
+    logger.info("In the testUpdateImageName() the image version is: " + WEBLOGIC_IMAGE_TAG);
+    logger.info("This test will be ABORTED if WebLogic image version is:  14.1.1.0-11");
+    assumeTrue(!WEBLOGIC_IMAGE_TAG.equals("14.1.1.0-11"));
     final String domainNamespace = introDomainNamespace;
 
     final String adminServerName = "admin-server";
