@@ -256,7 +256,7 @@ public class DomainSpec extends BaseConfiguration {
       + "server must be restarted because of changes to any of the fields listed here: "
       + "https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. "
-      + "See also `domains.spec.configuration.overridesConfigurationStrategy`.")
+      + "See also `domains.spec.configuration.overrideDistributionStrategy`.")
   private String introspectVersion;
 
   @Description("Models and overrides affecting the WebLogic domain configuration.")
