@@ -23,8 +23,8 @@ ENV LANG en_US.UTF-8
 ENV JAVA_HOME /usr/local/java
 ENV PATH /operator:$JAVA_HOME/bin:$PATH
 
-ENV JAVA_VERSION 14.0.2
-ENV JAVA_URL https://download.java.net/java/GA/jdk14.0.2/205943a0976c4ed48cb16f1043c5c647/12/GPL/openjdk-14.0.2_linux-x64_bin.tar.gz
+ENV JAVA_VERSION 15
+ENV JAVA_URL https://download.java.net/java/GA/jdk15/779bf45e88a44cbd9ea6621d33e33db1/36/GPL/openjdk-15_linux-x64_bin.tar.gz
 
 # Install Java and make the operator run with a non-root user id (1000 is the `oracle` user)
 RUN set -eux; \
