@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.IntStream;
@@ -22,6 +23,8 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -31,6 +34,7 @@ import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.IntrospectionTestUtils;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
@@ -71,6 +75,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static org.hamcrest.Matchers.allOf;
@@ -105,14 +110,26 @@ public class DomainProcessorTest {
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
-  private final DomainProcessorImpl processor =
-      new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
+  private final DomainProcessorDelegateStub processorDelegate = DomainProcessorDelegateStub.createDelegate(testSupport);
+  private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final Domain newDomain = DomainProcessorTestSetup.createTestDomain();
   private final DomainConfigurator domainConfigurator = configureDomain(newDomain);
   private final MakeRightDomainOperation makeRightOperation
         = processor.createMakeRightOperation(new DomainPresenceInfo(newDomain));
   private final WlsDomainConfig domainConfig = createDomainConfig();
+
+  private V1JobStatus jobStatus = createCompletedStatus();
+  private final Supplier<V1JobStatus> jobStatusSupplier = () -> jobStatus;
+
+  V1JobStatus createCompletedStatus() {
+    return new V1JobStatus()
+          .addConditionsItem(new V1JobCondition().type("Complete").status("True"));
+  }
+
+  V1JobStatus createNotCompletedStatus() {
+    return new V1JobStatus();
+  }
 
   private static WlsDomainConfig createDomainConfig() {
     WlsClusterConfig clusterConfig = new WlsClusterConfig(CLUSTER);
@@ -124,10 +141,6 @@ public class DomainProcessorTest {
         .withCluster(clusterConfig);
   }
 
-  /**
-   * Setup test environment.
-   * @throws Exception if StaticStubSupport fails to install
-   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger()
@@ -140,18 +153,13 @@ public class DomainProcessorTest {
     mementos.add(ScanCacheStub.install());
 
     testSupport.defineResources(newDomain);
-    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig());
+    IntrospectionTestUtils.defineResources(testSupport, createDomainConfig(), jobStatusSupplier);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
   }
 
-  /**
-   * Cleanup test environment.
-   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test
@@ -194,7 +202,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenMakeRightRun_updateSDomainStatus() {
+  public void whenMakeRightRun_updateDomainStatus() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
 
     processor.createMakeRightOperation(new DomainPresenceInfo(domain)).execute();
@@ -232,6 +240,17 @@ public class DomainProcessorTest {
 
     assertThat((int) getServerServices().count(), equalTo(MAX_SERVERS + NUM_ADMIN_SERVERS));
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
+  }
+
+  @Test
+  public void whenStrandedResourcesExist_removeThem() {
+    V1Service service1 = createServerService("admin");
+    V1Service service2 = createServerService("ms1");
+    testSupport.defineResources(service1, service2);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(NS, UID)).withExplicitRecheck().forDeletion().execute();
+
+    assertThat(testSupport.getResources(SERVICE), empty());
   }
 
   @Test
@@ -350,6 +369,19 @@ public class DomainProcessorTest {
     assertThat(makeRight.wasInspectionRun(), is(true));
   }
 
+  @Test
+  public void whenIntrospectionJobNotComplete_waitForIt() throws Exception {
+    establishPreviousIntrospection(null);
+    jobStatus = createNotCompletedStatus();
+
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    MakeRightDomainOperation makeRight = this.processor.createMakeRightOperation(
+          new DomainPresenceInfo(newDomain)).interrupt();
+    makeRight.execute();
+
+    assertThat(processorDelegate.waitedForIntrospection(), is(true));
+  }
+
   private void establishPreviousIntrospection(Consumer<Domain> domainSetup) throws JsonProcessingException {
     if (domainSetup != null) {
       domainSetup.accept(domain);
@@ -387,7 +419,7 @@ public class DomainProcessorTest {
   }
 
   private String defineTopology() throws JsonProcessingException {
-    return DomainProcessorTestSetup.createTopologyYaml(createDomainConfig());
+    return IntrospectionTestUtils.createTopologyYaml(createDomainConfig());
   }
 
   @Test

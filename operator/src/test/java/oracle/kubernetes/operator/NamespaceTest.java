@@ -15,9 +15,10 @@ import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -27,6 +28,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.helpers.HelmAccess.OPERATOR_DOMAIN_NAMESPACES;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -44,11 +46,10 @@ public class NamespaceTest {
   public static final String NAMESPACE_STOPPING_MAP = "namespaceStoppingMap";
 
   KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
-  private final WatchTuning tuning = new WatchTuning(30, 0, 5);
   private final List<Memento> mementos = new ArrayList<>();
   private final Set<String> currentNamespaces = new HashSet<>();
   private final DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
+  private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class);
 
   @Before
   public void setUp() throws Exception {
@@ -59,13 +60,6 @@ public class NamespaceTest {
     mementos.add(TuningParametersStub.install());
     mementos.add(StaticStubSupport.install(Main.class, "processor", dp));
     mementos.add(testSupport.install());
-    AtomicBoolean stopping = new AtomicBoolean(true);
-  }
-
-  private Thread createDaemonThread() {
-    Thread thread = new Thread();
-    thread.setDaemon(true);
-    return thread;
   }
 
   @After
@@ -82,7 +76,7 @@ public class NamespaceTest {
     processNamespaces();
     defineNamespaces(NS);
 
-    testSupport.runSteps(Main.createDomainRecheckSteps(DateTime.now()));
+    testSupport.runSteps(new Main(delegate).createDomainRecheckSteps(DateTime.now()));
     assertThat(DomainNamespaces.getJobWatcher(NS), not(sameInstance(oldWatcher)));
   }
 
@@ -130,7 +124,7 @@ public class NamespaceTest {
   }
 
   private void processNamespaces() {
-    testSupport.withClearPacket().runSteps(new Main.Namespaces(false).readExistingNamespaces());
+    testSupport.withClearPacket().runSteps(new Main.DomainRecheck().readExistingNamespaces());
   }
 
   @Test
@@ -194,8 +188,26 @@ public class NamespaceTest {
   }
 
   abstract static class DomainProcessorStub implements DomainProcessor {
-    List<String> nameSpaces = new ArrayList<>();
+    @Override
+    public void reportSuspendedFibers() {
+    }
+  }
 
+  abstract static class MainDelegateStub implements MainDelegate {
+    @Override
+    public DomainProcessor getProcessor() {
+      return createStrictStub(DomainProcessorStub.class);
+    }
+
+    @Override
+    public KubernetesVersion getKubernetesVersion() {
+      return KubernetesVersion.TEST_VERSION;
+    }
+
+    @Override
+    public SemanticVersion getProductVersion() {
+      return SemanticVersion.TEST_VERSION;
+    }
   }
 
 }
