@@ -6,8 +6,8 @@ package oracle.kubernetes.operator;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.work.FiberGate;
@@ -18,14 +18,19 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 
 /** A test stub for processing domains in unit tests. */
 public abstract class DomainProcessorDelegateStub implements DomainProcessorDelegate {
-  private FiberTestSupport testSupport;
+  private final FiberTestSupport testSupport;
+  private boolean waitedForIntrospection;
 
   public DomainProcessorDelegateStub(FiberTestSupport testSupport) {
     this.testSupport = testSupport;
   }
 
-  public static DomainProcessorDelegate createDelegate(KubernetesTestSupport testSupport) {
+  public static DomainProcessorDelegateStub createDelegate(KubernetesTestSupport testSupport) {
     return createStrictStub(DomainProcessorDelegateStub.class, testSupport);
+  }
+
+  public boolean waitedForIntrospection() {
+    return waitedForIntrospection;
   }
 
   @Override
@@ -39,8 +44,8 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   }
 
   @Override
-  public V1SubjectRulesReviewStatus getSubjectRulesReviewStatus(String namespace) {
-    return null;
+  public JobAwaiterStepFactory getJobAwaiterStepFactory(String namespace) {
+    return new PassthroughJobAwaiterStepFactory();
   }
 
   @Override
@@ -72,6 +77,14 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
 
     @Override
     public Step waitForDelete(V1Pod pod, Step next) {
+      return next;
+    }
+  }
+
+  private class PassthroughJobAwaiterStepFactory implements JobAwaiterStepFactory {
+    @Override
+    public Step waitForReady(V1Job job, Step next) {
+      waitedForIntrospection = true;
       return next;
     }
   }
