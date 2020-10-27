@@ -49,7 +49,6 @@ Beginning with operator 3.1.0, if a domain resource's `spec.introspectVersion` i
 ```
 Name:           domain1-admin-server
 Namespace:      domain1-ns
-Priority:       0
 Labels:         weblogic.createdByOperator=true
                 weblogic.domainName=domain1
                 weblogic.domainUID=domain1
