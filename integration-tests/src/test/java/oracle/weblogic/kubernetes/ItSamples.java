@@ -64,7 +64,6 @@ public class ItSamples {
 
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
-
   private static final String[] params = {"wlst:domain1", "wdt:domain2"};
 
   // create standard, reusable retry/backoff policy
