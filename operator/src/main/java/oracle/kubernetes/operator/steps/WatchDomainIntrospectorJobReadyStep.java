@@ -4,10 +4,9 @@
 package oracle.kubernetes.operator.steps;
 
 import io.kubernetes.client.openapi.models.V1Job;
-import oracle.kubernetes.operator.DomainNamespaces;
+import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -20,17 +19,17 @@ public class WatchDomainIntrospectorJobReadyStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-
     V1Job domainIntrospectorJob = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
 
-    // No need to spawn a watcher if the job is already complete
-    if (domainIntrospectorJob != null && !JobWatcher.isComplete(domainIntrospectorJob)) {
-      JobWatcher jw = DomainNamespaces.getJobWatcher(info.getNamespace());
-
+    if (hasNotCompleted(domainIntrospectorJob)) {
+      JobAwaiterStepFactory jw = packet.getSpi(JobAwaiterStepFactory.class);
       return doNext(jw.waitForReady(domainIntrospectorJob, getNext()), packet);
+    } else {
+      return doNext(packet);
     }
+  }
 
-    return doNext(packet);
+  private boolean hasNotCompleted(V1Job domainIntrospectorJob) {
+    return domainIntrospectorJob != null && !JobWatcher.isComplete(domainIntrospectorJob);
   }
 }

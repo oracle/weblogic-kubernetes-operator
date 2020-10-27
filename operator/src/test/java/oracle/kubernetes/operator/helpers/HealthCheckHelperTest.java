@@ -48,7 +48,6 @@ public class HealthCheckHelperTest {
       VERIFY_ACCESS_DENIED_WITH_NS
   };
 
-  private static final String OPERATOR_NAMESPACE = "operator";
   private static final String NS1 = "ns1";
   private static final String NS2 = "ns2";
   private static final List<String> TARGET_NAMESPACES = Arrays.asList(NS1, NS2);
@@ -61,10 +60,10 @@ public class HealthCheckHelperTest {
           "services");
 
   private static final List<String> CLUSTER_CRUD_RESOURCES =
-      Arrays.asList("customresourcedefinitions//apiextensions.k8s.io");
+        singletonList("customresourcedefinitions//apiextensions.k8s.io");
 
   private static final List<String> CLUSTER_READ_WATCH_RESOURCES =
-      Arrays.asList("namespaces");
+        singletonList("namespaces");
 
   private static final List<String> CLUSTER_READ_UPDATE_RESOURCES =
       Arrays.asList("domains//weblogic.oracle", "domains/status/weblogic.oracle");
@@ -74,7 +73,7 @@ public class HealthCheckHelperTest {
           "selfsubjectrulesreviews//authorization.k8s.io");
 
   private static final List<String> READ_WATCH_RESOURCES =
-      Arrays.asList("secrets");
+        singletonList("secrets");
 
   private static final List<Operation> CRUD_OPERATIONS =
       Arrays.asList(get, list, watch, create, update, patch, delete, deletecollection);
@@ -93,17 +92,12 @@ public class HealthCheckHelperTest {
       Arrays.asList(create, get);
 
   private static final String POD_LOGS = "pods/log";
-  private static final KubernetesVersion RULES_REVIEW_VERSION = new KubernetesVersion(1, 8);
 
-  private List<Memento> mementos = new ArrayList<>();
-  private List<LogRecord> logRecords = new ArrayList<>();
-  private CallTestSupport testSupport = new CallTestSupport();
-  private AccessChecks accessChecks = new AccessChecks();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final List<LogRecord> logRecords = new ArrayList<>();
+  private final CallTestSupport testSupport = new CallTestSupport();
+  private final AccessChecks accessChecks = new AccessChecks();
 
-  /**
-   * Setup test.
-   * @throws Exception if failure occurs
-   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TuningParametersStub.install());
@@ -112,14 +106,9 @@ public class HealthCheckHelperTest {
     mementos.add(testSupport.installSynchronousCallDispatcher());
   }
 
-  /**
-   * Tear down test.
-   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test
@@ -127,7 +116,7 @@ public class HealthCheckHelperTest {
     expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.performSecurityChecks(RULES_REVIEW_VERSION, OPERATOR_NAMESPACE, ns);
+      HealthCheckHelper.getAccessAuthorizations(ns);
     }
   }
 
@@ -137,7 +126,7 @@ public class HealthCheckHelperTest {
     expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.performSecurityChecks(RULES_REVIEW_VERSION, OPERATOR_NAMESPACE, ns);
+      HealthCheckHelper.getAccessAuthorizations(ns);
     }
 
     assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
@@ -152,9 +141,9 @@ public class HealthCheckHelperTest {
 
   @SuppressWarnings("SameParameterValue")
   static class AccessChecks {
+    private static final boolean MAY_ACCESS_CLUSTER = true;
 
     private boolean mayAccessNamespace = true;
-    private boolean mayAccessCluster = true;
 
     private static String getResource(String resourceString) {
       return resourceString.split("/")[0];
@@ -183,7 +172,7 @@ public class HealthCheckHelperTest {
       if (mayAccessNamespace) {
         addNamespaceRules(rules);
       }
-      if (mayAccessCluster) {
+      if (MAY_ACCESS_CLUSTER) {
         addClusterRules(rules);
       }
       return rules;
