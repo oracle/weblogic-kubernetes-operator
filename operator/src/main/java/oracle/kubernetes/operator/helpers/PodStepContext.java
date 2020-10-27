@@ -7,6 +7,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -86,6 +87,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     miiDomainZipHash = (String)packet.get(IntrospectorConfigMapKeys.DOMAINZIP_HASH);
     domainRestartVersion = (String)packet.get(IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
+  }
+
+  private static boolean isPatchableItem(Map.Entry<String, String> entry) {
+    return isCustomerItem(entry) || entry.getKey().equals(INTROSPECTION_STATE_LABEL);
   }
 
   private static boolean isCustomerItem(Map.Entry<String, String> entry) {
@@ -357,22 +362,22 @@ public abstract class PodStepContext extends BasePodStepContext {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
 
     KubernetesUtils.addPatches(
-        patchBuilder, "/metadata/labels/", getLabels(currentPod), getPodLabels());
+        patchBuilder, "/metadata/labels/", getLabels(currentPod), getNonHashedPodLabels());
     KubernetesUtils.addPatches(
         patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
-
-    if (introspectVersionChanged(currentPod)) {
-      String pathName = "/metadata/labels/" + INTROSPECTION_STATE_LABEL;
-      if (!getPodLabels().containsKey(INTROSPECTION_STATE_LABEL)) {
-        patchBuilder.add(pathName, getDomain().getSpec().getIntrospectVersion());
-      } else {
-        patchBuilder.replace(pathName, getDomain().getSpec().getIntrospectVersion());
-      }
-    }
 
     return new CallBuilder()
             .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
+  }
+
+  private Map<String, String> getNonHashedPodLabels() {
+    Map<String,String> result = new HashMap<>(getPodLabels());
+
+    Optional.ofNullable(getDomain().getSpec().getIntrospectVersion())
+        .ifPresent(version -> result.put(INTROSPECTION_STATE_LABEL, version));
+
+    return result;
   }
 
   private Map<String, String> getLabels(V1Pod pod) {
@@ -412,20 +417,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private boolean mustPatchPod(V1Pod currentPod) {
-    return KubernetesUtils.isMissingValues(getLabels(currentPod), getPodLabels())
-        || KubernetesUtils.isMissingValues(getAnnotations(currentPod), getPodAnnotations())
-        || introspectVersionChanged(currentPod);
-  }
-
-  private boolean introspectVersionChanged(V1Pod currentPod) {
-    return !Objects.equals(getPodIntrospectVersionLabel(currentPod), getDomain().getSpec().getIntrospectVersion());
-  }
-
-  private Object getPodIntrospectVersionLabel(V1Pod pod) {
-    return Optional.ofNullable(pod.getMetadata())
-        .map(V1ObjectMeta::getLabels)
-        .map(labels -> labels.get(INTROSPECTION_STATE_LABEL))
-        .orElse(null);
+    return KubernetesUtils.isMissingValues(getLabels(currentPod), getNonHashedPodLabels())
+        || KubernetesUtils.isMissingValues(getAnnotations(currentPod), getPodAnnotations());
   }
 
   private boolean canUseCurrentPod(V1Pod currentPod) {
@@ -478,15 +471,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   V1Pod withNonHashedElements(V1Pod pod) {
     V1ObjectMeta metadata = Objects.requireNonNull(pod.getMetadata());
     // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
-    getPodLabels().entrySet().stream()
-        .filter(PodStepContext::isCustomerItem)
+    getNonHashedPodLabels().entrySet().stream()
+        .filter(PodStepContext::isPatchableItem)
         .forEach(e -> metadata.putLabelsItem(e.getKey(), e.getValue()));
     getPodAnnotations().entrySet().stream()
-        .filter(PodStepContext::isCustomerItem)
+        .filter(PodStepContext::isPatchableItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
-
-    Optional.ofNullable(getDomain().getSpec().getIntrospectVersion())
-        .ifPresent(version -> metadata.putLabelsItem(INTROSPECTION_STATE_LABEL, version));
 
     setTerminationGracePeriod(pod);
     getContainer(pod).map(V1Container::getEnv).ifPresent(this::updateEnv);
@@ -557,7 +547,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         + getServerSpec().getDomainRestartVersion());
     LOGGER.finest("PodStepContext.createMetaData domainIntrospectVersion from spec "
         + getDomain().getIntrospectVersion());
-    
+
     metadata
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
         .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
@@ -855,7 +845,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       V1Pod currentPod = info.getServerPod(getServerName());
 
       // reset introspect failure job count - if any
-      
+
       Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
@@ -875,17 +865,6 @@ public abstract class PodStepContext extends BasePodStepContext {
         logPodExists();
         return doNext(packet);
       }
-    }
-
-    private boolean introspectVersionChanged(V1Pod currentPod) {
-      return !Objects.equals(getPodIntrospectVersionLabel(currentPod), getDomain().getSpec().getIntrospectVersion());
-    }
-
-    private Object getPodIntrospectVersionLabel(V1Pod pod) {
-      return Optional.ofNullable(pod.getMetadata())
-          .map(V1ObjectMeta::getLabels)
-          .map(labels -> labels.get(INTROSPECTION_STATE_LABEL))
-          .orElse(null);
     }
   }
 
