@@ -14,7 +14,12 @@ You can access most of the REST services using `GET`, for example:
 * To obtain a list of domains, send a `GET` request to the URL `/operator/latest/domains`
 * To obtain a list of clusters in a domain, send a `GET` request to the URL `/operator/latest/domains/<domainUID>/clusters`
 
-All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  Callers should pass in the `Accept:/application/json` header.
+All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  In previous operator versions, the operator performed authentication and authorization checks using the Kubernetes token review and subject access review APIs, and then updated the Domain resource using the operator's privileges.  Now, by default, the operator will use the caller's bearer token to perform the underlying update to the Domain resource using the caller's privileges and thus delegating authentication and authorization checks directly to the Kubernetes API Server (see [REST interface configuration]({{< relref "/userguide/managing-operators/using-the-operator/using-helm.md#rest-interface-configuration" >}})).  
+{{% notice note %}}
+When using the operator's REST services to scale up or down a WebLogic cluster, you may need to grant `patch` access to the user or service account associated with the caller's bearer token. This can be done with an RBAC ClusterRoleBinding between the user or service account and the ClusterRole that defines the permissions for the WebLogic `domains` resource.
+{{% /notice %}}
+
+Callers should pass in the `Accept:/application/json` header.
 
 To protect against Cross Site Request Forgery (CSRF) attacks, the operator REST API requires that you send in a `X-Requested-By` header when you invoke a REST endpoint that makes a change (for example, when you POST to the `/scale` endpoint).  The value is an arbitrary name such as `MyClient`. For example, when using `curl`:
 

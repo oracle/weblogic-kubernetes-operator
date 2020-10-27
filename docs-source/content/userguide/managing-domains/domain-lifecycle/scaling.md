@@ -87,8 +87,27 @@ For example, when using `curl`:
 curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H "Authorization:Bearer ..." -d '{ "managedServerCount": 3 }' https://.../scaling
 ```
 
-If you omit the header, you'll get a `400 (bad request)` response. If you omit the Bearer Authentication header, then you'll get a `401 (Unauthorized)` response.
+If you omit the header, you'll get a `400 (bad request)` response. If you omit the Bearer Authentication header, then you'll get a `401 (Unauthorized)` response.  If the service account or user associated with the `Bearer` token does not have permission to `patch` the WebLogic domain resource, then you'll get a `403 (Forbidden)` response.
 
+{{% notice note %}}
+To resolve a `403 (Forbidden)` response, when calling the operator's REST scaling API, you may need to add the `patch` request verb to the cluster role associated with the WebLogic `domains` resource.
+The example ClusterRole definition below grants `get`, `list`, `patch` and `update` access to the WebLogic `domains` resource 
+{{% /notice %}}
+
+```
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: weblogic-domain-cluster-role
+rules:
+- apiGroups: ["weblogic.oracle"]
+  resources: ["domains"]
+  verbs: ["get", "list", "patch", update"]
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
+  verbs: ["get", "list"]
+---
+```
 ##### Operator REST endpoints
 
 The WebLogic Server Kubernetes Operator can expose both an internal and external REST HTTPS endpoint.
@@ -207,7 +226,7 @@ metadata:
 rules:
 - apiGroups: ["weblogic.oracle"]
   resources: ["domains"]
-  verbs: ["get", "list", "update"]
+  verbs: ["get", "list", "patch", update"]
 - apiGroups: ["apiextensions.k8s.io"]
   resources: ["customresourcedefinitions"]
   verbs: ["get", "list"]
