@@ -13,6 +13,9 @@ import javax.ws.rs.WebApplicationException;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.auth.ApiKeyAuth;
+import io.kubernetes.client.openapi.auth.Authentication;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
@@ -20,6 +23,8 @@ import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.V1UserInfo;
+import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.rest.RestBackendImpl.TopologyRetriever;
@@ -49,6 +54,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNull;
 
 @SuppressWarnings("SameParameterValue")
 public class RestBackendImplTest {
@@ -92,6 +98,7 @@ public class RestBackendImplTest {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
+    mementos.add(TuningParametersStub.install());
     mementos.add(
         StaticStubSupport.install(RestBackendImpl.class, "INSTANCE", new TopologyRetrieverStub()));
 
@@ -352,6 +359,60 @@ public class RestBackendImplTest {
     assertThat(wlsDomainConfig, notNullValue());
   }
 
+  @Test
+  public void whenUsingAccessToken_userInfoIsNull() {
+    RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
+    assertThat(restBackend.getUserInfo(), nullValue());
+  }
+
+  @Test
+  public void whenUsingTokenReview_userInfoNotNull() {
+    TuningParameters.getInstance().put("tokenReviewAuthentication", "true");
+    RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
+    assertThat(restBackend.getUserInfo(), notNullValue());
+  }
+
+  @Test
+  public void whenUsingAccessToken_authorizationCheckNotCalled() {
+    AuthorizationProxyStub authorizationProxyStub = new AuthorizationProxyStub();
+    RestBackendImpl restBackendImpl = new RestBackendImpl("", "", this::getDomainNamespaces)
+        .withAuthorizationProxy(authorizationProxyStub);
+    restBackendImpl.getClusters(DOMAIN1);
+    assertThat(authorizationProxyStub.atzCheck, is(false));
+  }
+
+  @Test
+  public void whenUsingTokenReview_authorizationCheckCalled() {
+    TuningParameters.getInstance().put("tokenReviewAuthentication", "true");
+    AuthorizationProxyStub authorizationProxyStub = new AuthorizationProxyStub();
+    RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces)
+        .withAuthorizationProxy(authorizationProxyStub);
+    restBackend.getClusters(DOMAIN1);
+    assertThat(authorizationProxyStub.atzCheck, is(true));
+  }
+
+  @Test
+  public void whenUsingAccessToken_configureApiClient() {
+    RestBackendImpl restBackend = new RestBackendImpl("", "1234", this::getDomainNamespaces);
+    ApiClient apiClient = restBackend.getCallBuilder().getClientPool().take();
+    Authentication authentication = apiClient.getAuthentication("BearerToken");
+    assertThat(authentication instanceof ApiKeyAuth, is(true));
+    String apiKey = ((ApiKeyAuth) authentication).getApiKey();
+    assertThat(apiKey, is("1234"));
+  }
+
+  @Test
+  public void whenUsingTokenReview_configureApiClient() {
+    TuningParameters.getInstance().put("tokenReviewAuthentication", "true");
+    RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
+    ApiClient apiClient = restBackend.getCallBuilder().getClientPool().take();
+    Authentication authentication = apiClient.getAuthentication("BearerToken");
+    assertThat(authentication instanceof ApiKeyAuth, is(true));
+    String apiKey = ((ApiKeyAuth) authentication).getApiKey();
+    assertNull(apiKey);
+  }
+
+
   private DomainConfigurator configureDomain() {
     return configurator;
   }
@@ -364,6 +425,36 @@ public class RestBackendImplTest {
     @Override
     public WlsDomainConfig getWlsDomainConfig(String ns, String domainUid) {
       return config;
+    }
+  }
+
+  private class AuthorizationProxyStub extends AuthorizationProxy {
+    boolean atzCheck = false;
+
+    /**
+     * Check if the specified principal is allowed to perform the specified operation on the specified
+     * resource in the specified scope.
+     *
+     * @param principal The user, group or service account.
+     * @param groups The groups that principal is a member of.
+     * @param operation The operation to be authorized.
+     * @param resource The kind of resource on which the operation is to be authorized.
+     * @param resourceName The name of the resource instance on which the operation is to be
+     *     authorized.
+     * @param scope The scope of the operation (cluster or namespace).
+     * @param namespaceName name of the namespace if scope is namespace else null.
+     * @return true if the operation is allowed, or false if not.
+     */
+    public boolean check(
+        String principal,
+        final List<String> groups,
+        Operation operation,
+        Resource resource,
+        String resourceName,
+        Scope scope,
+        String namespaceName) {
+      atzCheck = true;
+      return atzCheck;
     }
   }
 }
