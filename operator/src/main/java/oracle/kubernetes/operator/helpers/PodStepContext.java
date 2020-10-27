@@ -372,11 +372,11 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected Step updatePod(V1Pod currentPod, Step next) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    String baseName = "/metadata/labels/";
+    String pathName = "/metadata/labels/" + INTROSPECTION_STATE_LABEL;
     if (!getPodLabels().containsKey(INTROSPECTION_STATE_LABEL)) {
-      patchBuilder.add(baseName + INTROSPECTION_STATE_LABEL, getDomain().getSpec().getIntrospectVersion());
+      patchBuilder.add(pathName, getDomain().getSpec().getIntrospectVersion());
     } else {
-      patchBuilder.replace(baseName + INTROSPECTION_STATE_LABEL, getDomain().getSpec().getIntrospectVersion());
+      patchBuilder.replace(pathName, getDomain().getSpec().getIntrospectVersion());
     }
 
     return new CallBuilder()
