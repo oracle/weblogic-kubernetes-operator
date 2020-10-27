@@ -51,6 +51,7 @@ Name:           domain1-admin-server
 Namespace:      domain1-ns
 Labels:         weblogic.createdByOperator=true
                 weblogic.domainName=domain1
+                weblogic.domainRestartVersion=abcdef
                 weblogic.domainUID=domain1
                 weblogic.introspectVersion=12345
                 weblogic.serverName=admin-server
