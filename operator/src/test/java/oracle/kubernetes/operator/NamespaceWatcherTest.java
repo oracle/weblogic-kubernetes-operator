@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator;
 
 import java.math.BigInteger;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.models.V1Namespace;
@@ -45,7 +44,6 @@ public class NamespaceWatcherTest extends WatcherTestBase
 
   @Override
   protected NamespaceWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
-    return NamespaceWatcher.create((ThreadFactory)this, rv.toString(), null,
-        tuning, (WatchListener<V1Namespace>)this, stopping);
+    return NamespaceWatcher.create(this, rv.toString(), null, tuning, this, stopping);
   }
 }
