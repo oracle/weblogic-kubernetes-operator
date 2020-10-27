@@ -28,7 +28,6 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
@@ -438,15 +437,13 @@ public class DomainProcessorImpl implements DomainProcessor {
         delegate.scheduleWithFixedDelay(
             () -> {
               try {
-                V1SubjectRulesReviewStatus srrs =
-                    delegate.getSubjectRulesReviewStatus(info.getNamespace());
                 Packet packet = new Packet();
                 packet
                     .getComponents()
                     .put(
                         ProcessingConstants.DOMAIN_COMPONENT_NAME,
                         Component.createFor(
-                            info, delegate.getVersion(), V1SubjectRulesReviewStatus.class, srrs));
+                            info, delegate.getVersion()));
                 packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
                 Step strategy =
                     ServerStatusReader.createStatusStep(main.statusUpdateTimeoutSeconds, null);
@@ -698,7 +695,7 @@ public class DomainProcessorImpl implements DomainProcessor {
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
               Component.createFor(liveInfo, delegate.getVersion(),
                   PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
-                  V1SubjectRulesReviewStatus.class, delegate.getSubjectRulesReviewStatus(getNamespace())));
+                  JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
       runDomainPlan(
             getDomain(),
             getDomainUid(),
