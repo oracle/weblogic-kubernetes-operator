@@ -44,7 +44,7 @@ Set `introspectVersion` to a new value.
 
 As with `restartVersion`, the `introspectVersion` field has no required format; however, we recommend using a value likely to be unique such as a continually increasing number or a timestamp.
 
-Starting from operator 3.1.0, if a domain resource's `spec.introspectVersion` is set, each of the domain's WebLogic Server pods will have a label with the key `weblogic.IntrospectVersion` to indicate the `introspectVersion` that the pod is running at.
+Beginning with operator 3.1.0, if a domain resource's `spec.introspectVersion` is set, each of the domain's WebLogic Server pods will have a label with the key `weblogic.IntrospectVersion` to indicate the `introspectVersion` at which the pod is running.
 
 ```
 Name:           domain1-admin-server
@@ -57,7 +57,7 @@ Labels:         weblogic.createdByOperator=true
                 weblogic.serverName=admin-server
 ```
 
-When a domain's `spec.intrsopectVersion` is changed, the `weblogic.introspectVersion` label of each WebLogic Server pod is updated to the new `introspectVersion` value either when the operator restarts the pod, or when the operator determines that the pod does not need to be restarted.
+When a domain's `spec.intrsopectVersion` is changed, the `weblogic.introspectVersion` label of each WebLogic Server pod is updated to the new `introspectVersion` value, either when the operator restarts the pod or when the operator determines that the pod does not need to be restarted.
 
 #### Failed introspection
 
