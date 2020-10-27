@@ -2240,13 +2240,15 @@ public class ItTwoDomainsLoadBalancers {
       int index = i;
       logger.info("Getting admin server pod log from pod {0} in namespace {1}",
           domainAdminServerPodNames.get(index), defaultNamespace);
-      String adminServerPodLog = assertDoesNotThrow(() ->
-          getPodLog(domainAdminServerPodNames.get(index), defaultNamespace, "weblogic-server")).toLowerCase();
+      String adminServerPodLog0 = assertDoesNotThrow(() ->
+          getPodLog(domainAdminServerPodNames.get(index), defaultNamespace, "weblogic-server"));
 
-      assertNotNull(adminServerPodLog,
+      assertNotNull(adminServerPodLog0,
           String.format("failed to get admin server log from pod %s in namespace %s, returned null",
           domainAdminServerPodNames.get(index), defaultNamespace));
 
+      String adminServerPodLog = adminServerPodLog0.toLowerCase();
+      
       // verify the admin server log does not contain WL-Proxy-Client-IP header
       logger.info("Checking that the admin server log does not contain 'WL-Proxy-Client-IP' header");
       assertFalse(adminServerPodLog.contains("WL-Proxy-Client-IP".toLowerCase()),
