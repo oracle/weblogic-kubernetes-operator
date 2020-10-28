@@ -42,6 +42,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -64,6 +65,7 @@ public class ItSamples {
 
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
+
   private static final String[] params = {"wlst:domain1", "wdt:domain2"};
 
   // create standard, reusable retry/backoff policy
@@ -315,11 +317,18 @@ public class ItSamples {
         + " -o "
         + Paths.get(sampleBase.toString())
         + moreOptions);
-
+    logger.info("====run create-domain.sh to create domain.yaml file");
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
 
+    if (!moreOptions.isEmpty()) {
+      // docker login and push image to docker registry if necessary
+      String miiImage = "domain-home-in-image:12.2.1.4";
+      dockerLoginAndPushImageToRegistry(miiImage);
+    }
+
     // run kubectl to create the domain
+    logger.info("====run kubectl to create the domain");
     params = new CommandParams().defaults();
     params.command("kubectl apply -f "
         + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
