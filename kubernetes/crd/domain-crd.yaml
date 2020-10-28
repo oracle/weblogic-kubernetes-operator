@@ -36,7 +36,7 @@ spec:
                       distributed to already running WebLogic Server instances following
                       introspection when the `domainHomeSourceType` is PersistentVolume
                       or Image. Configuration overrides are generated during introspection
-                      from Secrets, the `overrideConfigMap` field, and WebLogic domain
+                      from Secrets, the `overridesConfigMap` field, and WebLogic domain
                       topology. Legal values are DYNAMIC, which means that the operator
                       will distribute updated configuration overrides dynamically
                       to running servers, and ON_RESTART, which means that servers
@@ -5253,7 +5253,7 @@ spec:
                   full domain shut down. For the FromModel `domainHomeSourceType`,
                   introspection also occurs when a running server must be restarted
                   because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted.
-                  See also `domains.spec.configuration.overridesConfigurationStrategy`.'
+                  See also `domains.spec.configuration.overrideDistributionStrategy`.'
               dataHome:
                 type: string
                 description: An optional directory in a server's container for data
