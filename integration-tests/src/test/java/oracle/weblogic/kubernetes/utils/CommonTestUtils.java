@@ -2075,7 +2075,8 @@ public class CommonTestUtils {
     logger.info("========== docker image {0} and DOMAIN_IMAGES_REPO {1}",
         dockerImage, DOMAIN_IMAGES_REPO);
     // push image, if necessary
-    if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(DOMAIN_IMAGES_REPO)) {
+    //if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(DOMAIN_IMAGES_REPO)) {
+    if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains("domain-home-in-image:5000")) {
       // docker login, if necessary
       if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
         logger.info("docker login");
