@@ -2072,6 +2072,8 @@ public class CommonTestUtils {
    */
   public static void dockerLoginAndPushImageToRegistry(String dockerImage) {
     LoggingFacade logger = getLogger();
+    logger.info("========== docker image {0} and DOMAIN_IMAGES_REPO {1}",
+        dockerImage, DOMAIN_IMAGES_REPO);
     // push image, if necessary
     if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(DOMAIN_IMAGES_REPO)) {
       // docker login, if necessary
