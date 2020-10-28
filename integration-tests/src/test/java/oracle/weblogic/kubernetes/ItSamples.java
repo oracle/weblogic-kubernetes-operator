@@ -69,8 +69,8 @@ public class ItSamples {
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
 
-  //private static final String[] params = {"wlst:domain1", "wdt:domain2"};
-  private static final String[] params = {"wlst:domain1"};
+  private static final String[] params = {"wlst:domain1", "wdt:domain2"};
+  //private static final String[] params = {"wlst:domain1"};
   private static String diiImageNameBase = "domain-home-in-image";
   private static String diiImageTag = "12.2.1.4";
 
@@ -350,13 +350,8 @@ public class ItSamples {
 
     if (sampleBase.toString().contains("domain-home-in-image")) {
       // docker login and push image to docker registry if necessary
-      //String miiImage = "domain-home-in-image:12.2.1.4";
       logger.info("Push the image {0} to Docker repo", imageName);
       dockerLoginAndPushImageToRegistry(imageName);
-      //miiImage = "domain-home-in-image-wdt:12.2.1.4";
-      //dockerLoginAndPushImageToRegistry(miiImage);
-      //String miiImage = "domain-home-in-image:5000/weblogick8s/test-images/weblogic:12.2.1.4";
-      //dockerLoginAndPushImageToRegistry(miiImage, "domain-home-in-image:5000");
 
       // create docker registry secret to pull the image from registry
       // this secret is used only for non-kind cluster
