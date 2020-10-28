@@ -7,6 +7,18 @@
 #    invoke on-line WLST to create a configured static cluster and two managed
 #      servers that reference it.
 #
+#    NOTE: The static cluster must be configured using on-line WLST instead of
+#    off-line WLST in order to reproduce OWLS 85530. On-line WLST produces the
+#    following cluster configuration:
+#
+#    <cluster>
+#      <name>c1</name>
+#      <cluster-messaging-mode>unicast</cluster-messaging-mode>
+#      <dynamic-servers>
+#        <maximum-dynamic-server-count>0</maximum-dynamic-server-count>
+#      </dynamic-servers>
+#    </cluster>
+#
 #    assumes the admin user/pass was encoded to a userConfig/userKey by the
 #      introspector these files have been mounted to /weblogic-operator/introspector
 #

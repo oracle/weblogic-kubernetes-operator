@@ -40,7 +40,8 @@
 #         export ISTIO_ENABELD=true - this only test for Non Model in Image
 #
 #     To check for introspection of configured clusters with WebLogic 14.1.1.0 image.
-#     NOTE: Test for introspection of configured clusters only for Non Model in Image.
+#     NOTE: Test for introspection of configured clusters only for Non Model in Image
+#           and for verifying OWLS 85530.
 #
 #         export WEBLOGIC_IMAGE_TAG=14.1.1.0
 #         introspectTest.sh
@@ -1025,8 +1026,10 @@ function checkNodeManagerJavaOptions() {
 
 #############################################################################
 #
-# Create static cluster using on-line WLST.  This creates a static cluster entry
-# of the form:
+# Create static cluster using on-line WLST.
+# NOTE: The static cluster must be configured using on-line WLST instead of
+#       off-line WLST in order to reproduce OWLS 85530. This creates a static
+#       cluster entry of the form:
 #
 # <cluster>
 #   <name>c1</name>
@@ -1146,7 +1149,9 @@ checkManagedServer1MemArg
 checkNodeManagerJavaOptions
 
 if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ] ; then
-  # Create static cluster using WLST on-line mode
+  # Create static cluster using WLST on-line mode.
+  # NOTE: The static cluster must be configured using on-line WLST instead of
+  #       off-line WLST in order to reproduce OWLS 85530.
   createStaticCluster 'c1' ${DOMAIN_UID}-${ADMIN_NAME?} t3://${DOMAIN_UID}-${ADMIN_NAME}:${ADMIN_PORT}
 
   # Re-run introspector to introspect the static cluster
