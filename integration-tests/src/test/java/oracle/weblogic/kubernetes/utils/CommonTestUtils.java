@@ -2075,8 +2075,7 @@ public class CommonTestUtils {
     logger.info("========== docker image {0} and DOMAIN_IMAGES_REPO {1}",
         dockerImage, DOMAIN_IMAGES_REPO);
     // push image, if necessary
-    //if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(DOMAIN_IMAGES_REPO)) {
-    if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains("domain-home-in-image:5000")) {
+    if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(DOMAIN_IMAGES_REPO)) {
       // docker login, if necessary
       if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
         logger.info("docker login");
@@ -2086,6 +2085,26 @@ public class CommonTestUtils {
       logger.info("docker push image {0} to {1}", dockerImage, DOMAIN_IMAGES_REPO);
       assertTrue(dockerPush(dockerImage), String.format("docker push failed for image %s", dockerImage));
     }
+  }
+
+  /**
+   * Docker login and push the image to Docker registry.
+   *
+   * @param dockerImage the Docker image to push to registry
+   */
+  public static void dockerLoginAndPushImageToRegistry(String dockerImage, String repo) {
+    LoggingFacade logger = getLogger();
+    logger.info("========== docker image {0} and repo {1}",
+      dockerImage, repo);
+    // push image, if necessary
+    // docker login, if necessary
+    if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
+      logger.info("docker login");
+      assertTrue(dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD), "docker login failed");
+    }
+
+    logger.info("docker push image {0} to {1}", dockerImage, repo);
+    assertTrue(dockerPush(dockerImage), String.format("docker push failed for image %s", dockerImage));
   }
 
   /**

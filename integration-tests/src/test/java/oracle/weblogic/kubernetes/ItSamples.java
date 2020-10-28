@@ -331,12 +331,12 @@ public class ItSamples {
 
     if (sampleBase.toString().contains("domain-home-in-image")) {
       // docker login and push image to docker registry if necessary
-      String miiImage = "domain-home-in-image:12.2.1.4";
-      dockerLoginAndPushImageToRegistry(miiImage);
+      //String miiImage = "domain-home-in-image:12.2.1.4";
+      //dockerLoginAndPushImageToRegistry(miiImage);
       //miiImage = "domain-home-in-image-wdt:12.2.1.4";
       //dockerLoginAndPushImageToRegistry(miiImage);
-      miiImage = "domain-home-in-image:5000/weblogick8s/test-images/weblogic:12.2.1.4";
-      dockerLoginAndPushImageToRegistry(miiImage);
+      String miiImage = "domain-home-in-image:5000/weblogick8s/test-images/weblogic:12.2.1.4";
+      dockerLoginAndPushImageToRegistry(miiImage, "domain-home-in-image:5000");
 
       // create docker registry secret to pull the image from registry
       // this secret is used only for non-kind cluster
