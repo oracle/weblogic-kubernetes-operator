@@ -407,6 +407,20 @@ public class Kubernetes {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static String getPodLog(String name, String namespace, String container) throws ApiException {
+    return getPodLog(name, namespace, container, null);
+  }
+
+  /**
+   * Get a pod's log.
+   *
+   * @param name name of the Pod
+   * @param namespace name of the Namespace
+   * @param container name of container for which to stream logs
+   * @return log as a String or NULL when there is an error
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getPodLog(String name, String namespace, String container, Integer sinceSeconds)
+      throws ApiException {
     String log = null;
     try {
       log = coreV1Api.readNamespacedPodLog(
@@ -418,7 +432,7 @@ public class Kubernetes {
           null, // number of bytes to read from the server before terminating the log output
           PRETTY, // pretty print output
           null, // Boolean, Return previous terminated container logs
-          null, // relative time (seconds) before the current time from which to show logs
+          sinceSeconds, // relative time (seconds) before the current time from which to show logs
           null, // number of lines from the end of the logs to show
           null // Boolean, add timestamp at the beginning of every line of log output
       );

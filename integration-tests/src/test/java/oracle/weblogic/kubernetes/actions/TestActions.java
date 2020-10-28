@@ -1221,6 +1221,21 @@ public class TestActions {
   }
 
   /**
+   * Get a pod's log.
+   *
+   * @param podName name of the pod
+   * @param namespace name of the namespace
+   * @param container name of the container
+   * @param sinceSeconds a relative time in seconds before the current time from which to show logs.
+   * @return log as a String
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static String getPodLog(String podName, String namespace, String container, Integer sinceSeconds)
+      throws ApiException {
+    return Pod.getPodLog(podName, namespace, container, sinceSeconds);
+  }
+
+  /**
    * List Kubernetes pods in a namespace.
    *
    * @param namespace name of namespace

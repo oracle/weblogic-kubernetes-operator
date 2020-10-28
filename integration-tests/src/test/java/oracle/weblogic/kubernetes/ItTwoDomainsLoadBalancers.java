@@ -668,15 +668,16 @@ public class ItTwoDomainsLoadBalancers {
   @DisplayName("Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol")
   public void testNginxTLSPathRoutingAdminServer() {
     logger.info("Verifying WebLogic admin console is accessible through NGINX path routing with HTTPS protocol");
-    for (String domainUid : domainUids) {
+    for (int i = 0; i < numberOfDomains; i++) {
       verifyAdminServerAccess(true, getNginxLbNodePort("https"), false, "",
-          "/" + domainUid.substring(6) + "console");
-    }
+          "/" + domainUids.get(i).substring(6) + "console");
 
-    // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
-    // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
-    // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
-    verifyHeadersInAdminServerLog(2);
+
+      // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
+      // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
+      // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
+      verifyHeadersInAdminServerLog(domainAdminServerPodNames.get(i), defaultNamespace);
+    }
   }
 
   /**
@@ -706,15 +707,15 @@ public class ItTwoDomainsLoadBalancers {
   public void testVoyagerTLSPathRoutingAdminServer() {
     logger.info("Verifying WebLogic admin console is accessible through Voyager path routing with HTTPS protocol");
     String ingressName = "voyager-tls-pathrouting";
-    for (String domainUid : domainUids) {
+    for (int i = 0; i < numberOfDomains; i++) {
       verifyAdminServerAccess(true, getVoyagerLbNodePort(ingressName, "tcp-443"), false, "",
-          "/" + domainUid.substring(6) + "console");
-    }
+          "/" + domainUids.get(i).substring(6) + "console");
 
-    // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
-    // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
-    // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
-    verifyHeadersInAdminServerLog(2);
+      // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
+      // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
+      // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
+      verifyHeadersInAdminServerLog(domainAdminServerPodNames.get(i), defaultNamespace);
+    }
   }
 
   /**
@@ -750,7 +751,7 @@ public class ItTwoDomainsLoadBalancers {
     // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
     // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
     // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
-    verifyHeadersInAdminServerLog(1);
+    verifyHeadersInAdminServerLog(domainAdminServerPodNames.get(0), defaultNamespace);
   }
 
   /**
@@ -2234,57 +2235,48 @@ public class ItTwoDomainsLoadBalancers {
     createPVPVCAndVerify(v1pv, v1pvc, labelSelector, apacheNamespace);
   }
 
-  private void verifyHeadersInAdminServerLog(int numberOfDomains) {
+  private void verifyHeadersInAdminServerLog(String podName, String namespace) {
 
-    for (int i = 0; i < numberOfDomains; i++) {
-      int index = i;
-      logger.info("Getting admin server pod log from pod {0} in namespace {1}",
-          domainAdminServerPodNames.get(index), defaultNamespace);
+    logger.info("Getting admin server pod log from pod {0} in namespace {1}", podName, namespace);
 
-      ConditionFactory withStandardRetryPolicy =
-          with().pollDelay(10, SECONDS)
-              .and().with().pollInterval(10, SECONDS)
-              .atMost(2, MINUTES).await();
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Getting admin server pod log {0} in namespace {1}, waiting for success "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return assertDoesNotThrow(() ->
+              getPodLog(podName, namespace, "weblogic-server", 30)) != null;
+        });
 
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Calling curl command, waiting for success "
-                      + "(elapsed time {0}ms, remaining time {1}ms)",
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(() -> {
-            return assertDoesNotThrow(() ->
-                getPodLog(domainAdminServerPodNames.get(index), defaultNamespace, "weblogic-server")) != null;
-          });
+    String adminServerPodLog0 = assertDoesNotThrow(() ->
+        getPodLog(podName, namespace, "weblogic-server", 30));
 
-      String adminServerPodLog0 = assertDoesNotThrow(() ->
-          getPodLog(domainAdminServerPodNames.get(index), defaultNamespace, "weblogic-server"));
+    assertNotNull(adminServerPodLog0,
+        String.format("failed to get admin server log from pod %s in namespace %s, returned null",
+            podName, namespace));
 
-      assertNotNull(adminServerPodLog0,
-          String.format("failed to get admin server log from pod %s in namespace %s, returned null",
-          domainAdminServerPodNames.get(index), defaultNamespace));
+    String adminServerPodLog = adminServerPodLog0.toLowerCase();
 
-      String adminServerPodLog = adminServerPodLog0.toLowerCase();
-      
-      // verify the admin server log does not contain WL-Proxy-Client-IP header
-      logger.info("Checking that the admin server log does not contain 'WL-Proxy-Client-IP' header");
-      assertFalse(adminServerPodLog.contains("WL-Proxy-Client-IP".toLowerCase()),
-          String.format("found WL-Proxy-Client-IP in the admin server pod log, pod: %s; namespace: %s",
-              domainAdminServerPodNames.get(index), defaultNamespace));
+    // verify the admin server log does not contain WL-Proxy-Client-IP header
+    logger.info("Checking that the admin server log does not contain 'WL-Proxy-Client-IP' header");
+    assertFalse(adminServerPodLog.contains("WL-Proxy-Client-IP".toLowerCase()),
+        String.format("found WL-Proxy-Client-IP in the admin server pod log, pod: %s; namespace: %s",
+            podName, namespace));
 
-      // verify the admin server log does not contain header "WL-Proxy-SSL: false"
-      logger.info("Checking that the admin server log does not contain header 'WL-Proxy-SSL: false'");
-      assertFalse(adminServerPodLog.contains("WL-Proxy-SSL: false".toLowerCase()),
-          String.format("found 'WL-Proxy-SSL: false' in the admin server pod log, pod: %s; namespace: %s",
-              domainAdminServerPodNames.get(index), defaultNamespace));
+    // verify the admin server log does not contain header "WL-Proxy-SSL: false"
+    logger.info("Checking that the admin server log does not contain header 'WL-Proxy-SSL: false'");
+    assertFalse(adminServerPodLog.contains("WL-Proxy-SSL: false".toLowerCase()),
+        String.format("found 'WL-Proxy-SSL: false' in the admin server pod log, pod: %s; namespace: %s",
+            podName, namespace));
 
-      // verify the admin server log contains header "WL-Proxy-SSL: true"
-      logger.info("Checking that the admin server log contains header 'WL-Proxy-SSL: true'");
-      assertTrue(adminServerPodLog.contains("WL-Proxy-SSL: true".toLowerCase()),
-          String.format("Did not find 'WL-Proxy-SSL: true' in the admin server pod log, pod: %s; namespace: %s",
-              domainAdminServerPodNames.get(index), defaultNamespace));
-    }
+    // verify the admin server log contains header "WL-Proxy-SSL: true"
+    logger.info("Checking that the admin server log contains header 'WL-Proxy-SSL: true'");
+    assertTrue(adminServerPodLog.contains("WL-Proxy-SSL: true".toLowerCase()),
+        String.format("Did not find 'WL-Proxy-SSL: true' in the admin server pod log, pod: %s; namespace: %s",
+            podName, namespace));
   }
-
-
 }
