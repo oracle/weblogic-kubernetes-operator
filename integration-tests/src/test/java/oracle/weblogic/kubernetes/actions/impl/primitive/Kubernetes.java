@@ -407,7 +407,7 @@ public class Kubernetes {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static String getPodLog(String name, String namespace, String container) throws ApiException {
-    return getPodLog(name, namespace, container, null);
+    return getPodLog(name, namespace, container, null, null);
   }
 
   /**
