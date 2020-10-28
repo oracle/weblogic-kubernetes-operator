@@ -40,6 +40,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
@@ -317,18 +318,23 @@ public class ItSamples {
         + " -o "
         + Paths.get(sampleBase.toString())
         + moreOptions);
-    logger.info("====run create-domain.sh to create domain.yaml file");
+    logger.info("Run create-domain.sh to create domain.yaml file");
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
 
-    if (!moreOptions.isEmpty()) {
+    if (sampleBase.toString().contains("domain-home-in-image")) {
       // docker login and push image to docker registry if necessary
       String miiImage = "domain-home-in-image:12.2.1.4";
       dockerLoginAndPushImageToRegistry(miiImage);
+
+      // create docker registry secret to pull the image from registry
+      // this secret is used only for non-kind cluster
+      logger.info("Create docker registry secret in namespace {0}", domainNamespace);
+      createOcirRepoSecret(domainNamespace);
     }
 
     // run kubectl to create the domain
-    logger.info("====run kubectl to create the domain");
+    logger.info("Run kubectl to create the domain");
     params = new CommandParams().defaults();
     params.command("kubectl apply -f "
         + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
