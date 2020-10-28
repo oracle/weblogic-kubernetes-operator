@@ -63,6 +63,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.ActionConstants;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -2240,6 +2241,23 @@ public class ItTwoDomainsLoadBalancers {
       int index = i;
       logger.info("Getting admin server pod log from pod {0} in namespace {1}",
           domainAdminServerPodNames.get(index), defaultNamespace);
+
+      ConditionFactory withStandardRetryPolicy =
+          with().pollDelay(10, SECONDS)
+              .and().with().pollInterval(10, SECONDS)
+              .atMost(2, MINUTES).await();
+
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Calling curl command, waiting for success "
+                      + "(elapsed time {0}ms, remaining time {1}ms)",
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(() -> {
+            return assertDoesNotThrow(() ->
+                getPodLog(domainAdminServerPodNames.get(index), defaultNamespace, "weblogic-server")) != null;
+          });
+
       String adminServerPodLog0 = assertDoesNotThrow(() ->
           getPodLog(domainAdminServerPodNames.get(index), defaultNamespace, "weblogic-server"));
 
@@ -2268,4 +2286,6 @@ public class ItTwoDomainsLoadBalancers {
               domainAdminServerPodNames.get(index), defaultNamespace));
     }
   }
+
+
 }
