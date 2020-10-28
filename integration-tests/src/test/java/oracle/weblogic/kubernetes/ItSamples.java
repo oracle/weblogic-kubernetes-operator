@@ -205,8 +205,10 @@ public class ItSamples {
         .append(" -p ")
         .append(ADMIN_PASSWORD_DEFAULT).toString();
 
+    String[] additonalStr = {additonalOptions, imageName};
+
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
-    createDomainAndVerify(domainName, sampleBase, additonalOptions, imageName);
+    createDomainAndVerify(domainName, sampleBase, additonalStr);
 
     // delete the domain resource
     deleteDomainResourceAndVerify(domainName, sampleBase);
@@ -326,9 +328,9 @@ public class ItSamples {
     });
   }
 
-  private void createDomainAndVerify(String domainName, Path sampleBase, String... additionalOptions) {
-    String moreOptions = (additionalOptions.length == 0) ? "" : additionalOptions[0];
-    String imageName = (additionalOptions.length == 2) ? "" : additionalOptions[1];
+  private void createDomainAndVerify(String domainName, Path sampleBase, String... additonalStr) {
+    String additionalOptions = (additonalStr.length == 0) ? "" : additonalStr[0];
+    String imageName = (additonalStr.length == 2) ? additonalStr[1] : "";
 
     // run create-domain.sh to create domain.yaml file
     CommandParams params = new CommandParams().defaults();
@@ -337,11 +339,14 @@ public class ItSamples {
         + " -i " + Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
         + " -o "
         + Paths.get(sampleBase.toString())
-        + moreOptions);
+        + additionalOptions);
 
     logger.info("Run create-domain.sh to create domain.yaml file");
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
+
+    logger.info("======additonalStr.length {0}", additonalStr.length);
+    logger.info("====== Push the image {0} to Docker repo", imageName);
 
     if (sampleBase.toString().contains("domain-home-in-image")) {
       // docker login and push image to docker registry if necessary
