@@ -446,6 +446,88 @@ public class DomainProcessorTest {
     return testSupport.<V1ConfigMap>getResources(CONFIG_MAP).stream();
   }
 
+  @Test
+  public void afterInitialIntrospection_serverPodsHaveInitialIntrospectVersionLabel() throws Exception {
+    domainConfigurator.withIntrospectVersion(OLD_INTROSPECTION_STATE);
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
+
+    List<V1Pod> runningPods = getRunningPods();
+    //one introspector pod, one admin server pod and two managed server pods
+    assertThat(runningPods.size(), equalTo(4));
+    for (V1Pod pod: runningPods) {
+      if (!pod.getMetadata().getName().contains(LegalNames.getIntrospectorJobNameSuffix())) {
+        assertThat(getServerPodIntrospectionVersion(pod), equalTo(OLD_INTROSPECTION_STATE));
+      }
+    }
+  }
+
+  @Test
+  public void afterIntrospection_serverPodsHaveUpToDateIntrospectVersionLabel() throws Exception {
+    establishPreviousIntrospection(null);
+
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
+
+    List<V1Pod> runningPods = getRunningPods();
+    //one introspector pod, one admin server pod and two managed server pods
+    assertThat(runningPods.size(), equalTo(4));
+    for (V1Pod pod: runningPods) {
+      if (!pod.getMetadata().getName().contains(LegalNames.getIntrospectorJobNameSuffix())) {
+        assertThat(getServerPodIntrospectionVersion(pod), equalTo(NEW_INTROSPECTION_STATE));
+      }
+    }
+  }
+
+  @Test
+  public void afterScaleupClusterIntrospection_serverPodsHaveUpToDateIntrospectVersionLabel() throws Exception {
+    establishPreviousIntrospection(null);
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
+    domainConfigurator.withIntrospectVersion("after-scaleup");
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
+
+    List<V1Pod> runningPods = getRunningPods();
+    //one introspector pod, one admin server pod and three managed server pods
+    assertThat(runningPods.size(), equalTo(5));
+    for (V1Pod pod: runningPods) {
+      if (!pod.getMetadata().getName().contains(LegalNames.getIntrospectorJobNameSuffix())) {
+        assertThat(getServerPodIntrospectionVersion(pod), equalTo("after-scaleup"));
+      }
+    }
+  }
+
+  @Test
+  public void afterScaledownClusterIntrospection_serverPodsHaveUpToDateIntrospectVersionLabel() throws Exception {
+    establishPreviousIntrospection(null);
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(1);
+    domainConfigurator.withIntrospectVersion("after-scaledown");
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
+
+    List<V1Pod> runningPods = getRunningPods();
+    //one introspector pod, one admin server pod and one managed server pod
+    assertThat(runningPods.size(), equalTo(3));
+    for (V1Pod pod: runningPods) {
+      if (!pod.getMetadata().getName().contains(LegalNames.getIntrospectorJobNameSuffix())) {
+        assertThat(getServerPodIntrospectionVersion(pod), equalTo("after-scaledown"));
+      }
+    }
+  }
+
+  private String getServerPodIntrospectionVersion(V1Pod pod) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .map(m -> m.get(INTROSPECTION_STATE_LABEL))
+        .orElse(null);
+  }
+
   private boolean isIntrospectorMeta(@Nullable V1ObjectMeta meta) {
     return meta != null && NS.equals(meta.getNamespace()) && INTROSPECTOR_MAP_NAME.equals(meta.getName());
   }
