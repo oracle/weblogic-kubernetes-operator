@@ -2095,7 +2095,7 @@ public class CommonTestUtils {
   public static void dockerLoginAndPushImageToRegistry(String dockerImage, String repo) {
     LoggingFacade logger = getLogger();
     logger.info("========== docker image {0} and repo {1}",
-      dockerImage, repo);
+        dockerImage, repo);
     // push image, if necessary
     // docker login, if necessary
     if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
