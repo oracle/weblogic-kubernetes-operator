@@ -166,7 +166,7 @@ public class ItSamples {
     //String imageName = diiImageNameBase + "_" + script + ":" + diiImageTag;
 
     String imageName = (KIND_REPO != null
-        ? KIND_REPO + "/" + diiImageNameBase + "_" + script + ":" + diiImageTag
+        ? KIND_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag
         : diiImageNameBase + "_" + script + ":" + diiImageTag);
 
     //copy the samples directory to a temporary location
