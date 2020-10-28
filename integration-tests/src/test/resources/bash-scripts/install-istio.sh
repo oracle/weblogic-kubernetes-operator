@@ -32,10 +32,10 @@ kubectl create namespace istio-system
   curl -L https://istio.io/downloadIstio | ISTIO_VERSION=${version} sh 
 )
 
-( cd ${istiodir}
-  helm template istio-init install/kubernetes/helm/istio-init --namespace istio-system | kubectl apply -f -
+( cd ${istiodir}/install/kubernetes/helm
+  helm template istio-init istio-init --namespace istio-system | kubectl apply -f -
   kubectl -n istio-system wait --for=condition=complete job --all
-  helm template istio install/kubernetes/helm/istio --namespace istio-system | kubectl apply -f -
+  helm template istio --namespace istio-system | kubectl apply -f -
 )
 }
 
