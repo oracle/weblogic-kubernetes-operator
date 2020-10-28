@@ -68,7 +68,8 @@ public class ItSamples {
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
 
-  private static final String[] params = {"wlst:domain1", "wdt:domain2"};
+  //private static final String[] params = {"wlst:domain1", "wdt:domain2"};
+  private static final String[] params = {"wlst:domain1"};
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -332,8 +333,10 @@ public class ItSamples {
       // docker login and push image to docker registry if necessary
       String miiImage = "domain-home-in-image:12.2.1.4";
       dockerLoginAndPushImageToRegistry(miiImage);
-      miiImage = "domain-home-in-image-wdt:5000/weblogick8s/test-images/weblogic:12.2.1.4";
-      dockerLoginAndPushImageToRegistry(miiImage);
+      //miiImage = "domain-home-in-image-wdt:12.2.1.4";
+      //dockerLoginAndPushImageToRegistry(miiImage);
+      //miiImage = "domain-home-in-image-wdt:5000/weblogick8s/test-images/weblogic:12.2.1.4";
+      //dockerLoginAndPushImageToRegistry(miiImage);
 
       // create docker registry secret to pull the image from registry
       // this secret is used only for non-kind cluster
