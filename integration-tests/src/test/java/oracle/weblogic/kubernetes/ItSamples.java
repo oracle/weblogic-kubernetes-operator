@@ -18,6 +18,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -106,6 +107,7 @@ public class ItSamples {
    *
    * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
    */
+  @Disabled
   @Order(1)
   @ParameterizedTest
   @MethodSource("paramProvider")
@@ -150,7 +152,7 @@ public class ItSamples {
    *
    * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
    */
-  @Order(2)
+  //@Order(2)
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in image")
@@ -160,6 +162,10 @@ public class ItSamples {
 
     //copy the samples directory to a temporary location
     setupSample();
+
+    //create WebLogic secrets for the domain
+    createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     Path sampleBase = Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-in-image");
 
@@ -325,6 +331,8 @@ public class ItSamples {
     if (sampleBase.toString().contains("domain-home-in-image")) {
       // docker login and push image to docker registry if necessary
       String miiImage = "domain-home-in-image:12.2.1.4";
+      dockerLoginAndPushImageToRegistry(miiImage);
+      miiImage = "domain-home-in-image-wdt:5000/weblogick8s/test-images/weblogic:12.2.1.4";
       dockerLoginAndPushImageToRegistry(miiImage);
 
       // create docker registry secret to pull the image from registry
