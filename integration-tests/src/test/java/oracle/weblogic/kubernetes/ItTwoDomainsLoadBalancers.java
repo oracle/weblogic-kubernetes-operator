@@ -2249,11 +2249,11 @@ public class ItTwoDomainsLoadBalancers {
                 condition.getRemainingTimeInMS()))
         .until(() -> {
           return assertDoesNotThrow(() ->
-              getPodLog(podName, namespace, "weblogic-server", 120)) != null;
+              getPodLog(podName, namespace, "weblogic-server", true, 120)) != null;
         });
 
     String adminServerPodLog0 = assertDoesNotThrow(() ->
-        getPodLog(podName, namespace, "weblogic-server", 120));
+        getPodLog(podName, namespace, "weblogic-server", true, 120));
 
     assertNotNull(adminServerPodLog0,
         String.format("failed to get admin server log from pod %s in namespace %s, returned null",
