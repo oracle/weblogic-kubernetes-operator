@@ -1017,6 +1017,43 @@ function checkNodeManagerJavaOptions() {
   fi
 }
 
+#############################################################################
+#
+# Create static cluster using on-line WLST.  This creates a static cluster entry
+# of the form:
+#
+# <cluster>
+#   <name>c1</name>
+#   <dynamic-servers>
+#     <maximum-dynamic-server-count>0</maximum-dynamic-server-count>
+#   </dynamic-servers>
+# </cluster>
+#
+
+function createStaticCluster() {
+
+  local cluster_name=${1?}
+  local pod_name=${2?}
+  local admin_url=${3?}
+  local script_file=createStaticCluster.py
+  local out_file=$test_home/createStaticCluster.out
+
+  local script_cmd="wlst.sh /shared/${script_file} ${admin_url} ${cluster_name}"
+
+  trace "Info: Creating static cluster '$cluster_name' via '$script_cmd' on pod '$pod_name'."
+
+  kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/${script_file} ${pod_name}:/shared/${script_file} || exit 1
+
+  tracen "Info: Waiting for createStaticCluster script to complete"
+  printdots_start
+  kubectl exec -it -n ${NAMESPACE} ${pod_name} ${script_cmd} > ${out_file} 2>&1
+  status=$?
+  printdots_end
+  if [ $status -ne 0 ]; then
+    trace "Error: The '$script_cmd' failed, see '$out_file'."
+    exit 1
+  fi
+}
 
 #############################################################################
 #
@@ -1101,5 +1138,14 @@ checkManagedServer1MemArg
 
 # Verify node manager java options
 checkNodeManagerJavaOptions
+
+if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ] ; then
+  # Create static cluster using WLST on-line mode
+  createStaticCluster 'c1' ${DOMAIN_UID}-${ADMIN_NAME?} t3://${DOMAIN_UID}-${ADMIN_NAME}:${ADMIN_PORT}
+
+  # Re-run introspector to introspect the static cluster
+  cleanupMinor
+  deployIntrospectJobPod
+fi
 
 trace "Info: Success!"
