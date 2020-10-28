@@ -70,6 +70,8 @@ public class ItSamples {
 
   //private static final String[] params = {"wlst:domain1", "wdt:domain2"};
   private static final String[] params = {"wlst:domain1"};
+  private static String diiImageNameBase = "domain-home-in-image";
+  private static String diiImageTag = "12.2.1.4";
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -160,6 +162,7 @@ public class ItSamples {
   public void testSampleDomainInImage(String model) {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
+    String imageName = diiImageNameBase + "_" + script + ":" + diiImageTag;
 
     //copy the samples directory to a temporary location
     setupSample();
@@ -173,11 +176,15 @@ public class ItSamples {
     // update create-domain-inputs.yaml with the values from this test
     updateDomainInputsFile(domainName, sampleBase);
 
+    logger.info("=====WEBLOGIC_IMAGE_TO_USE_IN_SPEC: {0}", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     // update domainHomeImageBase with right values in create-domain-inputs.yaml
     assertDoesNotThrow(() -> {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-          "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:12.2.1.4",
+          "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:" + diiImageTag,
           "domainHomeImageBase: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "#image:",
+          "image: " + imageName);
 
       if (script.equalsIgnoreCase("wdt")) {
         replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
@@ -194,7 +201,7 @@ public class ItSamples {
         .append(ADMIN_PASSWORD_DEFAULT).toString();
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
-    createDomainAndVerify(domainName, sampleBase, additonalOptions);
+    createDomainAndVerify(domainName, sampleBase, additonalOptions, imageName);
 
     // delete the domain resource
     deleteDomainResourceAndVerify(domainName, sampleBase);
@@ -316,6 +323,7 @@ public class ItSamples {
 
   private void createDomainAndVerify(String domainName, Path sampleBase, String... additionalOptions) {
     String moreOptions = (additionalOptions.length == 0) ? "" : additionalOptions[0];
+    String imageName = (additionalOptions.length == 2) ? "" : additionalOptions[1];
 
     // run create-domain.sh to create domain.yaml file
     CommandParams params = new CommandParams().defaults();
@@ -325,6 +333,7 @@ public class ItSamples {
         + " -o "
         + Paths.get(sampleBase.toString())
         + moreOptions);
+
     logger.info("Run create-domain.sh to create domain.yaml file");
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
@@ -332,11 +341,12 @@ public class ItSamples {
     if (sampleBase.toString().contains("domain-home-in-image")) {
       // docker login and push image to docker registry if necessary
       //String miiImage = "domain-home-in-image:12.2.1.4";
-      //dockerLoginAndPushImageToRegistry(miiImage);
+      logger.info("Push the image {0} to Docker repo", imageName);
+      dockerLoginAndPushImageToRegistry(imageName);
       //miiImage = "domain-home-in-image-wdt:12.2.1.4";
       //dockerLoginAndPushImageToRegistry(miiImage);
-      String miiImage = "domain-home-in-image:5000/weblogick8s/test-images/weblogic:12.2.1.4";
-      dockerLoginAndPushImageToRegistry(miiImage, "domain-home-in-image:5000");
+      //String miiImage = "domain-home-in-image:5000/weblogick8s/test-images/weblogic:12.2.1.4";
+      //dockerLoginAndPushImageToRegistry(miiImage, "domain-home-in-image:5000");
 
       // create docker registry secret to pull the image from registry
       // this secret is used only for non-kind cluster
