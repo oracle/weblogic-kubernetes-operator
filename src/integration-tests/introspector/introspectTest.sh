@@ -39,6 +39,12 @@
 #     To check for ISTIO
 #         export ISTIO_ENABELD=true - this only test for Non Model in Image
 #
+#     To check for introspection of configured clusters with WebLogic 14.1.1.0 image.
+#     NOTE: Test for introspection of configured clusters only for Non Model in Image.
+#
+#         export WEBLOGIC_IMAGE_TAG=14.1.1.0
+#         introspectTest.sh
+#
 #############################################################################
 #
 # Initialize basic globals
