@@ -278,6 +278,136 @@ public class DomainProcessorTest {
     assertThat(getRunningPods(), empty());
   }
 
+  @Test
+  public void whenClusterReplicas2_server3WithAlwaysPolicy_establishMatchingPresence() {
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+    domainConfigurator.configureServer(MS_PREFIX + 3).withServerStartPolicy("ALWAYS");
+
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).execute();
+
+    assertServerPodAndServicePresent(info, ADMIN_NAME);
+    assertServerPodAndServicePresent(info, MS_PREFIX + 1);
+    assertServerPodAndServicePresent(info, MS_PREFIX + 3);
+    assertServerPodNotPresent(info, MS_PREFIX + 2);
+
+    assertThat(info.getClusterService(CLUSTER), notNullValue());
+  }
+
+  @Test
+  public void whenClusterScaleUpToReplicas3_fromReplicas2_server3WithAlwaysPolicy_establishMatchingPresence()
+      throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 3));
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
+    domainConfigurator.configureServer(MS_PREFIX + 3).withServerStartPolicy("ALWAYS");
+
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).execute();
+
+    assertServerPodAndServicePresent(info, ADMIN_NAME);
+    for (Integer i : Arrays.asList(1,2,3)) {
+      assertServerPodAndServicePresent(info, MS_PREFIX + i);
+    }
+    assertThat(info.getClusterService(CLUSTER), notNullValue());
+
+  }
+
+  @Test
+  public void whenClusterReplicas3_server3And4WithAlwaysPolicy_establishMatchingPresence() {
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+    domainConfigurator.configureServer(MS_PREFIX + 1).withServerStartPolicy("ALWAYS");
+    domainConfigurator.configureServer(MS_PREFIX + 3).withServerStartPolicy("ALWAYS");
+    domainConfigurator.configureServer(MS_PREFIX + 4).withServerStartPolicy("ALWAYS");
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).execute();
+
+    assertServerPodAndServicePresent(info, ADMIN_NAME);
+    for (Integer i : Arrays.asList(1,3,4)) {
+      assertServerPodAndServicePresent(info, MS_PREFIX + i);
+    }
+    assertServerPodNotPresent(info, MS_PREFIX + 2);
+
+    assertThat(info.getClusterService(CLUSTER), notNullValue());
+  }
+
+  @Test
+  public void whenClusterScaleUpToReplicas4_fromReplicas2_server3And4WithAlwaysPolicy_establishMatchingPresence()
+      throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 3, 4));
+
+    domainConfigurator.configureServer(MS_PREFIX + 1).withServerStartPolicy("ALWAYS");
+    domainConfigurator.configureServer(MS_PREFIX + 3).withServerStartPolicy("ALWAYS");
+    domainConfigurator.configureServer(MS_PREFIX + 4).withServerStartPolicy("ALWAYS");
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(4);
+
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+
+    processor.createMakeRightOperation(info).execute();
+
+    assertServerPodAndServicePresent(info, ADMIN_NAME);
+    for (Integer i : Arrays.asList(1,2,3,4)) {
+      assertServerPodAndServicePresent(info, MS_PREFIX + i);
+    }
+
+    assertThat(info.getClusterService(CLUSTER), notNullValue());
+  }
+
+  @Test
+  public void whenClusterScaleDownToReplicas1_fromReplicas2_server3WithAlwaysPolicy_establishMatchingPresence()
+      throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1,3));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(1);
+    domainConfigurator.configureServer(MS_PREFIX + 3).withServerStartPolicy("ALWAYS");
+
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).execute();
+
+    logRecords.clear();
+    assertServerPodAndServicePresent(info, ADMIN_NAME);
+    assertServerPodNotPresent(info, MS_PREFIX + 1);
+    assertServerPodNotPresent(info, MS_PREFIX + 2);
+    assertServerPodAndServicePresent(info, MS_PREFIX + 3);
+
+    assertThat(info.getClusterService(CLUSTER), notNullValue());
+  }
+
+  @Test
+  public void whenClusterReplicas2_server1And3And4WithAlwaysPolicy_establishMatchingPresence() {
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+    domainConfigurator.configureServer(MS_PREFIX + 1).withServerStartPolicy("ALWAYS");
+    domainConfigurator.configureServer(MS_PREFIX + 2).withServerStartPolicy("ALWAYS");
+    domainConfigurator.configureServer(MS_PREFIX + 3).withServerStartPolicy("ALWAYS");
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).execute();
+
+    assertServerPodAndServicePresent(info, ADMIN_NAME);
+    for (Integer i : Arrays.asList(1,2,3)) {
+      assertServerPodAndServicePresent(info, MS_PREFIX + i);
+    }
+
+    assertThat(info.getClusterService(CLUSTER), notNullValue());
+  }
+
+  @Test
+  public void whenClusterScaleDownToReplicas1_fromReplicas2_server1And2And3WithAlwaysPolicy_establishMatchingPresence()
+      throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3));
+
+    // now scale down the cluster
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(1);
+    domainConfigurator.configureServer(MS_PREFIX + 1).withServerStartPolicy("ALWAYS");
+    domainConfigurator.configureServer(MS_PREFIX + 2).withServerStartPolicy("ALWAYS");
+    domainConfigurator.configureServer(MS_PREFIX + 3).withServerStartPolicy("ALWAYS");
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).execute();
+    logRecords.clear();
+    assertServerPodAndServicePresent(info, ADMIN_NAME);
+    assertServerPodAndServicePresent(info, MS_PREFIX + 1);
+    assertServerPodAndServicePresent(info, MS_PREFIX + 2);
+    assertServerPodAndServicePresent(info, MS_PREFIX + 3);
+  }
+
   private V1Service createNonOperatorService() {
     return new V1Service()
         .metadata(
@@ -383,14 +513,20 @@ public class DomainProcessorTest {
   }
 
   private void establishPreviousIntrospection(Consumer<Domain> domainSetup) throws JsonProcessingException {
+    establishPreviousIntrospection(domainSetup, Arrays.asList(1,2));
+  }
+
+  private void establishPreviousIntrospection(Consumer<Domain> domainSetup, List<Integer> msNumbers)
+      throws JsonProcessingException {
     if (domainSetup != null) {
       domainSetup.accept(domain);
       domainSetup.accept(newDomain);
     }
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     defineServerResources(ADMIN_NAME);
-    defineServerResources(getManagedServerName(1));
-    defineServerResources(getManagedServerName(2));
+    for (Integer i : msNumbers) {
+      defineServerResources(getManagedServerName(i));
+    }
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     testSupport.defineResources(createIntrospectorConfigMap(OLD_INTROSPECTION_STATE));
     testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
@@ -773,6 +909,14 @@ public class DomainProcessorTest {
   private void assertServerPodAndServicePresent(DomainPresenceInfo info, String serverName) {
     assertThat(serverName + " server service", info.getServerService(serverName), notNullValue());
     assertThat(serverName + " pod", info.getServerPod(serverName), notNullValue());
+  }
+
+  private void assertServerPodNotPresent(DomainPresenceInfo info, String serverName) {
+    assertThat(serverName + " pod", isServerInactive(info, serverName), is(Boolean.TRUE));
+  }
+
+  private boolean isServerInactive(DomainPresenceInfo info, String serverName) {
+    return info.isServerPodBeingDeleted(serverName) || info.getServerPod(serverName) == null;
   }
 
   @Test
