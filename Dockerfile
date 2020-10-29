@@ -44,8 +44,10 @@ RUN set -eux; \
     done; \
     java -Xshare:dump; \
     useradd -d /operator -M -s /bin/bash -g root -u 1000 oracle; \
-    mkdir -p /operator/lib; \
-    mkdir /logs; \
+    mkdir -m 775 /operator; \
+    mkdir -m 775 /logs; \
+    mkdir /operator/lib; \
+    mkdir -m 775 -p /operator/internal-identity /operator/external-identity; \
     chown -R oracle:root /operator /logs
 
 USER oracle
