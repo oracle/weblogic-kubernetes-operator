@@ -547,9 +547,24 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   // todo set property to indicate dynamic/on_restart copying
   protected abstract void verifyPodReplaced();
 
+  protected void verifyPodPatched() {
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, not(containsFine(getExistsMessageKey())));
+    assertThat(logRecords, containsInfo(getPatchedMessageKey()));
+  }
+
+  protected void verifyPodNotPatched() {
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsFine(getExistsMessageKey()));
+    assertThat(logRecords, not(containsInfo(getPatchedMessageKey())));
+  }
+
   protected void verifyPodNotReplaced() {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
+    assertThat(logRecords, not(containsInfo(getReplacedMessageKey())));
     assertThat(logRecords, containsFine(getExistsMessageKey()));
   }
 
@@ -770,6 +785,16 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     domainPresenceInfo.setServerPod(getServerName(), pod);
   }
 
+  void initializeExistingPodWithIntrospectVersion(String introspectVersion) {
+    initializeExistingPodWithIntrospectVersion(createPodModel(), introspectVersion);
+  }
+
+  void initializeExistingPodWithIntrospectVersion(V1Pod pod, String introspectVersion) {
+    testSupport.defineResources(pod);
+    pod.getMetadata().getLabels().put(LabelConstants.INTROSPECTION_STATE_LABEL, introspectVersion);
+    domainPresenceInfo.setServerPod(getServerName(), pod);
+  }
+
   private V1Pod createPodModel() {
     return createPod(testSupport.getPacket());
   }
@@ -944,12 +969,21 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerConfigurationAddsIntrospectionVersion_dontReplacePod() {
+  public void whenServerConfigurationAddsIntrospectionVersion_patchPod() {
     initializeExistingPod();
 
     configurator.withIntrospectVersion("123");
 
-    verifyPodNotReplaced();
+    verifyPodPatched();
+  }
+
+  @Test
+  public void whenServerConfigurationIntrospectionVersionTheSame_dontPatchPod() {
+    initializeExistingPodWithIntrospectVersion("123");
+
+    configurator.withIntrospectVersion("123");
+
+    verifyPodNotPatched();
   }
 
   @Test
