@@ -437,9 +437,67 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol.
+   * Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol.
    */
   @Order(4)
+  @Test
+  @DisplayName("Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol")
+  public void testNginxTLSPathRoutingAdminServer() {
+    logger.info("Verifying WebLogic admin console is accessible through NGINX path routing with HTTPS protocol");
+    for (int i = 0; i < numberOfDomains; i++) {
+      verifyAdminServerAccess(true, getNginxLbNodePort("https"), false, "",
+          "/" + domainUids.get(i).substring(6) + "console");
+
+
+      // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
+      // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
+      // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
+      verifyHeadersInAdminServerLog(domainAdminServerPodNames.get(i), defaultNamespace);
+    }
+  }
+
+  /**
+   * Test verifies multiple WebLogic domains can be loadbalanced by NGINX loadbalancer with TLS path routing rules.
+   * Accesses the clusterview application deployed in the WebLogic cluster through NGINX loadbalancer and verifies it
+   * is correctly routed to the specific domain cluster.
+   */
+  @Order(5)
+  @Test
+  @DisplayName("Verify NGINX path routing with HTTPS protocol across two domains")
+  public void testNginxTLSPathRoutingAcrossDomains() {
+
+    // verify NGINX path routing with HTTP protocol across two domains
+    logger.info("Verifying NGINX path routing with HTTPS protocol across two domains");
+    for (String domainUid : domainUids) {
+      verifyClusterLoadbalancing(domainUid, "", "https", getNginxLbNodePort("https"),
+          replicaCount, false, "/" + domainUid.substring(6));
+    }
+  }
+
+  /**
+   * Verify WebLogic admin console is accessible through Voyager path routing with HTTPS protocol.
+   */
+  @Order(6)
+  @Test
+  @DisplayName("Verify WebLogic admin console is accessible through Voyager path routing with HTTPS protocol")
+  public void testVoyagerTLSPathRoutingAdminServer() {
+    logger.info("Verifying WebLogic admin console is accessible through Voyager path routing with HTTPS protocol");
+    String ingressName = "voyager-tls-pathrouting";
+    for (int i = 0; i < numberOfDomains; i++) {
+      verifyAdminServerAccess(true, getVoyagerLbNodePort(ingressName, "tcp-443"), false, "",
+          "/" + domainUids.get(i).substring(6) + "console");
+
+      // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
+      // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
+      // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
+      verifyHeadersInAdminServerLog(domainAdminServerPodNames.get(i), defaultNamespace);
+    }
+  }
+
+  /**
+   * Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol.
+   */
+  @Order(7)
   @Test
   @DisplayName("Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol")
   public void testTraefikHostRoutingAdminServer() {
@@ -456,7 +514,7 @@ public class ItTwoDomainsLoadBalancers {
    * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
-  @Order(5)
+  @Order(8)
   @Test
   @DisplayName("Verify Traefik host routing with HTTP protocol across two domains")
   public void testTraefikHttpHostRoutingAcrossDomains() {
@@ -474,7 +532,7 @@ public class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through Traefik loadbalancer websecure
    * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    */
-  @Order(6)
+  @Order(9)
   @Test
   @DisplayName("Verify Traefik host routing with HTTPS protocol across two domains")
   public void testTraefikHostHttpsRoutingAcrossDomains() {
@@ -489,7 +547,7 @@ public class ItTwoDomainsLoadBalancers {
   /**
    * Verify Traefik path routing with HTTP protocol across two domains.
    */
-  @Order(7)
+  @Order(10)
   @Test
   @DisplayName("Verify Traefik path routing with HTTP protocol across two domains")
   public void testTraefikPathRoutingAcrossDomains() {
@@ -506,7 +564,7 @@ public class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through Voyager loadbalancer and verifies it
    * is correctly routed to the specific domain cluster identified by the -H host header.
    */
-  @Order(8)
+  @Order(11)
   @Test
   @DisplayName("Verify Voyager host routing with HTTP protocol across two domains")
   public void testVoyagerHostHttpRoutingAcrossDomains() {
@@ -526,7 +584,7 @@ public class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through Voyager loadbalancer and verifies it
    * is correctly routed to the specific domain cluster identified by the -H host header.
    */
-  @Order(9)
+  @Order(12)
   @Test
   @DisplayName("Verify Voyager host routing with HTTPS protocol across two domains")
   public void testVoyagerHostHttpsRoutingAcrossDomains() {
@@ -546,7 +604,7 @@ public class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through Voyager loadbalancer and verifies it
    * is correctly routed to the specific domain cluster.
    */
-  @Order(10)
+  @Order(13)
   @Test
   @DisplayName("Verify Voyager path routing with HTTP protocol across two domains")
   public void testVoyagerPathRoutingAcrossDomains() {
@@ -567,7 +625,7 @@ public class ItTwoDomainsLoadBalancers {
    * For details, please see
    * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/default-sample
    */
-  @Order(11)
+  @Order(14)
   @Test
   @DisplayName("verify Apache load balancer default sample through HTTP channel")
   public void testApacheLoadBalancingDefaultSample() {
@@ -586,7 +644,7 @@ public class ItTwoDomainsLoadBalancers {
    * For more details, please check:
    * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/custom-sample
    */
-  @Order(12)
+  @Order(15)
   @Test
   @DisplayName("verify Apache load balancer custom sample through HTTP and HTTPS channel")
   public void testApacheLoadBalancingCustomSample() {
@@ -610,7 +668,7 @@ public class ItTwoDomainsLoadBalancers {
    * and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
-  @Order(13)
+  @Order(16)
   @Test
   @DisplayName("verify NGINX host routing with HTTP protocol across two domains")
   public void testNginxHttpHostRoutingAcrossDomains() {
@@ -629,7 +687,7 @@ public class ItTwoDomainsLoadBalancers {
    * protocol and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
-  @Order(14)
+  @Order(17)
   @Test
   @DisplayName("verify NGINX host routing with https protocol across two domains")
   public void testNginxHttpsHostRoutingAcrossDomains() {
@@ -647,7 +705,7 @@ public class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through NGINX loadbalancer and verifies it
    * is correctly routed to the specific domain cluster.
    */
-  @Order(15)
+  @Order(18)
   @Test
   @DisplayName("Verify NGINX path routing with HTTP protocol across two domains")
   public void testNginxPathRoutingAcrossDomains() {
@@ -657,64 +715,6 @@ public class ItTwoDomainsLoadBalancers {
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, "", "http", getNginxLbNodePort("http"),
           replicaCount, false, "/" + domainUid.substring(6));
-    }
-  }
-
-  /**
-   * Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol.
-   */
-  @Order(16)
-  @Test
-  @DisplayName("Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol")
-  public void testNginxTLSPathRoutingAdminServer() {
-    logger.info("Verifying WebLogic admin console is accessible through NGINX path routing with HTTPS protocol");
-    for (int i = 0; i < numberOfDomains; i++) {
-      verifyAdminServerAccess(true, getNginxLbNodePort("https"), false, "",
-          "/" + domainUids.get(i).substring(6) + "console");
-
-
-      // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
-      // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
-      // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
-      verifyHeadersInAdminServerLog(domainAdminServerPodNames.get(i), defaultNamespace);
-    }
-  }
-
-  /**
-   * Test verifies multiple WebLogic domains can be loadbalanced by NGINX loadbalancer with TLS path routing rules.
-   * Accesses the clusterview application deployed in the WebLogic cluster through NGINX loadbalancer and verifies it
-   * is correctly routed to the specific domain cluster.
-   */
-  @Order(17)
-  @Test
-  @DisplayName("Verify NGINX path routing with HTTPS protocol across two domains")
-  public void testNginxTLSPathRoutingAcrossDomains() {
-
-    // verify NGINX path routing with HTTP protocol across two domains
-    logger.info("Verifying NGINX path routing with HTTPS protocol across two domains");
-    for (String domainUid : domainUids) {
-      verifyClusterLoadbalancing(domainUid, "", "https", getNginxLbNodePort("https"),
-          replicaCount, false, "/" + domainUid.substring(6));
-    }
-  }
-
-  /**
-   * Verify WebLogic admin console is accessible through Voyager path routing with HTTPS protocol.
-   */
-  @Order(18)
-  @Test
-  @DisplayName("Verify WebLogic admin console is accessible through Voyager path routing with HTTPS protocol")
-  public void testVoyagerTLSPathRoutingAdminServer() {
-    logger.info("Verifying WebLogic admin console is accessible through Voyager path routing with HTTPS protocol");
-    String ingressName = "voyager-tls-pathrouting";
-    for (int i = 0; i < numberOfDomains; i++) {
-      verifyAdminServerAccess(true, getVoyagerLbNodePort(ingressName, "tcp-443"), false, "",
-          "/" + domainUids.get(i).substring(6) + "console");
-
-      // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
-      // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
-      // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
-      verifyHeadersInAdminServerLog(domainAdminServerPodNames.get(i), defaultNamespace);
     }
   }
 
@@ -1354,9 +1354,9 @@ public class ItTwoDomainsLoadBalancers {
                         + "-Dweblogic.http.isWLProxyHeadersAccessible=true "
                         + "-Dweblogic.debug.DebugHttp=true "
                         + "-Dweblogic.rjvm.allowUnknownHost=true "
-                        + "-Dweblogic.kernel.debug=true "
-                        + "-Dweblogic.debug.DebugMessaging=true "
-                        + "-Dweblogic.debug.DebugConnection=true "
+                        //+ "-Dweblogic.kernel.debug=true "
+                        //+ "-Dweblogic.debug.DebugMessaging=true "
+                        //+ "-Dweblogic.debug.DebugConnection=true "
                         + "-Dweblogic.ResolveDNSName=true "
                         + "-Dweblogic.MaxMessageSize=20000000"))
                 .addEnvItem(new V1EnvVar()
@@ -2249,11 +2249,11 @@ public class ItTwoDomainsLoadBalancers {
                 condition.getRemainingTimeInMS()))
         .until(() -> {
           return assertDoesNotThrow(() ->
-              getPodLog(podName, namespace, "weblogic-server", true, 120)) != null;
+              getPodLog(podName, namespace, "weblogic-server", null, 120)) != null;
         });
 
     String adminServerPodLog0 = assertDoesNotThrow(() ->
-        getPodLog(podName, namespace, "weblogic-server", true, 120));
+        getPodLog(podName, namespace, "weblogic-server", null, 120));
 
     assertNotNull(adminServerPodLog0,
         String.format("failed to get admin server log from pod %s in namespace %s, returned null",
