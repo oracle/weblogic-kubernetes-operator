@@ -21,9 +21,21 @@ Usage:
 (2) Optionally specify values for input env vars (see introspectTest.sh for the list).
 (3) For a non Model In Image domain type.
         Run introspectTest.sh
+
     For a Model In Image domain type.
         export DOMAIN_SOURCE_TYPE=FromModel
         Run introspectTest.sh
+
+    To check for ISTIO
+        export ISTIO_ENABELD=true - this only test for Non Model in Image
+
+    To check for introspection of configured clusters with WebLogic 14.1.1.0 image.
+    NOTE: Test for introspection of configured clusters only for Non Model in Image
+          and for verifying OWLS 85530.
+
+        export WEBLOGIC_IMAGE_TAG=14.1.1.0
+        introspectTest.sh
+
 -------------------
 Internal Test Flow:
 -------------------
@@ -85,3 +97,14 @@ Internal Test Flow:
    wl-pod.yamlt
    <operator-src>/operator/src/main/resources/scripts/startServer.sh
    <operator-src>/operator/src/main/resources/scripts/start-server.py
+
+() Various test verifications (WebLogic version, configuration overrides, etc) are executed.
+
+() For domain types other than Model in Image, a verification test for JIRA OWLS-85530 is executed:
+
+   1. a static configured cluster is created using WLST in online mode.
+   2. a minor cleanup of the test environment is performed in preparation for a rerun of the
+      introspection job.  The minor cleanup function leaves the existing
+      domain-home/pv/pvc/secret/etc, deletes wl pods, deletes the introspect job, then
+      redeploys the custom overrides.
+   3. reruns the introspect job
