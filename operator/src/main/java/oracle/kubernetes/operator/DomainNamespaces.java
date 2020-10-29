@@ -39,9 +39,10 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getResourceVers
  */
 @SuppressWarnings("SameParameterValue")
 public class DomainNamespaces {
+  private static final WatchListener<V1Job> NULL_LISTENER = w -> { };
+
   private static final Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
   private static final Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
-  private static final WatchListener<V1Job> NULL_LISTENER = w -> { };
 
   private static final WatcherControl<V1ConfigMap, ConfigMapWatcher> configMapWatchers
         = new WatcherControl<>(ConfigMapWatcher::create, d -> d::dispatchConfigMapWatch);
@@ -58,6 +59,20 @@ public class DomainNamespaces {
 
   static AtomicBoolean isStopping(String ns) {
     return namespaceStoppingMap.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
+  }
+
+  /**
+   * Constructs a DomainNamespace object. REG-> this is a hack to deal with resetting statics between tests.
+   */
+  public DomainNamespaces() {
+    namespaceStatuses.clear();
+    namespaceStoppingMap.clear();
+    configMapWatchers.clear();
+    domainWatchers.clear();
+    eventWatchers.clear();
+    jobWatchers.clear();
+    podWatchers.clear();
+    serviceWatchers.clear();
   }
 
   /**
@@ -124,10 +139,6 @@ public class DomainNamespaces {
     return namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
   }
 
-  static void startConfigMapWatcher(String ns, String initialResourceVersion, DomainProcessor processor) {
-    configMapWatchers.startWatcher(ns, initialResourceVersion, processor);
-  }
-
   private static WatchTuning getWatchTuning() {
     return TuningParameters.getInstance().getWatchTuning();
   }
@@ -170,6 +181,10 @@ public class DomainNamespaces {
     public WatcherControl(WatcherFactory<T, W> factory, ListenerSelector<T> selector) {
       this.factory = factory;
       this.selector = selector;
+    }
+
+    void clear() {
+      watchers.clear();
     }
 
     void startWatcher(String namespace, String resourceVersion, DomainProcessor domainProcessor) {

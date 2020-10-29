@@ -49,6 +49,10 @@ import org.junit.Test;
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.Main.GIT_BRANCH_KEY;
+import static oracle.kubernetes.operator.Main.GIT_BUILD_TIME_KEY;
+import static oracle.kubernetes.operator.Main.GIT_BUILD_VERSION_KEY;
+import static oracle.kubernetes.operator.Main.GIT_COMMIT_KEY;
 import static oracle.kubernetes.operator.MainTest.NamespaceStatusMatcher.isNamespaceStarting;
 import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -64,6 +68,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -120,16 +125,33 @@ public class MainTest extends ThreadFactoryTestBase {
   private final Collection<LogRecord> logRecords = new ArrayList<>();
   private final String ns = "nsrand" + new Random().nextInt(10000);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, testSupport);
+  private final Main main = new Main(delegate);
+
+  // REG-> hack to deal with statics
+  @SuppressWarnings({"FieldMayBeFinal", "InstantiationOfUtilityClass"})
+  private DomainNamespaces domainNamespaces = new DomainNamespaces();
 
   static {
     buildProperties = new PropertiesBuilder()
-              .withProperty("git.build.version", GIT_BUILD_VERSION)
-              .withProperty("git.branch", GIT_BRANCH)
-              .withProperty("git.commit.id.abbrev", GIT_COMMIT)
-              .withProperty("git.build.time", GIT_BUILD_TIME)
+              .withProperty(GIT_BUILD_VERSION_KEY, GIT_BUILD_VERSION)
+              .withProperty(GIT_BRANCH_KEY, GIT_BRANCH)
+              .withProperty(GIT_COMMIT_KEY, GIT_COMMIT)
+              .withProperty(GIT_BUILD_TIME_KEY, GIT_BUILD_TIME)
               .build();
   }
 
+  static class PropertiesBuilder {
+    private final Properties properties = new Properties();
+
+    private PropertiesBuilder withProperty(String name, String value) {
+      properties.put(name, value);
+      return this;
+    }
+
+    private Properties build() {
+      return properties;
+    }
+  }
 
   @Before
   public void setUp() throws Exception {
@@ -170,8 +192,9 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void whenOperatorVersionNotDefined_failToCreateTheOperator() {
-    assertThat(Main.createMain(new Properties()), nullValue());
+  public void mainHasAccessToBuildProperties() {
+    assertThat(Main.getBuildProperties(), allOf(
+          hasKey(GIT_BRANCH_KEY), hasKey(GIT_COMMIT_KEY), hasKey(GIT_BUILD_TIME_KEY), hasKey(GIT_BUILD_VERSION_KEY)));
   }
 
   @Test
@@ -199,33 +222,6 @@ public class MainTest extends ThreadFactoryTestBase {
     Main.createMain(buildProperties);
 
     assertThat(logRecords, containsInfo(OP_CONFIG_SERVICE_ACCOUNT, "default"));
-  }
-
-  @Test
-  public void whenOperatorStarted_namespaceWatcherIsCreated() {
-    final Main main = new Main(delegate);
-    main.startOperator(null);
-
-    assertThat(main.getNamespaceWatcher(), notNullValue());
-  }
-
-  @Test
-  public void whenDedicatedNamespaceButNoCRD_failToCreateTheOperator() {
-    testSupport.failOnResource(DOMAIN, null, getOperatorNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
-
-    assertThat(Main.createMain(buildProperties), nullValue());
-  }
-
-  @Test
-  public void whenDedicatedNamespaceButNoCRD_logReasonForFailure() {
-    loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
-    testSupport.failOnResource(DOMAIN, null, getOperatorNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
-
-    Main.createMain(buildProperties);
-    
-    assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
   }
 
   @Test
@@ -271,18 +267,78 @@ public class MainTest extends ThreadFactoryTestBase {
     assertThat(logRecords, not(containsInfo(OP_CONFIG_DOMAIN_NAMESPACES)));
   }
 
-  static class PropertiesBuilder {
-    private final Properties properties = new Properties();
+  @Test
+  public void whenOperatorStarted_namespaceWatcherIsCreated() {
+    main.startOperator(null);
 
-    private PropertiesBuilder withProperty(String name, String value) {
-      properties.put(name, value);
-      return this;
-    }
-
-    private Properties build() {
-      return properties;
-    }
+    assertThat(main.getNamespaceWatcher(), notNullValue());
   }
+
+  @Test
+  public void whenUnableToCreateCRD_dontTryToStartWatchers() {
+    simulateMissingCRD();
+
+    recheckDomains();
+
+    verifyWatchersNotDefined(getOperatorNamespace());
+  }
+
+  void simulateMissingCRD() {
+    testSupport.failOnResource(DOMAIN, null, getOperatorNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
+  }
+
+  void recheckDomains() {
+    testSupport.runSteps(main.createDomainRecheckSteps(DateTime.now()));
+  }
+
+  @Test
+  public void whenNoCRD_logReasonForFailure() {
+    loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
+    simulateMissingCRD();
+
+    recheckDomains();
+
+    assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
+  }
+
+  @Test
+  public void afterLoggedCRDMissing_dontDoItASecondTime() {
+    loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
+    simulateMissingCRD();
+    recheckDomains();
+    logRecords.clear();
+
+    recheckDomains();
+
+    assertThat(logRecords, not(containsSevere(CRD_NOT_INSTALLED)));
+  }
+
+  @Test
+  public void afterMissingCRDdetected_correctionOfTheConditionAllowsProcessingToOccur() {
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    simulateMissingCRD();
+    recheckDomains();
+
+    testSupport.cancelFailures();
+    recheckDomains();
+
+    verifyWatchersDefined(getOperatorNamespace());
+  }
+
+  @Test
+  public void afterMissingCRDcorrected_subsequentFailureLogsReasonForFailure() {
+    simulateMissingCRD();
+    recheckDomains();
+    testSupport.cancelFailures();
+    recheckDomains();
+
+    loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
+    simulateMissingCRD();
+    recheckDomains();
+
+    assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
+  }
+
 
   @Test
   public void withNamespaceList_onReadExistingNamespaces_startsNamespaces()
