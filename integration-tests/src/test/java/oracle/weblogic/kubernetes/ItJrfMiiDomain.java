@@ -35,12 +35,13 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-//import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -48,12 +49,15 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOpsswalletp
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to a create JRF model in image domain and start the domain")
 @IntegrationTest
@@ -85,6 +89,7 @@ public class ItJrfMiiDomain {
       = with().pollDelay(2, SECONDS)
       .and().with().pollInterval(10, SECONDS)
       .atMost(5, MINUTES).await();
+
 
   /**
    * Start DB service and create RCU schema.
@@ -127,6 +132,11 @@ public class ItJrfMiiDomain {
 
   }
 
+  /**
+   * Create a basic JRF model in image domain.
+   * Verify Pod is ready and service Exists for both admin server and managed servers.
+   * Verify EM console is accessible.
+   */
   @Test
   @DisplayName("Create JRF Domain model in image")
   public void testJrfModelInImage() {
@@ -209,30 +219,26 @@ public class ItJrfMiiDomain {
     // create model in image domain
     createDomainAndVerify(domain, jrfDomainNamespace);
 
-    //check admin service created
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, jrfDomainNamespace);
-    checkServiceExists(adminServerPodName, jrfDomainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, jrfDomainNamespace);
 
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, jrfDomainNamespace);
-    checkPodReady(adminServerPodName, domainUid, jrfDomainNamespace);
-
-    // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed service {0} is created in namespace {1}",
+      logger.info("Checking managed server service {0} is created in namespace {1}",
           managedServerPrefix + i + "-c1", jrfDomainNamespace);
-      checkServiceExists(managedServerPrefix + i + "-c1", jrfDomainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i + "-c1", domainUid, jrfDomainNamespace);
     }
 
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i + "-c1", jrfDomainNamespace);
-      checkPodReady(managedServerPrefix + i + "-c1", domainUid, jrfDomainNamespace);
-    }
-
+    //check access to the em console: http://hostname:port/em
+    int nodePort = getServiceNodePort(
+           jrfDomainNamespace, getExternalServicePodName(adminServerPodName, "-external"), "default");
+    assertTrue(nodePort != -1,
+          "Could not get the default external service node port");
+    logger.info("Found the default service nodePort {0}", nodePort);
+    String curlCmd1 = "curl -s -L --show-error --noproxy '*' "
+        + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
+        + "/em --write-out %{http_code} -o /dev/null";
+    logger.info("Executing default nodeport curl command {0}", curlCmd1);
+    assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5));
+    logger.info("EM console is accessible thru default service");
   }
 
   /**
@@ -288,6 +294,34 @@ public class ItJrfMiiDomain {
                             .introspectorJobActiveDeadlineSeconds(600L)));
 
     return domain;
+  }
+
+  private void checkAppIsRunning(
+      ConditionFactory conditionFactory,
+      String namespace,
+      String podName,
+      String internalPort,
+      String appPath,
+      String expectedStr
+  ) {
+
+    // check if the application is accessible inside of a server pod
+    conditionFactory
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for application {0} is running on pod {1} in namespace {2} "
+            + "(elapsed time {3}ms, remaining time {4}ms)",
+            appPath,
+            podName,
+            namespace,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(() -> appAccessibleInPod(
+                namespace,
+                podName,
+                internalPort,
+                appPath,
+                expectedStr));
+
   }
 
 }
