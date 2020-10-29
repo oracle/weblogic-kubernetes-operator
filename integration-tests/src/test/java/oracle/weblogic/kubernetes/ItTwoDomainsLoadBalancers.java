@@ -1354,9 +1354,6 @@ public class ItTwoDomainsLoadBalancers {
                         + "-Dweblogic.http.isWLProxyHeadersAccessible=true "
                         + "-Dweblogic.debug.DebugHttp=true "
                         + "-Dweblogic.rjvm.allowUnknownHost=true "
-                        //+ "-Dweblogic.kernel.debug=true "
-                        //+ "-Dweblogic.debug.DebugMessaging=true "
-                        //+ "-Dweblogic.debug.DebugConnection=true "
                         + "-Dweblogic.ResolveDNSName=true "
                         + "-Dweblogic.MaxMessageSize=20000000"))
                 .addEnvItem(new V1EnvVar()
