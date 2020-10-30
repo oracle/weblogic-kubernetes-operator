@@ -49,7 +49,7 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   }
 
   @Override
-  public KubernetesVersion getVersion() {
+  public KubernetesVersion getKubernetesVersion() {
     return KubernetesVersion.TEST_VERSION;
   }
 
