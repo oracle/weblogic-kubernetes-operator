@@ -13,7 +13,6 @@ import static oracle.weblogic.kubernetes.TestConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
- *
  *  JUnit5 extension class to implement ExecutionCondition for the custom
  *  annotation @AssumeWebLogicImage.
  */
@@ -24,7 +23,7 @@ public class WebLogicImageCondition implements ExecutionCondition {
    * Skip the test if the image tag is the latest one.
    * @param context the current extension context
    * @return ConditionEvaluationResult disabled if the image tag is the latest one, enabled if the
-   * image tag is not the latest one
+   *     image tag is not the latest one
    */
   @Override
   public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
