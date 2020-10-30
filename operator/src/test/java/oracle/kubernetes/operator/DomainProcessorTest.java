@@ -408,6 +408,44 @@ public class DomainProcessorTest {
     assertServerPodAndServicePresent(info, MS_PREFIX + 3);
   }
 
+  @Test
+  public void whenClusterReplicas2_server2NeverPolicy_establishMatchingPresence() {
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+    domainConfigurator.configureServer(MS_PREFIX + 2).withServerStartPolicy("NEVER");
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).execute();
+
+    assertServerPodAndServicePresent(info, ADMIN_NAME);
+    for (Integer i : Arrays.asList(1,3)) {
+      assertServerPodAndServicePresent(info, MS_PREFIX + i);
+    }
+    assertServerPodNotPresent(info, MS_PREFIX + 2);
+    assertThat(info.getClusterService(CLUSTER), notNullValue());
+  }
+
+  @Test
+  public void whenClusterReplicas2_allServersExcept5NeverPolicy_establishMatchingPresence() {
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+    for (Integer i : Arrays.asList(1 - MAX_SERVERS)) {
+      if (i != 5) {
+        domainConfigurator.configureServer(MS_PREFIX + i).withServerStartPolicy("NEVER");
+      }
+    }
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).execute();
+
+    assertServerPodAndServicePresent(info, ADMIN_NAME);
+    for (Integer i : Arrays.asList(1 - MAX_SERVERS)) {
+      if (i != 5) {
+        assertServerPodAndServiceNotPresent(info, MS_PREFIX + i);
+      } else {
+        assertServerPodAndServicePresent(info, MS_PREFIX + 5);
+      }
+    }
+
+    assertThat(info.getClusterService(CLUSTER), notNullValue());
+  }
+
   private V1Service createNonOperatorService() {
     return new V1Service()
         .metadata(
@@ -934,7 +972,7 @@ public class DomainProcessorTest {
 
   private void assertServerPodAndServiceNotPresent(DomainPresenceInfo info, String serverName) {
     assertThat(serverName + " server service", info.getServerService(serverName), nullValue());
-    assertThat(serverName + " pod", info.getServerPod(serverName), nullValue());
+    assertThat(serverName + " pod", isServerInactive(info, serverName), is(Boolean.TRUE));
   }
 
   @Test
