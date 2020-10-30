@@ -45,8 +45,7 @@ A new module "integration-tests" is added to the Maven project `weblogic-kuberne
     mvn -pl -integration-tests -P integration-tests verify
     To run tests in parallel
     mvn -DPARALLEL=true -DNUMBER_OF_THREADS=2 -pl -integration-tests -P integration-tests verify
-```
-
+   ```
 ## How to run a single test class 
 mvn -Dit.test=ItMiiDomain -pl integration-tests -P integration-tests verify
 
