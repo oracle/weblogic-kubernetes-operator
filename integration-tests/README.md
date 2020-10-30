@@ -22,11 +22,8 @@ A new module "integration-tests" is added to the Maven project `weblogic-kuberne
 
 # How to run Operator integration tests locally on Oracle Linux
 
-- Configure a supported version of Kubernetes cluster.
-- Install supported version git.
-- Install supported version mvn.
-- Install supported version Helm.
-- Install supported version JDK.
+- Install supported version Helm and Kubernetes cluster. For detail see [ https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/].
+- Install supported version JDK. Need JDK Version 11+ and above.
 - Clone the weblogic-kubernetes-operator repository
 - Setup a personal account on container-registry.oracle.com
 - Log into container-registry.oracle.com and signup for access to WebLogic 12.2.1.4 images from container-registry.oracle.com/middleware/weblogic:12.2.1.4
@@ -39,11 +36,11 @@ A new module "integration-tests" is added to the Maven project `weblogic-kuberne
    ```
 - In weblogic-kubernetes-operator run the following commands
   ```
-    To build the Weblogic Kubernetes Operator image locally for the first time 
+    # Build the Weblogic Kubernetes Operator image locally for the first time 
     mvn clean install 
-    To run tests in sequential
+    # Run tests in sequential
     mvn -pl -integration-tests -P integration-tests verify
-    To run tests in parallel
+    # Run tests in parallel
     mvn -DPARALLEL=true -DNUMBER_OF_THREADS=2 -pl -integration-tests -P integration-tests verify
    ```
 ## How to run a single test class 
