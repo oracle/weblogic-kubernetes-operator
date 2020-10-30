@@ -305,7 +305,7 @@ public class ItSamples {
   }
 
   private void updateDomainInputsFile(String domainName, Path sampleBase) {
-    // change namespace from default to custom, set wlst or wdt, domain name, and t3PublicAddress
+    // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
           "namespace: default", "namespace: " + domainNamespace);
