@@ -34,6 +34,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.annotations.AssumeWebLogicImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -63,7 +64,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -112,7 +112,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Tests related to introspectVersion attribute.
@@ -850,17 +849,15 @@ public class ItIntrospectVersion {
    * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
-   * This test will be aborted if the image tag is: 14.1.1.0-11
+   * This test will be skipped if the image tag is the latest WebLogic image tag
    */
   @Order(5)
+  @AssumeWebLogicImage
   @Test
   @DisplayName("Verify server pods are restarted by updating image name")
   public void testUpdateImageName() {
-    logger.info("In the testUpdateImageName() the image version is: " + WEBLOGIC_IMAGE_TAG);
-    logger.info("This test will be ABORTED if WebLogic image version is:  14.1.1.0-11");
-    assumeTrue(!WEBLOGIC_IMAGE_TAG.equals("14.1.1.0-11"));
-    final String domainNamespace = introDomainNamespace;
 
+    final String domainNamespace = introDomainNamespace;
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
     final String managedServerNameBase = "cl2-ms-";
