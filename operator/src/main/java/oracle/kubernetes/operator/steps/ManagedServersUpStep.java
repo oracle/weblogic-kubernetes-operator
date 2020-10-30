@@ -30,9 +30,11 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
+import static java.util.Comparator.comparing;
 import static oracle.kubernetes.operator.DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStep;
 
@@ -155,7 +157,7 @@ public class ManagedServersUpStep extends Step {
   static class ServersUpStepFactory {
     final WlsDomainConfig domainTopology;
     final Domain domain;
-    Collection<ServerStartupInfo> startupInfos;
+    List<ServerStartupInfo> startupInfos;
     List<ServerShutdownInfo> shutdownInfos = new ArrayList<>();
     final Collection<String> servers = new ArrayList<>();
     final Collection<String> preCreateServers = new ArrayList<>();
@@ -229,6 +231,11 @@ public class ManagedServersUpStep extends Step {
     }
 
     Collection<ServerStartupInfo> getStartupInfos() {
+      if (startupInfos != null) {
+        Collections.sort(
+            startupInfos,
+            comparing((ServerStartupInfo sinfo) -> OperatorUtils.getSortingString(sinfo.getServerName())));
+      }
       return startupInfos;
     }
 
