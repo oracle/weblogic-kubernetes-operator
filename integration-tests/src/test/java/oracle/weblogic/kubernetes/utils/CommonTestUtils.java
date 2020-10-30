@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1NFSVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -89,6 +90,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
+import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -97,6 +99,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
@@ -112,6 +115,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
@@ -2876,15 +2880,17 @@ public class CommonTestUtils {
         pvName, domainUid, className);
     Path pvHostPath = null;
     // when tests are running in local box the PV directories need to exist
-    try {
-      pvHostPath = Files.createDirectories(Paths.get(
-          PV_ROOT, className, pvName));
-      logger.info("Creating PV directory host path {0}", pvHostPath);
-      org.apache.commons.io.FileUtils.deleteDirectory(pvHostPath.toFile());
-      Files.createDirectories(pvHostPath);
-    } catch (IOException ioex) {
-      logger.severe(ioex.getMessage());
-      fail("Create persistent volume host path failed");
+    if (!OKE_CLUSTER) {
+      try {
+        pvHostPath = Files.createDirectories(Paths.get(
+            PV_ROOT, className, pvName));
+        logger.info("Creating PV directory host path {0}", pvHostPath);
+        org.apache.commons.io.FileUtils.deleteDirectory(pvHostPath.toFile());
+        Files.createDirectories(pvHostPath);
+      } catch (IOException ioex) {
+        logger.severe(ioex.getMessage());
+        fail("Create persistent volume host path failed");
+      }
     }
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
@@ -2901,6 +2907,15 @@ public class CommonTestUtils {
             .name(pvName)
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
+    if (OKE_CLUSTER) {
+      v1pv.getSpec().nfs(new V1NFSVolumeSource()
+          .path(FSS_DIR)
+          .server(NFS_SERVER)
+      );
+    } else {
+      v1pv.getSpec().hostPath(new V1HostPathVolumeSource()
+          .path(pvHostPath.toString()));
+    }
     boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Failed to create persistent volume");
     assertTrue(success, "PersistentVolume creation failed");
