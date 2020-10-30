@@ -31,7 +31,9 @@ interface MainDelegate {
 
   void runSteps(Packet packet, Step firstStep, Runnable completionAction);
 
-  DomainProcessor getProcessor();
+  DomainProcessor getDomainProcessor();
+
+  DomainNamespaces getDomainNamespaces();
 
   KubernetesVersion getKubernetesVersion();
 }

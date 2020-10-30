@@ -31,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -151,6 +152,8 @@ public class DomainProcessorTest {
     mementos.add(InMemoryCertificates.install());
     mementos.add(UnitTestHash.install());
     mementos.add(ScanCacheStub.install());
+    mementos.add(StubWatchFactory.install());
+    mementos.add(NoopWatcherStarter.install());
 
     testSupport.defineResources(newDomain);
     IntrospectionTestUtils.defineResources(testSupport, createDomainConfig(), jobStatusSupplier);

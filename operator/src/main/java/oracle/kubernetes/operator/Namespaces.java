@@ -221,6 +221,12 @@ public class Namespaces {
   // checks the list of namespace names collected above. If any configured namespaces are not found, logs a warning.
   static class NamespaceListAfterStep extends Step {
 
+    private final DomainNamespaces domainNamespaces;
+
+    public NamespaceListAfterStep(DomainNamespaces domainNamespaces) {
+      this.domainNamespaces = domainNamespaces;
+    }
+
     @Override
     public NextAction apply(Packet packet) {
       NamespaceValidationContext validationContext = new NamespaceValidationContext(packet);
@@ -237,9 +243,9 @@ public class Namespaces {
     // Halts processing of any managed namespaces that are no longer to be managed, either because
     // they have been deleted from the Kubernetes cluster or because the operator is no longer configured for them.
     private void stopRemovedNamespaces(NamespaceValidationContext validationContext) {
-      DomainNamespaces.getNamespaces().stream()
+      domainNamespaces.getNamespaces().stream()
             .filter(validationContext::isNoLongerActiveDomainNamespace)
-            .forEach(DomainNamespaces::stopNamespace);
+            .forEach(domainNamespaces::stopNamespace);
     }
   }
 

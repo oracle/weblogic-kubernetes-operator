@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,39 +40,55 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getResourceVers
  */
 @SuppressWarnings("SameParameterValue")
 public class DomainNamespaces {
-  private static final Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
-  private static final Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
   private static final WatchListener<V1Job> NULL_LISTENER = w -> { };
 
-  private static final WatcherControl<V1ConfigMap, ConfigMapWatcher> configMapWatchers
+  private final Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
+  private final Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
+
+  private final WatcherControl<V1ConfigMap, ConfigMapWatcher> configMapWatchers
         = new WatcherControl<>(ConfigMapWatcher::create, d -> d::dispatchConfigMapWatch);
-  private static final WatcherControl<Domain, DomainWatcher> domainWatchers
+  private final WatcherControl<Domain, DomainWatcher> domainWatchers
         = new WatcherControl<>(DomainWatcher::create, d -> d::dispatchDomainWatch);
-  private static final WatcherControl<V1Event, EventWatcher> eventWatchers
+  private final WatcherControl<V1Event, EventWatcher> eventWatchers
         = new WatcherControl<>(EventWatcher::create, d -> d::dispatchEventWatch);
-  private static final WatcherControl<V1Job, JobWatcher> jobWatchers
+  private final WatcherControl<V1Job, JobWatcher> jobWatchers
         = new WatcherControl<>(JobWatcher::create, d -> NULL_LISTENER);
-  private static final WatcherControl<V1Pod, PodWatcher> podWatchers
+  private final WatcherControl<V1Pod, PodWatcher> podWatchers
         = new WatcherControl<>(PodWatcher::create, d -> d::dispatchPodWatch);
-  private static final WatcherControl<V1Service, ServiceWatcher> serviceWatchers
+  private final WatcherControl<V1Service, ServiceWatcher> serviceWatchers
         = new WatcherControl<>(ServiceWatcher::create, d -> d::dispatchServiceWatch);
 
-  static AtomicBoolean isStopping(String ns) {
+  AtomicBoolean isStopping(String ns) {
     return namespaceStoppingMap.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
+  }
+
+  boolean isStarting(String ns) {
+    return Optional.ofNullable(namespaceStatuses.get(ns))
+          .map(NamespaceStatus::isNamespaceStarting)
+          .map(AtomicBoolean::get)
+          .orElse(false);
+  }
+
+  /**
+   * Constructs a DomainNamespace object. REG-> this is a hack to deal with resetting statics between tests.
+   */
+  public DomainNamespaces() {
+    namespaceStatuses.clear();
+    namespaceStoppingMap.clear();
   }
 
   /**
    * Returns a collection of the names of the namespaces currently being managed by the operator.
    */
   @Nonnull
-  static Set<String> getNamespaces() {
+  Set<String> getNamespaces() {
     return new TreeSet<>(namespaceStoppingMap.keySet());
   }
 
   /**
    * Requests all active namespaced-watchers to stop.
    */
-  static void stopAllWatchers() {
+  void stopAllWatchers() {
     namespaceStoppingMap.forEach((key, value) -> value.set(true));
   }
 
@@ -79,7 +96,7 @@ public class DomainNamespaces {
    * Stop the specified namespace and discard its in-memory resources.
    * @param ns a namespace name
    */
-  static void stopNamespace(String ns) {
+  void stopNamespace(String ns) {
     namespaceStoppingMap.remove(ns).set(true);
     namespaceStatuses.remove(ns);
 
@@ -91,27 +108,27 @@ public class DomainNamespaces {
     jobWatchers.removeWatcher(ns);
   }
 
-  static ConfigMapWatcher getConfigMapWatcher(String namespace) {
+  ConfigMapWatcher getConfigMapWatcher(String namespace) {
     return configMapWatchers.getWatcher(namespace);
   }
 
-  static DomainWatcher getDomainWatcher(String namespace) {
+  DomainWatcher getDomainWatcher(String namespace) {
     return domainWatchers.getWatcher(namespace);
   }
 
-  static EventWatcher getEventWatcher(String namespace) {
+  EventWatcher getEventWatcher(String namespace) {
     return eventWatchers.getWatcher(namespace);
   }
 
-  public static JobWatcher getJobWatcher(String namespace) {
+  JobWatcher getJobWatcher(String namespace) {
     return jobWatchers.getWatcher(namespace);
   }
 
-  static PodWatcher getPodWatcher(String namespace) {
+  PodWatcher getPodWatcher(String namespace) {
     return podWatchers.getWatcher(namespace);
   }
 
-  static ServiceWatcher getServiceWatcher(String namespace) {
+  ServiceWatcher getServiceWatcher(String namespace) {
     return serviceWatchers.getWatcher(namespace);
   }
 
@@ -120,12 +137,8 @@ public class DomainNamespaces {
    * @param ns the name of the namespace.
    */
   @Nonnull
-  static NamespaceStatus getNamespaceStatus(@Nonnull String ns) {
+  NamespaceStatus getNamespaceStatus(@Nonnull String ns) {
     return namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
-  }
-
-  static void startConfigMapWatcher(String ns, String initialResourceVersion, DomainProcessor processor) {
-    configMapWatchers.startWatcher(ns, initialResourceVersion, processor);
   }
 
   private static WatchTuning getWatchTuning() {
@@ -143,7 +156,7 @@ public class DomainNamespaces {
    * @param ns the name of the namespace
    * @param processor processing to be done to bring up any found domains
    */
-  public static Step readExistingResources(String ns, DomainProcessor processor) {
+  Step readExistingResources(String ns, DomainProcessor processor) {
     NamespacedResources resources = new NamespacedResources(ns, null);
     resources.addProcessing(new DomainResourcesValidation(ns, processor).getProcessors());
     resources.addProcessing(createWatcherStartupProcessing(ns, processor));
@@ -162,7 +175,7 @@ public class DomainNamespaces {
 
   interface ListenerSelector<T> extends Function<DomainProcessor, WatchListener<T>> { }
 
-  static class WatcherControl<T, W extends Watcher<T>> {
+  class WatcherControl<T, W extends Watcher<T>> {
     private final Map<String, W> watchers = new ConcurrentHashMap<>();
     private final WatcherFactory<T,W> factory;
     private final ListenerSelector<T> selector;
@@ -189,11 +202,11 @@ public class DomainNamespaces {
     }
   }
 
-  static NamespacedResources.Processors createWatcherStartupProcessing(String ns, DomainProcessor domainProcessor) {
+  NamespacedResources.Processors createWatcherStartupProcessing(String ns, DomainProcessor domainProcessor) {
     return new WatcherStartupProcessing(ns, domainProcessor);
   }
 
-  static class WatcherStartupProcessing extends NamespacedResources.Processors {
+  class WatcherStartupProcessing extends NamespacedResources.Processors {
     private final String ns;
     private final DomainProcessor domainProcessor;
 
