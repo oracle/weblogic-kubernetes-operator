@@ -11,10 +11,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
@@ -43,22 +43,21 @@ public class NamespaceTest {
 
   private static final String ADDITIONAL_NS1 = "EXTRA_NS1";
   private static final String ADDITIONAL_NS2 = "EXTRA_NS2";
-  public static final String NAMESPACE_STOPPING_MAP = "namespaceStoppingMap";
 
-  KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final Set<String> currentNamespaces = new HashSet<>();
+  private final DomainNamespaces domainNamespaces = new DomainNamespaces();
   private final DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
-  private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class);
+  private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, dp, domainNamespaces);
 
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(StaticStubSupport.preserve(DomainNamespaces.class, "namespaceStatuses"));
-    mementos.add(StaticStubSupport.preserve(DomainNamespaces.class, NAMESPACE_STOPPING_MAP));
+    mementos.add(StubWatchFactory.install());
+    mementos.add(NoopWatcherStarter.install());
     mementos.add(HelmAccessStub.install());
     mementos.add(TuningParametersStub.install());
-    mementos.add(StaticStubSupport.install(Main.class, "processor", dp));
     mementos.add(testSupport.install());
   }
 
@@ -70,20 +69,20 @@ public class NamespaceTest {
   @Test
   public void givenJobWatcherForNamespace_afterNamespaceDeletedAndRecreatedHaveDifferentWatcher() {
     initializeNamespaces();
-    JobWatcher oldWatcher = DomainNamespaces.getJobWatcher(NS);
+    JobWatcher oldWatcher = domainNamespaces.getJobWatcher(NS);
 
     deleteNamespace(NS);
     processNamespaces();
     defineNamespaces(NS);
 
     testSupport.runSteps(new Main(delegate).createDomainRecheckSteps(DateTime.now()));
-    assertThat(DomainNamespaces.getJobWatcher(NS), not(sameInstance(oldWatcher)));
+    assertThat(domainNamespaces.getJobWatcher(NS), not(sameInstance(oldWatcher)));
   }
 
   @Test
   public void whenDomainNamespaceRemovedFromDomainNamespaces_stopDomainWatchers() {
     initializeNamespaces();
-    AtomicBoolean stopping = DomainNamespaces.isStopping(NS);
+    AtomicBoolean stopping = domainNamespaces.isStopping(NS);
 
     unspecifyDomainNamespace(NS);
     processNamespaces();
@@ -124,7 +123,7 @@ public class NamespaceTest {
   }
 
   private void processNamespaces() {
-    testSupport.withClearPacket().runSteps(new Main.DomainRecheck().readExistingNamespaces());
+    testSupport.withClearPacket().runSteps(new DomainRecheck(dp, domainNamespaces).readExistingNamespaces());
   }
 
   @Test
@@ -134,7 +133,7 @@ public class NamespaceTest {
     unspecifyDomainNamespace(NS);
     processNamespaces();
 
-    assertThat(DomainNamespaces.getNamespaces(), not(contains(NS)));
+    assertThat(domainNamespaces.getNamespaces(), not(contains(NS)));
   }
 
   @Test
@@ -158,7 +157,7 @@ public class NamespaceTest {
   @Test
   public void whenDomainNamespaceDeleted_stopDomainWatchers() {
     initializeNamespaces();
-    AtomicBoolean stopping = DomainNamespaces.isStopping(NS);
+    AtomicBoolean stopping = domainNamespaces.isStopping(NS);
 
     deleteNamespace(NS);
     processNamespaces();
@@ -173,7 +172,7 @@ public class NamespaceTest {
     deleteNamespace(NS);
     processNamespaces();
 
-    assertThat(DomainNamespaces.getNamespaces(), not(contains(NS)));
+    assertThat(domainNamespaces.getNamespaces(), not(contains(NS)));
   }
 
   private void addDomainNamespace(String namespace) {
@@ -194,9 +193,22 @@ public class NamespaceTest {
   }
 
   abstract static class MainDelegateStub implements MainDelegate {
+    private final DomainProcessor domainProcessor;
+    private final DomainNamespaces domainNamespaces;
+
+    MainDelegateStub(DomainProcessor domainProcessor, DomainNamespaces domainNamespaces) {
+      this.domainProcessor = domainProcessor;
+      this.domainNamespaces = domainNamespaces;
+    }
+
     @Override
-    public DomainProcessor getProcessor() {
-      return createStrictStub(DomainProcessorStub.class);
+    public DomainProcessor getDomainProcessor() {
+      return domainProcessor;
+    }
+
+    @Override
+    public DomainNamespaces getDomainNamespaces() {
+      return domainNamespaces;
     }
 
     @Override
