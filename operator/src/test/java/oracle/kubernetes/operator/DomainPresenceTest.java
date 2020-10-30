@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.stream.IntStream;
 
@@ -56,12 +55,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final DomainProcessorStub dp = createStub(DomainProcessorStub.class);
-  private Map<String, AtomicBoolean> namespaceStoppingMap;
-
-  private static Memento installStub(Class<?> containingClass, String fieldName, Object newValue)
-      throws NoSuchFieldException {
-    return StaticStubSupport.install(containingClass, fieldName, newValue);
-  }
+  private final DomainNamespaces domainNamespaces = new DomainNamespaces();
 
   @Before
   public void setUp() throws Exception {
@@ -69,23 +63,13 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(testSupport.install());
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
-    mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
-    mementos.add(StaticStubSupport.install(Main.class, "engine", testSupport.getEngine()));
+    mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "INSTANCE", this));
     mementos.add(NoopWatcherStarter.install());
     mementos.add(TuningParametersStub.install());
-
-    namespaceStoppingMap = getStoppingVariable();
-    namespaceStoppingMap.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
-  }
-
-  private Map<String, AtomicBoolean> getStoppingVariable() throws NoSuchFieldException {
-    Memento stoppingMemento = StaticStubSupport.preserve(DomainNamespaces.class, "namespaceStoppingMap");
-    return stoppingMemento.getOriginalValue();
   }
 
   @After
   public void tearDown() throws Exception {
-    namespaceStoppingMap.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
     shutDownThreads();
     mementos.forEach(Memento::revert);
     testSupport.throwOnCompletionFailure();
@@ -94,7 +78,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   @Test
   public void whenNoPreexistingDomains_createEmptyDomainPresenceInfoMap() {
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(dp.getDomainPresenceInfos(), is(anEmptyMap()));
   }
@@ -105,7 +89,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(domain);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID).getDomain(), equalTo(domain));
   }
@@ -168,7 +152,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(service);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID).getServerService("admin"), equalTo(service));
   }
@@ -180,7 +164,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(pod);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID).getServerPod("admin"), equalTo(pod));
   }
@@ -200,7 +184,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     addEventResource(UID, "admin", "ignore this event");
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID).getLastKnownServerStatus("admin"), nullValue());
   }
@@ -225,9 +209,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         new V1PersistentVolumeClaim().metadata(createMetadata(UID, NS, "claim1"));
     testSupport.defineResources(service1, service2, volume, claim);
 
-    namespaceStoppingMap.get(NS).set(false);
-
-    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(dp.isDeletingStrandedResources(UID), is(true));
   }
@@ -239,8 +221,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     V1Service service2 = createServerService("UID" + LAST_DOMAIN_NUM, NS, "admin");
     testSupport.defineResources(service1, service2);
 
-    namespaceStoppingMap.get(NS).set(false);
-    testSupport.runSteps(DomainNamespaces.readExistingResources(NS, dp));
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(dp.isEstablishingDomain("UID1"), is(true));
     assertThat(dp.isEstablishingDomain("UID" + LAST_DOMAIN_NUM), is(true));
