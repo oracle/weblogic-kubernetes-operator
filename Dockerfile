@@ -47,7 +47,6 @@ RUN set -eux; \
     mkdir -m 775 /operator; \
     mkdir -m 775 /logs; \
     mkdir /operator/lib; \
-    mkdir -m 775 -p /operator/internal-identity /operator/external-identity; \
     chown -R oracle:root /operator /logs
 
 USER oracle
