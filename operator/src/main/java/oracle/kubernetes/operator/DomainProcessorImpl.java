@@ -443,7 +443,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                     .put(
                         ProcessingConstants.DOMAIN_COMPONENT_NAME,
                         Component.createFor(
-                            info, delegate.getVersion()));
+                            info, delegate.getKubernetesVersion()));
                 packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
                 Step strategy =
                     ServerStatusReader.createStatusStep(main.statusUpdateTimeoutSeconds, null);
@@ -693,7 +693,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           .getComponents()
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(liveInfo, delegate.getVersion(),
+              Component.createFor(liveInfo, delegate.getKubernetesVersion(),
                   PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                   JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
       runDomainPlan(

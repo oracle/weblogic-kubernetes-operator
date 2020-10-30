@@ -20,6 +20,7 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.NoopWatcherStarter;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -63,6 +64,7 @@ public class WatchBuilderTest {
     mementos.add(ClientPoolStub.install());
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
+    mementos.add(NoopWatcherStarter.install());
   }
 
   @After

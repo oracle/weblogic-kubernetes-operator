@@ -324,7 +324,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that a create operation should fail if it matches the specified conditions. Applies to
-   * namespaced resources.
+   * namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -337,7 +337,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that a replace operation should fail if it matches the specified conditions. Applies to
-   * namespaced resources.
+   * namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -350,7 +350,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that a replace operation should fail if it matches the specified conditions. Applies to
-   * namespaced resources.
+   * namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -364,7 +364,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that a delete operation should fail if it matches the specified conditions. Applies to
-   * namespaced resources.
+   * namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -377,7 +377,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that any operation should fail if it matches the specified conditions. Applies to
-   * namespaced resources.
+   * namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -390,7 +390,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that any operation should fail if it matches the specified conditions. Applies to
-   * namespaced resources.
+   * namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -403,7 +403,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that any operation should fail if it matches the specified conditions. Applies to
-   * non-namespaced resources.
+   * non-namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -411,6 +411,13 @@ public class KubernetesTestSupport extends FiberTestSupport {
    */
   public void failOnResource(@Nonnull String resourceType, String name, int httpStatus) {
     failOnResource(resourceType, name, null, httpStatus);
+  }
+
+  /**
+   * Cancels the currently defined 'failure' condition established by the various 'failOnResource' methods.
+   */
+  public void cancelFailures() {
+    failure = null;
   }
 
   @SuppressWarnings("unused")
