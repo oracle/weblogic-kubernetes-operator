@@ -13,15 +13,15 @@ function usage() {
 
   cat << EOF
 
-  This script stops a running WebLogic managed server in a domain by
-  patching 'spec.managedServers[<server-name>].serverStartPolicy' attribute
-  of the domain resource to 'NEVER'. It also decreases the 'spec.clusters[<cluster-name>].replicas'
-  value for the managed server's cluster by `1`. The 'spec.clusters[<cluster-name>].replicas'
-  value can be kept constant by using '-k' option.
+  This script stops a running WebLogic managed server in a domain either by
+  decreasing the value of 'spec.clusters[<cluster-name>].replicas' or by updating 
+  'spec.managedServers[<server-name>].serverStartPolicy' attribute of the domain 
+  resource or both as necessary. The 'spec.clusters[<cluster-name>].replicas' value
+  can be kept constant by using '-k' option.
  
   Usage:
  
-    $(basename $0) -s myserver [-n mynamespace] [-d mydomainuid] [-k] [-m kubecli]
+    $(basename $0) -s myserver [-n mynamespace] [-d mydomainuid] [-k] [-m kubecli] [-v]
   
     -s <server_name>           : Server name parameter is required.
 
@@ -32,6 +32,8 @@ function usage() {
     -k <keep_replica_constant> : Keep replica count constant. Default behavior is to decrement replica count.
 
     -m <kubernetes_cli>        : Kubernetes command line interface. Default is 'kubectl'.
+
+    -v <verbose_mode>          : Enables verbose mode. Default is 'false'.
 
     -h                         : This help.
    
@@ -45,8 +47,14 @@ clusterName=""
 domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
 keepReplicaConstant=false
+verboseMode=false
+serverStartPolicy=NEVER
+started=""
+action=""
+effectivePolicy=""
+managedServerPolicy=""
 
-while getopts "ks:m:n:d:h" opt; do
+while getopts "vks:m:n:d:h" opt; do
   case $opt in
     s) serverName="${OPTARG}"
     ;;
@@ -57,6 +65,8 @@ while getopts "ks:m:n:d:h" opt; do
     d) domainUid="${OPTARG}"
     ;;
     k) keepReplicaConstant=true;
+    ;;
+    v) verboseMode=true;
     ;;
     h) usage 0
     ;;
@@ -91,30 +101,84 @@ clusterName=$(${kubernetesCli} get pod ${domainUid}-${serverName} -n ${domainNam
 # Get the domain in json format
 domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
 
+getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
+checkServersStartedByCurrentReplicasAndPolicy "${domainJson}" "${serverName}" "${clusterName}" started
+if [[ "${effectivePolicy}" == "NEVER" || "${started}" != "true" ]]; then
+  echo "[INFO] Server should be already stopping or stopped. This is either because of the sever start policy or server is chosen to be stopped based on current replica count."
+  exit 0
+fi
+
 # Create server start policy patch with NEVER value
-currentPolicy=""
-serverStartPolicy=NEVER
-createServerStartPolicyPatch "${domainJson}" "${serverName}" "${serverStartPolicy}" serverStartPolicyPatch currentPolicy
+createServerStartPolicyPatch "${domainJson}" "${serverName}" "${serverStartPolicy}" neverStartPolicyPatch
+getCurrentPolicy "${domainJson}" "${serverName}" managedServerPolicy
 
 if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
-  # if server is part of a cluster and replica count needs to be updated, update replica count and patch server start policy
+  # server is part of a cluster and replica count needs to be updated
+  checkServersStoppedByDecreasingReplicasAndUnsetPolicy "${domainJson}" "${serverName}" "${clusterName}" stoppedWhenRelicaReducedAndPolicyReset
+  if [ "${effectivePolicy}" == "ALWAYS" ]; then
+    checkServersStoppedByUnsetPolicyWhenAlways "${domainJson}" "${serverName}" "${clusterName}" stoppedWhenAlwaysPolicyReset
+  fi
+
   operation="DECREMENT"
   createReplicaPatch "${domainJson}" "${clusterName}" "${operation}" replicaPatch replicaCount
-  patchJson="{\"spec\": {\"clusters\": "${replicaPatch}",\"managedServers\": "${serverStartPolicyPatch}"}}"
-  echo "[INFO] Patching start policy of server '${serverName}' from '${currentPolicy}' to 'NEVER' and decrementing replica count for cluster '${clusterName}'."
+
+  if [[ -n ${managedServerPolicy} && "${stoppedWhenRelicaReducedAndPolicyReset}" == "true" ]]; then
+    # Server will be shut down by unsetting start policy and decrementing replica count, unset and decrement 
+    echo "[INFO] Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and decrementing replica count."
+    createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${replicaPatch}" patchJson
+    action="PATCH_REPLICA_AND_UNSET_POLICY"
+  elif [[ -z ${managedServerPolicy} && "${stoppedWhenRelicaReducedAndPolicyReset}" == "true" ]]; then
+    # Server will be shut down by decrementing replica count, decrement replicas
+    echo "[INFO] Updating replica count for cluster ${clusterName} to ${replicaCount}."
+    patchJson="{\"spec\": {\"clusters\": "${replicaPatch}"}}"
+    action="PATCH_REPLICA"
+  elif [[ ${managedServerPolicy} == "ALWAYS" && "${stoppedWhenAlwaysPolicyReset}" == "true" ]]; then
+    # Server will be shut down by unsetting start policy and decrementing replica count, unset and decrement
+    echo "[INFO] Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and decrementing replica count."
+    createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${replicaPatch}" patchJson
+    action="PATCH_REPLICA_AND_UNSET_POLICY"
+  else
+    # Patch server start policy to NEVER and decrement replica count
+    patchJson="{\"spec\": {\"clusters\": "${replicaPatch}",\"managedServers\": "${neverStartPolicyPatch}"}}"
+    echo "[INFO] Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'NEVER' and decrementing replica count for cluster '${clusterName}'."
+    action="PATCH_REPLICA_AND_POLICY"
+  fi
+elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
+  # Server is part of a cluster and replica count needs to stay constant
+  if [[ ${managedServerPolicy} == "ALWAYS" && "${stoppedWhenAlwaysPolicyReset}" == "false" ]]; then
+    # Server start policy is AlWAYS, unset the server start policy
+    echo "[INFO] Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
+    createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
+    action="UNSET_POLICY"
+  else
+    # Patch server start policy 
+    patchJson="{\"spec\": {\"managedServers\": "${neverStartPolicyPatch}"}}"
+    echo "[INFO] Patching start policy of '${serverName}' from '${effectivePolicy}' to 'NEVER'."
+    action="PATCH_POLICY"
+  fi
 else
-  # if server is an independent managed server or replica count needs to stay constant, only patch server start policy
+  # Server is an independent managed server, only patch server start policy
   patchJson="{\"spec\": {\"managedServers\": "${serverStartPolicyPatch}"}}"
-  echo "[INFO] Patching start policy of '${serverName}' from '${currentPolicy}' to 'NEVER'."
+  echo "[INFO] Patching start policy of '${serverName}' from '${effectivePolicy}' to 'NEVER'."
+  action="PATCH_POLICY"
+fi
+if [ "${verboseMode}" == "true" ]; then
+  echo "Patching domain with Json string -> ${patchJson}"
 fi
 ${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type='merge' --patch "${patchJson}"
 
-if [[ -n ${clusterName} && "${keepReplicaConstant}" != 'true' ]]; then
+if [ "${action}" == "PATCH_REPLICA_AND_POLICY" ]; then
 cat << EOF
 [INFO] Successfully patched server '${serverName}' with 'NEVER' start policy!
 
        The replica count for cluster '${clusterName}' updated to ${replicaCount}.
 EOF
-else 
+elif [ "${action}" == "PATCH_POLICY" ]; then
   echo "[INFO] Successfully patched server '${serverName}' with 'NEVER' start policy!"
+elif [ "${action}" == "PATCH_REPLICA" ]; then
+  echo "[INFO] Successfully updated replica count for cluster '${clusterName}' to ${replicaCount}."
+elif [ "${action}" == "PATCH_REPLICA_AND_UNSET_POLICY" ]; then 
+  echo "[INFO] Successfully unset policy '${effectivePolicy}' and updated replica count for cluster '${clusterName}' to ${replicaCount}."
+else
+  echo "[INFO] Successfully unset policy '${effectivePolicy}'!"
 fi

@@ -7,39 +7,23 @@ The operator provides sample scripts to start up or shut down a specific Managed
 These scripts can be helpful when scripting the life cycle of a WebLogic Server domain. For information on how to start, stop, restart, and scale WebLogic Server instances in your domain, see [Domain Life Cycle](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle).
 
 #### Scripts to start and stop a Managed Server
-The `startServer.sh` script starts a Managed Server by patching the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource to `ALWAYS`. For clustered servers, it also increases the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1`. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
+The `startServer.sh` script starts a Managed Server either by increasing the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1` or by updating the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource or both as necessary. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
 
 ```
-$ startServer.sh -d domain1 -n weblogic-domain-1 -s managed-server1
-[INFO] Patching start policy of server 'managed-server1' from 'NEVER' to 'ALWAYS' and incrementing replica count for cluster 'cluster-1'.
+$ startServer.sh -d domain1 -n weblogic-domain-1 -s managed-server2
+[INFO] Updating replica count for cluster 'cluster-1' to 2.
 domain.weblogic.oracle/domain1 patched
-[INFO] Successfully patched server 'managed-server1' with 'ALWAYS' start policy!
-
-       The replica count for cluster 'cluster-1' updated to 1.
+[INFO] Successfully updated replica count for cluster 'cluster-1' to 2.
 ```
 
-The `stopServer.sh` script shuts down a running Managed Server by patching the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource to `NEVER`. For clustered servers, it also decreases the `spec.clusters[<cluster-name>].replicas` for the Managed Server's cluster by `1`. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
+The `stopServer.sh` script shuts down a running Managed Server either by decreasing the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1` or by patching the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource or both as necessary. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
 
 ```
-$ stopServer.sh -d domain1 -n weblogic-domain-1 -s managed-server1
-[INFO] Patching start policy of server 'managed-server1' from 'ALWAYS' to 'NEVER' and decrementing replica count for cluster 'cluster-1'.
+$ stopServer.sh -d domain1 -n weblogic-domain-1 -s managed-server2
+[INFO] Updating replica count for cluster cluster-1 to 1.
 domain.weblogic.oracle/domain1 patched
-[INFO] Successfully patched server 'managed-server1' with 'NEVER' start policy!
-
-       The replica count for cluster 'cluster-1' updated to 0.
+[INFO] Successfully updated replica count for cluster 'cluster-1' to 1.
 ```
-
-#### Script behavior when starting or stopping a clustered Managed Server
-The following table shows the new values of `spec.managedServers[<server-name>].serverStartPolicy` and `spec.clusters[<cluster-name>].replicas` as updated by the server start and stop scripts.
-
-| Script Name | Keep Replicas Constant? | Previous Clustered Server State | New serverStartPolicy value | New Clustered Server State | Cluster's Replicas Value |
-| --- | --- | --- | --- | --- | --- |
-| `startServer.sh`| No (default) | `Stopped` | `ALWAYS` | `Started` | Incremented by 1 |
-| `startServer.sh`| Yes | `Stopped` | `ALWAYS` | `Started` | Unchanged |
-| `startServer.sh`| Any | `Started` | Unchanged | `Started` | Unchanged |
-| `stopServer.sh`| No (default) | `Started` | `NEVER` | `Stopped` | Decremented by 1 |
-| `stopServer.sh`| Yes | `Started` | `NEVER` | `Stopped` | Unchanged |
-| `stopServer.sh`| Any | `Stopped` | Unchanged | `Stopped` | Unchanged |
 
 ### Scripts to start and stop a cluster
 
