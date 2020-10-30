@@ -47,23 +47,6 @@ A new module "integration-tests" is added to the Maven project `weblogic-kuberne
     mvn -DPARALLEL=true -DNUMBER_OF_THREADS=2 -pl -integration-tests -P integration-tests verify
 ```
 
-Successful run will have the output like below:
-```
-<10-30-2020 01:21:58> <INFO> <oracle.weblogic.kubernetes.extensions.ImageBuilders close> <Cleanup images after all test suites are run>
-[INFO]
-[INFO] Results:
-[INFO]
-[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
-[INFO]
-[INFO]
-[INFO] --- maven-failsafe-plugin:3.0.0-M3:verify (verify) @ integration-tests ---
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time:  42:54 min
-[INFO] Finished at: 2020-10-30T01:21:58Z
-```
-
 ## How to run a single test class 
 mvn -Dit.test=ItMiiDomain -pl integration-tests -P integration-tests verify
 
