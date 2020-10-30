@@ -37,7 +37,7 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
 function usage {
-  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-h]"
+  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-m true|false] [-h]"
   echo "  -v Kubernetes version (optional) "
   echo "      (default: 1.15.11, supported values: 1.18, 1.18.2, 1.17, 1.17.5, 1.16, 1.16.9, 1.15, 1.15.11, 1.14, 1.14.10) "
   echo "  -n Kind cluster name (optional) "
@@ -56,6 +56,8 @@ function usage {
   echo "      (default: https://github.com/oracle/weblogic-deploy-tooling/releases/latest) "
   echo "  -i WIT download URL"
   echo "      (default: https://github.com/oracle/weblogic-image-tool/releases/latest) "
+  echo "  -m Run verify-images-tests to verify the new images"
+  echo "      (default: false) "
   echo "  -h Help"
   exit $1
 }
@@ -73,6 +75,7 @@ parallel_run="false"
 threads="2"
 wdt_download_url="https://github.com/oracle/weblogic-deploy-tooling/releases/latest"
 wit_download_url="https://github.com/oracle/weblogic-image-tool/releases/latest"
+verify_image_run="false"
 
 while getopts ":h:n:o:t:v:c:x:p:d:i:" opt; do
   case $opt in
@@ -93,6 +96,8 @@ while getopts ":h:n:o:t:v:c:x:p:d:i:" opt; do
     d) wdt_download_url="${OPTARG}"
     ;;
     i) wit_download_url="${OPTARG}"
+    ;;
+    m) verify_image_run="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -237,9 +242,19 @@ rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
 if [ "${test_filter}" = "ItOperatorUpgrade" ] || [ "${parallel_run}" = "false" ]; then
-  echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P integration-tests verify"
-  time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+  if [ "${verify_image_run}" = "false" ]; then
+    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P integration-tests verify"
+    time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+  else
+    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl verify-images-tests -P verify-images-tests verify"
+    time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl verify-images-tests -P verify-images-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+  fi
 else
-  echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P integration-tests verify"
-  time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+  if [ "${verify_image_run}" = "false" ]; then
+    echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P integration-tests verify"
+    time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+  else
+    echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl verify-images-tests -P verify-images-tests verify"
+    time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl verify-images-tests -P verify-images-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+  fi
 fi
