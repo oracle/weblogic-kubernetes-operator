@@ -42,7 +42,7 @@ public interface DomainProcessorDelegate {
    *
    * @return an object that represents the Kubernetes version
    */
-  KubernetesVersion getVersion();
+  KubernetesVersion getKubernetesVersion();
 
   /**
    * Creates a new FiberGate.
