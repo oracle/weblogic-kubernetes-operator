@@ -23,7 +23,6 @@ import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.jetbrains.annotations.NotNull;
-import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,7 +74,7 @@ public class NamespaceTest {
     processNamespaces();
     defineNamespaces(NS);
 
-    testSupport.runSteps(new Main(delegate).createDomainRecheckSteps(DateTime.now()));
+    testSupport.runSteps(new Main(delegate).createDomainRecheckSteps());
     assertThat(domainNamespaces.getJobWatcher(NS), not(sameInstance(oldWatcher)));
   }
 

@@ -260,6 +260,15 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
+  public void whenOperatorStartedInDedicatedMode_namespaceWatcherIsNotCreated() {
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+
+    main.startOperator(null);
+
+    assertThat(main.getNamespaceWatcher(), nullValue());
+  }
+
+  @Test
   public void whenUnableToCreateCRD_dontTryToStartWatchers() {
     simulateMissingCRD();
 
@@ -273,7 +282,7 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   void recheckDomains() {
-    testSupport.runSteps(main.createDomainRecheckSteps(DateTime.now()));
+    testSupport.runSteps(main.createDomainRecheckSteps());
   }
 
   @Test

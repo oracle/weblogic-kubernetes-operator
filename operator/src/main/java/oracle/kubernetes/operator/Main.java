@@ -302,9 +302,22 @@ public class Main {
   }
 
   private Step createStartupSteps() {
-    return Step.chain(
-          new CallBuilder().listNamespaceAsync(new StartNamespaceWatcherStep()),
-          createDomainRecheckSteps(DateTime.now()));
+    return Namespaces.getSelection(new StartupStepsVisitor());
+  }
+
+  private class StartupStepsVisitor implements NamespaceStrategyVisitor<Step> {
+
+    @Override
+    public Step getDedicatedStrategySelection() {
+      return createDomainRecheckSteps();
+    }
+
+    @Override
+    public Step getDefaultSelection() {
+      return Step.chain(
+            new CallBuilder().listNamespaceAsync(new StartNamespaceWatcherStep()),
+            createDomainRecheckSteps());
+    }
   }
 
   private class StartNamespaceWatcherStep extends DefaultResponseStep<V1NamespaceList> {
@@ -344,11 +357,14 @@ public class Main {
   }
 
   Runnable recheckDomains() {
-    return () -> delegate.runSteps(createDomainRecheckSteps(DateTime.now()));
+    return () -> delegate.runSteps(createDomainRecheckSteps());
   }
 
-  Step createDomainRecheckSteps(DateTime now) {
+  Step createDomainRecheckSteps() {
+    return createDomainRecheckSteps(DateTime.now());
+  }
 
+  private Step createDomainRecheckSteps(DateTime now) {
     int recheckInterval = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
     boolean isFullRecheck = false;
     if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {
