@@ -8,12 +8,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
@@ -86,9 +83,6 @@ public class MainTest extends ThreadFactoryTestBase {
 
   private static final String NS = "default";
   private static final String DOMAIN_UID = "domain-uid-for-testing";
-
-  private static final String NAMESPACE_STATUS_MAP = "namespaceStatuses";
-  private static final String NAMESPACE_STOPPING_MAP = "namespaceStoppingMap";
 
   private static final String REGEXP = "regexp";
   private static final String NS_WEBLOGIC1 = "weblogic-alpha";
@@ -166,14 +160,6 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.throwOnCompletionFailure();
 
     mementos.forEach(Memento::revert);
-  }
-
-  private Map<String, NamespaceStatus> createNamespaceStatuses() {
-    return new ConcurrentHashMap<>();
-  }
-
-  private Map<String, AtomicBoolean> createNamespaceFlags() {
-    return new ConcurrentHashMap<>();
   }
 
   @Test
