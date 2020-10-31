@@ -50,6 +50,9 @@ keepReplicaConstant=false
 verboseMode=false
 managedServerPolicy=""
 action=""
+isValidServer=""
+withRelicas=""
+patchJson=""
 
 while getopts "vkd:n:m:s:h" opt; do
   case $opt in
@@ -120,29 +123,37 @@ if [ "${domainPolicy}" == 'NEVER' ]; then
 fi
 
 getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
-checkServersStartedByCurrentReplicasAndPolicy "${domainJson}" "${serverName}" "${clusterName}" started
-if [[ ${effectivePolicy} == "IF_NEEDED" && ${started} == "true" ]]; then
-  echo "[INFO] The server should be already started or it's starting. The start policy for server ${serverName} is ${effectivePolicy} and server is chosen to be started based on current replica count."
-  exit 0
-elif [[ "${effectivePolicy}" == "ALWAYS" && ${started} == "true" ]]; then
-  echo "[INFO] The server should be already started or it's starting. The start policy for server ${serverName} is ${effectivePolicy}."
-  exit 0
+if [ -n "${clusterName}" ]; then
+  checkServersStartedByCurrentReplicasAndPolicy "${domainJson}" "${serverName}" "${clusterName}" started
+  if [[ ${effectivePolicy} == "IF_NEEDED" && ${started} == "true" ]]; then
+    echo "[INFO] The server should be already started or it's starting. The start policy for server ${serverName} is ${effectivePolicy} and server is chosen to be started based on current replica count."
+    exit 0
+  elif [[ "${effectivePolicy}" == "ALWAYS" && ${started} == "true" ]]; then
+    echo "[INFO] The server should be already started or it's starting. The start policy for server ${serverName} is ${effectivePolicy}."
+    exit 0
+  fi
+else 
+  if [ "${effectivePolicy}" == "ALWAYS" ]; then
+    echo "[INFO] The server should be already started or it's starting. The start policy for server ${serverName} is ${effectivePolicy}."
+    exit 0
+  fi
 fi
 
 # Get current server start policy of the server
 getCurrentPolicy "${domainJson}" "${serverName}" managedServerPolicy
+targetPolicy="ALWAYS"
+createServerStartPolicyPatch "${domainJson}" "${serverName}" "${targetPolicy}" alwaysStartPolicyPatch 
 
 # if server is part of a cluster and replica count needs to be updated, patch the replica count and server start policy
 if [[ -n ${clusterName} && "${keepReplicaConstant}" != 'true' ]]; then
   #check if server can be started by increasing replicas and unsetting policy
-  checkServerStartByIncreasingReplicasAndUnsetPolicy "${domainJson}" "${serverName}" "${clusterName}" started
+  withRelicas="INCREASED"
+  checkServerStartByUnsetPolicy "${domainJson}" "${serverName}" "${clusterName}" "${withRelicas}" started
   operation="INCREMENT"
   createReplicaPatch "${domainJson}" "${clusterName}" "${operation}" incrementReplicaPatch replicaCount
   if [ "${incrementReplicaPatch}" == "MAX_REPLICA_COUNT_EXCEEDED" ]; then 
    exit 1
   fi
-  targetPolicy="ALWAYS"
-  createServerStartPolicyPatch "${domainJson}" "${serverName}" "${targetPolicy}" alwaysStartPolicyPatch 
   if [[ -n ${managedServerPolicy} && ${started} == "true" ]]; then
     # Server starts by increasing replicas and policy unset, increment and unset
     echo "[INFO] Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and incrementing replica count."
@@ -155,13 +166,16 @@ if [[ -n ${clusterName} && "${keepReplicaConstant}" != 'true' ]]; then
     action="PATCH_REPLICA"
   else
     # Patch server policy to always and increment replicas
-    patchJson="{\"spec\": {\"clusters\": "${incrementReplicaPatch}",\"managedServers\": "${alwaysStartPolicyPatch}"}}"
-    action="PATCH_REPLICA_AND_POLICY"
     echo "[INFO] Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'ALWAYS' and \
 incrementing replica count for cluster '${clusterName}'."
+    patchJson="{\"spec\": {\"clusters\": "${incrementReplicaPatch}",\"managedServers\": "${alwaysStartPolicyPatch}"}}"
+    action="PATCH_REPLICA_AND_POLICY"
   fi
 elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
-  # if replica count needs to stay constant, only patch server start policy
+  # Replica count needs to stay constant
+  # check if server can be started by unsetting policy
+  withRelicas="CONSTANT"
+  checkServerStartByUnsetPolicy "${domainJson}" "${serverName}" "${clusterName}" "${withRelicas}" started
   if [[ "${effectivePolicy}" == "NEVER" && ${started} == "true" ]]; then
     # Server starts by unsetting policy, unset policy
     echo "[INFO] Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
@@ -169,12 +183,13 @@ elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
     action="UNSET_POLICY"
   else
     # Patch server policy to always
+    echo "[INFO] Patching start policy for '${serverName}' to '${targetPolicy}'."
     patchJson="{\"spec\": {\"managedServers\": "${alwaysStartPolicyPatch}"}}"
     action="PATCH_POLICY"
   fi
 else
-  # if server is an independent managed server, only patch server start policy
-  patchJson="{\"spec\": {\"managedServers\": "${serverStartPolicyPatch}"}}"
+  # if server is an independent managed server, only patch server start policy to ALWAYS
+  patchJson="{\"spec\": {\"managedServers\": "${alwaysStartPolicyPatch}"}}"
   action="PATCH_POLICY"
 fi
 

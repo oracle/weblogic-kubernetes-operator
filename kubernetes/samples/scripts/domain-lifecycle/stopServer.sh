@@ -53,6 +53,7 @@ started=""
 action=""
 effectivePolicy=""
 managedServerPolicy=""
+stoppedWhenAlwaysPolicyReset=""
 
 while getopts "vks:m:n:d:h" opt; do
   case $opt in
@@ -102,15 +103,23 @@ clusterName=$(${kubernetesCli} get pod ${domainUid}-${serverName} -n ${domainNam
 domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
 
 getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
-checkServersStartedByCurrentReplicasAndPolicy "${domainJson}" "${serverName}" "${clusterName}" started
-if [[ "${effectivePolicy}" == "NEVER" || "${started}" != "true" ]]; then
-  echo "[INFO] Server should be already stopping or stopped. This is either because of the sever start policy or server is chosen to be stopped based on current replica count."
-  exit 0
+if [ -n "${clusterName}" ]; then
+  checkServersStartedByCurrentReplicasAndPolicy "${domainJson}" "${serverName}" "${clusterName}" started
+  if [[ "${effectivePolicy}" == "NEVER" || "${started}" != "true" ]]; then
+    echo "[INFO] Server should be already stopping or stopped. This is either because of the sever start policy or server is chosen to be stopped based on current replica count."
+    exit 0
+  fi
+else
+  if [ "${effectivePolicy}" == "NEVER" ]; then
+    echo "[INFO] Server should be already stopping or stopped because sever start policy is 'NEVER'."
+    exit 0
+  fi
 fi
 
 # Create server start policy patch with NEVER value
 createServerStartPolicyPatch "${domainJson}" "${serverName}" "${serverStartPolicy}" neverStartPolicyPatch
 getCurrentPolicy "${domainJson}" "${serverName}" managedServerPolicy
+
 
 if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
   # server is part of a cluster and replica count needs to be updated

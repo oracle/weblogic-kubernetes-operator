@@ -171,22 +171,28 @@ function getSortedListOfServers {
     done
   fi
   # Get servers with ALWAYS policy
-  for localServerName in "${sortedServers[@]}"; do
-    getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
-    #if unset policy is true and server is current server
-    if [[ "${unsetPolicy}" == "true" && "${serverName}" == "${localServerName}" ]]; then
-      policy=UNSET
-    fi
-    if [ "${policy}" == "ALWAYS" ]; then
-      sortedByAlwaysServers+=(${localServerName})
-    else
-      otherServers+=(${localServerName})
-    fi
-  done
+  sortedServersSize=${#sortedServers[@]}
+  if [ "${sortedServersSize}" -gt 0 ]; then
+    for localServerName in "${sortedServers[@]}"; do
+      getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
+      #if unset policy is true and server is current server
+      if [[ "${unsetPolicy}" == "true" && "${serverName}" == "${localServerName}" ]]; then
+        policy=UNSET
+      fi
+      if [ "${policy}" == "ALWAYS" ]; then
+        sortedByAlwaysServers+=(${localServerName})
+      else
+        otherServers+=(${localServerName})
+      fi
+    done
+  fi
   
-  for otherServer in "${otherServers[@]}"; do
-    sortedByAlwaysServers+=($otherServer)
-  done
+  otherServersSize=${#otherServers[@]}
+  if [ "${otherServersSize}" -gt 0 ]; then
+    for otherServer in "${otherServers[@]}"; do
+      sortedByAlwaysServers+=($otherServer)
+    done
+  fi
 }
 
 function getReplicaCount {
@@ -219,19 +225,22 @@ function checkServersStoppedByUnsetPolicyWhenAlways {
     echo "started servers before are -> ${startedServers[@]}"
   fi
   replicaCount=$((replicaCount-1))
-  for localServerName in "${sortedByAlwaysServers[@]}"; do
-    # Get effictive server policy
-    getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
-    if [ "${serverName}" == "${localServerName}" ]; then
-      policy=UNSET
-    fi
-    # check if server should be started based on policy and replica count
-    shouldStart ${currentReplicas} ${policy} ${replicaCount} result
-    if [ "${result}" == 'True' ]; then
-      currentReplicas=$((currentReplicas+1))
-      startedServers+=(${localServerName})
-    fi
-  done
+  sortedByAlwaysSize=${#sortedByAlwaysServers[@]}
+  if [ "${sortedByAlwaysSize}" -gt 0 ]; then
+    for localServerName in "${sortedByAlwaysServers[@]}"; do
+      # Get effictive server policy
+      getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
+      if [ "${serverName}" == "${localServerName}" ]; then
+        policy=UNSET
+      fi
+      # check if server should be started based on policy and replica count
+      shouldStart ${currentReplicas} ${policy} ${replicaCount} result
+      if [ "${result}" == 'True' ]; then
+        currentReplicas=$((currentReplicas+1))
+        startedServers+=(${localServerName})
+      fi
+    done
+  fi
 
   startedSize=${#startedServers[@]}
   if [ ${startedSize} -gt 0 ]; then
@@ -261,19 +270,22 @@ function checkServersStoppedByDecreasingReplicasAndUnsetPolicy {
   getReplicaCount "${domainJson}" "${clusterName}" replicaCount
   startedSize=${#startedServers[@]}
   replicaCount=$((replicaCount-1))
-  for localServerName in "${sortedByAlwaysServers[@]}"; do
-    # Get effictive server policy
-    getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
-    # check if server should be started based on policy and replica count
-    if [ "${serverName}" == "${localServerName}" ]; then
-      policy=UNSET
-    fi
-    shouldStart ${currentReplicas} ${policy} ${replicaCount} result
-    if [ "${result}" == 'True' ]; then
-      currentReplicas=$((currentReplicas+1))
-      startedServers+=(${localServerName})
-    fi
-  done
+  sortedByAlwaysSize=${#sortedByAlwaysServers[@]}
+  if [ "${sortedByAlwaysSize}" -gt 0 ]; then
+    for localServerName in "${sortedByAlwaysServers[@]}"; do
+      # Get effictive server policy
+      getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
+      # check if server should be started based on policy and replica count
+      if [ "${serverName}" == "${localServerName}" ]; then
+        policy=UNSET
+      fi
+      shouldStart ${currentReplicas} ${policy} ${replicaCount} result
+      if [ "${result}" == 'True' ]; then
+        currentReplicas=$((currentReplicas+1))
+        startedServers+=(${localServerName})
+      fi
+    done
+  fi
 
   startedSize=${#startedServers[@]}
   if [ ${startedSize} -gt 0 ]; then
@@ -303,16 +315,19 @@ function checkServersStartedByCurrentReplicasAndPolicy {
   unsetPolicy="false"
   getSortedListOfServers "${domainJson}" "${serverName}" "${clusterName}" "${unsetPolicy}"
   getReplicaCount "${domainJson}" "${clusterName}" replicaCount
-  for localServerName in "${sortedByAlwaysServers[@]}"; do
-    # Get effictive server policy
-    getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
-    # check if server should be started based on policy and replica count
-    shouldStart ${currentReplicas} ${policy} ${replicaCount} result
-    if [ "${result}" == 'True' ]; then
-      currentReplicas=$((currentReplicas+1))
-      startedServers+=(${localServerName})
-    fi
-  done
+  sortedByAlwaysSize=${#sortedByAlwaysServers[@]}
+  if [ "${sortedByAlwaysSize}" -gt 0 ]; then
+    for localServerName in "${sortedByAlwaysServers[@]}"; do
+      # Get effictive server policy
+      getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
+      # check if server should be started based on policy and replica count
+      shouldStart ${currentReplicas} ${policy} ${replicaCount} result
+      if [ "${result}" == 'True' ]; then
+        currentReplicas=$((currentReplicas+1))
+        startedServers+=(${localServerName})
+      fi
+    done
+  fi
   startedSize=${#startedServers[@]}
   if [ ${startedSize} -gt 0 ]; then
     if checkStringInArray ${serverName} ${startedServers[@]}; then
@@ -323,11 +338,12 @@ function checkServersStartedByCurrentReplicasAndPolicy {
   eval $__started="false"
 }
 
-function checkServerStartByIncreasingReplicasAndUnsetPolicy {
+function checkServerStartByUnsetPolicy {
   local domainJson=$1
   local serverName=$2
   local clusterName=$3
-  local __started=$4
+  local withReplicas=$4
+  local __started=$5
   local localServerName=""
   local policy=""
   local replicaCount=0
@@ -338,20 +354,25 @@ function checkServerStartByIncreasingReplicasAndUnsetPolicy {
   unsetPolicy="true"
   getSortedListOfServers "${domainJson}" "${serverName}" "${clusterName}" "${unsetPolicy}"
   getReplicaCount "${domainJson}" "${clusterName}" replicaCount
-  replicaCount=$((replicaCount+1))
-  for localServerName in "${sortedByAlwaysServers[@]}"; do
-    # Get effictive server policy
-    getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
-    # check if server should be started based on policy and replica count
-    if [ "${serverName}" == "${localServerName}" ]; then
-      policy=UNSET
-    fi
-    shouldStart "${currentReplicas}" "${policy}" "${replicaCount}" result
-    if [ "${result}" == 'True' ]; then
-      currentReplicas=$((currentReplicas+1))
-      startedServers+=(${localServerName})
-    fi
-  done
+  if [ "${withReplicas}" == "INCREASED" ]; then
+    replicaCount=$((replicaCount+1))
+  fi
+  sortedByAlwaysSize=${#sortedByAlwaysServers[@]}
+  if [ "${sortedByAlwaysSize}" -gt 0 ]; then
+    for localServerName in "${sortedByAlwaysServers[@]}"; do
+      # Get effictive server policy
+      getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
+      # check if server should be started based on policy and replica count
+      if [ "${serverName}" == "${localServerName}" ]; then
+        policy=UNSET
+      fi
+      shouldStart "${currentReplicas}" "${policy}" "${replicaCount}" result
+      if [ "${result}" == 'True' ]; then
+        currentReplicas=$((currentReplicas+1))
+        startedServers+=(${localServerName})
+      fi
+    done
+  fi
   startedSize=${#startedServers[@]}
   if [ ${startedSize} -gt 0 ]; then
     if checkStringInArray ${serverName} ${startedServers[@]}; then
@@ -458,20 +479,28 @@ Please make sure server name is correct."
     namePrefixSize=". | {name: .name, prefix:.dynamicServersConfig.serverNamePrefix, \
                  max:.dynamicServersConfig.maxDynamicClusterSize}"
     dynamicClusters=($(echo $jsonTopology | jq "${dynamicClause}" | jq -cr "${namePrefixSize}"))
-    for dynaClusterNamePrefix in "${dynamicClusters[@]}"; do
-      prefix=$(echo ${dynaClusterNamePrefix} | jq -r .prefix)
-      if [[ "${serverName}" == "${prefix}"* ]]; then
-        serverCount=$(echo "${serverName: -1}")
-        maxSize=$(echo ${dynaClusterNamePrefix} | jq -r .max)
-        if [ "${serverCount}" -gt "${maxSize}" ]; then
-          printError "${errorMessage}"
-          exit 1
+    dynamicClustersSize=${#dynamicClusters[@]}
+    if [ "${dynamicClustersSize}" -gt 0 ]; then
+      for dynaClusterNamePrefix in "${dynamicClusters[@]}"; do
+        prefix=$(echo ${dynaClusterNamePrefix} | jq -r .prefix)
+        if [[ "${serverName}" == "${prefix}"* ]]; then
+          serverCount=$(echo "${serverName: -1}")
+          maxSize=$(echo ${dynaClusterNamePrefix} | jq -r .max)
+          number='^[0-9]+$'
+          if ! [[ $serverCount =~ $number ]] ; then
+             echo "error: Server name is not valid for dynamic cluster." 
+             exit 1
+          fi
+          if [ "${serverCount}" -gt "${maxSize}" ]; then
+            printError "${errorMessage}"
+            exit 1
+          fi
+          eval $__clusterName="'$(echo ${dynaClusterNamePrefix} | jq -r .name)'"
+          eval $__isValidServer=true
+          break
         fi
-        eval $__clusterName="'$(echo ${dynaClusterNamePrefix} | jq -r .name)'"
-        eval $__isValidServer=true
-        break
-      fi
-    done
+      done
+    fi
     staticClause=".domain.configuredClusters[] | select (.dynamicServersConfig == null)"
     nameCmd=" . | {name: .name, serverName: .servers[].name}"
     configuredClusters=($(echo $jsonTopology | jq "${staticClause}" | jq -cr "${nameCmd}"))
