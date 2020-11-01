@@ -3,10 +3,17 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
+#
+# Function to get server start policy at cluster level
+# $1 - Domain resource in json format
+# $2 - Name of cluster
+# $3 - Return value containing cluster level server start policy
+#
 function getClusterPolicy {
   local domainJson=$1
   local clusterName=$2
   local __clusterPolicy=$3
+  local effectivePolicy=""
 
   clusterPolicyCmd="(.spec.clusters[] \
     | select (.clusterName == \"${clusterName}\")).serverStartPolicy"
@@ -14,22 +21,35 @@ function getClusterPolicy {
   eval $__clusterPolicy=${effectivePolicy}
 }
 
+#
+# Function to get server start policy at domain level
+# $1 - Domain resource in json format
+# $2 - Return value containing domain level server start policy
+#
 function getDomainPolicy {
   local domainJson=$1
   local __domainPolicy=$2
+  local effectivePolicy=""
 
   clusterPolicyCmd=".spec.serverStartPolicy"
   effectivePolicy=$(echo ${domainJson} | jq "${clusterPolicyCmd}")
   eval $__domainPolicy=${effectivePolicy}
 }
 
+#
+# Function to get effective start policy of server
+# $1 - Domain resource in json format
+# $2 - Name of server
+# $3 - Name of cluster
+# $4 - Return value containing effective server start policy
+#
 function getEffectivePolicy {
   local domainJson=$1
   local serverName=$2
   local clusterName=$3
   local __currentPolicy=$4
-  #local currentPolicy=""
   local policyFound=false
+  local managedServers=""
 
   # Get server start policy for this server
   managedServers=$(echo ${domainJson} | jq -cr '(.spec.managedServers)')
@@ -60,6 +80,12 @@ function getEffectivePolicy {
   fi
 }
 
+#
+# Function to get current start policy of server
+# $1 - Domain resource in json format
+# $2 - Name of server
+# $3 - Return value containing current server start policy
+#
 function getCurrentPolicy {
   local domainJson=$1
   local serverName=$2
@@ -112,6 +138,13 @@ function createServerStartPolicyPatch {
   eval $__result="'${serverStartPolicyPatch}'"
 }
 
+#
+# Function to create patch json string to unset policy and update replica
+# $1 - Domain resource in json format
+# $2 - Name of server whose policy will be patched
+# $3 - String containing replica patch string
+# $4 - Return value containing patch json string
+#
 function createPatchJsonToUnsetPolicyAndUpdateReplica {
   local domainJson=$1
   local serverName=$2
@@ -125,6 +158,12 @@ function createPatchJsonToUnsetPolicyAndUpdateReplica {
   eval $__result="'${patchJson}'"
 }
 
+#
+# Function to create patch json string to unset policy
+# $1 - Domain resource in json format
+# $2 - Name of server whose policy will be patched
+# $3 - Return value containing patch json string
+#
 function createPatchJsonToUnsetPolicy {
   local domainJson=$1
   local serverName=$2
@@ -137,13 +176,19 @@ function createPatchJsonToUnsetPolicy {
   eval $__result="'${patchJson}'"
 }
 
+#
+# Function to get sorted list of servers in a cluster.
+# The sorted list is created in 'sortedByAlwaysServers' array.
+# $1 - Domain resource in json format
+# $2 - Name of server 
+# $3 - Name of cluster 
+# $4 - Indicates if policy of current server would be unset
+#
 function getSortedListOfServers {
   local domainJson=$1
   local serverName=$2
   local clusterName=$3
-  local unsetPolicy=$4
-  local replicasCmd=""
-  local startedServers=()
+  local withPolicy=$4
   local sortedServers=()
   local otherServers=()
 
@@ -170,13 +215,13 @@ function getSortedListOfServers {
       sortedServers+=(${localServerName})
     done
   fi
-  # Get servers with ALWAYS policy
+  # Create arrays of ALWAYS policy servers and other servers
   sortedServersSize=${#sortedServers[@]}
   if [ "${sortedServersSize}" -gt 0 ]; then
     for localServerName in "${sortedServers[@]}"; do
       getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
-      #if unset policy is true and server is current server
-      if [[ "${unsetPolicy}" == "true" && "${serverName}" == "${localServerName}" ]]; then
+      # Update policy when server name matches current server and unsetting
+      if [[ "${withPolicy}" == "UNSET" && "${serverName}" == "${localServerName}" ]]; then
         policy=UNSET
       fi
       if [ "${policy}" == "ALWAYS" ]; then
@@ -187,6 +232,7 @@ function getSortedListOfServers {
     done
   fi
   
+  # append other servers to the list of servers with always policy
   otherServersSize=${#otherServers[@]}
   if [ "${otherServersSize}" -gt 0 ]; then
     for otherServer in "${otherServers[@]}"; do
@@ -195,6 +241,12 @@ function getSortedListOfServers {
   fi
 }
 
+#
+# Get replica count for a cluster
+# $1 - Domain resource in json format
+# $2 - Name of cluster 
+# $3 - Return value containing replica count
+#
 function getReplicaCount {
   local domainJson=$1
   local clusterName=$2
@@ -207,167 +259,51 @@ function getReplicaCount {
 
 }
 
-function checkServersStoppedByUnsetPolicyWhenAlways {
-  local domainJson=$1
-  local serverName=$2
-  local clusterName=$3
-  local __stopped=$4
-  local currentReplicas=0
-  local startedServers=()
-  local replicaCount=0
-  local sortedByAlwaysServers=()
-
-  unsetPolicy="true"
-  getSortedListOfServers "${domainJson}" "${serverName}" "${clusterName}" "${unsetPolicy}"
-  getReplicaCount "${domainJson}" "${clusterName}" replicaCount
-  startedSize=${#startedServers[@]}
-  if [ ${startedSize} -gt 0 ]; then
-    echo "started servers before are -> ${startedServers[@]}"
-  fi
-  replicaCount=$((replicaCount-1))
-  sortedByAlwaysSize=${#sortedByAlwaysServers[@]}
-  if [ "${sortedByAlwaysSize}" -gt 0 ]; then
-    for localServerName in "${sortedByAlwaysServers[@]}"; do
-      # Get effictive server policy
-      getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
-      if [ "${serverName}" == "${localServerName}" ]; then
-        policy=UNSET
-      fi
-      # check if server should be started based on policy and replica count
-      shouldStart ${currentReplicas} ${policy} ${replicaCount} result
-      if [ "${result}" == 'True' ]; then
-        currentReplicas=$((currentReplicas+1))
-        startedServers+=(${localServerName})
-      fi
-    done
-  fi
-
-  startedSize=${#startedServers[@]}
-  if [ ${startedSize} -gt 0 ]; then
-    if ! checkStringInArray ${serverName} ${startedServers[@]}; then
-      eval $__stopped="true"
-      return
-    fi
-  elif [ ${startedSize} -eq 0 ]; then
-    eval $__stopped="true"
-    return
-  fi
-  eval $__stopped="false"
-}
-
-function checkServersStoppedByDecreasingReplicasAndUnsetPolicy {
-  local domainJson=$1
-  local serverName=$2
-  local clusterName=$3
-  local __stopped=$4
-  local currentReplicas=0
-  local startedServers=()
-  local replicaCount=0
-  local sortedByAlwaysServers=()
-
-  unsetPolicy="true"
-  getSortedListOfServers "${domainJson}" "${serverName}" "${clusterName}" "${unsetPolicy}"
-  getReplicaCount "${domainJson}" "${clusterName}" replicaCount
-  startedSize=${#startedServers[@]}
-  replicaCount=$((replicaCount-1))
-  sortedByAlwaysSize=${#sortedByAlwaysServers[@]}
-  if [ "${sortedByAlwaysSize}" -gt 0 ]; then
-    for localServerName in "${sortedByAlwaysServers[@]}"; do
-      # Get effictive server policy
-      getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
-      # check if server should be started based on policy and replica count
-      if [ "${serverName}" == "${localServerName}" ]; then
-        policy=UNSET
-      fi
-      shouldStart ${currentReplicas} ${policy} ${replicaCount} result
-      if [ "${result}" == 'True' ]; then
-        currentReplicas=$((currentReplicas+1))
-        startedServers+=(${localServerName})
-      fi
-    done
-  fi
-
-  startedSize=${#startedServers[@]}
-  if [ ${startedSize} -gt 0 ]; then
-    if ! checkStringInArray ${serverName} ${startedServers[@]}; then
-      eval $__stopped="true"
-      return
-    fi
-  elif [ ${startedSize} -eq 0 ]; then
-    eval $__stopped="true"
-    return
-  fi
-  eval $__stopped="false"
-}
-
-function checkServersStartedByCurrentReplicasAndPolicy {
-  local domainJson=$1
-  local serverName=$2
-  local clusterName=$3
-  local __started=$4
-  local localServerName=""
-  local policy=""
-  local currentReplicas=0
-  local replicaCount=0
-  local startedServers=()
-  local sortedByAlwaysServers=()
-
-  unsetPolicy="false"
-  getSortedListOfServers "${domainJson}" "${serverName}" "${clusterName}" "${unsetPolicy}"
-  getReplicaCount "${domainJson}" "${clusterName}" replicaCount
-  sortedByAlwaysSize=${#sortedByAlwaysServers[@]}
-  if [ "${sortedByAlwaysSize}" -gt 0 ]; then
-    for localServerName in "${sortedByAlwaysServers[@]}"; do
-      # Get effictive server policy
-      getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
-      # check if server should be started based on policy and replica count
-      shouldStart ${currentReplicas} ${policy} ${replicaCount} result
-      if [ "${result}" == 'True' ]; then
-        currentReplicas=$((currentReplicas+1))
-        startedServers+=(${localServerName})
-      fi
-    done
-  fi
-  startedSize=${#startedServers[@]}
-  if [ ${startedSize} -gt 0 ]; then
-    if checkStringInArray ${serverName} ${startedServers[@]}; then
-      eval $__started="true"
-      return
-    fi
-  fi
-  eval $__started="false"
-}
-
-function checkServerStartByUnsetPolicy {
+#
+# Check servers started in a cluster based on server start policy and 
+# replica count.
+# $1 - Domain resource in json format
+# $2 - Name of server 
+# $3 - Name of cluster 
+# $4 - Indicates if replicas will stay constant, incremented or decremented
+# $5 - Indicates if policy of current server will stay same or unset
+# $6 - Return value indicating if current server will be started
+#
+function checkStartedServers {
   local domainJson=$1
   local serverName=$2
   local clusterName=$3
   local withReplicas=$4
-  local __started=$5
+  local withPolicy=$5
+  local __started=$6
   local localServerName=""
   local policy=""
   local replicaCount=0
   local currentReplicas=0
   local startedServers=()
   local sortedByAlwaysServers=()
-
-  unsetPolicy="true"
-  getSortedListOfServers "${domainJson}" "${serverName}" "${clusterName}" "${unsetPolicy}"
+  
+  # Get sorted list of servers in 'sortedByAlwaysServers' array
+  getSortedListOfServers "${domainJson}" "${serverName}" "${clusterName}" "${withPolicy}"
   getReplicaCount "${domainJson}" "${clusterName}" replicaCount
+  # Increment or decrement the replica count based on 'withReplicas' input parameter
   if [ "${withReplicas}" == "INCREASED" ]; then
     replicaCount=$((replicaCount+1))
+  elif [ "${withReplicas}" == "DECREASED" ]; then
+    replicaCount=$((replicaCount-1))
   fi
   sortedByAlwaysSize=${#sortedByAlwaysServers[@]}
   if [ "${sortedByAlwaysSize}" -gt 0 ]; then
     for localServerName in "${sortedByAlwaysServers[@]}"; do
-      # Get effictive server policy
       getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
-      # check if server should be started based on policy and replica count
-      if [ "${serverName}" == "${localServerName}" ]; then
+      # # Update policy when server name matches current server and unsetting
+      if [[ "${serverName}" == "${localServerName}" && "${withPolicy}" == "UNSET" ]]; then
         policy=UNSET
       fi
+      # check if server should start based on replica count, policy and current replicas
       shouldStart "${currentReplicas}" "${policy}" "${replicaCount}" result
       if [ "${result}" == 'True' ]; then
+        # server should start, increment current replicas and add server to list of started servers
         currentReplicas=$((currentReplicas+1))
         startedServers+=(${localServerName})
       fi
@@ -375,6 +311,7 @@ function checkServerStartByUnsetPolicy {
   fi
   startedSize=${#startedServers[@]}
   if [ ${startedSize} -gt 0 ]; then
+    # check if current server is in the list of started servers
     if checkStringInArray ${serverName} ${startedServers[@]}; then
       eval $__started="true"
       return
@@ -383,6 +320,13 @@ function checkServerStartByUnsetPolicy {
   eval $__started="false"
 }
 
+#
+# Function to check if server should start based on policy and current replicas
+# $1 - Current number of replicas
+# $2 - Server start policy
+# $3 - Replica count
+# $4 - Return value
+#
 function shouldStart {
   local currentReplicas=$1
   local policy=$2

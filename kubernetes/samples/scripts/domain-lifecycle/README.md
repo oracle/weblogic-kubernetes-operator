@@ -9,20 +9,38 @@ These scripts can be helpful when scripting the life cycle of a WebLogic Server 
 #### Scripts to start and stop a Managed Server
 The `startServer.sh` script starts a Managed Server either by increasing the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1` or by updating the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource or both as necessary. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
 
+Use the following command to start the server along with increased replica count:
 ```
-$ startServer.sh -d domain1 -n weblogic-domain-1 -s managed-server2
-[INFO] Updating replica count for cluster 'cluster-1' to 2.
+$ startServer.sh -d domain1 -n weblogic-domain-1 -s managed-server1
+[INFO] Updating replica count for cluster 'cluster-1' to 1.
 domain.weblogic.oracle/domain1 patched
-[INFO] Successfully updated replica count for cluster 'cluster-1' to 2.
+[INFO] Successfully updated replica count for cluster 'cluster-1' to 1.
+```
+
+Use the following command to start the server without increasing replica count:
+```
+$ startServer.sh -d domain1 -n weblogic-domain-1 -s managed-server2 -k
+[INFO] Patching start policy for 'managed-server2' to 'ALWAYS'.
+domain.weblogic.oracle/domain1 patched
+[INFO] Successfully patched server 'managed-server2' with 'ALWAYS' start policy.
 ```
 
 The `stopServer.sh` script shuts down a running Managed Server either by decreasing the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1` or by patching the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource or both as necessary. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
 
+Use the following command to stop the server along with decreased replica count:
 ```
-$ stopServer.sh -d domain1 -n weblogic-domain-1 -s managed-server2
-[INFO] Updating replica count for cluster cluster-1 to 1.
+$ stopServer.sh -d domain1 -n weblogic-domain-1 -s managed-server1
+[INFO] Updating replica count for cluster cluster-1 to 0.
 domain.weblogic.oracle/domain1 patched
-[INFO] Successfully updated replica count for cluster 'cluster-1' to 1.
+[INFO] Successfully updated replica count for cluster 'cluster-1' to 0.
+```
+
+Use the following command to stop the server without decreasing replica count:
+```
+$ stopServer.sh -d domain1 -n weblogic-domain-1 -s managed-server2 -k
+[INFO] Unsetting the current start policy 'ALWAYS' for 'managed-server2'.
+domain.weblogic.oracle/domain1 patched
+[INFO] Successfully unset policy 'ALWAYS'.
 ```
 
 ### Scripts to start and stop a cluster
