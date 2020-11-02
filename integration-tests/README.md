@@ -1,25 +1,25 @@
 # Integration Tests for Oracle WebLogic Server Kubernetes Operator
 
-This documentation describes the functional use cases that are covered in integration testing for the Oracle WebLogic Server Kubernetes Operator. The tests are written in Java (JUnit5 tests) and driven by Maven profile.
+This documentation describes the procedure to run integration test for the Oracle WebLogic Server Kubernetes Operator. The tests are written in Java (JUnit5 tests) and driven by Maven profile.
 
 # Environments
 
-The tests currently run in three modes: "Jenkins", "Kind Cluster" and "Local".
-
-* "Local" Oracle Linux, i.e, run the tests manually with the `mvn` command.
-* "Kind Cluster" Create a Kind Cluster before running the test  
-* "Jenkin" - http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator-integration/ Jenkins Run is restricted to authorized users on Jenkin server.
+*  Oracle Linux, i.e, run the tests manually with the `mvn` command.
 
 # Directory Configuration and Structure
  
 Directory structure of source code:
 
-A new module "integration-tests" is added to the Maven project `weblogic-kubernetes-operator`.
+A module "integration-tests" is added to the Maven project `weblogic-kubernetes-operator`.
 
 `weblogic-kubernetes-operator/integration-tests` - location of module pom.xml  
 `weblogic-kubernetes-operator/integration-tests/src/test/java/oracle/weblogic/kubernetes` - integration test(JUnit5) classes and utility classes  
 `weblogic-kubernetes-operator/integration-tests/src/test/resources` - properties, YAML files and other bash scripts
 
+# How does integration test infrastructure works
+ - A weblogic domain image is built using Model In Image model 
+ - Istio mesh is installed 
+ 
 # How to run Operator integration tests locally on Oracle Linux
 
 - Install supported version Helm and Kubernetes cluster. For detail see [Weblogic Kubernetes Operator guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/).
@@ -55,15 +55,18 @@ mvn -Dit.test="ItMiiUpdateDomainConfig#testMiiDeleteSystemResources" -pl integra
 mvn -Dit.test="ItCrossDomainTransaction,ItMiiUpdateDomainConfig" -pl integration-tests -P integration-tests verify
 
 ## Environment vaiables to manage test execution 
-| Variable | Description |
-| --- | --- |
-| SKIP_CLEANUP  | skips cleanup done by the test infra, all the pods/domains/etc will be left running if set to true  |
-| COLLECT_LOGS_ON_SUCCESS  | logs are generated even if test pass if set to true |
+| Variable | Description | Default Value
+| --- | --- | --- |
+| SKIP_CLEANUP  | skips cleanup done by the test infra, all the pods/domains/etc will be left running if set to true  | true
+| COLLECT_LOGS_ON_SUCCESS  | logs are generated even if test pass if set to true | true
+| RESULTS_ROOT | Root directory for test result | /tmp/ittestsresults
+| LOGS_DIR  | Root directory for the test log | /tmp/diagnosticlogs
+| PV_ROOT  | Root directory for Persistent Volume  | /tmp/ittestspvroot
 
 ## Logging/Archiving
 
 - Temporary installation of tools such as imagetool, istio are in /tmp/it-results diretory
-- Test result stdout are in /tmp/it-results diretory
+- Test result stdout are in /tmp/ittestsresults diretory
 - Test Diagnostic stdout are in /tmp/diagnosticlogs diretory
 
 ## Troubleshooting
