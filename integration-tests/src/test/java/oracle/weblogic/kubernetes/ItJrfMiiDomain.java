@@ -229,7 +229,7 @@ public class ItJrfMiiDomain {
 
     //check access to the em console: http://hostname:port/em
     int nodePort = getServiceNodePort(
-           jrfDomainNamespace, getExternalServicePodName(adminServerPodName, "-external"), "default");
+           jrfDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertTrue(nodePort != -1,
           "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
