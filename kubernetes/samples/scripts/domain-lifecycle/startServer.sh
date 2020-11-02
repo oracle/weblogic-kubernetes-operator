@@ -16,8 +16,8 @@ function usage() {
   This script starts a WebLogic managed server in a domain either by increasing
   the value of 'spec.clusters[<cluster-name>].replicas' by '1' or by updating the
   'spec.managedServers[<server-name>].serverStartPolicy' attribute of the domain
-  resource or both as needed. The 'spec.clusters[<cluster-name>].replicas' value can
-  be kept constant by using '-k' option.
+  resource or both as necessary. The 'spec.clusters[<cluster-name>].replicas' value can
+  be kept constant by using '-k' option. Please see README.md for more details.
 
   Usage:
 
@@ -48,9 +48,10 @@ domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
 keepReplicaConstant=false
 verboseMode=false
-withRelicas="CONSTANT"
+withReplicas="CONSTANT"
 withPolicy="CONSTANT"
 managedServerPolicy=""
+effectivePolicy=""
 action=""
 isValidServer=""
 patchJson=""
@@ -116,20 +117,20 @@ fi
 
 getClusterPolicy "${domainJson}" "${clusterName}" clusterPolicy
 if [ "${clusterPolicy}" == 'NEVER' ]; then
-  echo "The .spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy of the domain resource is 'NEVER'. The $(basename $0) script will exit without starting server ${serverName}."
-  exit 0
+  echo "Cannot start server '${serverName}', the server's parent cluster '.spec.clusters[?(clusterName=\"${clusterName}\"].serverStartPolicy' in the domain resource is set to 'NEVER'."
+  exit 1
 fi
 
 getDomainPolicy "${domainJson}" domainPolicy
 if [ "${domainPolicy}" == 'NEVER' ]; then
-  echo "The .spec.serverStartPolicy of the domain resource is 'NEVER'. The $(basename $0) script will exit without starting server ${serverName}."
-  exit 0
+  echo "Cannot start server '${serverName}', the .spec.serverStartPolicy in the domain resource is set to 'NEVER'."
+  exit 1
 fi
 
 getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
 if [ -n "${clusterName}" ]; then
   # Server is part of a cluster, check currently started servers
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withRelicas}" "${withPolicy}" serverStarted
+  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
   if [[ ${effectivePolicy} == "IF_NEEDED" && ${serverStarted} == "true" ]]; then
     echo "[INFO] The server should be already started or it's starting. The start policy for server ${serverName} is ${effectivePolicy} and server is chosen to be started based on current replica count."
     exit 0
@@ -145,16 +146,16 @@ else
   fi
 fi
 
-getCurrentPolicy "${domainJson}" "${serverName}" managedServerPolicy
+getServerPolicy "${domainJson}" "${serverName}" managedServerPolicy
 targetPolicy="ALWAYS"
 createServerStartPolicyPatch "${domainJson}" "${serverName}" "${targetPolicy}" alwaysStartPolicyPatch 
 
 # if server is part of a cluster and replica count will increase
 if [[ -n ${clusterName} && "${keepReplicaConstant}" != 'true' ]]; then
   #check if server starts by increasing replicas and unsetting policy
-  withRelicas="INCREASED"
+  withReplicas="INCREASED"
   withPolicy="UNSET"
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withRelicas}" "${withPolicy}" startsByReplicaIncreaseAndPolicyUnset
+  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByReplicaIncreaseAndPolicyUnset
   operation="INCREMENT"
   createReplicaPatch "${domainJson}" "${clusterName}" "${operation}" incrementReplicaPatch replicaCount
   if [ "${incrementReplicaPatch}" == "MAX_REPLICA_COUNT_EXCEEDED" ]; then 
@@ -179,9 +180,9 @@ incrementing replica count for cluster '${clusterName}'."
   fi
 elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   # Replica count needs to stay constant, check if server starts by unsetting policy
-  withRelicas="CONSTANT"
+  withReplicas="CONSTANT"
   withPolicy="UNSET"
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withRelicas}" "${withPolicy}" startsByPolicyUnset
+  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByPolicyUnset
   if [[ "${effectivePolicy}" == "NEVER" && ${startsByPolicyUnset} == "true" ]]; then
     # Server starts by unsetting policy, unset policy
     echo "[INFO] Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."

@@ -48,36 +48,21 @@ function getEffectivePolicy {
   local serverName=$2
   local clusterName=$3
   local __currentPolicy=$4
-  local policyFound=false
-  local managedServers=""
+  local currentPolicy=""
 
-  # Get server start policy for this server
-  managedServers=$(echo ${domainJson} | jq -cr '(.spec.managedServers)')
-  if [ "${managedServers}" != "null" ]; then
-    extractPolicyCmd="(.spec.managedServers[] \
-      | select (.serverName == \"${serverName}\") | .serverStartPolicy)"
-    currentPolicy=$(echo ${domainJson} | jq -r "${extractPolicyCmd}")
-    if [[ -n ${currentPolicy} && ${currentPolicy} != "null" ]]; then
-      # Start policy is set at server level, return policy
-      eval $__currentPolicy="'${currentPolicy}'"
-      policyFound=true
-    fi
-  fi
-  if [ "${policyFound}" == 'false' ]; then
-    clusterPolicyCmd="(.spec.clusters[] \
-      | select (.clusterName == \"${clusterName}\")).serverStartPolicy"
-    currentPolicy=$(echo ${domainJson} | jq -r "${clusterPolicyCmd}")
-    if [ "${currentPolicy}" == "null" ]; then
+  getServerPolicy "${domainJson}" "${serverName}" currentPolicy
+  if [[ -z "${currentPolicy}" ||  ${currentPolicy} == "null" ]]; then
+    getClusterPolicy "${domainJson}" "${clusterName}" currentPolicy
+    if [[ -z "${currentPolicy}" || "${currentPolicy}" == "null" ]]; then
       # Start policy is not set at cluster level, check at domain level
-      clusterPolicyCmd=".spec.serverStartPolicy"
-      currentPolicy=$(echo ${domainJson} | jq -r "${clusterPolicyCmd}")
-      if [ "${currentPolicy}" == "null" ]; then
+      getDomainPolicy "${domainJson}" currentPolicy
+      if [[ -z "${currentPolicy}" || "${currentPolicy}" == "null" ]]; then
         # Start policy is not set at domain level, default to IF_NEEDED
         currentPolicy=IF_NEEDED
       fi
     fi
-    eval $__currentPolicy="'${currentPolicy}'"
   fi
+  eval $__currentPolicy="'${currentPolicy}'"
 }
 
 #
@@ -86,7 +71,7 @@ function getEffectivePolicy {
 # $2 - Name of server
 # $3 - Return value containing current server start policy
 #
-function getCurrentPolicy {
+function getServerPolicy {
   local domainJson=$1
   local serverName=$2
   local __currentPolicy=$3
@@ -117,12 +102,7 @@ function createServerStartPolicyPatch {
   local currentServerStartPolicy=""
 
   # Get server start policy for this server
-  managedServers=$(echo ${domainJson} | jq -cr '(.spec.managedServers)')
-  if [ "${managedServers}" != "null" ]; then
-    extractPolicyCmd="(.spec.managedServers[] \
-      | select (.serverName == \"${serverName}\") | .serverStartPolicy)"
-    currentServerStartPolicy=$(echo ${domainJson} | jq "${extractPolicyCmd}")
-  fi
+  getServerPolicy "${domainJson}" "${serverName}" currentServerStartPolicy
   if [ -z "${currentServerStartPolicy}" ]; then
     # Server start policy doesn't exist, add a new policy
     addPolicyCmd=".[.| length] |= . + {\"serverName\":\"${serverName}\", \
@@ -189,6 +169,7 @@ function getSortedListOfServers {
   local serverName=$2
   local clusterName=$3
   local withPolicy=$4
+  local policy=""
   local sortedServers=()
   local otherServers=()
 
@@ -203,7 +184,7 @@ function getSortedListOfServers {
     # Cluster is a configured cluster, get server names
     servers=($(echo ${clusterTopology} | jq -r .servers[].name))
     # Sort server names in numero lexi order
-    IFS=$'\n' sortedServers=($(sed 's/\([0-9]\)/;\1/' <<<"${servers[*]}" | sort -n -t\; -k2,2 | tr -d ';'));
+    IFS=$'\n' sortedServers=($(sort --version-sort <<<"${servers[*]}" ))
     unset IFS
     clusterSize=${#sortedServers[@]}
   else 
@@ -296,7 +277,7 @@ function checkStartedServers {
   if [ "${sortedByAlwaysSize}" -gt 0 ]; then
     for localServerName in "${sortedByAlwaysServers[@]}"; do
       getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
-      # # Update policy when server name matches current server and unsetting
+      # Update policy when server name matches current server and unsetting
       if [[ "${serverName}" == "${localServerName}" && "${withPolicy}" == "UNSET" ]]; then
         policy=UNSET
       fi

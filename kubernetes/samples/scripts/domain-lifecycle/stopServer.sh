@@ -17,7 +17,7 @@ function usage() {
   decreasing the value of 'spec.clusters[<cluster-name>].replicas' or by updating 
   'spec.managedServers[<server-name>].serverStartPolicy' attribute of the domain 
   resource or both as necessary. The 'spec.clusters[<cluster-name>].replicas' value
-  can be kept constant by using '-k' option.
+  can be kept constant by using '-k' option. Please see README.md for more details.
  
   Usage:
  
@@ -54,7 +54,7 @@ action=""
 effectivePolicy=""
 managedServerPolicy=""
 stoppedWhenAlwaysPolicyReset=""
-withRelicas="CONSTANT"
+withReplicas="CONSTANT"
 withPolicy="CONSTANT"
 
 while getopts "vks:m:n:d:h" opt; do
@@ -107,7 +107,7 @@ domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o j
 getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
 if [ -n "${clusterName}" ]; then
   # Server is part of a cluster, check currently started servers
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withRelicas}" "${withPolicy}" serverStarted
+  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
   if [[ "${effectivePolicy}" == "NEVER" || "${serverStarted}" != "true" ]]; then
     echo "[INFO] Server should be already stopping or stopped. This is either because of the sever start policy or server is chosen to be stopped based on current replica count."
     exit 0
@@ -122,7 +122,7 @@ fi
 
 # Create server start policy patch with NEVER value
 createServerStartPolicyPatch "${domainJson}" "${serverName}" "${serverStartPolicy}" neverStartPolicyPatch
-getCurrentPolicy "${domainJson}" "${serverName}" managedServerPolicy
+getServerPolicy "${domainJson}" "${serverName}" managedServerPolicy
 if [[ -n "${clusterName}" && "${effectivePolicy}" == "ALWAYS" ]]; then
   # Server is part of a cluster and start policy is ALWAYS. 
   withReplicas="CONSTANT"
