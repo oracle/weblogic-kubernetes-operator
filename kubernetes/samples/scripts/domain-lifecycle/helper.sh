@@ -406,6 +406,7 @@ function validateServerAndFindCluster {
   local serverName=$3
   local __isValidServer=$4
   local __clusterName=$5
+  local serverCount=""
   local errorMessage="Server name is outside the range of allowed servers. \
 Please make sure server name is correct."
 
@@ -428,9 +429,11 @@ Please make sure server name is correct."
       for dynaClusterNamePrefix in "${dynamicClusters[@]}"; do
         prefix=$(echo ${dynaClusterNamePrefix} | jq -r .prefix)
         if [[ "${serverName}" == "${prefix}"* ]]; then
-          serverCount=$(echo "${serverName: -1}")
           maxSize=$(echo ${dynaClusterNamePrefix} | jq -r .max)
           number='^[0-9]+$'
+          if [ $(echo "${serverName}" | grep -c -Eo '[0-9]+$') -gt 0 ]; then
+            serverCount=$(echo "${serverName}" | grep -Eo '[0-9]+$')
+          fi
           if ! [[ $serverCount =~ $number ]] ; then
              echo "error: Server name is not valid for dynamic cluster." 
              exit 1
