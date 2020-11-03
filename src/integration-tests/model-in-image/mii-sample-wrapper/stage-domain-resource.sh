@@ -31,6 +31,7 @@ for var in DOMAIN_UID \
            MODEL_IMAGE_NAME \
            MODEL_IMAGE_TAG \
            INCLUDE_MODEL_CONFIGMAP \
+           ONLINE_UPDATE \
            DOMAIN_RESOURCE_FILENAME \
            DOMAIN_RESOURCE_TEMPLATE \
            INTROSPECTOR_DEADLINE_SECONDS
@@ -73,5 +74,11 @@ if [ "${INCLUDE_MODEL_CONFIGMAP}" = "true" ]; then
   sed -i -e "s;\#\(secrets:\);\1;"             "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
   sed -i -e "s;\#\(-.*datasource-secret\);\1;" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
 fi
+
+if [ "${ONLINE_UPDATE}" = "true" ]; then
+  # we're going to turn on online update
+  sed -i -e "s;\#\(useOnlineUpdate:\);\1;"     "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
+fi
+
 
 echo "@@ Info: Done."

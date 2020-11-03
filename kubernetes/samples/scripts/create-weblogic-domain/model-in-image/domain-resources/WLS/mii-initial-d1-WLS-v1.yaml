@@ -117,7 +117,16 @@ spec:
   # roll of your domain's WebLogic Server pods.
   restartVersion: '1'
 
+  # Changes to this field cause the operator to repeat its introspection of the
+  #  WebLogic domain configuration.
+  introspectVersion: '1'
+
   configuration:
+
+    # Operator will attempt to use the online update to the running domain without
+    # restarting the servers if only changes made are updating dynamic attributes
+    # of the WebLogic Domain
+    #useOnlineUpdate: true
 
     # Settings for domainHomeSourceType 'FromModel'
     model:

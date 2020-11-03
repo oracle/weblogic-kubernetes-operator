@@ -20,7 +20,7 @@ spec:
   domainHome: /u01/domains/sample-domain1
 
   # The WebLogic Server Docker image that the Operator uses to start the domain
-  image: "model-in-image:WLS-v2"
+  image: "model-in-image:JRF-v1"
 
   # Defaults to "Always" if image tag (version) is ':latest'
   imagePullPolicy: "IfNotPresent"
@@ -61,11 +61,11 @@ spec:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
-      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx1024m "
     resources:
       requests:
-        cpu: "250m"
-        memory: "768Mi"
+        cpu: "500m"
+        memory: "1280Mi"
 
     # Optional volumes and mounts for the domain's pods. See also 'logHome'.
     #volumes:
@@ -87,6 +87,11 @@ spec:
     #  channels:
     #  - channelName: default
     #    nodePort: 30701
+    serverPod:
+      # Optional new or overridden environment variables for the admin pods
+      env:
+      - name: USER_MEM_ARGS
+        value: "-Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m "
    
   # The number of managed servers to start for unlisted clusters
   replicas: 1
@@ -126,12 +131,12 @@ spec:
     # Operator will attempt to use the online update to the running domain without
     # restarting the servers if only changes made are updating dynamic attributes
     # of the WebLogic Domain
-    #useOnlineUpdate: true
+    useOnlineUpdate: true
 
     # Settings for domainHomeSourceType 'FromModel'
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-      domainType: "WLS"
+      domainType: "JRF"
 
       # Optional configmap for additional models and variable files
       configMap: sample-domain1-wdt-config-map
@@ -143,3 +148,15 @@ spec:
     # (the model yaml in the optional configMap or in the image)
     secrets:
     - sample-domain1-datasource-secret
+    - sample-domain1-rcu-access
+
+    # Increase the introspector job active timeout value for JRF use cases
+    introspectorJobActiveDeadlineSeconds: 600
+
+    opss:
+
+      # Name of secret with walletPassword for extracting the wallet, used for JRF domains
+      walletPasswordSecret: sample-domain1-opss-wallet-password-secret
+
+      # Name of secret with walletFile containing base64 encoded opss wallet, used for JRF domains
+      #walletFileSecret: sample-domain1-opss-walletfile-secret

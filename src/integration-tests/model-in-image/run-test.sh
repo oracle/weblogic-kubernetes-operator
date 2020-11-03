@@ -36,6 +36,7 @@ DO_UPDATE1=false
 DO_UPDATE2=false
 DO_UPDATE3_IMAGE=false
 DO_UPDATE3_MAIN=false
+DO_UPDATE4=false
 WDT_DOMAIN_TYPE=WLS
 
 function usage() {
@@ -119,6 +120,11 @@ function usage() {
                     Depends on '-update3-image'.
                     Rolls 'sample-domain1' if already running.
 
+    -update4      : Deploy update4 use case (update work manager configuration via configmap dyanamically).
+                    Domain uid 'sample-domain1'.
+                    Rolls 'sample-domain1' if already running.
+                    Depends on '-initial-image'.
+
     -all          : All of the above tests.
 
 EOF
@@ -141,6 +147,7 @@ while [ ! -z "${1:-}" ]; do
     -update2)        DO_UPDATE2="true" ;;
     -update3-image)  DO_UPDATE3_IMAGE="true" ;;  
     -update3-main)   DO_UPDATE3_MAIN="true" ;;  
+    -update4)        DO_UPDATE4="true" ;;
     -all)            DO_CHECK_SAMPLE="true" 
                      DO_INITIAL_IMAGE="true" 
                      DO_INITIAL_MAIN="true" 
@@ -148,6 +155,7 @@ while [ ! -z "${1:-}" ]; do
                      DO_UPDATE2="true" 
                      DO_UPDATE3_IMAGE="true" 
                      DO_UPDATE3_MAIN="true" 
+                     DO_UPDATE4="true" 
                      ;;  
     -?)              usage; exit 0; ;;
     *)               trace "Error: Unrecognized parameter '${1}', pass '-?' for usage."; exit 1; ;;
@@ -437,6 +445,33 @@ if [ "$DO_UPDATE3_MAIN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
     testapp internal cluster-1 "v2"
     testapp traefik  cluster-1 "v2"
+  fi
+fi
+
+#
+# Update work manager configurations on the running domain, patch
+# introspect version, wait for introspector to complete,
+# and use the test app to verify that the updated datasources.
+#
+
+if [ "$DO_UPDATE4" = "true" ]; then
+  doCommand -c "echo ====== USE CASE: UPDATE4 ======"
+
+  doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
+  doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update4.yaml"
+  doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
+  doCommand -c "export ONLINE_UPDATE=true"
+
+  doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
+  doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
+  doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/wmdatasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+
+  doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
+  doCommand    "\$WORKDIR/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+
+  if [ ! "$DRY_RUN" = "true" ]; then
+    testapp internal cluster-1 "'SampleMinThreads' with configured count: 2" 30 quiet
+    testapp internal cluster-1 "'SampleMaxThreads' with configured count: 20" 30 quiet
   fi
 fi
 

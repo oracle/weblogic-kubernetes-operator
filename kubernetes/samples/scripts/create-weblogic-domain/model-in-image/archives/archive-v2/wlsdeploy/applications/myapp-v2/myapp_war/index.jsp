@@ -25,9 +25,10 @@
 
     MBeanServer mbs = (MBeanServer)ic.lookup("java:comp/env/jmx/runtime");
 
+
     // display the current server's cluster name
     Set<ObjectInstance> clusterRuntimes = mbs.queryMBeans(new ObjectName("*:Type=ClusterRuntime,*"), null);
-    out.println("Found " + clusterRuntimes.size() + " local cluster runtime" + (String)((clusterRuntimes.size()!=1)?"s:":":"));
+    out.println("Found " + clusterRuntimes.size() + " local cluster runtime" + (String)((clusterRuntimes.size()==0)?".":(clusterRuntimes.size()!=1)?"s:":":"));
     for (ObjectInstance clusterRuntime : clusterRuntimes) {
        String cName = (String)mbs.getAttribute(clusterRuntime.getObjectName(), "Name");
        out.println("  Cluster '" + cName + "'");
@@ -37,11 +38,28 @@
     // display local data sources
     ObjectName jdbcRuntime = new ObjectName("com.bea:ServerRuntime=" + srName + ",Name=" + srName + ",Type=JDBCServiceRuntime");
     ObjectName[] dataSources = (ObjectName[])mbs.getAttribute(jdbcRuntime, "JDBCDataSourceRuntimeMBeans");
-    out.println("Found " + dataSources.length + " local data source" + (String)((dataSources.length!=1)?"s:":":"));
+    out.println("Found " + dataSources.length + " local data source" + (String)((dataSources.length==0)?".":(dataSources.length!=1)?"s:":":"));
     for (ObjectName dataSource : dataSources) {
        String dsName  = (String)mbs.getAttribute(dataSource, "Name");
        String dsState = (String)mbs.getAttribute(dataSource, "State");
        out.println("  Datasource '" + dsName + "': State='" + dsState +"'");
+    }
+    out.println();
+
+    // display work manager configuration created by the sample
+    Set<ObjectInstance> minTCRuntimes = mbs.queryMBeans(new ObjectName("*:Type=MinThreadsConstraintRuntime,Name=SampleMinThreads,*"), null);
+    for (ObjectInstance minTCRuntime : minTCRuntimes) {
+       String cName = (String)mbs.getAttribute(minTCRuntime.getObjectName(), "Name");
+       int count = (int)mbs.getAttribute(minTCRuntime.getObjectName(), "ConfiguredCount");
+       out.println("Found min threads constraint runtime named '" + cName + "' with configured count: " + count);
+    }
+    out.println();
+
+    Set<ObjectInstance> maxTCRuntimes = mbs.queryMBeans(new ObjectName("*:Type=MaxThreadsConstraintRuntime,Name=SampleMaxThreads,*"), null);
+    for (ObjectInstance maxTCRuntime : maxTCRuntimes) {
+       String cName = (String)mbs.getAttribute(maxTCRuntime.getObjectName(), "Name");
+       int count = (int)mbs.getAttribute(maxTCRuntime.getObjectName(), "ConfiguredCount");
+       out.println("Found max threads constraint runtime named '" + cName + "' with configured count: " + count);
     }
     out.println();
 

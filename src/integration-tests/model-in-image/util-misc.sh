@@ -79,6 +79,8 @@ function testapp() {
 
   local num_tries=0
   local traefik_nodeport=''
+  local max_tries="${4:-15}"
+  local quiet="${5:-false}"
 
   while [ 1 = 1 ] 
   do
@@ -112,7 +114,9 @@ EOF
 
     target_file=$WORKDIR/test-out/$PPID.$(printf "%3.3u" ${COMMAND_OUTFILE_COUNT:-0}).$(timestamp).testapp.curl.$1.out
 
-    echo -n "@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command'. Output file '$target_file'."
+    if [ $quiet = 'false' ] || [ $num_tries -eq 0 ]; then
+      echo -n "@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command'. Output file '$target_file'."
+    fi
 
     set +e
     bash -c "$command" > $target_file 2>&1
@@ -124,13 +128,17 @@ EOF
     local after=$(cat $target_file | sed "s/$3/ADIFFERENTVALUE/g")
 
     if [ "$before" = "$after" ]; then
-      echo
-      echo "@@ Error: '$3' not found in app response for command '$command'. Contents of response file '$target_file':"
-      cat $target_file
 
       num_tries=$((num_tries + 1))
-      [ $num_tries -gt 15 ] && return 1
-      echo "@@ Info: Curl command failed on try number '$num_tries'. Sleeping 5 seconds and retrying."
+      if [ $num_tries -gt $max_tries ]; then
+        echo
+        echo "@@ Error: '$3' not found in app response for command '$command' after try number '$num_tries'. Contents of reponse file '$target_file':"
+        cat $target_file
+        return 1
+      fi
+      if [ $quiet = 'false' ]; then
+        echo "@@ Info: Curl command failed on try number '$num_tries'. Sleeping 5 seconds and retrying."
+      fi
       sleep 5
 
     else

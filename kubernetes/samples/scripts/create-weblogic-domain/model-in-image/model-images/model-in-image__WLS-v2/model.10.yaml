@@ -32,3 +32,20 @@ appDeployments:
             SourcePath: 'wlsdeploy/applications/myapp-v2'
             ModuleType: ear
             Target: 'cluster-1'
+
+resources:
+  SelfTuning:
+    MinThreadsConstraint:
+      SampleMinThreads:
+        Target: 'cluster-1'
+        Count: 1
+    MaxThreadsConstraint:
+      SampleMaxThreads:
+        Target: 'cluster-1'
+        Count: 10
+    WorkManager:
+      SampleWM:
+        Target: 'cluster-1'
+        MinThreadsConstraint: 'SampleMinThreads'
+        MaxThreadsConstraint: 'SampleMaxThreads'
+

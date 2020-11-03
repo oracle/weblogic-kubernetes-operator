@@ -45,28 +45,40 @@ function phase_setup() {
       domain_num=1
       image_version=v1
       archive_version=v1
-      configmap=false
+      configmap=None
+      online_update=false
       ;;
     # Same as initial, plus a data source targeted to 'cluster-1' which is dynamically supplied using a model configmap. 
     update1)
       domain_num=1
       image_version=v1
       archive_version=v1
-      configmap=true
+      configmap=datasource
+      online_update=false
       ;;
     # Same as update1, with a second domain with its own uid 'sample-domain2' that's based on the update1 domain's resource file.
     update2)
       domain_num=2
       image_version=v1
       archive_version=v1
-      configmap=true
+      configmap=datasource
+      online_update=false
       ;;
     # Similar to update1, except deploy an updated web-app 'v2' while keeping the original app in the archive.
     update3)
       domain_num=1
       image_version=v2
       archive_version=v2
-      configmap=true
+      configmap=datasource
+      online_update=false
+      ;;
+    # Similar to update1, plus update work manager configuration using dynamic update without restarting servers.
+    update4)
+      domain_num=1
+      image_version=v1
+      archive_version=v1
+      configmap=wmdatasource
+      online_update=true
       ;;
     *)
       echo "Error: Unknown phase $1." 
@@ -110,18 +122,21 @@ chmod +x $WORKDIR/model-images/download-tooling.sh
 # Stage everything else
 #
 
-for phase in initial update1 update2 update3; do
+for phase in initial update1 update2 update3 update4; do
 
   phase_setup $phase
 
   export DOMAIN_NAMESPACE=sample-domain1-ns
   export DOMAIN_UID=sample-domain$domain_num
   export ARCHIVE_SOURCEDIR="archives/archive-$archive_version"
-  export INCLUDE_MODEL_CONFIGMAP=$configmap
+  if [ $configmap != "None" ]; then
+    export INCLUDE_MODEL_CONFIGMAP=true
+  fi
   export CUSTOM_DOMAIN_NAME=domain$domain_num
   export MODEL_IMAGE_NAME=model-in-image
   export INTROSPECTOR_DEADLINE_SECONDS=600
   export IMAGE_PULL_SECRET_NAME=""
+  export ONLINE_UPDATE=$online_update
 
   # setup ingress yaml files
   $SCRIPTDIR/stage-and-create-ingresses.sh -dry
@@ -144,7 +159,7 @@ for phase in initial update1 update2 update3; do
   # setup domain resource 
 
   domain_path=domain-resources/$type/mii-$phase-d$domain_num-$MODEL_IMAGE_TAG
-  if [ "$configmap" = "true" ]; then
+  if [ "$configmap" != "None" ]; then
     domain_path=$domain_path-ds
   fi
   export DOMAIN_RESOURCE_FILENAME=$domain_path.yaml
@@ -157,10 +172,10 @@ for phase in initial update1 update2 update3; do
    
   # setup script for the configmap
 
-  if [ "$configmap" = "true" ]; then
+  if [ "$configmap" != "None" ]; then
     $WORKDIR/utils/create-configmap.sh \
       -c ${DOMAIN_UID}-wdt-config-map \
-      -f ${WORKDIR}/model-configmaps/datasource \
+      -f ${WORKDIR}/model-configmaps/$configmap \
       -d $DOMAIN_UID \
       -n $DOMAIN_NAMESPACE \
       -dry kubectl | grep dryrun | sed 's/dryrun://' \
