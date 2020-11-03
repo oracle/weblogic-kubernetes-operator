@@ -315,13 +315,22 @@ class ItPodTemplates {
                 .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING")
-                .serverPod(new ServerPod().labels(clusterLabelKeyValues)))
+                )
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
+    domain.getSpec().getClusters()
+        .stream()
+        .forEach(
+            cluster -> {
+              if(cluster.getClusterName().equals(clusterName)) {
+                cluster.getServerPod().labels(clusterLabelKeyValues);
+              }
+            }
+        );
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, namespace, imageName);
