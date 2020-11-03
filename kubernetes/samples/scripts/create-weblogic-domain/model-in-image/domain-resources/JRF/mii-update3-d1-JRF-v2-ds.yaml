@@ -128,9 +128,11 @@ spec:
 
   configuration:
 
-    # Operator will attempt to use the online update to the running domain without
-    # restarting the servers if only changes made are updating dynamic attributes
-    # of the WebLogic Domain
+    # If set to 'true' and an introspector job detects that
+    # WebLogic configuration changes for an already running
+    # domain are all dynamic, then the operator will attempt
+    # to use an online update to update WebLogic configuration
+    # instead of restarting all WebLogic server pods.
     #useOnlineUpdate: true
 
     # Settings for domainHomeSourceType 'FromModel'

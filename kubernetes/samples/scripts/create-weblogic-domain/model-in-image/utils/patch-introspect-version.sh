@@ -9,7 +9,7 @@ function usage() {
 
   This is a helper script for changing the 'spec.introspectVersion' field
   of a deployed domain. This change will cause the operator to initiate
-  a rolling introspect of the resource's WebLogic pods if the pods are
+  a new introspect of the resource's WebLogic pods if the pods are
   already running.
  
   Usage:
