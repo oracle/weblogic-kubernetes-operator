@@ -3179,7 +3179,7 @@ public class CommonTestUtils {
    *
    * @param domain custom resource object
    */
-  public static void setPodAntiAffinity(Domain domain) {
+  public static synchronized void setPodAntiAffinity(Domain domain) {
     V1PodAntiAffinity podAntiAffinity = new V1PodAntiAffinity()
         .addPreferredDuringSchedulingIgnoredDuringExecutionItem(
             new V1WeightedPodAffinityTerm()
