@@ -168,7 +168,7 @@ if [ -n "${clusterName}" ]; then
   fi
 else 
   # Server is an independent managed server. 
-  if [ "${effectivePolicy}" == "ALWAYS" ]; then
+  if [[ "${effectivePolicy}" == "ALWAYS" || "${effectivePolicy}" == "IF_NEEDED" ]]; then
     printInfo "No changes needed, exiting. The server should be already started or it's in the process of starting. The start policy for server ${serverName} is ${effectivePolicy}."
     exit 0
   fi
@@ -223,9 +223,10 @@ elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
     action="PATCH_POLICY"
   fi
 else
-  # Server is an independent managed server, patch server start policy to ALWAYS
-  createPatchJsonToUpdatePolicy "${alwaysStartPolicyPatch}" patchJson
-  action="PATCH_POLICY"
+  # Server is an independent managed server
+  printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
+  createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
+  action="UNSET_POLICY"
 fi
 
 if [ "${verboseMode}" == "true" ]; then
