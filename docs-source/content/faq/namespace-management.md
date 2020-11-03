@@ -40,7 +40,7 @@ elkIntegrationEnabled: false
 externalDebugHttpPort: 30999
 externalRestEnabled: false
 externalRestHttpsPort: 31001
-image: oracle/weblogic-kubernetes-operator:3.0.2
+image: oracle/weblogic-kubernetes-operator:3.0.3
 imagePullPolicy: IfNotPresent
 internalDebugHttpPort: 30999
 istioEnabled: false

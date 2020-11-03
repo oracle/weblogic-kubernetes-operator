@@ -9,7 +9,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>3.0.2</version>
+        <version>3.0.3</version>
     </parent>
 
     <artifactId>installation-tests</artifactId>
@@ -103,7 +103,7 @@
     </dependencies>
 
     <properties>
-        <junit-version>4.13</junit-version>
+        <junit-version>4.13.1</junit-version>
     </properties>
 
     <profiles>

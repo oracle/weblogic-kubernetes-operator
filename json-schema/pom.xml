@@ -7,7 +7,7 @@
     <parent>
         <artifactId>operator-parent</artifactId>
         <groupId>oracle.kubernetes</groupId>
-        <version>3.0.2</version>
+        <version>3.0.3</version>
     </parent>
 
     <artifactId>json-schema</artifactId>
@@ -46,7 +46,7 @@
     </dependencies>
 
     <properties>
-        <junit-version>4.13</junit-version>
+        <junit-version>4.13.1</junit-version>
     </properties>
 
 </project>
