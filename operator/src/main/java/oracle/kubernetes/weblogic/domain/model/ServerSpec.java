@@ -160,4 +160,6 @@ public interface ServerSpec {
   String getClusterRestartVersion();
 
   String getServerRestartVersion();
+
+  boolean alwaysStart();
 }
