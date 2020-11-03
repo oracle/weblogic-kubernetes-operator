@@ -142,6 +142,10 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
         .orElse(ServerStartPolicy.getDefaultPolicy());
   }
 
+  public boolean alwaysStart() {
+    return ServerStartPolicy.ALWAYS.equals(getEffectiveServerStartPolicy());
+  }
+
   @Nonnull
   @Override
   public ProbeTuning getLivenessProbe() {
