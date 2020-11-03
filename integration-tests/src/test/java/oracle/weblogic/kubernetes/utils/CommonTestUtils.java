@@ -3194,19 +3194,7 @@ public class CommonTestUtils {
                 )
         );
     List<oracle.weblogic.domain.Cluster> clustersList = domain.getSpec().getClusters();
-/*
-    domain.getSpec()
-        .getClusters()
-        .stream()
-        .forEach(
-            cluster -> {
-              cluster
-                  .getServerPod()
-                  .affinity()
-                  .setPodAntiAffinity((podAntiAffinity));
-            }
-        );
-*/
+
     domain.getSpec()
         .getClusters()
         .stream()
