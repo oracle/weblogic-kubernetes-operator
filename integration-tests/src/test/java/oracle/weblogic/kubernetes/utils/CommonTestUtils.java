@@ -3193,14 +3193,32 @@ public class CommonTestUtils {
                             .addValuesItem("($CLUSTER_NAME)")))
                 )
         );
+    List<oracle.weblogic.domain.Cluster> clustersList = domain.getSpec().getClusters();
+/*
     domain.getSpec()
         .getClusters()
         .stream()
         .forEach(
-            cluster -> cluster
-                .serverPod()
-                .affinity()
-                .setPodAntiAffinity((podAntiAffinity))
+            cluster -> {
+              cluster
+                  .getServerPod()
+                  .affinity()
+                  .setPodAntiAffinity((podAntiAffinity));
+            }
         );
+*/
+    domain.getSpec()
+        .getClusters()
+        .stream()
+        .forEach(
+            cluster -> {
+              cluster
+                  .serverPod(new oracle.weblogic.domain.ServerPod()
+                      .affinity(new io.kubernetes.client.openapi.models.V1Affinity().podAntiAffinity(
+                          podAntiAffinity)));
+
+            }
+        );
+
   }
 }
