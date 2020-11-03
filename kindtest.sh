@@ -56,8 +56,8 @@ function usage {
   echo "      (default: https://github.com/oracle/weblogic-deploy-tooling/releases/latest) "
   echo "  -i WIT download URL"
   echo "      (default: https://github.com/oracle/weblogic-image-tool/releases/latest) "
-  echo "  -m Run integration-tests or verify-images-tests"
-  echo "      (default: integration-tests, supported values: verify-images-tests) "
+  echo "  -m Run integration-tests or wls-image-cert or fmw-image-cert"
+  echo "      (default: integration-tests, supported values: wls-image-cert, fmw-image-cert) "
   echo "  -h Help"
   exit $1
 }
@@ -75,7 +75,7 @@ parallel_run="false"
 threads="2"
 wdt_download_url="https://github.com/oracle/weblogic-deploy-tooling/releases/latest"
 wit_download_url="https://github.com/oracle/weblogic-image-tool/releases/latest"
-verify_image_run="false"
+maven_profile_name="integration-tests"
 
 while getopts ":h:n:o:t:v:c:x:p:d:i:" opt; do
   case $opt in
@@ -97,7 +97,7 @@ while getopts ":h:n:o:t:v:c:x:p:d:i:" opt; do
     ;;
     i) wit_download_url="${OPTARG}"
     ;;
-    m) verify_image_run="${OPTARG}"
+    m) maven_profile_name="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -242,19 +242,25 @@ rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
 if [ "${test_filter}" = "ItOperatorUpgrade" ] || [ "${parallel_run}" = "false" ]; then
-  if [ "${verify_image_run}" != "verify-images-tests" ]; then
+  if [ "${maven_profile_name}" = "wls-image-cert" ]; then
+    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl wls-image-cert -P wls-image-cert verify"
+    time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl wls-image-cert -P wls-image-cert verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+  elif [ "${maven_profile_name}" = "fmw-image-cert" ]; then
+    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl fmw-image-cert -P fmw-image-cert verify"
+    time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl fmw-image-cert -P fmw-image-cert verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+  else
     echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P integration-tests verify"
     time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
-  else
-    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl verify-images-tests -P verify-images-tests verify"
-    time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl verify-images-tests -P verify-images-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
   fi
 else
-  if [ "${verify_image_run}" != "verify-images-tests" ]; then
+  if [ "${maven_profile_name}" = "wls-image-cert" ]; then
+    echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl wls-image-cert -P wls-image-cert verify"
+    time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl wls-image-cert -P wls-image-cert verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+  elif [ "${maven_profile_name}" = "fmw-image-cert" ]; then
+    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl fmw-image-cert -P fmw-image-cert verify"
+    time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl fmw-image-cert -P fmw-image-cert verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+  else
     echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P integration-tests verify"
     time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
-  else
-    echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl verify-images-tests -P verify-images-tests verify"
-    time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl verify-images-tests -P verify-images-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
   fi
 fi
