@@ -16,7 +16,7 @@ To run the test:
    Usage:
      ./run-test.sh -?
 
-   WLS mode - all 4 tests (initial, update1, update2, update3):
+   WLS mode - all 5 tests (initial, update1, update2, update3, update4):
      ./run-test.sh -precleanup -oper -traefik -all
 
    WLS mode 'init' step only:
@@ -28,7 +28,7 @@ To run the test:
      ./run-test.sh -initial-image
      ./run-test.sh -initial-main
 
-   JRF mode - all 4 tests (initial, update1, update2, update3):
+   JRF mode - all 5 tests (initial, update1, update2, update3, update4):
      ./run-test.sh -precleanup -oper -traefik -precleandb -jrf -db -rcu -all
 
 --------------------
@@ -96,7 +96,7 @@ NOTES:
 
 - The '-all' options runs the tests "-check-sample", "-initial-image",
   "-initial-main", "-update1", "-update2", and 
-  "-update3-image", and "-update3-main". 
+  "-update3-image", "-update3-main", and "-update4". 
 
 - You can run the test in stages. For example:
   ./run-test.sh -precleanup 
