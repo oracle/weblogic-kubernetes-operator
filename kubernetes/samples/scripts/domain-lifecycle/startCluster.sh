@@ -27,7 +27,8 @@ function usage() {
 
     -n <namespace>      : Domain namespace. Default is 'sample-domain1-ns'.
 
-    -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl'.
+    -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl' if KUBERNETES_CLI env
+                          variable is not set. Otherwise default is the value of KUBERNETES_CLI env variable.
 
     -h                  : This help.
    
@@ -99,21 +100,21 @@ if [ "${startPolicy}" == "null" ]; then
 fi
 
 if [ "${startPolicy}" == 'IF_NEEDED' ]; then 
-  echo "[INFO] The cluster '${clusterName}' is already started or starting. The effective value of 'spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy' attribute on the domain resource is 'IF_NEEDED'. The $(basename $0) script will exit without making any changes."
+  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already started or starting. The effective value of 'spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy' attribute on the domain resource is 'IF_NEEDED'."
   exit 0
 fi
 
 if [ -z ${startPolicy} ]; then
   # cluster start policy doesn't exist, add a new IF_NEEDED policy
-  echo "[INFO] Patching start policy of cluster '${clusterName}' to 'IF_NEEDED'."
+  printInfo "Patching start policy of cluster '${clusterName}' to 'IF_NEEDED'."
   startPolicy=$(echo ${domainJson} | jq .spec.clusters | jq -c '.[.| length] |= . + {"clusterName":"'${clusterName}'","serverStartPolicy":"IF_NEEDED"}')
 else 
   # Server start policy exists, set policy value to IF_NEEDED
-  echo "[INFO]Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'IF_NEEDED'."
+  printInfo "Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'IF_NEEDED'."
   startPolicy=$(echo ${domainJson} | jq '(.spec.clusters[] | select (.clusterName == "'${clusterName}'") | .serverStartPolicy) |= "IF_NEEDED"' | jq -cr '(.spec.clusters)')
 fi
 
 patchServerStartPolicy="{\"spec\": {\"clusters\": "${startPolicy}"}}"
 ${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type='merge' --patch "${patchServerStartPolicy}"
 
-echo "[INFO] Successfully patched cluster '${clusterName}' with 'IF_NEEDED' start policy!."
+printInfo "Successfully patched cluster '${clusterName}' with 'IF_NEEDED' start policy!."

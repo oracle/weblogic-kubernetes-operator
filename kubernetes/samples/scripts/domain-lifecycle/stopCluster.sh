@@ -26,7 +26,8 @@ function usage() {
 
     -n <namespace>      : Domain namespace. Default is 'sample-domain1-ns'.
 
-    -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl'.
+    -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl' if KUBERNETES_CLI env
+                          variable is not set. Otherwise default is the value of KUBERNETES_CLI env variable.
 
     -h                  : This help.
    
@@ -98,21 +99,21 @@ if [ "${startPolicy}" == "null" ]; then
 fi
 
 if [ "${startPolicy}" == 'NEVER' ]; then 
-  echo "[INFO] The cluster '${clusterName}' is already stopped or stopping. The effective value of spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy attribute on the domain resource is 'NEVER'. The $(basename $0) script will exit without making any changes."
+  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already stopped or stopping. The effective value of spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy attribute on the domain resource is 'NEVER'."
   exit 0
 fi
 
 if [ -z ${startPolicy} ]; then
   # cluster start policy doesn't exist, add a new NEVER policy
-  echo "[INFO] Patching start policy of cluster '${clusterName}' to 'NEVER'."
+  printInfo "Patching start policy of cluster '${clusterName}' to 'NEVER'."
   startPolicy=$(echo ${domainJson} | jq .spec.clusters | jq -c '.[.| length] |= . + {"clusterName":"'${clusterName}'","serverStartPolicy":"NEVER"}')
 else 
   # Server start policy exists, set policy value to NEVER
-  echo "[INFO] Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'NEVER'."
+  printInfo "Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'NEVER'."
   startPolicy=$(echo ${domainJson} | jq '(.spec.clusters[] | select (.clusterName == "'${clusterName}'") | .serverStartPolicy) |= "NEVER"' | jq -cr '(.spec.clusters)')
 fi
 
 patch="{\"spec\": {\"clusters\": "${startPolicy}"}}"
 ${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type='merge' --patch "${patch}"
 
-echo "[INFO] Successfully patched cluster '${clusterName}' with 'NEVER' start policy!"
+printInfo "Successfully patched cluster '${clusterName}' with 'NEVER' start policy!"

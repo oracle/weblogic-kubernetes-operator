@@ -18,6 +18,9 @@ function getClusterPolicy {
   clusterPolicyCmd="(.spec.clusters[] \
     | select (.clusterName == \"${clusterName}\")).serverStartPolicy"
   effectivePolicy=$(echo ${domainJson} | jq "${clusterPolicyCmd}")
+  if [ "${effectivePolicy}" == "null" ]; then
+    effectivePolicy=""
+  fi
   eval $__clusterPolicy=${effectivePolicy}
 }
 
@@ -33,6 +36,9 @@ function getDomainPolicy {
 
   clusterPolicyCmd=".spec.serverStartPolicy"
   effectivePolicy=$(echo ${domainJson} | jq "${clusterPolicyCmd}")
+  if [ "${effectivePolicy}" == "null" ]; then
+    effectivePolicy=""
+  fi
   eval $__domainPolicy=${effectivePolicy}
 }
 
@@ -51,12 +57,12 @@ function getEffectivePolicy {
   local currentPolicy=""
 
   getServerPolicy "${domainJson}" "${serverName}" currentPolicy
-  if [[ -z "${currentPolicy}" ||  ${currentPolicy} == "null" ]]; then
+  if [ -z "${currentPolicy}" ]; then
     getClusterPolicy "${domainJson}" "${clusterName}" currentPolicy
-    if [[ -z "${currentPolicy}" || "${currentPolicy}" == "null" ]]; then
+    if [ -z "${currentPolicy}" ]; then
       # Start policy is not set at cluster level, check at domain level
       getDomainPolicy "${domainJson}" currentPolicy
-      if [[ -z "${currentPolicy}" || "${currentPolicy}" == "null" ]]; then
+      if [ -z "${currentPolicy}" ]; then
         # Start policy is not set at domain level, default to IF_NEEDED
         currentPolicy=IF_NEEDED
       fi
@@ -83,6 +89,9 @@ function getServerPolicy {
     extractPolicyCmd="(.spec.managedServers[] \
       | select (.serverName == \"${serverName}\") | .serverStartPolicy)"
     currentServerStartPolicy=$(echo ${domainJson} | jq "${extractPolicyCmd}")
+    if [ "${currentServerStartPolicy}" == "null" ]; then
+      currentServerStartPolicy=""
+    fi
   fi
   eval $__currentPolicy=${currentServerStartPolicy}
 }
@@ -135,6 +144,45 @@ function createPatchJsonToUnsetPolicyAndUpdateReplica {
     | select (.serverName != \"${serverName}\"))]"
   serverStartPolicyPatch=$(echo ${domainJson} | jq "${replacePolicyCmd}")
   patchJson="{\"spec\": {\"clusters\": "${replicaPatch}",\"managedServers\": "${serverStartPolicyPatch}"}}"
+  eval $__result="'${patchJson}'"
+}
+
+#
+# Function to create patch json string to update policy 
+# $1 - String containing start policy info
+# $2 - String containing json to patch domain resource
+#
+function createPatchJsonToUpdatePolicy {
+  local startPolicy=$1
+  local __result=$2
+  patchJson="{\"spec\": {\"managedServers\": "${startPolicy}"}}"
+  eval $__result="'${patchJson}'"
+}
+
+#
+# Function to create patch json string to update replica 
+# $1 - String containing replica
+# $2 - String containing json to patch domain resource
+#
+function createPatchJsonToUpdateReplica {
+  local replicaInfo=$1
+  local __result=$2
+  patchJson="{\"spec\": {\"clusters\": "${replicaInfo}"}}"
+  eval $__result="'${patchJson}'"
+}
+
+#
+# Function to create patch json string to unset policy
+# $1 - Domain resource in json format
+# $2 - Name of server whose policy will be patched
+# $3 - Return value containing patch json string
+#
+function createPatchJsonToUpdateReplicaAndPolicy {
+  local replicaInfo=$1
+  local startPolicy=$2
+  local __result=$3
+
+  patchJson="{\"spec\": {\"clusters\": "${replicaInfo}",\"managedServers\": "${startPolicy}"}}"
   eval $__result="'${patchJson}'"
 }
 
@@ -514,7 +562,30 @@ function fail {
 
 # Function to print an error message
 function printError {
-  echo [ERROR] $*
+  echo [`timestamp`][ERROR] $*
+}
+
+# Function to print an error message
+function printInfo {
+  echo [`timestamp`][INFO] $*
+}
+
+# timestamp
+#   purpose:  echo timestamp in the form yyyymmddThh:mm:ss.mmm ZZZ
+#   example:  20181001T14:00:00.001 UTC
+function timestamp() {
+  local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S %N %s %Z' 2>&1`"
+  if [ ! "${timestamp/illegal/xyz}" = "${timestamp}" ]; then
+    # old shell versions don't support %N or --utc
+    timestamp="`date -u '+%Y-%m-%dT%H:%M:%S 000000 %s %Z' 2>&1`"
+  fi
+  local ymdhms="`echo $timestamp | awk '{ print $1 }'`"
+  # convert nano to milli
+  local milli="`echo $timestamp | awk '{ print $2 }' | sed 's/\(^...\).*/\1/'`"
+  local secs_since_epoch="`echo $timestamp | awk '{ print $3 }'`"
+  local millis_since_opoch="${secs_since_epoch}${milli}"
+  local timezone="`echo $timestamp | awk '{ print $4 }'`"
+  echo "${ymdhms}.${milli} ${timezone}"
 }
 
 #

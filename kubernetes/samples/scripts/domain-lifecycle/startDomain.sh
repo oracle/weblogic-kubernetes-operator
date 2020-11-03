@@ -24,7 +24,8 @@ function usage() {
 
     -n <namespace>      : Domain namespace. Default is 'sample-domain1-ns'.
 
-    -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl'.
+    -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl' if KUBERNETES_CLI env
+                          variable is not set. Otherwise default is the value of KUBERNETES_CLI env variable.
 
     -h                  : This help.
    
@@ -65,13 +66,13 @@ if [ -z "${serverStartPolicy}" ]; then
 fi
 
 if [ "${serverStartPolicy}" == 'IF_NEEDED' ]; then 
-  echo "[INFO] The domain '${domainUid}' is already started or starting. The effective value of 'spec.serverStartPolicy' attribute on the domain resource is 'IF_NEEDED'. The $(basename $0) script will exit without making any changes."
+  printInfo "No changes needed, exiting. The domain '${domainUid}' is already started or starting. The effective value of 'spec.serverStartPolicy' attribute on the domain resource is 'IF_NEEDED'."
   exit 0
 fi
 
-echo "[INFO] Patching domain '${domainUid}' from serverStartPolicy='${serverStartPolicy}' to 'IF_NEEDED'."
+printInfo "Patching domain '${domainUid}' from serverStartPolicy='${serverStartPolicy}' to 'IF_NEEDED'."
 
 ${kubernetesCli} -n ${domainNamespace} patch domain ${domainUid} --type='json' \
   -p='[{"op": "replace", "path": "/spec/serverStartPolicy", "value": "IF_NEEDED" }]'
 
-echo "[INFO] Successfully patched domain '${domainUid}' in namespace '${domainNamespace}' with 'IF_NEEDED' start policy!"
+printInfo "Successfully patched domain '${domainUid}' in namespace '${domainNamespace}' with 'IF_NEEDED' start policy!"

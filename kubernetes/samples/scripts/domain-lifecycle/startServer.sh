@@ -3,6 +3,33 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
+# This script starts a WebLogic managed server in a domain. 
+# Internal code notes :-
+# - If server start policy is ALWAYS or policy is IF_NEEDED and the server is selected 
+#   to start based on the replica count, it means that server is already started or is
+#   in the process of starting. In this case, script exits without making any changes.
+#
+# - If start policy of servers parent cluster or domain is 'NEVER', script
+#   fails as server can't be started.
+#
+# - If the effective start policy of the server is IF_NEEDED and increasing replica 
+#   count will naturally start the server, the script increases the replica count. 
+#
+# - If unsetting policy and increasing the replica count will start this server, script unsets
+#   the policy and increases replica count. For e.g. if replica count is 1 and start policy
+#   of server2 is NEVER, unsetting policy and increasing replica count will start server2.
+#
+# - If option to keep replica count constant ('-k') is selected and unsetting start policy
+#   will naturally start the server, script will unset the policy. For e.g. if replica count
+#   is 2 and start policy  of server2 is NEVER, unsetting policy will start server2.
+#
+# - If above conditions are not true, it implies that either start policy is NEVER or policy
+#   is IF_NEEDED but server is not next in the order to start. In this case, script sets start 
+#   policy to ALWAYS. For e.g. replica count is 3 and server10 needs to start. The script also 
+#   increments the replica count by default. If option to keep replica count constant ('-k') 
+#   is selected, it only sets the start policy to ALWAYS.
+# 
+
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/helper.sh
@@ -31,7 +58,8 @@ function usage() {
 
     -k <keep_replica_constant> : Keep replica count constant. Default behavior is to increment replica count.
 
-    -m <kubernetes_cli>        : Kubernetes command line interface. Default is 'kubectl'.
+    -m <kubernetes_cli>        : Kubernetes command line interface. Default is 'kubectl' if KUBERNETES_CLI env
+                                 variable is not set. Otherwise default is the value of KUBERNETES_CLI env variable.
 
     -v <verbose_mode>          : Enables verbose mode. Default is 'false'.
 
@@ -104,7 +132,7 @@ initialize
 # Get the domain in json format
 domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
 if [ $? -ne 0 ]; then
-  echo "[ERROR} Unable to get domain resource. Please make sure 'domain_uid' and 'namespace' provided with '-d' and '-n' arguments are correct."
+  printError "Unable to get domain resource. Please make sure 'domain_uid' and 'namespace' provided with '-d' and '-n' arguments are correct."
   exit 1
 fi
 
@@ -117,13 +145,13 @@ fi
 
 getClusterPolicy "${domainJson}" "${clusterName}" clusterPolicy
 if [ "${clusterPolicy}" == 'NEVER' ]; then
-  echo "Cannot start server '${serverName}', the server's parent cluster '.spec.clusters[?(clusterName=\"${clusterName}\"].serverStartPolicy' in the domain resource is set to 'NEVER'."
+  printError "Cannot start server '${serverName}', the server's parent cluster '.spec.clusters[?(clusterName=\"${clusterName}\"].serverStartPolicy' in the domain resource is set to 'NEVER'."
   exit 1
 fi
 
 getDomainPolicy "${domainJson}" domainPolicy
 if [ "${domainPolicy}" == 'NEVER' ]; then
-  echo "Cannot start server '${serverName}', the .spec.serverStartPolicy in the domain resource is set to 'NEVER'."
+  printError "Cannot start server '${serverName}', the .spec.serverStartPolicy in the domain resource is set to 'NEVER'."
   exit 1
 fi
 
@@ -132,16 +160,16 @@ if [ -n "${clusterName}" ]; then
   # Server is part of a cluster, check currently started servers
   checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
   if [[ ${effectivePolicy} == "IF_NEEDED" && ${serverStarted} == "true" ]]; then
-    echo "[INFO] The server should be already started or it's starting. The start policy for server ${serverName} is ${effectivePolicy} and server is chosen to be started based on current replica count."
+    printInfo "No changes needed, exiting. The server should be already started or it's in the process of starting. The start policy for server ${serverName} is ${effectivePolicy} and server is chosen to be started based on current replica count."
     exit 0
   elif [[ "${effectivePolicy}" == "ALWAYS" && ${serverStarted} == "true" ]]; then
-    echo "[INFO] The server should be already started or it's starting. The start policy for server ${serverName} is ${effectivePolicy}."
+    printInfo "No changes needed, exiting. The server should be already started or it's in the process of starting. The start policy for server ${serverName} is ${effectivePolicy}."
     exit 0
   fi
 else 
   # Server is an independent managed server. 
   if [ "${effectivePolicy}" == "ALWAYS" ]; then
-    echo "[INFO] The server should be already started or it's starting. The start policy for server ${serverName} is ${effectivePolicy}."
+    printInfo "No changes needed, exiting. The server should be already started or it's in the process of starting. The start policy for server ${serverName} is ${effectivePolicy}."
     exit 0
   fi
 fi
@@ -163,19 +191,19 @@ if [[ -n ${clusterName} && "${keepReplicaConstant}" != 'true' ]]; then
   fi
   if [[ -n ${managedServerPolicy} && ${startsByReplicaIncreaseAndPolicyUnset} == "true" ]]; then
     # Server starts by increasing replicas and policy unset, increment and unset
-    echo "[INFO] Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and incrementing replica count."
+    printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and incrementing replica count."
     createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${incrementReplicaPatch}" patchJson
     action="PATCH_REPLICA_AND_UNSET_POLICY"
   elif [[ -z ${managedServerPolicy} && ${startsByReplicaIncreaseAndPolicyUnset} == "true" ]]; then
     # Start policy is not set, server starts by increasing replicas based on effective policy, increment replicas
-    echo "[INFO] Updating replica count for cluster '${clusterName}' to ${replicaCount}."
-    patchJson="{\"spec\": {\"clusters\": "${incrementReplicaPatch}"}}"
+    printInfo "Updating replica count for cluster '${clusterName}' to ${replicaCount}."
+    createPatchJsonToUpdateReplica "${incrementReplicaPatch}" patchJson
     action="PATCH_REPLICA"
   else
     # Patch server policy to always and increment replicas
-    echo "[INFO] Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'ALWAYS' and \
+    printInfo "Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'ALWAYS' and \
 incrementing replica count for cluster '${clusterName}'."
-    patchJson="{\"spec\": {\"clusters\": "${incrementReplicaPatch}",\"managedServers\": "${alwaysStartPolicyPatch}"}}"
+    createPatchJsonToUpdateReplicaAndPolicy "${incrementReplicaPatch}" "${alwaysStartPolicyPatch}" patchJson
     action="PATCH_REPLICA_AND_POLICY"
   fi
 elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
@@ -185,42 +213,42 @@ elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByPolicyUnset
   if [[ "${effectivePolicy}" == "NEVER" && ${startsByPolicyUnset} == "true" ]]; then
     # Server starts by unsetting policy, unset policy
-    echo "[INFO] Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
+    printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
     createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
     action="UNSET_POLICY"
   else
     # Patch server policy to always
-    echo "[INFO] Patching start policy for '${serverName}' to '${targetPolicy}'."
-    patchJson="{\"spec\": {\"managedServers\": "${alwaysStartPolicyPatch}"}}"
+    printInfo "Patching start policy for '${serverName}' to '${targetPolicy}'."
+    createPatchJsonToUpdatePolicy "${alwaysStartPolicyPatch}" patchJson
     action="PATCH_POLICY"
   fi
 else
   # Server is an independent managed server, patch server start policy to ALWAYS
-  patchJson="{\"spec\": {\"managedServers\": "${alwaysStartPolicyPatch}"}}"
+  createPatchJsonToUpdatePolicy "${alwaysStartPolicyPatch}" patchJson
   action="PATCH_POLICY"
 fi
 
 if [ "${verboseMode}" == "true" ]; then
-  echo "Patching domain with Json string -> ${patchJson}"
+  printInfo "Patching domain with Json string -> ${patchJson}"
 fi
 ${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type='merge' --patch "${patchJson}" 
 
-if [ ${action} == "PATCH_REPLICA_AND_POLICY" ]; then
-cat << EOF
-[INFO] Successfully patched server '${serverName}' with '${targetPolicy}' start policy!
-
-       The replica count for cluster '${clusterName}' updated to ${replicaCount}.
-EOF
-elif [ ${action} == "PATCH_REPLICA_AND_UNSET_POLICY" ]; then
-cat << EOF
-[INFO] Successfully unset server policy '${effectivePolicy}' for '${serverName}' !
-
-       The replica count for cluster '${clusterName}' updated to ${replicaCount}.
-EOF
-elif [ ${action} == "PATCH_POLICY" ]; then
-  echo "[INFO] Successfully patched server '${serverName}' with '${targetPolicy}' start policy."
-elif [ ${action} == "UNSET_POLICY" ]; then
-  echo "[INFO] Successfully unset policy for server '${serverName}'."
-else
-  echo "[INFO] Successfully updated replica count for cluster '${clusterName}' to ${replicaCount}."
-fi
+case ${action} in
+  "PATCH_REPLICA_AND_POLICY")
+    printInfo "Successfully patched server '${serverName}' with '${targetPolicy}' start policy!"
+    printInfo "The replica count for cluster '${clusterName}' updated to ${replicaCount}."
+    ;;
+  "PATCH_REPLICA_AND_UNSET_POLICY")
+    printInfo "Successfully unset server policy '${effectivePolicy}' for '${serverName}' !"
+    printInfo "The replica count for cluster '${clusterName}' updated to ${replicaCount}."
+    ;;
+  "PATCH_POLICY")
+    printInfo "Successfully patched server '${serverName}' with '${targetPolicy}' start policy."
+    ;;
+  "PATCH_REPLICA")
+    printInfo "Successfully updated replica count for cluster '${clusterName}' to ${replicaCount}."
+    ;;
+  *)
+    printInfo "Successfully unset policy '${effectivePolicy}' for server '${serverName}'."
+    ;;
+esac
