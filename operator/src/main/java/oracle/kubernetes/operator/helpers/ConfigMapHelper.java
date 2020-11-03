@@ -58,6 +58,7 @@ public class ConfigMapHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String SCRIPT_LOCATION = "/scripts";
+  private static final String UPDATEDOMAINRESULT= "UPDATEDOMAINRESULT";
   private static final ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
 
   private static final FileGroupReader scriptReader = new FileGroupReader(SCRIPT_LOCATION);
@@ -81,15 +82,15 @@ public class ConfigMapHelper {
 
   static Map<String, String> parseIntrospectorResult(String text, String domainUid) {
     Map<String, String> map = new HashMap<>();
-    String token = ">>>  updatedomainResult=";
+    String updateResultToken = ">>>  updatedomainResult=";
 
     try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
       String line = reader.readLine();
       while (line != null) {
-        if (line.contains(token)) {
-          int index = line.indexOf(token);
-          int beg = index + 1 + token.length();
-          map.put("UPDATEDOMAINRESULT", line.substring(beg - 1));
+        if (line.contains(updateResultToken)) {
+          int index = line.indexOf(updateResultToken);
+          int beg = index + 1 + updateResultToken.length();
+          map.put(UPDATEDOMAINRESULT, line.substring(beg - 1));
         }
         if (line.startsWith(">>>") && !line.endsWith("EOF")) {
           String filename = extractFilename(line);
@@ -513,12 +514,14 @@ public class ConfigMapHelper {
             .map(DomainTopology::getDomain)
             .orElse(null);
 
-      String updateDomainResult = data.get("UPDATEDOMAINRESULT");
+      String updateDomainResult = data.get(UPDATEDOMAINRESULT);
       if (updateDomainResult != null) {
         if ("0".equals(updateDomainResult) || "104".equals(updateDomainResult)) {
           LOGGER.fine("ConfigMapHelper apply: short circuit finished online update");
           packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE, updateDomainResult);
         }
+        // remove this, there is no need to store it in the configmap
+        data.remove(UPDATEDOMAINRESULT);
       }
     }
 
