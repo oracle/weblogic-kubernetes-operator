@@ -66,6 +66,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyE
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyWlsLoggingExporter;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.uninstallAndVerifyElasticsearch;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.uninstallAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyLoggingExporterReady;
@@ -434,7 +435,7 @@ class ItElasticLogging {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
-
+    setPodAntiAffinity(domain);
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
