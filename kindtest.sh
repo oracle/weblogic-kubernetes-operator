@@ -242,25 +242,9 @@ rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
 if [ "${test_filter}" = "ItOperatorUpgrade" ] || [ "${parallel_run}" = "false" ]; then
-  if [ "${maven_profile_name}" = "wls-image-cert" ]; then
-    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl wls-image-cert -P wls-image-cert verify"
-    time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl wls-image-cert -P wls-image-cert verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
-  elif [ "${maven_profile_name}" = "fmw-image-cert" ]; then
-    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl fmw-image-cert -P fmw-image-cert verify"
-    time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl fmw-image-cert -P fmw-image-cert verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
-  else
-    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P integration-tests verify"
-    time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
-  fi
+  echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl ${maven_profile_name} -P ${maven_profile_name} verify"
+  time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl ${maven_profile_name} -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
 else
-  if [ "${maven_profile_name}" = "wls-image-cert" ]; then
-    echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl wls-image-cert -P wls-image-cert verify"
-    time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl wls-image-cert -P wls-image-cert verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
-  elif [ "${maven_profile_name}" = "fmw-image-cert" ]; then
-    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl fmw-image-cert -P fmw-image-cert verify"
-    time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl fmw-image-cert -P fmw-image-cert verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
-  else
-    echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P integration-tests verify"
-    time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
-  fi
+  echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl ${maven_profile_name} -P ${maven_profile_name} verify"
+  time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl ${maven_profile_name} -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
 fi
