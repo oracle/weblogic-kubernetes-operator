@@ -7,7 +7,8 @@
 # Function to get server start policy at cluster level
 # $1 - Domain resource in json format
 # $2 - Name of cluster
-# $3 - Return value containing cluster level server start policy
+# $3 - Return value for cluster level server start policy.
+#      Legal return values are "NEVER" or "IF_NEEDED" or "".
 #
 function getClusterPolicy {
   local domainJson=$1
@@ -27,7 +28,8 @@ function getClusterPolicy {
 #
 # Function to get server start policy at domain level
 # $1 - Domain resource in json format
-# $2 - Return value containing domain level server start policy
+# $2 - Return value containing domain level server start policy.
+#      Legal retrun values are "NEVER" or "IF_NEEDED" or "ADMIN_ONLY".
 #
 function getDomainPolicy {
   local domainJson=$1
@@ -48,6 +50,7 @@ function getDomainPolicy {
 # $2 - Name of server
 # $3 - Name of cluster
 # $4 - Return value containing effective server start policy
+#      Legal retrun values are "NEVER" or "IF_NEEDED" or "ALWAYS".
 #
 function getEffectivePolicy {
   local domainJson=$1
@@ -76,6 +79,7 @@ function getEffectivePolicy {
 # $1 - Domain resource in json format
 # $2 - Name of server
 # $3 - Return value containing current server start policy
+#      Legal retrun values are "NEVER" or "IF_NEEDED", "ALWAYS" or "".
 #
 function getServerPolicy {
   local domainJson=$1
@@ -172,7 +176,7 @@ function createPatchJsonToUpdateReplica {
 }
 
 #
-# Function to create patch json string to unset policy
+# Function to create patch json string to update replica and policy
 # $1 - Domain resource in json format
 # $2 - Name of server whose policy will be patched
 # $3 - Return value containing patch json string
@@ -210,7 +214,8 @@ function createPatchJsonToUnsetPolicy {
 # $1 - Domain resource in json format
 # $2 - Name of server 
 # $3 - Name of cluster 
-# $4 - Indicates if policy of current server would be unset
+# $4 - Indicates if policy of current server would be unset.
+#      valid values are "UNSET" and "CONSTANT"
 #
 function getSortedListOfServers {
   local domainJson=$1
@@ -245,29 +250,23 @@ function getSortedListOfServers {
     done
   fi
   # Create arrays of ALWAYS policy servers and other servers
-  sortedServersSize=${#sortedServers[@]}
-  if [ "${sortedServersSize}" -gt 0 ]; then
-    for localServerName in "${sortedServers[@]}"; do
-      getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
-      # Update policy when server name matches current server and unsetting
-      if [[ "${withPolicy}" == "UNSET" && "${serverName}" == "${localServerName}" ]]; then
-        policy=UNSET
-      fi
-      if [ "${policy}" == "ALWAYS" ]; then
-        sortedByAlwaysServers+=(${localServerName})
-      else
-        otherServers+=(${localServerName})
-      fi
-    done
-  fi
+  for localServerName in ${sortedServers[@]:-}; do
+    getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
+    # Update policy when server name matches current server and unsetting
+    if [[ "${withPolicy}" == "UNSET" && "${serverName}" == "${localServerName}" ]]; then
+      policy=UNSET
+    fi
+    if [ "${policy}" == "ALWAYS" ]; then
+      sortedByAlwaysServers+=(${localServerName})
+    else
+      otherServers+=(${localServerName})
+    fi
+  done
   
   # append other servers to the list of servers with always policy
-  otherServersSize=${#otherServers[@]}
-  if [ "${otherServersSize}" -gt 0 ]; then
-    for otherServer in "${otherServers[@]}"; do
-      sortedByAlwaysServers+=($otherServer)
-    done
-  fi
+  for otherServer in ${otherServers[@]:-}; do
+    sortedByAlwaysServers+=($otherServer)
+  done
 }
 
 #
@@ -284,6 +283,12 @@ function getReplicaCount {
   replicasCmd="(.spec.clusters[] \
     | select (.clusterName == \"${clusterName}\")).replicas"
   replicaCount=$(echo ${domainJson} | jq "${replicasCmd}")
+  if [[ -z "${replicaCount}" || "${replicaCount}" == "null" ]]; then
+    replicaCount=$(echo ${domainJson} | jq .spec.replicas)
+  fi
+  if [[ -z "${replicaCount}" || "${replicaCount}" == "null" ]]; then
+    replicaCount=0
+  fi
   eval $__replicaCount="'${replicaCount}'"
 
 }
@@ -294,9 +299,11 @@ function getReplicaCount {
 # $1 - Domain resource in json format
 # $2 - Name of server 
 # $3 - Name of cluster 
-# $4 - Indicates if replicas will stay constant, incremented or decremented
-# $5 - Indicates if policy of current server will stay same or unset
-# $6 - Return value indicating if current server will be started
+# $4 - Indicates if replicas will stay constant, incremented or decremented.
+#      Valid values are "CONSTANT", "INCREMENT" and "DECREMENT"
+# $5 - Indicates if policy of current server will stay constant or unset.
+#      Valid values are "CONSTANT" and "UNSET"
+# $6 - Return value of "true" or "false" indicating if current server will be started
 #
 function checkStartedServers {
   local domainJson=$1
@@ -321,23 +328,20 @@ function checkStartedServers {
   elif [ "${withReplicas}" == "DECREASED" ]; then
     replicaCount=$((replicaCount-1))
   fi
-  sortedByAlwaysSize=${#sortedByAlwaysServers[@]}
-  if [ "${sortedByAlwaysSize}" -gt 0 ]; then
-    for localServerName in "${sortedByAlwaysServers[@]}"; do
-      getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
-      # Update policy when server name matches current server and unsetting
-      if [[ "${serverName}" == "${localServerName}" && "${withPolicy}" == "UNSET" ]]; then
-        policy=UNSET
-      fi
-      # check if server should start based on replica count, policy and current replicas
-      shouldStart "${currentReplicas}" "${policy}" "${replicaCount}" result
-      if [ "${result}" == 'True' ]; then
-        # server should start, increment current replicas and add server to list of started servers
-        currentReplicas=$((currentReplicas+1))
-        startedServers+=(${localServerName})
-      fi
-    done
-  fi
+  for localServerName in ${sortedByAlwaysServers[@]:-}; do
+    getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
+    # Update policy when server name matches current server and unsetting
+    if [[ "${serverName}" == "${localServerName}" && "${withPolicy}" == "UNSET" ]]; then
+      policy=UNSET
+    fi
+    # check if server should start based on replica count, policy and current replicas
+    shouldStart "${currentReplicas}" "${policy}" "${replicaCount}" result
+    if [ "${result}" == 'true' ]; then
+      # server should start, increment current replicas and add server to list of started servers
+      currentReplicas=$((currentReplicas+1))
+      startedServers+=(${localServerName})
+    fi
+  done
   startedSize=${#startedServers[@]}
   if [ ${startedSize} -gt 0 ]; then
     # check if current server is in the list of started servers
@@ -354,7 +358,7 @@ function checkStartedServers {
 # $1 - Current number of replicas
 # $2 - Server start policy
 # $3 - Replica count
-# $4 - Return value
+# $4 - Returns "true" or "false" indicating if server should start.
 #
 function shouldStart {
   local currentReplicas=$1
@@ -363,13 +367,13 @@ function shouldStart {
   local __result=$4
 
   if [ "$policy" == "ALWAYS" ]; then
-    eval $__result=True
+    eval $__result=true
   elif [ "$policy" == "NEVER" ]; then
-    eval $__result=False
+    eval $__result=false
   elif [ "${currentReplicas}" -lt "${replicaCount}" ]; then
-    eval $__result=True
+    eval $__result=true
   else 
-    eval $__result=False
+    eval $__result=false
   fi
 }
 
@@ -377,9 +381,10 @@ function shouldStart {
 # Function to create patch string for updating replica count
 # $1 - Domain resource in json format
 # $2 - Name of cluster whose replica count will be patched
-# $3 - operatation string indicating whether to increment or decrement count
+# $3 - operation string indicating whether to increment or decrement replica count. 
+#      Valid values are "INCREMENT" and "DECREMENT"
 # $4 - Return value containing replica update patch string
-# $5 - Retrun value containing updated replica count
+# $5 - Return value containing updated replica count
 #
 function createReplicaPatch {
   local domainJson=$1
@@ -388,29 +393,23 @@ function createReplicaPatch {
   local __result=$4
   local __replicaCount=$5
   local maxReplicas=""
-  local errorMessage="@@ ERROR: Maximum number of servers allowed (maxReplica = ${maxReplicas}) \
-are already running. Please increase cluster size to start new servers."
+  local infoMessage="Current replica count value is same as maximum number of replica count. \
+Not increasing replica count value."
 
-  replicasCmd="(.spec.clusters[] \
-    | select (.clusterName == \"${clusterName}\")).replicas"
   maxReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
     | .maximumReplicas"
-  replica=$(echo ${domainJson} | jq "${replicasCmd}")
-  if [[ -z "${replica}" || "${replica}" == "null" ]]; then
-    replica=$(echo ${domainJson} | jq .spec.replicas)
-  fi
+  getReplicaCount  "${domainJson}" "${clusterName}" replica
   if [ "${operation}" == "DECREMENT" ]; then
     replica=$((replica-1))
     if [ ${replica} -lt 0 ]; then
       replica=0
     fi
   elif [ "${operation}" == "INCREMENT" ]; then
-    replica=$((replica+1))
     maxReplicas=$(echo ${domainJson} | jq "${maxReplicaCmd}")
-    if [ ${replica} -gt ${maxReplicas} ]; then
-      echo "${errorMessage}"
-      eval $__result="MAX_REPLICA_COUNT_EXCEEDED"
-      return
+    if [ ${replica} -eq ${maxReplicas} ]; then
+      printInfo "${infoMessage}"
+    else
+      replica=$((replica+1))
     fi
   fi
 
@@ -426,7 +425,7 @@ are already running. Please increase cluster size to start new servers."
 # $1 - Domain unique id.
 # $2 - Domain namespace.
 # $3 - Server name.
-# $4 - Return value indicating if server is valid (i.e. if it's part of a cluster or independent server).
+# $4 - Return value of "true" or "false" indicating if server is valid (i.e. if it's part of a cluster or independent server).
 # $5 - Retrun value containting cluster name to which this server belongs.
 #
 function validateServerAndFindCluster {
@@ -439,6 +438,8 @@ function validateServerAndFindCluster {
   local errorMessage="Server name is outside the range of allowed servers. \
 Please make sure server name is correct."
 
+  eval $__isValidServer=false
+  eval $__clusterName=UNKNOWN
   configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
     -n ${domainNamespace} -o json)
   topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
@@ -454,43 +455,39 @@ Please make sure server name is correct."
                  max:.dynamicServersConfig.maxDynamicClusterSize}"
     dynamicClusters=($(echo $jsonTopology | jq "${dynamicClause}" | jq -cr "${namePrefixSize}"))
     dynamicClustersSize=${#dynamicClusters[@]}
-    if [ "${dynamicClustersSize}" -gt 0 ]; then
-      for dynaClusterNamePrefix in "${dynamicClusters[@]}"; do
-        prefix=$(echo ${dynaClusterNamePrefix} | jq -r .prefix)
-        if [[ "${serverName}" == "${prefix}"* ]]; then
-          maxSize=$(echo ${dynaClusterNamePrefix} | jq -r .max)
-          number='^[0-9]+$'
-          if [ $(echo "${serverName}" | grep -c -Eo '[0-9]+$') -gt 0 ]; then
-            serverCount=$(echo "${serverName}" | grep -Eo '[0-9]+$')
-          fi
-          if ! [[ $serverCount =~ $number ]] ; then
-             echo "error: Server name is not valid for dynamic cluster." 
-             exit 1
-          fi
-          if [ "${serverCount}" -gt "${maxSize}" ]; then
-            printError "${errorMessage}"
-            exit 1
-          fi
-          eval $__clusterName="'$(echo ${dynaClusterNamePrefix} | jq -r .name)'"
-          eval $__isValidServer=true
-          break
+    for dynaClusterNamePrefix in ${dynamicClusters[@]:-}; do
+      prefix=$(echo ${dynaClusterNamePrefix} | jq -r .prefix)
+      if [[ "${serverName}" == "${prefix}"* ]]; then
+        maxSize=$(echo ${dynaClusterNamePrefix} | jq -r .max)
+        number='^[0-9]+$'
+        if [ $(echo "${serverName}" | grep -c -Eo '[0-9]+$') -gt 0 ]; then
+          serverCount=$(echo "${serverName}" | grep -Eo '[0-9]+$')
         fi
-      done
-    fi
+        if ! [[ $serverCount =~ $number ]] ; then
+           echo "error: Server name is not valid for dynamic cluster." 
+           exit 1
+        fi
+        if [ "${serverCount}" -gt "${maxSize}" ]; then
+          printError "${errorMessage}"
+          exit 1
+        fi
+        eval $__clusterName="'$(echo ${dynaClusterNamePrefix} | jq -r .name)'"
+        eval $__isValidServer=true
+        break
+      fi
+    done
     staticClause=".domain.configuredClusters[] | select (.dynamicServersConfig == null)"
     nameCmd=" . | {name: .name, serverName: .servers[].name}"
     configuredClusters=($(echo $jsonTopology | jq "${staticClause}" | jq -cr "${nameCmd}"))
     configuredClusterSize=${#configuredClusters[@]}
-    if [ "${configuredClusterSize}" -gt 0 ]; then
-      for configuredClusterName in "${configuredClusters[@]}"; do
-        name=$(echo ${configuredClusterName} | jq -r .serverName)
-        if [ "${serverName}" == "${name}" ]; then
-          eval $__clusterName="'$(echo ${configuredClusterName} | jq -r .name)'"
-          eval $__isValidServer=true
-          break
-        fi
-      done
-    fi
+    for configuredClusterName in ${configuredClusters[@]:-}; do
+      name=$(echo ${configuredClusterName} | jq -r .serverName)
+      if [ "${serverName}" == "${name}" ]; then
+        eval $__clusterName="'$(echo ${configuredClusterName} | jq -r .name)'"
+        eval $__isValidServer=true
+        break
+      fi
+    done
   fi
 }
 
@@ -499,7 +496,7 @@ Please make sure server name is correct."
 # $1 - Domain unique id.
 # $2 - Domain namespace.
 # $3 - cluster name
-# $4 - Retrun value indicating whether cluster name is valid
+# $4 - Retrun value "true" or "false" indicating whether cluster name is valid
 #
 function validateClusterName {
   local domainUid=$1
@@ -515,6 +512,8 @@ function validateClusterName {
   clusters=($(echo $jsonTopology | jq -cr .domain.configuredClusters[].name))
   if  checkStringInArray "${clusterName}" "${clusters[@]}" ; then
     eval $__isValidCluster=true
+  else
+    eval $__isValidCluster=false
   fi
 }
 
@@ -574,7 +573,7 @@ function printInfo {
 #   purpose:  echo timestamp in the form yyyymmddThh:mm:ss.mmm ZZZ
 #   example:  20181001T14:00:00.001 UTC
 function timestamp() {
-  local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S %N %s %Z' 2>&1`"
+  timestamp="$(set +e && date --utc '+%Y-%m-%dT%H:%M:%S %N %s %Z' 2>&1 || echo illegal)"
   if [ ! "${timestamp/illegal/xyz}" = "${timestamp}" ]; then
     # old shell versions don't support %N or --utc
     timestamp="`date -u '+%Y-%m-%dT%H:%M:%S 000000 %s %Z' 2>&1`"

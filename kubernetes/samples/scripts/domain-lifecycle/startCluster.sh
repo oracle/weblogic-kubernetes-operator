@@ -15,7 +15,8 @@ function usage() {
   'spec.clusters[<cluster-name>].serverStartPolicy' attribute of the domain
   resource to 'IF_NEEDED'. This change will cause the operator to initiate
   startup of cluster's WebLogic server instance pods if the pods are not
-  already running.
+  already running and the spec.replicas or
+  'spec.clusters[<cluster-name>].serverStartPolicy' is set higher than zero.
  
   Usage:
  

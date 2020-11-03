@@ -186,9 +186,6 @@ if [[ -n ${clusterName} && "${keepReplicaConstant}" != 'true' ]]; then
   checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByReplicaIncreaseAndPolicyUnset
   operation="INCREMENT"
   createReplicaPatch "${domainJson}" "${clusterName}" "${operation}" incrementReplicaPatch replicaCount
-  if [ "${incrementReplicaPatch}" == "MAX_REPLICA_COUNT_EXCEEDED" ]; then 
-   exit 1
-  fi
   if [[ -n ${managedServerPolicy} && ${startsByReplicaIncreaseAndPolicyUnset} == "true" ]]; then
     # Server starts by increasing replicas and policy unset, increment and unset
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and incrementing replica count."
