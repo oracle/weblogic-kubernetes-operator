@@ -2917,6 +2917,7 @@ public class CommonTestUtils {
           .nfs(new V1NFSVolumeSource()
           .path(FSS_DIR)
           .server(NFS_SERVER)
+          .readOnly(false)
       );
     } else {
       v1pv.getSpec()
