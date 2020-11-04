@@ -458,7 +458,6 @@ if [ "$DO_UPDATE4" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE4 ======"
 
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
-  doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update4.yaml"
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
   doCommand -c "export ONLINE_UPDATE=true"
 
@@ -466,11 +465,11 @@ if [ "$DO_UPDATE4" = "true" ]; then
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
   doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/wmdatasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
-  doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
+  doCommand    "\$WORKDIR/utils/patch-useonlineupdate.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
   doCommand    "\$WORKDIR/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
   if [ ! "$DRY_RUN" = "true" ]; then
-    testapp internal cluster-1 "'SampleMinThreads' with configured count: 2" 100 quiet
+    testapp internal cluster-1 "'SampleMinThreads' with configured count: 2" 60 quiet
     testapp internal cluster-1 "'SampleMaxThreads' with configured count: 20" 
   fi
 fi

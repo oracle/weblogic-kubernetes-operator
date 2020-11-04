@@ -42,43 +42,41 @@ function phase_setup() {
   case "$1" in 
     # An initial domain with admin server, web-app 'v1', and a single cluster 'cluster-1' with 2 replicas.
     initial)
+      setup_domain_resource=true
       domain_num=1
       image_version=v1
       archive_version=v1
       configmap=None
-      online_update=false
       ;;
     # Same as initial, plus a data source targeted to 'cluster-1' which is dynamically supplied using a model configmap. 
     update1)
+      setup_domain_resource=true
       domain_num=1
       image_version=v1
       archive_version=v1
       configmap=datasource
-      online_update=false
       ;;
     # Same as update1, with a second domain with its own uid 'sample-domain2' that's based on the update1 domain's resource file.
     update2)
+      setup_domain_resource=true
       domain_num=2
       image_version=v1
       archive_version=v1
       configmap=datasource
-      online_update=false
       ;;
     # Similar to update1, except deploy an updated web-app 'v2' while keeping the original app in the archive.
     update3)
+      setup_domain_resource=true
       domain_num=1
       image_version=v2
       archive_version=v2
       configmap=datasource
-      online_update=false
       ;;
     # Similar to update1, plus update work manager configuration using dynamic update without restarting servers.
     update4)
+      setup_domain_resource=false
       domain_num=1
-      image_version=v1
-      archive_version=v1
       configmap=wmdatasource
-      online_update=true
       ;;
     *)
       echo "Error: Unknown phase $1." 
@@ -136,7 +134,6 @@ for phase in initial update1 update2 update3 update4; do
   export MODEL_IMAGE_NAME=model-in-image
   export INTROSPECTOR_DEADLINE_SECONDS=600
   export IMAGE_PULL_SECRET_NAME=""
-  export ONLINE_UPDATE=$online_update
 
   # setup ingress yaml files
   $SCRIPTDIR/stage-and-create-ingresses.sh -dry
@@ -153,17 +150,19 @@ for phase in initial update1 update2 update3 update4; do
     $SCRIPTDIR/build-model-image.sh -dry \
       | grep dryrun | sed 's/dryrun://' \
       > $WORKDIR/$MODEL_DIR/build-image.sh
-    chmod +x $WORKDIR/$MODEL_DIR/build-image.sh
+     chmod +x $WORKDIR/$MODEL_DIR/build-image.sh
   fi
 
   # setup domain resource 
 
-  domain_path=domain-resources/$type/mii-$phase-d$domain_num-$MODEL_IMAGE_TAG
-  if [ "$configmap" != "None" ]; then
-    domain_path=$domain_path-ds
+  if [ "$setup_domain_resource" = "true" ]; then
+    domain_path=domain-resources/$type/mii-$phase-d$domain_num-$MODEL_IMAGE_TAG
+    if [ "$configmap" != "None" ]; then
+      domain_path=$domain_path-ds
+    fi
+    export DOMAIN_RESOURCE_FILENAME=$domain_path.yaml
+    $SCRIPTDIR/stage-domain-resource.sh
   fi
-  export DOMAIN_RESOURCE_FILENAME=$domain_path.yaml
-  $SCRIPTDIR/stage-domain-resource.sh
 
   # setup secret script for the domain resource
 
