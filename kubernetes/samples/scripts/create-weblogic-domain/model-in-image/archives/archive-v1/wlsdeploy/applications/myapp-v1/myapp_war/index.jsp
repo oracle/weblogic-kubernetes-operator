@@ -28,7 +28,7 @@
 
     // display the current server's cluster name
     Set<ObjectInstance> clusterRuntimes = mbs.queryMBeans(new ObjectName("*:Type=ClusterRuntime,*"), null);
-    out.println("Found " + clusterRuntimes.size() + " local cluster runtime" + (String)((clusterRuntimes.size()==0)?".":(clusterRuntimes.size()!=1)?"s:":":"));
+    out.println("Found " + clusterRuntimes.size() + " local cluster runtime" + (String)((clusterRuntimes.size()==0)?"s.":(clusterRuntimes.size()!=1)?"s:":":"));
     for (ObjectInstance clusterRuntime : clusterRuntimes) {
        String cName = (String)mbs.getAttribute(clusterRuntime.getObjectName(), "Name");
        out.println("  Cluster '" + cName + "'");
@@ -38,7 +38,7 @@
     // display local data sources
     ObjectName jdbcRuntime = new ObjectName("com.bea:ServerRuntime=" + srName + ",Name=" + srName + ",Type=JDBCServiceRuntime");
     ObjectName[] dataSources = (ObjectName[])mbs.getAttribute(jdbcRuntime, "JDBCDataSourceRuntimeMBeans");
-    out.println("Found " + dataSources.length + " local data source" + (String)((dataSources.length==0)?".":(dataSources.length!=1)?"s:":":"));
+    out.println("Found " + dataSources.length + " local data source" + (String)((dataSources.length==0)?"s.":(dataSources.length!=1)?"s:":":"));
     for (ObjectName dataSource : dataSources) {
        String dsName  = (String)mbs.getAttribute(dataSource, "Name");
        String dsState = (String)mbs.getAttribute(dataSource, "State");
