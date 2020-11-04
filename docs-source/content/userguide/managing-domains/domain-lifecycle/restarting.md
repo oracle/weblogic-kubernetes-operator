@@ -188,7 +188,7 @@ d. Update the `image` field of the Domain YAML file, specifying the new image na
      ```
      domain:
        spec:
-         image: oracle/weblogic-updated:3.0.2
+         image: oracle/weblogic-updated:3.1.0
      ```
 e. The operator will now initiate a rolling restart, which will apply the updated image, for all the servers in the domain.
 
