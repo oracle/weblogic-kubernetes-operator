@@ -8,8 +8,9 @@ import org.joda.time.DateTime;
 /** A wrapper for the system clock that facilitates unit testing of time. */
 public abstract class SystemClock {
 
-  private static SystemClock DELEGATE =
-      new SystemClock() {
+  // Leave as non-final; unit tests may replace this value
+  @SuppressWarnings("FieldMayBeFinal")
+  private static SystemClock DELEGATE = new SystemClock() {
         @Override
         public DateTime getCurrentTime() {
           return DateTime.now();
