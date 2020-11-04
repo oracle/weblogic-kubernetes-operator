@@ -496,7 +496,7 @@ function validateServerAndFindCluster {
           serverCount=$(echo "${serverName}" | grep -Eo '[0-9]+$')
         fi
         if ! [[ $serverCount =~ $number ]] ; then
-           echo "error: Server name is not valid for dynamic cluster." 
+           printError "Server name is not valid for dynamic cluster."
            exit 1
         fi
         if [ "${serverCount}" -gt "${maxSize}" ]; then
