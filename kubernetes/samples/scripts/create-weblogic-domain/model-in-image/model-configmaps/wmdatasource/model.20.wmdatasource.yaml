@@ -5,11 +5,9 @@ resources:
   SelfTuning:
     MinThreadsConstraint:
       SampleMinThreads:
-        Target: 'cluster-1'
         Count: 2
     MaxThreadsConstraint:
       SampleMaxThreads:
-        Target: 'cluster-1'
         Count: 20
   JDBCSystemResource:
     mynewdatasource:
