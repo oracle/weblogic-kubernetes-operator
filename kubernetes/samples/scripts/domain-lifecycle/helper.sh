@@ -72,7 +72,7 @@ function getEffectivePolicy {
       fi
     fi
   fi
-  eval $__currentPolicy="'${currentPolicy}'"
+  eval $__currentPolicy=${currentPolicy}
 }
 
 #
@@ -99,7 +99,7 @@ function getServerPolicy {
       currentServerStartPolicy=""
     fi
   fi
-  eval $__currentPolicy="'${currentServerStartPolicy}'"
+  eval $__currentPolicy=${currentServerStartPolicy}
 }
 
 #
@@ -261,11 +261,15 @@ function getSortedListOfServers {
   local sortedServers=()
   local otherServers=()
   errorMessage="Domain config map '${domainUid}-weblogic-domain-introspect-cm' not found. \
-    This script will requires that the introspector job for the specified domain ran \
-    successfully and generated this config map. Exiting."
+This script requires that the introspector job for the specified domain ran \
+successfully and generated this config map. Exiting."
 
-  configMap=$(set +e && ${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
-    -n ${domainNamespace} -o json || printError ${errorMessage} && exit 1)
+  configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
+    -n ${domainNamespace} -o json --ignore-not-found)
+  if [ -z "${configMap}" ]; then
+    echo "${errorMessage}" 
+    exit 1
+  fi
   topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
   jsonTopology=$(python -c \
     'import sys, yaml, json; print json.dumps(yaml.safe_load('"${topology}"'), indent=4)')
