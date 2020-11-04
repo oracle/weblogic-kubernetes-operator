@@ -326,11 +326,11 @@ class ItPodTemplates {
         .stream()
         .forEach(
             cluster -> {
-              if(cluster.getClusterName().equals(clusterName)) {
-                cluster.getServerPod().labels(clusterLabelKeyValues);
-              }
+                if (cluster.getClusterName().equals(clusterName)) {
+                  cluster.getServerPod().labels(clusterLabelKeyValues);
+                }
             }
-        );
+    );
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, namespace, imageName);
