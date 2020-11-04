@@ -86,6 +86,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
@@ -323,7 +324,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that a create operation should fail if it matches the specified conditions. Applies to
-   * namespaced resources.
+   * namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -336,7 +337,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that a replace operation should fail if it matches the specified conditions. Applies to
-   * namespaced resources.
+   * namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -349,7 +350,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that a replace operation should fail if it matches the specified conditions. Applies to
-   * namespaced resources.
+   * namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -363,7 +364,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that a delete operation should fail if it matches the specified conditions. Applies to
-   * namespaced resources.
+   * namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -376,7 +377,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that any operation should fail if it matches the specified conditions. Applies to
-   * namespaced resources.
+   * namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -389,7 +390,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that any operation should fail if it matches the specified conditions. Applies to
-   * namespaced resources.
+   * namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -402,7 +403,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that any operation should fail if it matches the specified conditions. Applies to
-   * non-namespaced resources.
+   * non-namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
@@ -410,6 +411,13 @@ public class KubernetesTestSupport extends FiberTestSupport {
    */
   public void failOnResource(@Nonnull String resourceType, String name, int httpStatus) {
     failOnResource(resourceType, name, null, httpStatus);
+  }
+
+  /**
+   * Cancels the currently defined 'failure' condition established by the various 'failOnResource' methods.
+   */
+  public void cancelFailures() {
+    failure = null;
   }
 
   @SuppressWarnings("unused")
@@ -467,6 +475,12 @@ public class KubernetesTestSupport extends FiberTestSupport {
       @Override
       <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
         return callContext.deleteCollection(dataRepository);
+      }
+    },
+    getVersion {
+      @Override
+      <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
+        return KubernetesVersion.TEST_VERSION_INFO;
       }
     };
 
@@ -1047,15 +1061,22 @@ public class KubernetesTestSupport extends FiberTestSupport {
     private void parseCallName(String callName) {
       int i = indexOfFirstCapital(callName);
       resourceType = callName.substring(i);
-      String operationName = callName.substring(0, i);
-      if (callName.endsWith("Status")) {
-        operationName = operationName + "Status";
-      }
-      operation = Operation.valueOf(operationName);
+      operation = getOperation(callName, i);
 
       if (isDeleteCollection()) {
         selectDeleteCollectionOperation();
       }
+    }
+
+    @NotNull
+    private Operation getOperation(String callName, int numChars) {
+      String operationName = callName.substring(0, numChars);
+      if (callName.endsWith("Status")) {
+        operationName = operationName + "Status";
+      } else if (callName.equals("getVersion")) {
+        return Operation.getVersion;
+      }
+      return Operation.valueOf(operationName);
     }
 
     private boolean isDeleteCollection() {

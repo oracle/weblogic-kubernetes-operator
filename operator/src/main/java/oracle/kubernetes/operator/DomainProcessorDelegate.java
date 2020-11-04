@@ -6,20 +6,12 @@ package oracle.kubernetes.operator;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
-import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.Step;
 
 /** A set of underlying services required during domain processing. */
 public interface DomainProcessorDelegate {
-  /**
-   * Returns the namespace associated with the operator itself.
-   *
-   * @return a namespace string
-   */
-  String getOperatorNamespace();
 
   /**
    * Returns a factory that creates a step to wait for a pod in the specified namespace to be ready.
@@ -29,7 +21,13 @@ public interface DomainProcessorDelegate {
    */
   PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace);
 
-  V1SubjectRulesReviewStatus getSubjectRulesReviewStatus(String namespace);
+  /**
+   * Returns a factory that creates a step to wait for a pod in the specified namespace to be ready.
+   *
+   * @param namespace the namespace for the pod
+   * @return a step-creating factory
+   */
+  JobAwaiterStepFactory getJobAwaiterStepFactory(String namespace);
 
   /**
    * Returns true if the namespace is running.
@@ -44,14 +42,7 @@ public interface DomainProcessorDelegate {
    *
    * @return an object that represents the Kubernetes version
    */
-  KubernetesVersion getVersion();
-
-  /**
-   * Returns the version of the operator.
-   *
-   * @return an object that represents the semantic version
-   */
-  SemanticVersion getProductVersion();
+  KubernetesVersion getKubernetesVersion();
 
   /**
    * Creates a new FiberGate.
