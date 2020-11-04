@@ -2901,7 +2901,6 @@ public class CommonTestUtils {
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName("weblogic-domain-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
@@ -2920,7 +2919,9 @@ public class CommonTestUtils {
           .server(NFS_SERVER)
       );
     } else {
-      v1pv.getSpec().hostPath(new V1HostPathVolumeSource()
+      v1pv.getSpec()
+          .storageClassName("weblogic-domain-storage-class")
+          .hostPath(new V1HostPathVolumeSource()
           .path(pvHostPath.toString()));
     }
     boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
@@ -2944,7 +2945,6 @@ public class CommonTestUtils {
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName("weblogic-domain-storage-class")
             .volumeName(pvName)
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("5Gi"))))
@@ -2954,6 +2954,13 @@ public class CommonTestUtils {
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
 
+    if (OKE_CLUSTER) {
+      v1pvc.getSpec()
+          .storageClassName("oci-fss");
+    } else {
+      v1pvc.getSpec()
+          .storageClassName("weblogic-domain-storage-class");
+    }
     boolean success = assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
         "Failed to create persistent volume claim");
     assertTrue(success, "PersistentVolumeClaim creation failed");
