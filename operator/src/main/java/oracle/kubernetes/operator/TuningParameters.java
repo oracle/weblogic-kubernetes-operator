@@ -37,6 +37,7 @@ public interface TuningParameters extends Map<String, String> {
     public final int domainNamespaceRecheckIntervalSeconds;
     public final int statusUpdateTimeoutSeconds;
     public final int unchangedCountToDelayStatusRecheck;
+    public final int stuckPodRecheckSeconds;
     public final long initialShortDelay;
     public final long eventualLongDelay;
 
@@ -48,24 +49,27 @@ public interface TuningParameters extends Map<String, String> {
      * @param domainNamespaceRecheckIntervalSeconds domain namespace recheck interval
      * @param statusUpdateTimeoutSeconds status update timeout
      * @param unchangedCountToDelayStatusRecheck unchanged count to delay status recheck
+     * @param stuckPodRecheckSeconds time between checks for stuck pods
      * @param initialShortDelay initial short delay
      * @param eventualLongDelay eventual long delay
      */
     public MainTuning(
-        int domainPresenceFailureRetrySeconds,
-        int domainPresenceFailureRetryMaxCount,
-        int domainPresenceRecheckIntervalSeconds,
-        int domainNamespaceRecheckIntervalSeconds,
-        int statusUpdateTimeoutSeconds,
-        int unchangedCountToDelayStatusRecheck,
-        long initialShortDelay,
-        long eventualLongDelay) {
+          int domainPresenceFailureRetrySeconds,
+          int domainPresenceFailureRetryMaxCount,
+          int domainPresenceRecheckIntervalSeconds,
+          int domainNamespaceRecheckIntervalSeconds,
+          int statusUpdateTimeoutSeconds,
+          int unchangedCountToDelayStatusRecheck,
+          int stuckPodRecheckSeconds,
+          long initialShortDelay,
+          long eventualLongDelay) {
       this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
       this.domainPresenceFailureRetryMaxCount = domainPresenceFailureRetryMaxCount;
       this.domainPresenceRecheckIntervalSeconds = domainPresenceRecheckIntervalSeconds;
       this.domainNamespaceRecheckIntervalSeconds = domainNamespaceRecheckIntervalSeconds;
       this.statusUpdateTimeoutSeconds = statusUpdateTimeoutSeconds;
       this.unchangedCountToDelayStatusRecheck = unchangedCountToDelayStatusRecheck;
+      this.stuckPodRecheckSeconds = stuckPodRecheckSeconds;
       this.initialShortDelay = initialShortDelay;
       this.eventualLongDelay = eventualLongDelay;
     }

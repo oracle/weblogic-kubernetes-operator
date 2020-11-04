@@ -3,6 +3,9 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -36,4 +39,6 @@ interface MainDelegate {
   DomainNamespaces getDomainNamespaces();
 
   KubernetesVersion getKubernetesVersion();
+
+  ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit);
 }
