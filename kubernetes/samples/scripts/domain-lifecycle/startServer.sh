@@ -83,7 +83,6 @@ withReplicas="CONSTANT"
 withPolicy="CONSTANT"
 managedServerPolicy=""
 effectivePolicy=""
-action=""
 isValidServer=""
 patchJson=""
 serverStarted=""
@@ -191,18 +190,15 @@ if [[ -n ${clusterName} && "${keepReplicaConstant}" != 'true' ]]; then
     # Server starts by increasing replicas and policy unset, increment and unset
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and incrementing replica count ${replicaCount}."
     createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${incrementReplicaPatch}" patchJson
-    action="PATCH_REPLICA_AND_UNSET_POLICY"
   elif [[ -z ${managedServerPolicy} && ${startsByReplicaIncreaseAndPolicyUnset} == "true" ]]; then
     # Start policy is not set, server starts by increasing replicas based on effective policy, increment replicas
     printInfo "Updating replica count for cluster '${clusterName}' to ${replicaCount}."
     createPatchJsonToUpdateReplica "${incrementReplicaPatch}" patchJson
-    action="PATCH_REPLICA"
   else
     # Patch server policy to always and increment replicas
     printInfo "Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'ALWAYS' and \
 incrementing replica count for cluster '${clusterName}' to ${replicaCount}."
     createPatchJsonToUpdateReplicaAndPolicy "${incrementReplicaPatch}" "${alwaysStartPolicyPatch}" patchJson
-    action="PATCH_REPLICA_AND_POLICY"
   fi
 elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   # Replica count needs to stay constant, check if server starts by unsetting policy
@@ -213,18 +209,15 @@ elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
     # Server starts by unsetting policy, unset policy
     printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
     createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
-    action="UNSET_POLICY"
   else
     # Patch server policy to always
     printInfo "Patching start policy for '${serverName}' to '${targetPolicy}'."
     createPatchJsonToUpdatePolicy "${alwaysStartPolicyPatch}" patchJson
-    action="PATCH_POLICY"
   fi
 else
   # Server is an independent managed server
   printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
   createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
-  action="UNSET_POLICY"
 fi
 
 executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"

@@ -79,7 +79,6 @@ keepReplicaConstant=false
 verboseMode=false
 serverStartPolicy=NEVER
 serverStarted=""
-action=""
 effectivePolicy=""
 managedServerPolicy=""
 stoppedWhenAlwaysPolicyReset=""
@@ -179,24 +178,20 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
       and decrementing replica count to ${replicaCount}."
     createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${replicaPatch}" patchJson
-    action="PATCH_REPLICA_AND_UNSET_POLICY"
   elif [[ -z ${managedServerPolicy} && "${startedWhenRelicaReducedAndPolicyReset}" != "true" ]]; then
     # Start policy is not set, server shuts down by decrementing replica count, decrement replicas
     printInfo "Updating replica count for cluster ${clusterName} to ${replicaCount}."
     createPatchJsonToUpdateReplica "${replicaPatch}" patchJson
-    action="PATCH_REPLICA"
   elif [[ ${managedServerPolicy} == "ALWAYS" && "${startedWhenAlwaysPolicyReset}" != "true" ]]; then
     # Server shuts down by unsetting the start policy, unset and decrement replicas
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
      and decrementing replica count to ${replicaCount}."
     createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${replicaPatch}" patchJson
-    action="PATCH_REPLICA_AND_UNSET_POLICY"
   else
     # Patch server start policy to NEVER and decrement replica count
     printInfo "Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'NEVER' \
       and decrementing replica count for cluster '${clusterName}' to ${replicaCount}."
     createPatchJsonToUpdateReplicaAndPolicy "${replicaPatch}" "${neverStartPolicyPatch}" patchJson
-    action="PATCH_REPLICA_AND_POLICY"
   fi
 elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   # Server is part of a cluster and replica count needs to stay constant
@@ -204,18 +199,15 @@ elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
     # Server start policy is AlWAYS and server shuts down by unsetting the policy, unset policy
     printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
     createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
-    action="UNSET_POLICY"
   else
     # Patch server start policy to NEVER
     printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'NEVER'."
     createPatchJsonToUpdatePolicy "${neverStartPolicyPatch}" patchJson
-    action="PATCH_POLICY"
   fi
 else
   # Server is an independent managed server, patch server start policy to NEVER
   printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'NEVER'."
   createPatchJsonToUpdatePolicy "${neverStartPolicyPatch}" patchJson
-  action="PATCH_POLICY"
 fi
 
 executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
