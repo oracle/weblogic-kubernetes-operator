@@ -201,7 +201,6 @@ public class NamespaceTest {
         .collect(Collectors.toMap(identity(), a -> new AtomicBoolean()));
   }
 
-  @SuppressWarnings("unchecked")
   private void invoke_stopNamespace(String namespace, boolean inTargetNamespaceList)
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     if (stopNamespace == null) {
@@ -227,7 +226,7 @@ public class NamespaceTest {
 
     @Override
     public MainTuning getMainTuning() {
-      return new MainTuning(2, 2, domainPresenceRecheckIntervalSeconds, 2, 2, 2, 2L, 2L);
+      return new MainTuning(2, 2, domainPresenceRecheckIntervalSeconds, 2, 2, 2, 30, 2L, 2L);
     }
   }
 
