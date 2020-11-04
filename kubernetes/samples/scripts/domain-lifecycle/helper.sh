@@ -42,7 +42,7 @@ function getDomainPolicy {
   if [[ "${effectivePolicy}" == "null" || "${effectivePolicy}" == "" ]]; then
     effectivePolicy="IF_NEEDED"
   fi
-  eval $__domainPolicy="'${effectivePolicy}'"
+  eval $__domainPolicy=${effectivePolicy}
 }
 
 #
@@ -472,6 +472,11 @@ function validateServerAndFindCluster {
   topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
   jsonTopology=$(python -c \
     'import sys, yaml, json; print json.dumps(yaml.safe_load('"${topology}"'), indent=4)')
+  adminServer=$(echo $jsonTopology | jq -r .domain.adminServerName)
+  if [ "${serverName}" == "${adminServer}" ]; then
+    printError "Server '${serverName}' is administration server. The '${script}' script doesn't support starting or stopping administration server."
+    exit 1
+  fi
   servers=($(echo $jsonTopology | jq -r '.domain.servers[].name'))
   if  checkStringInArray "${serverName}" "${servers[@]}" ; then
     eval $__clusterName=""
@@ -495,7 +500,8 @@ function validateServerAndFindCluster {
            exit 1
         fi
         if [ "${serverCount}" -gt "${maxSize}" ]; then
-          printError "${errorMessage}"
+          printError "Server name is outside the range of allowed servers. \
+            Please make sure server name is correct."
           exit 1
         fi
         eval $__clusterName="'$(echo ${dynaClusterNamePrefix} | jq -r .name)'"

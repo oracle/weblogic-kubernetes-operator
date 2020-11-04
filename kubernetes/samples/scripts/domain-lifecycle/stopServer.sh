@@ -141,14 +141,14 @@ getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePol
 if [ -n "${clusterName}" ]; then
   # Server is part of a cluster, check currently started servers
   checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
-  if [[ "${effectivePolicy}" == "NEVER" || "${serverStarted}" != "true" ]]; then
+  if [[ "${effectivePolicy}" == "NEVER" || "${effectivePolicy}" == "ADMIN_ONLY" || "${serverStarted}" != "true" ]]; then
     printInfo "No changes needed, exiting. Server should be already stopping or stopped. This is either because of the sever start policy or server is chosen to be stopped based on current replica count."
     exit 0
   fi
 else
   # Server is an independent managed server. 
-  if [ "${effectivePolicy}" == "NEVER" ]; then
-    printInfo "No changes needed, exiting. Server should be already stopping or stopped because sever start policy is 'NEVER'."
+  if [[ "${effectivePolicy}" == "NEVER" || "${effectivePolicy}" == "ADMIN_ONLY" ]]; then
+    printInfo "No changes needed, exiting. Server should be already stopping or stopped because effective sever start policy is 'NEVER' or 'ADMIN_ONLY'."
     exit 0
   fi
 fi

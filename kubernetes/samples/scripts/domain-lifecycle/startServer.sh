@@ -152,8 +152,8 @@ if [ "${clusterPolicy}" == 'NEVER' ]; then
 fi
 
 getDomainPolicy "${domainJson}" domainPolicy
-if [ "${domainPolicy}" == 'NEVER' ]; then
-  printError "Cannot start server '${serverName}', the .spec.serverStartPolicy in the domain resource is set to 'NEVER'."
+if [[ "${domainPolicy}" == 'NEVER' || "${domainPolicy}" == 'ADMIN_ONLY' ]]; then
+  printError "Cannot start server '${serverName}', the .spec.serverStartPolicy in the domain resource is set to 'NEVER' or 'ADMIN_ONLY'."
   exit 1
 fi
 
