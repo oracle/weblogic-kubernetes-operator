@@ -349,6 +349,7 @@ public class ItIntrospectVersion {
     int defaultChannelNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server default node port failed");
+    logger.info("default channel node port: {0}", defaultChannelNodePort);
     assertNotEquals(-1, defaultChannelNodePort, "admin server defaultChannelNodePort is not valid");
 
     //deploy clusterview application

@@ -902,6 +902,7 @@ public class ItConfigDistributionStrategy {
     int defaultChannelNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server default node port failed");
+    logger.info("default channel node port: {0}", defaultChannelNodePort);
     assertNotEquals(-1, defaultChannelNodePort, "admin server defaultChannelNodePort is not valid");
 
     //deploy application
@@ -951,13 +952,20 @@ public class ItConfigDistributionStrategy {
   private void createJdbcDataSource(String dsName, String user, String password, int mySQLNodePort) {
 
     try {
+      logger.info("Getting node port for default channel");
+      int defaultChannelNodePort = assertDoesNotThrow(()
+          -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+          "Getting admin server default node port failed");
+      logger.info("default channel node port: {0}", defaultChannelNodePort);
+      assertNotEquals(-1, defaultChannelNodePort, "admin server defaultChannelNodePort is not valid");
+
       String jdbcDsUrl = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mySQLNodePort;
 
       // create a temporary WebLogic domain property file
       File domainPropertiesFile = File.createTempFile("domain", "properties");
       Properties p = new Properties();
       p.setProperty("admin_host", K8S_NODEPORT_HOST);
-      p.setProperty("admin_port", Integer.toString(t3ChannelPort));
+      p.setProperty("admin_port", Integer.toString(defaultChannelNodePort));
       p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
       p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
       p.setProperty("dsName", dsName);

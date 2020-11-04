@@ -86,6 +86,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 
+import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -1898,11 +1899,13 @@ public class Kubernetes {
    * @return node port if service and channel is found, otherwise -1
    */
   public static int getServiceNodePort(String namespace, String serviceName, String channelName) {
+    getLogger().info("Getting service obkect for channel {0}", channelName);
     V1Service service = getNamespacedService(namespace, serviceName);
     if (service != null) {
       V1ServicePort port = service.getSpec().getPorts().stream().filter(
           v1ServicePort -> v1ServicePort.getName().equalsIgnoreCase(channelName))
           .findAny().orElse(null);
+      getLogger().info(dump(service));
       if (port != null) {
         return port.getNodePort();
       }

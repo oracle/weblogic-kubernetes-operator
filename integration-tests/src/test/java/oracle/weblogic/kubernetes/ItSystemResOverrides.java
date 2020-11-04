@@ -418,10 +418,11 @@ public class ItSystemResOverrides {
 
   //deploy application sitconfig.war to domain
   private void deployApplication(String targets) {
-    logger.info("Getting node port for T3 channel");
+    logger.info("Getting node port for default channel");
     int defaultChannelNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server default node port failed");
+    logger.info("default channel node port: {0}", defaultChannelNodePort);
     assertNotEquals(-1, defaultChannelNodePort, "admin server defaultChannelNodePort is not valid");
 
     //deploy application
