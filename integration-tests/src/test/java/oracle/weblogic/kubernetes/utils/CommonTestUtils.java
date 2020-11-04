@@ -2913,7 +2913,9 @@ public class CommonTestUtils {
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
     if (OKE_CLUSTER) {
-      v1pv.getSpec().nfs(new V1NFSVolumeSource()
+      v1pv.getSpec()
+          .storageClassName("oci-fss")
+          .nfs(new V1NFSVolumeSource()
           .path(FSS_DIR)
           .server(NFS_SERVER)
       );
@@ -3193,7 +3195,6 @@ public class CommonTestUtils {
                             .addValuesItem("($CLUSTER_NAME)")))
                 )
         );
-    List<oracle.weblogic.domain.Cluster> clustersList = domain.getSpec().getClusters();
 
     domain.getSpec()
         .getClusters()
