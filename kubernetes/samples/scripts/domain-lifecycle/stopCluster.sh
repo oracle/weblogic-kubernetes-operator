@@ -6,6 +6,7 @@
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/helper.sh
+if [ "${debug}" == "true" ]; then set -x; fi;
 
 function usage() {
 
@@ -29,6 +30,8 @@ function usage() {
     -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl' if KUBERNETES_CLI env
                           variable is not set. Otherwise default is the value of KUBERNETES_CLI env variable.
 
+    -v <verbose_mode>   : Enables verbose mode. Default is 'false'.
+
     -h                  : This help.
    
 EOF
@@ -39,8 +42,10 @@ kubernetesCli=${KUBERNETES_CLI:-kubectl}
 clusterName=""
 domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
+verboseMode=false
+patchJson=""
 
-while getopts "c:n:m:d:h" opt; do
+while getopts "vc:n:m:d:h" opt; do
   case $opt in
     c) clusterName="${OPTARG}"
     ;;
@@ -49,6 +54,8 @@ while getopts "c:n:m:d:h" opt; do
     d) domainUid="${OPTARG}"
     ;;
     m) kubernetesCli="${OPTARG}"
+    ;;
+    v) verboseMode=true;
     ;;
     h) usage 0
     ;;
@@ -64,7 +71,6 @@ set -eu
 #
 function initialize {
 
-  # Validate the required files exist
   validateErrors=false
 
   validateKubernetesCliAvailable
@@ -90,12 +96,9 @@ initialize
 domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
 
 # Get server start policy for this server
-startPolicy=$(echo ${domainJson} | jq -r '(.spec.clusters[] | select (.clusterName == "'${clusterName}'") | .serverStartPolicy)')
-if [ "${startPolicy}" == "null" ]; then
-  startPolicy=$(echo ${domainJson} | jq -r .spec.serverStartPolicy)
-  if [ "${startPolicy}" == "null" ]; then
-    startPolicy=IF_NEEDED
-  fi
+getClusterPolicy "${domainJson}" "${clusterName}" startPolicy
+if [ -z "${startPolicy}" ]; then
+  getDomainPolicy "${domainJson}" startPolicy
 fi
 
 if [ "${startPolicy}" == 'NEVER' ]; then 
@@ -103,17 +106,10 @@ if [ "${startPolicy}" == 'NEVER' ]; then
   exit 0
 fi
 
-if [ -z ${startPolicy} ]; then
-  # cluster start policy doesn't exist, add a new NEVER policy
-  printInfo "Patching start policy of cluster '${clusterName}' to 'NEVER'."
-  startPolicy=$(echo ${domainJson} | jq .spec.clusters | jq -c '.[.| length] |= . + {"clusterName":"'${clusterName}'","serverStartPolicy":"NEVER"}')
-else 
-  # Server start policy exists, set policy value to NEVER
-  printInfo "Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'NEVER'."
-  startPolicy=$(echo ${domainJson} | jq '(.spec.clusters[] | select (.clusterName == "'${clusterName}'") | .serverStartPolicy) |= "NEVER"' | jq -cr '(.spec.clusters)')
-fi
+# Set policy value to NEVER
+printInfo "Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'NEVER'."
+createPatchJsonToUpdateClusterPolicy "${domainJson}" "${clusterName}" "NEVER" patchJson
 
-patch="{\"spec\": {\"clusters\": "${startPolicy}"}}"
-${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type='merge' --patch "${patch}"
+executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
 printInfo "Successfully patched cluster '${clusterName}' with 'NEVER' start policy!"

@@ -10,12 +10,15 @@
 #   stopped or is in the process of stopping. In this case, script exits without 
 #   making any changes.
 #
-# - If the effective start policy of the server is IF_NEEDED and decreasing replica 
-#   count will naturally stop the server, the script decreases the replica count. 
+# - If server is part of a cluster and keep_replica_constant option is false (the default)
+#   and the effective start policy of the server is IF_NEEDED and decreasing replica count 
+#   will naturally stop the server, the script decreases the replica count. 
 #
-# - If unsetting policy and decreasing the replica count will stop the server, script unsets
-#   the policy and decreases replica count. For e.g. if replica count is 2 and start policy
-#   of server2 is ALWAYS, unsetting policy and decreasing replica count will stop server2.
+# - If server is part of a cluster and keep_replica_constant option is false (the default)
+#   and unsetting policy and decreasing the replica count will stop the server, script 
+#   unsets the policy and decreases replica count. For e.g. if replica count is 2 and 
+#   start policy of server2 is ALWAYS, unsetting policy and decreasing replica count will 
+#   stop server2.
 #
 # - If option to keep replica count constant ('-k') is selected and unsetting start policy
 #   will naturally stop the server, script will unset the policy. For e.g. if replica count
@@ -124,8 +127,13 @@ function initialize {
 
 initialize
 
-# Get the cluster name for current server 
-clusterName=$(${kubernetesCli} get pod ${domainUid}-${serverName} -n ${domainNamespace} -o=jsonpath="{.metadata.labels['weblogic\.clusterName']}")
+# Validate that specified server is either part of a cluster or is an independent managed server
+validateServerAndFindCluster "${domainUid}" "${domainNamespace}" "${serverName}" isValidServer clusterName
+if [ "${isValidServer}" != 'true' ]; then
+  printError "Server ${serverName} is not part of any cluster and it's not an independent managed server. Please make sure that server name specified is correct."
+  exit 1
+fi
+
 
 # Get the domain in json format
 domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
@@ -149,6 +157,9 @@ fi
 # Create server start policy patch with NEVER value
 createServerStartPolicyPatch "${domainJson}" "${serverName}" "${serverStartPolicy}" neverStartPolicyPatch
 getServerPolicy "${domainJson}" "${serverName}" managedServerPolicy
+if [ -n "${managedServerPolicy}" ]; then
+  effectivePolicy=${managedServerPolicy}
+fi
 if [[ -n "${clusterName}" && "${effectivePolicy}" == "ALWAYS" ]]; then
   # Server is part of a cluster and start policy is ALWAYS. 
   withReplicas="CONSTANT"
@@ -161,13 +172,11 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
   withReplicas="DECREASED"
   withPolicy="UNSET"
   checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startedWhenRelicaReducedAndPolicyReset
-
-  operation="DECREMENT"
-  createReplicaPatch "${domainJson}" "${clusterName}" "${operation}" replicaPatch replicaCount
+  createReplicaPatch "${domainJson}" "${clusterName}" "DECREMENT" replicaPatch replicaCount
 
   if [[ -n ${managedServerPolicy} && "${startedWhenRelicaReducedAndPolicyReset}" != "true" ]]; then
     # Server shuts down by unsetting start policy and decrementing replica count, unset and decrement 
-    printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and decrementing replica count."
+    printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and decrementing replica count to ${replicaCount}."
     createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${replicaPatch}" patchJson
     action="PATCH_REPLICA_AND_UNSET_POLICY"
   elif [[ -z ${managedServerPolicy} && "${startedWhenRelicaReducedAndPolicyReset}" != "true" ]]; then
@@ -177,12 +186,14 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
     action="PATCH_REPLICA"
   elif [[ ${managedServerPolicy} == "ALWAYS" && "${startedWhenAlwaysPolicyReset}" != "true" ]]; then
     # Server shuts down by unsetting the start policy, unset and decrement replicas
-    printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and decrementing replica count."
+    printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
+     and decrementing replica count to ${replicaCount}."
     createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${replicaPatch}" patchJson
     action="PATCH_REPLICA_AND_UNSET_POLICY"
   else
     # Patch server start policy to NEVER and decrement replica count
-    printInfo "Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'NEVER' and decrementing replica count for cluster '${clusterName}'."
+    printInfo "Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'NEVER' \
+      and decrementing replica count for cluster '${clusterName}' to ${replicaCount}."
     createPatchJsonToUpdateReplicaAndPolicy "${replicaPatch}" "${neverStartPolicyPatch}" patchJson
     action="PATCH_REPLICA_AND_POLICY"
   fi
@@ -206,28 +217,6 @@ else
   action="PATCH_POLICY"
 fi
 
-if [ "${verboseMode}" == "true" ]; then
-  printInfo "Patching domain with Json string -> ${patchJson}"
-fi
+executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
-${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type='merge' --patch "${patchJson}"
-
-case ${action} in
-  "PATCH_REPLICA_AND_POLICY")
-    printInfo "Successfully patched server '${serverName}' with 'NEVER' start policy!"
-    printInfo "The replica count for cluster '${clusterName}' updated to ${replicaCount}."
-    ;;
-  "PATCH_REPLICA_AND_UNSET_POLICY")
-    printInfo "Successfully unset server policy '${effectivePolicy}' for '${serverName}' !"
-    printInfo "The replica count for cluster '${clusterName}' updated to ${replicaCount}."
-    ;;
-  "PATCH_POLICY")
-    printInfo "Successfully patched server '${serverName}' with 'NEVER' start policy."
-    ;;
-  "PATCH_REPLICA")
-    printInfo "Successfully updated replica count for cluster '${clusterName}' to ${replicaCount}."
-    ;;
-  *)
-    printInfo "Successfully unset policy '${effectivePolicy}' for server '${serverName}'."
-    ;;
-esac
+printInfo "Patch command succeeded !"

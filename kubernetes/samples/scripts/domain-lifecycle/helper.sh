@@ -36,10 +36,11 @@ function getDomainPolicy {
   local __domainPolicy=$2
   local effectivePolicy=""
 
-  clusterPolicyCmd=".spec.serverStartPolicy"
-  effectivePolicy=$(echo ${domainJson} | jq "${clusterPolicyCmd}")
+  eval $__domainPolicy="IF_NEEDED"
+  domainPolicyCommand=".spec.serverStartPolicy"
+  effectivePolicy=$(echo ${domainJson} | jq "${domainPolicyCommand}")
   if [ "${effectivePolicy}" == "null" ]; then
-    effectivePolicy=""
+    effectivePolicy="IF_NEEDED"
   fi
   eval $__domainPolicy=${effectivePolicy}
 }
@@ -88,6 +89,7 @@ function getServerPolicy {
   local currentServerStartPolicy=""
 
   # Get server start policy for this server
+  eval $__currentPolicy=""
   managedServers=$(echo ${domainJson} | jq -cr '(.spec.managedServers)')
   if [ "${managedServers}" != "null" ]; then
     extractPolicyCmd="(.spec.managedServers[] \
@@ -97,7 +99,7 @@ function getServerPolicy {
       currentServerStartPolicy=""
     fi
   fi
-  eval $__currentPolicy=${currentServerStartPolicy}
+  eval $__currentPolicy="'${currentServerStartPolicy}'"
 }
 
 #
@@ -209,6 +211,39 @@ function createPatchJsonToUnsetPolicy {
 }
 
 #
+# Function to create patch json to update cluster server start policy
+# $1 - Domain resource in json format
+# $2 - Name of cluster whose policy will be patched
+# $3 - policy value of "IF_NEEDED" or "NEVER"
+# $4 - Return value containing patch json string
+#
+function createPatchJsonToUpdateClusterPolicy {
+  local domainJson=$1
+  local clusterName=$2
+  local policy=$3
+  local __result=$4
+  
+  replacePolicyCmd="(.spec.clusters[] | select (.clusterName == \"${clusterName}\") \
+    | .serverStartPolicy) |= \"${policy}\""
+  startPolicy=$(echo ${domainJson} | jq "${replacePolicyCmd}" | jq -cr '(.spec.clusters)')
+  patchJson="{\"spec\": {\"clusters\": "${startPolicy}"}}"
+  eval $__result="'${patchJson}'"
+}
+
+#
+# Function to create patch json to update domain server start policy
+# $1 - policy value of "IF_NEEDED" or "NEVER"
+# $2 - Return value containing patch json string
+#
+function createPatchJsonToUpdateDomainPolicy {
+  local policy=$1
+  local __result=$2
+  
+  patchServerStartPolicy="{\"spec\": {\"serverStartPolicy\": \"${policy}\"}}"
+  eval $__result="'${patchServerStartPolicy}'"
+}
+
+#
 # Function to get sorted list of servers in a cluster.
 # The sorted list is created in 'sortedByAlwaysServers' array.
 # $1 - Domain resource in json format
@@ -226,8 +261,8 @@ function getSortedListOfServers {
   local sortedServers=()
   local otherServers=()
 
-  configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
-    -n ${domainNamespace} -o json)
+  configMap=$(set +e && ${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
+    -n ${domainNamespace} -o json || printError "Domain config map not found, exiting.")
   topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
   jsonTopology=$(python -c \
     'import sys, yaml, json; print json.dumps(yaml.safe_load('"${topology}"'), indent=4)')
@@ -393,7 +428,7 @@ function createReplicaPatch {
   local __result=$4
   local __replicaCount=$5
   local maxReplicas=""
-  local infoMessage="Current replica count value is same as maximum number of replica count. \
+  local infoMessage="Current replica count value is same as or greater than maximum number of replica count. \
 Not increasing replica count value."
 
   maxReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
@@ -406,7 +441,7 @@ Not increasing replica count value."
     fi
   elif [ "${operation}" == "INCREMENT" ]; then
     maxReplicas=$(echo ${domainJson} | jq "${maxReplicaCmd}")
-    if [ ${replica} -eq ${maxReplicas} ]; then
+    if [ ${replica} -ge ${maxReplicas} ]; then
       printInfo "${infoMessage}"
     else
       replica=$((replica+1))
@@ -567,6 +602,28 @@ function printError {
 # Function to print an error message
 function printInfo {
   echo [`timestamp`][INFO] $*
+}
+
+#
+# Function to execute patch command and print verbose information
+# $1 - Kubernetes command line interface
+# $2 - Domain unique id
+# $2 - Domain namespace
+# $4 - Json string to be used in 'patch' command
+# $5 - Verbose mode. Legal values are "true" or "false"
+#
+function executePatchCommand {
+  local kubernetesCli=$1
+  local domainUid=$2
+  local domainNamespace=$3
+  local patchJson=$4
+  local verboseMode=$5
+
+  if [ "${verboseMode}" == "true" ]; then
+    printInfo "Executing command --> ${kubernetesCli} patch domain ${domainUid} \
+      -n ${domainNamespace} --type=merge --patch ${patchJson}"
+  fi
+  ${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type=merge --patch "${patchJson}"
 }
 
 # timestamp

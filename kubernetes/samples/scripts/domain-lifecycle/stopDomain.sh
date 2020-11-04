@@ -6,6 +6,7 @@
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/helper.sh
+#set -x
 
 function usage() {
 
@@ -27,6 +28,8 @@ function usage() {
     -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl' if KUBERNETES_CLI env
                           variable is not set. Otherwise default is the value of KUBERNETES_CLI env variable.
 
+    -v <verbose_mode>   : Enables verbose mode. Default is 'false'.
+
     -h                  : This help.
    
 EOF
@@ -36,14 +39,17 @@ exit $1
 kubernetesCli=${KUBERNETES_CLI:-kubectl}
 domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
+verboseMode=false
 
-while getopts "n:d:m:h" opt; do
+while getopts "vn:d:m:h" opt; do
   case $opt in
     n) domainNamespace="${OPTARG}"
     ;;
     d) domainUid="${OPTARG}"
     ;;
     m) kubernetesCli="${OPTARG}"
+    ;;
+    v) verboseMode=true;
     ;;
     h) usage 0
     ;;
@@ -55,11 +61,13 @@ done
 set -eu
 set -o pipefail
 
-if ! [ -x "$(command -v ${kubernetesCli})" ]; then
-  fail "${kubernetesCli} is not installed"
-fi
+validateKubernetesCliAvailable
+validateJqAvailable
 
-serverStartPolicy=`${kubernetesCli} -n ${domainNamespace} get domain ${domainUid} -o=jsonpath='{.spec.serverStartPolicy}'`
+# Get the domain in json format
+domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
+
+getDomainPolicy "${domainJson}" serverStartPolicy
 if [ -z "${serverStartPolicy}" ]; then
   serverStartPolicy=IF_NEEDED
 fi
@@ -71,7 +79,8 @@ fi
 
 printInfo "Patching domain '${domainUid}' in namespace '${domainNamespace}' from serverStartPolicy='${serverStartPolicy}' to 'NEVER'."
 
-${kubernetesCli} -n ${domainNamespace} patch domain ${domainUid} --type='json' \
-  -p='[{"op": "replace", "path": "/spec/serverStartPolicy", "value": "NEVER" }]'
+createPatchJsonToUpdateDomainPolicy "NEVER" patchJson
+
+executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
 printInfo "Successfully patched domain '${domainUid}' in namespace '${domainNamespace}' with 'NEVER' start policy!"
