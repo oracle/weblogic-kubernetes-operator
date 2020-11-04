@@ -6,8 +6,8 @@ package oracle.weblogic.kubernetes.actions;
 public interface ActionConstants {
 
   // Work directory for the integration test suite
-  public static final String WORK_DIR
-      = System.getProperty("java.io.tmpdir") + "/it-results";
+  public static final String WORK_DIR = System.getenv().getOrDefault("WORK_DIR",
+      System.getProperty("java.io.tmpdir")) + "/it-testsresults";
   // Integration tests directory
   public static final String ITTESTS_DIR = System.getProperty("user.dir");
   // Directory for resources
