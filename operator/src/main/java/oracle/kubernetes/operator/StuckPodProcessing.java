@@ -100,7 +100,7 @@ public class StuckPodProcessing {
         Collection<StepAndPacket> startDetails = new ArrayList<>();
 
         for (V1Pod pod : stuckPodList) {
-          startDetails.add(new StepAndPacket(createDeletePodStep(pod), packet.clone()));
+          startDetails.add(new StepAndPacket(createForcedDeletePodStep(pod), packet.clone()));
         }
         return doForkJoin(readExistingNamespaces(), packet, startDetails);
       }
@@ -111,8 +111,9 @@ public class StuckPodProcessing {
       return mainDelegate.getDomainNamespaces().readExistingResources(namespace, mainDelegate.getDomainProcessor());
     }
 
-    private Step createDeletePodStep(V1Pod pod) {
+    private Step createForcedDeletePodStep(V1Pod pod) {
       return new CallBuilder()
+            .withGracePeriodSeconds(0)
             .deletePodAsync(getName(pod), getNamespace(pod), getDomainUid(pod), null, new DefaultResponseStep<>());
     }
 

@@ -303,7 +303,7 @@ public class CallBuilder {
   private final CallFactory<V1Secret> readSecret =
       (requestParams, usage, cont, callback) ->
           wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final Integer gracePeriodSeconds = null;
+  private Integer gracePeriodSeconds = null;
   private final Boolean orphanDependents = null;
   private final String propagationPolicy = null;
 
@@ -537,6 +537,11 @@ public class CallBuilder {
 
   public CallBuilder withTimeoutSeconds(int timeoutSeconds) {
     this.timeoutSeconds = timeoutSeconds;
+    return this;
+  }
+
+  public CallBuilder withGracePeriodSeconds(int gracePeriodSeconds) {
+    this.gracePeriodSeconds = gracePeriodSeconds;
     return this;
   }
 
@@ -1909,6 +1914,7 @@ public class CallBuilder {
         helper,
         timeoutSeconds,
         maxRetryCount,
+        gracePeriodSeconds,
         fieldSelector,
         labelSelector,
         resourceVersion);
@@ -1924,6 +1930,7 @@ public class CallBuilder {
             helper,
             timeoutSeconds,
             maxRetryCount,
+            gracePeriodSeconds,
             fieldSelector,
             labelSelector,
             resourceVersion);
@@ -1939,6 +1946,7 @@ public class CallBuilder {
             helper,
             timeoutSeconds,
             maxRetryCount,
+            gracePeriodSeconds,
             fieldSelector,
             labelSelector,
             resourceVersion);

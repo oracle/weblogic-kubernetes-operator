@@ -28,6 +28,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -47,6 +48,7 @@ public class StuckPodTest {
   private final V1Pod managedPod1 = defineManagedPod(SERVER_POD_1);
   private final V1Pod managedPod2 = defineManagedPod(SERVER_POD_2);
   private final V1Pod foreignPod = defineForeignPod(FOREIGN_POD);
+  private Integer gracePeriodSeconds;
 
   @Before
   public void setUp() throws Exception {
@@ -93,6 +95,21 @@ public class StuckPodTest {
     processing.checkStuckPods(NS);
 
     assertThat(getSelectedPod(SERVER_POD_1), nullValue());
+  }
+
+  @Test
+  public void whenServerPodDeleted_specifyZeroGracePeriod() {
+    markAsDelete(getSelectedPod(SERVER_POD_1));
+    SystemClockTestSupport.increment(DELETION_GRACE_PERIOD_SECONDS + 1);
+    testSupport.doOnDelete(POD, this::recordGracePeriodSeconds);
+
+    processing.checkStuckPods(NS);
+
+    assertThat(gracePeriodSeconds, equalTo(0));
+  }
+
+  private void recordGracePeriodSeconds(Integer gracePeriodSeconds) {
+    this.gracePeriodSeconds = gracePeriodSeconds;
   }
 
   @Test
