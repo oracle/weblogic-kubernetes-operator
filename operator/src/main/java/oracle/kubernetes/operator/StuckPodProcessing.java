@@ -16,6 +16,8 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -23,8 +25,14 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import org.joda.time.DateTime;
 
-public class StuckPodProcessing {
+import static oracle.kubernetes.operator.logging.MessageKeys.POD_FORCE_DELETED;
 
+/**
+ * Under certain circumstances, when a Kubernetes node goes down, it may mark its pods as terminating, but never
+ * actually remove them. This code detects such cases, deletes the pods and triggers the necessary make-right flows.
+ */
+public class StuckPodProcessing {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final MainDelegate mainDelegate;
 
@@ -114,7 +122,8 @@ public class StuckPodProcessing {
     private Step createForcedDeletePodStep(V1Pod pod) {
       return new CallBuilder()
             .withGracePeriodSeconds(0)
-            .deletePodAsync(getName(pod), getNamespace(pod), getDomainUid(pod), null, new DefaultResponseStep<>());
+            .deletePodAsync(getName(pod), getNamespace(pod), getDomainUid(pod), null,
+                  new ForcedDeleteResponseStep(getName(pod), getNamespace(pod)));
     }
 
     private String getName(V1Pod pod) {
@@ -129,4 +138,22 @@ public class StuckPodProcessing {
       return PodHelper.getPodDomainUid(pod);
     }
   }
+
+  static class ForcedDeleteResponseStep extends DefaultResponseStep<V1Pod> {
+
+    private final String name;
+    private final String namespace;
+
+    public ForcedDeleteResponseStep(String name, String namespace) {
+      this.name = name;
+      this.namespace = namespace;
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+      LOGGER.info(POD_FORCE_DELETED, name, namespace);
+      return super.onSuccess(packet, callResponse);
+    }
+  }
+
 }

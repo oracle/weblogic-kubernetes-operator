@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -28,6 +30,8 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
+import static oracle.kubernetes.operator.logging.MessageKeys.POD_FORCE_DELETED;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -49,10 +53,11 @@ public class StuckPodTest {
   private final V1Pod managedPod2 = defineManagedPod(SERVER_POD_2);
   private final V1Pod foreignPod = defineForeignPod(FOREIGN_POD);
   private Integer gracePeriodSeconds;
+  private TestUtils.ConsoleHandlerMemento consoleMemento;
 
   @Before
   public void setUp() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(consoleMemento = TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
     mementos.add(SystemClockTestSupport.installClock());
     mementos.add(TuningParametersStub.install());
@@ -95,6 +100,18 @@ public class StuckPodTest {
     processing.checkStuckPods(NS);
 
     assertThat(getSelectedPod(SERVER_POD_1), nullValue());
+  }
+
+  @Test
+  public void whenStuckServerPodDeleted_logMessage() {
+    final List<LogRecord> logMessages = new ArrayList<>();
+    consoleMemento.collectLogMessages(logMessages, POD_FORCE_DELETED).withLogLevel(Level.INFO);
+    markAsDelete(getSelectedPod(SERVER_POD_1));
+    SystemClockTestSupport.increment(DELETION_GRACE_PERIOD_SECONDS + 1);
+
+    processing.checkStuckPods(NS);
+
+    assertThat(logMessages, containsInfo(POD_FORCE_DELETED, SERVER_POD_1, NS));
   }
 
   @Test
