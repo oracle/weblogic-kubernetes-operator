@@ -315,10 +315,7 @@ public class ItIntrospectVersion {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))
-                    .addChannelsItem(new Channel()
-                        .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
+                        .nodePort(0))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(replicaCount)
@@ -348,16 +345,16 @@ public class ItIntrospectVersion {
     }
 
     // deploy application and verify all servers functions normally
-    logger.info("Getting node port for T3 channel");
-    int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
-        "Getting admin server t3channel node port failed");
-    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
+    logger.info("Getting node port for default channel");
+    int defaultChannelNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server default node port failed");
+    assertNotEquals(-1, defaultChannelNodePort, "admin server defaultChannelNodePort is not valid");
 
     //deploy clusterview application
     logger.info("Deploying clusterview app {0} to cluster {1}",
         clusterViewAppPath, clusterName);
-    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(defaultChannelNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
         introDomainNamespace);
 

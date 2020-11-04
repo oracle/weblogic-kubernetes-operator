@@ -134,6 +134,7 @@ import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -1025,10 +1026,7 @@ class ItParameterizedDomain {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))
-                    .addChannelsItem(new Channel()
-                        .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
+                        .nodePort(0))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(replicaCount)
@@ -1058,10 +1056,16 @@ class ItParameterizedDomain {
               .appName(appName)),
           String.format("Failed to create app archive for %s", appName));
 
+      logger.info("Getting node port for default channel");
+      int defaultChannelNodePort = assertDoesNotThrow(()
+          -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+          "Getting admin server default node port failed");
+      assertNotEquals(-1, defaultChannelNodePort, "admin server defaultChannelNodePort is not valid");
+
       //deploy application
       Path archivePath = get(ARCHIVE_DIR, "wlsdeploy", "applications", appName + ".ear");
       logger.info("Deploying webapp {0} to domain {1}", archivePath, domainUid);
-      deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3ChannelPort),
+      deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(defaultChannelNodePort),
           ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + ADMIN_SERVER_NAME_BASE, archivePath,
           domainNamespace);
     }

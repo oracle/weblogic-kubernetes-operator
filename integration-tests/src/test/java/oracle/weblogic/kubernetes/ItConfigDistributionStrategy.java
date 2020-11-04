@@ -866,10 +866,7 @@ public class ItConfigDistributionStrategy {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))
-                    .addChannelsItem(new Channel()
-                        .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
+                        .nodePort(0))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(replicaCount)
@@ -901,15 +898,15 @@ public class ItConfigDistributionStrategy {
 
   //deploy application clusterview.war to domain
   private void deployApplication(String targets) {
-    logger.info("Getting node port for T3 channel");
-    int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
-        "Getting admin server t3channel node port failed");
-    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
+    logger.info("Getting node port for default channel");
+    int defaultChannelNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server default node port failed");
+    assertNotEquals(-1, defaultChannelNodePort, "admin server defaultChannelNodePort is not valid");
 
     //deploy application
     logger.info("Deploying webapp {0} to domain", clusterViewAppPath);
-    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(defaultChannelNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, targets, clusterViewAppPath,
         domainNamespace);
   }
