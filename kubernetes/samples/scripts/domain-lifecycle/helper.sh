@@ -39,10 +39,10 @@ function getDomainPolicy {
   eval $__domainPolicy="IF_NEEDED"
   domainPolicyCommand=".spec.serverStartPolicy"
   effectivePolicy=$(echo ${domainJson} | jq "${domainPolicyCommand}")
-  if [ "${effectivePolicy}" == "null" ]; then
+  if [[ "${effectivePolicy}" == "null" || "${effectivePolicy}" == "" ]]; then
     effectivePolicy="IF_NEEDED"
   fi
-  eval $__domainPolicy=${effectivePolicy}
+  eval $__domainPolicy="'${effectivePolicy}'"
 }
 
 #
@@ -260,9 +260,12 @@ function getSortedListOfServers {
   local policy=""
   local sortedServers=()
   local otherServers=()
+  errorMessage="Domain config map '${domainUid}-weblogic-domain-introspect-cm' not found. \
+    This script will requires that the introspector job for the specified domain ran \
+    successfully and generated this config map. Exiting."
 
   configMap=$(set +e && ${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
-    -n ${domainNamespace} -o json || printError "Domain config map not found, exiting.")
+    -n ${domainNamespace} -o json || printError ${errorMessage} && exit 1)
   topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
   jsonTopology=$(python -c \
     'import sys, yaml, json; print json.dumps(yaml.safe_load('"${topology}"'), indent=4)')
@@ -621,7 +624,7 @@ function executePatchCommand {
 
   if [ "${verboseMode}" == "true" ]; then
     printInfo "Executing command --> ${kubernetesCli} patch domain ${domainUid} \
-      -n ${domainNamespace} --type=merge --patch ${patchJson}"
+      -n ${domainNamespace} --type=merge --patch \"${patchJson}\""
   fi
   ${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type=merge --patch "${patchJson}"
 }

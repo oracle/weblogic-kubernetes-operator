@@ -76,9 +76,6 @@ initialize
 domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
 
 getDomainPolicy "${domainJson}" serverStartPolicy
-if [ -z "${serverStartPolicy}" ]; then
-  serverStartPolicy=IF_NEEDED
-fi
 
 if [ "${serverStartPolicy}" == 'IF_NEEDED' ]; then 
   printInfo "No changes needed, exiting. The domain '${domainUid}' is already started or starting. The effective value of 'spec.serverStartPolicy' attribute on the domain resource is 'IF_NEEDED'."

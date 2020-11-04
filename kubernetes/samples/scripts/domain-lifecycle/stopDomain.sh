@@ -6,7 +6,6 @@
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/helper.sh
-#set -x
 
 function usage() {
 
@@ -61,16 +60,21 @@ done
 set -eu
 set -o pipefail
 
-validateKubernetesCliAvailable
-validateJqAvailable
+function initialize {
+
+  validateErrors=false
+
+  validateKubernetesCliAvailable
+  validateJqAvailable
+  failIfValidationErrors
+}
+
+initialize
 
 # Get the domain in json format
 domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
 
 getDomainPolicy "${domainJson}" serverStartPolicy
-if [ -z "${serverStartPolicy}" ]; then
-  serverStartPolicy=IF_NEEDED
-fi
 
 if [ "${serverStartPolicy}" == 'NEVER' ]; then 
   printInfo "No changes needed, exiting. The domain '${domainUid}' is already stopped or stopping. The value of 'spec.serverStartPolicy' attribute on the domain resource is 'NEVER'."

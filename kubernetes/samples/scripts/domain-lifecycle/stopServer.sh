@@ -176,7 +176,8 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
 
   if [[ -n ${managedServerPolicy} && "${startedWhenRelicaReducedAndPolicyReset}" != "true" ]]; then
     # Server shuts down by unsetting start policy and decrementing replica count, unset and decrement 
-    printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and decrementing replica count to ${replicaCount}."
+    printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
+      and decrementing replica count to ${replicaCount}."
     createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${replicaPatch}" patchJson
     action="PATCH_REPLICA_AND_UNSET_POLICY"
   elif [[ -z ${managedServerPolicy} && "${startedWhenRelicaReducedAndPolicyReset}" != "true" ]]; then
