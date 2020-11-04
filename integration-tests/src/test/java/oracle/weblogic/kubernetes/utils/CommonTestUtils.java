@@ -2917,8 +2917,7 @@ public class CommonTestUtils {
           .nfs(new V1NFSVolumeSource()
           .path(FSS_DIR)
           .server(NFS_SERVER)
-          .readOnly(false)
-      );
+          .readOnly(false));
     } else {
       v1pv.getSpec()
           .storageClassName("weblogic-domain-storage-class")
