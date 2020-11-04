@@ -73,8 +73,10 @@ public class Main {
   private static final AtomicReference<DateTime> lastFullRecheck =
       new AtomicReference<>(DateTime.now());
   private static final Semaphore shutdownSignal = new Semaphore(0);
+  private static final int DEFAULT_STUCK_POD_RECHECK_SECONDS = 30;
 
   private final MainDelegate delegate;
+  private final StuckPodProcessing stuckPodProcessing;
   private NamespaceWatcher namespaceWatcher;
   private boolean warnedOfCrdAbsence;
 
@@ -291,6 +293,7 @@ public class Main {
 
   Main(MainDelegate delegate) {
     this.delegate = delegate;
+    stuckPodProcessing = new StuckPodProcessing(delegate);
   }
 
   void startOperator(Runnable completionAction) {
@@ -336,16 +339,22 @@ public class Main {
 
       // start periodic retry and recheck
       int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
-      delegate.getEngine()
-          .getExecutor()
-          .scheduleWithFixedDelay(
-              recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
+      int stuckPodInterval = getStuckPodInterval();
+      delegate.scheduleWithFixedDelay(recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
+      delegate.scheduleWithFixedDelay(checkStuckPods(), stuckPodInterval, stuckPodInterval, TimeUnit.SECONDS);
 
       markReadyAndStartLivenessThread();
 
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
+  }
+
+  private int getStuckPodInterval() {
+    return Optional.ofNullable(TuningParameters.getInstance())
+          .map(TuningParameters::getMainTuning)
+          .map(t -> t.stuckPodRecheckSeconds)
+          .orElse(DEFAULT_STUCK_POD_RECHECK_SECONDS);
   }
 
   NamespaceWatcher getNamespaceWatcher() {
@@ -359,6 +368,11 @@ public class Main {
   Runnable recheckDomains() {
     return () -> delegate.runSteps(createDomainRecheckSteps());
   }
+
+  Runnable checkStuckPods() {
+    return () -> getDomainNamespaces().getNamespaces().forEach(stuckPodProcessing::checkStuckPods);
+  }
+
 
   Step createDomainRecheckSteps() {
     return createDomainRecheckSteps(DateTime.now());
