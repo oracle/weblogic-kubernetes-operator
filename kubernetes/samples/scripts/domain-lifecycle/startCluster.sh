@@ -99,7 +99,7 @@ domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o j
 
 getDomainPolicy "${domainJson}" domainStartPolicy
 # Fail if effective start policy of domain is NEVER or ADMIN_ONLY
-if [[ "${domainStartPolicy}" == 'NEVER' && "${domainStartPolicy}" == 'ADMIN_ONLY' ]]; then
+if [[ "${domainStartPolicy}" == 'NEVER' || "${domainStartPolicy}" == 'ADMIN_ONLY' ]]; then
   printError "Cannot start cluster '${clusterName}', the domain is configured with a 'spec.serverStartPolicy' attribute on the domain resource of 'NEVER' or 'ADMIN_ONLY'."
   exit 1
 fi

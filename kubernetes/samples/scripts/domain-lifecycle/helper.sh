@@ -66,10 +66,6 @@ function getEffectivePolicy {
     if [ -z "${currentPolicy}" ]; then
       # Start policy is not set at cluster level, check at domain level
       getDomainPolicy "${domainJson}" currentPolicy
-      if [ -z "${currentPolicy}" ]; then
-        # Start policy is not set at domain level, default to IF_NEEDED
-        currentPolicy=IF_NEEDED
-      fi
     fi
   fi
   eval $__currentPolicy=${currentPolicy}
@@ -260,16 +256,8 @@ function getSortedListOfServers {
   local policy=""
   local sortedServers=()
   local otherServers=()
-  errorMessage="Domain config map '${domainUid}-weblogic-domain-introspect-cm' not found. \
-This script requires that the introspector job for the specified domain ran \
-successfully and generated this config map. Exiting."
 
-  configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
-    -n ${domainNamespace} -o json --ignore-not-found)
-  if [ -z "${configMap}" ]; then
-    echo "${errorMessage}" 
-    exit 1
-  fi
+  getConfigMap "${domainUid}" "${domainNamespace}" configMap
   topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
   jsonTopology=$(python -c \
     'import sys, yaml, json; print json.dumps(yaml.safe_load('"${topology}"'), indent=4)')
@@ -477,13 +465,10 @@ function validateServerAndFindCluster {
   local __isValidServer=$4
   local __clusterName=$5
   local serverCount=""
-  local errorMessage="Server name is outside the range of allowed servers. \
-Please make sure server name is correct."
 
   eval $__isValidServer=false
   eval $__clusterName=UNKNOWN
-  configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
-    -n ${domainNamespace} -o json)
+  getConfigMap "${domainUid}" "${domainNamespace}" configMap
   topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
   jsonTopology=$(python -c \
     'import sys, yaml, json; print json.dumps(yaml.safe_load('"${topology}"'), indent=4)')
@@ -546,6 +531,7 @@ function validateClusterName {
   local clusterName=$3
   local __isValidCluster=$4
 
+  getConfigMap "${domainUid}" "${domainNamespace}" configMap
   configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
     -n ${domainNamespace} -o json)
   topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
@@ -558,6 +544,23 @@ function validateClusterName {
     eval $__isValidCluster=false
   fi
 }
+
+function getConfigMap {
+  local domainUid=$1
+  local domainNamespace=$2
+  local __result=$3 
+
+  configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
+    -n ${domainNamespace} -o json --ignore-not-found)
+  if [ -z "${configMap}" ]; then
+    printError "Domain config map '${domainUid}-weblogic-domain-introspect-cm' not found. \
+      This script requires that the introspector job for the specified domain ran \
+      successfully and generated this config map. Exiting."
+    exit 1
+  fi
+  eval $__result="'${configMap}'"
+}
+
 
 #
 # check if string passed as first argument is present in array passed as second argument
