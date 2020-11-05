@@ -211,7 +211,7 @@ elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
     createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
   else
     # Patch server policy to always
-    printInfo "Patching start policy for '${serverName}' to '${targetPolicy}'."
+    printInfo "Patching start policy for '${serverName}' to 'ALWAYS'."
     createPatchJsonToUpdatePolicy "${alwaysStartPolicyPatch}" patchJson
   fi
 else
