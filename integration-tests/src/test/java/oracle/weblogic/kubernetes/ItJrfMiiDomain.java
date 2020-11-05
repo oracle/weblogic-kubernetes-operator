@@ -80,8 +80,6 @@ public class ItJrfMiiDomain {
   private static LoggingFacade logger = null;
 
   private final String domainUid = "jrfdomain-mii";
-  //private final String wlSecretName = domainUid + "-weblogic-credentials";
-  //private final String rcuSecretName = domainUid + "-rcu-credentials";
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -133,7 +131,7 @@ public class ItJrfMiiDomain {
 
   /**
    * Create a basic JRF model in image domain.
-   * Verify Pod is ready and service Exists for both admin server and managed servers.
+   * Verify Pod is ready and service exists for both admin server and managed servers.
    * Verify EM console is accessible.
    */
   @Test
@@ -236,7 +234,7 @@ public class ItJrfMiiDomain {
         + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
         + "/em --write-out %{http_code} -o /dev/null";
     logger.info("Executing default nodeport curl command {0}", curlCmd1);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5));
+    assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5), "Calling web app failed");
     logger.info("EM console is accessible thru default service");
   }
 
