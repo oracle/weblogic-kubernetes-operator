@@ -451,7 +451,8 @@ fi
 #
 # Update work manager configurations on the running domain, patch
 # introspect version, wait for introspector to complete,
-# and use the test app to verify that the updated datasources.
+# and use the test app to verify the updated work manager
+# configurations.
 #
 
 if [ "$DO_UPDATE4" = "true" ]; then
@@ -463,7 +464,7 @@ if [ "$DO_UPDATE4" = "true" ]; then
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
-  doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/wmdatasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f  \${WORKDIR}/model-configmaps/datasource -f \${WORKDIR}/model-configmaps/workmanager -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
   doCommand    "\$WORKDIR/utils/patch-use-online-update.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
   doCommand    "\$WORKDIR/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"

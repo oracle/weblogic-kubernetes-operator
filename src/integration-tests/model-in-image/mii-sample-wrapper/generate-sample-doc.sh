@@ -76,7 +76,9 @@ function phase_setup() {
     update4)
       setup_domain_resource=false
       domain_num=1
-      configmap=wmdatasource
+      image_version=v2
+      archive_version=v2
+      configmap=datasource,workmanager
       ;;
     *)
       echo "Error: Unknown phase $1." 
@@ -155,12 +157,12 @@ for phase in initial update1 update2 update3 update4; do
 
   # setup domain resource 
 
+  domain_path=domain-resources/$type/mii-$phase-d$domain_num-$MODEL_IMAGE_TAG
+  if [ "$configmap" != "None" ]; then
+    domain_path=$domain_path-ds
+  fi
+  export DOMAIN_RESOURCE_FILENAME=$domain_path.yaml
   if [ "$setup_domain_resource" = "true" ]; then
-    domain_path=domain-resources/$type/mii-$phase-d$domain_num-$MODEL_IMAGE_TAG
-    if [ "$configmap" != "None" ]; then
-      domain_path=$domain_path-ds
-    fi
-    export DOMAIN_RESOURCE_FILENAME=$domain_path.yaml
     $SCRIPTDIR/stage-domain-resource.sh
   fi
 
@@ -170,11 +172,16 @@ for phase in initial update1 update2 update3 update4; do
   chmod +x $WORKDIR/$domain_path.secrets.sh
    
   # setup script for the configmap
-
+  file_param=''
   if [ "$configmap" != "None" ]; then
+    for i in ${configmap//,/ }
+      do
+       file_param="${file_param}-f ${WORKDIR}/model-configmaps/$i "
+      done
+
     $WORKDIR/utils/create-configmap.sh \
       -c ${DOMAIN_UID}-wdt-config-map \
-      -f ${WORKDIR}/model-configmaps/$configmap \
+      ${file_param} \
       -d $DOMAIN_UID \
       -n $DOMAIN_NAMESPACE \
       -dry kubectl | grep dryrun | sed 's/dryrun://' \
