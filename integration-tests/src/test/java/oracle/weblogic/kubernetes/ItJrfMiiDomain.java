@@ -40,7 +40,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
@@ -294,34 +293,6 @@ public class ItJrfMiiDomain {
                             .introspectorJobActiveDeadlineSeconds(600L)));
 
     return domain;
-  }
-
-  private void checkAppIsRunning(
-      ConditionFactory conditionFactory,
-      String namespace,
-      String podName,
-      String internalPort,
-      String appPath,
-      String expectedStr
-  ) {
-
-    // check if the application is accessible inside of a server pod
-    conditionFactory
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for application {0} is running on pod {1} in namespace {2} "
-            + "(elapsed time {3}ms, remaining time {4}ms)",
-            appPath,
-            podName,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> appAccessibleInPod(
-                namespace,
-                podName,
-                internalPort,
-                appPath,
-                expectedStr));
-
   }
 
 }
