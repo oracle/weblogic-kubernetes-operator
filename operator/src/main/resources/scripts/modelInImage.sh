@@ -577,7 +577,6 @@ function diff_model() {
 
   ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2
   ret=$?
-
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Compare Model failed:"
     cat /tmp/compare_model_stdout
@@ -639,7 +638,7 @@ function createPrimordialDomain() {
 
     diff_rc=$(cat /tmp/model_diff_rc)
     rm ${DECRYPTED_MERGED_MODEL}
-    trace "createPrimordialDomain: model diff returns "${diff_rc}
+    trace "createPrimordialDomain: model diff return code list (can be empty): "${diff_rc}
 
     local security_info_updated="false"
     local cannot_perform_online_update="false"
@@ -682,7 +681,7 @@ function createPrimordialDomain() {
   # If there is no primordial domain or needs to recreate one due to password changes
 
   if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
-    trace "No primordial domain or need to recreate again"
+    trace "No primordial domain or need to create again because of changes require domain recreation"
     wdtCreatePrimordialDomain
     create_primordial_tgz=1
     # Override online update since the domain needs to be restarted for security related changes ?
