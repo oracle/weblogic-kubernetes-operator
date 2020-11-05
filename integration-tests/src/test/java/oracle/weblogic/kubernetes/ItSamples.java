@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests related to samples.
  */
-@DisplayName("Verify the domain on pv samples using wlst and wdt")
+@DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @IntegrationTest
 public class ItSamples {
 
@@ -181,10 +181,10 @@ public class ItSamples {
    *
    * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
    */
+  @Order(2)
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in pv")
-  @Order(2)
   public void testSampleDomainInPv(String model) {
 
     String domainName = model.split(":")[1];
@@ -221,9 +221,9 @@ public class ItSamples {
   /**
    * Test scripts for stopping and starting a managed server.
    */
+  @Order(3)
   @Test
   @DisplayName("Test server lifecycle samples scripts")
-  @Order(3)
   public void testServerLifecycleScripts() {
 
     // Verify that stopServer script execution shuts down server pod and replica count is decremented
@@ -245,9 +245,9 @@ public class ItSamples {
   /**
    * Test scripts for stopping and starting a managed server while keeping replica count constant.
    */
+  @Order(4)
   @Test
   @DisplayName("Test server lifecycle samples scripts with constant replica count")
-  @Order(4)
   public void testServerLifecycleScriptsWithConstantReplicaCount() {
     String serverName = managedServerNameBase + "1";
     String keepReplicaCountConstantParameter = "-k";
@@ -271,9 +271,9 @@ public class ItSamples {
   /**
    * Test scripts for stopping and starting a cluster.
    */
+  @Order(5)
   @Test
   @DisplayName("Test cluster lifecycle scripts")
-  @Order(5)
   public void testClusterLifecycleScripts() {
 
     // Verify all clustered server pods are shut down after stopCluster script execution
@@ -292,9 +292,9 @@ public class ItSamples {
   /**
    * Test scripts for stopping and starting a domain.
    */
+  @Order(6)
   @Test
   @DisplayName("Test domain lifecycle scripts")
-  @Order(6)
   public void testDomainLifecycleScripts() {
     // Verify all WebLogic server instance pods are shut down after stopDomain script execution
     executeLifecycleScript(STOP_DOMAIN_SCRIPT, DOMAIN, null);
