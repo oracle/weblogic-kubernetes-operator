@@ -10,15 +10,18 @@ This documentation describes the procedure to run integration test for the Oracl
  
 Directory structure of source code:
 
-A module "integration-tests" is added to the Maven project `weblogic-kubernetes-operator`.
-
 `weblogic-kubernetes-operator/integration-tests` - location of module pom.xml  
 `weblogic-kubernetes-operator/integration-tests/src/test/java/oracle/weblogic/kubernetes` - integration test(JUnit5) classes and utility classes  
 `weblogic-kubernetes-operator/integration-tests/src/test/resources` - properties, YAML files and other bash scripts
 
 # How does integration test infrastructure works
- - A weblogic domain image is built using Model In Image model 
- - Istio mesh is installed 
+ - Build weblogic kubernetes operator image from the downloaded branch.
+ - Download the latest version of WebLogic Deploy Tooling (WDT) and WebLogic Image Tool (WIT)
+ - Pull the specified version of WebLogic Image from container-registry.oracle.com (OCR) or phx.ocir.io (OCIR) 
+ - Build a simple weblogic domain image with a dynamic weblogic cluster and a sample web application using Model-In-Image model.
+ - Install istio service mesh.
+ - After test execution, clean all the Namespaces, Kubernetes Objects created during test execution.
+ - Archive the test stdout for each test class and kubernates object details for each test method in the diagnostic directory for triage. 
  
 # How to run Operator integration tests locally on Oracle Linux
 
@@ -57,16 +60,49 @@ mvn -Dit.test="ItCrossDomainTransaction,ItMiiUpdateDomainConfig" -pl integration
 ## Environment vaiables to manage test execution 
 | Variable | Description | Default Value
 | --- | --- | --- |
-| SKIP_CLEANUP  | skips cleanup done by the test infra, all the pods/domains/etc will be left running if set to true  | true
-| COLLECT_LOGS_ON_SUCCESS  | logs are generated even if test pass if set to true | true
-| RESULTS_ROOT | Root directory for test result | /tmp/ittestsresults
-| LOGS_DIR  | Root directory for the test log | /tmp/diagnosticlogs
-| PV_ROOT  | Root directory for Persistent Volume  | /tmp/ittestspvroot
+| SKIP_CLEANUP  | Test infra remove for all kubernetes objects created during test execution. To retain all such object for triaging a test failure this environment variable should be set to true. User need to run weblogic-kubernetes-operator/src/integration-tests/bash/cleanup.sh to clean up kubernetes objects later.    | true
+| COLLECT_LOGS_ON_SUCCESS  | Test infra does not keep the diagnostic log for successful tests. To archive the diagnostic log for successful tests, this environment variable should be set to true. | false
+| LOGS_DIR  | Root directory for the diagnosticlogs log. | /tmp/it-diagnosticlogs
+| RESULTS_ROOT  | Root directory for the intermidiate artifacts such istio installation, dynamically geneteted yaml files | /tmp/it-testresults
 
 ## Logging/Archiving
 
-- Temporary installation of tools such as imagetool, istio are in /tmp/it-results diretory
-- Test result stdout are in /tmp/ittestsresults diretory
-- Test Diagnostic stdout are in /tmp/diagnosticlogs diretory
+On completion of integration test execution, the results are archived in directory based on environment variable  LOG_DIR  ( the default value is /tmp/it-diagnosticlogs) and runtime artifacts are available in a directory based on environment variable RESULTS_ROOT ( the default value is /tmp/it-testresults) . 
 
+A typical diagnosticlogs directory structure will look like as follows after completion of test ItMiiDomain. Here he stdout for the tests in captured in  ItMiiDomain.out.  Fore each test method ( say testCreateMiiDomain, testCreateMiiSecondDomain) a directory is created and the corresponding k8s object description log(s) and  server pod logs  are saved if the test fails or environment variable COLLECT_LOGS_ON_SUCCESS set to true.
+
+```
+itMiiDomain
+
+|-- ItMiiDomain.out
+
+|-- testCreateMiiDomain
+
+|   |-- ns-gggs.list.services.log
+
+|   |-- ns-gggs.pod.weblogic-operator-7b8-lwqzm.container.weblogic-operator.log
+
+|   |-- ns-luaf.pod.domain1-admin-server.container.weblogic-server.log
+
+|   |-- ns-luaf.pod.domain1-managed-server1.container.weblogic-server.log
+
+|   |-- ns-luaf.pod.domain1-managed-server2.container.weblogic-server.log
+
+-- testCreateMiiSecondDomain
+
+    |-- ns-gggs.list.configmaps.log
+
+    |-- ns-gggs.list.domains.log
+
+    |-- ns-gggs.list.services.log
+
+    |-- ns-gggs.pod.weblogic-operator-7b8f-lwqzm.container.weblogic-operator.log
+
+    |-- ns-luaf.list.configmaps.log
+
+    |-- ns-luaf.pod.domain1-admin-server.container.weblogic-server.log
+
+    |-- ns-luaf.pod.domain1-managed-server1.container.weblogic-server.log
+```
 ## Troubleshooting
+The diagnostic logs files in method scoped directory in ${LOGS_DIR}/<testClass>/<testMehod> and the test stdout ${LOGS_DIR}/<testClass>.out is the starting point to triage a test failure.
