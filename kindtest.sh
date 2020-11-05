@@ -77,7 +77,7 @@ wdt_download_url="https://github.com/oracle/weblogic-deploy-tooling/releases/lat
 wit_download_url="https://github.com/oracle/weblogic-image-tool/releases/latest"
 maven_profile_name="integration-tests"
 
-while getopts ":h:n:o:t:v:c:x:p:d:i:" opt; do
+while getopts ":h:n:o:t:v:c:x:p:d:i:m:" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
