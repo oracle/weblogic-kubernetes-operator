@@ -146,7 +146,7 @@ abstract class Watcher<T> {
 
   private void watchForEvents() {
     long now = System.currentTimeMillis();
-    long delay = (tuning.watchMinimumDelay * 1000) - (now - lastInitialize);
+    long delay = (getWatchMinimumDelay() * 1000) - (now - lastInitialize);
     if (lastInitialize != 0 && delay > 0) {
       try {
         Thread.sleep(delay);
@@ -162,7 +162,7 @@ abstract class Watcher<T> {
         initiateWatch(
             new WatchBuilder()
                 .withResourceVersion(resourceVersion)
-                .withTimeoutSeconds(tuning.watchLifetime))) {
+                .withTimeoutSeconds(getWatchLifetime()))) {
       while (hasNext(watch)) {
         Watch.Response<T> item = watch.next();
 
@@ -185,6 +185,14 @@ abstract class Watcher<T> {
     } catch (Throwable ex) {
       LOGGER.warning(MessageKeys.EXCEPTION, ex);
     }
+  }
+
+  private int getWatchLifetime() {
+    return Optional.ofNullable(tuning).map(t -> t.watchLifetime).orElse(5);
+  }
+
+  private int getWatchMinimumDelay() {
+    return Optional.ofNullable(tuning).map(t -> t.watchMinimumDelay).orElse(1);
   }
 
   private boolean hasNext(Watchable<T> watch) {
