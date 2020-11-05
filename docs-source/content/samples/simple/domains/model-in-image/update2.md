@@ -459,6 +459,10 @@ Here are the steps for this use case:
     Found 1 local data source:
       Datasource 'mynewdatasource': State='Running'
 
+   Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
+   
+   Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
+
     *****************************************************************
     </pre></body></html>
 

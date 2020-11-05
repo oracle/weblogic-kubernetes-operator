@@ -20,6 +20,7 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
    - [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}): Dynamically adding a data source using a model ConfigMap
    - [Update 2]({{< relref "/samples/simple/domains/model-in-image/update2.md" >}}): Deploying an additional domain
    - [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}): Updating an application in an image
+   - [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}): Dynamically update Work Manager Threads Constraints configurations using a model ConfigMap without restarting servers
    - [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}})
 
 
@@ -94,6 +95,18 @@ This sample demonstrates four Model in Image use cases:
   - A Domain:
     - Same as the Update 1 use case, except `spec.image` is `model-in-image:WLS-v2`
 
+- [Update 4]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}): Demonstrates updating the initial domain by dynamically adding a data source using a model ConfigMap.
+
+   - Update 4 requires completion of Update 1, but can also be run after completion of Update 3
+   - Image `model-in-image:WLS-v1` or `model-in-image:WLS-v2`:
+     - Same image as Update 1 or Update 3 use cases
+   - Kubernetes Secrets:
+     - Same as the Update 1 and Update 3 use case
+   - Kubernetes ConfigMap with:
+     - A WDT model for Work Manager Min and Max Threads Constraints, with the same data source as the Update 1 use case
+   - A Domain, same as Update 1 or Update 3 use case, plus:
+     - `spec.configuration.useOnlineUpdate` set to `true`
+
 #### Sample directory structure
 
 The sample contains the following files and directories:
@@ -103,10 +116,13 @@ Location | Description |
 `domain-resources` | JRF and WLS Domain YAML files. |
 `archives` | Source code location for WebLogic Deploy Tooling application ZIP archives. |
 `model-images` | Staging for each model image's WDT YAML files, WDT properties, and WDT archive ZIP files. The directories in `model images` are named for their respective images. |
-`model-configmaps` | Staging files for a model ConfigMap that configures a data source. |
+`model-configmaps/datasource` | Staging files for a model ConfigMap that configures a data source. |
+`model-configmaps/wmdatasource` | Staging files for a model ConfigMap that configures Work Manager Threads Constraints and a data source. |
 `ingresses` | Ingress resources. |
 `utils/wl-pod-wait.sh` | Utility script for watching the pods in a domain reach their expected `restartVersion`, image name, and ready state. |
+`utils/patch-introspect-version.sh` | Utility script for updating a running domain `spec.introspectVersion` field (which causes it to 're-instrospect' and 'roll' only if non-dynamic attributes are updated). |
 `utils/patch-restart-version.sh` | Utility script for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll'). |
+`utils/patch-use-online-update.sh` | Utility script for updating a running domain `spec.configuration.useOnlineUpdate` field to `true` (which enables the online update feature). |
 `utils/opss-wallet.sh` | Utility script for exporting or importing a JRF domain OPSS wallet file. |
 
 #### Ensuring your Kubernetes cluster can access images

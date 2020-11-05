@@ -456,6 +456,10 @@ Here are the steps:
     Found 1 local data source:
       Datasource 'mynewdatasource': State='Running'
 
+    Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
+
+    Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
+
     *****************************************************************
     </pre></body></html>
 
@@ -463,6 +467,6 @@ Here are the steps:
 
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
-If you plan to run the [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}) use case, then leave your domain running.
+If you plan to run the [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}) or [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case, then leave your domain running.
 
 To remove the resources you have created in the samples, see [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}}).

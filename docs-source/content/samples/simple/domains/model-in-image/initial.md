@@ -89,7 +89,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
 
     // display the current server's cluster name
     Set<ObjectInstance> clusterRuntimes = mbs.queryMBeans(new ObjectName("*:Type=ClusterRuntime,*"), null);
-    out.println("Found " + clusterRuntimes.size() + " local cluster runtime" + (String)((clusterRuntimes.size()!=1)?"s:":":"));
+    out.println("Found " + clusterRuntimes.size() + " local cluster runtime" + (String)((clusterRuntimes.size()==0)?".":(clusterRuntimes.size()!=1)?"s:":":"));
     for (ObjectInstance clusterRuntime : clusterRuntimes) {
        String cName = (String)mbs.getAttribute(clusterRuntime.getObjectName(), "Name");
        out.println("  Cluster '" + cName + "'");
@@ -100,11 +100,28 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
     // display local data sources
     ObjectName jdbcRuntime = new ObjectName("com.bea:ServerRuntime=" + srName + ",Name=" + srName + ",Type=JDBCServiceRuntime");
     ObjectName[] dataSources = (ObjectName[])mbs.getAttribute(jdbcRuntime, "JDBCDataSourceRuntimeMBeans");
-    out.println("Found " + dataSources.length + " local data source" + (String)((dataSources.length!=1)?"s:":":"));
+    out.println("Found " + dataSources.length + " local data source" + (String)((dataSources.length==0)?".":(dataSources.length!=1)?"s:":":"));
     for (ObjectName dataSource : dataSources) {
        String dsName  = (String)mbs.getAttribute(dataSource, "Name");
        String dsState = (String)mbs.getAttribute(dataSource, "State");
        out.println("  Datasource '" + dsName + "': State='" + dsState +"'");
+    }
+    out.println();
+
+    // display work manager configuration created by the sample
+    Set<ObjectInstance> minTCRuntimes = mbs.queryMBeans(new ObjectName("*:Type=MinThreadsConstraintRuntime,Name=SampleMinThreads,*"), null);
+    for (ObjectInstance minTCRuntime : minTCRuntimes) {
+       String cName = (String)mbs.getAttribute(minTCRuntime.getObjectName(), "Name");
+       int count = (int)mbs.getAttribute(minTCRuntime.getObjectName(), "ConfiguredCount");
+       out.println("Found min threads constraint runtime named '" + cName + "' with configured count: " + count);
+    }
+    out.println();
+
+    Set<ObjectInstance> maxTCRuntimes = mbs.queryMBeans(new ObjectName("*:Type=MaxThreadsConstraintRuntime,Name=SampleMaxThreads,*"), null);
+    for (ObjectInstance maxTCRuntime : maxTCRuntimes) {
+       String cName = (String)mbs.getAttribute(maxTCRuntime.getObjectName(), "Name");
+       int count = (int)mbs.getAttribute(maxTCRuntime.getObjectName(), "ConfiguredCount");
+       out.println("Found max threads constraint runtime named '" + cName + "' with configured count: " + count);
     }
     out.println();
 
@@ -181,6 +198,22 @@ appDeployments:
             SourcePath: 'wlsdeploy/applications/myapp-v1'
             ModuleType: ear
             Target: 'cluster-1'
+
+resources:
+  SelfTuning:
+    MinThreadsConstraint:
+      SampleMinThreads:
+        Target: 'cluster-1'
+        Count: 1
+    MaxThreadsConstraint:
+      SampleMaxThreads:
+        Target: 'cluster-1'
+        Count: 10
+    WorkManager:
+      SampleWM:
+        Target: 'cluster-1'
+        MinThreadsConstraint: 'SampleMinThreads'
+        MaxThreadsConstraint: 'SampleMaxThreads'
 ```
 
 
@@ -223,6 +256,22 @@ appDeployments:
             SourcePath: 'wlsdeploy/applications/myapp-v1'
             ModuleType: ear
             Target: 'cluster-1'
+
+resources:
+  SelfTuning:
+    MinThreadsConstraint:
+      SampleMinThreads:
+        Target: 'cluster-1'
+        Count: 1
+    MaxThreadsConstraint:
+      SampleMaxThreads:
+        Target: 'cluster-1'
+        Count: 10
+    WorkManager:
+      SampleWM:
+        Target: 'cluster-1'
+        MinThreadsConstraint: 'SampleMinThreads'
+        MaxThreadsConstraint: 'SampleMaxThreads'
 ```
 {{% /expand %}}
 
@@ -233,6 +282,7 @@ The model files:
   - Cluster `cluster-1`
   - Administration Server `admin-server`
   - A `cluster-1` targeted `ear` application that's located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`
+  - A WorkManager `SampleWM` configured with minimum threads constraint `SampleMinThreads` and maximum threads constraint `SampleMaxThreads`
 
 - Leverage macros to inject external values:
   - The property file `CLUSTER_SIZE` property is referenced in the model YAML file `DynamicClusterSize` and `MaxDynamicClusterSize` fields using a PROP macro.
@@ -833,7 +883,11 @@ You will see output like the following:
    Found 1 local cluster runtime:
      Cluster 'cluster-1'
 
-   Found 0 local data sources:
+   Found 0 local data sources.
+
+   Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
+
+   Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
 
    *****************************************************************
    </pre></body></html>
