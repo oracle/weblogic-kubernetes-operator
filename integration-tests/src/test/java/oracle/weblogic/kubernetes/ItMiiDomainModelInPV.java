@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -340,6 +341,13 @@ public class ItMiiDomainModelInPV {
     createSecretForBaseImages(namespace);
 
     final String podName = "weblogic-pv-pod-" + namespace;
+    String argCommand = "chown -R 1000:1000 " + modelMountPath;
+    if (OKE_CLUSTER) {
+      argCommand = "chown 1000:1000 " + modelMountPath
+          + "/. && find "
+          + modelMountPath
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:1000";
+    }
     V1Pod podBody = new V1Pod()
         .spec(new V1PodSpec()
             .initContainers(Arrays.asList(new V1Container()
@@ -347,7 +355,7 @@ public class ItMiiDomainModelInPV {
                 .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                 .addCommandItem("/bin/sh")
                 .addArgsItem("-c")
-                .addArgsItem("chown -R 1000:1000 " + modelMountPath)
+                .addArgsItem(argCommand)
                 .volumeMounts(Arrays.asList(
                     new V1VolumeMount()
                         .name(pvName)

@@ -3022,6 +3022,11 @@ public class CommonTestUtils {
     logger.info("Running Kubernetes job to create domain for image: {1}: {2} "
         + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image,
         pvName, pvcName, domainScriptCM, namespace);
+    String argCommand = "chown -R 1000:1000 /shared";
+    if (OKE_CLUSTER) {
+      argCommand = "chown 1000:1000 /shared/. && find /shared/. -maxdepth 1 ! -name '.snapshot'"
+          + " ! -name '.' -print0 | xargs -r -0 chown -R 1000:1000";
+    }
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
@@ -3037,7 +3042,7 @@ public class CommonTestUtils {
                         .image(image)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:1000 /shared")
+                        .addArgsItem(argCommand)
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
                                 .name(pvName)

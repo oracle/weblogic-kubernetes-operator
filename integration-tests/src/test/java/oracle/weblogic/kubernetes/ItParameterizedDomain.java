@@ -79,6 +79,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
@@ -1218,7 +1219,14 @@ class ItParameterizedDomain {
                                       String namespace,
                                       V1Container jobContainer) {
     logger.info("Running Kubernetes job to create domain");
-
+    String modelMountPath = "/u01/shared";
+    String argCommand = "chown -R 1000:1000 " + modelMountPath;
+    if (OKE_CLUSTER) {
+      argCommand = "chown 1000:1000 "
+          + modelMountPath
+          + "/. && find " + modelMountPath
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:1000";
+    }
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
@@ -1234,7 +1242,7 @@ class ItParameterizedDomain {
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:1000 /u01/shared")
+                        .addArgsItem(argCommand)
                         .addVolumeMountsItem(
                             new V1VolumeMount()
                                 .name(pvName)

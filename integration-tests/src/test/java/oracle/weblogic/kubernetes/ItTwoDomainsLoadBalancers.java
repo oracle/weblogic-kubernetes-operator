@@ -100,6 +100,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
@@ -1054,6 +1055,14 @@ public class ItTwoDomainsLoadBalancers {
     createConfigMapFromFiles(domainScriptConfigMapName, domainScriptFiles, domainNamespace);
 
     logger.info("Running a Kubernetes job to create the domain");
+    String modelMountPath = "/shared";
+    String argCommand = "chown -R 1000:1000 " + modelMountPath;
+    if (OKE_CLUSTER) {
+      argCommand = "chown 1000:1000 "
+          + modelMountPath
+          + "/. && find " + modelMountPath
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:1000";
+    }
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
@@ -1069,7 +1078,7 @@ public class ItTwoDomainsLoadBalancers {
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:1000 /shared")
+                        .addArgsItem(argCommand)
                         .volumeMounts(Collections.singletonList(
                             new V1VolumeMount()
                                 .name(pvName)

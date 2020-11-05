@@ -58,6 +58,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -380,7 +381,14 @@ public class ItIstioDomainInPV  {
     logger.info("Running Kubernetes job to create domain");
     Map<String, String> annotMap = new HashMap<String, String>();
     annotMap.put("sidecar.istio.io/inject", "false");
-
+    String modelMountPath = "/shared";
+    String argCommand = "chown -R 1000:1000 " + modelMountPath;
+    if (OKE_CLUSTER) {
+      argCommand = "chown 1000:1000 "
+          + modelMountPath
+          + "/. && find " + modelMountPath
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:1000";
+    }
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
@@ -398,7 +406,7 @@ public class ItIstioDomainInPV  {
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:1000 /shared")
+                        .addArgsItem(argCommand)
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
                                 .name(pvName)
