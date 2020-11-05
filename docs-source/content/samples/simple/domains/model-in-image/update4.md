@@ -145,9 +145,9 @@ Here are the steps:
     Found 1 local data source:
       Datasource 'mynewdatasource': State='Running'
 
-   Found min threads constraint runtime named 'SampleMinThreads' with configured count: 2
+    Found min threads constraint runtime named 'SampleMinThreads' with configured count: 2
    
-   Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 20
+    Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 20
 
     *****************************************************************
     </pre></body></html>
