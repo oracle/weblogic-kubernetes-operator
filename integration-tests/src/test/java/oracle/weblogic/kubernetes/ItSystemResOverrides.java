@@ -427,7 +427,7 @@ public class ItSystemResOverrides {
 
     //deploy application
     logger.info("Deploying webapp {0} to domain", sitconfigAppPath);
-    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(defaultChannelNodePort),
+    deployUsingWlst(adminServerPodName, Integer.toString(7001),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, targets, sitconfigAppPath,
         domainNamespace);
   }
