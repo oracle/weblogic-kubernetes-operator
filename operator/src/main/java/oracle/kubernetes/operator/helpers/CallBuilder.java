@@ -289,7 +289,7 @@ public class CallBuilder {
   private final CallFactory<V1Secret> readSecret =
       (requestParams, usage, cont, callback) ->
           wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final Integer gracePeriodSeconds = null;
+  private Integer gracePeriodSeconds = null;
   private final Boolean orphanDependents = null;
   private final String propagationPolicy = null;
 
@@ -496,6 +496,11 @@ public class CallBuilder {
 
   public CallBuilder withFieldSelector(String fieldSelector) {
     this.fieldSelector = fieldSelector;
+    return this;
+  }
+
+  public CallBuilder withGracePeriodSeconds(int gracePeriodSeconds) {
+    this.gracePeriodSeconds = gracePeriodSeconds;
     return this;
   }
 

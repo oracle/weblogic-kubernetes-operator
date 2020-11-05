@@ -37,6 +37,7 @@ public interface TuningParameters extends Map<String, String> {
     public final int targetNamespaceRecheckIntervalSeconds;
     public final int statusUpdateTimeoutSeconds;
     public final int unchangedCountToDelayStatusRecheck;
+    public final int stuckPodRecheckSeconds;
     public final long initialShortDelay;
     public final long eventualLongDelay;
 
@@ -48,6 +49,7 @@ public interface TuningParameters extends Map<String, String> {
      * @param targetNamespaceRecheckIntervalSeconds target namespace recheck interval
      * @param statusUpdateTimeoutSeconds status update timeout
      * @param unchangedCountToDelayStatusRecheck unchanged count to delay status recheck
+     * @param stuckPodRecheckSeconds time between checks for stuck pods
      * @param initialShortDelay initial short delay
      * @param eventualLongDelay eventual long delay
      */
@@ -58,6 +60,7 @@ public interface TuningParameters extends Map<String, String> {
         int targetNamespaceRecheckIntervalSeconds,
         int statusUpdateTimeoutSeconds,
         int unchangedCountToDelayStatusRecheck,
+        int stuckPodRecheckSeconds,
         long initialShortDelay,
         long eventualLongDelay) {
       this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
@@ -66,6 +69,7 @@ public interface TuningParameters extends Map<String, String> {
       this.targetNamespaceRecheckIntervalSeconds = targetNamespaceRecheckIntervalSeconds;
       this.statusUpdateTimeoutSeconds = statusUpdateTimeoutSeconds;
       this.unchangedCountToDelayStatusRecheck = unchangedCountToDelayStatusRecheck;
+      this.stuckPodRecheckSeconds = stuckPodRecheckSeconds;
       this.initialShortDelay = initialShortDelay;
       this.eventualLongDelay = eventualLongDelay;
     }
