@@ -1,16 +1,16 @@
 ---
 title: "Update 4"
 date: 2019-02-23T17:32:31-05:00
-weight: 3
+weight: 6
 ---
 
 This use case demonstrates dynamically configuring Work Manager Threads Constraints in your running domain without restarting the servers. This use case requires Update1 use case to be run already. 
 
 In the use case, you will:
 
- - Update the ConfigMap containing WDT model created in Update1 use case with changes to Work Manager Threads Constraint configuration
- - Update the Domain YAML file to enable online update feature
- - Update the Domain YAML file to trigger a domain introspection, which applies the new configuration values without restarting servers
+ - Update the ConfigMap containing WDT model created in Update1 use case with changes to Work Manager Threads Constraint configuration.
+ - Update the Domain YAML file to enable online update feature.
+ - Update the Domain YAML file to trigger a domain introspection, which applies the new configuration values without restarting servers.
 
 Here are the steps:
 
@@ -30,37 +30,8 @@ Here are the steps:
        MaxThreadsConstraint:
          SampleMaxThreads:
            Count: 20
-     JDBCSystemResource:
-       mynewdatasource:
-         Target: 'cluster-1'
-         JdbcResource:
-           JDBCDataSourceParams:
-             JNDIName: [
-               jdbc/mydatasource1,
-               jdbc/mydatasource2
-             ]
-             GlobalTransactionsProtocol: TwoPhaseCommit
-           JDBCDriverParams:
-             DriverName: oracle.jdbc.xa.client.OracleXADataSource
-             URL: '@@SECRET:@@ENV:DOMAIN_UID@@-datasource-secret:url@@'
-             PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-datasource-secret:password@@'
-             Properties:
-               user:
-                 Value: 'sys as sysdba'
-               oracle.net.CONNECT_TIMEOUT:
-                 Value: 5000
-               oracle.jdbc.ReadTimeout:
-                 Value: 30000
-           JDBCConnectionPoolParams:
-               InitialCapacity: 0
-               MaxCapacity: 1
-               TestTableName: SQL ISVALID
-               TestConnectionsOnReserve: true
-
    ```
-   Place the above model snippet in a file named `/tmp/mii-sample/mywmdatasource.yaml` and then use it in the later step where you deploy the model ConfigMap, or use the same data source that's provided in `/tmp/mii-sample/model-configmaps/wmdatasource/model.20.wmdatasource.yaml`.
-
-   It is important to keep the datasource configuration from Update 1 use case in the ConfigMap. If it is removed from the ConfigMap, the introspector would delete the datasource from the servers.
+   Place the above model snippet in a file named `/tmp/mii-sample/myworkmanager.yaml` and then use it in the later step where you deploy the model ConfigMap, or use the same data source that's provided in `/tmp/mii-sample/model-configmaps/workmanager/model.20.workmanager.yaml`.
 
 1. Replace the ConfigMap created in Update1 use case with a ConfigMap with the WDT model containing both the data source and configuration updates.
 
@@ -70,13 +41,14 @@ Here are the steps:
    ```
    $ kubectl -n sample-domain1-ns delete configmap sample-domain1-wdt-config-map
    $ kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map \
-     --from-file=/tmp/mii-sample/model-configmaps/wmdatasource
+     --from-file=/tmp/mii-sample/model-configmaps/workmanager --from-file=/tmp/mii-sample/model-configmaps/datasource
    $ kubectl -n sample-domain1-ns label configmap sample-domain1-wdt-config-map \
      weblogic.domainUID=sample-domain1
    ```
 
-     - If you've created your own model YAML file, then substitute the file name in the `--from-file=` parameter (we suggested `/tmp/mii-sample/mywmdatasource.yaml` earlier).
+     - If you've created your own model YAML file, then substitute the file names in the `--from-file=` parameters (we suggested `/tmp/mii-sample/myworkmanager.yaml` and `/tmp/mii-sample/mydatasource.xml` earlier).
      - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory.
+     - The `-from-file=` paramater can be specified multiple times to put contents from all specified files or directories into the ConfigMap.
 
    You name and label the ConfigMap using its associated domain UID for two reasons:
      - To make it obvious which ConfigMap belong to which domains.
@@ -112,23 +84,23 @@ Here are the steps:
    - Option 1: Edit your domain custom resource.
      - Call `kubectl -n sample-domain1-ns edit domain sample-domain1`.
      - Edit the value of the `spec.introspectVersion` field and save.
-       - The field is a string; typically, you use a number in this field and increment it with each restart.
+       - The field is a string; typically, you use a number in this field and increment it.
 
    - Option 2: Dynamically change your domain using `kubectl patch`.
      - To get the current `introspectVersion` call:
        ```
        $ kubectl -n sample-domain1-ns get domain sample-domain1 '-o=jsonpath={.spec.introspectVersion}'
        ```
-     - Choose a new restart version that's different from the current introspect version.
+     - Choose a new introspect version that's different from the current introspect version.
        - The field is a string; typically, you use a number in this field and increment it.
 
-     - Use `kubectl patch` to set the new value. For example, assuming the new restart version is `2`:
+     - Use `kubectl patch` to set the new value. For example, assuming the new introspect version is `2`:
        ```
        $ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/introspectVersion", "value": "2" }]'
        ```
    - Option 3: Use the sample helper script.
      - Call `/tmp/mii-sample/utils/patch-introspect-version.sh -n sample-domain1-ns -d sample-domain1`.
-     - This will perform the same `kubectl get` and `kubectl patch` commands as Option 2.
+     - This will perform the same `kubectl patch` command as Option 2.
 
 
 1. Wait for the introspector job to run to completion.
