@@ -311,8 +311,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       logger.info("Skipping RESULTS_ROOT clean up after test execution");
     } else {
       logger.info("Uninstall istio after all test suites are run");
-      logger.info("Cleanup WIT/WDT binary form {0}", RESULTS_ROOT);
       uninstallIstio();
+      logger.info("Cleanup WIT/WDT binary form {0}", RESULTS_ROOT);
       try {
         Files.deleteIfExists(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
         cleanupDirectory(DOWNLOAD_DIR);
