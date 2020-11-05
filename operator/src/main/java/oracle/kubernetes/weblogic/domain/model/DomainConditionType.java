@@ -11,7 +11,8 @@ public enum DomainConditionType {
     }
   },
   Available,
-  WLSDomainConfigurationStatus,
+  OnlineUpdateComplete,
+  OnlineUpdateRolledback,
   Failed {
     @Override
     String getStatusMessage(DomainCondition condition) {

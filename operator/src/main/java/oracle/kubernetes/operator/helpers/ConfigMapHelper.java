@@ -493,6 +493,7 @@ public class ConfigMapHelper {
     private final DomainPresenceInfo info;
     private Map<String, String> data;
     private WlsDomainConfig wlsDomainConfig;
+    private final String rollbackFileKey = "rollback.file";
 
     IntrospectionLoader(Packet packet, Step conflictStep) {
       this.packet = packet;
@@ -519,6 +520,11 @@ public class ConfigMapHelper {
         if ("0".equals(updateDomainResult) || "104".equals(updateDomainResult)) {
           LOGGER.fine("ConfigMapHelper apply: short circuit finished online update");
           packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE, updateDomainResult);
+          if (data.containsKey(rollbackFileKey)) {
+            String rollbackFileContent = data.get(rollbackFileKey);
+            packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE_ROLLBACKFILE, rollbackFileContent);
+            data.remove(rollbackFileKey);
+          }
         }
         // remove this, there is no need to store it in the configmap
         data.remove(UPDATEDOMAINRESULT);

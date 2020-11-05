@@ -66,6 +66,51 @@ public class IntrospectorJobEnvVars {
   public static final String MII_ROLLBACK_IFRESTART = "MII_ROLLBACK_IFRESTART";
 
   /**
+   * WDT CONNECT TIMEOUT.
+   */
+
+  public static final String WDT_CONNECT_TIMEOUT = "wdt_connect_timeout";
+
+  /**
+   * WDT ACTIVATE TIMEOUT.
+   */
+  public static final String WDT_ACTIVATE_TIMEOUT = "wdt_activate_timeout";
+
+  /**
+   * WDT DEPLOY TIMEOUT.
+   */
+
+  public static final String WDT_DEPLOY_TIMEOUT = "wdt_deploy_timeout";
+
+  /**
+   * WDT REDEPLOY TIMEOUT.
+   */
+
+  public static final String WDT_REDEPLOY_TIMEOUT = "wdt_redeploy_timeout";
+
+  /**
+   * WDT UNDEPLOY TIMEOUT.
+   */
+
+  public static final String WDT_UNDEPLOY_TIMEOUT = "wdt_undeploy_timeout";
+
+  /**
+   * WDT START APPLICATION TIMEOUT.
+   */
+
+  public static final String WDT_START_APPLICATION_TIMEOUT = "wdt_start_application_timeout";
+  /**
+   * WDT STOP APPLICATION TIMEOUT.
+   */
+  public static final String WDT_STOP_APPLICAITON_TIMEOUT = "wdt_stop_application_timeout";
+
+  /**
+   * WDT SET SERVER GROUPS TIMEOUT.
+   */
+
+  public static final String WDT_SET_SERVERGROUPS_TIMEOUT = "wdt_set_server_groups_timeout";
+
+  /**
    * Istio enabled.
    */
   public static final String ISTIO_ENABLED = "ISTIO_ENABLED";

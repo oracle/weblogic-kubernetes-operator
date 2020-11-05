@@ -499,12 +499,136 @@ public class Domain implements KubernetesObject {
     return spec.getHttpAccessLogInLogHome();
   }
 
+  /**
+   * Returns if the domain is using online update.
+   * return true if using onlne update
+   */
+
   public boolean isUseOnlineUpdate() {
-    return spec.isUseOnlineUpdate();
+    return Optional.ofNullable(spec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getEnabled)
+        .orElse(false);
   }
 
+  /**
+   * Returns WDT activate timeout.
+   * @return WDT activate timeout
+   */
+  public Long getWDTActivateTimeout() {
+    return Optional.ofNullable(spec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getActivateTimeoutSeconds)
+        .orElse(null);
+  }
+
+  /**
+   * Returns WDT connect timeout.
+   * @return WDT connect timeout
+   */
+  public Long getWDTConnectTimeout() {
+    return Optional.ofNullable(spec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getConnectTimeoutSeconds)
+        .orElse(null);
+  }
+
+  /**
+   * Returns WDT deploy timeout.
+   * @return WDT deploy timeout
+   */
+  public Long getWDTDeployTimeout() {
+    return Optional.ofNullable(spec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getDeployTimeoutSeconds)
+        .orElse(null);
+  }
+
+  /**
+   * Returns WDT undeploy timeout.
+   * @return WDT undeploy timeout
+   */
+  public Long getWDTUnDeployTimeout() {
+    return Optional.ofNullable(spec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getUndeployTimeoutSeconds)
+        .orElse(null);
+  }
+
+  /**
+   * Returns WDT redeploy timeout.
+   * @return WDT redeploy timeout
+   */
+  public Long getWDTReDeployTimeout() {
+    return Optional.ofNullable(spec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getRedeployTimeoutSeconds)
+        .orElse(null);
+  }
+
+  /**
+   * Returns WDT start application timeout.
+   * @return WDT start application timeout
+   */
+  public Long getWDTStartApplicationTimeout() {
+    return Optional.ofNullable(spec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getStartApplicationTimeoutSeconds)
+        .orElse(null);
+  }
+
+  /**
+   * Returns WDT stop application timeout.
+   * @return WDT stop application timeout
+   */
+  public Long getWDTStopApplicationTimeout() {
+    return Optional.ofNullable(spec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getStopApplicationTimeoutSeconds)
+        .orElse(null);
+  }
+
+  /**
+   * Returns WDT set server groups timeout.
+   * @return WDT set server groups timeout
+   */
+  public Long getWDTSetServerGroupsTimeout() {
+    return Optional.ofNullable(spec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getSetServerGroupsTimeoutSeconds)
+        .orElse(null);
+  }
+
+  /**
+   * Returns if rollback changes if restart is required.
+   *
+   * @return true to rollback changes if restart is required
+   */
   public boolean isRollbackIfRestartRequire() {
-    return spec.isRollbackIfRestartRequire();
+    return Optional.ofNullable(spec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getRollBackIfRestartRequired)
+        .orElse(false);
   }
 
   public boolean isIstioEnabled() {

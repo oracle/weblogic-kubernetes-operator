@@ -959,7 +959,8 @@ function wdtHandleOnlineUpdate() {
 
   local ROLLBACK_FLAG=""
   if [ ! -z "${MII_ROLLBACK_IFRESTART}" ] && [ "${MII_ROLLBACK_IFRESTART}" == "true" ]; then
-      ROLLBACK_FLAG="-rollback_if_require_restart"
+      #ROLLBACK_FLAG="-rollback_if_require_restart"
+      ROLLBACK_FLAG="-rollback_if_restart_required"
   fi
   # no need for encryption phrase because the diffed model has real value
   # note: using yes seems to et a 141 return code, switch to echo seems to be ok
@@ -976,7 +977,7 @@ function wdtHandleOnlineUpdate() {
   echo ${admin_pwd} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} \
    -admin_url ${admin_url} -admin_user ${admin_user} -model_file \
    /tmp/diffed_model.yaml -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG} ${archive_list} \
-   -discard_current_edit
+   -discard_current_edit -output_dir /tmp
 
   local ret=$?
 
@@ -985,6 +986,11 @@ function wdtHandleOnlineUpdate() {
     trace ">>>  updatedomainResult=${ret}"
   elif [ ${ret} -eq ${PROG_ROLLBACK_IF_RESTART_EXIT_CODE} ] ; then
     trace ">>>  updatedomainResult=${ret}"
+    if [ -f /tmp/rollback.file ] ; then
+      echo ">>> /tmp/rollback.file"
+      cat /tmp/rollback.file
+      echo ">>> EOF"
+    fi
     MII_UPDATE_ROLLEDBACK=true
   elif [ ${ret} -ne 0 ] ; then
     trace "Introspect job terminated: Online update failed. Check error in the logs"

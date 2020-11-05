@@ -31,6 +31,7 @@ public interface ProcessingConstants {
   String DOMAIN_INTROSPECT_REQUESTED = "domainIntrospectRequested";
   String REMAINING_SERVERS_HEALTH_TO_READ = "serverHealthRead";
   String MII_DYNAMIC_UPDATE = "miiDynamicUpdate";
+  String MII_DYNAMIC_UPDATE_ROLLBACKFILE = "miiDynamicUpdateRollBackFile";
 
   String ENCODED_CREDENTIALS = "encodedCredentials";
   String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
