@@ -2167,6 +2167,55 @@ public class CommonTestUtils {
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
   }
 
+  /**
+   * Create a RcuAccess secret with RCU schema prefix, RCU schema password and RCU database connection string in the
+   * specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param rcuPrefix  RCU schema prefix
+   * @param password RCU schema passoword
+   * @param rcuDbConnString RCU database connection string
+   */
+  public static void createRcuAccessSecret(String secretName, String namespace,
+      String rcuPrefix, String password, String rcuDbConnString) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("rcu_db_conn_string", rcuDbConnString);
+    secretMap.put("rcu_prefix", rcuPrefix);
+    secretMap.put("rcu_schema_password", password);
+
+    getLogger().info("Create RcuAccessSecret: {0} in namespace: {1}, with rcuPrefix {2}, password {3}, "
+        + "rcuDbConnString {4} ", secretName, namespace, rcuPrefix, password, rcuDbConnString);
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
+
+  /**
+   * Create a RcuAccess secret with RCU schema prefix, RCU schema password and RCU database connection string
+   * in the specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param opsswalletpassword  OPSS wallet password
+   */
+  public static void createOpsswalletpasswordSecret(String secretName, String namespace,
+      String opsswalletpassword) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("walletPassword", opsswalletpassword);
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
+
+
 
   /** Scale the WebLogic cluster to specified number of servers.
    *  Verify the sample app can be accessed through NGINX if curlCmd is not null.
