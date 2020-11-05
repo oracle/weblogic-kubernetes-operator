@@ -95,7 +95,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
-import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -104,7 +103,6 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
-import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
@@ -120,7 +118,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
@@ -2885,17 +2882,15 @@ public class CommonTestUtils {
         pvName, domainUid, className);
     Path pvHostPath = null;
     // when tests are running in local box the PV directories need to exist
-    if (!OKE_CLUSTER) {
-      try {
-        pvHostPath = Files.createDirectories(Paths.get(
-            PV_ROOT, className, pvName));
-        logger.info("Creating PV directory host path {0}", pvHostPath);
-        org.apache.commons.io.FileUtils.deleteDirectory(pvHostPath.toFile());
-        Files.createDirectories(pvHostPath);
-      } catch (IOException ioex) {
-        logger.severe(ioex.getMessage());
-        fail("Create persistent volume host path failed");
-      }
+    try {
+      pvHostPath = Files.createDirectories(Paths.get(
+          PV_ROOT, className, pvName));
+      logger.info("Creating PV directory host path {0}", pvHostPath);
+      org.apache.commons.io.FileUtils.deleteDirectory(pvHostPath.toFile());
+      Files.createDirectories(pvHostPath);
+    } catch (IOException ioex) {
+      logger.severe(ioex.getMessage());
+      fail("Create persistent volume host path failed");
     }
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
@@ -2904,24 +2899,14 @@ public class CommonTestUtils {
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
-            .accessModes(Arrays.asList("ReadWriteMany")))
+            .accessModes(Arrays.asList("ReadWriteMany"))
+            .storageClassName("weblogic-domain-storage-class")
+            .hostPath(new V1HostPathVolumeSource()
+                .path(pvHostPath.toString())))
         .metadata(new V1ObjectMeta()
             .name(pvName)
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
-    if (OKE_CLUSTER) {
-      v1pv.getSpec()
-          .storageClassName("oci-fss")
-          .nfs(new V1NFSVolumeSource()
-          .path(FSS_DIR)
-          .server(NFS_SERVER)
-          .readOnly(false));
-    } else {
-      v1pv.getSpec()
-          .storageClassName("weblogic-domain-storage-class")
-          .hostPath(new V1HostPathVolumeSource()
-          .path(pvHostPath.toString()));
-    }
     boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Failed to create persistent volume");
     assertTrue(success, "PersistentVolume creation failed");
@@ -2944,6 +2929,7 @@ public class CommonTestUtils {
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
             .volumeName(pvName)
+            .storageClassName("weblogic-domain-storage-class")
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("5Gi"))))
         .metadata(new V1ObjectMeta()
@@ -2952,13 +2938,6 @@ public class CommonTestUtils {
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
 
-    if (OKE_CLUSTER) {
-      v1pvc.getSpec()
-          .storageClassName("oci-fss");
-    } else {
-      v1pvc.getSpec()
-          .storageClassName("weblogic-domain-storage-class");
-    }
     boolean success = assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
         "Failed to create persistent volume claim");
     assertTrue(success, "PersistentVolumeClaim creation failed");
