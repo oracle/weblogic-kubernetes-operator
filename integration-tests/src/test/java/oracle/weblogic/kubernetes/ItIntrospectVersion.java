@@ -5,6 +5,10 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,8 +52,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ConditionEvaluationResult;
+import org.junit.jupiter.api.extension.ExecutionCondition;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.opentest4j.AssertionFailedError;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -63,7 +72,9 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_LATEST_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -187,7 +198,6 @@ public class ItIntrospectVersion {
     clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
 
   }
-
 
   /**
    * Test domain status gets updated when introspectVersion attribute is added under domain.spec.
@@ -474,9 +484,9 @@ public class ItIntrospectVersion {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
-        + "\"?user=" + ADMIN_USERNAME_DEFAULT
-        + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
+            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
+            + "\"?user=" + ADMIN_USERNAME_DEFAULT
+            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
 
     // verify each managed server can see other member in the cluster
@@ -595,9 +605,9 @@ public class ItIntrospectVersion {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
-        + "\"?user=" + ADMIN_USERNAME_DEFAULT
-        + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
+            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
+            + "\"?user=" + ADMIN_USERNAME_DEFAULT
+            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
 
     // verify each managed server can see other member in the cluster
@@ -848,14 +858,15 @@ public class ItIntrospectVersion {
    * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
+   * This test will be skipped if the image tag is the latest WebLogic image tag
    */
   @Order(5)
+  @AssumeWebLogicImage
   @Test
   @DisplayName("Verify server pods are restarted by updating image name")
   public void testUpdateImageName() {
 
     final String domainNamespace = introDomainNamespace;
-
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
     final String managedServerNameBase = "cl2-ms-";
@@ -929,11 +940,11 @@ public class ItIntrospectVersion {
    * Create a configmap containing WLST script and property file.
    * Create a Kubernetes job to create domain on persistent volume.
    *
-   * @param wlstScriptFile python script to create domain
+   * @param wlstScriptFile       python script to create domain
    * @param domainPropertiesFile properties file containing domain configuration
-   * @param pvName name of the persistent volume to create domain in
-   * @param pvcName name of the persistent volume claim
-   * @param namespace name of the domain namespace in which the job is created
+   * @param pvName               name of the persistent volume to create domain in
+   * @param pvcName              name of the persistent volume claim
+   * @param namespace            name of the domain namespace in which the job is created
    */
   private void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
                                          String pvName, String pvcName, String namespace) {
@@ -966,7 +977,7 @@ public class ItIntrospectVersion {
   }
 
   private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
-      String user, String password) {
+                                         String user, String password) {
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
@@ -979,7 +990,7 @@ public class ItIntrospectVersion {
 
     withStandardRetryPolicy.conditionEvaluationListener(
         condition -> logger.info("Verifying the health of all cluster members"
-            + "(elapsed time {0} ms, remaining time {1} ms)",
+                + "(elapsed time {0} ms, remaining time {1} ms)",
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
         .until((Callable<Boolean>) () -> {
@@ -1012,6 +1023,42 @@ public class ItIntrospectVersion {
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();
     }
+  }
+
+  /**
+  *  JUnit5 extension class to implement ExecutionCondition for the custom
+  *  annotation @AssumeWebLogicImage.
+  */
+  private static class WebLogicImageCondition implements ExecutionCondition {
+
+    /**
+     * Determine if the the test "testUpdateImageName" will be skipped based on WebLogic image tag.
+     * Skip the test if the image tag is the latest one.
+     *
+     * @param context the current extension context
+     * @return ConditionEvaluationResult disabled if the image tag is the latest one, enabled if the
+     *         image tag is not the latest one
+    */
+    @Override
+    public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
+      if (WEBLOGIC_IMAGE_TAG.equals(WLS_LATEST_IMAGE_TAG)) {
+        getLogger().info("WebLogic image tag is {0}. No latest image available to continue test. Skipping test",
+            WLS_LATEST_IMAGE_TAG);
+        return ConditionEvaluationResult
+            .disabled(String.format("No latest image available to continue test. Skipping test!"));
+      } else {
+        getLogger().info("Updating image to {0}. Continuing test!", WLS_UPDATE_IMAGE_TAG);
+        return ConditionEvaluationResult
+            .enabled(String.format("Updating image to {0}. Continuing test!", WLS_UPDATE_IMAGE_TAG));
+      }
+    }
+  }
+
+  @Target({ElementType.TYPE, ElementType.METHOD})
+  @Retention(RetentionPolicy.RUNTIME)
+  @Tag("assume-weblogic-image")
+  @ExtendWith(WebLogicImageCondition.class)
+  @interface AssumeWebLogicImage {
   }
 
 }
