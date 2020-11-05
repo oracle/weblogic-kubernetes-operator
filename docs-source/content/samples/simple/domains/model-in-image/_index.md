@@ -117,7 +117,7 @@ Location | Description |
 `archives` | Source code location for WebLogic Deploy Tooling application ZIP archives. |
 `model-images` | Staging for each model image's WDT YAML files, WDT properties, and WDT archive ZIP files. The directories in `model images` are named for their respective images. |
 `model-configmaps/datasource` | Staging files for a model ConfigMap that configures a data source. |
-`model-configmaps/wmdatasource` | Staging files for a model ConfigMap that configures Work Manager Threads Constraints and a data source. |
+`model-configmaps/workmanager` | Staging files for a model ConfigMap that configures Work Manager Threads Constraints. |
 `ingresses` | Ingress resources. |
 `utils/wl-pod-wait.sh` | Utility script for watching the pods in a domain reach their expected `restartVersion`, image name, and ready state. |
 `utils/patch-introspect-version.sh` | Utility script for updating a running domain `spec.introspectVersion` field (which causes it to 're-instrospect' and 'roll' only if non-dynamic attributes are updated). |

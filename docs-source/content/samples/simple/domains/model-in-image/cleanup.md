@@ -1,7 +1,7 @@
 ---
 title: "Cleanup"
 date: 2019-02-23T17:32:31-05:00
-weight: 6
+weight: 7
 ---
 
 To remove the resources you have created in these samples:
