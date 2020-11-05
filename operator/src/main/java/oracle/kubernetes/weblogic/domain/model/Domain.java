@@ -522,7 +522,7 @@ public class Domain implements KubernetesObject {
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getModel)
         .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getActivateTimeoutSeconds)
+        .map(OnlineUpdate::getActivateTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -535,7 +535,7 @@ public class Domain implements KubernetesObject {
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getModel)
         .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getConnectTimeoutSeconds)
+        .map(OnlineUpdate::getConnectTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -548,7 +548,7 @@ public class Domain implements KubernetesObject {
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getModel)
         .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getDeployTimeoutSeconds)
+        .map(OnlineUpdate::getDeployTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -561,7 +561,7 @@ public class Domain implements KubernetesObject {
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getModel)
         .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getUndeployTimeoutSeconds)
+        .map(OnlineUpdate::getUndeployTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -574,7 +574,7 @@ public class Domain implements KubernetesObject {
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getModel)
         .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getRedeployTimeoutSeconds)
+        .map(OnlineUpdate::getRedeployTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -587,7 +587,7 @@ public class Domain implements KubernetesObject {
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getModel)
         .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getStartApplicationTimeoutSeconds)
+        .map(OnlineUpdate::getStartApplicationTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -600,7 +600,7 @@ public class Domain implements KubernetesObject {
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getModel)
         .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getStopApplicationTimeoutSeconds)
+        .map(OnlineUpdate::getStopApplicationTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -613,7 +613,7 @@ public class Domain implements KubernetesObject {
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getModel)
         .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getSetServerGroupsTimeoutSeconds)
+        .map(OnlineUpdate::getSetServerGroupsTimeoutMilliSeconds)
         .orElse(null);
   }
 

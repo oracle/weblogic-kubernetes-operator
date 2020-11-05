@@ -20,28 +20,28 @@ public class OnlineUpdate {
   private Boolean rollBackIfRestartRequired = false;
 
   @Description("WLST deploy timout seconds (in milliseconds) Default: 180000L.")
-  private Long deployTimeoutSeconds = 180000L;
+  private Long deployTimeoutMilliSeconds = 180000L;
 
   @Description("WLST redeploy timout seconds (in milliseconds) Default: 180000L.")
-  private Long redeployTimeoutSeconds = 180000L;
+  private Long redeployTimeoutMilliSeconds = 180000L;
 
   @Description("WLST undeploy timout seconds (in milliseconds) Default: 180000L.")
-  private Long undeployTimeoutSeconds = 180000L;
+  private Long undeployTimeoutMilliSeconds = 180000L;
 
   @Description("WLST startApplication timout seconds (in milliseconds) Default: 180000L.")
-  private Long startApplicationTimeoutSeconds = 180000L;
+  private Long startApplicationTimeoutMilliSeconds = 180000L;
 
   @Description("WLST stopApplication timout seconds (in milliseconds) Default: 180000L.")
-  private Long stopApplicationTimeoutSeconds = 180000L;
+  private Long stopApplicationTimeoutMilliSeconds = 180000L;
 
   @Description("WLST connect timout seconds (in milliseconds) Default: 180000L.")
-  private Long connectTimeoutSeconds = 120000L;
+  private Long connectTimeoutMilliSeconds = 120000L;
 
   @Description("WLST activate timout seconds (in milliseconds) Default: 180000L.")
-  private Long activateTimeoutSeconds = 180000L;
+  private Long activateTimeoutMilliSeconds = 180000L;
 
   @Description("WLST set server groups timout seconds (in milliseconds) Default: 180000L.")
-  private Long setServerGroupsTimeoutSeconds = 180000L;
+  private Long setServerGroupsTimeoutMilliSeconds = 180000L;
 
   public Boolean getEnabled() {
     return enabled;
@@ -69,107 +69,107 @@ public class OnlineUpdate {
     return this;
   }
 
-  public Long getDeployTimeoutSeconds() {
-    return deployTimeoutSeconds;
+  public Long getDeployTimeoutMilliSeconds() {
+    return deployTimeoutMilliSeconds;
   }
 
-  public void setDeployTimeoutSeconds(Long deployTimeoutSeconds) {
-    this.deployTimeoutSeconds = deployTimeoutSeconds;
+  public void setDeployTimeoutMilliSeconds(Long deployTimeoutMilliSeconds) {
+    this.deployTimeoutMilliSeconds = deployTimeoutMilliSeconds;
   }
 
   public OnlineUpdate withDeployTimeoutSeconds(Long deployTimeoutSeconds) {
-    this.deployTimeoutSeconds = deployTimeoutSeconds;
+    this.deployTimeoutMilliSeconds = deployTimeoutSeconds;
     return this;
   }
 
-  public Long getRedeployTimeoutSeconds() {
-    return redeployTimeoutSeconds;
+  public Long getRedeployTimeoutMilliSeconds() {
+    return redeployTimeoutMilliSeconds;
   }
 
-  public void setRedeployTimeoutSeconds(Long redeployTimeoutSeconds) {
-    this.redeployTimeoutSeconds = redeployTimeoutSeconds;
+  public void setRedeployTimeoutMilliSeconds(Long redeployTimeoutMilliSeconds) {
+    this.redeployTimeoutMilliSeconds = redeployTimeoutMilliSeconds;
   }
 
   public OnlineUpdate withRedeployTimeoutSeconds(Long redeployTimeoutSeconds) {
-    this.redeployTimeoutSeconds = redeployTimeoutSeconds;
+    this.redeployTimeoutMilliSeconds = redeployTimeoutSeconds;
     return this;
   }
 
-  public Long getUndeployTimeoutSeconds() {
-    return undeployTimeoutSeconds;
+  public Long getUndeployTimeoutMilliSeconds() {
+    return undeployTimeoutMilliSeconds;
   }
 
-  public void setUndeployTimeoutSeconds(Long undeployTimeoutSeconds) {
-    this.undeployTimeoutSeconds = undeployTimeoutSeconds;
+  public void setUndeployTimeoutMilliSeconds(Long undeployTimeoutMilliSeconds) {
+    this.undeployTimeoutMilliSeconds = undeployTimeoutMilliSeconds;
   }
 
   public OnlineUpdate withUndeployTimeoutSeconds(Long undeployTimeoutSeconds) {
-    this.undeployTimeoutSeconds = undeployTimeoutSeconds;
+    this.undeployTimeoutMilliSeconds = undeployTimeoutSeconds;
     return this;
   }
 
-  public Long getStartApplicationTimeoutSeconds() {
-    return startApplicationTimeoutSeconds;
+  public Long getStartApplicationTimeoutMilliSeconds() {
+    return startApplicationTimeoutMilliSeconds;
   }
 
-  public void setStartApplicationTimeoutSeconds(Long startApplicationTimeoutSeconds) {
-    this.startApplicationTimeoutSeconds = startApplicationTimeoutSeconds;
+  public void setStartApplicationTimeoutMilliSeconds(Long startApplicationTimeoutMilliSeconds) {
+    this.startApplicationTimeoutMilliSeconds = startApplicationTimeoutMilliSeconds;
   }
 
   public OnlineUpdate withStartApplicationTimeoutSeconds(Long startApplicationTimeoutSeconds) {
-    this.startApplicationTimeoutSeconds = startApplicationTimeoutSeconds;
+    this.startApplicationTimeoutMilliSeconds = startApplicationTimeoutSeconds;
     return this;
   }
 
-  public Long getStopApplicationTimeoutSeconds() {
-    return stopApplicationTimeoutSeconds;
+  public Long getStopApplicationTimeoutMilliSeconds() {
+    return stopApplicationTimeoutMilliSeconds;
   }
 
-  public void setStopApplicationTimeoutSeconds(Long stopApplicationTimeoutSeconds) {
-    this.stopApplicationTimeoutSeconds = stopApplicationTimeoutSeconds;
+  public void setStopApplicationTimeoutMilliSeconds(Long stopApplicationTimeoutMilliSeconds) {
+    this.stopApplicationTimeoutMilliSeconds = stopApplicationTimeoutMilliSeconds;
   }
 
   public OnlineUpdate withStopApplicationTimeoutSeconds(Long stopApplicationTimeoutSeconds) {
-    this.stopApplicationTimeoutSeconds = stopApplicationTimeoutSeconds;
+    this.stopApplicationTimeoutMilliSeconds = stopApplicationTimeoutSeconds;
     return this;
   }
 
-  public Long getConnectTimeoutSeconds() {
-    return connectTimeoutSeconds;
+  public Long getConnectTimeoutMilliSeconds() {
+    return connectTimeoutMilliSeconds;
   }
 
-  public void setConnectTimeoutSeconds(Long connectTimeoutSeconds) {
-    this.connectTimeoutSeconds = connectTimeoutSeconds;
+  public void setConnectTimeoutMilliSeconds(Long connectTimeoutMilliSeconds) {
+    this.connectTimeoutMilliSeconds = connectTimeoutMilliSeconds;
   }
 
   public OnlineUpdate withConnectTimeoutSeconds(Long connectTimeoutSeconds) {
-    this.connectTimeoutSeconds = connectTimeoutSeconds;
+    this.connectTimeoutMilliSeconds = connectTimeoutSeconds;
     return this;
   }
 
-  public Long getActivateTimeoutSeconds() {
-    return activateTimeoutSeconds;
+  public Long getActivateTimeoutMilliSeconds() {
+    return activateTimeoutMilliSeconds;
   }
 
-  public void setActivateTimeoutSeconds(Long activateTimeoutSeconds) {
-    this.activateTimeoutSeconds = activateTimeoutSeconds;
+  public void setActivateTimeoutMilliSeconds(Long activateTimeoutMilliSeconds) {
+    this.activateTimeoutMilliSeconds = activateTimeoutMilliSeconds;
   }
 
   public OnlineUpdate withActivateTimeoutSeconds(Long activateTimeoutSeconds) {
-    this.activateTimeoutSeconds = activateTimeoutSeconds;
+    this.activateTimeoutMilliSeconds = activateTimeoutSeconds;
     return this;
   }
 
-  public Long getSetServerGroupsTimeoutSeconds() {
-    return setServerGroupsTimeoutSeconds;
+  public Long getSetServerGroupsTimeoutMilliSeconds() {
+    return setServerGroupsTimeoutMilliSeconds;
   }
 
-  public void setSetServerGroupsTimeoutSeconds(Long setServerGroupsTimeoutSeconds) {
-    this.setServerGroupsTimeoutSeconds = setServerGroupsTimeoutSeconds;
+  public void setSetServerGroupsTimeoutMilliSeconds(Long setServerGroupsTimeoutMilliSeconds) {
+    this.setServerGroupsTimeoutMilliSeconds = setServerGroupsTimeoutMilliSeconds;
   }
 
   public OnlineUpdate withSetServerGroupsTimeoutSeconds(Long setServerGroupsTimeoutSeconds) {
-    this.setServerGroupsTimeoutSeconds = setServerGroupsTimeoutSeconds;
+    this.setServerGroupsTimeoutMilliSeconds = setServerGroupsTimeoutSeconds;
     return this;
   }
 
@@ -178,14 +178,14 @@ public class OnlineUpdate {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(enabled)
         .append(rollBackIfRestartRequired)
-        .append(deployTimeoutSeconds)
-        .append(redeployTimeoutSeconds)
-        .append(undeployTimeoutSeconds)
-        .append(startApplicationTimeoutSeconds)
-        .append(stopApplicationTimeoutSeconds)
-        .append(connectTimeoutSeconds)
-        .append(setServerGroupsTimeoutSeconds)
-        .append(activateTimeoutSeconds);
+        .append(deployTimeoutMilliSeconds)
+        .append(redeployTimeoutMilliSeconds)
+        .append(undeployTimeoutMilliSeconds)
+        .append(startApplicationTimeoutMilliSeconds)
+        .append(stopApplicationTimeoutMilliSeconds)
+        .append(connectTimeoutMilliSeconds)
+        .append(setServerGroupsTimeoutMilliSeconds)
+        .append(activateTimeoutMilliSeconds);
 
     return builder.toHashCode();
   }
@@ -203,14 +203,14 @@ public class OnlineUpdate {
         new EqualsBuilder()
             .append(enabled, rhs.enabled)
             .append(rollBackIfRestartRequired, rhs.rollBackIfRestartRequired)
-            .append(deployTimeoutSeconds, rhs.deployTimeoutSeconds)
-            .append(redeployTimeoutSeconds, rhs.redeployTimeoutSeconds)
-            .append(undeployTimeoutSeconds, rhs.undeployTimeoutSeconds)
-            .append(startApplicationTimeoutSeconds, rhs.startApplicationTimeoutSeconds)
-            .append(stopApplicationTimeoutSeconds, rhs.stopApplicationTimeoutSeconds)
-            .append(connectTimeoutSeconds, rhs.connectTimeoutSeconds)
-            .append(setServerGroupsTimeoutSeconds, rhs.setServerGroupsTimeoutSeconds)
-            .append(activateTimeoutSeconds, rhs.activateTimeoutSeconds);
+            .append(deployTimeoutMilliSeconds, rhs.deployTimeoutMilliSeconds)
+            .append(redeployTimeoutMilliSeconds, rhs.redeployTimeoutMilliSeconds)
+            .append(undeployTimeoutMilliSeconds, rhs.undeployTimeoutMilliSeconds)
+            .append(startApplicationTimeoutMilliSeconds, rhs.startApplicationTimeoutMilliSeconds)
+            .append(stopApplicationTimeoutMilliSeconds, rhs.stopApplicationTimeoutMilliSeconds)
+            .append(connectTimeoutMilliSeconds, rhs.connectTimeoutMilliSeconds)
+            .append(setServerGroupsTimeoutMilliSeconds, rhs.setServerGroupsTimeoutMilliSeconds)
+            .append(activateTimeoutMilliSeconds, rhs.activateTimeoutMilliSeconds);
 
     return builder.isEquals();
   }
