@@ -105,4 +105,4 @@ itMiiDomain
     |-- ns-luaf.pod.domain1-managed-server1.container.weblogic-server.log
 ```
 ## Troubleshooting
-The diagnostic logs files in method scoped directory in ${LOGS_DIR}/<testClass>/<testMehod> and the test stdout ${LOGS_DIR}/<testClass>.out is the starting point to triage a test failure.
+The diagnostic logs files in method scoped directory in ${LOGS_DIR}/`<testClass>`/`<testMehod>` and the test stdout ${LOGS_DIR}/`<testClass>`.out is the starting point to triage a test failure.
