@@ -68,9 +68,6 @@ spec:
                         which must be in a field named `walletPassword`. Used to encrypt
                         and decrypt the wallet that is used for accessing the domain's
                         entries in its RCU database.
-                useOnlineUpdate:
-                  type: boolean
-                  description: Use online update.
                 model:
                   type: object
                   description: Model in image model files and properties.
@@ -91,13 +88,54 @@ spec:
                       type: string
                       description: Name of a ConfigMap containing the WebLogic Deploy
                         Tooling model.
+                    onlineUpdate:
+                      type: object
+                      description: Online update option for Model In Image dynamic
+                        update.
+                      properties:
+                        deployTimeoutMilliSeconds:
+                          type: number
+                          description: 'WLST deploy timout seconds (in milliseconds)
+                            Default: 180000L.'
+                        stopApplicationTimeoutMilliSeconds:
+                          type: number
+                          description: 'WLST stopApplication timout seconds (in milliseconds)
+                            Default: 180000L.'
+                        connectTimeoutMilliSeconds:
+                          type: number
+                          description: 'WLST connect timout seconds (in milliseconds)
+                            Default: 180000L.'
+                        startApplicationTimeoutMilliSeconds:
+                          type: number
+                          description: 'WLST startApplication timout seconds (in milliseconds)
+                            Default: 180000L.'
+                        setServerGroupsTimeoutMilliSeconds:
+                          type: number
+                          description: 'WLST set server groups timout seconds (in
+                            milliseconds) Default: 180000L.'
+                        rollBackIfRestartRequired:
+                          type: boolean
+                          description: Rollback the changes if the update require
+                            domain restart.
+                        enabled:
+                          type: boolean
+                          description: Enable online update.
+                        undeployTimeoutMilliSeconds:
+                          type: number
+                          description: 'WLST undeploy timout seconds (in milliseconds)
+                            Default: 180000L.'
+                        redeployTimeoutMilliSeconds:
+                          type: number
+                          description: 'WLST redeploy timout seconds (in milliseconds)
+                            Default: 180000L.'
+                        activateTimeoutMilliSeconds:
+                          type: number
+                          description: 'WLST activate timout seconds (in milliseconds)
+                            Default: 180000L.'
                     modelHome:
                       type: string
                       description: Location of the WebLogic Deploy Tooling model home.
                         Defaults to /u01/wdt/models.
-                rollBackIfRestartRequired:
-                  type: boolean
-                  description: Rollback the changes if the update require domain restart.
                 secrets:
                   type: array
                   description: A list of names of the Secrets for WebLogic configuration
@@ -10142,7 +10180,8 @@ spec:
                     enum:
                     - Progressing
                     - Available
-                    - WLSDomainConfigurationUpdated
+                    - OnlineUpdateComplete
+                    - OnlineUpdateRolledback
                     - Failed
                   lastTransitionTime:
                     format: date-time
