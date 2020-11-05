@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.Quantity;
@@ -50,6 +51,7 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
@@ -1627,6 +1629,22 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, namespace),
             String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
                 serviceName, namespace)));
+  }
+
+  /**
+   * Check whether the cluster's replica count matches with input parameter value.
+   *
+   * @param clusterName Name of cluster to check
+   * @param domainName Name of domain to which cluster belongs
+   * @param namespace cluster's namespace
+   * @param replicaCount replica count value to match
+   * @return
+   */
+  public static boolean checkClusterReplicaCountMatches(String clusterName, String domainName,
+                                                        String namespace, Integer replicaCount) throws ApiException {
+    Cluster cluster = TestActions.getDomainCustomResource(domainName, namespace).getSpec().getClusters()
+            .stream().filter(c -> c.clusterName().equals(clusterName)).findAny().orElse(null);
+    return Optional.ofNullable(cluster).get().replicas() == replicaCount;
   }
 
   /**
