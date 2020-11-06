@@ -470,7 +470,10 @@ class ItDedicatedMode {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))))
+                        .nodePort(0))
+                    .addChannelsItem(new Channel()
+                        .channelName("T3Channel")
+                        .nodePort(t3ChannelPort))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(replicaCount)
@@ -490,17 +493,17 @@ class ItDedicatedMode {
     }
 
     // deploy application and verify all servers functions normally
-    logger.info("Getting node port for default channel");
-    int defaultChannelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domain1Namespace, getExternalServicePodName(adminServerPodName), "t3Channel"),
-        "Getting admin server default port failed");
-    logger.info("techannel channel node port: {0}", defaultChannelNodePort);
-    assertNotEquals(-1, defaultChannelNodePort, "admin server t3ChannelNodePort is not valid");
+    logger.info("Getting node port for T3 channel");
+    int t3ChannelNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domain1Namespace, getExternalServicePodName(adminServerPodName), "t3channel"),
+        "Getting admin server t3channel node port failed");
+    logger.info("techannel channel node port: {0}", t3ChannelNodePort);
+    assertNotEquals(-1, t3ChannelNodePort, "admin server t3ChannelNodePort is not valid");
 
     //deploy clusterview application
     logger.info("Deploying clusterview app {0} to cluster {1}",
         clusterViewAppPath, clusterName);
-    deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelNodePort),
+    deployUsingWlst(adminServerPodName, Integer.toString(t3ChannelNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
         domain1Namespace);
 
