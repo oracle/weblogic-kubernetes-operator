@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.Quantity;
@@ -50,6 +51,7 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
@@ -1630,6 +1632,22 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check whether the cluster's replica count matches with input parameter value.
+   *
+   * @param clusterName Name of cluster to check
+   * @param domainName Name of domain to which cluster belongs
+   * @param namespace cluster's namespace
+   * @param replicaCount replica count value to match
+   * @return
+   */
+  public static boolean checkClusterReplicaCountMatches(String clusterName, String domainName,
+                                                        String namespace, Integer replicaCount) throws ApiException {
+    Cluster cluster = TestActions.getDomainCustomResource(domainName, namespace).getSpec().getClusters()
+            .stream().filter(c -> c.clusterName().equals(clusterName)).findAny().orElse(null);
+    return Optional.ofNullable(cluster).get().replicas() == replicaCount;
+  }
+
+  /**
    * Create a Docker image for a model in image domain.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
@@ -2166,6 +2184,55 @@ public class CommonTestUtils {
         .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
   }
+
+  /**
+   * Create a RcuAccess secret with RCU schema prefix, RCU schema password and RCU database connection string in the
+   * specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param rcuPrefix  RCU schema prefix
+   * @param password RCU schema passoword
+   * @param rcuDbConnString RCU database connection string
+   */
+  public static void createRcuAccessSecret(String secretName, String namespace,
+      String rcuPrefix, String password, String rcuDbConnString) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("rcu_db_conn_string", rcuDbConnString);
+    secretMap.put("rcu_prefix", rcuPrefix);
+    secretMap.put("rcu_schema_password", password);
+
+    getLogger().info("Create RcuAccessSecret: {0} in namespace: {1}, with rcuPrefix {2}, password {3}, "
+        + "rcuDbConnString {4} ", secretName, namespace, rcuPrefix, password, rcuDbConnString);
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
+
+  /**
+   * Create a RcuAccess secret with RCU schema prefix, RCU schema password and RCU database connection string
+   * in the specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param opsswalletpassword  OPSS wallet password
+   */
+  public static void createOpsswalletpasswordSecret(String secretName, String namespace,
+      String opsswalletpassword) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("walletPassword", opsswalletpassword);
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
+
 
 
   /** Scale the WebLogic cluster to specified number of servers.
