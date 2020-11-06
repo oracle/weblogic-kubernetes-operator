@@ -70,6 +70,8 @@ else
   outdir="${WORKSPACE}/logdir/${BUILD_TAG}"
 fi
 test_filter="**/It*"
+test_filter_wls="**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItMiiSample.java,**/ItJrfDomainInPV.java,**/ItStickySession.java,**/ItSessionMigration.java"
+test_filter_fmw="**/ItMiiSample.java,**/ItJrfDomainInPV.java"
 cni_implementation="kindnet"
 parallel_run="false"
 threads="2"
@@ -240,7 +242,14 @@ export JAVA_HOME="${JAVA_HOME:-`type -p java|xargs readlink -f|xargs dirname|xar
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
-echo 'Run tests...'
+echo 'Determine test filter ...'
+if [ "${maven_profile_name}" = "wls-image-cert" ]; then
+  test_filter="${test_filter_wls}"
+elif [ "${maven_profile_name}" = "fmw-image-cert" ]; then
+  test_filter="${test_filter_fmw}"
+fi
+
+echo "Run tests..."
 if [ "${test_filter}" = "ItOperatorUpgrade" ] || [ "${parallel_run}" = "false" ]; then
   echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P ${maven_profile_name} verify"
   time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
