@@ -138,6 +138,8 @@ public class ItOperatorUpgrade {
   /**
    * Operator upgrade from 3.0.0 to latest.
    * Install 3.0.0 Operator from GitHub chart repository and create a domain.
+   * Deploy an application to the cluster in domain and verify the application can be
+   * accessed while the operator is upgraded and after the upgrade.
    * Upgrade operator with latest Operator image and verify CRD version and image are updated
    * and the domain can be managed by scaling the cluster using operator REST api.
    */
@@ -152,6 +154,8 @@ public class ItOperatorUpgrade {
   /**
    * Operator upgrade from 3.0.1 to latest.
    * Install 3.0.1 Operator from GitHub chart repository and create a domain.
+   * Deploy an application to the cluster in domain and verify the application can be
+   * accessed while the operator is upgraded and after the upgrade.
    * Upgrade operator with latest Operator image and verify CRD version and image are updated
    * and the domain can be managed by scaling the cluster using operator REST api.
    */
@@ -167,6 +171,8 @@ public class ItOperatorUpgrade {
   /**
    * Operator upgrade from 3.0.2 to latest.
    * Install 3.0.2 Operator from GitHub chart repository and create a domain.
+   * Deploy an application to the cluster in domain and verify the application can be
+   * accessed while the operator is upgraded and after the upgrade.
    * Upgrade operator with latest Operator image and verify CRD version and image are updated
    * and the domain can be managed by scaling the cluster using operator REST api.
    */
