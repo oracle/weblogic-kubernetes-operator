@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
@@ -418,16 +419,16 @@ public class ItSystemResOverrides {
 
   //deploy application sitconfig.war to domain
   private void deployApplication(String targets) {
-    logger.info("Getting node port for default channel");
-    int defaultChannelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server default node port failed");
-    logger.info("default channel node port: {0}", defaultChannelNodePort);
-    assertNotEquals(-1, defaultChannelNodePort, "admin server defaultChannelNodePort is not valid");
+    logger.info("Getting port for default channel");
+    int defaultChannelPort = assertDoesNotThrow(()
+        -> getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server default port failed");
+    logger.info("default channel port: {0}", defaultChannelPort);
+    assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
 
     //deploy application
     logger.info("Deploying webapp {0} to domain", sitconfigAppPath);
-    deployUsingWlst(adminServerPodName, Integer.toString(7001),
+    deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, targets, sitconfigAppPath,
         domainNamespace);
   }

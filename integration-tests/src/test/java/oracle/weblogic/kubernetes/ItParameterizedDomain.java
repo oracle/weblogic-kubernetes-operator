@@ -102,6 +102,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getContainerRestart
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
@@ -1056,17 +1057,17 @@ class ItParameterizedDomain {
               .appName(appName)),
           String.format("Failed to create app archive for %s", appName));
 
-      logger.info("Getting node port for default channel");
-      int defaultChannelNodePort = assertDoesNotThrow(()
-          -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-          "Getting admin server default node port failed");
-      logger.info("default channel node port: {0}", defaultChannelNodePort);
-      assertNotEquals(-1, defaultChannelNodePort, "admin server defaultChannelNodePort is not valid");
+      logger.info("Getting port for default channel");
+      int defaultChannelPort = assertDoesNotThrow(()
+          -> getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+          "Getting admin server default port failed");
+      logger.info("default channel port: {0}", defaultChannelPort);
+      assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
 
       //deploy application
       Path archivePath = get(ARCHIVE_DIR, "wlsdeploy", "applications", appName + ".ear");
       logger.info("Deploying webapp {0} to domain {1}", archivePath, domainUid);
-      deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(defaultChannelNodePort),
+      deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
           ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + ADMIN_SERVER_NAME_BASE, archivePath,
           domainNamespace);
     }
