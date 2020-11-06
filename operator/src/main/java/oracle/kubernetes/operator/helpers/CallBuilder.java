@@ -1190,8 +1190,17 @@ public class CallBuilder {
       V1DeleteOptions deleteOptions,
       ApiCallback<Object> callback)
       throws ApiException {
-    return deleteNamespacedPodAsync(client, name, namespace, pretty, dryRun, gracePeriodSeconds,
-        orphanDependents, propagationPolicy, deleteOptions, callback);
+    return deleteNamespacedPodAsync(
+        client,
+        name,
+        namespace,
+        pretty,
+        dryRun,
+        gracePeriodSeconds,
+        orphanDependents,
+        propagationPolicy,
+        deleteOptions,
+        callback);
   }
 
   /**
@@ -1205,11 +1214,11 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step deletePodAsync(
-          String name,
-          String namespace,
-          String domainUid,
-          V1DeleteOptions deleteOptions,
-          ResponseStep<Object> responseStep) {
+      String name,
+      String namespace,
+      String domainUid,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<Object> responseStep) {
     return createRequestAsync(
             responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid),
             deletePod, retryStrategy);
