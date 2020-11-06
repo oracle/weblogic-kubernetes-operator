@@ -423,7 +423,7 @@ class ItDedicatedMode {
         .addArgsItem("/u01/weblogic/" + wlstScript.getFileName()) //wlst.sh script
         .addArgsItem("-skipWLSModuleScanning")
         .addArgsItem("-loadProperties")
-        .addArgsItem("/u01/weblogic/" + domainPropertiesFile); //domain property file
+        .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getName()); //domain property file
 
     logger.info("Running a Kubernetes job to create the domain");
     createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
