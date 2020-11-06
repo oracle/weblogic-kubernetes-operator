@@ -784,7 +784,7 @@ public class ItIntrospectVersion {
 
     logger.info("Getting port for default channel");
     int adminServerPort
-        = getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
