@@ -153,6 +153,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.TestUtils.verifyServerCommunication;
@@ -1325,7 +1326,7 @@ public class ItTwoDomainsLoadBalancers {
                                             String pvName,
                                             String pvcName,
                                             int t3ChannelPort) {
-    return new Domain()
+    Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -1379,6 +1380,8 @@ public class ItTwoDomainsLoadBalancers {
                 .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING")));
+    setPodAntiAffinity(domain);
+    return domain;
   }
 
   /**

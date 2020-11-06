@@ -264,6 +264,7 @@ public interface TestConstants {
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";
 
+
   // default name suffixes
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
   public String DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX = "-introspector";
