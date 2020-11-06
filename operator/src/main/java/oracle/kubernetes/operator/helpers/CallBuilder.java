@@ -1187,7 +1187,7 @@ public class CallBuilder {
       throws ApiException {
     return new CustomObjectsApi(client)
         .deleteNamespacedCustomObjectAsync(
-            "api",
+            "",
             "v1",
             namespace,
             "pods",
