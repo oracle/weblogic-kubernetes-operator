@@ -96,6 +96,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
@@ -805,7 +806,7 @@ class ItMiiDomain {
                                     String repoSecretName, String encryptionSecretName, int replicaCount,
                                       String miiImage) {
     // create the domain CR
-    return new Domain()
+    Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -844,6 +845,8 @@ class ItMiiDomain {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+    setPodAntiAffinity(domain);
+    return domain;
   }
 
   // Create a domain resource with a custom ConfigMap
@@ -852,7 +855,7 @@ class ItMiiDomain {
           String repoSecretName, String encryptionSecretName, 
           int replicaCount, String miiImage, String configmapName) {
     // create the domain CR
-    return new Domain()
+    Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -895,6 +898,8 @@ class ItMiiDomain {
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+    setPodAntiAffinity(domain);
+    return domain;
   }
 
   private void patchAndVerify(

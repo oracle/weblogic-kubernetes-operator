@@ -46,6 +46,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSec
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -305,6 +306,7 @@ class ItInitContainers {
             .name("busybox")
             .imagePullPolicy("IfNotPresent")
             .image("busybox"));
+        setPodAntiAffinity(domain);
         break;
       case "adminServer":
         domain.getSpec().getAdminServer().serverPod(new ServerPod()
@@ -313,6 +315,7 @@ class ItInitContainers {
             .name("busybox")
             .imagePullPolicy("IfNotPresent")
             .image("busybox")));
+        setPodAntiAffinity(domain);
         break;
       case "clusters":
         clusters = domain.getSpec().getClusters();
@@ -321,12 +324,13 @@ class ItInitContainers {
             .filter(cluster -> clusterName.equals(cluster.getClusterName())).findAny()
             .orElse(null);
         assertNotNull(mycluster, "Can't find cluster " + clusterName);
-        mycluster.serverPod(new ServerPod()
+        setPodAntiAffinity(domain);
+        mycluster.getServerPod()
                 .addInitContainersItem(new V1Container()
                     .addCommandItem("echo").addArgsItem("\"Hi from Cluster \"")
                     .name("busybox")
                     .imagePullPolicy("IfNotPresent")
-                    .image("busybox")));
+                    .image("busybox"));
         break;
       case "managedServers":
         domain.getSpec().addManagedServersItem(new ManagedServer()
@@ -337,6 +341,7 @@ class ItInitContainers {
                     .name("busybox")
                     .imagePullPolicy("IfNotPresent")
                     .image("busybox"))));
+        setPodAntiAffinity(domain);
         break;
       default:
         logger.info("no match for provided case {0}", testCaseName);

@@ -32,6 +32,8 @@ import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1LabelSelector;
+import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
@@ -41,6 +43,8 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
+import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
@@ -51,6 +55,7 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.TestConstants;
@@ -2957,11 +2962,11 @@ public class CommonTestUtils {
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName("weblogic-domain-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
             .accessModes(Arrays.asList("ReadWriteMany"))
+            .storageClassName("weblogic-domain-storage-class")
             .hostPath(new V1HostPathVolumeSource()
                 .path(pvHostPath.toString())))
         .metadata(new V1ObjectMeta()
@@ -2989,8 +2994,8 @@ public class CommonTestUtils {
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName("weblogic-domain-storage-class")
             .volumeName(pvName)
+            .storageClassName("weblogic-domain-storage-class")
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("5Gi"))))
         .metadata(new V1ObjectMeta()
@@ -3218,5 +3223,41 @@ public class CommonTestUtils {
 
   public static String getIntrospectJobName(String domainUid) {
     return domainUid + TestConstants.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX;
+  }
+
+  /**
+   * Set the inter-pod anti-affinity  for the domain custom resource
+   * so that server instances spread over the available Nodes.
+   *
+   * @param domain custom resource object
+   */
+  public static synchronized void setPodAntiAffinity(Domain domain) {
+    V1PodAntiAffinity podAntiAffinity = new V1PodAntiAffinity()
+        .addPreferredDuringSchedulingIgnoredDuringExecutionItem(
+            new V1WeightedPodAffinityTerm()
+                .weight(100)
+                .podAffinityTerm(new V1PodAffinityTerm()
+                    .topologyKey("kubernetes.io/hostname")
+                    .labelSelector(new V1LabelSelector()
+                        .addMatchExpressionsItem(new V1LabelSelectorRequirement()
+                            .key("weblogic.clusterName")
+                            .operator("In")
+                            .addValuesItem("($CLUSTER_NAME)")))
+                )
+        );
+
+    domain.getSpec()
+        .getClusters()
+        .stream()
+        .forEach(
+            cluster -> {
+              cluster
+                  .serverPod(new oracle.weblogic.domain.ServerPod()
+                      .affinity(new io.kubernetes.client.openapi.models.V1Affinity().podAntiAffinity(
+                          podAntiAffinity)));
+
+            }
+        );
+
   }
 }
