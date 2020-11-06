@@ -83,7 +83,7 @@ public class Application {
   }
 
   /**
-   * Check if an application is accessible inside a WebLogic server pod.
+   * Check if an application is accessible inside a WebLogic server pod using "kubectl exec" command.
    *
    * @param namespace Kubernetes namespace where the WebLogic server pod is running
    * @param podName name of the WebLogic server pod
