@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.apis.AuthenticationV1Api;
 import io.kubernetes.client.openapi.apis.AuthorizationV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.apis.VersionApi;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
@@ -317,7 +318,7 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1DeleteOptions) requestParams.body,
                   callback));
-  private final CallFactory<V1Pod> deletePod =
+  private final CallFactory<Object> deletePod =
       (requestParams, usage, cont, callback) ->
           wrap(
               deletePodAsync(
@@ -1182,17 +1183,19 @@ public class CallBuilder {
       String name,
       String namespace,
       V1DeleteOptions deleteOptions,
-      ApiCallback<V1Pod> callback)
+      ApiCallback<Object> callback)
       throws ApiException {
-    return new CoreV1Api(client)
-        .deleteNamespacedPodAsync(
-            name,
+    return new CustomObjectsApi(client)
+        .deleteNamespacedCustomObjectAsync(
+            "api",
+            "v1",
             namespace,
-            pretty,
-            dryRun,
+            "pods",
+            name,
             gracePeriodSeconds,
             orphanDependents,
             propagationPolicy,
+            dryRun,
             deleteOptions,
             callback);
   }
@@ -1212,7 +1215,7 @@ public class CallBuilder {
       String namespace,
       String domainUid,
       V1DeleteOptions deleteOptions,
-      ResponseStep<V1Pod> responseStep) {
+      ResponseStep<Object> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid),
             deletePod, retryStrategy);

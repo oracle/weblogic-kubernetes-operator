@@ -139,7 +139,7 @@ public class StuckPodProcessing {
     }
   }
 
-  static class ForcedDeleteResponseStep extends DefaultResponseStep<V1Pod> {
+  static class ForcedDeleteResponseStep extends DefaultResponseStep<Object> {
 
     private final String name;
     private final String namespace;
@@ -150,7 +150,7 @@ public class StuckPodProcessing {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+    public NextAction onSuccess(Packet packet, CallResponse<Object> callResponse) {
       LOGGER.info(POD_FORCE_DELETED, name, namespace);
       return super.onSuccess(packet, callResponse);
     }
