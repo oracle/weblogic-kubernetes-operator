@@ -489,7 +489,7 @@ public class TestAssertions {
       String appPath,
       String expectedResponse
   ) {
-    return !Application.appAccessibleInPod(namespace, podName, port, appPath, expectedResponse);
+    return !Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**
