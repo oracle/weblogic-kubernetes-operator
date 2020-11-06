@@ -51,6 +51,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseRevision;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -308,8 +309,6 @@ public class ItOperatorUpgrade {
       // install latest operator
       installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
     }
-
-
     // check CRD version is updated
     logger.info("Checking CRD version ");
     withStandardRetryPolicy
@@ -481,34 +480,6 @@ public class ItOperatorUpgrade {
       checkAppIsRunning(withQuickRetryPolicy, namespace, managedServerPodNamePrefix + i,
           "8001", "testwebapp/index.jsp", managedServerPodNamePrefix + i);
     }
-  }
-
-  private void checkAppIsRunning(
-      ConditionFactory conditionFactory,
-      String namespace,
-      String podName,
-      String internalPort,
-      String appPath,
-      String expectedStr
-  ) {
-
-    // check if the application is accessible inside of a server pod
-    conditionFactory
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for application {0} is running on pod {1} in namespace {2} "
-                    + "(elapsed time {3}ms, remaining time {4}ms)",
-                appPath,
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> appAccessibleInPod(
-            namespace,
-            podName,
-            internalPort,
-            appPath,
-            expectedStr));
-
   }
 
   /**
