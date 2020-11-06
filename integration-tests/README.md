@@ -13,18 +13,18 @@ weblogic-kubernetes-operator/integration-tests/src/test/resources - properties, 
  - Build weblogic kubernetes operator image from the downloaded branch.
  - Download the latest version of WebLogic Deploy Tooling (WDT) and WebLogic Image Tool (WIT)
  - Pull the specified version of WebLogic Image from container-registry.oracle.com (OCR) or phx.ocir.io (OCIR) 
- - Build a simple weblogic domain image with a dynamic weblogic cluster and a sample web application using Model-In-Image model.
+ - Build a simple WebLogic domain in image with a dynamic WebLogic cluster and a sample web application using Model-In-Image model.
  - Install istio service mesh.
- - After test execution, clean all the Namespaces, Kubernetes Objects created during test execution.
- - Archive the test stdout for each test class and kubernates object details for each test method in the diagnostic directory for triage. 
+ - After test execution, delete all the Namespaces, Kubernetes Objects created during test execution.
+ - Archive the test stdout for each test class and kubernates object details for each test method in the diagnostic directory for triage when tests fail or when the env variable COLLECT_LOGS_ON_SUCCESS is set to true.
  
 # How to run Operator integration tests locally on Oracle Linux
 
-- Install supported version Helm and Kubernetes cluster. For detail see [Weblogic Kubernetes Operator guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/).
-- Install supported version JDK. Need JDK Version 11+ and above.
+- Install supported version of Helm and Kubernetes cluster. For detail see [Weblogic Kubernetes Operator guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/).
+- Install supported version of JDK. Need JDK Version 11+ and above.
 - Clone the weblogic-kubernetes-operator repository
 - Setup a personal account on container-registry.oracle.com
-- Log into container-registry.oracle.com and signup for access to WebLogic 12.2.1.4 images from container-registry.oracle.com/middleware/weblogic:12.2.1.4
+- Log into https://container-registry.oracle.com and accept Oracle Standard Terms and Restrictions to pull WebLogic images from container-registry.oracle.com/middleware/weblogic
 - Export the following environment variable before running the tests
    ```
     export BASE_IMAGES_REPO="container-registry.oracle.com"
@@ -32,12 +32,12 @@ weblogic-kubernetes-operator/integration-tests/src/test/resources - properties, 
     export OCR_USERNAME=<ocr_username>
     export OCR_PASSWORD=<ocr_password> 
    ```
-- In weblogic-kubernetes-operator run the following commands
+- `cd  weblogic-kubernetes-operator` and run the following commands
   ```
     # Build the Weblogic Kubernetes Operator binary 
     mvn clean install 
     # Run tests in sequential
-    mvn -pl -integration-tests -P integration-tests verify
+    mvn -pl -integration-tests -P integration-tests clean verify
     # Run tests in parallel
     mvn -DPARALLEL=true -DNUMBER_OF_THREADS=2 -pl -integration-tests -P integration-tests verify
    ```
@@ -53,7 +53,7 @@ mvn -Dit.test="!ItCrossDomainTransaction,!ItMiiUpdateDomainConfig" -pl integrati
 ## Environment variables to manage test execution 
 | Variable | Description | Default Value
 | --- | --- | --- |
-| SKIP_CLEANUP  | Test infra remove for all kubernetes objects created during test execution. To retain all such objects for triaging a test failure this environment variable should be set to true. User need to run weblogic-kubernetes-operator/src/integration-tests/bash/cleanup.sh to clean up kubernetes objects later.    | true
+| SKIP_CLEANUP  | Test infrastructure removes all kubernetes objects created during test execution. To retain all such objects for triaging test failures this environment variable should be set to true. User need to run weblogic-kubernetes-operator/src/integration-tests/bash/cleanup.sh to clean up kubernetes objects after traiging.    | true
 | COLLECT_LOGS_ON_SUCCESS  | Test infra does not keep the diagnostic log for successful tests. To archive the diagnostic log for successful tests, this environment variable should be set to true. | false
 | LOGS_DIR  | Root directory for the diagnostic logs. | /tmp/it-diagnosticlogs
 | RESULTS_ROOT  | Root directory for the intermediate artifacts such istio installation, dynamically generated YAML files | /tmp/it-testresults
