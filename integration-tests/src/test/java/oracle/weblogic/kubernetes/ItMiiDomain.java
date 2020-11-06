@@ -1121,7 +1121,7 @@ class ItMiiDomain {
       appAvailability.add(count);
 
       if (count == 0) {
-        logger.info("XXXXXXXXXXX: application not available XXXXXXXX");
+        logger.info("NNNNNNNNNNN: application not available NNNNNNNN");
         return true;
       }
 
