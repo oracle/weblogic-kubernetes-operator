@@ -75,6 +75,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBa
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -258,7 +259,7 @@ public class ItIstioDomainInPV  {
                 .istio(new Istio()
                     .enabled(Boolean.TRUE)
                     .readinessPort(8888))));
-
+    setPodAntiAffinity(domain);
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
 
