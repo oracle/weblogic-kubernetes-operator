@@ -431,8 +431,7 @@ public class TestAssertions {
   }
 
   /**
-   * Check if an application is accessible inside a WebLogic server pod using
-   * Kubernetes Java client API.
+   * Check if an application is accessible inside a WebLogic server pod.
    *
    * @param namespace Kubernetes namespace where the WebLogic server pod is running
    * @param podName name of the WebLogic server pod
@@ -442,27 +441,6 @@ public class TestAssertions {
    * @return true if the command succeeds
    */
   public static boolean appAccessibleInPod(
-      String namespace,
-      String podName,
-      String port,
-      String appPath,
-      String expectedResponse
-  ) {
-    return Application.appAccessibleInPod(namespace, podName, port, appPath, expectedResponse);
-  }
-
-  /**
-   * Check if an application is accessible inside a WebLogic server pod using
-   * "kubectl exec" command.
-   *
-   * @param namespace Kubernetes namespace where the WebLogic server pod is running
-   * @param podName name of the WebLogic server pod
-   * @param port internal port of the managed server running in the pod
-   * @param appPath path to access the application
-   * @param expectedResponse the expected response from the application
-   * @return true if the command succeeds
-   */
-  public static boolean appAccessibleInPodKubectl(
       String namespace,
       String podName,
       String port,
@@ -489,7 +467,7 @@ public class TestAssertions {
       String appPath,
       String expectedResponse
   ) {
-    return !Application.appAccessibleInPod(namespace, podName, port, appPath, expectedResponse);
+    return !Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**
