@@ -51,4 +51,24 @@ public class Helm {
     return false;
   }
 
+  /**
+   * Check Helm release revision against expected.
+   * @param releaseName release name which is unique in a namespace
+   * @param namespace namespace name
+   * @param revision expected value
+   * @return true on success
+   */
+  public static boolean checkHelmReleaseRevision(String releaseName, String namespace, String revision) {
+    CommandParams cmdParams = Command.defaultCommandParams()
+        .command(String.format("helm status %s -n %s", releaseName, namespace))
+        .saveResults(true)
+        .redirect(false);
+
+    if (Command.withParams(cmdParams)
+        .execute()) {
+      return cmdParams.stdout().toLowerCase().contains("revision: " + revision);
+    }
+    return false;
+  }
+
 }
