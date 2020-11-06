@@ -393,8 +393,8 @@ public class ItIntrospectVersion {
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
     Properties p1 = new Properties();
-    p1.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p1.setProperty("admin_port", Integer.toString(t3ChannelPort));
+    p1.setProperty("admin_host", adminServerPodName);
+    p1.setProperty("admin_port", Integer.toString(defaultChannelPort));
     p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p1.setProperty("cluster_name", clusterName);
