@@ -123,7 +123,7 @@ class ItMiiDomain {
   private String miiImageAddSecondApp = null;
   private String miiImage = null;
   private static LoggingFacade logger = null;
-  private static boolean mainThreadDone = false;
+  private static volatile boolean mainThreadDone = false;
 
   /**
    * Install Operator.
