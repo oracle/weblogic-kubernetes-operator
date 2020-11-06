@@ -7,7 +7,7 @@
 
 source ${SCRIPTPATH}/utils.sh
 
-WDT_MINIMUM_VERSION="1.9.4"
+WDT_MINIMUM_VERSION="1.9.7"
 INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormii/inventory_image.md5"
 INTROSPECTCM_CM_MD5="/weblogic-operator/introspectormii/inventory_cm.md5"
 INTROSPECTCM_PASSPHRASE_MD5="/weblogic-operator/introspectormii/inventory_passphrase.md5"
