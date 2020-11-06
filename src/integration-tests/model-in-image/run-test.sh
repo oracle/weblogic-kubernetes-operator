@@ -466,7 +466,7 @@ if [ "$DO_UPDATE4" = "true" ]; then
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
   doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f  \${WORKDIR}/model-configmaps/datasource -f \${WORKDIR}/model-configmaps/workmanager -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
-  doCommand    "\$WORKDIR/utils/patch-use-online-update.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doCommand    "\$WORKDIR/utils/patch-enable-online-update.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
   doCommand    "\$WORKDIR/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
   if [ ! "$DRY_RUN" = "true" ]; then

@@ -7,7 +7,7 @@ function usage() {
 
   cat << EOF
 
-  This is a helper script for changing the 'spec.configuration.useOnlineUpdate' field
+  This is a helper script for changing the 'spec.configuration.model.onlineUpdate.enabled' field
   of a deployed domain to 'true'. 
  
   Usage:
@@ -52,12 +52,12 @@ done
 set -eu
 set -o pipefail
 
-echo "@@ Info: Patching domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}' useOnlineUpate to 'true'."
+echo "@@ Info: Patching domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}' to enable onlineUpdate to 'true'."
 kubectl -n ${DOMAIN_NAMESPACE} patch domain ${DOMAIN_UID} --type='json' \
-  -p='[{"op": "replace", "path": "/spec/configuration/useOnlineUpdate", "value": 'true'}]'
+  -p='[{"op": "replace", "path": "/spec/configuration/model/onlineUpdate", "value": {"enabled" : 'true'} }]'
 
 cat << EOF
 @@
-@@ Info: Domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}' successfully patched with useOnlineUpdate 'true'!"
+@@ Info: Domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}' successfully patched with onlineUpdate/enabled set to 'true'!"
 @@ Done.
 EOF

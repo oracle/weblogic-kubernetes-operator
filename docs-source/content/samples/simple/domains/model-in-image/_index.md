@@ -105,7 +105,7 @@ This sample demonstrates four Model in Image use cases:
    - Kubernetes ConfigMap with:
      - A WDT model for Work Manager Min and Max Threads Constraints, with the same data source as the Update 1 use case
    - A Domain, same as Update 1 or Update 3 use case, plus:
-     - `spec.configuration.useOnlineUpdate` set to `true`
+     - `spec.configuration.model.onlineUpdate` set to `enabled: true`
 
 #### Sample directory structure
 
@@ -122,7 +122,7 @@ Location | Description |
 `utils/wl-pod-wait.sh` | Utility script for watching the pods in a domain reach their expected `restartVersion`, image name, and ready state. |
 `utils/patch-introspect-version.sh` | Utility script for updating a running domain `spec.introspectVersion` field (which causes it to 're-instrospect' and 'roll' only if non-dynamic attributes are updated). |
 `utils/patch-restart-version.sh` | Utility script for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll'). |
-`utils/patch-use-online-update.sh` | Utility script for updating a running domain `spec.configuration.useOnlineUpdate` field to `true` (which enables the online update feature). |
+`utils/patch-enable-online-update.sh` | Utility script for updating a running domain `spec.configuration.model.onlineUpdate` field to `enabled: true` (which enables the online update feature). |
 `utils/opss-wallet.sh` | Utility script for exporting or importing a JRF domain OPSS wallet file. |
 
 #### Ensuring your Kubernetes cluster can access images

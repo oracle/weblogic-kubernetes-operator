@@ -54,29 +54,29 @@ Here are the steps:
      - To make it obvious which ConfigMap belong to which domains.
      - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
-1. Update your Domain YAML file to set `useOnlineUpdate` to `true`.
+1. Update your Domain YAML file to enable `onlineUpdate`.
 
     - Operator will attempt to use the online update to the running domain without 
       restarting the servers if only changes made are updating dynamic attributes of the WebLogic Domain.
 
     - Option 1: Edit your domain custom resource.
       - Call `kubectl -n sample-domain1-ns edit domain sample-domain1`.
-      - Add or edit the value of the `spec.configuration.useOnlineUpdate` field to `true` and save.
+      - Add or edit the value of the `spec.configuration.model.onlineUpdate` field so it contains  `enabled: true` and save.
 
    - Option 2: Dynamically change your domain using `kubectl patch`.
      - Use `kubectl patch` to set the value. For example:
        ```
-       $ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/configuration/useOnlineUpdate", "value": "true" }]'
+       $ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/configuration/model/onlineUpdate", "value": {"enabled" : "true"} }]' 
        ```
    - Option 3: Use the sample helper script.
-     - Call `/tmp/mii-sample/utils/patch-use-online-update.sh -n sample-domain1-ns -d sample-domain1`.
+     - Call `/tmp/mii-sample/utils/patch-enable-online-update.sh -n sample-domain1-ns -d sample-domain1`.
      - This will perform the same `kubectl patch` commands as Option 2.
 
 1. Inform the operator to introspect the WebLogic domain configuration.
 
    Now that the updated configuration is deployed in a ConfigMap, we need to tell the operator to 
    rerun its introspector job in order to regenerate its configuration. 
-   When the `spec.configuration.useOnlineUpdate` value is `true`, and all the changes are 
+   When the `enabled` value in `spec.configuration.model.onlineUpdate` `true`, and all the changes are 
    dynamic changes, the domain introspector can apply the changes to the servers without doing a server restart.
    Change the `spec.introspectVersion` of the domain to trigger domain instrospection to be performed. 
    To do this:
