@@ -62,6 +62,8 @@ import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.Model;
+import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
@@ -709,15 +711,13 @@ public class DomainProcessorImpl implements DomainProcessor {
         if (domainSourceType.equals(DomainSourceType.FromModel) && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo)) {
           LOGGER.info("DomainType is FromModel and Online changes requested in the spec involves more than "
               + "introspectVersion, overridden to use offline");
-          // TODO: flag it in domain status ?
-          Configuration c = Optional.ofNullable(liveInfo)
+          Optional.ofNullable(liveInfo)
               .map(DomainPresenceInfo::getDomain)
               .map(Domain::getSpec)
               .map(DomainSpec::getConfiguration)
-              .orElse(null);
-          if (c != null) {
-            c.setUseOnlineUpdate(false);
-          }
+              .map(Configuration::getModel)
+              .map(Model::getOnlineUpdate)
+              .ifPresent(o -> o.setEnabled(false));
         }
         if (exceededFailureRetryCount) {
           Optional.ofNullable(liveInfo)
@@ -806,7 +806,9 @@ public class DomainProcessorImpl implements DomainProcessor {
     boolean isOnlineUpdate = Optional.ofNullable(liveInfo.getDomain())
         .map(Domain::getSpec)
         .map(DomainSpec::getConfiguration)
-        .map(Configuration::getUseOnlineUpdate)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getEnabled)
         .orElse(false);
 
     if (isOnlineUpdate) {

@@ -737,7 +737,9 @@ public class DomainSpec extends BaseConfiguration {
    */
   boolean isUseOnlineUpdate() {
     return Optional.ofNullable(configuration)
-        .map(Configuration::getUseOnlineUpdate)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getEnabled)
         .orElse(false);
   }
 
@@ -748,7 +750,9 @@ public class DomainSpec extends BaseConfiguration {
    */
   boolean isRollbackIfRestartRequire() {
     return Optional.ofNullable(configuration)
-        .map(Configuration::getRollBackIfRestartRequired)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getRollBackIfRestartRequired)
         .orElse(false);
   }
 
@@ -932,9 +936,9 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Check to see if the only change in the spec is introspectVersion.
+   * Check to see if the only change in the spec is introspectVersion and/or model.onlineUpdate.
    * @param other - another DomainSpec object for comparison
-   * @return true if the change is only introspectVersion and/or useOnlineUpdate
+   * @return true if the change is only introspectVersion and/or model.onlineUpdate
    */
   public boolean isSpecChangeForOnlineUpdateOnly(Object other) {
     if (other == this) {
@@ -976,6 +980,7 @@ public class DomainSpec extends BaseConfiguration {
     if (!isEqual) {
       return isEqual;
     } else {
+      // Check under configuration
       return configuration.isSpecChangeForOnlineUpdateOnly(((DomainSpec) other).getConfiguration());
     }
   }

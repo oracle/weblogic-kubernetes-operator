@@ -59,7 +59,7 @@ class ModelDiffer:
         if model.has_key('domainInfo'):
             domain_info = model['domainInfo']
             if domain_info.has_key('AdminUserName') or domain_info.has_key('AdminPassword') \
-                    or domain_info.has_key('WLSRoles'):
+                    or domain_info.has_key('WLSRoles') or domain_info.has_key('WLSUserPasswordCredentialMappings'):
                 changed_items.append(SECURITY_INFO_UPDATED)
 
             if domain_info.has_key('RCUDbInfo'):
@@ -70,6 +70,13 @@ class ModelDiffer:
                 if rcu_db_info.has_key('rcu_db_conn_string') \
                     or rcu_db_info.has_key('rcu_prefix'):
                     changed_items.append(SECURITY_INFO_UPDATED)
+
+        if model.has_key('topology'):
+            if model['topology'].has_key('Security'):
+                changed_items.append(SECURITY_INFO_UPDATED)
+            if model['topology'].has_key('SecurityConfiguration'):
+                changed_items.append(SECURITY_INFO_UPDATED)
+
         if self.is_not_safe_for_online_update(model):
             changed_items.append(NOT_FOR_ONLINE_UPDATE)
 

@@ -230,8 +230,30 @@ in the Model in Image sample.
 
 #### Updating a running domain
 
-When `useOnlineUpdate` is enabled in the `domain.spec.configuration`.  Operator will attempt to use the online update to the running domain, this 
-feature is useful or changing any dynamic attribute of the Weblogic Domain, no restart is necessary, and the changes are immediate take effect.
+You can use the online update method to update a running domain managed by the Operator by specifying `onlineUpdate` section under `domain.spec.configuration.model`   
+
+```
+apiVersion: "weblogic.oracle/v8"
+kind: Domain
+metadata:
+  name: sample-domain1
+  namespace: sample-domain1-ns
+  labels:
+    weblogic.resourceVersion: domain-v2
+    weblogic.domainUID: sample-domain1
+spec:
+  ...
+  configuration:
+
+    model:
+    ....
+      onlineUpdate:
+        enabled: true
+        rollBackIfRestartRequired: false
+
+```
+
+Operator will attempt to use the online update to the running domain, this feature is useful or changing any dynamic attribute of the Weblogic Domain, no restart is necessary, and the changes are immediate take effect.
 
 You can update the configmap specified in `domain.spec.configuration.model.configmap` in the domain resource YAML or any associated secrets in the mdoel(s)
 and a new `introspectVersion`, then apply the YAML, the operator will start the introspection job to update the domain.  Once the job is finished, you can use
@@ -280,7 +302,7 @@ If the changes do not require restart then all changes are effective immediately
 
 Status updates
 
-|Scenarios|Domain status |
+|Scenarios|Domain status ||
   |---------------------|-------------|-------|
   |Successful updates|Domain status will have a condition WLSDomainConfigurationStatus with message Successfully updated, reason with introspectionVersion|
   |Changes rolled back per request|Domain status will have a condition WLSDomainConfigurationStatus with message Online update rolledback, reason with introspectionVersion|
@@ -294,5 +316,18 @@ to the domain are immediate.
 - In case of any failure in online updates, no changes will be made to running domain.  However, since the introspect job runs periodically against the domain resources up to 6 times.
 You can delete the introspect job, correct the error and re-apply the changes; or just correct the error and wait for the next introspect job retry.
 
+Specifying timeout
 
+In a rare case if the WDT online update command timeout results in error in the operator log, you can specify the following attributes under `onlineUpdate` to override the default value:
+
+|Attribute Name | Default value (milli seconds) |
+|-------|------|
+|deployTimeoutMilliSeconds| 180000 |
+|redeployTimeoutMilliSeconds| 180000 |
+|undeployTimeoutMilliSeconds| 180000 |
+|startApplicationTimeoutMilliSeconds| 180000 |
+|stopApplicationTimeoutMilliSeconds| 180000 |
+|connectTimeoutMilliSeconds| 120000 |
+|activateTimeoutMilliSeconds| 180000 |
+|setServerGroupsTimeoutMilliSeconds| 180000 |
 

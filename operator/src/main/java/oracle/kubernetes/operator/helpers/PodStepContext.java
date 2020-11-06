@@ -864,6 +864,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     @Override
     public NextAction apply(Packet packet) {
       V1Pod currentPod = info.getServerPod(getServerName());
+      String dynamicUpdateResult = Optional.ofNullable((String)packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))
+          .orElse(null);
 
       // reset introspect failure job count - if any
       
@@ -875,9 +877,6 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
-        String dynamicUpdateResult = Optional.ofNullable((String)packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))
-              .orElse(null);
-
         if (Objects.equals("0", dynamicUpdateResult)) {
           if (miiDomainZipHash != null) {
             LOGGER.info(DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid());
@@ -890,33 +889,41 @@ public abstract class PodStepContext extends BasePodStepContext {
                   updatedPod.getMetadata().getAnnotations().get("weblogic.sha256"));
             updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
             updatedPod.setMetadata(updatedMetaData);
-            updateDomainConditions("Online update successful. No restart necessary");
+            updateDomainConditions("Online update successful. No restart necessary",
+                DomainConditionType.OnlineUpdateComplete);
             return  doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
           }
         }
-        // Changes rolled back per user request in the domain.spec.configuration, keep the pod
-        if (Objects.equals("104", dynamicUpdateResult)) {
-          return doNext(packet);
-        }
+
 
         LOGGER.info(
             MessageKeys.CYCLING_POD,
             Objects.requireNonNull(currentPod.getMetadata()).getName(),
             getReasonToRecycle(currentPod));
 
-        updateDomainConditions("Online update rolled back. Nothing changed");
-
         return doNext(replaceCurrentPod(getNext()), packet);
       } else if (mustPatchPod(currentPod)) {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else {
         logPodExists();
+        // Changes rolled back per user request in the domain.spec.configuration, keep the pod
+        if (Objects.equals("104", dynamicUpdateResult)) {
+          String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
+              ProcessingConstants.MII_DYNAMIC_UPDATE_ROLLBACKFILE))
+              .orElse(null);
+          updateDomainConditions("Online update completed successfully, but the changes require restart and "
+              + "the domain resource specified option to rollback all changes if restart require.  The changes are: "
+              + dynamicUpdateRollBackFile,
+              DomainConditionType.OnlineUpdateRolledback);
+
+          return doNext(packet);
+        }
         return doNext(packet);
       }
     }
 
-    private void updateDomainConditions(String message) {
-      DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.WLSDomainConfigurationStatus);
+    private void updateDomainConditions(String message, DomainConditionType domainSourceType) {
+      DomainCondition onlineUpdateCondition = new DomainCondition(domainSourceType);
       String introspectVersion = Optional.ofNullable(info)
             .map(DomainPresenceInfo::getDomain)
             .map(Domain::getSpec)

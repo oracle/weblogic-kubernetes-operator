@@ -296,6 +296,23 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE, Boolean.toString(isUseOnlineUpdate()));
       addEnvVar(vars, IntrospectorJobEnvVars.MII_ROLLBACK_IFRESTART, Boolean.toString(isRollbackIfRestartRequire()));
 
+      addEnvVarIfLongNotNull(vars, IntrospectorJobEnvVars.WDT_ACTIVATE_TIMEOUT,
+          getDomain().getWDTActivateTimeout());
+      addEnvVarIfLongNotNull(vars, IntrospectorJobEnvVars.WDT_CONNECT_TIMEOUT,
+          getDomain().getWDTConnectTimeout());
+      addEnvVarIfLongNotNull(vars, IntrospectorJobEnvVars.WDT_DEPLOY_TIMEOUT,
+          getDomain().getWDTDeployTimeout());
+      addEnvVarIfLongNotNull(vars, IntrospectorJobEnvVars.WDT_REDEPLOY_TIMEOUT,
+          getDomain().getWDTReDeployTimeout());
+      addEnvVarIfLongNotNull(vars, IntrospectorJobEnvVars.WDT_UNDEPLOY_TIMEOUT,
+          getDomain().getWDTUnDeployTimeout());
+      addEnvVarIfLongNotNull(vars, IntrospectorJobEnvVars.WDT_START_APPLICATION_TIMEOUT,
+          getDomain().getWDTStartApplicationTimeout());
+      addEnvVarIfLongNotNull(vars, IntrospectorJobEnvVars.WDT_STOP_APPLICAITON_TIMEOUT,
+          getDomain().getWDTStopApplicationTimeout());
+      addEnvVarIfLongNotNull(vars, IntrospectorJobEnvVars.WDT_SET_SERVERGROUPS_TIMEOUT,
+          getDomain().getWDTSetServerGroupsTimeout());
+
       String dataHome = getDataHome();
       if (dataHome != null && !dataHome.isEmpty()) {
         addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);

@@ -36,7 +36,7 @@ WDT_ROOT="/u01/wdt/weblogic-deploy"
 WDT_OUTPUT="/tmp/wdt_output.log"
 WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model_filters.json"
-WDT_CREATE_FILTER="/weblogic-operator/scripts/wdt_create_filter.py"
+WDT_CREATE_FILTER="/weblogic-operator/scripts/model_wdt_create_filter.py"
 UPDATE_RCUPWD_FLAG=""
 WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 ARCHIVE_ZIP_CHANGED=0
@@ -577,7 +577,6 @@ function diff_model() {
 
   ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2
   ret=$?
-
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Compare Model failed:"
     cat /tmp/compare_model_stdout
@@ -639,7 +638,7 @@ function createPrimordialDomain() {
 
     diff_rc=$(cat /tmp/model_diff_rc)
     rm ${DECRYPTED_MERGED_MODEL}
-    trace "createPrimordialDomain: model diff returns "${diff_rc}
+    trace "createPrimordialDomain: model diff return code list (can be empty): "${diff_rc}
 
     local security_info_updated="false"
     local cannot_perform_online_update="false"
@@ -682,7 +681,7 @@ function createPrimordialDomain() {
   # If there is no primordial domain or needs to recreate one due to password changes
 
   if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
-    trace "No primordial domain or need to recreate again"
+    trace "No primordial domain or need to create again because of changes require domain recreation"
     wdtCreatePrimordialDomain
     create_primordial_tgz=1
     # Override online update since the domain needs to be restarted for security related changes ?
@@ -959,7 +958,8 @@ function wdtHandleOnlineUpdate() {
 
   local ROLLBACK_FLAG=""
   if [ ! -z "${MII_ROLLBACK_IFRESTART}" ] && [ "${MII_ROLLBACK_IFRESTART}" == "true" ]; then
-      ROLLBACK_FLAG="-rollback_if_require_restart"
+      #ROLLBACK_FLAG="-rollback_if_require_restart"
+      ROLLBACK_FLAG="-rollback_if_restart_required"
   fi
   # no need for encryption phrase because the diffed model has real value
   # note: using yes seems to et a 141 return code, switch to echo seems to be ok
@@ -976,7 +976,7 @@ function wdtHandleOnlineUpdate() {
   echo ${admin_pwd} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} \
    -admin_url ${admin_url} -admin_user ${admin_user} -model_file \
    /tmp/diffed_model.yaml -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG} ${archive_list} \
-   -discard_current_edit
+   -discard_current_edit -output_dir /tmp
 
   local ret=$?
 
@@ -985,6 +985,11 @@ function wdtHandleOnlineUpdate() {
     trace ">>>  updatedomainResult=${ret}"
   elif [ ${ret} -eq ${PROG_ROLLBACK_IF_RESTART_EXIT_CODE} ] ; then
     trace ">>>  updatedomainResult=${ret}"
+    if [ -f /tmp/rollback.file ] ; then
+      echo ">>> /tmp/rollback.file"
+      cat /tmp/rollback.file
+      echo ">>> EOF"
+    fi
     MII_UPDATE_ROLLEDBACK=true
   elif [ ${ret} -ne 0 ] ; then
     trace "Introspect job terminated: Online update failed. Check error in the logs"
@@ -1035,7 +1040,7 @@ function encrypt_decrypt_model() {
   ${JAVA_HOME}/bin/java -cp ${CP} \
     ${JAVA_PROPS} \
     org.python.util.jython \
-    ${SCRIPTPATH}/encryption_util.py $1 "$(cat $2)" $3 $4 > ${WDT_OUTPUT} 2>&1
+    ${SCRIPTPATH}/model_encryption_util.py $1 "$(cat $2)" $3 $4 > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
     trace SEVERE "Fatal Error: Failed to $1 domain model. This error is irrecoverable.  Check to see if the secret " \
@@ -1076,7 +1081,7 @@ function encrypt_decrypt_domain_secret() {
   ${JAVA_HOME}/bin/java -cp ${CP} \
     ${JAVA_PROPS} \
     org.python.util.jython \
-    ${SCRIPTPATH}/encryption_util.py $1 "$(cat /tmp/secure.ini)" $3 ${tmp_output} > ${WDT_OUTPUT} 2>&1
+    ${SCRIPTPATH}/model_encryption_util.py $1 "$(cat /tmp/secure.ini)" $3 ${tmp_output} > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
     trace SEVERE "Fatal Error: Failed to $1 domain secret. This error is irrecoverable.  Check to see if the secret " \
