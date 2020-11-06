@@ -30,7 +30,6 @@ import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
-import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
@@ -273,12 +272,13 @@ public abstract class PodStepContext extends BasePodStepContext {
   /**
    * Deletes the specified pod.
    *
+   * @param pod the existing pod
    * @param next the next step to perform after the pod deletion is complete.
    * @return a step to be scheduled.
    */
-  private Step deletePod(Step next) {
+  private Step deletePod(V1Pod pod, Step next) {
     return new CallBuilder()
-          .deletePodAsync(getPodName(), getNamespace(), new V1DeleteOptions(), deleteResponse(next));
+          .deletePodAsync(getPodName(), getNamespace(), new V1DeleteOptions(), deleteResponse(pod, next));
   }
 
   /**
@@ -307,10 +307,11 @@ public abstract class PodStepContext extends BasePodStepContext {
   /**
    * Creates the specified replacement pod and performs any additional needed processing.
    *
+   * @param pod the existing pod
    * @param next the next step to perform after the pod creation is complete.
    * @return a step to be scheduled.
    */
-  abstract Step replaceCurrentPod(Step next);
+  abstract Step replaceCurrentPod(V1Pod pod, Step next);
 
   /**
    * Creates the specified replacement pod and records it.
@@ -379,8 +380,8 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract String getPodReplacedMessageKey();
 
-  Step createCyclePodStep(Step next) {
-    return new CyclePodStep(next);
+  Step createCyclePodStep(V1Pod pod, Step next) {
+    return new CyclePodStep(pod, next);
   }
 
   private boolean mustPatchPod(V1Pod currentPod) {
@@ -410,8 +411,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     return new CreateResponseStep(next);
   }
 
-  private ResponseStep<V1Status> deleteResponse(Step next) {
-    return new DeleteResponseStep(next);
+  private ResponseStep<Object> deleteResponse(V1Pod pod, Step next) {
+    return new DeleteResponseStep(pod, next);
   }
 
   private ResponseStep<V1Pod> replaceResponse(Step next) {
@@ -787,15 +788,17 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private class CyclePodStep extends BaseStep {
+    private final V1Pod pod;
 
-    CyclePodStep(Step next) {
+    CyclePodStep(V1Pod pod, Step next) {
       super(next);
+      this.pod = pod;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       markBeingDeleted();
-      return doNext(deletePod(getNext()), packet);
+      return doNext(deletePod(pod, getNext()), packet);
     }
   }
 
@@ -815,7 +818,7 @@ public abstract class PodStepContext extends BasePodStepContext {
             MessageKeys.CYCLING_POD,
             Objects.requireNonNull(currentPod.getMetadata()).getName(),
             getReasonToRecycle(currentPod));
-        return doNext(replaceCurrentPod(getNext()), packet);
+        return doNext(replaceCurrentPod(currentPod, getNext()), packet);
       } else if (mustPatchPod(currentPod)) {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else {
@@ -873,9 +876,12 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
   }
 
-  private class DeleteResponseStep extends ResponseStep<V1Status> {
-    DeleteResponseStep(Step next) {
+  private class DeleteResponseStep extends ResponseStep<Object> {
+    private final V1Pod pod;
+
+    DeleteResponseStep(V1Pod pod, Step next) {
       super(next);
+      this.pod = pod;
     }
 
     protected String getDetail() {
@@ -883,7 +889,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Status> callResponses) {
+    public NextAction onFailure(Packet packet, CallResponse<Object> callResponses) {
       if (callResponses.getStatusCode() == CallBuilder.NOT_FOUND) {
         return onSuccess(packet, callResponses);
       }
@@ -891,7 +897,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Status> callResponses) {
+    public NextAction onSuccess(Packet packet, CallResponse<Object> callResponses) {
       return doNext(replacePod(getNext()), packet);
     }
   }
