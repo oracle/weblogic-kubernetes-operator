@@ -13,7 +13,6 @@ import java.util.function.BiFunction;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1Status;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -136,7 +135,7 @@ public class StuckPodProcessing {
     }
   }
 
-  static class ForcedDeleteResponseStep extends DefaultResponseStep<V1Status> {
+  static class ForcedDeleteResponseStep extends DefaultResponseStep<Object> {
 
     private final String name;
     private final String namespace;
@@ -147,7 +146,7 @@ public class StuckPodProcessing {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Status> callResponse) {
+    public NextAction onSuccess(Packet packet, CallResponse<Object> callResponse) {
       LOGGER.info(POD_FORCE_DELETED, name, namespace);
       return super.onSuccess(packet, callResponse);
     }
