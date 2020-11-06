@@ -123,6 +123,7 @@ class ItMiiDomain {
   private String miiImageAddSecondApp = null;
   private String miiImage = null;
   private static LoggingFacade logger = null;
+  private static boolean mainThreadDone = false;
 
   /**
    * Install Operator.
@@ -395,7 +396,7 @@ class ItMiiDomain {
             MII_APP_RESPONSE_V2 + i);
       } 
     } finally {
-    
+      mainThreadDone = true;
       if (accountingThread != null) {
         try {
           accountingThread.join();
@@ -1125,7 +1126,7 @@ class ItMiiDomain {
       }
 
       logger.fine("YYYYYYYYYYY: application available YYYYYYYY count = " + count);
-      return v2AppAvailable;
+      return v2AppAvailable || mainThreadDone;
     };
   }
 
