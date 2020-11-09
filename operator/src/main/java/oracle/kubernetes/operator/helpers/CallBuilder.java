@@ -3,13 +3,20 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.Pair;
 import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
 import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
 import io.kubernetes.client.openapi.apis.AuthenticationV1Api;
@@ -289,7 +296,7 @@ public class CallBuilder {
   private final CallFactory<V1Secret> readSecret =
       (requestParams, usage, cont, callback) ->
           wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final Integer gracePeriodSeconds = null;
+  private Integer gracePeriodSeconds = null;
   private final Boolean orphanDependents = null;
   private final String propagationPolicy = null;
 
@@ -303,7 +310,7 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1DeleteOptions) requestParams.body,
                   callback));
-  private final CallFactory<V1Status> deletePod =
+  private final CallFactory<Object> deletePod =
       (requestParams, usage, cont, callback) ->
           wrap(
               deletePodAsync(
@@ -496,6 +503,11 @@ public class CallBuilder {
 
   public CallBuilder withFieldSelector(String fieldSelector) {
     this.fieldSelector = fieldSelector;
+    return this;
+  }
+
+  public CallBuilder withGracePeriodSeconds(int gracePeriodSeconds) {
+    this.gracePeriodSeconds = gracePeriodSeconds;
     return this;
   }
 
@@ -1112,19 +1124,19 @@ public class CallBuilder {
       String name,
       String namespace,
       V1DeleteOptions deleteOptions,
-      ApiCallback<V1Status> callback)
+      ApiCallback<Object> callback)
       throws ApiException {
-    return new CoreV1Api(client)
-        .deleteNamespacedPodAsync(
-            name,
-            namespace,
-            pretty,
-            dryRun,
-            gracePeriodSeconds,
-            orphanDependents,
-            propagationPolicy,
-            deleteOptions,
-            callback);
+    return deleteNamespacedPodAsync(
+        client,
+        name,
+        namespace,
+        pretty,
+        dryRun,
+        gracePeriodSeconds,
+        orphanDependents,
+        propagationPolicy,
+        deleteOptions,
+        callback);
   }
 
   /**
@@ -1140,9 +1152,82 @@ public class CallBuilder {
       String name,
       String namespace,
       V1DeleteOptions deleteOptions,
-      ResponseStep<V1Status> responseStep) {
+      ResponseStep<Object> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("deletePod", namespace, name, deleteOptions), deletePod);
+  }
+
+  private Call deleteNamespacedPodAsync(ApiClient client, String name, String namespace, String pretty, String dryRun,
+                                        Integer gracePeriodSeconds, Boolean orphanDependents, String propagationPolicy,
+                                        V1DeleteOptions body, ApiCallback<Object> callback) throws ApiException {
+    Call localVarCall = this.deleteNamespacedPodValidateBeforeCall(client, name, namespace, pretty, dryRun,
+            gracePeriodSeconds, orphanDependents, propagationPolicy, body, callback);
+    Type localVarReturnType = (new TypeToken<Object>() {
+    }).getType();
+    client.executeAsync(localVarCall, localVarReturnType, callback);
+    return localVarCall;
+  }
+
+  private Call deleteNamespacedPodValidateBeforeCall(ApiClient client, String name, String namespace, String pretty,
+                                                     String dryRun, Integer gracePeriodSeconds,
+                                                     Boolean orphanDependents, String propagationPolicy,
+                                                     V1DeleteOptions body, ApiCallback callback) throws ApiException {
+    if (name == null) {
+      throw new ApiException("Missing the required parameter 'name' when calling deleteNamespacedPod(Async)");
+    } else if (namespace == null) {
+      throw new ApiException("Missing the required parameter 'namespace' when calling deleteNamespacedPod(Async)");
+    } else {
+      Call localVarCall = this.deleteNamespacedPodCall(client, name, namespace, pretty, dryRun, gracePeriodSeconds,
+              orphanDependents, propagationPolicy, body, callback);
+      return localVarCall;
+    }
+  }
+
+  private Call deleteNamespacedPodCall(ApiClient client, String name, String namespace, String pretty, String dryRun,
+                                       Integer gracePeriodSeconds, Boolean orphanDependents, String propagationPolicy,
+                                       V1DeleteOptions body, ApiCallback callback) throws ApiException {
+    String localVarPath = "/api/v1/namespaces/{namespace}/pods/{name}".replaceAll("\\{name\\}",
+            client.escapeString(name.toString())).replaceAll("\\{namespace\\}",
+            client.escapeString(namespace.toString()));
+    List<Pair> localVarQueryParams = new ArrayList();
+    List<Pair> localVarCollectionQueryParams = new ArrayList();
+    if (pretty != null) {
+      localVarQueryParams.addAll(client.parameterToPair("pretty", pretty));
+    }
+
+    if (dryRun != null) {
+      localVarQueryParams.addAll(client.parameterToPair("dryRun", dryRun));
+    }
+
+    if (gracePeriodSeconds != null) {
+      localVarQueryParams.addAll(client.parameterToPair("gracePeriodSeconds", gracePeriodSeconds));
+    }
+
+    if (orphanDependents != null) {
+      localVarQueryParams.addAll(client.parameterToPair("orphanDependents", orphanDependents));
+    }
+
+    if (propagationPolicy != null) {
+      localVarQueryParams.addAll(client.parameterToPair("propagationPolicy", propagationPolicy));
+    }
+
+    Map<String, String> localVarHeaderParams = new HashMap();
+    Map<String, String> localVarCookieParams = new HashMap();
+    Map<String, Object> localVarFormParams = new HashMap();
+    String[] localVarAccepts = new String[]{
+        "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
+    };
+    String localVarAccept = client.selectHeaderAccept(localVarAccepts);
+    if (localVarAccept != null) {
+      localVarHeaderParams.put("Accept", localVarAccept);
+    }
+
+    String[] localVarContentTypes = new String[0];
+    String localVarContentType = client.selectHeaderContentType(localVarContentTypes);
+    localVarHeaderParams.put("Content-Type", localVarContentType);
+    String[] localVarAuthNames = new String[]{"BearerToken"};
+    return client.buildCall(localVarPath, "DELETE", localVarQueryParams, localVarCollectionQueryParams, body,
+            localVarHeaderParams, localVarCookieParams, localVarFormParams, localVarAuthNames, callback);
   }
 
   private Call patchPodAsync(

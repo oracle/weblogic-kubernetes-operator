@@ -109,6 +109,8 @@ public class Main {
   private static String principal;
   private static KubernetesVersion version = null;
   private static SemanticVersion productVersion = null;
+  private static final StuckPodProcessing stuckPodProcessing
+        = new StuckPodProcessing(operatorNamespace, Main::readExistingResources);
 
   static {
     try {
@@ -222,10 +224,15 @@ public class Main {
 
       // start periodic retry and recheck
       int recheckInterval = tuningAndConfig.getMainTuning().targetNamespaceRecheckIntervalSeconds;
+      int stuckPodInterval = tuningAndConfig.getMainTuning().stuckPodRecheckSeconds;
       engine
           .getExecutor()
           .scheduleWithFixedDelay(
               recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
+      engine
+          .getExecutor()
+          .scheduleWithFixedDelay(
+              checkStuckPods(), stuckPodInterval, stuckPodInterval, TimeUnit.SECONDS);
 
       // Wait until all other initialization is done before marking ready and
       // starting liveness thread
@@ -334,6 +341,14 @@ public class Main {
         runSteps(new StartNamespacesStep(namespacesToStart, isFullRecheck));
       }
     };
+  }
+
+  static Runnable checkStuckPods() {
+    return () -> getTargetNamespaces().stream().map(Main::checkStuckPodsIn).forEach(Main::runSteps);
+  }
+
+  private  static Step checkStuckPodsIn(String namespace) {
+    return stuckPodProcessing.createStuckPodCheckSteps(namespace);
   }
 
   static Step readExistingResources(String operatorNamespace, String ns) {
