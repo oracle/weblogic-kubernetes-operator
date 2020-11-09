@@ -9,6 +9,7 @@ draft: false
 | Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
 | November 10, 2020 | v3.1.0 | no | Enhanced options for specifying managed namespaces. Helm 3.1.3+ now required. |
+| November 9, 2020 | v3.0.3 | no | This release contains a fix for pods that are stuck in the Terminating state after an unexpected shut down of a worker node. |
 | September 15, 2020 | v3.0.2 | no | This release contains several fixes, including improvements to log rotation and a fix that avoids unnecessarily updating the domain status. |
 | August 13, 2020 | v3.0.1 | no | Fixed an issue preventing the REST interface from working after a Helm upgrade. Helm 3.1.3+ now required. |
 | July 17, 2020 | v3.0.0 | yes | Adds Model in Image feature and support for applying topology and configuration override changes without downtime. Removal of support for Helm 2.x. Operator performance improvements to manage many domains in the same Kubernetes cluster. |
@@ -32,6 +33,9 @@ draft: false
 
 #### Operator 3.1.0
 
+* All fixes included in 3.0.1, 3.0.2, and 3.0.3 are included in 3.1.0.
+* Sample [scripts to start and stop server instances](userguide/managing-domains/domain-lifecycle/startup.md#domain-lifecycle-sample-scripts) ([#2002](https://github.com/oracle/weblogic-kubernetes-operator/pull/2002)).
+* Support running with [OpenShift restrictive SCC](security/openshift.md) ([#2007](https://github.com/oracle/weblogic-kubernetes-operator/pull/2007)).
 * Updated [default resource and Java options](faq/resource-settings.md) ([#1775](https://github.com/oracle/weblogic-kubernetes-operator/pull/1775)).
 * Introspection failures are logged to the operator's log ([#1787](https://github.com/oracle/weblogic-kubernetes-operator/pull/1787)).
 * Mirror introspector log to a rotating file in the log home ([#1827](https://github.com/oracle/weblogic-kubernetes-operator/pull/1827)).
@@ -50,6 +54,10 @@ draft: false
 * Fix validation error during inrtrospector for certain static clusters ([#2014](https://github.com/oracle/weblogic-kubernetes-operator/pull/2014)).
 * Correct issue in wl-pod-wait.sh sample script ([#2018](https://github.com/oracle/weblogic-kubernetes-operator/pull/2018)).
 * Correct processing of ALWAYS serverStartPolicy ([#2020](https://github.com/oracle/weblogic-kubernetes-operator/pull/2020)).
+
+#### Operator 3.0.3
+
+* The operator now responds to WebLogic Server instance pods that are stuck in the Terminating state when those pods are evicted from a node that has unexpectedly shut down and where Kubernetes has not removed the pod.
 
 #### Operator 3.0.2
 

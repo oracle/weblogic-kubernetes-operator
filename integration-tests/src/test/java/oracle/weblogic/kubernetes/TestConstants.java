@@ -272,7 +272,6 @@ public interface TestConstants {
   public static final String FSS_DIR = Optional.ofNullable(System.getenv("FSS_DIR"))
       .orElse("");
 
-
   // default name suffixes
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
   public String DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX = "-introspector";
