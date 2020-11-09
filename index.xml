@@ -800,7 +800,7 @@ Check the introspector job If your introspector job failed, then examine the kub
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Releases    Date Version Introduces backward incompatibilities? Changes     November 4, 2020 v3.0.3 no This release contains a fix for pods that are stuck in the Terminating state after an unexpected shut down of a worker node.   September 15, 2020 v3.0.2 no This release contains several fixes, including improvements to log rotation and a fix that avoids unnecessarily updating the domain status.   August 13, 2020 v3.</description>
+      <description>Releases    Date Version Introduces backward incompatibilities? Changes     November 9, 2020 v3.0.3 no This release contains a fix for pods that are stuck in the Terminating state after an unexpected shut down of a worker node.   September 15, 2020 v3.0.2 no This release contains several fixes, including improvements to log rotation and a fix that avoids unnecessarily updating the domain status.   August 13, 2020 v3.</description>
     </item>
     
   </channel>
