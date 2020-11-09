@@ -7,7 +7,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>3.0.2</version>
+        <version>3.0.3</version>
     </parent>
 
     <artifactId>operator-integration-tests</artifactId>
@@ -28,7 +28,7 @@
     <properties>
         <src-integration-test>${project.basedir}/src/test/java</src-integration-test>
         <resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
-        <junit-version>4.13</junit-version>
+        <junit-version>4.13.1</junit-version>
         <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
