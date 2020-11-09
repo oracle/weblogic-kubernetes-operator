@@ -158,8 +158,9 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" == 'false' ]]; then
   # check if replica count can decrease below current value
   isReplicaCountEqualToMinReplicas "${domainJson}" "${clusterName}" replicasEqualsMinReplicas
   if [ "${replicasEqualsMinReplicas}" == 'true' ]; then
-    printInfo "Current replica count value is same as minimum number of replica count. \
-      Not decreasing the replica count value."
+    printInfo "Not decreasing the replica count value: it is at its minimum. \
+      (See 'domain.spec.allowReplicasBelowMinDynClusterSize' and \
+      'domain.status.clusters[].minimumReplicas' for details)."
     keepReplicaConstant=true
   fi
 fi
