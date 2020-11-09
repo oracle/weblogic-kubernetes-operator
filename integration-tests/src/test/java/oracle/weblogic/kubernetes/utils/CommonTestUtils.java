@@ -183,6 +183,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallKibana;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
@@ -2934,6 +2935,43 @@ public class CommonTestUtils {
           };
         }));
     return true;
+  }
+
+  /**
+   * Check if the the application is accessible inside the WebLogic server pod.
+   * @param conditionFactory condition factory
+   * @param namespace namespace of the domain
+   * @param podName name of the pod
+   * @param internalPort internal port of the managed server running in the pod
+   * @param appPath path to access the application
+   * @param expectedStr expected response from the app
+   */
+  public static void checkAppIsRunning(
+      ConditionFactory conditionFactory,
+      String namespace,
+      String podName,
+      String internalPort,
+      String appPath,
+      String expectedStr
+  ) {
+
+    // check if the application is accessible inside of a server pod
+    conditionFactory
+        .conditionEvaluationListener(
+            condition -> getLogger().info("Waiting for application {0} is running on pod {1} in namespace {2} "
+                    + "(elapsed time {3}ms, remaining time {4}ms)",
+                appPath,
+                podName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> appAccessibleInPod(
+            namespace,
+            podName,
+            internalPort,
+            appPath,
+            expectedStr));
+
   }
 
   /** Create a persistent volume.
