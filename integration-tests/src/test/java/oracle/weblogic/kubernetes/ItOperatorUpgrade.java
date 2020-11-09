@@ -505,7 +505,7 @@ public class ItOperatorUpgrade {
   }
 
   /**
-   * Check application availability while the operator upgrade is happening and once after the ugprade is complete
+   * Check application availability while the operator upgrade is happening and once the ugprade is complete
    * by accessing the application inside the managed server pods.
    */
   private static void collectAppAvailability(
