@@ -322,11 +322,11 @@ public class PodHelper {
     }
 
     @Override
-    Step replaceCurrentPod(Step next) {
+    Step replaceCurrentPod(V1Pod pod, Step next) {
       if (MakeRightDomainOperation.isInspectionRequired(packet)) {
         return createProgressingStep(MakeRightDomainOperation.createStepsToRerunWithIntrospection(packet));
       } else {
-        return createProgressingStep(createCyclePodStep(next));
+        return createProgressingStep(createCyclePodStep(pod, next));
       }
     }
 
@@ -454,8 +454,8 @@ public class PodHelper {
 
     @Override
     // let the pod rolling step update the pod
-    Step replaceCurrentPod(Step next) {
-      return deferProcessing(createCyclePodStep(next));
+    Step replaceCurrentPod(V1Pod pod, Step next) {
+      return deferProcessing(createCyclePodStep(pod, next));
     }
 
     private Step deferProcessing(Step deferredStep) {
