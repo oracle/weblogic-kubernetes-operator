@@ -76,13 +76,15 @@ if [ "${MOCK_WLS}" != 'true' ]; then
   fi
 fi
 
-# WARNING: This state file check must continue to be left in place
-#          even if we remove the node manager from the life cycle.
-#          This is because at least one WKO user is externally
-#          modifying this file to FAILED_NOT_RESTARTABLE in order
-#          to force a liveness failure when the user detects
-#          that their applications are unresponsive.
 if [ -f ${STATEFILE} ] && [ `grep -c "FAILED_NOT_RESTARTABLE" ${STATEFILE}` -eq 1 ]; then
+  # WARNING: This state file check is essentially a public API and 
+  #          must continue to be honored even if we remove the node
+  #          manager from the life cycle.
+  #
+  #          (There is at least one WKO user that externally modifies
+  #          the file to FAILED_NOT_RESTARTABLE to force a liveness
+  #          failure when the user detects that their applications
+  #          are unresponsive.)
   trace SEVERE "WebLogic Server state is FAILED_NOT_RESTARTABLE."
   exit $RETVAL
 fi
