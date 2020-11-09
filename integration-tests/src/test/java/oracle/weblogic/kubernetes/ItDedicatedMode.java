@@ -498,7 +498,7 @@ class ItDedicatedMode {
     int t3ChannelNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(domain1Namespace, getExternalServicePodName(adminServerPodName), "t3channel"),
         "Getting admin server t3channel node port failed");
-    logger.info("techannel channel node port: {0}", t3ChannelNodePort);
+    logger.info("t3channel channel node port: {0}", t3ChannelNodePort);
     assertNotEquals(-1, t3ChannelNodePort, "admin server t3ChannelNodePort is not valid");
 
     //deploy clusterview application
