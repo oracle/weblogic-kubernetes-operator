@@ -82,6 +82,7 @@ serverStarted=""
 effectivePolicy=""
 managedServerPolicy=""
 stoppedWhenAlwaysPolicyReset=""
+replicasEqualsMinReplicas=""
 withReplicas="CONSTANT"
 withPolicy="CONSTANT"
 
@@ -150,6 +151,16 @@ else
   if [[ "${effectivePolicy}" == "NEVER" || "${effectivePolicy}" == "ADMIN_ONLY" ]]; then
     printInfo "No changes needed, exiting. Server should be already stopping or stopped because effective sever start policy is 'NEVER' or 'ADMIN_ONLY'."
     exit 0
+  fi
+fi
+
+if [[ -n "${clusterName}" && "${keepReplicaConstant}" == 'false' ]]; then
+  # check if replica count can decrease below current value
+  isReplicaCountEqualToMinReplicas "${domainJson}" "${clusterName}" replicasEqualsMinReplicas
+  if [ "${replicasEqualsMinReplicas}" == 'true' ]; then
+    printInfo "Current replica count value is same as minimum number of replica count. \
+      Not decreasing the replica count value."
+    keepReplicaConstant=true
   fi
 fi
 
