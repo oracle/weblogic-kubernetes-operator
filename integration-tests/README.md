@@ -1,5 +1,5 @@
 # Integration tests for Oracle WebLogic Server Kubernetes Operator
-This documentation describes the procedure to run integration tests for the WebLogic Server Kubernetes Operator locally in the Oracle Linux environment. The tests are written in the JUnit5 framework and driven by maven profile.
+This documentation describes the steps to run integration tests for the Oracle WebLogic Server Kubernetes Operator locally on a Oracle Linux environment. The tests are written in the JUnit5 framework and driven by maven profile.
 
 # Directory Configuration and Structure
 Directory structure of integration test source is distributed as follows 
@@ -9,14 +9,16 @@ weblogic-kubernetes-operator/integration-tests/src/test/java/oracle/weblogic/kub
 weblogic-kubernetes-operator/integration-tests/src/test/resources - properties, YAML files and other bash scripts
 ```
 
-# How does integration test infrastructure works
- - Build weblogic kubernetes operator image from the downloaded branch.
- - Download the latest version of WebLogic Deploy Tooling (WDT) and WebLogic Image Tool (WIT)
- - Pull the specified version of WebLogic Image from container-registry.oracle.com (OCR) or phx.ocir.io (OCIR) 
- - Build a simple WebLogic domain in image with a dynamic WebLogic cluster and a sample web application using Model-In-Image model.
- - Install istio service mesh.
+# How does WebLogic Kubernetes Operator integration test works
+ - Build WebLogic Kubernetes Operator image from the downloaded git branch.
+ - Install the latest version of WebLogic Deploy Tooling (WDT) and WebLogic Image Tool (WIT)
+ - Install supported istio service mesh.
+ - Pull the specified version of WebLogic Image from container-registry.oracle.com (OCR)
+ - Install WebLogic Kubernetes Operator.
+ - Build a WebLogic domain resource WebLogic.
+ - Make sure WebLogic domain is running by verify the corresponding server pod and kubernetes service status. 
  - After test execution, delete all the Namespaces, Kubernetes Objects created during test execution.
- - Archive the test stdout for each test class and kubernates object details for each test method in the diagnostic directory for triage when tests fail or when the env variable COLLECT_LOGS_ON_SUCCESS is set to true.
+ - Archive the test standard output for each test class and kubernetes object details for each test method in the diagnostic directory for triage when tests fail or when the env variable COLLECT_LOGS_ON_SUCCESS is set to true.
  
 # How to run Operator integration tests locally on Oracle Linux
 
@@ -53,7 +55,7 @@ mvn -Dit.test="!ItCrossDomainTransaction,!ItMiiUpdateDomainConfig" -pl integrati
 ## Environment variables to manage test execution 
 | Variable | Description | Default Value
 | --- | --- | --- |
-| SKIP_CLEANUP  | Test infrastructure removes all kubernetes objects created during test execution. To retain all such objects for triaging test failures this environment variable should be set to true. User need to run weblogic-kubernetes-operator/src/integration-tests/bash/cleanup.sh to clean up kubernetes objects after traiging.    | true
+| SKIP_CLEANUP  | Test infrastructure removes all kubernetes objects created during test execution. To retain all such objects for triaging test failures this environment variable should be set to true. User need to run weblogic-kubernetes-operator/src/integration-tests/bash/cleanup.sh to clean up kubernetes objects after traiging.    | false
 | COLLECT_LOGS_ON_SUCCESS  | Test infra does not keep the diagnostic log for successful tests. To archive the diagnostic log for successful tests, this environment variable should be set to true. | false
 | LOGS_DIR  | Root directory for the diagnostic logs. | /tmp/it-diagnosticlogs
 | RESULTS_ROOT  | Root directory for the intermediate artifacts such istio installation, dynamically generated YAML files | /tmp/it-testresults
@@ -67,7 +69,7 @@ mvn -Dit.test="!ItCrossDomainTransaction,!ItMiiUpdateDomainConfig" -pl integrati
 
 On completion of integration test execution, the results are archived in a directory based on environment variable  LOG_DIR  ( the default value is /tmp/it-diagnosticlogs) and runtime artifacts are available in a directory based on environment variable RESULTS_ROOT ( the default value is /tmp/it-testresults) . 
 
-A typical diagnosticlogs directory content will look as follows after the completion of test ItMiiDomain. The stdout for the tests is captured in ItMiiDomain.out. For each test method ( say testCreateMiiDomain, testCreateMiiSecondDomain) a directory is created and the corresponding k8s object description log(s) and server pod logs are saved if the test fails or environment variable COLLECT_LOGS_ON_SUCCESS set to true.
+A typical diagnosticlogs directory content will look as follows after the completion of test ItMiiDomain. The standard output for the tests is captured in ItMiiDomain.out. For each test method ( say testCreateMiiDomain, testCreateMiiSecondDomain) a directory is created and the corresponding k8s object description log(s) and server pod logs are saved if the test fails or environment variable COLLECT_LOGS_ON_SUCCESS set to true.
 
 ```
 itMiiDomain
