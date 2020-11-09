@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -546,11 +545,6 @@ public class ItOperatorUpgrade {
         appAccessedAfterUpgrade = true;
       }
 
-      try {
-        TimeUnit.MILLISECONDS.sleep(200);
-      } catch (InterruptedException ie) {
-        // do nothing
-      }
     }
   }
 
