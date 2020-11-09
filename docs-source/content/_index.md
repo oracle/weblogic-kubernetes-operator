@@ -24,7 +24,7 @@ using the operator to deploy and run a WebLogic domain container-packaged web ap
 #### Current production release
 
 The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.0.3.
-This release was published on November 4, 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
+This release was published on November 9, 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
 
 This release introduces _non-backward compatible_ changes; however, operators using this release can be run in the same
 Kubernetes cluster as operators using the 2.6.0 version allowing for staged migration. You can replace a 2.6.0 operator with a 3.x operator without needing to recreate any existing domains; however, you must delete the 2.6.0 Helm release and then install the 3.x version rather than using a Helm upgrade. When the 3.x operator starts, it will roll any running WebLogic Server instances
