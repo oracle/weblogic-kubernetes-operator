@@ -30,7 +30,13 @@ exportInstallHomes
 
 function copyIfChanged() {
   [ ! -f "${1?}" ] && trace SEVERE "File '$1' not found." && exit 1
-  if [ ! -f "${2?}" ] || [ ! -z "`diff $1 $2 2>&1`" ]; then
+  if [ ! -f "${2?}" ]; then
+    trace "Copying '$1' to '$2'."
+    cp $1 $2
+    [ $? -ne 0 ] && trace SEVERE "failed cp $1 $2" && exitOrLoop
+    chmod 770 $2
+    [ $? -ne 0 ] && trace SEVERE "failed chmod 770 $2" && exitOrLoop
+  else if [ ! -z "`diff $1 $2 2>&1`" ]; then
     trace "Copying '$1' to '$2'."
     cp $1 $2
     [ $? -ne 0 ] && trace SEVERE "failed cp $1 $2" && exitOrLoop
@@ -40,7 +46,7 @@ function copyIfChanged() {
 }
 
 #
-# Define function to start weblogic
+# Define function to start WebLogic
 #
 
 function startWLS() {
