@@ -16,31 +16,36 @@ public class OnlineUpdate {
   @Description("Enable online update.")
   private Boolean enabled = false;
 
-  @Description("Rollback the changes if the update require domain restart.")
+  @Description("If set to true, it will rollback the changes if the update require domain restart. " +
+            "All changes are rolled back, the domain continues to run without interruption. " +
+            "It is the user responsibility to revert the content changes in the configmap specified in " +
+            "`domain.spec.configuration.model.configmap` or secrets. User can detect the changes have been " +
+            "rolled back when describing the domain `kubectl -n <ns> describe domain <domain name>" +
+            " under the condition `OnlineUpdateRolledback`")
   private Boolean rollBackIfRestartRequired = false;
 
-  @Description("WLST deploy timout seconds (in milliseconds) Default: 180000L.")
+  @Description("WLST deploy application or libraries timout in milliseconds. Default: 180000.")
   private Long deployTimeoutMilliSeconds = 180000L;
 
-  @Description("WLST redeploy timout seconds (in milliseconds) Default: 180000L.")
+  @Description("WLST redeploy application or libraries timout in milliseconds. Default: 180000.")
   private Long redeployTimeoutMilliSeconds = 180000L;
 
-  @Description("WLST undeploy timout seconds (in milliseconds) Default: 180000L.")
+  @Description("WLST undeploy application or libraries timout in milliseconds. Default: 180000.")
   private Long undeployTimeoutMilliSeconds = 180000L;
 
-  @Description("WLST startApplication timout seconds (in milliseconds) Default: 180000L.")
+  @Description("WLST startApplication timout in milliseconds. Default: 180000.")
   private Long startApplicationTimeoutMilliSeconds = 180000L;
 
-  @Description("WLST stopApplication timout seconds (in milliseconds) Default: 180000L.")
+  @Description("WLST stopApplication timout in milliseconds. Default: 180000.")
   private Long stopApplicationTimeoutMilliSeconds = 180000L;
 
-  @Description("WLST connect timout seconds (in milliseconds) Default: 180000L.")
+  @Description("WLST connect to running domain timout in milliseconds. Default: 120000.")
   private Long connectTimeoutMilliSeconds = 120000L;
 
-  @Description("WLST activate timout seconds (in milliseconds) Default: 180000L.")
+  @Description("WLST activate changes timout in milliseconds. Default: 180000.")
   private Long activateTimeoutMilliSeconds = 180000L;
 
-  @Description("WLST set server groups timout seconds (in milliseconds) Default: 180000L.")
+  @Description("WLST set server groups timout in milliseconds. Default: 180000.")
   private Long setServerGroupsTimeoutMilliSeconds = 180000L;
 
   public Boolean getEnabled() {
