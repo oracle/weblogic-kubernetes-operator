@@ -3290,7 +3290,7 @@ public class CommonTestUtils {
                                               .addMatchExpressionsItem(new V1LabelSelectorRequirement()
                                                   .key("weblogic.clusterName")
                                                   .operator("In")
-                                                  .addValuesItem(cluster.getClusterName())))
+                                                  .addValuesItem("$(CLUSTER_NAME)")))
                                       )))));
 
             }
