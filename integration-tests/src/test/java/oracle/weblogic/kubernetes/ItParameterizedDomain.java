@@ -75,9 +75,11 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
@@ -917,30 +919,38 @@ class ItParameterizedDomain {
     // these resources should be labeled with domainUid for cleanup after testing
     Path pvHostPath =
         get(PV_ROOT, ItParameterizedDomain.class.getSimpleName(), pvcName);
-
-    logger.info("Creating PV directory {0}", pvHostPath);
-    assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
-    assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
-
+    if (!OKE_CLUSTER) {
+      logger.info("Creating PV directory {0}", pvHostPath);
+      assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
+      assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
+    }
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName(domainUid + "-weblogic-domain-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
-            .persistentVolumeReclaimPolicy("Recycle")
-            .hostPath(new V1HostPathVolumeSource()
-                .path(pvHostPath.toString())))
+            .persistentVolumeReclaimPolicy("Recycle"))
         .metadata(new V1ObjectMetaBuilder()
             .withName(pvName)
             .build()
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
-
+    if (OKE_CLUSTER) {
+      v1pv.getSpec()
+          .storageClassName("oci-fss")
+          .nfs(new io.kubernetes.client.openapi.models.V1NFSVolumeSource()
+              .path(FSS_DIR)
+              .server(NFS_SERVER)
+              .readOnly(false));
+    } else {
+      v1pv.getSpec()
+          .storageClassName(domainUid + "-weblogic-domain-storage-class")
+          .hostPath(new V1HostPathVolumeSource()
+              .path(pvHostPath.toString()));
+    }
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName(domainUid + "-weblogic-domain-storage-class")
             .volumeName(pvName)
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("5Gi"))))
@@ -950,6 +960,13 @@ class ItParameterizedDomain {
             .build()
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
+    if (OKE_CLUSTER) {
+      v1pvc.getSpec()
+          .storageClassName("oci-fss");
+    } else {
+      v1pvc.getSpec()
+          .storageClassName(domainUid + "-weblogic-domain-storage-class");
+    }
 
     String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
     createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace);
