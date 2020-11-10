@@ -33,22 +33,14 @@ function copyIfChanged() {
   if [ ! -f "${2?}" ] || [ ! -z "`diff $1 $2 2>&1`" ]; then
     trace "Copying '$1' to '$2'."
     cp $1 $2
-    [ $? -ne 0 ] && trace SEVERE "failed cp $1 $2" && diagnoseCopyFailure $1 $2 && exitOrLoop
+    [ $? -ne 0 ] && trace SEVERE "failed cp $1 $2" && exitOrLoop
     if [ -O "$2" ]; then
       chmod 770 $2
-      [ $? -ne 0 ] && trace SEVERE "failed chmod 770 $2" && diagnoseCopyFailure $1 $2 && exitOrLoop
+      [ $? -ne 0 ] && trace SEVERE "failed chmod 770 $2" && exitOrLoop
     fi
   else
     trace "Skipping copy of '$1' to '$2' -- these files already match."
   fi
-}
-
-function diagnoseCopyFailure() {
-  ls -l $1
-  ls -l $2
-  ls -l `dirname $2`
-  whoami
-  groups
 }
 
 #
