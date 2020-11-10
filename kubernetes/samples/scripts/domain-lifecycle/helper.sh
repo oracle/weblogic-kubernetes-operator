@@ -110,11 +110,11 @@ function createServerStartPolicyPatch {
   local serverName=$2
   local policy=$3
   local __result=$4
-  local currentServerStartPolicy=""
+  local currentStartPolicy=""
 
   # Get server start policy for this server
-  getServerPolicy "${domainJson}" "${serverName}" currentServerStartPolicy
-  if [ -z "${currentServerStartPolicy}" ]; then
+  getServerPolicy "${domainJson}" "${serverName}" currentStartPolicy
+  if [ -z "${currentStartPolicy}" ]; then
     # Server start policy doesn't exist, add a new policy
     addPolicyCmd=".[.| length] |= . + {\"serverName\":\"${serverName}\", \
       \"serverStartPolicy\":\"${policy}\"}"
@@ -319,6 +319,12 @@ function getReplicaCount {
   if [[ -z "${replicaCount}" || "${replicaCount}" == "null" ]]; then
     replicaCount=0
   fi
+  # check if replica count is less than minimum replicas
+  getMinReplicas "${domainJson}" "${clusterName}" minReplicas
+  if [ "${replicaCount}" -lt "${minReplicas}" ]; then
+    # Reset current replica count to minimum replicas
+    replicaCount=${minReplicas}
+  fi
   eval $__replicaCount="'${replicaCount}'"
 
 }
@@ -408,6 +414,44 @@ function shouldStart {
 }
 
 #
+# Function to check if cluster's replica count is same as min replicas
+# $1 - Domain resource in json format
+# $2 - Name of the cluster
+# $3 - Returns "true" or "false" indicating if replica count is equal to
+#      or greater than min replicas.
+#
+function isReplicaCountEqualToMinReplicas {
+  local domainJson=$1
+  local clusterName=$2
+  local __result=$3
+
+  eval $__result=false
+  getMinReplicas "${domainJson}" "${clusterName}" minReplicas
+  getReplicaCount  "${domainJson}" "${clusterName}" replica
+  if [ ${replica} -eq ${minReplicas} ]; then
+    eval $__result=true
+  fi
+}
+
+#
+# Function to get minimum replica count for cluster
+# $1 - Domain resource in json format
+# $2 - Name of the cluster
+# $3 - Return value containing minimum replica count
+#
+function getMinReplicas {
+  local domainJson=$1
+  local clusterName=$2
+  local __result=$3
+
+  eval $__result=0
+  minReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
+    | .minimumReplicas"
+  minReplicas=$(echo ${domainJson} | jq "${minReplicaCmd}")
+  eval $__result=${minReplicas}
+}
+
+#
 # Function to create patch string for updating replica count
 # $1 - Domain resource in json format
 # $2 - Name of cluster whose replica count will be patched
@@ -431,9 +475,6 @@ Not increasing replica count value."
   getReplicaCount  "${domainJson}" "${clusterName}" replica
   if [ "${operation}" == "DECREMENT" ]; then
     replica=$((replica-1))
-    if [ ${replica} -lt 0 ]; then
-      replica=0
-    fi
   elif [ "${operation}" == "INCREMENT" ]; then
     maxReplicas=$(echo ${domainJson} | jq "${maxReplicaCmd}")
     if [ ${replica} -ge ${maxReplicas} ]; then

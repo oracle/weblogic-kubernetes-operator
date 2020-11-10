@@ -511,6 +511,17 @@ public class TestAssertions {
   }
 
   /**
+   * Check Helm release revision against expected.
+   * @param releaseName release name which is unique in a namespace
+   * @param namespace namespace name
+   * @param revision expected revision for the helm release
+   * @return true on success
+   */
+  public static boolean checkHelmReleaseRevision(String releaseName, String namespace, String revision) {
+    return Helm.checkHelmReleaseRevision(releaseName, namespace, revision);
+  }
+
+  /**
    * Check if a pod is restarted based on podCreationTimestamp.
    *
    * @param podName the name of the pod to check for
