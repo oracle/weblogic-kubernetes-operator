@@ -24,6 +24,7 @@ import java.util.Optional;
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -58,6 +59,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
@@ -3270,29 +3272,26 @@ public class CommonTestUtils {
    * @param domain custom resource object
    */
   public static synchronized void setPodAntiAffinity(Domain domain) {
-    V1PodAntiAffinity podAntiAffinity = new V1PodAntiAffinity()
-        .addPreferredDuringSchedulingIgnoredDuringExecutionItem(
-            new V1WeightedPodAffinityTerm()
-                .weight(100)
-                .podAffinityTerm(new V1PodAffinityTerm()
-                    .topologyKey("kubernetes.io/hostname")
-                    .labelSelector(new V1LabelSelector()
-                        .addMatchExpressionsItem(new V1LabelSelectorRequirement()
-                            .key("weblogic.clusterName")
-                            .operator("In")
-                            .addValuesItem("($CLUSTER_NAME)")))
-                )
-        );
-
     domain.getSpec()
         .getClusters()
         .stream()
         .forEach(
             cluster -> {
               cluster
-                  .serverPod(new oracle.weblogic.domain.ServerPod()
-                      .affinity(new io.kubernetes.client.openapi.models.V1Affinity().podAntiAffinity(
-                          podAntiAffinity)));
+                  .serverPod(new ServerPod()
+                      .affinity(new V1Affinity().podAntiAffinity(
+                          new V1PodAntiAffinity()
+                              .addPreferredDuringSchedulingIgnoredDuringExecutionItem(
+                                  new V1WeightedPodAffinityTerm()
+                                      .weight(100)
+                                      .podAffinityTerm(new V1PodAffinityTerm()
+                                          .topologyKey("kubernetes.io/hostname")
+                                          .labelSelector(new V1LabelSelector()
+                                              .addMatchExpressionsItem(new V1LabelSelectorRequirement()
+                                                  .key("weblogic.clusterName")
+                                                  .operator("In")
+                                                  .addValuesItem("$(CLUSTER_NAME)")))
+                                      )))));
 
             }
         );
