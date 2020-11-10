@@ -326,10 +326,7 @@ public class ItIntrospectVersion {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))
-                    .addChannelsItem(new Channel()
-                        .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
+                        .nodePort(0))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(replicaCount)
@@ -359,16 +356,17 @@ public class ItIntrospectVersion {
     }
 
     // deploy application and verify all servers functions normally
-    logger.info("Getting node port for T3 channel");
-    int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
-        "Getting admin server t3channel node port failed");
-    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
+    logger.info("Getting port for default channel");
+    int defaultChannelPort = assertDoesNotThrow(()
+        -> getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server default port failed");
+    logger.info("default channel port: {0}", defaultChannelPort);
+    assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
 
     //deploy clusterview application
     logger.info("Deploying clusterview app {0} to cluster {1}",
         clusterViewAppPath, clusterName);
-    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+    deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
         introDomainNamespace);
 
@@ -396,8 +394,8 @@ public class ItIntrospectVersion {
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
     Properties p1 = new Properties();
-    p1.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p1.setProperty("admin_port", Integer.toString(t3ChannelPort));
+    p1.setProperty("admin_host", adminServerPodName);
+    p1.setProperty("admin_port", Integer.toString(defaultChannelPort));
     p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p1.setProperty("cluster_name", clusterName);
@@ -531,17 +529,17 @@ public class ItIntrospectVersion {
           getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
     }
 
-    logger.info("Getting node port for default channel");
-    int adminServerT3Port = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
-        "Getting admin server node port failed");
+    logger.info("Getting port for default channel");
+    int adminServerPort = assertDoesNotThrow(()
+        -> getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server port failed");
 
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
     Properties p = new Properties();
-    p.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p.setProperty("admin_port", Integer.toString(adminServerT3Port));
+    p.setProperty("admin_host", adminServerPodName);
+    p.setProperty("admin_port", Integer.toString(adminServerPort));
     p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p.setProperty("cluster_name", clusterName);
@@ -636,10 +634,10 @@ public class ItIntrospectVersion {
 
     int replicaCount = 3;
 
-    logger.info("Getting node port for T3 channel");
-    int adminServerT3Port
-        = getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel");
-    assertNotEquals(-1, adminServerT3Port, "Couldn't get valid port for T3 channel");
+    logger.info("Getting port for default channel");
+    int adminServerPort
+        = getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServerPort, "Couldn't get valid port for default channel");
 
     // get the pod creation time stamps
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
@@ -656,8 +654,8 @@ public class ItIntrospectVersion {
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
     Properties p = new Properties();
-    p.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p.setProperty("admin_port", Integer.toString(adminServerT3Port));
+    p.setProperty("admin_host", adminServerPodName);
+    p.setProperty("admin_port", Integer.toString(adminServerPort));
     p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p.setProperty("new_admin_user", ADMIN_USERNAME_PATCH);
@@ -785,16 +783,16 @@ public class ItIntrospectVersion {
 
     final int replicaCount = 2;
 
-    logger.info("Getting node port for default channel");
-    int adminServerT3Port
-        = getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel");
+    logger.info("Getting port for default channel");
+    int adminServerPort
+        = getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
     Properties p = new Properties();
-    p.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p.setProperty("admin_port", Integer.toString(adminServerT3Port));
+    p.setProperty("admin_host", adminServerPodName);
+    p.setProperty("admin_port", Integer.toString(adminServerPort));
     p.setProperty("admin_username", ADMIN_USERNAME_PATCH);
     p.setProperty("admin_password", ADMIN_PASSWORD_PATCH);
     p.setProperty("test_name", "create_cluster");
