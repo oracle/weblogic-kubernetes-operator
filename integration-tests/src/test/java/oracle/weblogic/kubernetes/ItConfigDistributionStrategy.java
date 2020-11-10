@@ -74,6 +74,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
@@ -867,10 +868,7 @@ public class ItConfigDistributionStrategy {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))
-                    .addChannelsItem(new Channel()
-                        .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
+                        .nodePort(0))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(replicaCount)
@@ -902,15 +900,16 @@ public class ItConfigDistributionStrategy {
 
   //deploy application clusterview.war to domain
   private void deployApplication(String targets) {
-    logger.info("Getting node port for T3 channel");
-    int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
-        "Getting admin server t3channel node port failed");
-    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
+    logger.info("Getting port for default channel");
+    int defaultChannelPort = assertDoesNotThrow(()
+        -> getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server default port failed");
+    logger.info("default channel port: {0}", defaultChannelPort);
+    assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
 
     //deploy application
     logger.info("Deploying webapp {0} to domain", clusterViewAppPath);
-    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+    deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, targets, clusterViewAppPath,
         domainNamespace);
   }
@@ -955,13 +954,20 @@ public class ItConfigDistributionStrategy {
   private void createJdbcDataSource(String dsName, String user, String password, int mySQLNodePort) {
 
     try {
+      logger.info("Getting port for default channel");
+      int defaultChannelPort = assertDoesNotThrow(()
+          -> getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+          "Getting admin server default port failed");
+      logger.info("default channel port: {0}", defaultChannelPort);
+      assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
+
       String jdbcDsUrl = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mySQLNodePort;
 
       // create a temporary WebLogic domain property file
       File domainPropertiesFile = File.createTempFile("domain", "properties");
       Properties p = new Properties();
-      p.setProperty("admin_host", K8S_NODEPORT_HOST);
-      p.setProperty("admin_port", Integer.toString(t3ChannelPort));
+      p.setProperty("admin_host", adminServerPodName);
+      p.setProperty("admin_port", Integer.toString(defaultChannelPort));
       p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
       p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
       p.setProperty("dsName", dsName);
