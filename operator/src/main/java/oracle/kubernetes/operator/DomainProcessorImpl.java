@@ -60,6 +60,8 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
@@ -705,8 +707,8 @@ public class DomainProcessorImpl implements DomainProcessor {
             .map(Domain::getDomainHomeSourceType)
             .orElse(DomainSourceType.Image);
 
-        // For MII, reset the useOnlineUpdate to false if chnages in the spec involves more than introspectVersion and
-        // useOnlineUpdate
+        // For MII, reset the useOnlineUpdate to false if changes in the spec involves more than introspectVersion and
+        // useOnlineUpdate, disable online update ??
 
         if (domainSourceType.equals(DomainSourceType.FromModel) && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo)) {
           LOGGER.info("DomainType is FromModel and Online changes requested in the spec involves more than "

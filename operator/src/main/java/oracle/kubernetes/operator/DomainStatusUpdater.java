@@ -43,9 +43,14 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.Model;
+import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
@@ -328,6 +333,28 @@ public class DomainStatusUpdater {
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(info.getValidationWarningsAsString());
         if (existingError != null) {
+
+          boolean isFromModel = Optional.ofNullable(info)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getDomainHomeSourceType)
+              .equals(DomainSourceType.FromModel);
+
+          if (isFromModel) {
+            boolean onlineUpdate = Optional.ofNullable(info)
+                .map(DomainPresenceInfo::getDomain)
+                .map(Domain::getSpec)
+                .map(DomainSpec::getConfiguration)
+                .map(Configuration::getModel)
+                .map(Model::getOnlineUpdate)
+                .map(OnlineUpdate::getEnabled)
+                .orElse(false);
+            if (onlineUpdate) {
+              DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.OnlineUpdateComplete)
+                  .withMessage("Online update failed. Check status message for reasons.")
+                  .withStatus("False");
+              newStatus.addCondition(onlineUpdateCondition);
+            }
+          }
           if (domainConditions != null && domainConditions.size() > 0) {
             String reason = domainConditions.get(0).getReason();
             // Only increase the instrospect job failure count if the job failed or timeout
