@@ -5,6 +5,10 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,8 +52,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ConditionEvaluationResult;
+import org.junit.jupiter.api.extension.ExecutionCondition;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.opentest4j.AssertionFailedError;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -63,7 +72,9 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_LATEST_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -98,6 +109,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTim
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.TestUtils.verifyServerCommunication;
@@ -187,7 +199,6 @@ public class ItIntrospectVersion {
     clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
 
   }
-
 
   /**
    * Test domain status gets updated when introspectVersion attribute is added under domain.spec.
@@ -315,15 +326,12 @@ public class ItIntrospectVersion {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))
-                    .addChannelsItem(new Channel()
-                        .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
+                        .nodePort(0))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING")));
-
+    setPodAntiAffinity(domain);
     // verify the domain custom resource is created
     createDomainAndVerify(domain, introDomainNamespace);
 
@@ -348,16 +356,17 @@ public class ItIntrospectVersion {
     }
 
     // deploy application and verify all servers functions normally
-    logger.info("Getting node port for T3 channel");
-    int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
-        "Getting admin server t3channel node port failed");
-    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
+    logger.info("Getting port for default channel");
+    int defaultChannelPort = assertDoesNotThrow(()
+        -> getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server default port failed");
+    logger.info("default channel port: {0}", defaultChannelPort);
+    assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
 
     //deploy clusterview application
     logger.info("Deploying clusterview app {0} to cluster {1}",
         clusterViewAppPath, clusterName);
-    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+    deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
         introDomainNamespace);
 
@@ -385,8 +394,8 @@ public class ItIntrospectVersion {
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
     Properties p1 = new Properties();
-    p1.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p1.setProperty("admin_port", Integer.toString(t3ChannelPort));
+    p1.setProperty("admin_host", adminServerPodName);
+    p1.setProperty("admin_port", Integer.toString(defaultChannelPort));
     p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p1.setProperty("cluster_name", clusterName);
@@ -474,9 +483,9 @@ public class ItIntrospectVersion {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
-        + "\"?user=" + ADMIN_USERNAME_DEFAULT
-        + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
+            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
+            + "\"?user=" + ADMIN_USERNAME_DEFAULT
+            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
 
     // verify each managed server can see other member in the cluster
@@ -520,17 +529,17 @@ public class ItIntrospectVersion {
           getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
     }
 
-    logger.info("Getting node port for default channel");
-    int adminServerT3Port = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel"),
-        "Getting admin server node port failed");
+    logger.info("Getting port for default channel");
+    int adminServerPort = assertDoesNotThrow(()
+        -> getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server port failed");
 
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
     Properties p = new Properties();
-    p.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p.setProperty("admin_port", Integer.toString(adminServerT3Port));
+    p.setProperty("admin_host", adminServerPodName);
+    p.setProperty("admin_port", Integer.toString(adminServerPort));
     p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p.setProperty("cluster_name", clusterName);
@@ -595,9 +604,9 @@ public class ItIntrospectVersion {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
-        + "\"?user=" + ADMIN_USERNAME_DEFAULT
-        + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
+            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
+            + "\"?user=" + ADMIN_USERNAME_DEFAULT
+            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
         domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
 
     // verify each managed server can see other member in the cluster
@@ -625,10 +634,10 @@ public class ItIntrospectVersion {
 
     int replicaCount = 3;
 
-    logger.info("Getting node port for T3 channel");
-    int adminServerT3Port
-        = getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel");
-    assertNotEquals(-1, adminServerT3Port, "Couldn't get valid port for T3 channel");
+    logger.info("Getting port for default channel");
+    int adminServerPort
+        = getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServerPort, "Couldn't get valid port for default channel");
 
     // get the pod creation time stamps
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
@@ -645,8 +654,8 @@ public class ItIntrospectVersion {
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
     Properties p = new Properties();
-    p.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p.setProperty("admin_port", Integer.toString(adminServerT3Port));
+    p.setProperty("admin_host", adminServerPodName);
+    p.setProperty("admin_port", Integer.toString(adminServerPort));
     p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p.setProperty("new_admin_user", ADMIN_USERNAME_PATCH);
@@ -774,16 +783,16 @@ public class ItIntrospectVersion {
 
     final int replicaCount = 2;
 
-    logger.info("Getting node port for default channel");
-    int adminServerT3Port
-        = getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "t3channel");
+    logger.info("Getting port for default channel");
+    int adminServerPort
+        = getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
     Properties p = new Properties();
-    p.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p.setProperty("admin_port", Integer.toString(adminServerT3Port));
+    p.setProperty("admin_host", adminServerPodName);
+    p.setProperty("admin_port", Integer.toString(adminServerPort));
     p.setProperty("admin_username", ADMIN_USERNAME_PATCH);
     p.setProperty("admin_password", ADMIN_PASSWORD_PATCH);
     p.setProperty("test_name", "create_cluster");
@@ -848,14 +857,15 @@ public class ItIntrospectVersion {
    * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
+   * This test will be skipped if the image tag is the latest WebLogic image tag
    */
   @Order(5)
+  @AssumeWebLogicImage
   @Test
   @DisplayName("Verify server pods are restarted by updating image name")
   public void testUpdateImageName() {
 
     final String domainNamespace = introDomainNamespace;
-
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
     final String managedServerNameBase = "cl2-ms-";
@@ -929,11 +939,11 @@ public class ItIntrospectVersion {
    * Create a configmap containing WLST script and property file.
    * Create a Kubernetes job to create domain on persistent volume.
    *
-   * @param wlstScriptFile python script to create domain
+   * @param wlstScriptFile       python script to create domain
    * @param domainPropertiesFile properties file containing domain configuration
-   * @param pvName name of the persistent volume to create domain in
-   * @param pvcName name of the persistent volume claim
-   * @param namespace name of the domain namespace in which the job is created
+   * @param pvName               name of the persistent volume to create domain in
+   * @param pvcName              name of the persistent volume claim
+   * @param namespace            name of the domain namespace in which the job is created
    */
   private void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
                                          String pvName, String pvcName, String namespace) {
@@ -966,7 +976,7 @@ public class ItIntrospectVersion {
   }
 
   private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
-      String user, String password) {
+                                         String user, String password) {
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
@@ -979,7 +989,7 @@ public class ItIntrospectVersion {
 
     withStandardRetryPolicy.conditionEvaluationListener(
         condition -> logger.info("Verifying the health of all cluster members"
-            + "(elapsed time {0} ms, remaining time {1} ms)",
+                + "(elapsed time {0} ms, remaining time {1} ms)",
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
         .until((Callable<Boolean>) () -> {
@@ -1012,6 +1022,42 @@ public class ItIntrospectVersion {
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();
     }
+  }
+
+  /**
+  *  JUnit5 extension class to implement ExecutionCondition for the custom
+  *  annotation @AssumeWebLogicImage.
+  */
+  private static class WebLogicImageCondition implements ExecutionCondition {
+
+    /**
+     * Determine if the the test "testUpdateImageName" will be skipped based on WebLogic image tag.
+     * Skip the test if the image tag is the latest one.
+     *
+     * @param context the current extension context
+     * @return ConditionEvaluationResult disabled if the image tag is the latest one, enabled if the
+     *         image tag is not the latest one
+    */
+    @Override
+    public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
+      if (WEBLOGIC_IMAGE_TAG.equals(WLS_LATEST_IMAGE_TAG)) {
+        getLogger().info("WebLogic image tag is {0}. No latest image available to continue test. Skipping test",
+            WLS_LATEST_IMAGE_TAG);
+        return ConditionEvaluationResult
+            .disabled(String.format("No latest image available to continue test. Skipping test!"));
+      } else {
+        getLogger().info("Updating image to {0}. Continuing test!", WLS_UPDATE_IMAGE_TAG);
+        return ConditionEvaluationResult
+            .enabled(String.format("Updating image to {0}. Continuing test!", WLS_UPDATE_IMAGE_TAG));
+      }
+    }
+  }
+
+  @Target({ElementType.TYPE, ElementType.METHOD})
+  @Retention(RetentionPolicy.RUNTIME)
+  @Tag("assume-weblogic-image")
+  @ExtendWith(WebLogicImageCondition.class)
+  @interface AssumeWebLogicImage {
   }
 
 }

@@ -10,6 +10,9 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.json.JsonPatchBuilder;
 
+import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.LabelConstants;
 import org.apache.commons.collections.MapUtils;
@@ -172,6 +175,28 @@ public class KubernetesUtils {
       }
     }
     return BigInteger.ZERO;
+  }
+
+  /**
+   * Returns the resource version associated with the specified list.
+   * @param list the result of a Kubernetes list operation.
+   */
+  public static String getResourceVersion(KubernetesListObject list) {
+    return Optional.ofNullable(list)
+          .map(KubernetesListObject::getMetadata)
+          .map(V1ListMeta::getResourceVersion)
+          .orElse("");
+  }
+
+  /**
+   * Returns the resource version associated with the specified resource.
+   * @param resource a Kubernetes resource
+   */
+  public static String getResourceVersion(KubernetesObject resource) {
+    return Optional.ofNullable(resource)
+          .map(KubernetesObject::getMetadata)
+          .map(V1ObjectMeta::getResourceVersion)
+          .orElse("");
   }
 
   public static V1ObjectMeta withOperatorLabels(String uid, V1ObjectMeta meta) {

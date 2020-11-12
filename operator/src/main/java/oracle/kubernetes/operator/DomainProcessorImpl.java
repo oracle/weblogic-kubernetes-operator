@@ -28,7 +28,6 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
@@ -208,30 +207,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private FiberGate getStatusFiberGate(String ns) {
     return statusFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
-  }
-
-  /**
-   * Stop namespace.
-   * @param ns namespace
-   */
-  public void stopNamespace(String ns) {
-    try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
-      Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
-      if (map != null) {
-        for (DomainPresenceInfo dpi : map.values()) {
-          stack.domainUid(dpi.getDomainUid());
-
-          Domain dom = dpi.getDomain();
-          DomainPresenceInfo value =
-              (dom != null)
-                  ? new DomainPresenceInfo(dom)
-                  : new DomainPresenceInfo(dpi.getNamespace(), dpi.getDomainUid());
-          value.setDeleting(true);
-          value.setPopulated(true);
-          createMakeRightOperation(value).withExplicitRecheck().forDeletion().execute();
-        }
-      }
-    }
   }
 
   /**
@@ -465,15 +440,13 @@ public class DomainProcessorImpl implements DomainProcessor {
         delegate.scheduleWithFixedDelay(
             () -> {
               try {
-                V1SubjectRulesReviewStatus srrs =
-                    delegate.getSubjectRulesReviewStatus(info.getNamespace());
                 Packet packet = new Packet();
                 packet
                     .getComponents()
                     .put(
                         ProcessingConstants.DOMAIN_COMPONENT_NAME,
                         Component.createFor(
-                            info, delegate.getVersion(), V1SubjectRulesReviewStatus.class, srrs));
+                            info, delegate.getKubernetesVersion()));
                 packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
                 Step strategy =
                     ServerStatusReader.createStatusStep(main.statusUpdateTimeoutSeconds, null);
@@ -531,11 +504,6 @@ public class DomainProcessorImpl implements DomainProcessor {
   @Override
   public MakeRightDomainOperationImpl createMakeRightOperation(DomainPresenceInfo liveInfo) {
     return new MakeRightDomainOperationImpl(liveInfo);
-  }
-
-  @Override
-  public MakeRightDomainOperation createMakeRightOperation(Domain liveDomain) {
-    return createMakeRightOperation(new DomainPresenceInfo(liveDomain));
   }
 
   public Step createPopulatePacketServerMapsStep(oracle.kubernetes.operator.work.Step next) {
@@ -705,8 +673,8 @@ public class DomainProcessorImpl implements DomainProcessor {
             .map(Domain::getDomainHomeSourceType)
             .orElse(DomainSourceType.Image);
 
-        // For MII, reset the useOnlineUpdate to false if chnages in the spec involves more than introspectVersion and
-        // useOnlineUpdate
+        // For MII, reset the useOnlineUpdate to false if changes in the spec involves more than introspectVersion and
+        // useOnlineUpdate, disable online update ??
 
         if (domainSourceType.equals(DomainSourceType.FromModel) && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo)) {
           LOGGER.info("DomainType is FromModel and Online changes requested in the spec involves more than "
@@ -747,9 +715,9 @@ public class DomainProcessorImpl implements DomainProcessor {
           .getComponents()
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(liveInfo, delegate.getVersion(),
+              Component.createFor(liveInfo, delegate.getKubernetesVersion(),
                   PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
-                  V1SubjectRulesReviewStatus.class, delegate.getSubjectRulesReviewStatus(getNamespace())));
+                  JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
       runDomainPlan(
             getDomain(),
             getDomainUid(),
@@ -958,7 +926,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     Step domainUpStrategy =
         Step.chain(
             domainIntrospectionSteps(info),
-            DomainValidationSteps.createAfterIntrospectValidationSteps(info.getDomainUid()),
+            DomainValidationSteps.createAfterIntrospectValidationSteps(),
             new DomainStatusStep(info, null),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
@@ -1040,7 +1008,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private Step getRecordExistingResourcesSteps() {
       NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid());
 
-      resources.addProcessor(new NamespacedResources.Processors() {
+      resources.addProcessing(new NamespacedResources.Processors() {
         @Override
         Consumer<V1PodList> getPodListProcessing() {
           return list -> list.getItems().forEach(this::addPod);

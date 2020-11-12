@@ -7,7 +7,7 @@
 
 source ${SCRIPTPATH}/utils.sh
 
-WDT_MINIMUM_VERSION="1.9.4"
+WDT_MINIMUM_VERSION="1.9.7"
 INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormii/inventory_image.md5"
 INTROSPECTCM_CM_MD5="/weblogic-operator/introspectormii/inventory_cm.md5"
 INTROSPECTCM_PASSPHRASE_MD5="/weblogic-operator/introspectormii/inventory_passphrase.md5"
@@ -681,12 +681,20 @@ function createPrimordialDomain() {
   # If there is no primordial domain or needs to recreate one due to password changes
 
   if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
+
+    if [  "true" == "${MII_ROLLBACK_IFRESTART}" ] && [  ${recreate_domain} -eq 1  ] ; then
+      trace SEVERE "Non dynamic security changes detected and 'rollBackIfRestartRequired=true', will not perform " \
+        "update. You can use offline update to update the domain by setting " \
+        "'domain.spec.configuration.model.onlineUpdate.enabled' to false and try again."
+      exit 1
+    fi
+
     trace "No primordial domain or need to create again because of changes require domain recreation"
     wdtCreatePrimordialDomain
     create_primordial_tgz=1
-    # Override online update since the domain needs to be restarted for security related changes ?
-    # TODO check if this is enough information
+    # Override online update since the domain needs to be restarted for security related changes.
     # Note: currently there is no way in WDT to update security information online
+
     trace "Security changes detected or new deployment - override spec.configuration.useOnlineUpdate to false"
     MII_USE_ONLINE_UPDATE=false
   fi
@@ -1106,7 +1114,8 @@ function encrypt_decrypt_domain_secret() {
 #
 function error_handler() {
     if [ $1 -ne 0 ]; then
-        trace SEVERE  "Script Error: There was an error at line: ${2} command: ${@:3:20}"
+        # Use FINE instead of SEVERE, avoid showing in domain status
+        trace FINE  "Script Error: There was an error at line: ${2} command: ${@:3:20}"
         stop_trap
         exitOrLoop
     fi

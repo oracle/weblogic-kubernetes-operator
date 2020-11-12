@@ -243,58 +243,67 @@ metadata:
     weblogic.domainUID: sample-domain1
 spec:
   ...
+  introspectVersion: 5
   configuration:
 
     model:
     ....
       onlineUpdate:
+        # enable the update to use dynamic update method which does not require restart for dynamic attributes
         enabled: true
+        # If set to true, and the changes of non-dynamic attributes are involved;  this will cancel (rollback) all changes to the domain
+        # It is the user to revert the wdt configmap, domain resource YAML changes.
         rollBackIfRestartRequired: false
 
 ```
 
-Operator will attempt to use the online update to the running domain, this feature is useful or changing any dynamic attribute of the Weblogic Domain, no restart is necessary, and the changes are immediate take effect.
+The Operator will attempt to use the online update to the running domain. This feature is useful or changing any dynamic attribute of the WebLogic Domain. No restart is necessary, and the changes are immediately take effect.
 
-You can update the configmap specified in `domain.spec.configuration.model.configmap` in the domain resource YAML or any associated secrets in the mdoel(s)
-and a new `introspectVersion`, then apply the YAML, the operator will start the introspection job to update the domain.  Once the job is finished, you can use
+You can update the models in the configmap specified in `domain.spec.configuration.model.configmap` of the domain resource, and/or update any referenced Kubernetes secrets in the models.
+Then update the domain resource with a new `introspectVersion` in `domain.spec`. The Operator will start an introspection job to update the running domain.  
 
-`kubectl -n <namespace> dsecribe domain <domain uid>` to view the condition or message in the status section to see the results.
+Once the job finished, you can use
+
+`kubectl -n <namespace> describe domain <domain uid>` to view the condition or message in the domain status.
+
+Below is a general description on how dynamic update works and expected outcome.
 
 |Scenarios|Expected Outcome|Actions Required|
   |---------------------|-------------|-------|
-  |Changing a dynamic attribute|Changes are committed in running domain and effective immediately| No action required|
-  |Changing a non-dynamic attribute|Changes are committed, domain will rolling restart|No action required|
-  |Unsupported changes for dynamic updates|Error in the introspect job, job will retry until error is corrected or cancel|Use offline updates or recreate the domain|
-  |Errors in the model|Error in the introspect job, job will retry for 6 times until error is corrected or cancel|Correct the model|
-  |Additional changes in domain resource YAML other than `userOnlineUpdate` and `introspectVersion`|Change are automatically switch to offline as before|No action required|
-  |Errors while updating the domain|Error in the introspect job, job will retry for 6 times until error is corrected or cancel|Check the introspection job or domain status|
+  |Changing a dynamic attribute|Changes are committed in the running domain and effective immediately| No action required|
+  |Changing a non-dynamic attribute|Changes are committed, domain rolling restart|No action required|
+  |Additional changes in domain resource YAML other than `userOnlineUpdate` and `introspectVersion`|Change are automatically switch to use offline update|No action required|
+  |Unsupported changes for dynamic updates|Error in the introspect job, it will retry in 120s interval until the error is corrected or until maximum error count exceeded|Use offline updates or recreate the domain|
+  |Errors in the model|Error in the introspect job, it will retry in 120s interval until the error is corrected or until maximum error count exceeded|Correct the model|
+  |Other errors while updating the domain|Error in the introspect job, it will retry in 120s interval until the error is corrected or until maximum error count exceeded|Check the introspection job or domain status|
   
-Example use cases:
+Sample use cases:
 
-|Scenarios|Expected Outcome|Actions Required|
+|Use case|Expected Outcome|Actions Required|
   |---------------------|-------------|-------|
   |Changing a data source connection pool capacity (dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
   |Changing a data source credentials (dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
   |Changing a data source driver parameters properties (non dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
   |Changing an application targeting (dynamic attribute)|Changes are committed in running domain and effective immediately|No action required|
-  |Changing the listen port, address, SSL on a server or channel (unsupported online changes)|Error in the introspect job, job will retry until error is corrected or cancel|Use offline updates or recreate the domain|
   |Adding a data source (dynamic changes)|Changes are committed in running domain and effective immediately| No action required|
   |Remove all targets of a datasource (dynamic changes)|Changes are committed in running domain and effective immediately| No action required|
-  |Deleting an application|Changes are committed in running domain and effective immediately| No action required|
-  |Changing Weblogic administrator credentials (non dynamic changes)|Changes are committed, domain will rolling restart|No action required|
+  |Deleting an application (dynamic changes)|Changes are committed in running domain and effective immediately| No action required|
+  |Changing WebLogic administrator credentials (non dynamic changes)|Changes are committed, domain will rolling restart|No action required|
   |Changing image in the domain resource YAML at the same time|Offline changes are applied and domain will rolling restart|No action required|
   |Changing security settings under domainInfo or SecurityConfiguration section (non dynamic changes)|Changes are committed, domain will rolling restart|No action required|
+  |Changing the listen port, address, SSL on a server or channel (unsupported online changes)|Error in the introspect job, job will retry until error is corrected or cancel|Use offline updates or recreate the domain|
 
 Unsupported Changes:
 
 For any of these unsupported changes, the introspect job will fail and automatically retry up to 6 times.  You can either cancel the job, correct the problem, and wait for the job retry interval.
 
-- Topology changes including SSL. The introspection job will fail and automatically retry up to 6 times.
+- Topology changes, including SSL. The introspection job will fail and automatically retry up to 6 times.
 - Dependency deletion. For example, trying to delete a datasource that is referenced by a persistent store, even if both of them are deleting at the same time. The introspection job will fail and automatically retry up to 6 times
 
-Safeguarding domain restart 
+Preventing domain restart 
 
-In general, changes to a mission critical production running domain should be tested and make sure the changes do not accidentally restart the domain.
+In general, changes to a mission-critical production running domain should be tested, and changes do not require restart of the domain. It is strongly recommended the changes using online update must be tested 
+in a non-production environment first.
 
 If you set domain.spec.configuration.rollBackIfRestartRequired` to `true`, then the operator will rollback all changes if changes require restart (i.e. involving non dynamic changes) 
 The changes in your configmap and domain resources need to be reverted manually, the introspection job will not retry and the domain will remain unchanged.   
@@ -302,19 +311,20 @@ If the changes do not require restart then all changes are effective immediately
 
 Status updates
 
+When the introspection job finished, the domain status will be updated according to the result.
+
 |Scenarios|Domain status ||
   |---------------------|-------------|-------|
-  |Successful updates|Domain status will have a condition WLSDomainConfigurationStatus with message Successfully updated, reason with introspectionVersion|
-  |Changes rolled back per request|Domain status will have a condition WLSDomainConfigurationStatus with message Online update rolledback, reason with introspectionVersion|
+  |Successful updates|Domain status will have a condition OnlineUpdateComplete with message and introspectionVersion|
+  |Changes rolled back per request|Domain status will have a condition OnlineUpdateRolledback with message and introspectionVersion|
   |Any other errors| Domain status message will display the error message. No condition is set in the status condition|
 
 Error Recovery
 
-- When updating a domain it involves changes to the following, while user has an option to rollback the changes for changes that require restart. Any successful changes
-to the domain are immediate.  
-- Changes to the image, configmap and domain resource YAML are under user control.  The operator cannot revert the changes automatically just like offline updates.
+- When updating a domain with `rollBackIfRestartRequired` is set to true, if the changes involve non-dynamic changes, all changes are canceled. User must correct the models immediately or use offline update instead. This avoids the mismatch between the models in the configmap and the domain's configuration.   
+- Changes to the image, configmap, and domain resource YAML are under user control.  The operator cannot revert the changes automatically just like offline updates. 
 - In case of any failure in online updates, no changes will be made to running domain.  However, since the introspect job runs periodically against the domain resources up to 6 times.
-You can delete the introspect job, correct the error and re-apply the changes; or just correct the error and wait for the next introspect job retry.
+You can delete the introspection job, correct the error and re-apply the changes; or just correct the error and wait for the next introspection job retry.
 
 Specifying timeout
 
