@@ -34,15 +34,17 @@ function copyIfChanged() {
     trace "Copying '$1' to '$2'."
     cp $1 $2
     [ $? -ne 0 ] && trace SEVERE "failed cp $1 $2" && exitOrLoop
-    chmod 750 $2 
-    [ $? -ne 0 ] && trace SEVERE "failed chmod 750 $2" && exitOrLoop
+    if [ -O "$2" ]; then
+      chmod 770 $2
+      [ $? -ne 0 ] && trace SEVERE "failed chmod 770 $2" && exitOrLoop
+    fi
   else
     trace "Skipping copy of '$1' to '$2' -- these files already match."
   fi
 }
 
 #
-# Define function to start weblogic
+# Define function to start WebLogic
 #
 
 function startWLS() {

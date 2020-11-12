@@ -382,12 +382,12 @@ public class ItIstioDomainInPV  {
     Map<String, String> annotMap = new HashMap<String, String>();
     annotMap.put("sidecar.istio.io/inject", "false");
     String modelMountPath = "/shared";
-    String argCommand = "chown -R 1000:1000 " + modelMountPath;
+    String argCommand = "chown -R 1000:0 " + modelMountPath;
     if (OKE_CLUSTER) {
-      argCommand = "chown 1000:1000 "
+      argCommand = "chown 1000:0 "
           + modelMountPath
           + "/. && find " + modelMountPath
-          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:1000";
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:0";
     }
     V1Job jobBody = new V1Job()
         .metadata(

@@ -341,12 +341,12 @@ public class ItMiiDomainModelInPV {
     createSecretForBaseImages(namespace);
 
     final String podName = "weblogic-pv-pod-" + namespace;
-    String argCommand = "chown -R 1000:1000 " + modelMountPath;
+    String argCommand = "chown -R 1000:0 " + modelMountPath;
     if (OKE_CLUSTER) {
-      argCommand = "chown 1000:1000 " + modelMountPath
+      argCommand = "chown 1000:0 " + modelMountPath
           + "/. && find "
           + modelMountPath
-          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:1000";
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:0";
     }
     V1Pod podBody = new V1Pod()
         .spec(new V1PodSpec()

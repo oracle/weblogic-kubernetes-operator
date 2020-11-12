@@ -64,14 +64,12 @@ public class DomainsResource extends BaseResource {
    */
   @Path("{domainUID}")
   public DomainResource getDomainResource(@PathParam("domainUID") String domainUid) {
-    LOGGER.entering(href(), domainUid);
     if (!getBackend().isDomainUid(domainUid)) {
       WebApplicationException e = notFound(domainUid);
       LOGGER.throwing(e);
       throw e;
     }
     DomainResource result = new DomainResource(this, domainUid);
-    LOGGER.exiting(result);
     return result;
   }
 }
