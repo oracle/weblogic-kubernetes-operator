@@ -53,7 +53,7 @@ Init Containers:
     Command:
       sh
       -c
-      chown -R 1000:1000 /shared
+      chown -R 1000:0 /shared
     State:          Terminated
       Reason:       Error
       Exit Code:    1
@@ -85,7 +85,7 @@ spec:
       initContainers:
         - name: fix-pvc-owner
           image: %WEBLOGIC_IMAGE%
-          command: ["sh", "-c", "chown 1000:1000 %DOMAIN_ROOT_DIR%/. && find %DOMAIN_ROOT_DIR%/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:1000"]
+          command: ["sh", "-c", "chown 1000:0 %DOMAIN_ROOT_DIR%/. && find %DOMAIN_ROOT_DIR%/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:0"]
           volumeMounts:
           - name: weblogic-sample-domain-storage-volume
             mountPath: %DOMAIN_ROOT_DIR%
