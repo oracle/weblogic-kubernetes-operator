@@ -14,8 +14,9 @@ description = "Updating a running Model in Image domain's images and model files
  - [Supported and unsupported updates](#supported-and-unsupported-updates)
  - [Changing a Domain `restartVersion`](#changing-a-domain-restartversion)
  - [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools)
- - [Example of adding a data source](#example-of-adding-a-data-source)
- - [Dynamic updates of a running domain](#Updating-a-running-domain)
+ - [Example of adding a data source using rolling upgrade](#example-of-adding-a-data-source)
+ - [Dynamic online only updates to a running domain](#online-updates-to-a-running-domain)
+ - [Example of configuration changes with online only updates](#example-of-online-updates)
 
 #### Overview
 
@@ -27,7 +28,9 @@ If you want to make a configuration change to a running Model in Image domain, a
 
   - Supplying a new image with new or changed model files.
 
-After the changes are in place, you can tell the operator to apply the changes and propagate them to a running domain by altering the Domain YAML file's `image` or `restartVersion` attribute.
+After the changes are in place, you can tell the operator to apply the changes and propagate them to a running domain using a rolling upgrade by altering the Domain YAML file's `image` or `restartVersion` attribute. 
+
+Alternatively, for changes changes that only affect WebLogic configuration mbean attributes that are fully dynamic, you can tell the operator to attempt online updates that don't require a rolling upgrade.  See [Dynamic updates of a running domain](#Updating-a-running-domain).
 
 #### Important notes
 
@@ -102,6 +105,8 @@ The following updates are *supported* except when they reference an area that is
    For more information, see [Declaring Named MBeans to Delete](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md#declaring-named-mbeans-to-delete) in the WebLogic Deploying Tooling documentation.
 
 ##### Unsupported updates
+
+TBD Add information about online updates...
 
 The following updates are *unsupported*. If you need to make an unsupported update and no workaround is documented, then shut down your domain entirely before making the change.
 
@@ -228,9 +233,17 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
 For details on how to add a data source, see the [Update1 use case]({{% relref "/samples/simple/domains/model-in-image/_index.md#update1-use-case" %}})
 in the Model in Image sample.
 
-#### Updating a running domain
+#### On-line updates to a running domain
 
-You can use the online update method to update a running domain managed by the Operator by specifying `onlineUpdate` section under `domain.spec.configuration.model`   
+For configuration changes that only modify dynamic WebLogic mbean attributes (subject to the exceptions listed in section support/unsupported TBD), you can initiate an online update to a running domain managed by the Operator by doing the following:
+
+ - Modifying contents of secret that are referenced by WDT model(s) and/or modifying the contents of `domain.spec.configuration.model.configMap`.
+ - Setting `domain.spec.configuration.model.onLineUpdate.enabled` to `true`
+ - Changing `domain.spec.configuration.introspectVersion`.
+
+> **Warning:** If any non-dynamic WebLogic mbean attribute is changed as part of the above actions and `domain.spec.configuration.model.onLineUpdate.rollBackIfRestartRequired` is set to `false` (the default), then the operator will immediately perform any dynamic changes that were specified, and also **the operator will roll the domain (restart each server in the domain) in order to propagate the non-dynamic changes**.
+
+Sample domain resource YAML:
 
 ```
 apiVersion: "weblogic.oracle/v8"
@@ -245,37 +258,33 @@ spec:
   ...
   introspectVersion: 5
   configuration:
-
+    ...
     model:
-    ....
+    ...
       onlineUpdate:
         # enable the update to use dynamic update method which does not require restart for dynamic attributes
         enabled: true
         # If set to true, and the changes of non-dynamic attributes are involved;  this will cancel (rollback) all changes to the domain
         # It is the user to revert the wdt configmap, domain resource YAML changes.
         rollBackIfRestartRequired: false
-
 ```
 
-The Operator will attempt to use the online update to the running domain. This feature is useful or changing any dynamic attribute of the WebLogic Domain. No restart is necessary, and the changes are immediately take effect.
+During an online update, the Operator will rerun the introspector job which will attempt online updates on the running domain. This feature is useful for changing any dynamic attribute of the WebLogic Domain. No pod restarts are necessary, and the changes immediately take effect. 
 
-You can update the models in the configmap specified in `domain.spec.configuration.model.configmap` of the domain resource, and/or update any referenced Kubernetes secrets in the models.
-Then update the domain resource with a new `introspectVersion` in `domain.spec`. The Operator will start an introspection job to update the running domain.  
+Once the job finished, you can check the domain status to view the status of the online update: `kubectl -n <namespace> describe domain <domain uid>`. Upon success, each WebLogic pod will have an `weblogic.introspectVersion` label that matches the `domain.spec.introspectVersion` that you specified.
 
-Once the job finished, you can use
+Below is a general description about how online update works and expected outcome.
 
-`kubectl -n <namespace> describe domain <domain uid>` to view the condition or message in the domain status.
-
-Below is a general description on how dynamic update works and expected outcome.
+TBD/WIP: The implementation treats setting/changing/adding secrets or configMap treated as 'offline' changes, but idealy these should be treated as 'online' if the net resulting change is solely dynamic mbeans changes...
 
 |Scenarios|Expected Outcome|Actions Required|
   |---------------------|-------------|-------|
   |Changing a dynamic attribute|Changes are committed in the running domain and effective immediately| No action required|
-  |Changing a non-dynamic attribute|Changes are committed, domain rolling restart|No action required|
-  |Additional changes in domain resource YAML other than `userOnlineUpdate` and `introspectVersion`|Change are automatically switch to use offline update|No action required|
-  |Unsupported changes for dynamic updates|Error in the introspect job, it will retry in 120s interval until the error is corrected or until maximum error count exceeded|Use offline updates or recreate the domain|
-  |Errors in the model|Error in the introspect job, it will retry in 120s interval until the error is corrected or until maximum error count exceeded|Correct the model|
-  |Other errors while updating the domain|Error in the introspect job, it will retry in 120s interval until the error is corrected or until maximum error count exceeded|Check the introspection job or domain status|
+  |Changing a non-dynamic attribute|If `domain.spec.model.onlineUpdates.rollBackIfRestartRequired` is `false`, then changes are committed and domain pods are restarted (rolled). If `rollBackIfRestartRequired` is `false`, the introspector job will not perform any changes, the introspector job will not retry, and the `domain.status` will report the problem. | No action required|
+  |Changing domain resource YAML other than `domain.spec.introspectVersion` and the fields in `spec.configuration.model.onlineUpdate` | No online update is attempted by the introspector job, and changes are treated the same as offline updates (which may result in restarts/roll after job success). | No action required|
+  |Changing an mbean attribute that is unsupported (TBD link to unsupported section)|Expected behavior is undefined. In some cases there will be helpful error in the introspect job, and the job will periodically retry until the error is corrected or its maximum error count exceeded.|Use offline updates or recreate the domain|
+  |Errors in the model|Error in the introspect job, it will retry periodically until the error is corrected or until maximum error count exceeded|Correct the model|
+  |Other errors while updating the domain|Error in the introspect job, it will retry periodically until the error is corrected or until maximum error count exceeded|Check the introspection job or domain status|
   
 Sample use cases:
 
