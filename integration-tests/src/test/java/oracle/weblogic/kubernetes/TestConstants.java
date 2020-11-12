@@ -147,7 +147,8 @@ public interface TestConstants {
       System.getProperty("java.io.tmpdir")) + "/it-testsresults";
 
   public static final String LOGS_DIR = RESULTS_BASE + "/diagnostics";
-  public static final String PV_ROOT = RESULTS_BASE + "/pvroot";
+  public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT", 
+      RESULTS_BASE + "/pvroot");
   public static final String RESULTS_ROOT = RESULTS_BASE + "/workdir";
 
   // NGINX constants
