@@ -32,6 +32,7 @@ public class NamespaceHelper {
   /**
    * Parse a string of namespace names and return them as a collection.
    * @param namespaceString a comma-separated list of namespace names
+   * @return Namespace list
    */
   public static Collection<String> parseNamespaceList(String namespaceString) {
     Collection<String> namespaces

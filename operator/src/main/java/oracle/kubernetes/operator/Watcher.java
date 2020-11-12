@@ -223,6 +223,7 @@ abstract class Watcher<T> {
   /**
    * Gets the domainUID associated with a watch response.
    *
+   * @param item Response item
    * @return String object or null if the watch response is not associated with a domain
    */
   public abstract String getDomainUid(Watch.Response<T> item);
