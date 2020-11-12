@@ -1069,7 +1069,7 @@ public class ItTwoDomainsLoadBalancers {
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:1000 /shared")
+                        .addArgsItem("chown -R 1000:0 /shared")
                         .volumeMounts(Collections.singletonList(
                             new V1VolumeMount()
                                 .name(pvName)

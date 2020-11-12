@@ -20,7 +20,7 @@ spec:
       initContainers:
         - name: fix-pvc-owner
           image: %WEBLOGIC_IMAGE%
-          command: ["sh", "-c", "chown -R 1000:1000 %DOMAIN_ROOT_DIR%"]
+          command: ["sh", "-c", "chown -R 1000:0 %DOMAIN_ROOT_DIR%"]
           volumeMounts:
           - name: weblogic-sample-domain-storage-volume
             mountPath: %DOMAIN_ROOT_DIR%

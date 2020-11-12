@@ -347,7 +347,7 @@ public class ItMiiDomainModelInPV {
                 .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                 .addCommandItem("/bin/sh")
                 .addArgsItem("-c")
-                .addArgsItem("chown -R 1000:1000 " + modelMountPath)
+                .addArgsItem("chown -R 1000:0 " + modelMountPath)
                 .volumeMounts(Arrays.asList(
                     new V1VolumeMount()
                         .name(pvName)
