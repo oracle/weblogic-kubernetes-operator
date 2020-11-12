@@ -164,7 +164,7 @@ In a Kubernetes deployment, similar cache affinity can be achieved by doing the 
 Note that some Kubernetes environments may not allow changing the CPU management policy.
 
 #### Measuring JVM heap, Pod CPU, and Pod memory
-You can monitor JVM heap, Pod CPU, and Pod memory using Prometheus and Grafana with steps similar to the [Monitor a SOA Domain]({{< relref "/samples/simple/elastic-stack/soa-domain/weblogic-monitoring-exporter-setup" >}}) sample. Also, see [Tools for Monitoring Resources](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-usage-monitoring/) in the Kubernetes documentation.
+You can monitor JVM heap, Pod CPU, and Pod memory using Prometheus and Grafana. Also, see [Tools for Monitoring Resources](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-usage-monitoring/) in the Kubernetes documentation.
 
 #### References:
 1. [Managing Resources for Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) in the Kubernetes documentation.
