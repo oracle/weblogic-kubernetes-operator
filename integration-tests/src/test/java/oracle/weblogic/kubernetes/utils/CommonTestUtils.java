@@ -3122,7 +3122,7 @@ public class CommonTestUtils {
                         .image(image)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:1000 /shared")
+                        .addArgsItem("chown -R 1000:0 /shared")
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
                                 .name(pvName)

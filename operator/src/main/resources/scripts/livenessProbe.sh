@@ -36,7 +36,9 @@ if [ ! "${DYNAMIC_CONFIG_OVERRIDE:-notset}" = notset ]; then
       [ -f "$tgt_file" ] && [ -z "$(diff $local_fname $tgt_file 2>&1)" ] && continue  # nothing changed
       trace "Copying file '$local_fname' to '$tgt_file'."
       cp $local_fname $tgt_file # TBD ignore any error?
-      chmod 750 $tgt_file # TBD ignore any error?
+      if [ -O "$tgt_file" ]; then
+        chmod 770 $tgt_file # TBD ignore any error?
+      fi
     done
     for local_fname in ${tgt_dir}/*.xml ; do
       if [ -f "$src_dir/${fil_prefix}$(basename ${local_fname})" ]; then
