@@ -65,9 +65,8 @@ public class IntrospectionLoggingTest {
 
   @Test
   public void logIntrospectorMessages() {
-    new DomainProcessorTestSetup(testSupport)
-        .defineKubernetesResources(
-            onSeparateLines(SEVERE_MESSAGE_1, WARNING_MESSAGE, INFO_MESSAGE));
+    IntrospectionTestUtils.defineResources(testSupport,
+          onSeparateLines(SEVERE_MESSAGE_1, WARNING_MESSAGE, INFO_MESSAGE));
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
@@ -84,7 +83,7 @@ public class IntrospectionLoggingTest {
   @Test
   public void whenIntrospectorMessageContainsAdditionalLines_logThem() {
     String extendedInfoMessage = onSeparateLines(INFO_MESSAGE, INFO_EXTRA1, INFO_EXTRA_2);
-    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(extendedInfoMessage);
+    IntrospectionTestUtils.defineResources(testSupport, extendedInfoMessage);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
@@ -94,7 +93,7 @@ public class IntrospectionLoggingTest {
 
   @Test
   public void whenJobLogContainsSevereError_copyToDomainStatus() {
-    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(SEVERE_MESSAGE_1);
+    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
     logRecords.clear();
@@ -106,8 +105,7 @@ public class IntrospectionLoggingTest {
 
   @Test
   public void whenJobLogContainsMultipleSevereErrors_copyToDomainStatus() {
-    new DomainProcessorTestSetup(testSupport)
-        .defineKubernetesResources(
+    IntrospectionTestUtils.defineResources(testSupport,
             onSeparateLines(SEVERE_MESSAGE_1, INFO_MESSAGE, INFO_EXTRA1, SEVERE_MESSAGE_2));
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));

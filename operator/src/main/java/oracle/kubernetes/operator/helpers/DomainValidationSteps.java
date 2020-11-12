@@ -48,8 +48,8 @@ public class DomainValidationSteps {
     return new DomainAdditionalValidationStep(podSpec);
   }
 
-  public static Step createAfterIntrospectValidationSteps(String domainUid) {
-    return new DomainAfterIntrospectValidationStep(domainUid);
+  public static Step createAfterIntrospectValidationSteps() {
+    return new DomainAfterIntrospectValidationStep();
   }
 
   private static Step createListSecretsStep(String domainNamespace) {
@@ -230,11 +230,6 @@ public class DomainValidationSteps {
   }
 
   private static class DomainAfterIntrospectValidationStep extends Step {
-    private String domainUid;
-
-    public DomainAfterIntrospectValidationStep(String domainUid) {
-      this.domainUid = domainUid;
-    }
 
     @Override
     public NextAction apply(Packet packet) {

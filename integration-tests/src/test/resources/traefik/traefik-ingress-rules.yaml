@@ -37,7 +37,7 @@ spec:
       name: @domain1uid@-cluster-cluster-1
       port: 8001
   tls:
-     secretName: @domain1uid@-tls-secret
+     secretName: @domain1uid@-traefik-tls-secret
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -170,3 +170,114 @@ spec:
   replacePathRegex:
     regex: ^/domain2(.*)
     replacement: /$1
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: @domain1uid@-traefik-tls-console
+  namespace: default
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - kind: Rule
+    match: PathPrefix(`/console`)
+    middlewares:
+    - name: tls-middleware-console1
+      namespace: default
+    services:
+    - kind: Service
+      name: @domain1uid@-admin-server
+      namespace: default
+      port: 7001
+  tls:
+    secretName: @domain1uid@-traefik-tls-secret
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: tls-middleware-console1
+  namespace: default
+spec:
+  headers:
+    customRequestHeaders:
+      X-Custom-Request-Header: "" # Removes
+      X-Forwarded-For: "" # Removes
+      WL-Proxy-Client-IP: "" # Removes
+      WL-Proxy-SSL: "" # Removes
+      WL-Proxy-SSL: "true" # Adds
+    sslRedirect: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    ingress.kubernetes.io/custom-request-headers: "WL-Proxy-SSL: true"
+  name: @domain1uid@-traefik-tls-pathrouting
+  namespace: default
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - kind: Rule
+    match: PathPrefix(`/domain1`)
+    middlewares:
+    - name: tls-middleware-domain1
+      namespace: default
+    services:
+    - kind: Service
+      name: @domain1uid@-cluster-cluster-1
+      namespace: default
+      port: 8001
+  tls:
+    secretName: @domain1uid@-traefik-tls-secret
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: tls-middleware-domain1
+  namespace: default
+spec:
+  replacePathRegex:
+    regex: ^/domain1(.*)
+    replacement: /$1
+  sslRedirect: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    ingress.kubernetes.io/custom-request-headers: "WL-Proxy-SSL: true"
+  name: @domain2uid@-traefik-tls-pathrouting
+  namespace: default
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - kind: Rule
+    match: PathPrefix(`/domain2`)
+    middlewares:
+    - name: tls-middleware-domain2
+      namespace: default
+    services:
+    - kind: Service
+      name: @domain2uid@-cluster-cluster-1
+      namespace: default
+      port: 8001
+  tls:
+    secretName: @domain2uid@-traefik-tls-secret
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: tls-middleware-domain2
+  namespace: default
+spec:
+  replacePathRegex:
+    regex: ^/domain2(.*)
+    replacement: /$1
+  sslRedirect: true

@@ -10,6 +10,7 @@ public interface ProcessingConstants {
   String DOMAIN_COMPONENT_NAME = "domain";
   String FIBER_COMPONENT_NAME = "fiber";
   String PODWATCHER_COMPONENT_NAME = "podWatcher";
+  String JOBWATCHER_COMPONENT_NAME = "jobWatcher";
 
   /** key to an object of type WlsServerConfig. */
   String SERVER_SCAN = "serverScan";

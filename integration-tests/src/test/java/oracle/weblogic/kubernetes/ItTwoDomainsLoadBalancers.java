@@ -119,6 +119,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.listJobs;
@@ -152,6 +153,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.TestUtils.verifyServerCommunication;
@@ -161,6 +163,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -393,10 +396,10 @@ public class ItTwoDomainsLoadBalancers {
     // deploy clusterview application in domain1Namespace
     deployApplication(domain1Namespace, domain1Uid, domain1Uid + "-admin-server");
 
-    // create TLS secret for https traffic
+    // create TLS secret for Traefik HTTPS traffic
     for (String domainUid : domainUids) {
       createCertKeyFiles(domainUid + "." + defaultNamespace + ".cluster-1.test");
-      assertDoesNotThrow(() -> createSecretWithTLSCertKey(domainUid + "-tls-secret",
+      assertDoesNotThrow(() -> createSecretWithTLSCertKey(domainUid + "-traefik-tls-secret",
           defaultNamespace, tlsKeyFile, tlsCertFile));
     }
 
@@ -415,6 +418,10 @@ public class ItTwoDomainsLoadBalancers {
     createVoyagerIngressPathRoutingRules();
     createNginxIngressPathRoutingForTwoDomains();
 
+    // create ingress rules with TLS path routing for Voyager and NGINX
+    createVoyagerIngressTLSPathRoutingRules();
+    createNginxTLSPathRoutingForTwoDomains();
+
     // install and verify Apache for default sample
     apacheHelmParams1 = assertDoesNotThrow(
         () -> installAndVerifyApache(domain1Namespace, kindRepoApacheImage, 0, 0, domain1Uid));
@@ -431,15 +438,74 @@ public class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol.
+   * Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol.
    */
   @Order(4)
+  @Test
+  @DisplayName("Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol")
+  public void testNginxTLSPathRoutingAdminServer() {
+    logger.info("Verifying WebLogic admin console is accessible through NGINX path routing with HTTPS protocol");
+    for (int i = 0; i < numberOfDomains; i++) {
+      verifyAdminServerAccess(true, getNginxLbNodePort("https"), false, "",
+          "/" + domainUids.get(i).substring(6) + "console");
+
+
+      // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
+      // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
+      // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
+      verifyHeadersInAdminServerLog(domainAdminServerPodNames.get(i), defaultNamespace);
+    }
+  }
+
+  /**
+   * Test verifies multiple WebLogic domains can be loadbalanced by NGINX loadbalancer with TLS path routing rules.
+   * Accesses the clusterview application deployed in the WebLogic cluster through NGINX loadbalancer and verifies it
+   * is correctly routed to the specific domain cluster.
+   */
+  @Order(5)
+  @Test
+  @DisplayName("Verify NGINX path routing with HTTPS protocol across two domains")
+  public void testNginxTLSPathRoutingAcrossDomains() {
+
+    // verify NGINX path routing with HTTP protocol across two domains
+    logger.info("Verifying NGINX path routing with HTTPS protocol across two domains");
+    for (String domainUid : domainUids) {
+      verifyClusterLoadbalancing(domainUid, "", "https", getNginxLbNodePort("https"),
+          replicaCount, false, "/" + domainUid.substring(6));
+    }
+  }
+
+  /**
+   * Verify WebLogic admin console is accessible through Voyager path routing with HTTPS protocol.
+   */
+  @Order(6)
+  @Test
+  @DisplayName("Verify WebLogic admin console is accessible through Voyager path routing with HTTPS protocol")
+  public void testVoyagerTLSPathRoutingAdminServer() {
+    logger.info("Verifying WebLogic admin console is accessible through Voyager path routing with HTTPS protocol");
+    String ingressName = "voyager-tls-pathrouting";
+    for (int i = 0; i < numberOfDomains; i++) {
+      verifyAdminServerAccess(true, getVoyagerLbNodePort(ingressName, "tcp-443"), false, "",
+          "/" + domainUids.get(i).substring(6) + "console");
+
+      // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
+      // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
+      // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
+      verifyHeadersInAdminServerLog(domainAdminServerPodNames.get(i), defaultNamespace);
+    }
+  }
+
+  /**
+   * Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol.
+   */
+  @Order(7)
   @Test
   @DisplayName("Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol")
   public void testTraefikHostRoutingAdminServer() {
     logger.info("Verifying WebLogic admin console is accessible through Traefik host routing with HTTP protocol");
     for (String domainUid : domainUids) {
-      verifyAdminServerAccess(domainUid);
+      verifyAdminServerAccess(false, getTraefikLbNodePort(false), true,
+          domainUid + "." + defaultNamespace + "." + "admin-server" + ".test", "");
     }
   }
 
@@ -449,7 +515,7 @@ public class ItTwoDomainsLoadBalancers {
    * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
-  @Order(5)
+  @Order(8)
   @Test
   @DisplayName("Verify Traefik host routing with HTTP protocol across two domains")
   public void testTraefikHttpHostRoutingAcrossDomains() {
@@ -467,7 +533,7 @@ public class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through Traefik loadbalancer websecure
    * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    */
-  @Order(6)
+  @Order(9)
   @Test
   @DisplayName("Verify Traefik host routing with HTTPS protocol across two domains")
   public void testTraefikHostHttpsRoutingAcrossDomains() {
@@ -482,7 +548,7 @@ public class ItTwoDomainsLoadBalancers {
   /**
    * Verify Traefik path routing with HTTP protocol across two domains.
    */
-  @Order(7)
+  @Order(10)
   @Test
   @DisplayName("Verify Traefik path routing with HTTP protocol across two domains")
   public void testTraefikPathRoutingAcrossDomains() {
@@ -499,7 +565,7 @@ public class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through Voyager loadbalancer and verifies it
    * is correctly routed to the specific domain cluster identified by the -H host header.
    */
-  @Order(8)
+  @Order(11)
   @Test
   @DisplayName("Verify Voyager host routing with HTTP protocol across two domains")
   public void testVoyagerHostHttpRoutingAcrossDomains() {
@@ -519,7 +585,7 @@ public class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through Voyager loadbalancer and verifies it
    * is correctly routed to the specific domain cluster identified by the -H host header.
    */
-  @Order(9)
+  @Order(12)
   @Test
   @DisplayName("Verify Voyager host routing with HTTPS protocol across two domains")
   public void testVoyagerHostHttpsRoutingAcrossDomains() {
@@ -539,7 +605,7 @@ public class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through Voyager loadbalancer and verifies it
    * is correctly routed to the specific domain cluster.
    */
-  @Order(10)
+  @Order(13)
   @Test
   @DisplayName("Verify Voyager path routing with HTTP protocol across two domains")
   public void testVoyagerPathRoutingAcrossDomains() {
@@ -560,7 +626,7 @@ public class ItTwoDomainsLoadBalancers {
    * For details, please see
    * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/default-sample
    */
-  @Order(11)
+  @Order(14)
   @Test
   @DisplayName("verify Apache load balancer default sample through HTTP channel")
   public void testApacheLoadBalancingDefaultSample() {
@@ -579,7 +645,7 @@ public class ItTwoDomainsLoadBalancers {
    * For more details, please check:
    * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/custom-sample
    */
-  @Order(12)
+  @Order(15)
   @Test
   @DisplayName("verify Apache load balancer custom sample through HTTP and HTTPS channel")
   public void testApacheLoadBalancingCustomSample() {
@@ -603,7 +669,7 @@ public class ItTwoDomainsLoadBalancers {
    * and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
-  @Order(13)
+  @Order(16)
   @Test
   @DisplayName("verify NGINX host routing with HTTP protocol across two domains")
   public void testNginxHttpHostRoutingAcrossDomains() {
@@ -622,7 +688,7 @@ public class ItTwoDomainsLoadBalancers {
    * protocol and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
-  @Order(14)
+  @Order(17)
   @Test
   @DisplayName("verify NGINX host routing with https protocol across two domains")
   public void testNginxHttpsHostRoutingAcrossDomains() {
@@ -640,7 +706,7 @@ public class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through NGINX loadbalancer and verifies it
    * is correctly routed to the specific domain cluster.
    */
-  @Order(15)
+  @Order(18)
   @Test
   @DisplayName("Verify NGINX path routing with HTTP protocol across two domains")
   public void testNginxPathRoutingAcrossDomains() {
@@ -649,6 +715,60 @@ public class ItTwoDomainsLoadBalancers {
     logger.info("Verifying NGINX path routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, "", "http", getNginxLbNodePort("http"),
+          replicaCount, false, "/" + domainUid.substring(6));
+    }
+  }
+
+  /**
+   * Test verifies multiple WebLogic domains can be loadbalanced by Voyager with TLS path routing rules.
+   * Accesses the clusterview application deployed in the WebLogic cluster through Voyager and verifies it
+   * is correctly routed to the specific domain cluster.
+   */
+  @Order(19)
+  @Test
+  @DisplayName("Verify Voyager path routing with HTTPS protocol across two domains")
+  public void testVoyagerTLSPathRoutingAcrossDomains() {
+
+    // verify Voyager path routing with HTTP protocol across two domains
+    logger.info("Verifying Voyager path routing with HTTPS protocol across two domains");
+    String ingressName = "voyager-tls-pathrouting";
+    for (String domainUid : domainUids) {
+      verifyClusterLoadbalancing(domainUid, "", "https", getVoyagerLbNodePort(ingressName, "tcp-443"),
+          replicaCount, false, "/" + domainUid.substring(6));
+    }
+  }
+
+  /**
+   * Verify WebLogic admin console is accessible through Traefik path routing with HTTPS protocol.
+   */
+  @Order(20)
+  @Test
+  @DisplayName("Verify WebLogic admin console is accessible through Traefik path routing with HTTPS protocol")
+  public void testTraefikTLSPathRoutingAdminServer() {
+    logger.info("Verifying WebLogic admin console is accessible through Traefik path routing with HTTPS protocol");
+
+    verifyAdminServerAccess(true, getTraefikLbNodePort(true), false, "", "");
+
+    // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
+    // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
+    // verify the header 'WL-Proxy-SSL: true' is added in the admin server log
+    verifyHeadersInAdminServerLog(domainAdminServerPodNames.get(0), defaultNamespace);
+  }
+
+  /**
+   * Test verifies multiple WebLogic domains can be loadbalanced by Traefik with TLS path routing rules.
+   * Accesses the clusterview application deployed in the WebLogic cluster through Traefik and verifies it
+   * is correctly routed to the specific domain cluster.
+   */
+  @Order(21)
+  @Test
+  @DisplayName("Verify Traefik path routing with HTTPS protocol across two domains")
+  public void testTraefikTLSPathRoutingAcrossDomains() {
+
+    // verify Voyager path routing with HTTP protocol across two domains
+    logger.info("Verifying Traefik path routing with HTTPS protocol across two domains");
+    for (String domainUid : domainUids) {
+      verifyClusterLoadbalancing(domainUid, "", "https", getTraefikLbNodePort(true),
           replicaCount, false, "/" + domainUid.substring(6));
     }
   }
@@ -1206,7 +1326,7 @@ public class ItTwoDomainsLoadBalancers {
                                             String pvName,
                                             String pvcName,
                                             int t3ChannelPort) {
-    return new Domain()
+    Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -1231,10 +1351,10 @@ public class ItTwoDomainsLoadBalancers {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false "
-                        + "-Dweblogic.kernel.debug=true "
-                        + "-Dweblogic.debug.DebugMessaging=true "
-                        + "-Dweblogic.debug.DebugConnection=true "
+                    .value("-Dweblogic.StdoutDebugEnabled=true "
+                        + "-Dweblogic.http.isWLProxyHeadersAccessible=true "
+                        + "-Dweblogic.debug.DebugHttp=true "
+                        + "-Dweblogic.rjvm.allowUnknownHost=true "
                         + "-Dweblogic.ResolveDNSName=true "
                         + "-Dweblogic.MaxMessageSize=20000000"))
                 .addEnvItem(new V1EnvVar()
@@ -1260,6 +1380,8 @@ public class ItTwoDomainsLoadBalancers {
                 .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING")));
+    setPodAntiAffinity(domain);
+    return domain;
   }
 
   /**
@@ -1572,6 +1694,33 @@ public class ItTwoDomainsLoadBalancers {
     }
   }
 
+  private void createVoyagerIngressTLSPathRoutingRules() {
+    logger.info("Creating ingress rules for Voyager tls console traffic routing");
+    Path srcFile = Paths.get(ActionConstants.RESOURCE_DIR, "voyager/voyager-tls-pathrouting.yaml");
+    dstFile = Paths.get(TestConstants.RESULTS_ROOT, "voyager/voyager-tls-pathrouting.yaml");
+    assertDoesNotThrow(() -> {
+      Files.deleteIfExists(dstFile);
+      Files.createDirectories(dstFile.getParent());
+      Files.write(dstFile, Files.readString(srcFile).replaceAll("@NS@", defaultNamespace)
+          .replaceAll("@domain1uid@", domainUids.get(0))
+          .replaceAll("@domain2uid@", domainUids.get(1))
+          .replaceAll("@secretName@", domainUids.get(0) + "-voyager-tls-secret")
+          .getBytes(StandardCharsets.UTF_8));
+    });
+    String command = "kubectl create -f " + dstFile;
+    logger.info("Running {0}", command);
+    ExecResult result;
+    try {
+      result = ExecCommand.exec(command, true);
+      String response = result.stdout().trim();
+      logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          result.exitValue(), response, result.stderr());
+      assertEquals(0, result.exitValue(), "Command didn't succeed");
+    } catch (IOException | InterruptedException ex) {
+      logger.severe(ex.getMessage());
+    }
+  }
+
   private void createNginxIngressHostRoutingForTwoDomains(boolean isTLS) {
 
     // create an ingress in domain namespace
@@ -1698,6 +1847,77 @@ public class ItTwoDomainsLoadBalancers {
     }
   }
 
+  private void createNginxTLSPathRoutingForTwoDomains() {
+
+    // create an ingress in domain namespace
+    String ingressName = defaultNamespace + "-nginx-tls-pathrouting";
+
+    HashMap<String, String> annotations = new HashMap<>();
+    annotations.put("kubernetes.io/ingress.class", "nginx");
+    annotations.put("nginx.ingress.kubernetes.io/rewrite-target", "/$1");
+    String configurationSnippet =
+        new StringBuffer()
+        .append("more_clear_input_headers \"WL-Proxy-Client-IP\" \"WL-Proxy-SSL\"; ")
+        .append("more_set_input_headers \"X-Forwarded-Proto: https\"; ")
+        .append("more_set_input_headers \"WL-Proxy-SSL: true\";")
+        .toString();
+    annotations.put("nginx.ingress.kubernetes.io/configuration-snippet", configurationSnippet);
+    annotations.put("nginx.ingress.kubernetes.io/ingress.allow-http", "false");
+
+    // create ingress rules for two domains
+    List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
+    List<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+
+    for (String domainUid : domainUids) {
+      NetworkingV1beta1HTTPIngressPath httpIngressAdminConsolePath = new NetworkingV1beta1HTTPIngressPath()
+          .path("/" + domainUid.substring(6) + "console(.+)")
+          .backend(new NetworkingV1beta1IngressBackend()
+              .serviceName(domainUid + "-" + ADMIN_SERVER_NAME_BASE)
+              .servicePort(new IntOrString(ADMIN_SERVER_PORT))
+          );
+      httpIngressPaths.add(httpIngressAdminConsolePath);
+      NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
+          .path("/" + domainUid.substring(6) + "(.+)")
+          .backend(new NetworkingV1beta1IngressBackend()
+              .serviceName(domainUid + "-cluster-cluster-1")
+              .servicePort(new IntOrString(MANAGED_SERVER_PORT))
+          );
+      httpIngressPaths.add(httpIngressPath);
+    }
+
+    NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
+        .host("")
+        .http(new NetworkingV1beta1HTTPIngressRuleValue()
+            .paths(httpIngressPaths));
+
+    ingressRules.add(ingressRule);
+
+    // create TLS list for the ingress
+    List<NetworkingV1beta1IngressTLS> tlsList = new ArrayList<>();
+    String tlsSecretName = domainUids.get(0) + "-nginx-tlspathrouting-secret";
+    createCertKeyFiles(domainUids.get(0) + "." + defaultNamespace + ".nginx.tlspathrouting.test");
+    assertDoesNotThrow(() -> createSecretWithTLSCertKey(tlsSecretName, defaultNamespace, tlsKeyFile, tlsCertFile));
+    NetworkingV1beta1IngressTLS tls = new NetworkingV1beta1IngressTLS()
+        .secretName(tlsSecretName);
+    tlsList.add(tls);
+
+    assertDoesNotThrow(() -> createIngress(ingressName, defaultNamespace, annotations, ingressRules, tlsList));
+
+    // check the ingress was found in the domain namespace
+    assertThat(assertDoesNotThrow(() -> listIngresses(defaultNamespace)))
+        .as(String.format("Test ingress %s was found in namespace %s", ingressName, defaultNamespace))
+        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, defaultNamespace))
+        .contains(ingressName);
+
+    logger.info("ingress {0} was created in namespace {1}", ingressName, defaultNamespace);
+
+    // check the ingress is ready to route the app to the server pod
+    int httpsNodeport = getNginxLbNodePort("https");
+    for (String domainUid : domainUids) {
+      checkIngressReady(false, "", true, -1, httpsNodeport, domainUid.substring(6));
+    }
+  }
+
   /**
    * Get the Voyager ingress nodeport.
    * @param ingressName name of the Voyager ingress
@@ -1762,38 +1982,58 @@ public class ItTwoDomainsLoadBalancers {
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
   }
 
-  private void verifyAdminServerAccess(String domainUid) {
-    String consoleUrl = new StringBuffer()
-        .append("http://")
-        .append(K8S_NODEPORT_HOST)
+  private void verifyAdminServerAccess(boolean isTLS,
+                                       int lbNodePort,
+                                       boolean isHostRouting,
+                                       String ingressHostName,
+                                       String pathLocation) {
+
+    StringBuffer consoleUrl = new StringBuffer();
+    if (isTLS) {
+      consoleUrl.append("https://");
+    } else {
+      consoleUrl.append("http://");
+    }
+    consoleUrl.append(K8S_NODEPORT_HOST)
         .append(":")
-        .append(getTraefikLbNodePort(false))
-        .append("/console/login/LoginForm.jsp").toString();
+        .append(lbNodePort);
+    if (!isHostRouting) {
+      consoleUrl.append(pathLocation);
+    }
+    consoleUrl.append("/console/login/LoginForm.jsp");
 
-    //access application in managed servers through Traefik load balancer and bind domain in the JNDI tree
-    String curlCmd = String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' %s",
-        domainUid + "." + defaultNamespace + "." + "admin-server" + ".test", consoleUrl);
+    String curlCmd;
+    if (isHostRouting) {
+      curlCmd = String.format("curl -ks --show-error --noproxy '*' -H 'host: %s' %s",
+          ingressHostName, consoleUrl.toString());
+    } else {
+      if (isTLS) {
+        curlCmd = String.format("curl -ks --show-error --noproxy '*' -H 'WL-Proxy-Client-IP: 1.2.3.4' "
+            + "-H 'WL-Proxy-SSL: false' %s", consoleUrl.toString());
+      } else {
+        curlCmd = String.format("curl -ks --show-error --noproxy '*' %s", consoleUrl.toString());
+      }
+    }
 
-    boolean hostRouting = false;
+    boolean consoleAccessible = false;
     for (int i = 0; i < 10; i++) {
       assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
       ExecResult result;
       try {
-        logger.info("Accessing console using curl request iteration{0} {1}", i, curlCmd);
+        logger.info("Accessing console using curl request, iteration {0}: {1}", i, curlCmd);
         result = ExecCommand.exec(curlCmd, true);
         String response = result.stdout().trim();
         logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
             result.exitValue(), response, result.stderr());
         if (response.contains("login")) {
-          hostRouting = true;
+          consoleAccessible = true;
           break;
         }
-        //assertTrue(result.stdout().contains("Login"), "Couldn't access admin server console");
       } catch (IOException | InterruptedException ex) {
         logger.severe(ex.getMessage());
       }
     }
-    assertTrue(hostRouting, "Couldn't access admin server console");
+    assertTrue(consoleAccessible, "Couldn't access admin server console");
   }
 
   /**
@@ -1819,13 +2059,13 @@ public class ItTwoDomainsLoadBalancers {
     logger.info("Accessing the clusterview app through load balancer to verify all servers in cluster");
     String curlRequest;
     if (hostRouting) {
-      curlRequest = String.format("curl --silent --show-error -ks --noproxy '*' "
+      curlRequest = String.format("curl --show-error -ks --noproxy '*' "
               + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
               + "\"?user=" + ADMIN_USERNAME_DEFAULT
               + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
           ingressHostName, protocol, K8S_NODEPORT_HOST, lbPort);
     } else {
-      curlRequest = String.format("curl --silent --show-error -ks --noproxy '*' "
+      curlRequest = String.format("curl --show-error -ks --noproxy '*' "
               + "%s://%s:%s" + locationString + "/clusterview/ClusterViewServlet"
               + "\"?user=" + ADMIN_USERNAME_DEFAULT
               + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
@@ -1940,8 +2180,13 @@ public class ItTwoDomainsLoadBalancers {
               + "/weblogic/ready --write-out %{http_code} -o /dev/null";
         }
       } else {
-        curlCmd = "curl --silent --show-error --noproxy '*' http://" + K8S_NODEPORT_HOST + ":" + httpNodeport
-            + "/" + pathString + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+        if (isTLS) {
+          curlCmd = "curl -k --silent --show-error --noproxy '*' https://" + K8S_NODEPORT_HOST + ":" + httpsNodeport
+              + "/" + pathString + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+        } else {
+          curlCmd = "curl --silent --show-error --noproxy '*' http://" + K8S_NODEPORT_HOST + ":" + httpNodeport
+              + "/" + pathString + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+        }
       }
       logger.info("Executing curl command {0}", curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
@@ -1988,5 +2233,51 @@ public class ItTwoDomainsLoadBalancers {
 
     String labelSelector = String.format("apacheLabel in (%s)", "apache-custom-config");
     createPVPVCAndVerify(v1pv, v1pvc, labelSelector, apacheNamespace);
+  }
+
+  private void verifyHeadersInAdminServerLog(String podName, String namespace) {
+
+    logger.info("Getting admin server pod log from pod {0} in namespace {1}", podName, namespace);
+
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Getting admin server pod log {0} in namespace {1}, waiting for success "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return assertDoesNotThrow(() ->
+              getPodLog(podName, namespace, "weblogic-server", null, 120)) != null;
+        });
+
+    String adminServerPodLog0 = assertDoesNotThrow(() ->
+        getPodLog(podName, namespace, "weblogic-server", null, 120));
+
+    assertNotNull(adminServerPodLog0,
+        String.format("failed to get admin server log from pod %s in namespace %s, returned null",
+            podName, namespace));
+
+    String adminServerPodLog = adminServerPodLog0.toLowerCase();
+
+    // verify the admin server log does not contain WL-Proxy-Client-IP header
+    logger.info("Checking that the admin server log does not contain 'WL-Proxy-Client-IP' header");
+    assertFalse(adminServerPodLog.contains("WL-Proxy-Client-IP".toLowerCase()),
+        String.format("found WL-Proxy-Client-IP in the admin server pod log, pod: %s; namespace: %s; pod log: %s",
+            podName, namespace, adminServerPodLog0));
+
+    // verify the admin server log does not contain header "WL-Proxy-SSL: false"
+    logger.info("Checking that the admin server log does not contain header 'WL-Proxy-SSL: false'");
+    assertFalse(adminServerPodLog.contains("WL-Proxy-SSL: false".toLowerCase()),
+        String.format("found 'WL-Proxy-SSL: false' in the admin server pod log, pod: %s; namespace: %s; pod log: %s",
+            podName, namespace, adminServerPodLog0));
+
+    // verify the admin server log contains header "WL-Proxy-SSL: true"
+    logger.info("Checking that the admin server log contains header 'WL-Proxy-SSL: true'");
+    assertTrue(adminServerPodLog.contains("WL-Proxy-SSL: true".toLowerCase()),
+        String.format(
+            "Did not find 'WL-Proxy-SSL: true' in the admin server pod log, pod: %s; namespace: %s; pod log: %s",
+            podName, namespace, adminServerPodLog0));
   }
 }
