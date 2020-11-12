@@ -370,7 +370,7 @@
   </dependencies>
 
   <properties>
-    <junit-version>4.13</junit-version>
+    <junit-version>4.13.1</junit-version>
     <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 

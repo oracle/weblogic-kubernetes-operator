@@ -14,7 +14,6 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
@@ -284,9 +283,5 @@ public class DomainUpPlanTest {
       return new NullPodWaiter();
     }
 
-    @Override
-    public V1SubjectRulesReviewStatus getSubjectRulesReviewStatus(String namespace) {
-      return null;
-    }
   }
 }

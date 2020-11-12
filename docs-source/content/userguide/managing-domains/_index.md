@@ -8,6 +8,7 @@ description: "Important considerations for WebLogic domains in Kubernetes."
 #### Contents
 
 * [Important considerations for WebLogic domains in Kubernetes](#important-considerations-for-weblogic-domains-in-kubernetes)
+* [Meet Kubernetes resource name restrictions](#meet-kubernetes-resource-name-restrictions)
 * [Creating and managing WebLogic domains](#creating-and-managing-weblogic-domains)
 * [Modifying domain configurations](#modifying-domain-configurations)
 * [About the Domain resource](#about-the-domain-resource)
@@ -44,9 +45,9 @@ Be aware of the following important considerations for WebLogic domains running 
   the WebLogic Server name is `Admin_Server`, then its listen address becomes `domain1-admin-server`.
 
 * _Domain, Cluster, Server, and Network-Access-Point Names:_ WebLogic domain, cluster, server, and network-access-point (channel)
-  names must contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`.  This ensures that they can be converted to
-  meet Kubernetes resource and DNS1123 naming requirements.  (When generating pod and service names, the operator will convert
-  configured names to lower case and substitute a hyphen (`-`) for each underscore (`_`).)
+  names must contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`, and must be kept to a reasonable length.  This ensures that they can
+  be safely used to form resource names that meet Kubernetes resource and DNS1123 naming requirements. For more details,
+  see [Meet Kubernetes resource name restrictions](#meet-kubernetes-resource-name-restrictions).
 
 * _Node Ports:_ If you choose to expose any WebLogic channels outside the Kubernetes cluster using a `NodePort`, for example, the
   administration port or a T3 channel to allow WLST access, you need to ensure that you allocate each channel a
@@ -86,6 +87,23 @@ The following features are **not** certified or supported in this release:
 
 For up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments, see My Oracle Support Doc ID 2349228.1.
 
+### Meet Kubernetes resource name restrictions
+          
+Kubernetes requires that the names of some resource types follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement restricts the characters that are allowed in the names of these resources, and also limits the length of these names to no more than 63 characters.
+
+The following is a list of such Kubernetes resources that the operator generates when a domain resource is deployed, including how their names are constructed.
+          
+* A domain introspector job named `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (see [WebLogic domain management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
+* A ClusterIP type service and a pod for each WebLogic Server named `<domainUID>-<serverName>`.
+* A ClusterIP type service for each WebLogic cluster named `<domainUID>-cluster-<clusterName>`.
+* An optional NodePort type service, also known as an external service, for the WebLogic Administration Server named `<domainUID>-<adminServerName>-<externalServiceNameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` (see [WebLogic domain management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
+
+The operator puts in place certain validation checks and conversions to prevent these resources from violating Kubernetes restrictions.
+* All the names previously described can contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`, and must start and end with an alphanumeric character. Note that when generating pod and service names, the operator will convert configured names to lower case and substitute a hyphen (`-`) for each underscore (`_`).
+* A `domainUID` is required to be no more than 45 characters. 
+* WebLogic domain configuration names, such as the cluster names, Administration Server name, and Managed Server names must be kept to a legal length so that the resultant resource names do not exceed Kubernetes' limits. 
+
+When a domain resource or WebLogic domain configuration violates the limits, the domain startup will fail, and actual validation errors are reported in the domain resource's status.
 
 ### Creating and managing WebLogic domains
 

@@ -92,7 +92,7 @@
             <dependency>
               <groupId>com.puppycrawl.tools</groupId>
               <artifactId>checkstyle</artifactId>
-              <version>8.30</version>
+              <version>${checkstyle-version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -121,7 +121,7 @@
             <dependency>
               <groupId>net.sourceforge.pmd</groupId>
               <artifactId>pmd-java</artifactId>
-              <version>6.21.0</version>
+              <version>${pmd-java-version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -220,7 +220,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>build-helper-maven-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>${mojo-build-helper-version}</version>
         </plugin>
 
         <plugin>
@@ -240,7 +240,7 @@
       <plugin>
         <groupId>org.commonjava.maven.plugins</groupId>
         <artifactId>directory-maven-plugin</artifactId>
-        <version>0.1</version>
+        <version>${directory-maven-version}</version>
         <executions>
           <execution>
             <id>directories</id>
@@ -322,7 +322,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
-        <version>3.0.0</version>
+        <version>${maven-jxr-plugin-version}</version>
       </plugin>
     </plugins>
   </reporting>
@@ -336,7 +336,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
+            <version>${maven-gpg-plugin-version}</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -361,7 +361,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>build-helper-maven-plugin</artifactId>
-            <version>3.0.0</version>
+            <version>${mojo-build-helper-version}</version>
             <executions>
               <execution>
                 <id>add-test-source</id>
@@ -454,7 +454,7 @@
       <dependency>
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest-junit</artifactId>
-        <version>2.0.0.0</version>
+        <version>${hamcrest-junit-version}</version>
       </dependency>
       <dependency>
         <groupId>org.junit.jupiter</groupId>
@@ -490,12 +490,12 @@
       <dependency>
         <groupId>com.meterware.simplestub</groupId>
         <artifactId>simplestub</artifactId>
-        <version>1.3.0</version>
+        <version>${simplestub-version}</version>
       </dependency>
       <dependency>
         <groupId>org.glassfish</groupId>
         <artifactId>jakarta.json</artifactId>
-        <version>1.1.6</version>
+        <version>${jakarta-json-version}</version>
       </dependency>
       <dependency>
         <groupId>org.glassfish.jersey.core</groupId>
@@ -571,43 +571,38 @@
       <dependency>
         <groupId>javax.jms</groupId>
         <artifactId>javax.jms-api</artifactId>
-        <version>2.0.1</version>
-      </dependency>
-      <dependency>
-        <groupId>net.sourceforge.htmlunit</groupId>
-        <artifactId>htmlunit</artifactId>
-        <version>2.38.0</version>
+        <version>${jms-api-version}</version>
       </dependency>
       <dependency>
         <groupId>javax.xml.bind</groupId>
         <artifactId>jaxb-api</artifactId>
-        <version>2.3.1</version>
+        <version>${jaxb-api-version}</version>
       </dependency>
       <dependency>
         <groupId>javax</groupId>
         <artifactId>javaee-web-api</artifactId>
-        <version>7.0</version>
+        <version>${javaee-web-api}</version>
         <type>jar</type>
       </dependency>
       <dependency>
         <groupId>com.kjetland</groupId>
         <artifactId>mbknor-jackson-jsonschema_2.12</artifactId>
-        <version>1.0.38</version>
+        <version>${kjetland-mbknor-jsonschema-version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-lang3</artifactId>
-        <version>3.10</version>
+        <version>${commons-lang3-version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-exec</artifactId>
-        <version>1.3</version>
+        <version>${commons-exec-version}</version>
       </dependency>
       <dependency>
         <groupId>commons-codec</groupId>
         <artifactId>commons-codec</artifactId>
-        <version>1.14</version>
+        <version>${commons-codec-version}</version>
       </dependency>
       <dependency>
         <groupId>commons-io</groupId>
@@ -622,12 +617,12 @@
       <dependency>
         <groupId>org.httpunit</groupId>
         <artifactId>httpunit</artifactId>
-        <version>1.7.3</version>
+        <version>${httpunit-version}</version>
       </dependency>
       <dependency>
         <groupId>com.appscode.voyager</groupId>
         <artifactId>client-java</artifactId>
-        <version>0.1.0</version>
+        <version>${voyager-client-version}</version>
       </dependency>
       <dependency>
         <groupId>org.assertj</groupId>
@@ -646,7 +641,7 @@
     <dependency>
       <groupId>com.jayway.jsonpath</groupId>
       <artifactId>json-path-assert</artifactId>
-      <version>2.4.0</version>
+      <version>${jsonpath-version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -665,29 +660,47 @@
     <maven-deploy-plugin-version>3.0.0-M1</maven-deploy-plugin-version>
     <maven-install-plugin-version>3.0.0-M1</maven-install-plugin-version>
     <maven-jar-plugin-version>3.2.0</maven-jar-plugin-version>
-    <maven-resources-plugin-version>3.1.0</maven-resources-plugin-version>
-    <maven-site-plugin-version>3.8.2</maven-site-plugin-version>
+    <maven-resources-plugin-version>3.2.0</maven-resources-plugin-version>
+    <maven-site-plugin-version>3.9.1</maven-site-plugin-version>
     <maven-surefire-plugin-version>2.22.2</maven-surefire-plugin-version>
     <surefire-logger-api-version>2.22.2</surefire-logger-api-version>
     <maven-checkstyle-plugin-version>3.1.1</maven-checkstyle-plugin-version>
     <maven-pmd-plugin-version>3.13.0</maven-pmd-plugin-version>
     <maven-release-plugin-version>3.0.0-M1</maven-release-plugin-version>
-    <maven-javadoc-plugin-version>3.1.1</maven-javadoc-plugin-version>
-    <!-- do NOT use the 3.0.0-M4 failsafe-plugin (ignores @BeforeAll failures) -->
+    <maven-javadoc-plugin-version>3.2.0</maven-javadoc-plugin-version>
     <maven-failsafe-plugin-version>3.0.0-M3</maven-failsafe-plugin-version>
-    <maven-dependency-plugin-version>3.1.1</maven-dependency-plugin-version>
-    <exec-maven-plugin-version>1.6.0</exec-maven-plugin-version>
-    <spotbugs-maven-plugin-version>3.1.12.2</spotbugs-maven-plugin-version>
-    <spotbugs-version>3.1.12</spotbugs-version>
+    <maven-dependency-plugin-version>3.1.2</maven-dependency-plugin-version>
+    <exec-maven-plugin-version>3.0.0</exec-maven-plugin-version>
+    <spotbugs-maven-plugin-version>4.1.4</spotbugs-maven-plugin-version>
+    <spotbugs-version>4.1.4</spotbugs-version>
+    <checkstyle-version>8.36.2</checkstyle-version>
+    <pmd-java-version>6.21.0</pmd-java-version>
+    <directory-maven-version>0.1</directory-maven-version>
+    <maven-jxr-plugin-version>3.0.0</maven-jxr-plugin-version>
+    <maven-gpg-plugin-version>1.6</maven-gpg-plugin-version>
+    <hamcrest-junit-version>2.0.0.0</hamcrest-junit-version>
+    <simplestub-version>1.3.0</simplestub-version>
+    <jakarta-json-version>1.1.6</jakarta-json-version>
+    <jms-api-version>2.0.1</jms-api-version>
+    <jaxb-api-version>2.3.1</jaxb-api-version>
+    <javaee-web-api>7.0</javaee-web-api>
+    <kjetland-mbknor-jsonschema-version>1.0.38</kjetland-mbknor-jsonschema-version>
+    <commons-lang3-version>3.10</commons-lang3-version>
+    <commons-exec-version>1.3</commons-exec-version>
+    <commons-codec-version>1.14</commons-codec-version>
+    <httpunit-version>1.7.3</httpunit-version>
+    <voyager-client-version>0.1.0</voyager-client-version>
+    <jsonpath-version>2.4.0</jsonpath-version>
+    <mojo-build-helper-version>3.0.0</mojo-build-helper-version>
     <swagger-core-version>1.6.2</swagger-core-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
-    <assertj.core.version>3.15.0</assertj.core.version>
+    <assertj.core.version>3.17.2</assertj.core.version>
     <commons.io.version>2.6</commons.io.version>
-    <awaitility-version>4.0.2</awaitility-version>
+    <awaitility-version>4.0.3</awaitility-version>
     <client-java-version>10.0.0</client-java-version>
-    <junit.jupiter.version>5.6.0</junit.jupiter.version>
-    <junit.vintage.version>5.6.0</junit.vintage.version>
-    <junit.platform.version>1.6.0</junit.platform.version>
+    <junit.jupiter.version>5.7.0</junit.jupiter.version>
+    <junit.vintage.version>5.7.0</junit.vintage.version>
+    <junit.platform.version>1.7.0</junit.platform.version>
     <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jersey-version>2.31</jersey-version>

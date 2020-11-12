@@ -17,6 +17,7 @@ public interface AsyncRequestStepFactory {
       ClientPool helper,
       int timeoutSeconds,
       int maxRetryCount,
+      Integer gracePeriodSeconds,
       String fieldSelector,
       String labelSelector,
       String resourceVersion);

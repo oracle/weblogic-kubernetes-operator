@@ -1,0 +1,45 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: voyager-tls-pathrouting
+  namespace: @NS@
+  annotations:
+    ingress.appscode.com/rewrite-target: /
+    ingress.appscode.com/type: 'NodePort'
+    ingress.appscode.com/stats: 'true'
+    ingress.appscode.com/affinity: 'cookie'
+spec:
+  tls:
+  - secretName: @secretName@
+    hosts:
+    - '*'
+  frontendRules:
+  - port: 443
+    rules:
+    - http-request del-header WL-Proxy-SSL
+    - http-request del-header X-Forwarded-For
+    - http-request del-header WL-Proxy-Client-IP
+    - http-request set-header WL-Proxy-SSL true
+  rules:
+  - host: '*'
+    http:
+      paths:
+      - path: /domain1console
+        backend:
+          serviceName: @domain1uid@-admin-server
+          servicePort: '7001'
+      - path: /domain1
+        backend:
+          serviceName: @domain1uid@-cluster-cluster-1
+          servicePort: '8001'
+      - path: /domain2console
+        backend:
+          serviceName: @domain2uid@-admin-server
+          servicePort: '7001'
+      - path: /domain2
+        backend:
+          serviceName: @domain2uid@-cluster-cluster-1
+          servicePort: '8001'

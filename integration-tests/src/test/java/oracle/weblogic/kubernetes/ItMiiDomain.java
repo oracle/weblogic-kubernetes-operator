@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -44,6 +44,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -95,6 +96,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
@@ -122,6 +124,7 @@ class ItMiiDomain {
   private String miiImageAddSecondApp = null;
   private String miiImage = null;
   private static LoggingFacade logger = null;
+  private static volatile boolean mainThreadDone = false;
 
   /**
    * Install Operator.
@@ -137,9 +140,9 @@ class ItMiiDomain {
         .atMost(6, MINUTES).await();
 
     // create a reusable quick retry policy
-    withQuickRetryPolicy = with().pollDelay(0, SECONDS)
-        .and().with().pollInterval(4, SECONDS)
-        .atMost(10, SECONDS).await();
+    withQuickRetryPolicy = with().pollDelay(1, SECONDS)
+        .and().with().pollInterval(2, SECONDS)
+        .atMost(15, SECONDS).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -334,7 +337,7 @@ class ItMiiDomain {
     accountingThread =
         new Thread(
             () -> {
-              collectAppAvaiability(
+              collectAppAvailability(
                   domainNamespace,
                   appAvailability,
                   managedServerPrefix,
@@ -394,7 +397,7 @@ class ItMiiDomain {
             MII_APP_RESPONSE_V2 + i);
       } 
     } finally {
-    
+      mainThreadDone = true;
       if (accountingThread != null) {
         try {
           accountingThread.join();
@@ -803,7 +806,7 @@ class ItMiiDomain {
                                     String repoSecretName, String encryptionSecretName, int replicaCount,
                                       String miiImage) {
     // create the domain CR
-    return new Domain()
+    Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -842,6 +845,8 @@ class ItMiiDomain {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+    setPodAntiAffinity(domain);
+    return domain;
   }
 
   // Create a domain resource with a custom ConfigMap
@@ -850,7 +855,7 @@ class ItMiiDomain {
           String repoSecretName, String encryptionSecretName, 
           int replicaCount, String miiImage, String configmapName) {
     // create the domain CR
-    return new Domain()
+    Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -893,6 +898,8 @@ class ItMiiDomain {
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+    setPodAntiAffinity(domain);
+    return domain;
   }
 
   private void patchAndVerify(
@@ -1060,7 +1067,7 @@ class ItMiiDomain {
                namespace)));
   }
   
-  private static void collectAppAvaiability(
+  private static void collectAppAvailability(
       String namespace,
       List<Integer> appAvailability,
       String managedServerPrefix,
@@ -1068,18 +1075,40 @@ class ItMiiDomain {
       String internalPort,
       String appPath
   ) {
-    boolean v2AppAvailable = false;
+    with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(200, MILLISECONDS)
+        .atMost(15, MINUTES)
+        .await()
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for patched application running on all managed servers in namespace {1} "
+                + "(elapsed time {2}ms, remaining time {3}ms)",
+            namespace,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> checkContinuousAvailability(
+            namespace, appAvailability, managedServerPrefix, replicaCount, internalPort, appPath),
+            String.format(
+                "App is not available on all managed servers in namespace %s.",
+                namespace)));
 
-    // Access the pod periodically to check application's availability across the duration
-    // of patching the domain with newer version of the application.
-    while (!v2AppAvailable)  {
-      v2AppAvailable = true;
+  }
+
+  private static Callable<Boolean> checkContinuousAvailability(
+      String namespace,
+      List<Integer> appAvailability,
+      String managedServerPrefix,
+      int replicaCount,
+      String internalPort,
+      String appPath) {
+    return () -> {
+      boolean v2AppAvailable = true;
+      
       for (int i = 1; i <= replicaCount; i++) {
         v2AppAvailable = v2AppAvailable && appAccessibleInPod(
                             namespace,
-                            managedServerPrefix + i, 
-                            internalPort, 
-                            appPath, 
+                            managedServerPrefix + i,
+                            internalPort,
+                            appPath,
                             MII_APP_RESPONSE_V2 + i);
       }
 
@@ -1087,29 +1116,25 @@ class ItMiiDomain {
       for (int i = 1; i <= replicaCount; i++) {
         if (appAccessibleInPod(
             namespace,
-            managedServerPrefix + i, 
-            internalPort, 
-            appPath, 
-            "Hello World")) {  
+            managedServerPrefix + i,
+            internalPort,
+            appPath,
+            "Hello World")) {
           count++;
         }
       }
       appAvailability.add(count);
-      
+
       if (count == 0) {
-        logger.info("XXXXXXXXXXX: application not available XXXXXXXX");
-        break;
-      } else {
-        logger.fine("YYYYYYYYYYY: application available YYYYYYYY count = " + count);   
+        logger.info("NNNNNNNNNNN: application not available NNNNNNNN");
+        return true;
       }
-      try {
-        TimeUnit.MILLISECONDS.sleep(200);
-      } catch (InterruptedException ie) {
-        // do nothing
-      }
-    }
+
+      logger.fine("YYYYYYYYYYY: application available YYYYYYYY count = " + count);
+      return v2AppAvailable || mainThreadDone;
+    };
   }
-  
+
   private static boolean appAlwaysAvailable(List<Integer> appAvailability) {
     for (Integer count: appAvailability) {
       if (count == 0) {

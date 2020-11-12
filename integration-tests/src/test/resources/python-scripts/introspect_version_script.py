@@ -123,13 +123,12 @@ def get_admin_server_name():
   serverConfig()
   return admin_server_name
 
-if __name__== "main":
-  if(test_name == 'change_server_count'):
-    change_server_count()
-  if(test_name == 'change_admin_port'):
-    change_admin_port()
-  if(test_name == 'create_cluster'):
-    create_static_cluster()
-  if(test_name == 'replace_admin_user'):
-    replace_admin_user()
-  exit()
+if(test_name == 'change_server_count'):
+  change_server_count()
+if(test_name == 'change_admin_port'):
+  change_admin_port()
+if(test_name == 'create_cluster'):
+  create_static_cluster()
+if(test_name == 'replace_admin_user'):
+  replace_admin_user()
+exit()

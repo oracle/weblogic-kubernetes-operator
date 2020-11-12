@@ -23,6 +23,7 @@ def create_domain():
   cd('/Servers/AdminServer')
   set('ListenPort', int(admin_server_port))
   set('Name', admin_server_name)
+  set('WeblogicPluginEnabled', true)
 
   print('Configuring network access point')
   create('T3Channel', 'NetworkAccessPoint')
@@ -64,6 +65,7 @@ def create_domain():
   print('Done setting attributes for server template: %s' % template_name);
 
   cd('/Clusters/%s' % cluster_name)
+  set('WeblogicPluginEnabled', true)
   create(cluster_name, 'DynamicServers')
   cd('DynamicServers/%s' % cluster_name)
   set('ServerTemplate', st)

@@ -278,11 +278,11 @@ public class FileUtils {
       throws IOException {
     LoggingFacade logger = getLogger();
     Path src = Paths.get(filePath);
-    logger.info("Copying {0}", src.toString());
+    logger.info("Replacing {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
     String content = new String(Files.readAllBytes(src), charset);
     content = content.replaceAll(regex, replacement);
-    logger.info("to {0}", src.toString());
+    logger.info("with {0}", replacement);
     Files.write(src, content.getBytes(charset));
   }
 

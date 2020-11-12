@@ -9,8 +9,6 @@ from java.util import Base64
 from org.apache.commons.io import FileUtils
 from java.io import File
 
-
-
 script_name = 'application_deployment.py'
 print 'script_name: ' + script_name
 
@@ -65,8 +63,8 @@ def deploy_application():
     print dumpStack()
     apply(traceback.print_exception, sys.exc_info())
     exit(exitcode=1)
- 
-if __name__== "main": 
-  decode_archive()
-  deploy_application()
-  exit()
+
+decode_archive()
+deploy_application()
+exit()
+

@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -20,18 +19,16 @@ import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionNames;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionSpec;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionVersion;
-import io.kubernetes.client.openapi.models.V1JSONSchemaProps;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinitionNames;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinitionSpec;
-import io.kubernetes.client.openapi.models.V1beta1CustomResourceValidation;
-import io.kubernetes.client.openapi.models.V1beta1JSONSchemaProps;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -39,6 +36,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.BETA_CRD;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATE_CRD_FAILED;
@@ -47,6 +45,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.REPLACE_CRD_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
@@ -58,6 +57,7 @@ public class CrdHelperTest {
   private static final SemanticVersion PRODUCT_VERSION = new SemanticVersion(3, 0, 0);
   private static final SemanticVersion PRODUCT_VERSION_OLD = new SemanticVersion(2, 4, 0);
   private static final SemanticVersion PRODUCT_VERSION_FUTURE = new SemanticVersion(3, 1, 0);
+  private static final int UNPROCESSABLE_ENTITY = 422;
 
   private V1CustomResourceDefinition defaultCrd;
   private V1beta1CustomResourceDefinition defaultBetaCrd;
@@ -68,6 +68,7 @@ public class CrdHelperTest {
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
   private final Function<URI, Path> pathFunction = fileSystem::getPath;
+  private final TerminalStep terminalStep = new TerminalStep();
 
   private V1CustomResourceDefinition defineDefaultCrd() {
     return CrdHelper.CrdContext.createModel(KUBERNETES_VERSION_16, PRODUCT_VERSION);
@@ -77,21 +78,21 @@ public class CrdHelperTest {
     return CrdHelper.CrdContext.createBetaModel(KUBERNETES_VERSION_15, PRODUCT_VERSION);
   }
 
-  private V1CustomResourceDefinition defineCrd(String version, SemanticVersion operatorVersion) {
+  private V1CustomResourceDefinition defineCrd(SemanticVersion operatorVersion) {
     return new V1CustomResourceDefinition()
         .apiVersion("apiextensions.k8s.io/v1")
         .kind("CustomResourceDefinition")
         .metadata(createMetadata(operatorVersion))
-        .spec(createSpec(version));
+        .spec(createSpec());
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1beta1CustomResourceDefinition defineBetaCrd(String version, SemanticVersion operatorVersion) {
+  private V1beta1CustomResourceDefinition defineBetaCrd(SemanticVersion operatorVersion) {
     return new V1beta1CustomResourceDefinition()
         .apiVersion("apiextensions.k8s.io/v1beta1")
         .kind("CustomResourceDefinition")
         .metadata(createMetadata(operatorVersion))
-        .spec(createBetaSpec(version));
+        .spec(createBetaSpec());
   }
 
   private V1ObjectMeta createMetadata(SemanticVersion operatorVersion) {
@@ -100,7 +101,7 @@ public class CrdHelperTest {
         .putLabelsItem(LabelConstants.OPERATOR_VERISON, operatorVersion.toString());
   }
 
-  private V1CustomResourceDefinitionSpec createSpec(String version) {
+  private V1CustomResourceDefinitionSpec createSpec() {
     return new V1CustomResourceDefinitionSpec()
         .group(KubernetesConstants.DOMAIN_GROUP)
         .scope("Namespaced")
@@ -112,7 +113,7 @@ public class CrdHelperTest {
                 .shortNames(Collections.singletonList(KubernetesConstants.DOMAIN_SHORT)));
   }
 
-  private V1beta1CustomResourceDefinitionSpec createBetaSpec(String version) {
+  private V1beta1CustomResourceDefinitionSpec createBetaSpec() {
     return new V1beta1CustomResourceDefinitionSpec()
         .group(KubernetesConstants.DOMAIN_GROUP)
         .scope("Namespaced")
@@ -139,17 +140,17 @@ public class CrdHelperTest {
 
   @After
   public void tearDown() throws Exception {
-    mementos.forEach(Memento::revert);
-
     testSupport.throwOnCompletionFailure();
+
+    mementos.forEach(Memento::revert);
   }
 
   @Test
   public void whenUnableToReadBetaCrd_reportFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnResource(BETA_CRD, KubernetesConstants.CRD_NAME, 422);
+    testSupport.failOnResource(BETA_CRD, KubernetesConstants.CRD_NAME, UNPROCESSABLE_ENTITY);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
 
     testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
@@ -157,7 +158,7 @@ public class CrdHelperTest {
 
   @Test
   public void whenCrdV1SupportedAndNoCrd_createIt() {
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -166,7 +167,7 @@ public class CrdHelperTest {
   public void whenCrdV1SupportedAndBetaCrd_upgradeIt() {
     testSupport.defineResources(defaultBetaCrd);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
     assertThat(testSupport.getResources(CUSTOM_RESOURCE_DEFINITION), hasItem(defaultCrd));
@@ -174,7 +175,7 @@ public class CrdHelperTest {
 
   @Test
   public void whenNoBetaCrd_createIt() {
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
     assertThat(testSupport.getResources(BETA_CRD), hasItem(defaultBetaCrd));
@@ -183,9 +184,9 @@ public class CrdHelperTest {
   @Test
   public void whenNoBetaCrd_retryOnFailureAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnCreate(BETA_CRD, KubernetesConstants.CRD_NAME, null, 401);
+    testSupport.failOnCreate(BETA_CRD, KubernetesConstants.CRD_NAME, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
     assertThat(logRecords, containsInfo(CREATE_CRD_FAILED));
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
@@ -194,35 +195,50 @@ public class CrdHelperTest {
   @Test
   public void whenNoCrd_retryOnFailureAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, 401);
+    testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16,PRODUCT_VERSION,  null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16,PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
     assertThat(logRecords, containsInfo(CREATE_CRD_FAILED));
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
   }
 
   @Test
+  public void whenNoCrd_proceedToNextStep() {
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, HTTP_UNAUTHORIZED);
+
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16,PRODUCT_VERSION);
+    testSupport.runSteps(Step.chain(scriptCrdStep, terminalStep));
+
+    assertThat(terminalStep.wasRun(), is(true));
+    logRecords.clear();
+  }
+
+  @Test
   public void whenMatchingCrdExists_noop() {
     testSupport.defineResources(defaultBetaCrd);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null));
+    testSupport.runSteps(
+          Step.chain(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION), terminalStep));
+
+    assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
   public void whenExistingCrdHasOldVersion_replaceIt() {
-    testSupport.defineResources(defineBetaCrd("v1", PRODUCT_VERSION_OLD));
+    testSupport.defineResources(defineBetaCrd(PRODUCT_VERSION_OLD));
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
   @Test
   public void whenExistingCrdHasCurrentApiVersionButOldProductVersion_replaceIt() {
-    testSupport.defineResources(defineCrd(KubernetesConstants.DOMAIN_VERSION, PRODUCT_VERSION));
+    testSupport.defineResources(defineCrd(PRODUCT_VERSION));
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION_FUTURE, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION_FUTURE));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
     List<V1CustomResourceDefinition> crds = testSupport.getResources(CUSTOM_RESOURCE_DEFINITION);
@@ -242,7 +258,7 @@ public class CrdHelperTest {
   @Test
   @Ignore
   public void whenExistingCrdHasFutureVersion_dontReplaceIt() {
-    V1CustomResourceDefinition existing = defineCrd("v500", PRODUCT_VERSION_FUTURE);
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
     existing
         .getSpec()
         .addVersionsItem(
@@ -251,15 +267,15 @@ public class CrdHelperTest {
                 .name(KubernetesConstants.DOMAIN_VERSION));
     testSupport.defineResources(existing);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
   }
 
   @Test
   @Ignore
   public void whenExistingCrdHasFutureVersionButNotCurrentStorage_updateIt() {
-    testSupport.defineResources(defineCrd("v500", PRODUCT_VERSION_FUTURE));
+    testSupport.defineResources(defineCrd(PRODUCT_VERSION_FUTURE));
 
-    V1CustomResourceDefinition replacement = defineCrd("v500", PRODUCT_VERSION_FUTURE);
+    V1CustomResourceDefinition replacement = defineCrd(PRODUCT_VERSION_FUTURE);
     replacement
         .getSpec()
         .addVersionsItem(
@@ -267,7 +283,7 @@ public class CrdHelperTest {
                 .served(true)
                 .name(KubernetesConstants.DOMAIN_VERSION));
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, null));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -275,10 +291,10 @@ public class CrdHelperTest {
   @Test
   public void whenReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineCrd("v1", PRODUCT_VERSION_OLD));
-    testSupport.failOnReplace(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, 401);
+    testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD));
+    testSupport.failOnReplace(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -288,10 +304,10 @@ public class CrdHelperTest {
   @Test
   public void whenReplaceFailsThrowsStreamException_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineCrd("v1", PRODUCT_VERSION_OLD));
+    testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD));
     testSupport.failOnReplaceWithStreamResetException(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -301,10 +317,10 @@ public class CrdHelperTest {
   @Test
   public void whenBetaCrdReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineBetaCrd("v1", PRODUCT_VERSION_OLD));
-    testSupport.failOnReplace(BETA_CRD, KubernetesConstants.CRD_NAME, null, 401);
+    testSupport.defineResources(defineBetaCrd(PRODUCT_VERSION_OLD));
+    testSupport.failOnReplace(BETA_CRD, KubernetesConstants.CRD_NAME, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -314,131 +330,14 @@ public class CrdHelperTest {
   @Test
   public void whenBetaCrdReplaceThrowsStreamResetException_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineBetaCrd("v1", PRODUCT_VERSION_OLD));
+    testSupport.defineResources(defineBetaCrd(PRODUCT_VERSION_OLD));
     testSupport.failOnReplaceWithStreamResetException(BETA_CRD, KubernetesConstants.CRD_NAME, null);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
   }
 
-  class V1CustomResourceDefinitionMatcher implements BodyMatcher {
-    private V1CustomResourceDefinition expected;
-
-    V1CustomResourceDefinitionMatcher(V1CustomResourceDefinition expected) {
-      this.expected = expected;
-    }
-
-    @Override
-    public boolean matches(Object actualBody) {
-      return actualBody instanceof V1CustomResourceDefinition
-          && matches((V1CustomResourceDefinition) actualBody);
-    }
-
-    private boolean matches(V1CustomResourceDefinition actualBody) {
-      return hasExpectedVersion(actualBody) && hasSchemaVerification(actualBody);
-    }
-
-    private boolean hasExpectedVersion(V1CustomResourceDefinition actualBody) {
-      return Objects.equals(expected.getSpec().getVersions(), actualBody.getSpec().getVersions());
-    }
-
-    private boolean hasSchemaVerification(V1CustomResourceDefinition actualBody) {
-      List<V1CustomResourceDefinitionVersion> versions = actualBody.getSpec().getVersions();
-      if (versions == null) {
-        return expected.getSpec().getVersions() == null;
-      }
-
-      V1JSONSchemaProps openApiV3Schema = null;
-      for (V1CustomResourceDefinitionVersion version : versions) {
-        if (KubernetesConstants.DOMAIN_VERSION.equals(version.getName())) {
-          openApiV3Schema = version.getSchema().getOpenAPIV3Schema();
-          break;
-        }
-      }
-
-      if (openApiV3Schema == null) {
-        List<V1CustomResourceDefinitionVersion> expectedVersions = expected.getSpec().getVersions();
-        if (expectedVersions != null) {
-          for (V1CustomResourceDefinitionVersion version : expectedVersions) {
-            if (KubernetesConstants.DOMAIN_VERSION.equals(version.getName())) {
-              if (version.getSchema().getOpenAPIV3Schema() != null) {
-                return false;
-              }
-              break;
-            }
-          }
-        }
-      }
-
-      if (openApiV3Schema == null || openApiV3Schema.getProperties().size() != 2) {
-        return false;
-      }
-
-      // check for structural schema condition 1 -- top level type value
-      // https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/
-      //     custom-resource-definitions/#specifying-a-structural-schema
-      if (openApiV3Schema == null || !openApiV3Schema.getType().equals("object")) {
-        return false;
-      }
-
-      V1JSONSchemaProps spec = openApiV3Schema.getProperties().get("spec");
-      if (spec == null || spec.getProperties().isEmpty()) {
-        return false;
-      }
-
-      return spec.getProperties().containsKey("serverStartState");
-    }
-  }
-
-  class V1beta1CustomResourceDefinitionMatcher implements BodyMatcher {
-    private V1beta1CustomResourceDefinition expected;
-
-    V1beta1CustomResourceDefinitionMatcher(V1beta1CustomResourceDefinition expected) {
-      this.expected = expected;
-    }
-
-    @Override
-    public boolean matches(Object actualBody) {
-      return actualBody instanceof V1beta1CustomResourceDefinition
-          && matches((V1beta1CustomResourceDefinition) actualBody);
-    }
-
-    private boolean matches(V1beta1CustomResourceDefinition actualBody) {
-      return hasExpectedVersion(actualBody) && hasSchemaVerification(actualBody);
-    }
-
-    private boolean hasExpectedVersion(V1beta1CustomResourceDefinition actualBody) {
-      return Objects.equals(expected.getSpec().getVersion(), actualBody.getSpec().getVersion())
-          && Objects.equals(expected.getSpec().getVersions(), actualBody.getSpec().getVersions());
-    }
-
-    private boolean hasSchemaVerification(V1beta1CustomResourceDefinition actualBody) {
-      V1beta1CustomResourceValidation validation = actualBody.getSpec().getValidation();
-      if (validation == null) {
-        return expected.getSpec().getValidation() == null;
-      }
-
-      V1beta1JSONSchemaProps openApiV3Schema = validation.getOpenAPIV3Schema();
-      if (openApiV3Schema == null || openApiV3Schema.getProperties().size() != 2) {
-        return false;
-      }
-
-      // check for structural schema condition 1 -- top level type value
-      // https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/
-      //     custom-resource-definitions/#specifying-a-structural-schema
-      if (openApiV3Schema == null || !openApiV3Schema.getType().equals("object")) {
-        return false;
-      }
-
-      V1beta1JSONSchemaProps spec = openApiV3Schema.getProperties().get("spec");
-      if (spec == null || spec.getProperties().isEmpty()) {
-        return false;
-      }
-
-      return spec.getProperties().containsKey("serverStartState");
-    }
-  }
 }

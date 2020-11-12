@@ -380,6 +380,10 @@ class TopologyGenerator(Generator):
   def getDynamicServersOrNone(self,cluster):
     try:
       ret = cluster.getDynamicServers()
+      # Dynamic Servers must be configured with a ServerTemplate
+      if ret is not None:
+        if ret.getServerTemplate() is None:
+          ret = None
     except:
       trace("Ignoring getDynamicServers() exception, this is expected.")
       ret = None

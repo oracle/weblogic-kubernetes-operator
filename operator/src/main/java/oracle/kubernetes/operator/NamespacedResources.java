@@ -13,12 +13,13 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1EventList;
+import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -39,14 +40,15 @@ class NamespacedResources {
     this.domainUid = domainUid;
   }
 
-  void addProcessor(Processors processor) {
+  void addProcessing(Processors processor) {
     processors.add(processor);
   }
 
   Step createListSteps() {
     return Step.chain(
-          getScriptConfigMapSteps(),
+          getConfigMapListSteps(),
           getEventListSteps(),
+          getJobListSteps(),
           getPodListSteps(),
           getServiceListSteps(),
           getDomainListSteps(),
@@ -60,9 +62,9 @@ class NamespacedResources {
   abstract static class Processors {
 
     /**
-     * Return the processing to be performed on the script config map. May be null.
+     * Return the processing to be performed on a list of config maps found in Kubernetes. May be null.
      */
-    Consumer<Packet> getConfigMapProcessing() {
+    Consumer<V1ConfigMapList> getConfigMapListProcessing() {
       return null;
     }
 
@@ -70,6 +72,13 @@ class NamespacedResources {
      * Return the processing to be performed on a list of events found in Kubernetes. May be null.
      */
     Consumer<V1EventList> getEventListProcessing() {
+      return null;
+    }
+
+    /**
+     * Return the processing to be performed on a list of jobs found in Kubernetes. May be null.
+     */
+    Consumer<V1JobList> getJobListProcessing() {
       return null;
     }
 
@@ -102,15 +111,13 @@ class NamespacedResources {
     }
   }
 
-  private Step getScriptConfigMapSteps() {
-    return getResourceProcessing(Processors::getConfigMapProcessing).map(this::createConfigMapSteps).orElse(null);
+  private Step getConfigMapListSteps() {
+    return getListProcessing(Processors::getConfigMapListProcessing).map(this::createConfigMapListStep).orElse(null);
   }
 
-  private Step createConfigMapSteps(List<Consumer<Packet>> processing) {
-    return Step.chain(
-          ConfigMapHelper.createScriptConfigMapStep(namespace),
-          new Main.ConfigMapAfterStep(processing)
-    );
+  private Step createConfigMapListStep(List<Consumer<V1ConfigMapList>> processing) {
+    return new CallBuilder()
+             .listConfigMapsAsync(namespace, new ListResponseStep<>(processing));
   }
 
   private Step getEventListSteps() {
@@ -121,6 +128,14 @@ class NamespacedResources {
     return new CallBuilder()
             .withFieldSelector(ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER)
             .listEventAsync(namespace, new ListResponseStep<>(processing));
+  }
+
+  private Step getJobListSteps() {
+    return getListProcessing(Processors::getJobListProcessing).map(this::createJobListStep).orElse(null);
+  }
+
+  private Step createJobListStep(List<Consumer<V1JobList>> processing) {
+    return createSubResourceCallBuilder().listJobAsync(namespace, new ListResponseStep<>(processing));
   }
 
   private Step getPodListSteps() {
@@ -157,10 +172,6 @@ class NamespacedResources {
 
   private <L extends KubernetesListObject>
         Optional<List<Consumer<L>>> getListProcessing(Function<Processors, Consumer<L>> method) {
-    return nullIfEmpty(processors.stream().map(method).filter(Objects::nonNull).collect(Collectors.toList()));
-  }
-
-  private Optional<List<Consumer<Packet>>> getResourceProcessing(Function<Processors, Consumer<Packet>> method) {
     return nullIfEmpty(processors.stream().map(method).filter(Objects::nonNull).collect(Collectors.toList()));
   }
 
