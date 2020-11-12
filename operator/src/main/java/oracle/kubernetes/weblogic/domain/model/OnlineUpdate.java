@@ -16,12 +16,12 @@ public class OnlineUpdate {
   @Description("Enable online update.")
   private Boolean enabled = false;
 
-  @Description("If set to true, it will rollback the changes if the update require domain restart. " +
-            "All changes are rolled back, the domain continues to run without interruption. " +
-            "It is the user responsibility to revert the content changes in the configmap specified in " +
-            "`domain.spec.configuration.model.configmap` or secrets. User can detect the changes have been " +
-            "rolled back when describing the domain `kubectl -n <ns> describe domain <domain name>" +
-            " under the condition `OnlineUpdateRolledback`")
+  @Description("If set to true, it will rollback the changes if the update require domain restart. "
+      + "All changes are rolled back, the domain continues to run without interruption. "
+      + "It is the user responsibility to revert the content changes in the configmap specified in "
+      +     "`domain.spec.configuration.model.configmap` or secrets. User can detect the changes have been "
+      +     "rolled back when describing the domain `kubectl -n <ns> describe domain <domain name>"
+      +     " under the condition `OnlineUpdateRolledback`")
   private Boolean rollBackIfRestartRequired = false;
 
   @Description("WLST deploy application or libraries timout in milliseconds. Default: 180000.")

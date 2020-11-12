@@ -92,43 +92,49 @@ spec:
                         properties:
                           deployTimeoutMilliSeconds:
                             type: number
-                            description: 'WLST deploy timout seconds (in milliseconds)
-                              Default: 180000L.'
+                            description: 'WLST deploy application or libraries timout
+                              in milliseconds. Default: 180000.'
                           stopApplicationTimeoutMilliSeconds:
                             type: number
-                            description: 'WLST stopApplication timout seconds (in
-                              milliseconds) Default: 180000L.'
+                            description: 'WLST stopApplication timout in milliseconds.
+                              Default: 180000.'
                           connectTimeoutMilliSeconds:
                             type: number
-                            description: 'WLST connect timout seconds (in milliseconds)
-                              Default: 180000L.'
+                            description: 'WLST connect to running domain timout in
+                              milliseconds. Default: 120000.'
                           startApplicationTimeoutMilliSeconds:
                             type: number
-                            description: 'WLST startApplication timout seconds (in
-                              milliseconds) Default: 180000L.'
+                            description: 'WLST startApplication timout in milliseconds.
+                              Default: 180000.'
                           setServerGroupsTimeoutMilliSeconds:
                             type: number
-                            description: 'WLST set server groups timout seconds (in
-                              milliseconds) Default: 180000L.'
+                            description: 'WLST set server groups timout in milliseconds.
+                              Default: 180000.'
                           rollBackIfRestartRequired:
                             type: boolean
-                            description: Rollback the changes if the update require
-                              domain restart.
+                            description: If set to true, it will rollback the changes
+                              if the update require domain restart. All changes are
+                              rolled back, the domain continues to run without interruption.
+                              It is the user responsibility to revert the content
+                              changes in the configmap specified in `domain.spec.configuration.model.configmap`
+                              or secrets. User can detect the changes have been rolled
+                              back when describing the domain `kubectl -n <ns> describe
+                              domain <domain name> under the condition `OnlineUpdateRolledback`
                           enabled:
                             type: boolean
                             description: Enable online update.
                           undeployTimeoutMilliSeconds:
                             type: number
-                            description: 'WLST undeploy timout seconds (in milliseconds)
-                              Default: 180000L.'
+                            description: 'WLST undeploy application or libraries timout
+                              in milliseconds. Default: 180000.'
                           redeployTimeoutMilliSeconds:
                             type: number
-                            description: 'WLST redeploy timout seconds (in milliseconds)
-                              Default: 180000L.'
+                            description: 'WLST redeploy application or libraries timout
+                              in milliseconds. Default: 180000.'
                           activateTimeoutMilliSeconds:
                             type: number
-                            description: 'WLST activate timout seconds (in milliseconds)
-                              Default: 180000L.'
+                            description: 'WLST activate changes timout in milliseconds.
+                              Default: 180000.'
                       modelHome:
                         type: string
                         description: Location of the WebLogic Deploy Tooling model
