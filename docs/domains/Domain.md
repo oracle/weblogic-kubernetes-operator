@@ -97,9 +97,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `opss` | [Opss](#opss) | Settings for OPSS security. |
 | `overrideDistributionStrategy` | string | Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server's next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also `domains.spec.introspectVersion`. Defaults to DYNAMIC. |
 | `overridesConfigMap` | string | The name of the ConfigMap for WebLogic configuration overrides. If this field is specified, then the value of `spec.configOverrides` is ignored. |
-| `rollBackIfRestartRequired` | Boolean | Rollback the changes if the update require domain restart. |
 | `secrets` | array of string | A list of names of the Secrets for WebLogic configuration overrides or model. If this field is specified, then the value of `spec.configOverrideSecrets` is ignored. |
-| `useOnlineUpdate` | Boolean | Use online update. |
 
 ### Managed Server
 
@@ -210,6 +208,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `configMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
 | `domainType` | string | WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS. |
 | `modelHome` | string | Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models. |
+| `onlineUpdate` | [Online Update](#online-update) | Online update option for Model In Image dynamic update. |
 | `runtimeEncryptionSecret` | string | Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel. |
 
 ### Opss
@@ -249,6 +248,21 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `channelName` | string | Name of the channel. The "default" value refers to the Administration Server's default channel, which is configured using the ServerMBean's ListenPort. The "default-secure" value refers to the Administration Server's default secure channel, which is configured using the ServerMBean's SSLMBean's ListenPort. The "default-admin" value refers to the Administration Server's default administrative channel, which is configured using the DomainMBean's AdministrationPort. Otherwise, provide the name of one of the Administration Server's network access points, which is configured using the ServerMBean's NetworkAccessMBeans. The "default", "default-secure", and "default-admin" channels may not be specified here when using Istio. |
 | `nodePort` | number | Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel. |
+
+### Online Update
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `activateTimeoutMilliSeconds` | number | WLST activate changes timout in milliseconds. Default: 180000. |
+| `connectTimeoutMilliSeconds` | number | WLST connect to running domain timout in milliseconds. Default: 120000. |
+| `deployTimeoutMilliSeconds` | number | WLST deploy application or libraries timout in milliseconds. Default: 180000. |
+| `enabled` | Boolean | Enable online update. |
+| `redeployTimeoutMilliSeconds` | number | WLST redeploy application or libraries timout in milliseconds. Default: 180000. |
+| `rollBackIfRestartRequired` | Boolean | If set to true, it will rollback the changes if the update require domain restart. All changes are rolled back, the domain continues to run without interruption. It is the user responsibility to revert the content changes in the configmap specified in `domain.spec.configuration.model.configmap` or secrets. User can detect the changes have been rolled back when describing the domain `kubectl -n <ns> describe domain <domain name> under the condition `OnlineUpdateRolledback` |
+| `setServerGroupsTimeoutMilliSeconds` | number | WLST set server groups timout in milliseconds. Default: 180000. |
+| `startApplicationTimeoutMilliSeconds` | number | WLST startApplication timout in milliseconds. Default: 180000. |
+| `stopApplicationTimeoutMilliSeconds` | number | WLST stopApplication timout in milliseconds. Default: 180000. |
+| `undeployTimeoutMilliSeconds` | number | WLST undeploy application or libraries timout in milliseconds. Default: 180000. |
 
 ### Subsystem Health
 
