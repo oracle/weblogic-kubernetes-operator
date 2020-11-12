@@ -380,17 +380,6 @@ Domain secret mismatch. The domain secret in DOMAIN_HOME/security/SerializedSyst
     </item>
     
     <item>
-      <title>Publish logs to Elasticsearch</title>
-      <link>/weblogic-kubernetes-operator/samples/simple/elastic-stack/soa-domain/weblogic-logging-exporter-setup/</link>
-      <pubDate>Thu, 05 Dec 2019 06:46:23 -0500</pubDate>
-      
-      <guid>/weblogic-kubernetes-operator/samples/simple/elastic-stack/soa-domain/weblogic-logging-exporter-setup/</guid>
-      <description>The WebLogic Logging Exporter adds a log event handler to WebLogic Server. WebLogic Server logs can be pushed to Elasticsearch in Kubernetes directly by using the Elasticsearch REST API. For more details, refer to the WebLogic Logging Exporter project.
-This sample shows you how to publish WebLogic Server logs to Elasticsearch and view them in Kibana. For publishing operator logs, see this sample.
-Prerequisites This document assumes that you have already set up Elasticsearch and Kibana for logs collection.</description>
-    </item>
-    
-    <item>
       <title>Mutate the domain layer</title>
       <link>/weblogic-kubernetes-operator/userguide/cicd/mutate-the-domain-layer/</link>
       <pubDate>Thu, 11 Apr 2019 13:43:41 -0400</pubDate>
@@ -478,17 +467,6 @@ In order to manage the operation of WebLogic domains in Kubernetes, the Oracle W
       
       <guid>/weblogic-kubernetes-operator/faq/node-heating/</guid>
       <description>The WebLogic Server Kubernetes Operator creates a Pod for each WebLogic Server instance that is started. The Kubernetes Scheduler then selects a Node for each Pod. Because the default scheduling algorithm gives substantial weight to selecting a Node where the necessary Docker images have already been pulled, this often results in Kubernetes running many of the Pods for WebLogic Server instances on the same Node while other Nodes are not fairly utilized.</description>
-    </item>
-    
-    <item>
-      <title>Monitor a SOA domain</title>
-      <link>/weblogic-kubernetes-operator/samples/simple/elastic-stack/soa-domain/weblogic-monitoring-exporter-setup/</link>
-      <pubDate>Thu, 05 Dec 2019 06:46:23 -0500</pubDate>
-      
-      <guid>/weblogic-kubernetes-operator/samples/simple/elastic-stack/soa-domain/weblogic-monitoring-exporter-setup/</guid>
-      <description>Monitor a SOA domain using Prometheus and Grafana by exporting the metrics from the domain instance using the WebLogic Monitoring Exporter. This sample shows you how to set up the WebLogic Monitoring Exporter to push the data to Prometheus.
-Prerequisites This document assumes that the Prometheus Operator is deployed on the Kubernetes cluster. If it is not already deployed, follow the steps below for deploying the Prometheus Operator.
-Clone the kube-prometheus project $ git clone https://github.</description>
     </item>
     
     <item>
