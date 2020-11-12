@@ -264,6 +264,22 @@ public class TestActions {
   }
 
   /**
+   * Get current introspectVersion for a given domain.
+   *
+   * @param domainUid domain id
+   * @param namespace namespace in which the domain resource exists
+   * @return String containing current introspectVersion
+   * @throws ApiException when getting domain resource fails
+   */
+  public static String getCurrentIntrospectVersion(String domainUid, String namespace) throws ApiException {
+    LoggingFacade logger = getLogger();
+    oracle.weblogic.domain.Domain domain = Domain.getDomainCustomResource(domainUid, namespace);
+    String introspectVersion = domain.getSpec().getIntrospectVersion();
+
+    return introspectVersion;
+  }
+
+  /**
    * Get next introspectVersion for a given domain.
    *
    * @param domainUid domain id
