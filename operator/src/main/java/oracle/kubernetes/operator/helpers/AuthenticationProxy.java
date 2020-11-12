@@ -22,6 +22,7 @@ public class AuthenticationProxy {
    *
    * @param principal The user, group or service account.
    * @param token The access token that identifies the user.
+   * @param namespace Namespace
    * @return V1TokenReviewStatus containing either info about the authenticated user or an error
    *     explaining why the user couldn't be authenticated
    */
