@@ -381,6 +381,7 @@ public abstract class PodStepContext extends BasePodStepContext {
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 
+  // Method for online update
   protected Step patchPod(V1Pod currentPod, V1Pod updatedPod, Step next) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     Map<String, String> updatedLabels = Optional.ofNullable(updatedPod)
@@ -392,8 +393,16 @@ public abstract class PodStepContext extends BasePodStepContext {
         .map(V1Pod::getMetadata)
         .map(V1ObjectMeta::getAnnotations)
         .orElse(null);
-
     if (updatedLabels != null) {
+      String introspectVersion = Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getSpec)
+          .map(DomainSpec::getIntrospectVersion)
+          .orElse(null);
+      if (introspectVersion != null) {
+        updatedLabels.put(INTROSPECTION_STATE_LABEL, introspectVersion);
+      }
+
       KubernetesUtils.addPatches(
           patchBuilder, "/metadata/labels/", getLabels(currentPod), updatedLabels);
     }
