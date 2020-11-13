@@ -310,7 +310,6 @@ For any of these unsupported changes, the introspect job will fail and automatic
 
 - Topology changes, including SSL. The introspection job will fail and automatically retry up to 6 times.
 - Dependency deletion. For example, trying to delete a datasource that is referenced by a persistent store, even if both of them are deleting at the same time. The introspection job will fail and automatically retry up to 6 times
-- There seems to be a problem in WDT when updating ServerDebug attributes of a dynamic server, this is under investigation.
 
 Preventing domain restart 
 
