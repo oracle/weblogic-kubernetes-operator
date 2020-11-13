@@ -242,7 +242,8 @@ For configuration changes that only modify dynamic WebLogic mbean attributes (su
  - Changing `domain.spec.configuration.introspectVersion`.
 
 > **Warning:** If any non-dynamic WebLogic mbean attribute is changed as part of the above actions and `domain.spec.configuration.model.onLineUpdate.rollBackIfRestartRequired` is set to `false` (the default), then the operator will immediately perform any dynamic changes that were specified, and also **the operator will roll the domain (restart each server in the domain) in order to propagate the non-dynamic changes**.
->If the attribute value is set to 'true', then the Operator will cancel all changes, the introspector job will not retry again. This gives the opportunity for the user to correct any un-intentional changes or try it again at a different time allowing domain restart. 
+>If this attribute value is 'true', then the Operator will cancel all changes before committing them, and the introspector job will complete successfully with message set in domain status listing the non-dynamic attributes changed but rolled back because `domain.spec.configuration.model.onLineUpdate.rollBackIfRestartRequired` equals to `true` . 
+>This gives the opportunity for the user to whether to correct un-intentional changes or try it again at a different time allowing domain restart. 
 
 Sample domain resource YAML:
 
@@ -274,7 +275,7 @@ During an online update, the Operator will rerun the introspector job which will
 
 Once the job finished, you can check the domain status to view the status of the online update: `kubectl -n <namespace> describe domain <domain uid>`. Upon success, each WebLogic pod will have an `weblogic.introspectVersion` label that matches the `domain.spec.introspectVersion` that you specified.
 
-Below is a general description about how online update works and expected outcome.
+Below is a general description about how online update works and the expected outcome.
 
 TBD/WIP: The implementation treats setting/changing/adding secrets or configMap treated as 'offline' changes, but idealy these should be treated as 'online' if the net resulting change is solely dynamic mbeans changes...
 
@@ -283,9 +284,11 @@ TBD/WIP: The implementation treats setting/changing/adding secrets or configMap 
   |Changing a dynamic attribute|Changes are committed in the running domain and effective immediately| No action required|
   |Changing a non-dynamic attribute|If `domain.spec.model.onlineUpdates.rollBackIfRestartRequired` is `false`, then changes are committed and domain pods are restarted (rolled). If `rollBackIfRestartRequired` is `false`, the introspector job will not perform any changes, the introspector job will not retry, and the `domain.status` will report the problem. | No action required|
   |Changing domain resource YAML other than `domain.spec.introspectVersion` and the fields in `spec.configuration.model.onlineUpdate` | No online update is attempted by the introspector job, and changes are treated the same as offline updates (which may result in restarts/roll after job success). | No action required|
-  |Changing an mbean attribute that is unsupported (TBD link to unsupported section)|Expected behavior is undefined. In some cases there will be helpful error in the introspect job, and the job will periodically retry until the error is corrected or its maximum error count exceeded.|Use offline updates or recreate the domain|
-  |Errors in the model|Error in the introspect job, it will retry periodically until the error is corrected or until maximum error count exceeded|Correct the model|
+  |Changing any mbean attribute that is unsupported (TBD link to unsupported section)|Expected behavior is undefined. In some cases there will be helpful error in the introspect job, and the job will periodically retry until the error is corrected or its maximum error count exceeded.|Use offline updates or recreate the domain|
+  |Errors in the model|Error in the introspector job, it will retry periodically until the error is corrected or until maximum error count exceeded|Correct the model|
   |Other errors while updating the domain|Error in the introspect job, it will retry periodically until the error is corrected or until maximum error count exceeded|Check the introspection job or domain status|
+  
+
   
 Sample use cases:
 
@@ -307,7 +310,7 @@ Sample use cases:
 
 Unsupported Changes:
 
-For any of these unsupported changes, the introspect job will fail and automatically retry up to 6 times.  You can either cancel the job, correct the problem, and wait for the job retry interval.
+For any of these unsupported changes, the introspector job will fail and automatically retry up to 6 times.  You can either cancel the job, correct the problem, and wait for the job retry interval.
 
 - Topology changes, including SSL. The introspection job will fail and automatically retry up to 6 times.
 - Dependency deletion. For example, trying to delete a datasource that is referenced by a persistent store, even if both of them are deleting at the same time. The introspection job will fail and automatically retry up to 6 times
