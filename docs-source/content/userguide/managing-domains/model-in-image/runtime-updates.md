@@ -233,7 +233,7 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
 For details on how to add a data source, see the [Update1 use case]({{% relref "/samples/simple/domains/model-in-image/_index.md#update1-use-case" %}})
 in the Model in Image sample.
 
-#### On-line updates to a running domain
+#### online updates to a running domain
 
 For configuration changes that only modify dynamic WebLogic mbean attributes (subject to the exceptions listed in section support/unsupported TBD), you can initiate an online update to a running domain managed by the Operator by doing the following:
 
@@ -310,6 +310,7 @@ For any of these unsupported changes, the introspect job will fail and automatic
 
 - Topology changes, including SSL. The introspection job will fail and automatically retry up to 6 times.
 - Dependency deletion. For example, trying to delete a datasource that is referenced by a persistent store, even if both of them are deleting at the same time. The introspection job will fail and automatically retry up to 6 times
+- There is a bug in WDT when setting topology:/Server/ServerDebug/DebugScope/* - DebugScope is not recognized.
 
 Preventing domain restart 
 
