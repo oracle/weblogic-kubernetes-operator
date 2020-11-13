@@ -16,6 +16,9 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.accessContinue;
+
 /**
  * Step to receive response of Kubernetes API server call.
  *
@@ -27,7 +30,7 @@ public abstract class ResponseStep<T> extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final Step conflictStep;
-  private AsyncRequestStep previousStep = null;
+  private Step previousStep = null;
 
   /** Constructor specifying no next step. */
   public ResponseStep() {
@@ -54,7 +57,7 @@ public abstract class ResponseStep<T> extends Step {
     this.conflictStep = conflictStep;
   }
 
-  public final void setPrevious(AsyncRequestStep previousStep) {
+  public final void setPrevious(Step previousStep) {
     this.previousStep = previousStep;
   }
 
@@ -67,6 +70,7 @@ public abstract class ResponseStep<T> extends Step {
     }
 
     if (previousStep != nextAction.getNext()) { // not a retry, clear out old response
+      packet.remove(CONTINUE);
       packet.getComponents().remove(AsyncRequestStep.RESPONSE_COMPONENT_NAME);
     }
 
@@ -92,17 +96,34 @@ public abstract class ResponseStep<T> extends Step {
 
   /**
    * Returns next action that can be used to get the next batch of results from a list search that
-   * specified a "continue" value.
+   * specified a "continue" value, if any; otherwise, returns next.
    *
+   * @param callResponse Call response
    * @param packet Packet
    * @return Next action for list continue
    */
-  protected final NextAction doContinueList(Packet packet) {
-    RetryStrategy retryStrategy = packet.getSpi(RetryStrategy.class);
-    if (retryStrategy != null) {
-      retryStrategy.reset();
+  protected final NextAction doContinueListOrNext(CallResponse<T> callResponse, Packet packet) {
+    return doContinueListOrNext(callResponse, packet, getNext());
+  }
+
+  /**
+   * Returns next action that can be used to get the next batch of results from a list search that
+   * specified a "continue" value, if any; otherwise, returns next.
+   *
+   * @param callResponse Call response
+   * @param packet Packet
+   * @param next Next step, if no continuation
+   * @return Next action for list continue
+   */
+  protected final NextAction doContinueListOrNext(CallResponse<T> callResponse, Packet packet, Step next) {
+    String cont = accessContinue(callResponse.getResult());
+    if (callResponse != null && cont != null) {
+      packet.put(CONTINUE, cont);
+      // Since the continue value is present, invoking the original request will return
+      // the next window of data.
+      return resetRetryStrategyAndReinvokeRequest(packet);
     }
-    return doNext(previousStep, packet);
+    return doNext(next, packet);
   }
 
   /**
@@ -124,6 +145,20 @@ public abstract class ResponseStep<T> extends Step {
         callResponse.getStatusCode(),
         callResponse.getHeadersString());
     return null;
+  }
+
+  /**
+   * Resets any retry strategy, such as a failed retry count and invokes the request again. This
+   * will be useful for patterns such as list requests that include a "continue" value.
+   * @param packet Packet
+   * @return Next action for the original request
+   */
+  private NextAction resetRetryStrategyAndReinvokeRequest(Packet packet) {
+    RetryStrategy retryStrategy = packet.getSpi(RetryStrategy.class);
+    if (retryStrategy != null) {
+      retryStrategy.reset();
+    }
+    return doNext(previousStep, packet);
   }
 
   /**
@@ -174,7 +209,6 @@ public abstract class ResponseStep<T> extends Step {
    * @return Next action for fiber processing
    */
   public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
-    throw new IllegalStateException("Should be overriden if called");
+    throw new IllegalStateException("Must be overridden, if called");
   }
-
 }

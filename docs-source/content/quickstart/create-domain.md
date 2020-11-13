@@ -11,7 +11,7 @@ weight: 6
    * Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character).
    * Pick or create a directory to which you can write output.
 
-1. Create a Kubernetes Secret for the WebLogic administrator credentials containing the `username` and `password` for the domain, using the [create-weblogic-credentials](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
+1. Create a Kubernetes Secret for the WebLogic domain administrator credentials containing the `username` and `password` for the domain, using the [create-weblogic-credentials](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
 
     ```bash
     $ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \
@@ -72,9 +72,9 @@ weight: 6
     ```
 
 
-1.	To confirm that the load balancer noticed the new ingress and is successfully routing to the domain's server pods,
+1.	To confirm that the ingress controller noticed the new ingress and is successfully routing to the domain's server pods,
     you can send a request to the URL for the "WebLogic ReadyApp framework", as
-    shown in the example below, which will return a HTTP 200 status code.   
+    shown in the example below, which will return an HTTP 200 status code.   
 
     ```
     $ curl -v -H 'host: sample-domain1.org' http://localhost:30305/weblogic/ready

@@ -694,7 +694,7 @@ deleteByTypeAndLabel
 
 g_arg1="all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress,deployments"
 g_arg2="crd,pv,ns,clusterroles,clusterrolebindings"
-g_arg3="Namespace/ns-|logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql|test|opns|oracle-db|rcu"
+g_arg3="Namespace/ns-|logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql|test|opns|oracle-db|rcu|prometheus-server|prometheus-alertmanager|prometheus-kube-state-metrics|grafana-clusterrole|grafana-clusterrolebinding"
 
 #
 # Phase 1 (continued):  wait 15 seconds to see if artifacts dissappear naturally due to phase 1 effort

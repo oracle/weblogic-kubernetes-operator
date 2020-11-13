@@ -1,0 +1,22 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+{{- if eq .Values.type "NGINX" }}
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Values.wlsDomain.domainUID }}-nginx
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: '{{ .Values.nginx.hostname }}'
+    http:
+      paths:
+      - path:
+        backend:
+          serviceName: '{{ .Values.wlsDomain.domainUID }}-cluster-{{ .Values.wlsDomain.clusterName | lower | replace "_" "-" }}'
+          servicePort: {{ .Values.wlsDomain.managedServerPort }}
+{{- end }}

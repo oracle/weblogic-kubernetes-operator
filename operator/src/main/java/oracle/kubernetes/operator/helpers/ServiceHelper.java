@@ -40,6 +40,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
@@ -529,7 +530,7 @@ public class ServiceHelper {
       V1DeleteOptions deleteOptions = new V1DeleteOptions();
       return new CallBuilder()
           .deleteServiceAsync(
-              createServiceName(), getNamespace(), deleteOptions, new DeleteServiceResponse(next));
+              createServiceName(), getNamespace(), getDomainUid(), deleteOptions, new DeleteServiceResponse(next));
     }
 
     private Step createReplacementService(Step next) {
@@ -549,7 +550,7 @@ public class ServiceHelper {
         return doNext(
             new CallBuilder()
                 .readServiceAsync(
-                    createServiceName(), getNamespace(), new ReadServiceResponse(conflictStep)),
+                    createServiceName(), getNamespace(), getDomainUid(), new ReadServiceResponse(conflictStep)),
             packet);
       }
 
@@ -657,15 +658,17 @@ public class ServiceHelper {
 
       if (oldService != null) {
         return doNext(
-            deleteService(oldService.getMetadata().getName(), info.getNamespace()), packet);
+            deleteService(oldService.getMetadata()), packet);
       }
       return doNext(packet);
     }
 
-    Step deleteService(String name, String namespace) {
+    Step deleteService(V1ObjectMeta metadata) {
       V1DeleteOptions deleteOptions = new V1DeleteOptions();
       return new CallBuilder()
-          .deleteServiceAsync(name, namespace, deleteOptions, new DefaultResponseStep<>(getNext()));
+          .deleteServiceAsync(metadata.getName(),
+              metadata.getNamespace(), getDomainUidLabel(metadata), deleteOptions,
+              new DefaultResponseStep<>(getNext()));
     }
   }
 

@@ -16,11 +16,13 @@ import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
 
 /** This test class verifies the behavior of the DomainWatcher. */
 public class DomainWatcherTest extends WatcherTestBase implements WatchListener<Domain> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("456");
+  private static final String BOOKMARK_RESOURCE_VERSION = "987";
   private static final String UID = "uid";
 
   private Domain domain = createDomain();
@@ -41,6 +43,13 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
     assertThat(
         StubWatchFactory.getRequestParameters().get(0),
         hasEntry("resourceVersion", INITIAL_RESOURCE_VERSION.toString()));
+  }
+
+  @Test
+  public void whenWatcherReceivesBookmarkEvent_updateResourceVersion() {
+    Watcher<?> watcher = sendBookmarkRequest(INITIAL_RESOURCE_VERSION, BOOKMARK_RESOURCE_VERSION);
+
+    assertThat(watcher.getResourceVersion(), is(BOOKMARK_RESOURCE_VERSION));
   }
 
   @Test

@@ -65,7 +65,7 @@ weblogicCredentialsSecretName: domain1-weblogic-credentials
 # The default is true.
 includeServerOutInPodLog: true
 
-# The in-pod location for domain log, server logs, server out, Node Manager log, and
+# The in-pod location for domain log, server logs, server out, Node Manager log, introspector out, and
 # HTTP access log files. If not specified, the value is derived from the domainUID as
 # /shared/logs/<domainUID>.
 logHome: /shared/logs/domain1

@@ -10,13 +10,14 @@ import javax.validation.constraints.NotNull;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** DomainList is a list of Domains. */
-public class DomainList {
+public class DomainList implements KubernetesListObject {
 
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should

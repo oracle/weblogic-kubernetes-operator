@@ -6,8 +6,9 @@ draft: false
 
 ### Releases
 
-| Date | Version | Introduces backward incompatibilities? | Changes |
+| Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
+| November 13, 2020 | v3.1.0 | no | Enhanced options for specifying managed namespaces. Helm 3.1.3+ now required. |
 | November 9, 2020 | v3.0.3 | no | This release contains a fix for pods that are stuck in the Terminating state after an unexpected shut down of a worker node. |
 | September 15, 2020 | v3.0.2 | no | This release contains several fixes, including improvements to log rotation and a fix that avoids unnecessarily updating the domain status. |
 | August 13, 2020 | v3.0.1 | no | Fixed an issue preventing the REST interface from working after a Helm upgrade. Helm 3.1.3+ now required. |
@@ -29,6 +30,30 @@ draft: false
 | March 20, 2018 |  | yes | Several files and input parameters have been renamed.  This affects how operators and domains are created.  It also changes generated Kubernetes artifacts, therefore customers must recreate their operators and domains.
 
 ### Change log
+
+#### Operator 3.1.0
+
+* All fixes included in 3.0.1, 3.0.2, and 3.0.3 are included in 3.1.0.
+* Sample [scripts to start and stop server instances]({{< relref "/userguide/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) ([#2002](https://github.com/oracle/weblogic-kubernetes-operator/pull/2002)).
+* Support running with [OpenShift restrictive SCC]({{< relref "/security/openshift#create-a-custom-security-context-constraint" >}}) ([#2007](https://github.com/oracle/weblogic-kubernetes-operator/pull/2007)).
+* Updated [default resource and Java options]({{< relref "/faq/resource-settings.md" >}}) ([#1775](https://github.com/oracle/weblogic-kubernetes-operator/pull/1775)).
+* Introspection failures are logged to the operator's log ([#1787](https://github.com/oracle/weblogic-kubernetes-operator/pull/1787)).
+* Mirror introspector log to a rotating file in the log home ([#1827](https://github.com/oracle/weblogic-kubernetes-operator/pull/1827)).
+* Reflect introspector status to domain status ([#1832](https://github.com/oracle/weblogic-kubernetes-operator/pull/1832)).
+* Ensure operator detects pod state changes even when watch events are not delivered ([#1811](https://github.com/oracle/weblogic-kubernetes-operator/pull/1811)).
+* Support configurable WDT model home ([#1828](https://github.com/oracle/weblogic-kubernetes-operator/pull/1828)).
+* [Namespace management enhancements]({{< relref "/faq/namespace-management.md" >}}) ([#1860](https://github.com/oracle/weblogic-kubernetes-operator/pull/1860)).
+* Limit concurrent pod shut down while scaling down a cluster ([#1892](https://github.com/oracle/weblogic-kubernetes-operator/pull/1892)).
+* List continuation and watch bookmark support ([#1881](https://github.com/oracle/weblogic-kubernetes-operator/pull/1881)).
+* Fix scaling script when used with dedicated namespace mode ([#1921](https://github.com/oracle/weblogic-kubernetes-operator/pull/1921)).
+* Fix token substitution for mount paths ([#1911](https://github.com/oracle/weblogic-kubernetes-operator/pull/1911)).
+* Validate existence of service accounts during Helm chart processing ([#1939](https://github.com/oracle/weblogic-kubernetes-operator/pull/1939)).
+* Use Kubernetes Java Client 10.0.0 ([#1937](https://github.com/oracle/weblogic-kubernetes-operator/pull/1937)).
+* Better validation and guidance when using longer domainUID values ([#1979](https://github.com/oracle/weblogic-kubernetes-operator/pull/1979)).
+* Update pods with label for introspection version ([#2012](https://github.com/oracle/weblogic-kubernetes-operator/pull/2012)).
+* Fix validation error during inrtrospector for certain static clusters ([#2014](https://github.com/oracle/weblogic-kubernetes-operator/pull/2014)).
+* Correct issue in wl-pod-wait.sh sample script ([#2018](https://github.com/oracle/weblogic-kubernetes-operator/pull/2018)).
+* Correct processing of ALWAYS serverStartPolicy ([#2020](https://github.com/oracle/weblogic-kubernetes-operator/pull/2020)).
 
 #### Operator 3.0.3
 

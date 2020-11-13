@@ -10,6 +10,7 @@ import java.util.Objects;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.kubernetes.operator.DomainStatusUpdater;
@@ -43,6 +44,14 @@ public class DomainValidationSteps {
               new DomainValidationStep(next));
   }
 
+  public static Step createAdditionalDomainValidationSteps(V1PodSpec podSpec) {
+    return new DomainAdditionalValidationStep(podSpec);
+  }
+
+  public static Step createAfterIntrospectValidationSteps() {
+    return new DomainAfterIntrospectValidationStep();
+  }
+
   private static Step createListSecretsStep(String domainNamespace) {
     return new CallBuilder().listSecretsAsync(domainNamespace, new ListSecretsResponseStep());
   }
@@ -56,7 +65,8 @@ public class DomainValidationSteps {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1SecretList> callResponse) {
       packet.put(SECRETS, callResponse.getResult().getItems());
-      return doNext(packet);
+
+      return doContinueListOrNext(callResponse, packet);
     }
   }
 
@@ -69,7 +79,8 @@ public class DomainValidationSteps {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMapList> callResponse) {
       packet.put(CONFIGMAPS, callResponse.getResult().getItems());
-      return doNext(packet);
+
+      return doContinueListOrNext(callResponse, packet);
     }
   }
 
@@ -98,6 +109,34 @@ public class DomainValidationSteps {
       return String.join(lineSeparator(), validationFailures);
     }
     
+  }
+
+  static class DomainAdditionalValidationStep extends Step {
+    V1PodSpec podSpec;
+
+    DomainAdditionalValidationStep(V1PodSpec podSpec) {
+      this.podSpec = podSpec;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      Domain domain = info.getDomain();
+      List<String> validationFailures = domain.getAdditionalValidationFailures(podSpec);
+
+      if (validationFailures.isEmpty()) {
+        return doNext(packet);
+      }
+
+      LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
+      Step step = DomainStatusUpdater.createFailedStep(BAD_DOMAIN, perLine(validationFailures), null);
+      return doNext(step, packet);
+    }
+
+    private String perLine(List<String> validationFailures) {
+      return String.join(lineSeparator(), validationFailures);
+    }
+
   }
 
   static class ValidateDomainTopologyStep extends Step {
@@ -188,5 +227,28 @@ public class DomainValidationSteps {
             && Objects.equals(name, metadata.getName())
             && Objects.equals(namespace, metadata.getNamespace());
     }
+  }
+
+  private static class DomainAfterIntrospectValidationStep extends Step {
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      Domain domain = info.getDomain();
+      List<String> validationFailures = domain.getAfterIntrospectValidationFailures(packet);
+
+      if (validationFailures.isEmpty()) {
+        return doNext(packet);
+      }
+
+      LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
+      Step step = DomainStatusUpdater.createFailedStep(BAD_DOMAIN, perLine(validationFailures), null);
+      return doNext(step, packet);
+    }
+
+    private String perLine(List<String> validationFailures) {
+      return String.join(lineSeparator(), validationFailures);
+    }
+
   }
 }

@@ -4,8 +4,8 @@
 
 #
 # This script downloads the latest version of the WebLogic Deploy Tooling
-# and of the WebLogic Image Tool to WORKDIR/weblogic-deploy-tooling.zip
-# and WORKDIR/weblogic-image-tool.zip by default.
+# and of the WebLogic Image Tool to WORKDIR/model-images/weblogic-deploy-tooling.zip
+# and WORKDIR/model-images/weblogic-image-tool.zip by default.
 #
 # Optional command line:
 #    -dry    Show, but don't perform, the final download command. (This
@@ -53,7 +53,7 @@ download_zip() {
     echo "@@"
     echo "@@ -----------------------------------------------------------------------"
     echo "@@ Info: NOTE! Skipping '$LOCATION' download since local                  "
-    echo "@@             file '$WORKDIR/$ZIPFILE' already exists.                   "
+    echo "@@             file '$WORKDIR/model-images/$ZIPFILE' already exists.      "
     echo "@@             To force a download, 'export $DOWNLOAD_VAR_NAME=always'.   "
     echo "@@ -----------------------------------------------------------------------"
     echo "@@"

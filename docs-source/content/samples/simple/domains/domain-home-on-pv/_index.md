@@ -118,7 +118,7 @@ The following parameters can be provided in the inputs file.
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` in the pod's `stdout`. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to start initially for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration Server and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
-| `logHome` | The in-pod location for domain log, server logs, server out, Node Manager log, and server HTTP access log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
+| `logHome` | The in-pod location for domain log, server logs, server out, introspector out, Node Manager log, and server HTTP access log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes Namespace in which to create the domain. | `default` |
@@ -177,7 +177,7 @@ spec:
   includeServerOutInPodLog: true
   # Whether to enable log home
   logHomeEnabled: true
-  # The in-pod name location for domain log, server logs, server out, and Node Manager log files
+  # The in-pod name location for domain log, server logs, server out, introspector out, and Node Manager log files
   logHome: /shared/logs/domain1
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the operator will start up when it discovers this Domain
@@ -397,7 +397,7 @@ Here is an example of the output of this command:
 $ kubectl get services
 NAME                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
 domain1-admin-server                        ClusterIP   10.96.206.134    <none>        7001/TCP          23m
-domain1-admin-server-external               NodePort    10.107.164.241   <none>        30012:30012/TCP   22m
+domain1-admin-server-ext                    NodePort    10.107.164.241   <none>        30012:30012/TCP   22m
 domain1-cluster-cluster-1                   ClusterIP   10.109.133.168   <none>        8001/TCP          22m
 domain1-managed-server1                     ClusterIP   None             <none>        8001/TCP          22m
 domain1-managed-server2                     ClusterIP   None             <none>        8001/TCP          22m

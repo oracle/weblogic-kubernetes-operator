@@ -60,15 +60,15 @@ public class PodPresenceTest {
   private static final String POD_NAME = SERVER;
   private static final String RESOURCE_VERSION = "1233489";
   private static final String ADMIN_SERVER_NAME = "admin";
-  private DomainPresenceInfo info = new DomainPresenceInfo(NS, UID);
-  private List<Memento> mementos = new ArrayList<>();
-  private Map<String, Map<String, DomainPresenceInfo>> domains = new HashMap<>();
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private DomainProcessorImpl processor =
+  private final DomainPresenceInfo info = new DomainPresenceInfo(NS, UID);
+  private final List<Memento> mementos = new ArrayList<>();
+  private final Map<String, Map<String, DomainPresenceInfo>> domains = new HashMap<>();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
   private long clock;
-  private Packet packet = new Packet();
-  private V1Pod pod =
+  private final Packet packet = new Packet();
+  private final V1Pod pod =
       new V1Pod()
           .metadata(
               KubernetesUtils.withOperatorLabels(
@@ -99,8 +99,7 @@ public class PodPresenceTest {
         new WlsDomainConfigSupport(UID).withAdminServerName(ADMIN_SERVER_NAME);
     configSupport.addWlsServer("admin", 8001);
     configSupport.addWlsServer(SERVER, 7001);
-    new DomainProcessorTestSetup(testSupport)
-        .defineKubernetesResources(configSupport.createDomainConfig());
+    IntrospectionTestUtils.defineResources(testSupport, configSupport.createDomainConfig());
 
     packet.put(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     packet.put(CLUSTER_NAME, CLUSTER);
@@ -117,14 +116,9 @@ public class PodPresenceTest {
     info.setDeleting(false);
   }
 
-  /**
-   * Tear down test.
-   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test
@@ -195,12 +189,14 @@ public class PodPresenceTest {
     MatcherAssert.assertThat(PodHelper.isFailed(pod), is(true));
   }
 
+  @SuppressWarnings("ConstantConditions")
   @Test
   public void whenPodHasNoDomainUid_returnNull() {
     pod.getMetadata().getLabels().remove(DOMAINUID_LABEL);
     MatcherAssert.assertThat(PodHelper.getPodDomainUid(pod), nullValue());
   }
 
+  @SuppressWarnings("ConstantConditions")
   @Test
   public void whenPodHasDomainUid_returnIt() {
     pod.getMetadata().labels(ImmutableMap.of(DOMAINUID_LABEL, "domain1"));
@@ -213,6 +209,7 @@ public class PodPresenceTest {
     MatcherAssert.assertThat(PodHelper.getPodServerName(pod), nullValue());
   }
 
+  @SuppressWarnings("ConstantConditions")
   @Test
   public void whenPodHasServerName_returnIt() {
     pod.getMetadata().labels(ImmutableMap.of(SERVERNAME_LABEL, "myserver"));
@@ -405,6 +402,7 @@ public class PodPresenceTest {
     return withTimeAndVersion(PodHelper.createManagedServerPodModel(packet));
   }
 
+  @SuppressWarnings("ConstantConditions")
   private V1Pod withTimeAndVersion(V1Pod pod) {
     pod.getMetadata().creationTimestamp(getDateTime()).resourceVersion(RESOURCE_VERSION);
     return pod;

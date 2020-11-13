@@ -11,6 +11,7 @@ import java.util.Optional;
 
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -79,8 +80,10 @@ public class DomainStatusUpdaterTest {
    */
   @Before
   public void setUp() throws NoSuchFieldException {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(TestUtils.silenceOperatorLogger()
+        .ignoringLoggedExceptions(ApiException.class));
     mementos.add(testSupport.install());
+    mementos.add(ClientFactoryStub.install());
 
     domain.setStatus(new DomainStatus());
 

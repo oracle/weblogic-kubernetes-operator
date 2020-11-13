@@ -53,8 +53,8 @@ weight: 1
     - Option 1: To create the ingresses, use the following YAML file to create a file called `/tmp/mii-sample/ingresses/myingresses.yaml` and then call `kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml`:
 
        ```yaml
-       apiVersion: networking.k8s.io/v1beta1
-       kind: Ingress
+       apiVersion: traefik.containo.us/v1alpha1
+       kind: IngressRoute
        metadata:
          name: traefik-ingress-sample-domain1-admin-server
          namespace: sample-domain1-ns
@@ -63,17 +63,16 @@ weight: 1
          annotations:
            kubernetes.io/ingress.class: traefik
        spec:
-         rules:
-         - host:
-           http:
-             paths:
-             - path: /console
-               backend:
-                 serviceName: sample-domain1-admin-server
-                 servicePort: 7001
+         routes:
+         - kind: Rule
+           match: PathPrefix(`/console`)
+           services:
+           - kind: Service
+             name: sample-domain1-admin-server
+             port: 7001
        ---
-       apiVersion: networking.k8s.io/v1beta1
-       kind: Ingress
+       apiVersion: traefik.containo.us/v1alpha1
+       kind: IngressRoute
        metadata:
          name: traefik-ingress-sample-domain1-cluster-cluster-1
          namespace: sample-domain1-ns
@@ -82,17 +81,16 @@ weight: 1
          annotations:
            kubernetes.io/ingress.class: traefik
        spec:
-         rules:
-         - host: sample-domain1-cluster-cluster-1.mii-sample.org
-           http:
-             paths:
-             - path:
-               backend:
-                 serviceName: sample-domain1-cluster-cluster-1
-                 servicePort: 8001
+         routes:
+         - kind: Rule
+           match: Host(`sample-domain1-cluster-cluster-1.mii-sample.org`)
+           services:
+           - kind: Service
+             name: sample-domain1-cluster-cluster-1
+             port: 8001
        ---
-       apiVersion: networking.k8s.io/v1beta1
-       kind: Ingress
+       apiVersion: traefik.containo.us/v1alpha1
+       kind: IngressRoute
        metadata:
          name: traefik-ingress-sample-domain2-cluster-cluster-1
          namespace: sample-domain1-ns
@@ -101,14 +99,13 @@ weight: 1
          annotations:
            kubernetes.io/ingress.class: traefik
        spec:
-         rules:
-         - host: sample-domain2-cluster-cluster-1.mii-sample.org
-           http:
-             paths:
-             - path:
-               backend:
-                 serviceName: sample-domain2-cluster-cluster-1
-                 servicePort: 8001
+         routes:
+         - kind: Rule
+           match: Host(`sample-domain2-cluster-cluster-1.mii-sample.org`)
+           services:
+           - kind: Service
+             name: sample-domain2-cluster-cluster-1
+             port: 8001
        ```
 
    - Option 2: Run `kubectl apply -f` on each of the ingress YAML files that are already included in the sample source `/tmp/mii-sample/ingresses` directory:
@@ -147,10 +144,10 @@ weight: 1
    ```
    $ cd /tmp/mii-sample/model-images
 
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.9.1/weblogic-deploy.zip \
+   $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.7/weblogic-deploy.zip \
      -o /tmp/mii-sample/model-images/weblogic-deploy.zip
 
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.9.1/imagetool.zip \
+   $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.9.5/imagetool.zip \
      -o /tmp/mii-sample/model-images/imagetool.zip
    ```
 

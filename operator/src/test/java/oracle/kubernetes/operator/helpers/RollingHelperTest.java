@@ -154,10 +154,10 @@ public class RollingHelperTest {
     return new Step.StepAndPacket(DomainStatusUpdater.createProgressingStep(
         DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON,
         false,
-            new ManagedPodStepContext(terminalStep, packet).createCyclePodStep(
-                testSupport.getResourceWithName(
-                    KubernetesTestSupport.POD,
-                    LegalNames.toPodName(UID, serverName)), null)), packet);
+        new ManagedPodStepContext(terminalStep, packet).createCyclePodStep(
+            testSupport.getResourceWithName(
+                KubernetesTestSupport.POD,
+                LegalNames.toPodName(UID, serverName)), null)), packet);
   }
 
   private void initializeExistingPods() {

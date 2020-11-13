@@ -24,8 +24,8 @@
 #      "curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp"
 # 
 
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
   name: traefik-ingress-sample-domain1-cluster-cluster-1
   namespace: sample-domain1-ns
@@ -33,12 +33,12 @@ metadata:
     weblogic.domainUID: sample-domain1
   annotations:
     kubernetes.io/ingress.class: traefik
+
 spec:
-  rules:
-  - host: sample-domain1-cluster-cluster-1.mii-sample.org
-    http:
-      paths:
-      - path: 
-        backend:
-          serviceName: sample-domain1-cluster-cluster-1
-          servicePort: 8001
+  routes:
+  - kind: Rule
+    match: Host(`sample-domain1-cluster-cluster-1.mii-sample.org`)
+    services:
+    - kind: Service
+      name: sample-domain1-cluster-cluster-1
+      port: 8001

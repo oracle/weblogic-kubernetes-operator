@@ -299,43 +299,6 @@ public abstract class Step {
         });
   }
 
-  /**
-   * Create a {@link NextAction} that suspends the current {@link Fiber} and that starts child
-   * fibers for each step and packet pair. When at least one of the created child fibers completes,
-   * then this fiber is resumed with the indicated step and packet and any other child fibers are
-   * cancelled.
-   *
-   * @param step Step to invoke next when resumed after at least one child fiber completes
-   * @param packet Resume packet
-   * @param startDetails Pairs of step and packet to use when starting child fibers
-   * @return Next action
-   */
-  protected NextAction doForkAtLeastOne(
-      Step step, Packet packet, Collection<StepAndPacket> startDetails) {
-    return doSuspend(
-        step,
-        (fiber) -> {
-          Collection<Fiber> createdFibers = new ArrayList<>();
-          CompletionCallback callback =
-              new JoinCompletionCallback(fiber, packet, startDetails.size()) {
-                @Override
-                public void onCompletion(Packet p) {
-                  count.decrementAndGet();
-                  fiber.resume(packet);
-                  synchronized (createdFibers) {
-                    for (Fiber f : createdFibers) {
-                      f.cancel(true);
-                    }
-                  }
-                }
-              };
-          // start forked fibers
-          for (StepAndPacket sp : startDetails) {
-            fiber.createChildFiber().start(sp.step, sp.packet, callback);
-          }
-        });
-  }
-
   /** Multi-exception. */
   @SuppressWarnings("serial")
   public static class MultiThrowable extends RuntimeException {

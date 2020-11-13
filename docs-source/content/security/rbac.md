@@ -136,7 +136,5 @@ the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` grantin
 
 [^1]: The binding is assigned to the operator `ServiceAccount`.
 [^2]: The binding is assigned to the operator `ServiceAccount`
-      in each namespace listed with the `domainNamespaces` setting.
-      The `domainNamespaces` setting contains the list of namespaces
-      that the operator is configured to manage.
+      in each namespace that the operator is configured to manage. See [Managing domain namespaces]({{< relref "/faq/namespace-management.md" >}})
 [^3]: The binding is assigned to the operator `ServiceAccount`. In addition, the Kubernetes RBAC resources that the operator installation actually set up will be adjusted based on the value of the `dedicated` setting. By default,  the `dedicated` value is set to `false`, those security resources are created as `ClusterRole` and `ClusterRoleBindings`. If the `dedicated` value is set to `true`,  those resources will be created as `Roles` and `RoleBindings` in the namespace of the operator.

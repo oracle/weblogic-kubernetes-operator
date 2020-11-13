@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -61,6 +62,7 @@ import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -70,6 +72,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.junit.After;
 import org.junit.Before;
@@ -124,7 +127,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue", "ConstantConditions", "OctalInteger", "unchecked"})
-public abstract class PodHelperTestBase {
+public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   static final String NS = "namespace";
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
@@ -234,7 +237,11 @@ public abstract class PodHelperTestBase {
 
   private String[] getMessageKeys() {
     return new String[] {
-      getCreatedMessageKey(), getExistsMessageKey(), getPatchedMessageKey(), getReplacedMessageKey()
+      getCreatedMessageKey(),
+        getExistsMessageKey(),
+        getPatchedMessageKey(),
+        getReplacedMessageKey(),
+        getDomainValidationFailedKey()
     };
   }
 
@@ -540,14 +547,24 @@ public abstract class PodHelperTestBase {
   // todo set property to indicate dynamic/on_restart copying
   protected abstract void verifyPodReplaced();
 
-  protected void verifyPodNotReplaced() {
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new NullPodAwaiterStepFactory(terminalStep));
-
+  protected void verifyPodPatched() {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
+    assertThat(logRecords, not(containsFine(getExistsMessageKey())));
+    assertThat(logRecords, containsInfo(getPatchedMessageKey()));
+  }
+
+  protected void verifyPodNotPatched() {
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsFine(getExistsMessageKey()));
+    assertThat(logRecords, not(containsInfo(getPatchedMessageKey())));
+  }
+
+  protected void verifyPodNotReplaced() {
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, not(containsInfo(getReplacedMessageKey())));
     assertThat(logRecords, containsFine(getExistsMessageKey()));
   }
 
@@ -560,11 +577,6 @@ public abstract class PodHelperTestBase {
   }
 
   private V1Pod getPatchedPod() {
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new NullPodAwaiterStepFactory(terminalStep));
-
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getPatchedMessageKey()));
@@ -773,6 +785,16 @@ public abstract class PodHelperTestBase {
     domainPresenceInfo.setServerPod(getServerName(), pod);
   }
 
+  void initializeExistingPodWithIntrospectVersion(String introspectVersion) {
+    initializeExistingPodWithIntrospectVersion(createPodModel(), introspectVersion);
+  }
+
+  void initializeExistingPodWithIntrospectVersion(V1Pod pod, String introspectVersion) {
+    testSupport.defineResources(pod);
+    pod.getMetadata().getLabels().put(LabelConstants.INTROSPECTION_STATE_LABEL, introspectVersion);
+    domainPresenceInfo.setServerPod(getServerName(), pod);
+  }
+
   private V1Pod createPodModel() {
     return createPod(testSupport.getPacket());
   }
@@ -947,12 +969,21 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenServerConfigurationAddsIntrospectionVersion_dontReplacePod() {
+  public void whenServerConfigurationAddsIntrospectionVersion_patchPod() {
     initializeExistingPod();
 
     configurator.withIntrospectVersion("123");
 
-    verifyPodNotReplaced();
+    verifyPodPatched();
+  }
+
+  @Test
+  public void whenServerConfigurationIntrospectionVersionTheSame_dontPatchPod() {
+    initializeExistingPodWithIntrospectVersion("123");
+
+    configurator.withIntrospectVersion("123");
+
+    verifyPodNotPatched();
   }
 
   @Test
@@ -1020,6 +1051,8 @@ public abstract class PodHelperTestBase {
   abstract String getPatchedMessageKey();
 
   abstract String getReplacedMessageKey();
+
+  abstract String getDomainValidationFailedKey();
 
   abstract V1Pod createTestPodModel();
 
@@ -1427,24 +1460,6 @@ public abstract class PodHelperTestBase {
     void mutate(V1Pod pod);
   }
 
-  protected static class NullPodAwaiterStepFactory implements PodAwaiterStepFactory {
-    private final Step ne;
-
-    NullPodAwaiterStepFactory(Step next) {
-      this.ne = next;
-    }
-
-    @Override
-    public Step waitForReady(V1Pod pod, Step next) {
-      return ne;
-    }
-
-    @Override
-    public Step waitForDelete(V1Pod pod, Step next) {
-      return ne;
-    }
-  }
-
   protected static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {
     @Override
     public Step waitForReady(V1Pod pod, Step next) {
@@ -1456,4 +1471,38 @@ public abstract class PodHelperTestBase {
       return next;
     }
   }
+
+  public static class DelayedPodAwaiterStepFactory implements PodAwaiterStepFactory {
+    private final int delaySeconds;
+
+    public DelayedPodAwaiterStepFactory(int delaySeconds) {
+      this.delaySeconds = delaySeconds;
+    }
+
+    @Override
+    public Step waitForReady(V1Pod pod, Step next) {
+      return new DelayStep(next, delaySeconds);
+    }
+
+    @Override
+    public Step waitForDelete(V1Pod pod, Step next) {
+      return new DelayStep(next, delaySeconds);
+    }
+  }
+
+  private static class DelayStep extends Step {
+    private final int delay;
+    private final Step next;
+
+    DelayStep(Step next, int delay) {
+      this.delay = delay;
+      this.next = next;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doDelay(next, packet, delay, TimeUnit.SECONDS);
+    }
+  }
+
 }

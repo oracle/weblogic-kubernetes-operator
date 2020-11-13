@@ -20,7 +20,7 @@ The Apache webtier Helm chart [is located here](../../apache-webtier/README.md).
 Install the Apache webtier Helm chart into the default namespace with the default settings:
 ```
 $ cd kubernetes/samples/charts
-$ helm install --name my-release apache-webtier
+$ helm install my-release apache-webtier
 ```
 
 ## 4. Run the sample application
@@ -35,5 +35,5 @@ $ curl -k --silent https://${HOSTNAME}:30443/weblogic/testwebapp/
 
 ## 5. Uninstall the Apache webtier
 ```
-$ helm delete --purge my-release
+$ helm uninstall my-release
 ```
