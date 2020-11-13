@@ -928,24 +928,25 @@ public abstract class PodStepContext extends BasePodStepContext {
             MessageKeys.CYCLING_POD,
             Objects.requireNonNull(currentPod.getMetadata()).getName(),
             getReasonToRecycle(currentPod));
-        // TODO: check
         return doNext(replaceCurrentPod(currentPod, getNext()), packet);
       } else if (mustPatchPod(currentPod)) {
-        return doNext(patchCurrentPod(currentPod, getNext()), packet);
-      } else {
-        logPodExists();
-        // Changes rolled back per user request in the domain.spec.configuration, keep the pod
+        // We got here because the introspectVersion changed and cancel changes return code from WDT
+        // Changes rolled back per user request in the domain.spec.configuration, keep the pod.
+        //
         if (Objects.equals("104", dynamicUpdateResult)) {
           String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
-              ProcessingConstants.MII_DYNAMIC_UPDATE_ROLLBACKFILE))
+              ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
               .orElse(null);
           updateDomainConditions("Online update completed successfully, but the changes require restart and "
-              + "the domain resource specified option to rollback all changes if restart require.  The changes are: "
-              + dynamicUpdateRollBackFile,
+                  + "the domain resource specified option to cancel all changes if restart require. The changes are: "
+                  + dynamicUpdateRollBackFile,
               DomainConditionType.OnlineUpdateRolledback);
 
           return doNext(packet);
         }
+        return doNext(patchCurrentPod(currentPod, getNext()), packet);
+      } else {
+        logPodExists();
         return doNext(packet);
       }
     }
@@ -967,6 +968,16 @@ public abstract class PodStepContext extends BasePodStepContext {
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
           .orElse(null);
+
+      Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateComplete));
+
+      Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateRolledback));
 
       Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)

@@ -42,8 +42,8 @@ WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./ur
 ARCHIVE_ZIP_CHANGED=0
 WDT_ARTIFACTS_CHANGED=0
 RESTART_REQUIRED=103
-PROG_ROLLBACK_IF_RESTART_EXIT_CODE=104
-MII_UPDATE_ROLLEDBACK=false
+PROG_CANCELCHGS_IF_RESTART_EXIT_CODE=104
+MII_UPDATE_CANCELED=false
 
 # return codes for model_diff
 UNSAFE_ONLINE_UPDATE=0
@@ -682,8 +682,8 @@ function createPrimordialDomain() {
 
   if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
 
-    if [  "true" == "${MII_ROLLBACK_IFRESTART}" ] && [  ${recreate_domain} -eq 1  ] ; then
-      trace SEVERE "Non dynamic security changes detected and 'rollBackIfRestartRequired=true', will not perform " \
+    if [  "true" == "${MII_CANCEL_CHANGES_IFRESTART_REQ}" ] && [  ${recreate_domain} -eq 1  ] ; then
+      trace SEVERE "Non dynamic security changes detected and 'cancelChangesIfRestartRequired=true', will not perform " \
         "update. You can use offline update to update the domain by setting " \
         "'domain.spec.configuration.model.onlineUpdate.enabled' to false and try again."
       exit 1
@@ -965,7 +965,7 @@ function wdtHandleOnlineUpdate() {
   local admin_pwd=$(cat /weblogic-operator/secrets/password)
 
   local ROLLBACK_FLAG=""
-  if [ ! -z "${MII_ROLLBACK_IFRESTART}" ] && [ "${MII_ROLLBACK_IFRESTART}" == "true" ]; then
+  if [ ! -z "${MII_CANCEL_CHANGES_IFRESTART_REQ}" ] && [ "${MII_CANCEL_CHANGES_IFRESTART_REQ}" == "true" ]; then
       #ROLLBACK_FLAG="-rollback_if_require_restart"
       ROLLBACK_FLAG="-rollback_if_restart_required"
   fi
@@ -991,14 +991,17 @@ function wdtHandleOnlineUpdate() {
   trace "Completed online update="${ret}
   if [ ${ret} -eq ${RESTART_REQUIRED} ] ; then
     trace ">>>  updatedomainResult=${ret}"
-  elif [ ${ret} -eq ${PROG_ROLLBACK_IF_RESTART_EXIT_CODE} ] ; then
+  elif [ ${ret} -eq ${PROG_CANCELCHGS_IF_RESTART_EXIT_CODE} ] ; then
+    trace "Online update completed but all changes are canceled. This is because the changes involved non-dynamic " \
+      "mbean attributes and 'domain.spec.configuration.model.cancelChangesIfRestartRequried=ture'.  Following is " \
+      "the output from WDT updateDomain command."
     trace ">>>  updatedomainResult=${ret}"
     if [ -f /tmp/rollback.file ] ; then
       echo ">>> /tmp/rollback.file"
       cat /tmp/rollback.file
       echo ">>> EOF"
     fi
-    MII_UPDATE_ROLLEDBACK=true
+    MII_UPDATE_CANCELED=true
   elif [ ${ret} -ne 0 ] ; then
     trace SEVERE "Online update failed. Check error in the logs " \
        "Note: Changes in the optional configmap and/or image may needs to be corrected"

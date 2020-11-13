@@ -16,13 +16,13 @@ public class OnlineUpdate {
   @Description("Enable online update.")
   private Boolean enabled = false;
 
-  @Description("If set to true, it will rollback the changes if the update require domain restart. "
-      + "All changes are rolled back, the domain continues to run without interruption. "
+  @Description("If set to true, it will cancel all the changes if the update require domain restart. "
+      + "All changes are canceled, the domain continues to run without interruption. "
       + "It is the user responsibility to revert the content changes in the configmap specified in "
       +     "`domain.spec.configuration.model.configmap` or secrets. User can detect the changes have been "
       +     "rolled back when describing the domain `kubectl -n <ns> describe domain <domain name>"
       +     " under the condition `OnlineUpdateRolledback`")
-  private Boolean rollBackIfRestartRequired = false;
+  private Boolean cancelChangesIfRestartRequired = false;
 
   @Description("WLST deploy application or libraries timout in milliseconds. Default: 180000.")
   private Long deployTimeoutMilliSeconds = 180000L;
@@ -61,16 +61,16 @@ public class OnlineUpdate {
     return this;
   }
 
-  public Boolean getRollBackIfRestartRequired() {
-    return rollBackIfRestartRequired;
+  public Boolean getCancelChangesIfRestartRequired() {
+    return cancelChangesIfRestartRequired;
   }
 
-  public void setRollBackIfRestartRequired(boolean rollBackIfRestartRequired) {
-    this.rollBackIfRestartRequired = rollBackIfRestartRequired;
+  public void setCancelChangesIfRestartRequired(boolean cancelChangesIfRestartRequired) {
+    this.cancelChangesIfRestartRequired = cancelChangesIfRestartRequired;
   }
 
-  public OnlineUpdate withRollBackIfRestartRequired(boolean rollBackIfRestartRequired) {
-    this.rollBackIfRestartRequired = rollBackIfRestartRequired;
+  public OnlineUpdate withCancelChangesIfRestartRequired(boolean cancelChangesIfRestartRequired) {
+    this.cancelChangesIfRestartRequired = cancelChangesIfRestartRequired;
     return this;
   }
 
@@ -182,7 +182,7 @@ public class OnlineUpdate {
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(enabled)
-        .append(rollBackIfRestartRequired)
+        .append(cancelChangesIfRestartRequired)
         .append(deployTimeoutMilliSeconds)
         .append(redeployTimeoutMilliSeconds)
         .append(undeployTimeoutMilliSeconds)
@@ -207,7 +207,7 @@ public class OnlineUpdate {
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(enabled, rhs.enabled)
-            .append(rollBackIfRestartRequired, rhs.rollBackIfRestartRequired)
+            .append(cancelChangesIfRestartRequired, rhs.cancelChangesIfRestartRequired)
             .append(deployTimeoutMilliSeconds, rhs.deployTimeoutMilliSeconds)
             .append(redeployTimeoutMilliSeconds, rhs.redeployTimeoutMilliSeconds)
             .append(undeployTimeoutMilliSeconds, rhs.undeployTimeoutMilliSeconds)
