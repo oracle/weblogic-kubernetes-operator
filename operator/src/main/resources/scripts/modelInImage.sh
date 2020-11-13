@@ -984,7 +984,7 @@ function wdtHandleOnlineUpdate() {
   echo ${admin_pwd} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} \
    -admin_url ${admin_url} -admin_user ${admin_user} -model_file \
    /tmp/diffed_model.yaml -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG} ${archive_list} \
-   -discard_current_edit -output_dir /tmp
+   -discard_current_edit -output_dir /tmp  >  ${WDT_OUTPUT}
 
   local ret=$?
 
@@ -1000,10 +1000,11 @@ function wdtHandleOnlineUpdate() {
     fi
     MII_UPDATE_ROLLEDBACK=true
   elif [ ${ret} -ne 0 ] ; then
-    trace "Introspect job terminated: Online update failed. Check error in the logs"
-    trace "Note: Changes in the optional configmap and/or image may needs to be corrected"
+    trace SEVERE "Online update failed. Check error in the logs " \
+       "Note: Changes in the optional configmap and/or image may needs to be corrected"
+    cat ${WDT_OUTPUT}
     trace ">>>  updatedomainResult=${ret}"
-    exit 1
+    exitOrLoop
   else
     trace ">>>  updatedomainResult=${ret}"
   fi
