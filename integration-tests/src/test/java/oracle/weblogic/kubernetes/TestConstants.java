@@ -144,7 +144,7 @@ public interface TestConstants {
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostAddress()));
   public static final String RESULTS_BASE = System.getenv().getOrDefault("RESULT_ROOT",
-      System.getProperty("java.io.tmpdir")) + "/it-testsresults";
+      System.getProperty("java.io.tmpdir") + "/it-testsresults");
 
   public static final String LOGS_DIR = RESULTS_BASE + "/diagnostics";
   public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT", 

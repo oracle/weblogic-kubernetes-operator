@@ -57,8 +57,7 @@ mvn -Dit.test="!ItCrossDomainTransaction,!ItMiiUpdateDomainConfig" -pl integrati
 | --- | --- | --- |
 | SKIP_CLEANUP  | Test infrastructure removes all kubernetes objects created during test execution. To retain all such objects for triaging test failures this environment variable should be set to true. User need to run weblogic-kubernetes-operator/src/integration-tests/bash/cleanup.sh to clean up kubernetes objects after traiging.    | false
 | COLLECT_LOGS_ON_SUCCESS  | Test infra does not keep the diagnostic log for successful tests. To archive the diagnostic log for successful tests, this environment variable should be set to true. | false
-| LOGS_DIR  | Root directory for the diagnostic logs. | /tmp/it-diagnosticlogs
-| RESULTS_ROOT  | Root directory for the intermediate artifacts such istio installation, dynamically generated YAML files | /tmp/it-testresults
+| RESULT_ROOT  | Root directory for the integration test results and artifacts generated during test execution. | /tmp/it-testsresults
 | BASE_IMAGES_REPO  | The repository URL to download WebLogic and FMW image. Make sure you have access to this repository. Other supported repository is phx.ocir.io (OCIR)  | container-registry.oracle.com(OCR)
 | WEBLOGIC_IMAGE_NAME  | Name of the WebLogic image in the chosen repository.| middleware/weblogic (OCR) 
 | WEBLOGIC_IMAGE_TAG  | The tag for WebLogic base image. Generally, it represents the WebLogic version with JDK and/or installation type. Possible values are 12.2.1.3, 12.2.1.3-dev, 12.2.1.4-slim, 14.1.1.0-11 or 14.1.1.0-8. Please check the repository for the availability of these images. | 12.2.1.4
