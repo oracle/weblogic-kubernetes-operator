@@ -70,7 +70,7 @@ public class DomainNamespaces {
   }
 
   /**
-   * Constructs a DomainNamespace object. REG-> this is a hack to deal with resetting statics between tests.
+   * Constructs a DomainNamespace object.
    */
   public DomainNamespaces() {
     namespaceStatuses.clear();

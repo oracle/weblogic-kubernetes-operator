@@ -180,6 +180,7 @@ public class KubernetesUtils {
   /**
    * Returns the resource version associated with the specified list.
    * @param list the result of a Kubernetes list operation.
+   * @return Resource version
    */
   public static String getResourceVersion(KubernetesListObject list) {
     return Optional.ofNullable(list)
@@ -191,6 +192,7 @@ public class KubernetesUtils {
   /**
    * Returns the resource version associated with the specified resource.
    * @param resource a Kubernetes resource
+   * @return Resource version
    */
   public static String getResourceVersion(KubernetesObject resource) {
     return Optional.ofNullable(resource)
