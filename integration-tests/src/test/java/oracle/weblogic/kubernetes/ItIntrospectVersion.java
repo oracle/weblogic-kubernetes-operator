@@ -498,7 +498,7 @@ public class ItIntrospectVersion {
     // verify when a domain resource has spec.introspectVersion configured,
     // all WebLogic server pods will have a label "weblogic.introspectVersion"
     // set to the value of spec.introspectVersion.
-    verifyWebLogicVersioninPod(replicaCount);
+    verifyIntrospectVersionLabelInPod(replicaCount);
   }
 
   /**
@@ -622,7 +622,7 @@ public class ItIntrospectVersion {
 
     // verify when a domain/cluster is rolling restarted without changing the spec.introspectVersion,
     // all server pods' weblogic.introspectVersion label stay unchanged after the pods are restarted.
-    verifyWebLogicVersioninPod(replicaCount);
+    verifyIntrospectVersionLabelInPod(replicaCount);
   }
 
   /**
@@ -772,7 +772,7 @@ public class ItIntrospectVersion {
 
     // verify when the spec.introspectVersion is changed,
     // all running server pods' weblogic.introspectVersion label is updated to the new value.
-    verifyWebLogicVersioninPod(replicaCount);
+    verifyIntrospectVersionLabelInPod(replicaCount);
   }
 
   /**
@@ -985,7 +985,7 @@ public class ItIntrospectVersion {
 
     // verify when a domain resource has spec.introspectVersion configured,
     // after a cluster is scaled up, new server pods have the label "weblogic.introspectVersion" set as well.
-    verifyWebLogicVersioninPod(replicaCount);
+    verifyIntrospectVersionLabelInPod(replicaCount);
   }
 
   /**
@@ -1062,7 +1062,7 @@ public class ItIntrospectVersion {
         });
   }
 
-  private void verifyWebLogicVersioninPod(int replicaCount) {
+  private void verifyIntrospectVersionLabelInPod(int replicaCount) {
     final String adminServerName = "admin-server";
     final String managedServerNameBase = "ms-";
     final String adminServerPodName = domainUid + "-" + adminServerName;
@@ -1073,17 +1073,17 @@ public class ItIntrospectVersion {
 
     // verify admin server pods
     logger.info("Verify weblogic.introspectVersion in admin server pod {0}", adminServerPodName);
-    verifyWebLogicVersionValue(adminServerPodName, introspectVersion);
+    verifyIntrospectVersionLabelValue(adminServerPodName, introspectVersion);
 
     // verify managed server pods
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Verify weblogic.introspectVersion in managed server pod {0}",
           managedServerPodNamePrefix + i);
-      verifyWebLogicVersionValue(managedServerPodNamePrefix + i, introspectVersion);
+      verifyIntrospectVersionLabelValue(managedServerPodNamePrefix + i, introspectVersion);
     }
   }
 
-  private void verifyWebLogicVersionValue(String podName, String introspectVersion) {
+  private void verifyIntrospectVersionLabelValue(String podName, String introspectVersion) {
     final String wlsIntroVersion = "weblogic.introspectVersion";
     V1Pod myPod = assertDoesNotThrow(() ->
         getPod(introDomainNamespace, "", podName),
