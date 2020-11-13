@@ -44,7 +44,6 @@ externalDebugHttpPort: 30999
 externalRestEnabled: false
 externalRestHttpsPort: 31001
 image: oracle/weblogic-kubernetes-operator:3.1.0
->>>>>>> origin/master
 imagePullPolicy: IfNotPresent
 internalDebugHttpPort: 30999
 istioEnabled: false
