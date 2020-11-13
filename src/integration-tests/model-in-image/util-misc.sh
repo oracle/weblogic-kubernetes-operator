@@ -94,9 +94,9 @@ function testapp() {
       if [ -z "$traefik_nodeport" ]; then
         echo "@@ Info: Obtaining traefik nodeport by calling:"
         cat<<EOF
-          kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="http")].nodePort}'
+          kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}'
 EOF
-        traefik_nodeport=$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+        traefik_nodeport=$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
         if [ -z "$traefik_nodeport" ]; then
           echo "@@ Error: Could not obtain traefik nodeport."
           return 1

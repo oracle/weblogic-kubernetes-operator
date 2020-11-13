@@ -4,16 +4,16 @@
 {{- define "operator.operator" -}}
 {{- include "operator.operatorClusterRoleGeneral" . }}
 {{- include "operator.operatorClusterRoleNamespace" . }}
-{{- if not .dedicated }}
-{{- include "operator.operatorClusterRoleNonResource" . }}
+{{- if not (or (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") (and .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "List"))) }}
+{{-   include "operator.operatorClusterRoleNonResource" . }}
 {{- end }}
 {{- include "operator.operatorClusterRoleOperatorAdmin" . }}
 {{- include "operator.operatorClusterRoleDomainAdmin" . }}
 {{- include "operator.clusterRoleBindingGeneral" . }}
 {{- include "operator.clusterRoleBindingAuthDelegator" . }}
 {{- include "operator.clusterRoleBindingDiscovery" . }}
-{{- if not .dedicated }}
-{{- include "operator.clusterRoleBindingNonResource" . }}
+{{- if not (or (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") (and .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "List"))) }}
+{{-   include "operator.clusterRoleBindingNonResource" . }}
 {{- end }}
 {{- include "operator.operatorRole" . }}
 {{- include "operator.operatorRoleBinding" . }}
@@ -22,5 +22,9 @@
 {{- include "operator.operatorDeployment" . }}
 {{- include "operator.operatorInternalService" . }}
 {{- include "operator.operatorExternalService" . }}
-{{- include "operator.domainNamespaces" . }}
+{{- if .enableClusterRoleBinding }}
+{{-   include "operator.operatorRoleBindingNamespace" . }}
+{{- else }}
+{{-   include "operator.domainNamespaces" . }}
+{{- end }}
 {{- end }}

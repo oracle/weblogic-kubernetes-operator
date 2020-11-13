@@ -11,6 +11,7 @@ started, or restarted. To start, stop, or restart servers, modify these fields o
 
 * [Starting and stopping servers](#starting-and-stopping-servers)
     * [Common starting and stopping scenarios](#common-starting-and-stopping-scenarios)
+    * [Domain lifecycle sample scripts](#domain-lifecycle-sample-scripts)
 * [Shutdown options](#shutdown-options)
 * [Restarting servers](#restarting-servers)
     * [Rolling restarts](#rolling-restarts)
@@ -81,6 +82,13 @@ progress only to the administrative state.  Then you could use the WebLogic Serv
 updates before advancing the server to the running state.
 
 Changes to the `serverStartState` property do not affect already started servers.
+
+### Domain lifecycle sample scripts
+Beginning in version 3.1.0, the operator provides sample scripts to start up or shut down a specific Managed Server or cluster in a deployed domain, or the entire deployed domain.
+
+**Note**: Prior to running these scripts, you must have previously created and deployed the domain.
+
+The scripts are located in the `kubernetes/samples/scripts/domain-lifecycle` directory. They are helpful when scripting the life cycle of a WebLogic Server domain. For more information, see the [README](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/domain-lifecycle/README.md).
 
 ### Common starting and stopping scenarios
 

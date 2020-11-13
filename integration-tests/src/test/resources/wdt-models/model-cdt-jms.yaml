@@ -1,0 +1,26 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+resources:
+  FileStore:
+    TestCdtFileStore:
+      Target: 'cluster-1'
+  JMSServer:
+    TestCdtJmsServer:
+      ProductionPausedAtStartup: false
+      ConsumptionPausedAtStartup: false
+      Target: 'cluster-1'
+      PersistentStore: 'TestCdtFileStore'
+      InsertionPausedAtStartup: false
+      MessageCompressionOptions: GZIP_DEFAULT_COMPRESSION
+
+  JMSSystemResource:
+    TestCdtJmsModule:
+      Target: 'cluster-1'
+      SubDeployment:
+        TestCdtSubDeployment:
+          Target: TestCdtJmsServer
+      JmsResource:
+        UniformDistributedQueue:
+          testCdtUniformQueue:
+            SubDeploymentName: TestCdtSubDeployment
+            JNDIName: jms/testCdtUniformQueue

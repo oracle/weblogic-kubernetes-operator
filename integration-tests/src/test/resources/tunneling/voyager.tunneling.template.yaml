@@ -1,0 +1,20 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: voyager-tunneling
+  namespace: DOMAIN_NS
+  annotations:
+    ingress.appscode.com/type: 'NodePort'
+    ingress.appscode.com/stats: 'true'
+    ingress.appscode.com/affinity: 'cookie'
+spec:
+  rules:
+  - host: '*'
+    http:
+      paths:
+      - backend:
+          serviceName: DOMAIN_UID-cluster-CLUSTER
+          servicePort: '7788'

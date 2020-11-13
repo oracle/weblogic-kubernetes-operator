@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.rest;
 
 import java.util.Collection;
+import java.util.function.Supplier;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -16,20 +17,17 @@ public class RestConfigImpl implements RestConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final String principal;
-  private final Collection<String> targetNamespaces;
+  private final Supplier<Collection<String>> domainNamespaces;
 
   /**
    * Constructs a RestConfigImpl.
-   *
-   * @param principal is the name of the Kubernetes User or Service Account to use when calling the
+   *  @param principal is the name of the Kubernetes User or Service Account to use when calling the
    *     Kubernetes REST API.
-   * @param targetNamespaces is a list of the Kubernetes Namespaces covered by this Operator.
+   * @param domainNamespaces returns a list of the Kubernetes Namespaces covered by this Operator.
    */
-  public RestConfigImpl(String principal, Collection<String> targetNamespaces) {
-    LOGGER.entering(principal, targetNamespaces);
+  public RestConfigImpl(String principal, Supplier<Collection<String>> domainNamespaces) {
+    this.domainNamespaces = domainNamespaces;
     this.principal = principal;
-    this.targetNamespaces = targetNamespaces;
-    LOGGER.exiting();
   }
 
   @Override
@@ -89,9 +87,6 @@ public class RestConfigImpl implements RestConfig {
 
   @Override
   public RestBackend getBackend(String accessToken) {
-    LOGGER.entering();
-    RestBackend result = new RestBackendImpl(principal, accessToken, targetNamespaces);
-    LOGGER.exiting();
-    return result;
+    return new RestBackendImpl(principal, accessToken, domainNamespaces);
   }
 }

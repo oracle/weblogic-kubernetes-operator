@@ -15,6 +15,7 @@ import javax.annotation.Nonnull;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
@@ -40,10 +41,10 @@ import oracle.kubernetes.operator.calls.SynchronousCallFactory;
  *
  * <p>will return the specified custom resource definition.
  */
-class CallTestSupport {
+public class CallTestSupport {
 
   private static RequestParams REQUEST_PARAMS
-      = new RequestParams("testcall", "junit", "testName", "body");
+      = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
 
   private Map<CallTestSupport.CannedResponse, Boolean> cannedResponses = new HashMap<>();
 
@@ -57,7 +58,11 @@ class CallTestSupport {
         .toString();
   }
 
-  Memento installSynchronousCallDispatcher() {
+  /**
+   * Install synchronous call dispatcher memento.
+   * @return synchronous call dispatcher memento
+   */
+  public Memento installSynchronousCallDispatcher() {
     return new Memento() {
       private SynchronousCallDispatcher originalCallDispatcher;
 

@@ -36,7 +36,9 @@ if [ ! "${DYNAMIC_CONFIG_OVERRIDE:-notset}" = notset ]; then
       [ -f "$tgt_file" ] && [ -z "$(diff $local_fname $tgt_file 2>&1)" ] && continue  # nothing changed
       trace "Copying file '$local_fname' to '$tgt_file'."
       cp $local_fname $tgt_file # TBD ignore any error?
-      chmod 750 $tgt_file # TBD ignore any error?
+      if [ -O "$tgt_file" ]; then
+        chmod 770 $tgt_file # TBD ignore any error?
+      fi
     done
     for local_fname in ${tgt_dir}/*.xml ; do
       if [ -f "$src_dir/${fil_prefix}$(basename ${local_fname})" ]; then
@@ -75,7 +77,16 @@ if [ "${MOCK_WLS}" != 'true' ]; then
     exit $RETVAL
   fi
 fi
+
 if [ -f ${STATEFILE} ] && [ `grep -c "FAILED_NOT_RESTARTABLE" ${STATEFILE}` -eq 1 ]; then
+  # WARNING: This state file check is essentially a public API and 
+  #          must continue to be honored even if we remove the node
+  #          manager from the life cycle.
+  #
+  #          (There is at least one WKO user that externally modifies
+  #          the file to FAILED_NOT_RESTARTABLE to force a liveness
+  #          failure when the user detects that their applications
+  #          are unresponsive.)
   trace SEVERE "WebLogic Server state is FAILED_NOT_RESTARTABLE."
   exit $RETVAL
 fi

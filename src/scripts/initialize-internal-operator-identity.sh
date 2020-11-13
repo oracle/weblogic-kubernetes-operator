@@ -146,7 +146,7 @@ trap "cleanup" EXIT
 
 mkdir ${INTERNAL_IDENTITY_DIR}
 
-if [ -f "${OPERATOR_DIR}/config/${CERT_PROPERTY}" ]; then
+if [ -f "${OPERATOR_DIR}/config/${CERT_PROPERTY}" ] && [ -f "${OPERATOR_DIR}/secrets/${KEY_PROPERTY}" ]; then
   # The operator's internal ssl identity has already been created.
   reuseInternalIdentity
 else

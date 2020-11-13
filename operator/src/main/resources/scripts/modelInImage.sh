@@ -25,9 +25,10 @@ LOCAL_PRIM_DOMAIN_TAR="/tmp/prim_domain.tar"
 NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 RUNTIME_ENCRYPTION_SECRET_PASSWORD="/weblogic-operator/model-runtime-secret/password"
-OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
+# we export the opss password file location because it's also used by introspectDomain.py
+export OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
 OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
-IMG_MODELS_HOME="/u01/wdt/models"
+IMG_MODELS_HOME="${WDT_MODEL_HOME:-/u01/wdt/models}"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
@@ -238,17 +239,11 @@ function buildWDTParams_MD5() {
     model_list="-model_file ${model_list}"
   fi
 
-  if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
-    if [ ! -f "${OPSS_KEY_PASSPHRASE}" ] ; then
-      trace SEVERE "Domain Source Type is 'FromModel' and domain type JRF which requires specifying a " \
-         "walletPasswordSecret in your domain resource and deploying this secret with a 'walletPassword' key, " \
-         " but the secret does not have this key."
-      exit 1
-    else
-      # TBD code review comment: pass credentials via filename instead of risking putting them in an env var
-      # Set it for introspectDomain.py to use
-      export OPSS_PASSPHRASE=$(cat ${OPSS_KEY_PASSPHRASE})
-    fi
+  if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] && [ ! -f "${OPSS_KEY_PASSPHRASE}" ] ; then
+    trace SEVERE "Domain Source Type is 'FromModel' and domain type JRF which requires specifying a " \
+       "walletPasswordSecret in your domain resource and deploying this secret with a 'walletPassword' key, " \
+       " but the secret does not have this key."
+    exit 1
   fi
 
   #  We cannot strictly run create domain for JRF type because it's tied to a database schema
@@ -256,10 +251,10 @@ function buildWDTParams_MD5() {
   #
   opss_wallet=$(get_opss_key_wallet)
   if [ -f "${opss_wallet}" ] ; then
-      trace "keeping rcu schema"
-      mkdir -p /tmp/opsswallet
-      base64 -d  ${opss_wallet} > /tmp/opsswallet/ewallet.p12
-      OPSS_FLAGS="-opss_wallet /tmp/opsswallet -opss_wallet_passphrase ${OPSS_PASSPHRASE}"
+    trace "A wallet file was passed in using walletFileSecret, so we're using an existing rcu schema."
+    mkdir -p /tmp/opsswallet
+    base64 -d  ${opss_wallet} > /tmp/opsswallet/ewallet.p12
+    OPSS_FLAGS="-opss_wallet /tmp/opsswallet"
   else
     OPSS_FLAGS=""
   fi
@@ -279,7 +274,7 @@ function createWLDomain() {
     "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
     exitOrLoop
   fi
-  # Check if /u01/wdt/models and /u01/wdt/weblogic-deploy exists
+  # Check if modelHome (default /u01/wdt/models) and /u01/wdt/weblogic-deploy exists
 
   checkDirNotExistsOrEmpty ${IMG_MODELS_HOME}
   checkDirNotExistsOrEmpty ${WDT_BINDIR}
@@ -559,8 +554,18 @@ function createPrimordialDomain() {
     # decrypt the merged model from introspect cm
     local DECRYPTED_MERGED_MODEL="/tmp/decrypted_merged_model.json"
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+
+    # Maintain backward compatibility - check first byte to see if it is a json file
+    # if yes then it is the not a gzipped and encrypted model, just use it
+    # else base64d to gzip file and unzip it
     encrypt_decrypt_model "decrypt" ${INTROSPECTCM_MERGED_MODEL}  ${MII_PASSPHRASE} \
       ${DECRYPTED_MERGED_MODEL}
+
+    if [ "{" != $(head -c 1 ${DECRYPTED_MERGED_MODEL}) ] ; then
+      base64 -d ${DECRYPTED_MERGED_MODEL} > ${DECRYPTED_MERGED_MODEL}.gz  || exitOrLoop
+      rm ${DECRYPTED_MERGED_MODEL}  || exitOrLoop
+      gunzip ${DECRYPTED_MERGED_MODEL}.gz  || exitOrLoop
+    fi
 
     diff_model ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
 
@@ -621,8 +626,8 @@ function createPrimordialDomain() {
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
     encrypt_decrypt_domain_secret "encrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
 
-    tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/lib  ${empath} \
-    ${DOMAIN_HOME}/*
+    tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/sysman/log  \
+    --exclude ${DOMAIN_HOME}/lib --exclude ${DOMAIN_HOME}/backup_config ${empath} ${DOMAIN_HOME}/*
 
     # Put back the original one so that update can continue
     mv  /tmp/sii.dat.saved ${DOMAIN_HOME}/security/SerializedSystemIni.dat
@@ -671,14 +676,85 @@ function wdtCreatePrimordialDomain() {
 
   export __WLSDEPLOY_STORE_MODEL__=1
 
-  ${WDT_BINDIR}/createDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}  ${UPDATE_RCUPWD_FLAG}  \
-    > ${WDT_OUTPUT}
+  if [ "JRF" == "$WDT_DOMAIN_TYPE" ] ; then
+    if [ -z "${OPSS_FLAGS}" ] ; then
+      trace INFO "An OPSS wallet was not supplied for the Model in Image JRF domain in its " \
+        "'spec.configuration.opss.walletFileSecret' attribute; therefore, it's assumed that this is the first time " \
+        "the OPSS RCU database is being accessed by the domain, so a schema and a wallet file will be created. " \
+        "Consult the Model in Image documentation for instructions about preserving the OPSS wallet file."
+    else
+      trace "Creating JRF Primordial Domain"
+    fi
+  fi
+  
+  local wdtArgs=""
+  wdtArgs+=" -oracle_home ${ORACLE_HOME}"
+  wdtArgs+=" -domain_home ${DOMAIN_HOME}" 
+  wdtArgs+=" ${model_list} ${archive_list} ${variable_list}"
+  wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
+  wdtArgs+=" ${OPSS_FLAGS}"
+  wdtArgs+=" ${UPDATE_RCUPWD_FLAG}"
+
+  trace "About to call '${WDT_BINDIR}/createDomain.sh ${wdtArgs}'."
+
+  if [ -z "${OPSS_FLAGS}" ]; then
+
+    # We get here for WLS domains, and for the JRF 'first time' case
+
+    # JRF wallet generation note:
+    #  If this is JRF, the unset OPSS_FLAGS indicates no wallet file was specified
+    #  via spec.configuration.opss.walletFileSecret and so we assume that this is
+    #  the first time this domain started for this RCU database. We also assume 
+    #  that 'createDomain.sh' will perform the one time initialization of the 
+    #  empty RCU schema for the domain in the database (where the empty schema
+    #  itself must be setup external to the Operator by calling 'create_rcu_schema.sh'
+    #  or similar prior to deploying the domain for the first time).
+    #
+    #  The 'introspectDomain.py' script, which runs later, will create a wallet
+    #  file using the spec.configuration.opss.walletPasswordSecret as its passphrase
+    #  so that an administrator can then retrieve the file from the introspector's
+    #  output configmap and save it for reuse.
+
+    ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
+
+  else
+
+    # We get here only for JRF domain 'second time' (or more) case.
+
+    # JRF wallet reuse note:
+    #  The set OPSS_FLAGS indicates a wallet file was specified
+    #  via spec.configuration.opss.walletFileSecret on the domain resource.
+    #  So we assume that this domain already
+    #  has its RCU tables and the wallet file will give us access to them.
+
+    echo $(cat ${OPSS_KEY_PASSPHRASE}) | \
+      ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
+
+  fi
+
   ret=$?
   if [ $ret -ne 0 ]; then
+    #
+    # FatalIntrospectorError is detected by DomainProcessorImpl.isShouldContinue
+    # If it is detected then it will stop the periodic retry
+    # We need to prevent retries with a "MII Fatal Error" because JRF without the OPSS_FLAGS indicates
+    # a likely attempt to initialize the RCU DB schema for this domain, and we don't want to retry when this fails
+    # without admin intervention (retrying can compound the problem and obscure the original issue).
+    #
+    if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] ; then
+      trace SEVERE "FatalIntrospectorError: WDT Create Primordial Domain Failed ${ret}"
+    else
+      trace SEVERE "WDT Create Primordial Domain Failed ${ret}"
+    fi
+    if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
+      cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
+    fi
     trace SEVERE "WDT Create Domain Failed, ret=${ret}:"
     cat ${WDT_OUTPUT}
     exitOrLoop
+  else
+    trace "WDT Create Domain Succeeded, ret=${ret}:"
+    cat ${WDT_OUTPUT}
   fi
 
   # restore trap
@@ -736,7 +812,9 @@ function wdtUpdateModelDomain() {
   #
   local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
 
-  encrypt_decrypt_model "encrypt" ${DOMAIN_HOME}/wlsdeploy/domain_model.json ${MII_PASSPHRASE} \
+  gzip ${DOMAIN_HOME}/wlsdeploy/domain_model.json || exitOrLoop
+  base64 ${DOMAIN_HOME}/wlsdeploy/domain_model.json.gz > ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 || exitOrLoop
+  encrypt_decrypt_model "encrypt" ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 ${MII_PASSPHRASE} \
     ${DOMAIN_HOME}/wlsdeploy/domain_model.json
 
   # restore trap

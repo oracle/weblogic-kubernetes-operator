@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.Optional;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
@@ -67,7 +67,9 @@ public class DomainUpPlanTest {
    */
   @Before
   public void setUp() throws NoSuchFieldException {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(TestUtils.silenceOperatorLogger()
+        .ignoringLoggedExceptions(ApiException.class));
+    mementos.add(ClientFactoryStub.install());
     mementos.add(testSupport.install());
     mementos.add(InMemoryCertificates.install());
     mementos.add(TuningParametersStub.install());
@@ -281,9 +283,5 @@ public class DomainUpPlanTest {
       return new NullPodWaiter();
     }
 
-    @Override
-    public V1SubjectRulesReviewStatus getSubjectRulesReviewStatus(String namespace) {
-      return null;
-    }
   }
 }

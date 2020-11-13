@@ -1,3 +1,6 @@
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 apiVersion: voyager.appscode.com/v1beta1
 kind: Ingress
 metadata:
@@ -21,7 +24,7 @@ spec:
       nodePort: '30305'
       paths:
       - backend:
-          serviceName: domain2-cluster-cluster-1.test1
+          serviceName: domain2-cluster-cluster-1
           servicePort: '8001'
 
 ---
