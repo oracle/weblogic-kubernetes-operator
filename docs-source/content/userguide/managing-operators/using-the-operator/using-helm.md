@@ -100,7 +100,7 @@ javaLoggingLevel:  "FINE"
 ##### `image`
 Specifies the Docker image containing the operator code.
 
-Defaults to `oracle/weblogic-kubernetes-operator:3.1.0`.
+Defaults to `oracle/weblogic-kubernetes-operator:3.2.0`.
 
 Example:
 ```
