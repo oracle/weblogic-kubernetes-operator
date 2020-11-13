@@ -182,10 +182,8 @@ public class Configuration {
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(opss, rhs.opss)
-            .append(secrets, rhs.secrets)
             .append(overrideDistributionStrategy, rhs.overrideDistributionStrategy)
             .append(overridesConfigMap, rhs.overridesConfigMap)
-            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
             .append(istio, rhs.istio);
 
     boolean isEqual = builder.isEquals();

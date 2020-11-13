@@ -277,7 +277,7 @@ Once the job finished, you can check the domain status to view the status of the
 
 Below is a general description about how online update works and the expected outcome.
 
-TBD/WIP: The implementation treats setting/changing/adding secrets or configMap treated as 'offline' changes, but idealy these should be treated as 'online' if the net resulting change is solely dynamic mbeans changes...
+TBD/WIP: The implementation treats configMap (using a different configmap) as 'offline' changes, but idealy these should be treated as 'online' if the net resulting change is solely dynamic mbeans changes...
 
 |Scenarios|Expected Outcome|Actions Required|
   |---------------------|-------------|-------|
