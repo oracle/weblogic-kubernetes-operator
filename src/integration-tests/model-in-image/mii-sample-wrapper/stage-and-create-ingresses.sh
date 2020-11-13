@@ -112,8 +112,8 @@ do
 
 $(get_help "# " "$service_name")
 
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
   name: traefik-ingress-$(get_service_name $service_name)
   namespace: ${DOMAIN_NAMESPACE}
@@ -121,15 +121,15 @@ metadata:
     weblogic.domainUID: ${DOMAIN_UID}
   annotations:
     kubernetes.io/ingress.class: traefik
+
 spec:
-  rules:
-  - host: $(get_sample_host $service_name)
-    http:
-      paths:
-      - path: 
-        backend:
-          serviceName: $(get_service_name $service_name)
-          servicePort: 8001
+  routes:
+  - kind: Rule
+    match: Host(\`$(get_sample_host $service_name)\`)
+    services:
+    - kind: Service
+      name: $(get_service_name $service_name)
+      port: 8001
 EOF
 
   else
@@ -149,8 +149,8 @@ EOF
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
   name: traefik-ingress-$(get_service_name $service_name)
   namespace: ${DOMAIN_NAMESPACE}
@@ -159,14 +159,13 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
 spec:
-  rules:
-  - host:
-    http:
-      paths:
-      - path: /console
-        backend:
-          serviceName: $(get_service_name $service_name)
-          servicePort: 7001
+  routes:
+  - kind: Rule
+    match: PathPrefix(\`/console\`)
+    services:
+    - kind: Service
+      name: $(get_service_name $service_name)
+      port: 7001
 EOF
     fi
   fi

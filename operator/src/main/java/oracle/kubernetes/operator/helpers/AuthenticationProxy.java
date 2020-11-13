@@ -15,17 +15,18 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 public class AuthenticationProxy {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final AuthorizationProxy authorizationProxy = new AuthorizationProxy();
+  private static AuthorizationProxy authorizationProxy = new AuthorizationProxy();
 
   /**
    * Check if the specified access token can be authenticated.
    *
    * @param principal The user, group or service account.
    * @param token The access token that identifies the user.
+   * @param namespace Namespace
    * @return V1TokenReviewStatus containing either info about the authenticated user or an error
    *     explaining why the user couldn't be authenticated
    */
-  public V1TokenReviewStatus check(String principal, String token) {
+  public V1TokenReviewStatus check(String principal, String token, String namespace) {
 
     LOGGER.entering(principal); // Don't expose the token since it's a credential
 
@@ -37,8 +38,8 @@ public class AuthenticationProxy {
               AuthorizationProxy.Operation.create,
               AuthorizationProxy.Resource.TOKENREVIEWS,
               null,
-              AuthorizationProxy.Scope.cluster,
-              null);
+              namespace == null ? AuthorizationProxy.Scope.cluster : AuthorizationProxy.Scope.namespace,
+              namespace);
       if (allowed) {
         result = new CallBuilder().createTokenReview(prepareTokenReview(token));
       } else {

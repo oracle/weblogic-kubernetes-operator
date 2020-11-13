@@ -9,13 +9,14 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nonnull;
 
 /**
  * Collection of {@link Fiber}s. Owns an {@link Executor} to run them.
  */
 public class Engine {
   private static final int DEFAULT_THREAD_COUNT = 10;
-  private final AtomicReference<ScheduledExecutorService> threadPool = new AtomicReference();
+  private final AtomicReference<ScheduledExecutorService> threadPool = new AtomicReference<>();
 
   /**
    * Creates engine with the specified executor.
@@ -89,7 +90,7 @@ public class Engine {
       namePrefix = "engine-" + id + "-thread-";
     }
 
-    public Thread newThread(Runnable r) {
+    public Thread newThread(@Nonnull Runnable r) {
       Thread t = new Thread(r);
       t.setName(namePrefix + threadNumber.getAndIncrement());
       if (!t.isDaemon()) {

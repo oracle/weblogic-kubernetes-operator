@@ -12,11 +12,39 @@ data:
   externalOperatorCert: {{ .externalOperatorCert | quote }}
     {{- end }}
   {{- end }}
+  {{- $configmap := (lookup "v1" "ConfigMap" .Release.Namespace "weblogic-operator-cm") }}
+  {{- if (and $configmap $configmap.data) }}
+  {{- $internalOperatorCert := index $configmap.data "internalOperatorCert" }}
+  {{- if $internalOperatorCert }}
+  internalOperatorCert: {{ $internalOperatorCert }}
+  {{- end }}
+  {{- end }}
   serviceaccount: {{ .serviceAccount | quote }}
-  targetNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
+  domainNamespaceSelectionStrategy: {{ (default "List" .domainNamespaceSelectionStrategy) | quote }}
+  domainNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
+  {{- if .dedicated }}
   dedicated: {{ .dedicated | quote }}
+  {{- end }}
+  {{- if .domainNamespaceLabelSelector }}
+  domainNamespaceLabelSelector: {{ .domainNamespaceLabelSelector | quote }}
+  {{- end }}
+  {{- if .domainNamespaceRegExp }}
+  domainNamespaceRegExp: {{ .domainNamespaceRegExp | quote }}
+  {{- end }}
   {{- if .dns1123Fields }}
   dns1123Fields: {{ .dns1123Fields | quote }}
+  {{- end }}
+  {{- if .introspectorJobNameSuffix }}
+  introspectorJobNameSuffix: {{ .introspectorJobNameSuffix | quote }}
+  {{- end }}
+  {{- if .externalServiceNameSuffix }}
+  externalServiceNameSuffix: {{ .externalServiceNameSuffix | quote }}
+  {{- end }}
+  {{- if .clusterSizePaddingValidationEnabled }}
+  clusterSizePaddingValidationEnabled: {{ .clusterSizePaddingValidationEnabled | quote }}
+  {{- end }}
+  {{- if .tokenReviewAuthentication }}
+  tokenReviewAuthentication: {{ .tokenReviewAuthentication | quote }}
   {{- end }}
 kind: "ConfigMap"
 metadata:

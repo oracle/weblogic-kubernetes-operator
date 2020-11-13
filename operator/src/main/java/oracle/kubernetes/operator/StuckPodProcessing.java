@@ -8,7 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -34,18 +34,17 @@ import static oracle.kubernetes.operator.logging.MessageKeys.POD_FORCE_DELETED;
 public class StuckPodProcessing {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final String operatorNamespace;
-  private final BiFunction<String,String,Step> readExistingNamespaces;
+  private final MainDelegate mainDelegate;
 
-  public StuckPodProcessing(String operatorNamespace, BiFunction<String, String, Step> readExistingNamespaces) {
-    this.operatorNamespace = operatorNamespace;
-    this.readExistingNamespaces = readExistingNamespaces;
+  public StuckPodProcessing(MainDelegate mainDelegate) {
+    this.mainDelegate = mainDelegate;
   }
 
-  Step createStuckPodCheckSteps(String namespace) {
-    return new CallBuilder()
+  void checkStuckPods(String namespace) {
+    Step step = new CallBuilder()
           .withLabelSelectors(LabelConstants.getCreatedbyOperatorSelector())
           .listPodAsync(namespace, new PodListProcessing(namespace, SystemClock.now()));
+    mainDelegate.runSteps(step);
   }
 
   @SuppressWarnings("unchecked")
@@ -67,8 +66,8 @@ public class StuckPodProcessing {
       callResponse.getResult().getItems().stream()
             .filter(pod -> isStuck(pod, now))
             .forEach(pod -> addStuckPodToPacket(packet, pod));
-
-      return doNext(packet);
+      
+      return doContinueListOrNext(callResponse, packet);
     }
 
     private boolean isStuck(V1Pod pod, DateTime now)  {
@@ -111,14 +110,19 @@ public class StuckPodProcessing {
         for (V1Pod pod : stuckPodList) {
           startDetails.add(new StepAndPacket(createForcedDeletePodStep(pod), packet.clone()));
         }
-        return doForkJoin(readExistingNamespaces.apply(operatorNamespace, namespace), packet, startDetails);
+        return doForkJoin(readExistingNamespaces(), packet, startDetails);
       }
+    }
+
+    @Nonnull
+    private Step readExistingNamespaces() {
+      return mainDelegate.getDomainNamespaces().readExistingResources(namespace, mainDelegate.getDomainProcessor());
     }
 
     private Step createForcedDeletePodStep(V1Pod pod) {
       return new CallBuilder()
             .withGracePeriodSeconds(0)
-            .deletePodAsync(getName(pod), getNamespace(pod), null,
+            .deletePodAsync(getName(pod), getNamespace(pod), getDomainUid(pod), null,
                   new ForcedDeleteResponseStep(getName(pod), getNamespace(pod)));
     }
 

@@ -430,7 +430,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       # Whether to enable overriding your log file location, see also 'logHome'
       #logHomeEnabled: false
 
-      # The location for domain log, server logs, server out, and Node Manager log files
+      # The location for domain log, server logs, server out, introspector out, and Node Manager log files
       # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
       #logHome: /shared/logs/sample-domain1
 
@@ -552,7 +552,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
     # Whether to enable overriding your log file location, see also 'logHome'
     #logHomeEnabled: false
 
-    # The location for domain log, server logs, server out, and Node Manager log files
+    # The location for domain log, server logs, server out, introspector out, and Node Manager log files
     # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
     #logHome: /shared/logs/sample-domain1
 
@@ -658,11 +658,11 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   ```
   $ kubectl get pods -n sample-domain1-ns --watch
   NAME                                         READY   STATUS    RESTARTS   AGE
-  sample-domain1-introspect-domain-job-lqqj9   0/1   Pending   0     0s
-  sample-domain1-introspect-domain-job-lqqj9   0/1   ContainerCreating   0     0s
-  sample-domain1-introspect-domain-job-lqqj9   1/1   Running   0     1s
-  sample-domain1-introspect-domain-job-lqqj9   0/1   Completed   0     65s
-  sample-domain1-introspect-domain-job-lqqj9   0/1   Terminating   0     65s
+  sample-domain1-introspector-lqqj9   0/1   Pending   0     0s
+  sample-domain1-introspector-lqqj9   0/1   ContainerCreating   0     0s
+  sample-domain1-introspector-lqqj9   1/1   Running   0     1s
+  sample-domain1-introspector-lqqj9   0/1   Completed   0     65s
+  sample-domain1-introspector-lqqj9   0/1   Terminating   0     65s
   sample-domain1-admin-server   0/1   Pending   0     0s
   sample-domain1-admin-server   0/1   ContainerCreating   0     0s
   sample-domain1-admin-server   0/1   Running   0     1s
@@ -732,14 +732,14 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
 
   NAME                                          VERSION  IMAGE  READY  PHASE
   --------------------------------------------  -------  -----  -----  ---------
-  'sample-domain1-introspect-domain-job-rkdkg'  ''       ''     ''     'Pending'
+  'sample-domain1-introspector-rkdkg'           ''       ''     ''     'Pending'
 
   @@ [2020-04-30T13:50:45][seconds=3] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
   @@ [2020-04-30T13:50:45][seconds=3] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
   NAME                                          VERSION  IMAGE  READY  PHASE
   --------------------------------------------  -------  -----  -----  ---------
-  'sample-domain1-introspect-domain-job-rkdkg'  ''       ''     ''     'Running'
+  'sample-domain1-introspector-rkdkg'           ''       ''     ''     'Running'
 
 
   @@ [2020-04-30T13:51:50][seconds=68] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.

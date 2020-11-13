@@ -47,10 +47,8 @@ spec:
   # If you want to use a mounted volume as the log home, i.e. to persist logs outside the container, then
   # uncomment this and set it to `true`:
   # logHomeEnabled: false
-  # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
-  # files in.
-  # If not specified or empty, domain log file, server logs, server out, and node manager log files
-  # will be stored in the default logHome location of /shared/logs/<domainUID>/.
+  # The in-pod name of the directory to store the domain, node manager, server logs, server .out,
+  # and introspector .out files. Default is /shared/logs/<domainUID>. See also logHomeEnabled.
   # logHome: /shared/logs/domain1
 
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"

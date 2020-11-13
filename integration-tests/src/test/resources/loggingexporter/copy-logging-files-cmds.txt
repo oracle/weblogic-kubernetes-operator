@@ -1,0 +1,7 @@
+[final-build-commands]
+
+RUN mkdir -p /u01/domains/elk-domain1/config && chown oracle:root /u01/domains/elk-domain1/config
+COPY --chown=oracle:root files/WebLogicLoggingExporter.yaml /u01/domains/elk-domain1/config/
+
+RUN mkdir -p /u01/domains/elk-domain1/lib && chown oracle:root /u01/domains/elk-domain1/lib
+COPY --chown=oracle:root files/SNAKEYAML_JAR files/WEBLOGICLOGGINGEXPORTER_JAR /u01/domains/elk-domain1/lib/

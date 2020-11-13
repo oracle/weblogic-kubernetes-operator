@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ResourceRule;
@@ -18,6 +19,8 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 /** A Helper Class for checking the health of the WebLogic Operator. */
 public final class HealthCheckHelper {
@@ -106,40 +109,37 @@ public final class HealthCheckHelper {
   /**
    * Verify Access.
    *
-   * @param version Kubernetes version
-   * @param operatorNamespace operator namespace
-   * @param namespace target namespace
-   * @return self subject rules review for the target namespace
+   * @param namespace domain namespace
+   * @return self subject rules review for the domain namespace
    */
-  public static V1SubjectRulesReviewStatus performSecurityChecks(
-      KubernetesVersion version, String operatorNamespace, String namespace) {
-    String ns = namespace != null ? namespace : operatorNamespace;
-
+  public static V1SubjectRulesReviewStatus getAccessAuthorizations(@Nonnull String namespace) {
     // Validate namespace
-    if (DEFAULT_NAMESPACE.equals(operatorNamespace)) {
+    if (DEFAULT_NAMESPACE.equals(getOperatorNamespace())) {
       LOGGER.fine(MessageKeys.NAMESPACE_IS_DEFAULT);
     }
 
     // Validate policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
-    LOGGER.fine(MessageKeys.VERIFY_ACCESS_START, ns);
+    LOGGER.fine(MessageKeys.VERIFY_ACCESS_START, namespace);
 
-    V1SelfSubjectRulesReview review = ap.review(ns);
+    V1SelfSubjectRulesReview review = ap.review(namespace);
     if (review != null) {
       V1SubjectRulesReviewStatus status = review.getStatus();
-      List<V1ResourceRule> rules = status.getResourceRules();
 
-      if (namespace != null) {
+      if (status != null) {
+        List<V1ResourceRule> rules = status.getResourceRules();
+
         for (Resource r : namespaceAccessChecks.keySet()) {
           for (Operation op : namespaceAccessChecks.get(r)) {
             check(rules, r, op, namespace);
           }
         }
-      }
-      if (!Main.isDedicated() && operatorNamespace.equals(ns)) {
-        for (Resource r : clusterAccessChecks.keySet()) {
-          for (Operation op : clusterAccessChecks.get(r)) {
-            check(rules, r, op, ns);
+
+        if (!Main.isDedicated() && getOperatorNamespace().equals(namespace)) {
+          for (Resource r : clusterAccessChecks.keySet()) {
+            for (Operation op : clusterAccessChecks.get(r)) {
+              check(rules, r, op, namespace);
+            }
           }
         }
       }

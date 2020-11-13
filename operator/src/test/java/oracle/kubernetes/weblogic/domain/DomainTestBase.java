@@ -22,6 +22,7 @@ import org.junit.Test;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.LATEST_IMAGE_SUFFIX;
@@ -398,6 +399,45 @@ public abstract class DomainTestBase {
 
     assertThat(domain.getMaxConcurrentStartup("cluster1"),
         equalTo(1));
+  }
+
+  @Test
+  public void afterMaxConcurrentShutdownSetForCluster_canReadIt() {
+    configureCluster("cluster1").withMaxConcurrentShutdown(3);
+
+    assertThat(domain.getMaxConcurrentShutdown("cluster1"), equalTo(3));
+  }
+
+  @Test
+  public void whenNotSpecified_maxConcurrentShutdownHasDefault() {
+    configureCluster("cluster1");
+    configureDomain(domain).withMaxConcurrentShutdown(null);
+
+    assertThat(domain.getMaxConcurrentShutdown("cluster1"),
+            equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN));
+  }
+
+  @Test
+  public void whenNotSpecified_maxConcurrentShutdownFromDomain() {
+    configureDomain(domain).withMaxConcurrentShutdown(2);
+
+    assertThat(domain.getMaxConcurrentShutdown("cluster1"),
+            equalTo(2));
+  }
+
+  @Test
+  public void whenNoClusterSpec_maxConcurrentShutdownHasDefault() {
+    assertThat(domain.getMaxConcurrentShutdown("cluster-with-no-spec"),
+            equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN));
+  }
+
+  @Test
+  public void whenBothClusterAndDomainSpecified_maxConcurrentShutdownFromCluster() {
+    configureCluster("cluster1").withMaxConcurrentShutdown(1);
+    configureDomain(domain).withMaxConcurrentShutdown(0);
+
+    assertThat(domain.getMaxConcurrentShutdown("cluster1"),
+            equalTo(1));
   }
 
   @Test

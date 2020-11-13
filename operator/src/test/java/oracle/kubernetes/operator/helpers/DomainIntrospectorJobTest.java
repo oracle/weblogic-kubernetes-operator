@@ -18,7 +18,8 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.kubernetes.operator.DomainProcessorTestSetup;
+import oracle.kubernetes.operator.JobAwaiterStepFactory;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -28,18 +29,23 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.Model;
+import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -56,6 +62,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -67,6 +74,7 @@ public class DomainIntrospectorJobTest {
   private static final String OVERRIDE_SECRET_2 = "override-secret-2";
   private static final String LOG_HOME = "/shared/logs/" + UID;
   private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
+  private static final String WDT_MODEL_HOME = "/u01/wdt/my-models";
   private static final String LATEST_IMAGE = "image:latest";
   private static final String ADMIN_NAME = "admin";
   private static final int MAX_SERVERS = 2;
@@ -79,11 +87,11 @@ public class DomainIntrospectorJobTest {
   private final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  protected List<Memento> mementos = new ArrayList<>();
-  protected List<LogRecord> logRecords = new ArrayList<>();
-  private RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
-  private String jobPodName = LegalNames.toJobIntrospectorName(UID);
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final List<LogRecord> logRecords = new ArrayList<>();
+  private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
+  private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
 
   public DomainIntrospectorJobTest() {
   }
@@ -109,6 +117,9 @@ public class DomainIntrospectorJobTest {
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
+    testSupport.addComponent(JOBWATCHER_COMPONENT_NAME,
+          JobAwaiterStepFactory.class,
+          createNiceStub(JobAwaiterStepFactory.class));
   }
 
   private String[] getMessageKeys() {
@@ -186,7 +197,7 @@ public class DomainIntrospectorJobTest {
 
   @Test
   public void whenNoJob_createIt() throws JsonProcessingException {
-    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig("cluster-1"));
+    IntrospectionTestUtils.defineResources(testSupport, createDomainConfig("cluster-1"));
     testSupport.defineResources(
         new V1ConfigMap()
             .metadata(
@@ -226,6 +237,30 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
+  public void whenJobCreated_jobNameContainsDefaultSuffix() {
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(getCreatedJobName(), stringContainsInOrder(UID,"-introspector"));
+  }
+
+  @SuppressWarnings("ConstantConditions")
+  @Nullable
+  private String getCreatedJobName() {
+    List<V1Job> jobs = testSupport.getResources(KubernetesTestSupport.JOB);
+    return jobs.get(0).getMetadata().getName();
+  }
+
+  @Test
+  public void whenJobCreatedWithCustomIntrospectorJobnameSuffix_jobNameContainsConfiguredSuffix() {
+    TuningParameters.getInstance().put(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "-introspector-job");
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(getCreatedJobName(), stringContainsInOrder(UID,"-introspector-job"));
+  }
+
+  @Test
   public void whenJobCreated_specHasOneContainer() {
     testSupport.runSteps(getStepFactory(), terminalStep);
     logRecords.clear();
@@ -234,6 +269,7 @@ public class DomainIntrospectorJobTest {
     assertThat(getPodTemplateContainers(jobs.get(0)), hasSize(1));
   }
 
+  @SuppressWarnings("ConstantConditions")
   private List<V1Container> getPodTemplateContainers(V1Job v1Job) {
     return v1Job.getSpec().getTemplate().getSpec().getContainers();
   }
@@ -259,6 +295,20 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
+  public void whenJobCreatedWithModelHomeDefined_hasModelHomeEnvVariable() {
+    getDomain().getSpec()
+        .setConfiguration(new Configuration().withModel(new Model().withModelHome(WDT_MODEL_HOME)));
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    List<V1Job> jobs = testSupport.getResources(KubernetesTestSupport.JOB);
+    List<V1Container> podTemplateContainers = getPodTemplateContainers(jobs.get(0));
+    assertThat(
+        podTemplateContainers.get(0).getEnv(),
+        hasEnvVar("WDT_MODEL_HOME", WDT_MODEL_HOME));
+  }
+
+  @Test
   public void whenPodCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
     testSupport.failOnResource(JOB, getJobName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
@@ -272,7 +322,7 @@ public class DomainIntrospectorJobTest {
   }
 
   Domain getDomain() {
-    return (Domain) testSupport.getResourceWithName(DOMAIN, UID);
+    return testSupport.getResourceWithName(DOMAIN, UID);
   }
 
   @Test
@@ -290,7 +340,7 @@ public class DomainIntrospectorJobTest {
   @Test
   public void whenIntrospectorJobIsRun_validatesDomainTopology() throws JsonProcessingException {
     // create WlsDomainConfig with "cluster-2" whereas domain spec contains cluster-1
-    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig("cluster-2"));
+    IntrospectionTestUtils.defineResources(testSupport, createDomainConfig("cluster-2"));
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -303,7 +353,7 @@ public class DomainIntrospectorJobTest {
   public void whenIntrospectorJobNotNeeded_validatesDomainTopology() throws JsonProcessingException {
     // create WlsDomainConfig with "cluster-2" whereas domain spec contains "cluster-1"
     WlsDomainConfig wlsDomainConfig = createDomainConfig("cluster-2");
-    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(wlsDomainConfig);
+    IntrospectionTestUtils.defineResources(testSupport, wlsDomainConfig);
 
     // make JobHelper.runIntrospector() return false
     getCluster("cluster-1").setServerStartPolicy(START_NEVER);
@@ -319,7 +369,7 @@ public class DomainIntrospectorJobTest {
   public void whenJobLogContainsSevereError_logJobInfosOnDelete() {
     testSupport.defineResources(
         new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)).status(new V1JobStatus()));
-    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(SEVERE_MESSAGE_1);
+    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
     testSupport.runSteps(JobHelper.deleteDomainIntrospectorJobStep(terminalStep));
@@ -333,7 +383,7 @@ public class DomainIntrospectorJobTest {
   public void whenJobLogContainsSevereError_logJobInfosOnReadPogLog() {
     testSupport.defineResources(
         new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)).status(new V1JobStatus()));
-    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(SEVERE_MESSAGE_1);
+    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
@@ -343,12 +393,9 @@ public class DomainIntrospectorJobTest {
   }
 
   private Cluster getCluster(String clusterName) {
-    for (Cluster cluster: domain.getSpec().getClusters()) {
-      if (clusterName.equals(cluster.getClusterName())) {
-        return cluster;
-      }
-    }
-    return null;
+    return domain.getSpec().getClusters().stream()
+          .filter(c -> clusterName.equals(c.getClusterName()))
+          .findFirst().orElse(new Cluster());
   }
 
   private String getDomainHome() {

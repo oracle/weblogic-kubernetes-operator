@@ -208,7 +208,7 @@ These instructions are for Oracle Linux 7u2+.  If you are using a different flav
 1. Set an environment variable with the Docker version you want to install:
 
     ```
-    docker_version="17.03.1.ce"
+    docker_version="18.09.1.ol"
     ```
 
 1. Install Docker, removing any previously installed version:
@@ -273,7 +273,7 @@ These instructions are for Oracle Linux 7u2+.  If you are using a different flav
 
     setenforce 0
     # install kube* packages
-    v=${1:-1.8.4-0}
+    v=${1:-1.17.0-0}
     old_ver=`echo $v | egrep "^1.7"`
     yum install -y kubelet-$v kubeadm-$v kubectl-$v kubernetes-cni
 

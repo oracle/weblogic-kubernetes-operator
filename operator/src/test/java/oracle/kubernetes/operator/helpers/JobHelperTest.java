@@ -27,6 +27,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -42,18 +43,23 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.meterware.simplestub.Stub.createNiceStub;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVarRegEx;
+import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAffinity;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createConfigMapKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createContainer;
@@ -75,10 +81,10 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class JobHelperTest {
-
+public class JobHelperTest extends DomainValidationBaseTest {
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
+
   /** 
    * OEVN is the name of an env var that contains a comma-separated list of oper supplied env var names.
    * It's used by the Model in Image introspector job to detect env var differences from the last
@@ -95,8 +101,8 @@ public class JobHelperTest {
   private final V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
   private final V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
   private final V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
-  private List<Memento> mementos = new ArrayList<>();
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
   /**
    * Setup test environment.
@@ -111,6 +117,9 @@ public class JobHelperTest {
     domain.getSpec().setNodeName(null);
     testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.addComponent(JOBWATCHER_COMPONENT_NAME,
+          JobAwaiterStepFactory.class,
+          createNiceStub(JobAwaiterStepFactory.class));
   }
 
   /**
@@ -439,6 +448,55 @@ public class JobHelperTest {
 
     assertThat(
         getConfiguredDomainSpec(domainConfigurator).getEnv(), hasEnvVar("item1", RAW_VALUE_1));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithReservedVariables_createIntrospectorPodWithSubstitutions() {
+    configureDomain()
+        .withAdditionalVolumeMount("volume2", "/source-$(DOMAIN_UID)");
+    runCreateJob();
+    assertThat(
+        job.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts(),
+        hasVolumeMount("volume2", "/source-" + UID));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithCustomVariables_createIntrospectorPodWithSubstitutions() {
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+
+    configureDomain()
+        .withEnvironmentVariable(ENV_NAME1, GOOD_MY_ENV_VALUE)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+
+    runCreateJob();
+
+    assertThat(job.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts(),
+            hasVolumeMount("volume1", END_VOLUME_MOUNT_PATH_1));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumesWithCustomVariablesInvalidValue_jobNotCreated() {
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+
+    V1EnvVar envVar = new V1EnvVar().name(ENV_NAME1).value(BAD_MY_ENV_VALUE);
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
+
+    configureDomain()
+        .withEnvironmentVariable(ENV_NAME1, BAD_MY_ENV_VALUE)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+
+    runCreateJob();
+
+    assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), org.hamcrest.Matchers.is(true));
+    assertThat(job, is(nullValue()));
   }
 
   @Test

@@ -10,7 +10,7 @@ description: "This document describes domain introspection in the Oracle WebLogi
 This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in Kubernetes environment.
 
 In order to manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic
-domain configuration using an "introspection" job. This Job will be named `DOMAIN_UID-introspect-domain-job`, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances. Because each of the
+domain configuration using an "introspection" job. This Job will be named `DOMAIN_UID-introspector`, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances. Because each of the
 [domain home source types]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) are different (for instance, Domain in PV uses a domain home on a PersistentVolume while Model in Image generates the domain home dynamically from a WDT model), the Pod created by this Job will be
 as similar as possible to the Pod that will later be generated for the Administration Server. This guarantees that the operator is
 analyzing the same WebLogic domain configuration that WebLogic Server instances will use.
@@ -44,15 +44,35 @@ Set `introspectVersion` to a new value.
 
 As with `restartVersion`, the `introspectVersion` field has no required format; however, we recommend using a value likely to be unique such as a continually increasing number or a timestamp.
 
+Beginning with operator 3.1.0, if a domain resource's `spec.introspectVersion` is set, each of the domain's WebLogic Server pods will have a label with the key `weblogic.introspectVersion` to indicate the `introspectVersion` at which the pod is running.
+
+```
+Name:           domain1-admin-server
+Namespace:      domain1-ns
+Labels:         weblogic.createdByOperator=true
+                weblogic.domainName=domain1
+                weblogic.domainRestartVersion=abcdef
+                weblogic.domainUID=domain1
+                weblogic.introspectVersion=12345
+                weblogic.serverName=admin-server
+```
+
+When a domain's `spec.introspectVersion` is changed, the `weblogic.introspectVersion` label of each WebLogic Server pod is updated to the new `introspectVersion` value, either when the operator restarts the pod or when the operator determines that the pod does not need to be restarted.
+
 #### Failed introspection
 
-Sometimes the Kubernetes Job, named `DOMAIN_UID-introspect-domain-job`, created for the introspection will fail.
+Sometimes the Kubernetes Job, named `DOMAIN_UID-introspector`, created for the introspection will fail.
 
 When introspection fails, the operator will not start any WebLogic Server instances. If this is not the initial introspection and there are already WebLogic Server instances running, then a failed introspection will leave the existing WebLogic Server instances running without making any changes to the operational state of the domain.
 
 The introspection will be periodically retried and then will eventually timeout with the Domain `status` indicating the processing failed. To recover from a failed state, correct the underlying problem and update the `introspectVersion`.
 
 Please review the details for diagnosing introspection failures related to [configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md#debugging">}}) or [Model in Image domain home generation]({{<relref "/userguide/managing-domains/model-in-image/debugging.md">}}).
+
+{{% notice tip %}}
+The introspector log is mirrored to the Domain resource `spec.logHome` directory
+when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
+{{% /notice %}}
 
 ### Introspection use cases
 

@@ -40,6 +40,7 @@ import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
@@ -321,6 +322,10 @@ public class JobHelper {
         addEnvVar(vars, "AS_SERVICE_NAME", getAsServiceName());
       }
 
+      String modelHome = getModelHome();
+      if (modelHome != null && !modelHome.isEmpty()) {
+        addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, modelHome);
+      }
       return vars;
     }
   }
@@ -341,6 +346,8 @@ public class JobHelper {
 
         return doNext(
             Step.chain(
+                DomainValidationSteps.createAdditionalDomainValidationSteps(
+                    context.getJobModel().getSpec().getTemplate().getSpec()),
                 createProgressingStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
                 context.createNewJob(null),
                 readDomainIntrospectorPodLogStep(null),
@@ -354,6 +361,8 @@ public class JobHelper {
   }
 
   private static class DeleteIntrospectorJobStep extends Step {
+
+    public static final int JOB_DELETE_TIMEOUT_SECONDS = 1;
 
     DeleteIntrospectorJobStep(Step next) {
       super(next);
@@ -388,10 +397,11 @@ public class JobHelper {
       java.lang.String namespace = info.getNamespace();
       String jobName = JobHelper.createJobName(domainUid);
       logJobDeleted(domainUid, namespace, jobName, packet);
-      return new CallBuilder()
+      return new CallBuilder().withTimeoutSeconds(JOB_DELETE_TIMEOUT_SECONDS)
             .deleteJobAsync(
                   jobName,
                   namespace,
+                  domainUid,
                   new V1DeleteOptions().propagationPolicy("Foreground"),
                   new DefaultResponseStep<>(next));
     }
@@ -414,13 +424,13 @@ public class JobHelper {
 
       String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
 
-      return doNext(readDomainIntrospectorPodLog(jobPodName, namespace, getNext()), packet);
+      return doNext(readDomainIntrospectorPodLog(jobPodName, namespace, info.getDomainUid(), getNext()), packet);
     }
 
-    private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, Step next) {
+    private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, String domainUid, Step next) {
       return new CallBuilder()
             .readPodLogAsync(
-                  jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep(next));
+                  jobPodName, namespace, domainUid, new ReadDomainIntrospectorPodLogResponseStep(next));
     }
   }
 
@@ -579,6 +589,17 @@ public class JobHelper {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String domainUid = info.getDomain().getDomainUid();
       String namespace = info.getNamespace();
+      Integer currentIntrospectFailureRetryCount = Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getIntrospectJobFailureCount)
+          .orElse(0);
+
+      if (currentIntrospectFailureRetryCount > 0) {
+        LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED, info.getDomain().getDomainUid(),
+            TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds,
+            currentIntrospectFailureRetryCount);
+      }
 
       return doNext(readDomainIntrospectorPod(domainUid, namespace, getNext()), packet);
     }
@@ -614,7 +635,7 @@ public class JobHelper {
             .findFirst()
             .ifPresent(name -> recordJobPodName(packet, name));
 
-      return doNext(packet);
+      return doContinueListOrNext(callResponse, packet);
     }
 
     private String getName(V1Pod pod) {

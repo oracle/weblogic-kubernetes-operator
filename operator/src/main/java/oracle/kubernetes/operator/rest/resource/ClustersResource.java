@@ -63,14 +63,12 @@ public class ClustersResource extends BaseResource {
    */
   @Path("{clusters}")
   public ClusterResource getClusterResource(@PathParam("clusters") String cluster) {
-    LOGGER.entering(href(), cluster);
     if (!getBackend().isCluster(getDomainUid(), cluster)) {
       WebApplicationException e = notFound(cluster);
       LOGGER.throwing(e);
       throw e;
     }
     ClusterResource result = new ClusterResource(this, cluster);
-    LOGGER.exiting(result);
     return result;
   }
 

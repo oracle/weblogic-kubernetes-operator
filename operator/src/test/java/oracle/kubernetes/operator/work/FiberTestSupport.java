@@ -5,16 +5,13 @@ package oracle.kubernetes.operator.work;
 
 import java.util.ArrayDeque;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -43,7 +40,7 @@ public class FiberTestSupport {
   private final CompletionCallbackStub completionCallback = new CompletionCallbackStub();
   private final ScheduledExecutorStub schedule = ScheduledExecutorStub.create();
   private final Engine engine = new Engine(schedule);
-  private final Packet packet = new Packet();
+  private Packet packet = new Packet();
 
   private Fiber fiber = engine.createFiber();
 
@@ -126,6 +123,11 @@ public class FiberTestSupport {
     return packet;
   }
 
+  public FiberTestSupport withClearPacket() {
+    packet.clear();
+    return this;
+  }
+
   public FiberTestSupport addToPacket(String key, Object value) {
     packet.put(key, value);
     return this;
@@ -151,11 +153,6 @@ public class FiberTestSupport {
     return this;
   }
 
-  public <T> FiberTestSupport addContainerComponent(String key, Class<T> aaClass, T component) {
-    container.getComponents().put(key, Component.createFor(aaClass, component));
-    return this;
-  }
-
   /**
    * Returns true if the specified action indicates that the fiber should be suspended.
    * @param nextAction the action to check
@@ -170,6 +167,20 @@ public class FiberTestSupport {
    */
   public static void doOnExit(NextAction nextAction, AsyncFiber fiber) {
     Optional.ofNullable(nextAction.onExit).orElse(f -> {}).accept(fiber);
+  }
+
+  /**
+   * Specifies a predefined packet to use for the next run.
+   * @param packet the new packet
+   */
+  public FiberTestSupport withPacket(@Nonnull Packet packet) {
+    this.packet = packet;
+    return this;
+  }
+
+  public FiberTestSupport withCompletionAction(Runnable completionAction) {
+    completionCallback.setCompletionAction(completionAction);
+    return this;
   }
 
   /**
@@ -192,24 +203,6 @@ public class FiberTestSupport {
   public Packet runSteps(StepFactory factory, Step nextStep) {
     fiber = engine.createFiber();
     fiber.start(factory.createStepList(nextStep), packet, completionCallback);
-    return packet;
-  }
-
-  /**
-   * Starts a unit-test fiber with the specified step and runs until the fiber is done.
-   *
-   * @param step the first step to run
-   */
-  public Packet runStepsToCompletion(Step step) {
-    fiber = engine.createFiber();
-    fiber.start(step, packet, completionCallback);
-
-    // Wait for fiber to finish
-    try {
-      fiber.get();
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
     return packet;
   }
 
@@ -244,7 +237,7 @@ public class FiberTestSupport {
     /* current time in milliseconds. */
     private long currentTime = 0;
 
-    private final SortedSet<ScheduledItem> scheduledItems = new TreeSet<>();
+    private final PriorityQueue<ScheduledItem> scheduledItems = new PriorityQueue<>();
     private final Queue<Runnable> queue = new ArrayDeque<>();
     private Runnable current;
 
@@ -256,7 +249,7 @@ public class FiberTestSupport {
     @Nonnull
     public ScheduledFuture<?> schedule(
         @Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
-      scheduledItems.add(new ScheduledItem(unit.toMillis(delay), command));
+      scheduledItems.add(new ScheduledItem(currentTime + unit.toMillis(delay), command));
       runNextRunnable();
       return createStub(ScheduledFuture.class);
     }
@@ -307,17 +300,19 @@ public class FiberTestSupport {
             "Attempt to move clock backwards from " + currentTime + " to " + newTime);
       }
 
-      List<ScheduledItem> itemsToRun = getItemsToRunByMsec(newTime);
-      scheduledItems.removeAll(itemsToRun);
-      itemsToRun.forEach(item -> execute(item.runnable));
-      itemsToRun.stream().filter(ScheduledItem::isReschedulable).forEach(scheduledItems::add);
+      while (!scheduledItems.isEmpty() && scheduledItems.peek().atTime <= newTime) {
+        executeAsScheduled(scheduledItems.poll());
+      }
 
       currentTime = newTime;
     }
 
-    @Nonnull
-    private List<ScheduledItem> getItemsToRunByMsec(long newTime) {
-      return scheduledItems.stream().filter(item -> item.shouldRunBy(newTime)).collect(Collectors.toList());
+    private void executeAsScheduled(ScheduledItem item) {
+      currentTime = item.atTime;
+      execute(item.runnable);
+      if (item.isReschedulable()) {
+        scheduledItems.add(item.rescheduled());
+      }
     }
 
     /**
@@ -350,11 +345,6 @@ public class FiberTestSupport {
         return rescheduled() != null;
       }
 
-      // Return true if the item is intended to run at or before the specified time in msec.
-      private boolean shouldRunBy(long newTime) {
-        return atTime <= newTime;
-      }
-
       @Override
       public int compareTo(@Nonnull ScheduledItem o) {
         return Long.compare(atTime, o.atTime);
@@ -382,9 +372,15 @@ public class FiberTestSupport {
 
   static class CompletionCallbackStub implements Fiber.CompletionCallback {
     private Throwable throwable;
+    private Runnable completionAction;
+
+    void setCompletionAction(Runnable completionAction) {
+      this.completionAction = completionAction;
+    }
 
     @Override
     public void onCompletion(Packet packet) {
+      Optional.ofNullable(completionAction).ifPresent(Runnable::run);
     }
 
     @Override

@@ -34,7 +34,7 @@ public interface TuningParameters extends Map<String, String> {
     public final int domainPresenceFailureRetrySeconds;
     public final int domainPresenceFailureRetryMaxCount;
     public final int domainPresenceRecheckIntervalSeconds;
-    public final int targetNamespaceRecheckIntervalSeconds;
+    public final int domainNamespaceRecheckIntervalSeconds;
     public final int statusUpdateTimeoutSeconds;
     public final int unchangedCountToDelayStatusRecheck;
     public final int stuckPodRecheckSeconds;
@@ -46,7 +46,7 @@ public interface TuningParameters extends Map<String, String> {
      * @param domainPresenceFailureRetrySeconds domain presence failure retry
      * @param domainPresenceFailureRetryMaxCount domain presence failure retry max count
      * @param domainPresenceRecheckIntervalSeconds domain presence recheck interval
-     * @param targetNamespaceRecheckIntervalSeconds target namespace recheck interval
+     * @param domainNamespaceRecheckIntervalSeconds domain namespace recheck interval
      * @param statusUpdateTimeoutSeconds status update timeout
      * @param unchangedCountToDelayStatusRecheck unchanged count to delay status recheck
      * @param stuckPodRecheckSeconds time between checks for stuck pods
@@ -54,19 +54,19 @@ public interface TuningParameters extends Map<String, String> {
      * @param eventualLongDelay eventual long delay
      */
     public MainTuning(
-        int domainPresenceFailureRetrySeconds,
-        int domainPresenceFailureRetryMaxCount,
-        int domainPresenceRecheckIntervalSeconds,
-        int targetNamespaceRecheckIntervalSeconds,
-        int statusUpdateTimeoutSeconds,
-        int unchangedCountToDelayStatusRecheck,
-        int stuckPodRecheckSeconds,
-        long initialShortDelay,
-        long eventualLongDelay) {
+          int domainPresenceFailureRetrySeconds,
+          int domainPresenceFailureRetryMaxCount,
+          int domainPresenceRecheckIntervalSeconds,
+          int domainNamespaceRecheckIntervalSeconds,
+          int statusUpdateTimeoutSeconds,
+          int unchangedCountToDelayStatusRecheck,
+          int stuckPodRecheckSeconds,
+          long initialShortDelay,
+          long eventualLongDelay) {
       this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
       this.domainPresenceFailureRetryMaxCount = domainPresenceFailureRetryMaxCount;
       this.domainPresenceRecheckIntervalSeconds = domainPresenceRecheckIntervalSeconds;
-      this.targetNamespaceRecheckIntervalSeconds = targetNamespaceRecheckIntervalSeconds;
+      this.domainNamespaceRecheckIntervalSeconds = domainNamespaceRecheckIntervalSeconds;
       this.statusUpdateTimeoutSeconds = statusUpdateTimeoutSeconds;
       this.unchangedCountToDelayStatusRecheck = unchangedCountToDelayStatusRecheck;
       this.stuckPodRecheckSeconds = stuckPodRecheckSeconds;
@@ -80,7 +80,7 @@ public interface TuningParameters extends Map<String, String> {
           .append("domainPresenceFailureRetrySeconds", domainPresenceFailureRetrySeconds)
           .append("domainPresenceFailureRetryMaxCount", domainPresenceFailureRetryMaxCount)
           .append("domainPresenceRecheckIntervalSeconds", domainPresenceRecheckIntervalSeconds)
-          .append("targetNamespaceRecheckIntervalSeconds", targetNamespaceRecheckIntervalSeconds)
+          .append("domainNamespaceRecheckIntervalSeconds", domainNamespaceRecheckIntervalSeconds)
           .append("statusUpdateTimeoutSeconds", statusUpdateTimeoutSeconds)
           .append("unchangedCountToDelayStatusRecheck", unchangedCountToDelayStatusRecheck)
           .append("initialShortDelay", initialShortDelay)
@@ -94,7 +94,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(domainPresenceFailureRetrySeconds)
           .append(domainPresenceFailureRetryMaxCount)
           .append(domainPresenceRecheckIntervalSeconds)
-          .append(targetNamespaceRecheckIntervalSeconds)
+          .append(domainNamespaceRecheckIntervalSeconds)
           .append(statusUpdateTimeoutSeconds)
           .append(unchangedCountToDelayStatusRecheck)
           .append(initialShortDelay)
@@ -115,7 +115,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(domainPresenceFailureRetrySeconds, mt.domainPresenceFailureRetrySeconds)
           .append(domainPresenceFailureRetryMaxCount, mt.domainPresenceFailureRetryMaxCount)
           .append(domainPresenceRecheckIntervalSeconds, mt.domainPresenceRecheckIntervalSeconds)
-          .append(targetNamespaceRecheckIntervalSeconds, mt.targetNamespaceRecheckIntervalSeconds)
+          .append(domainNamespaceRecheckIntervalSeconds, mt.domainNamespaceRecheckIntervalSeconds)
           .append(statusUpdateTimeoutSeconds, mt.statusUpdateTimeoutSeconds)
           .append(unchangedCountToDelayStatusRecheck, mt.unchangedCountToDelayStatusRecheck)
           .append(initialShortDelay, mt.initialShortDelay)

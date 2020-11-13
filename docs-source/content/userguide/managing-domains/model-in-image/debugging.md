@@ -36,27 +36,27 @@ For example, assuming your domain UID is `sample-domain1` and your domain namesp
   $ kubectl -n sample-domain1-ns get pods -l weblogic.domainUID=sample-domain1
   NAME                                         READY   STATUS    RESTARTS   AGE
   sample-domain1-admin-server                  1/1     Running   0          19h
-  sample-domain1-introspect-domain-job-v2l7k   0/1     Error     0          75m
+  sample-domain1-introspector-v2l7k            0/1     Error     0          75m
   sample-domain1-managed-server1               1/1     Running   0          19h
   sample-domain1-managed-server2               1/1     Running   0          19h
 
   $ # let's look at the job's describe
-  $ kubectl -n sample-domain1-ns describe job/sample-domain1-introspect-domain-job
+  $ kubectl -n sample-domain1-ns describe job/sample-domain1-introspector
 
   ...
 
   $ # now let's look at the job's pod describe, in particular look at its 'events'
-  $ kubectl -n sample-domain1-ns describe pod/sample-domain1-introspect-domain-job-v2l7k
+  $ kubectl -n sample-domain1-ns describe pod/sample-domain1-introspector-v2l7k
 
   ...
 
   $ # finally let's look at job's pod's log
-  $ kubectl -n sample-domain1-ns logs job/sample-domain1-introspect-domain-job
+  $ kubectl -n sample-domain1-ns logs job/sample-domain1-introspector
 
   ...
 
   $ # alternative log command (will have same output as previous)
-  # kubectl -n sample-domain1-ns logs pod/sample-domain1-introspect-domain-job-v2l7k
+  # kubectl -n sample-domain1-ns logs pod/sample-domain1-introspector-v2l7k
   ```
 
   A common reason for the introspector job to fail is because of an error in a model file. Here's some sample log output from an introspector job that shows such a failure:
@@ -67,6 +67,11 @@ For example, assuming your domain UID is `sample-domain1` and your domain namesp
   SEVERE Messages:
         1. WLSDPLY-05007: Model file /u01/wdt/models/model1.yaml,/weblogic-operator/wdt-config-map/..2020_03_19_15_43_05.993607882/datasource.yaml contains an unrecognized section: TYPOresources. The recognized sections are domainInfo, topology, resources, appDeployments, kubernetes
   ```
+
+{{% notice tip %}}
+The introspector log is mirrored to the Domain resource `spec.logHome` directory
+when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
+{{% /notice %}}
 
 {{% notice tip %}}
 If a model file error references a model file in your `spec.configuration.model.configMap`, then you can correct the error by redeploying the ConfigMap with a corrected model file and then initiating a domain restart or roll. Similarly, if a model file error references a model file in your model image, then you can correct the error by deploying a corrected image, modifying your Domain YAML file to reference the new image, and then initiating a domain restart or roll.

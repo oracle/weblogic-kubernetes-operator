@@ -177,6 +177,11 @@ public abstract class DomainConfigurator {
     return this;
   }
 
+  public DomainConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown) {
+    getDomainSpec().setMaxClusterConcurrentShutdown(maxConcurrentShutdown);
+    return this;
+  }
+
   /**
    * Sets the WebLogic configuration overrides configmap name for the domain.
    *

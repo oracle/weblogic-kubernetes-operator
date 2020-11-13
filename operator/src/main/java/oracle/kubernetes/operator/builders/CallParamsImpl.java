@@ -4,8 +4,8 @@
 package oracle.kubernetes.operator.builders;
 
 /** An object which encapsulates common parameters for Kubernetes API calls. */
-class CallParamsImpl implements CallParams {
-  private static final int DEFAULT_LIMIT = 500;
+public class CallParamsImpl implements CallParams {
+  private static final int DEFAULT_LIMIT = 50;
   private static final int DEFAULT_TIMEOUT = 30;
 
   private Integer limit = CallParamsImpl.DEFAULT_LIMIT;
@@ -20,7 +20,7 @@ class CallParamsImpl implements CallParams {
     return limit;
   }
 
-  void setLimit(Integer limit) {
+  public void setLimit(Integer limit) {
     this.limit = limit;
   }
 
@@ -29,7 +29,7 @@ class CallParamsImpl implements CallParams {
     return timeoutSeconds;
   }
 
-  void setTimeoutSeconds(Integer timeoutSeconds) {
+  public void setTimeoutSeconds(Integer timeoutSeconds) {
     this.timeoutSeconds = timeoutSeconds;
   }
 

@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.rest;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -12,13 +13,20 @@ import javax.ws.rs.WebApplicationException;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.auth.ApiKeyAuth;
+import io.kubernetes.client.openapi.auth.Authentication;
+import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.V1UserInfo;
+import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.rest.RestBackendImpl.TopologyRetriever;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.DomainAction;
@@ -46,25 +54,34 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNull;
 
 @SuppressWarnings("SameParameterValue")
 public class RestBackendImplTest {
 
   private static final int REPLICA_LIMIT = 4;
   private static final String NS = "namespace1";
-  private static final String NAME1 = "domain";
-  private static final String NAME2 = "domain2";
+  private static final String DOMAIN1 = "domain";
+  private static final String DOMAIN2 = "domain2";
+  private static final String DOMAIN3 = "domain3";
+  private static final String DOMAIN4 = "domain4";
   public static final String INITIAL_VERSION = "1";
-  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(NAME1);
+  private final WlsDomainConfigSupport domain1ConfigSupport = new WlsDomainConfigSupport(DOMAIN1);
 
   private final List<Memento> mementos = new ArrayList<>();
   private RestBackend restBackend;
-  private final Domain domain = createDomain(NS, NAME1);
-  private final Domain domain2 = createDomain(NS, NAME2);
+  private final V1Namespace namespace = createNamespace(NS);
+  private final Domain domain1 = createDomain(NS, DOMAIN1);
+  private final Domain domain2 = createDomain(NS, DOMAIN2);
+  private final Collection<String> namespaces = new ArrayList<>(Collections.singletonList(NS));
   private Domain updatedDomain;
-  private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
+  private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain1);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private WlsDomainConfig config;
+
+  private static V1Namespace createNamespace(String name) {
+    return new V1Namespace().metadata(new V1ObjectMeta().name(name));
+  }
 
   private static Domain createDomain(String namespace, String name) {
     return new Domain()
@@ -79,18 +96,24 @@ public class RestBackendImplTest {
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
+    mementos.add(TuningParametersStub.install());
     mementos.add(
         StaticStubSupport.install(RestBackendImpl.class, "INSTANCE", new TopologyRetrieverStub()));
 
-    testSupport.defineResources(domain, domain2);
+    testSupport.defineResources(namespace, domain1, domain2);
     testSupport.doOnCreate(TOKEN_REVIEW, r -> authenticate((V1TokenReview) r));
     testSupport.doOnCreate(SUBJECT_ACCESS_REVIEW, s -> allow((V1SubjectAccessReview) s));
     testSupport.doOnUpdate(DOMAIN, d -> updatedDomain = (Domain) d);
-    configSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
-    restBackend = new RestBackendImpl("", "", Collections.singletonList(NS));
+    domain1ConfigSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
+    restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
 
     setupScanCache();
+  }
+
+  Collection<String> getDomainNamespaces() {
+    return namespaces;
   }
 
   private void authenticate(V1TokenReview tokenReview) {
@@ -110,14 +133,24 @@ public class RestBackendImplTest {
 
   @Test
   public void retrieveRegisteredDomainIds() {
-    assertThat(restBackend.getDomainUids(), containsInAnyOrder(NAME1, NAME2));
+    createNamespaceWithDomains("ns2", DOMAIN3, DOMAIN4);
+    namespaces.add("ns2");
+    
+    assertThat(restBackend.getDomainUids(), containsInAnyOrder(DOMAIN1, DOMAIN2, DOMAIN3, DOMAIN4));
+  }
+
+  private void createNamespaceWithDomains(String ns, String... domainNames) {
+    testSupport.defineResources(createNamespace(ns));
+    for (String domainName : domainNames) {
+      testSupport.defineResources(createDomain(ns, domainName));
+    }
   }
 
   // functionality needed for Domain resource
 
   @Test
   public void validateKnownUid() {
-    assertThat(restBackend.isDomainUid(NAME2), is(true));
+    assertThat(restBackend.isDomainUid(DOMAIN2), is(true));
   }
 
   @Test
@@ -132,12 +165,12 @@ public class RestBackendImplTest {
 
   @Test(expected = WebApplicationException.class)
   public void whenUnknownDomainUpdateCommand_throwException() {
-    restBackend.performDomainAction(NAME1, new DomainAction(null));
+    restBackend.performDomainAction(DOMAIN1, new DomainAction(null));
   }
 
   @Test
   public void whenIntrospectionRequestedWhileNoIntrospectVersionDefined_setIntrospectVersion() {
-    restBackend.performDomainAction(NAME1, createIntrospectRequest());
+    restBackend.performDomainAction(DOMAIN1, createIntrospectRequest());
 
     assertThat(getUpdatedIntrospectVersion(), equalTo(INITIAL_VERSION));
   }
@@ -160,14 +193,14 @@ public class RestBackendImplTest {
   }
 
   private boolean isDomain1Meta(V1ObjectMeta meta) {
-    return meta != null && NS.equals(meta.getNamespace()) && NAME1.equals(meta.getName());
+    return meta != null && NS.equals(meta.getNamespace()) && DOMAIN1.equals(meta.getName());
   }
 
   @Test
   public void whenIntrospectionRequestedWhileIntrospectVersionNonNumeric_setNumericVersion() {
     configurator.withIntrospectVersion("zork");
 
-    restBackend.performDomainAction(NAME1, createIntrospectRequest());
+    restBackend.performDomainAction(DOMAIN1, createIntrospectRequest());
 
     assertThat(getUpdatedIntrospectVersion(), equalTo(INITIAL_VERSION));
   }
@@ -176,14 +209,14 @@ public class RestBackendImplTest {
   public void whenIntrospectionRequestedWhileIntrospectVersionDefined_incrementIntrospectVersion() {
     configurator.withIntrospectVersion("17");
 
-    restBackend.performDomainAction(NAME1, createIntrospectRequest());
+    restBackend.performDomainAction(DOMAIN1, createIntrospectRequest());
 
     assertThat(getUpdatedIntrospectVersion(), equalTo("18"));
   }
 
   @Test
   public void whenClusterRestartRequestedWhileNoRestartVersionDefined_setRestartVersion() {
-    restBackend.performDomainAction(NAME1, createDomainRestartRequest());
+    restBackend.performDomainAction(DOMAIN1, createDomainRestartRequest());
 
     assertThat(getUpdatedRestartVersion(), equalTo(INITIAL_VERSION));
   }
@@ -200,7 +233,7 @@ public class RestBackendImplTest {
   public void whenRestartRequestedWhileRestartVersionDefined_incrementIntrospectVersion() {
     configurator.withRestartVersion("23");
 
-    restBackend.performDomainAction(NAME1, createDomainRestartRequest());
+    restBackend.performDomainAction(DOMAIN1, createDomainRestartRequest());
 
     assertThat(getUpdatedRestartVersion(), equalTo("24"));
   }
@@ -209,36 +242,36 @@ public class RestBackendImplTest {
 
   @Test
   public void retrieveDefinedClusters() {
-    configSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
-    configSupport.addWlsCluster("cluster2", "ms4", "ms5", "ms6");
+    domain1ConfigSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
+    domain1ConfigSupport.addWlsCluster("cluster2", "ms4", "ms5", "ms6");
     setupScanCache();
 
-    assertThat(restBackend.getClusters(NAME1), containsInAnyOrder("cluster1", "cluster2"));
+    assertThat(restBackend.getClusters(DOMAIN1), containsInAnyOrder("cluster1", "cluster2"));
   }
 
   // functionality needed for cluster resource
 
   @Test
   public void acceptDefinedClusterName() {
-    configSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
-    configSupport.addWlsCluster("cluster2", "ms4", "ms5", "ms6");
+    domain1ConfigSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
+    domain1ConfigSupport.addWlsCluster("cluster2", "ms4", "ms5", "ms6");
     setupScanCache();
 
-    assertThat(restBackend.isCluster(NAME1, "cluster1"), is(true));
+    assertThat(restBackend.isCluster(DOMAIN1, "cluster1"), is(true));
   }
 
   @Test
   public void rejectUndefinedClusterName() {
-    configSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
-    configSupport.addWlsCluster("cluster2", "ms4", "ms5", "ms6");
+    domain1ConfigSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
+    domain1ConfigSupport.addWlsCluster("cluster2", "ms4", "ms5", "ms6");
     setupScanCache();
 
-    assertThat(restBackend.isCluster(NAME1, "cluster3"), is(false));
+    assertThat(restBackend.isCluster(DOMAIN1, "cluster3"), is(false));
   }
 
   @Test
   public void whenDomainRestartRequestedWhileNoRestartVersionDefined_setRestartVersion() {
-    restBackend.performDomainAction(NAME1, createDomainRestartRequest());
+    restBackend.performDomainAction(DOMAIN1, createDomainRestartRequest());
 
     assertThat(getUpdatedRestartVersion(), equalTo(INITIAL_VERSION));
   }
@@ -247,14 +280,14 @@ public class RestBackendImplTest {
 
   @Test(expected = WebApplicationException.class)
   public void whenNegativeScaleSpecified_throwException() {
-    restBackend.scaleCluster(NAME1, "cluster1", -1);
+    restBackend.scaleCluster(DOMAIN1, "cluster1", -1);
   }
 
   @Test
   public void whenPerClusterReplicaSettingMatchesScaleRequest_doNothing() {
     configureCluster("cluster1").withReplicas(5);
 
-    restBackend.scaleCluster(NAME1, "cluster1", 5);
+    restBackend.scaleCluster(DOMAIN1, "cluster1", 5);
 
     assertThat(getUpdatedDomain(), nullValue());
   }
@@ -271,7 +304,7 @@ public class RestBackendImplTest {
   public void whenPerClusterReplicaSetting_scaleClusterUpdatesSetting() {
     configureCluster("cluster1").withReplicas(1);
 
-    restBackend.scaleCluster(NAME1, "cluster1", 5);
+    restBackend.scaleCluster(DOMAIN1, "cluster1", 5);
 
     assertThat(getUpdatedDomain().getReplicaCount("cluster1"), equalTo(5));
   }
@@ -279,7 +312,7 @@ public class RestBackendImplTest {
   @Test
   @Ignore
   public void whenNoPerClusterReplicaSetting_scaleClusterCreatesOne() {
-    restBackend.scaleCluster(NAME1, "cluster1", 5);
+    restBackend.scaleCluster(DOMAIN1, "cluster1", 5);
 
     assertThat(getUpdatedDomain().getReplicaCount("cluster1"), equalTo(5));
   }
@@ -288,25 +321,25 @@ public class RestBackendImplTest {
   public void whenNoPerClusterReplicaSettingAndDefaultMatchesRequest_doNothing() {
     configureDomain().withDefaultReplicaCount(REPLICA_LIMIT);
 
-    restBackend.scaleCluster(NAME1, "cluster1", REPLICA_LIMIT);
+    restBackend.scaleCluster(DOMAIN1, "cluster1", REPLICA_LIMIT);
 
     assertThat(getUpdatedDomain(), nullValue());
   }
 
   @Test(expected = WebApplicationException.class)
   public void whenReplaceDomainReturnsError_scaleClusterThrowsException() {
-    testSupport.failOnResource(DOMAIN, NAME2, NS, HTTP_CONFLICT);
+    testSupport.failOnResource(DOMAIN, DOMAIN2, NS, HTTP_CONFLICT);
 
     DomainConfiguratorFactory.forDomain(domain2).configureCluster("cluster1").withReplicas(2);
 
-    restBackend.scaleCluster(NAME2, "cluster1", 3);
+    restBackend.scaleCluster(DOMAIN2, "cluster1", 3);
   }
 
   @Test
   public void verify_getWlsDomainConfig_returnsWlsDomainConfig() {
-    WlsDomainConfig wlsDomainConfig = ((RestBackendImpl) restBackend).getWlsDomainConfig(NAME1);
+    WlsDomainConfig wlsDomainConfig = ((RestBackendImpl) restBackend).getWlsDomainConfig(DOMAIN1);
 
-    assertThat(wlsDomainConfig.getName(), equalTo(NAME1));
+    assertThat(wlsDomainConfig.getName(), equalTo(DOMAIN1));
   }
 
   @Test
@@ -321,23 +354,107 @@ public class RestBackendImplTest {
   public void verify_getWlsDomainConfig_doesNotReturnNull_whenScanIsNull() {
     config = null;
 
-    WlsDomainConfig wlsDomainConfig = ((RestBackendImpl) restBackend).getWlsDomainConfig(NAME1);
+    WlsDomainConfig wlsDomainConfig = ((RestBackendImpl) restBackend).getWlsDomainConfig(DOMAIN1);
 
     assertThat(wlsDomainConfig, notNullValue());
   }
+
+  @Test
+  public void whenUsingAccessToken_userInfoIsNull() {
+    RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
+    assertThat(restBackend.getUserInfo(), nullValue());
+  }
+
+  @Test
+  public void whenUsingTokenReview_userInfoNotNull() {
+    TuningParameters.getInstance().put("tokenReviewAuthentication", "true");
+    RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
+    assertThat(restBackend.getUserInfo(), notNullValue());
+  }
+
+  @Test
+  public void whenUsingAccessToken_authorizationCheckNotCalled() {
+    AuthorizationProxyStub authorizationProxyStub = new AuthorizationProxyStub();
+    RestBackendImpl restBackendImpl = new RestBackendImpl("", "", this::getDomainNamespaces)
+        .withAuthorizationProxy(authorizationProxyStub);
+    restBackendImpl.getClusters(DOMAIN1);
+    assertThat(authorizationProxyStub.atzCheck, is(false));
+  }
+
+  @Test
+  public void whenUsingTokenReview_authorizationCheckCalled() {
+    TuningParameters.getInstance().put("tokenReviewAuthentication", "true");
+    AuthorizationProxyStub authorizationProxyStub = new AuthorizationProxyStub();
+    RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces)
+        .withAuthorizationProxy(authorizationProxyStub);
+    restBackend.getClusters(DOMAIN1);
+    assertThat(authorizationProxyStub.atzCheck, is(true));
+  }
+
+  @Test
+  public void whenUsingAccessToken_configureApiClient() {
+    RestBackendImpl restBackend = new RestBackendImpl("", "1234", this::getDomainNamespaces);
+    ApiClient apiClient = restBackend.getCallBuilder().getClientPool().take();
+    Authentication authentication = apiClient.getAuthentication("BearerToken");
+    assertThat(authentication instanceof ApiKeyAuth, is(true));
+    String apiKey = ((ApiKeyAuth) authentication).getApiKey();
+    assertThat(apiKey, is("1234"));
+  }
+
+  @Test
+  public void whenUsingTokenReview_configureApiClient() {
+    TuningParameters.getInstance().put("tokenReviewAuthentication", "true");
+    RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
+    ApiClient apiClient = restBackend.getCallBuilder().getClientPool().take();
+    Authentication authentication = apiClient.getAuthentication("BearerToken");
+    assertThat(authentication instanceof ApiKeyAuth, is(true));
+    String apiKey = ((ApiKeyAuth) authentication).getApiKey();
+    assertNull(apiKey);
+  }
+
 
   private DomainConfigurator configureDomain() {
     return configurator;
   }
 
   private void setupScanCache() {
-    config = configSupport.createDomainConfig();
+    config = domain1ConfigSupport.createDomainConfig();
   }
 
   private class TopologyRetrieverStub implements TopologyRetriever {
     @Override
     public WlsDomainConfig getWlsDomainConfig(String ns, String domainUid) {
       return config;
+    }
+  }
+
+  private class AuthorizationProxyStub extends AuthorizationProxy {
+    boolean atzCheck = false;
+
+    /**
+     * Check if the specified principal is allowed to perform the specified operation on the specified
+     * resource in the specified scope.
+     *
+     * @param principal The user, group or service account.
+     * @param groups The groups that principal is a member of.
+     * @param operation The operation to be authorized.
+     * @param resource The kind of resource on which the operation is to be authorized.
+     * @param resourceName The name of the resource instance on which the operation is to be
+     *     authorized.
+     * @param scope The scope of the operation (cluster or namespace).
+     * @param namespaceName name of the namespace if scope is namespace else null.
+     * @return true if the operation is allowed, or false if not.
+     */
+    public boolean check(
+        String principal,
+        final List<String> groups,
+        Operation operation,
+        Resource resource,
+        String resourceName,
+        Scope scope,
+        String namespaceName) {
+      atzCheck = true;
+      return atzCheck;
     }
   }
 }
