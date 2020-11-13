@@ -242,6 +242,7 @@ For configuration changes that only modify dynamic WebLogic mbean attributes (su
  - Changing `domain.spec.configuration.introspectVersion`.
 
 > **Warning:** If any non-dynamic WebLogic mbean attribute is changed as part of the above actions and `domain.spec.configuration.model.onLineUpdate.rollBackIfRestartRequired` is set to `false` (the default), then the operator will immediately perform any dynamic changes that were specified, and also **the operator will roll the domain (restart each server in the domain) in order to propagate the non-dynamic changes**.
+>If the attribute value is set to 'true', then the Operator will cancel all changes, the introspector job will not retry again. This gives the opportunity for the user to correct any un-intentional changes or try it again at a different time allowing domain restart. 
 
 Sample domain resource YAML:
 
