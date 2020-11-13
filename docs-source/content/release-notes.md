@@ -8,6 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
+| December ??, 2020 | v3.2.0 | no | Placeholder |
 | November 13, 2020 | v3.1.0 | no | Enhanced options for specifying managed namespaces. Helm 3.1.3+ now required. |
 | November 9, 2020 | v3.0.3 | no | This release contains a fix for pods that are stuck in the Terminating state after an unexpected shut down of a worker node. |
 | September 15, 2020 | v3.0.2 | no | This release contains several fixes, including improvements to log rotation and a fix that avoids unnecessarily updating the domain status. |
@@ -30,6 +31,8 @@ draft: false
 | March 20, 2018 |  | yes | Several files and input parameters have been renamed.  This affects how operators and domains are created.  It also changes generated Kubernetes artifacts, therefore customers must recreate their operators and domains.
 
 ### Change log
+
+#### Operator 3.2.0
 
 #### Operator 3.1.0
 
