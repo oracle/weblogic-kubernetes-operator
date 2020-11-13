@@ -1,16 +1,12 @@
-serviceType: NodePort
-service:
-  nodePorts:
-    http: "30305"
-    https: "30443"
-dashboard:
-  enabled: true
-  domain: traefik.example.com
-rbac:
-  enabled: true
-ssl:
-  enabled: true
-  #enforced: true 
-  #upstream: true
-  #insecureSkipVerify: false
-  tlsMinVersion: VersionTLS12
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+# Ref https://github.com/containous/traefik-helm-chart/blob/master/traefik/values.yaml
+ports:
+  web:
+    nodePort: 30305
+  websecure:
+    nodePort: 30443
+
+additionalArguments: 
+  - "--log.level=INFO"

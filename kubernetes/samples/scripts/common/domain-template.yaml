@@ -42,7 +42,7 @@ spec:
   # Whether to write HTTP access log file to log home
   %LOG_HOME_ON_PV_PREFIX%httpAccessLogInLogHome: %HTTP_ACCESS_LOG_IN_LOG_HOME%
 
-  # The in-pod location for domain log, server logs, server out, and Node Manager log files
+  # The in-pod location for domain log, server logs, server out, introspector out, and Node Manager log files
   %LOG_HOME_ON_PV_PREFIX%logHome: %LOG_HOME%
   # An (optional) in-pod location for data storage of default and custom file stores.
   # If not specified or the value is either not set or empty (e.g. dataHome: "") then the

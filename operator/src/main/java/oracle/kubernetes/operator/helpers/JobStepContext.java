@@ -62,7 +62,7 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   // ------------------------ data methods ----------------------------
 
-  private V1Job getJobModel() {
+  protected V1Job getJobModel() {
     return jobModel;
   }
 
@@ -136,7 +136,7 @@ public abstract class JobStepContext extends BasePodStepContext {
    * @return a step to be scheduled.
    */
   Step createJob(Step next) {
-    return new CallBuilder().createJobAsync(getNamespace(), getJobModel(), createResponse(next));
+    return new CallBuilder().createJobAsync(getNamespace(), getDomainUid(), getJobModel(), createResponse(next));
   }
 
   private void logJobCreated() {
@@ -152,6 +152,10 @@ public abstract class JobStepContext extends BasePodStepContext {
   protected String getDataHome() {
     String dataHome = getDomain().getDataHome();
     return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
+  }
+
+  protected String getModelHome() {
+    return getDomain().getModelHome();
   }
 
   protected String getWdtDomainType() {

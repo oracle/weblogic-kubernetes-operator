@@ -5,15 +5,18 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParametersImpl;
+import org.jetbrains.annotations.NotNull;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 
 public abstract class TuningParametersStub implements TuningParameters {
+  // Pod tuning
   static final int READINESS_INITIAL_DELAY = 1;
   static final int READINESS_TIMEOUT = 2;
   static final int READINESS_PERIOD = 3;
@@ -21,6 +24,11 @@ public abstract class TuningParametersStub implements TuningParameters {
   static final int LIVENESS_PERIOD = 6;
   static final int LIVENESS_TIMEOUT = 5;
   static final long INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = 180L;
+
+  // Call builder tuning
+  public static final int CALL_REQUEST_LIMIT = 10;
+  public static final int CALL_MAX_RETRY_COUNT = 3;
+  public static final int CALL_TIMEOUT_SECONDS = 5;
   static Map<String, String> namedParameters;
 
   /**
@@ -46,6 +54,15 @@ public abstract class TuningParametersStub implements TuningParameters {
         INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS);
   }
 
+  /**
+   * Sets a tuning parameter for testing purposes.
+   * @param key the parameter to set
+   * @param value its test value
+   */
+  public static void setParameter(String key, String value) {
+    namedParameters.put(key, value);
+  }
+
   @Override
   public MainTuning getMainTuning() {
     return new MainTuning(2, 2, 2, 2, 2, 2, 30, 2L, 2L);
@@ -53,7 +70,7 @@ public abstract class TuningParametersStub implements TuningParameters {
 
   @Override
   public CallBuilderTuning getCallBuilderTuning() {
-    return null;
+    return new CallBuilderTuning(CALL_REQUEST_LIMIT, CALL_MAX_RETRY_COUNT, CALL_TIMEOUT_SECONDS);
   }
 
   @Override
@@ -69,5 +86,11 @@ public abstract class TuningParametersStub implements TuningParameters {
   @Override
   public String put(String key, String value) {
     return namedParameters.put(key, value);
+  }
+
+  @NotNull
+  @Override
+  public Set<Entry<String, String>> entrySet() {
+    return namedParameters.entrySet();
   }
 }

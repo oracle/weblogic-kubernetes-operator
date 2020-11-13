@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.calls.unprocessable;
 import java.util.Collections;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSource;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -32,7 +33,7 @@ public class UnprocessableEntityTest {
          + "\"causes\":[{" + CAUSE + "}]},"
          + "\"code\":422}\n";
   private static RequestParams REQUEST_PARAMS
-      = new RequestParams("testcall", "junit", "testName", "body");
+      = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
 
   private static String escape(String s) {
     return s.replaceAll("\"", "\\\\\"");

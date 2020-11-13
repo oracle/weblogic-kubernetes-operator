@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -22,6 +23,8 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.LegalNames;
+import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.steps.ManagedServersUpStep.ServersUpStepFactory;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -42,6 +45,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
+import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getPreCreateServers;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
@@ -494,7 +498,8 @@ public class ManagedServersUpStepTest {
     addServer(domainPresenceInfo, "server3");
     addServer(domainPresenceInfo, ADMIN);
 
-    assertStoppingServers(skipProgressingStep(createNextStepWithout("server2")), "server1", "server3");
+    assertStoppingServers(skipProgressingStep(createNextStepWithout("server2")),
+        "server1", "server3");
   }
 
   @Test
@@ -506,7 +511,8 @@ public class ManagedServersUpStepTest {
     addServer(domainPresenceInfo, "server3");
     addServer(domainPresenceInfo, ADMIN);
 
-    assertStoppingServers(skipProgressingStep(createNextStepWithout("server2")), "server1", "server3", ADMIN);
+    assertStoppingServers(skipProgressingStep(createNextStepWithout("server2")), "server1",
+        "server3", ADMIN);
   }
 
   @Test
@@ -516,7 +522,7 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(getServers(), allOf(hasItem("ms1"), hasItem("ms2")));
+    assertThat(TestStepFactory.getPreCreateServers(), allOf(hasItem("ms1"), hasItem("ms2")));
   }
 
   @Test
@@ -527,7 +533,7 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(getServers(), allOf(hasItem("ms1"), hasItem("ms2")));
+    assertThat(getPreCreateServers(), allOf(hasItem("ms1"), hasItem("ms2")));
   }
 
   @Test
@@ -537,7 +543,7 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(getServers(), allOf(hasItem("ms1"), hasItem("ms2")));
+    assertThat(getPreCreateServers(), allOf(hasItem("ms1"), hasItem("ms2")));
   }
 
   @Test
@@ -619,7 +625,21 @@ public class ManagedServersUpStepTest {
     configSupport.setAdminServerName(ADMIN);
     WlsDomainConfig config = configSupport.createDomainConfig();
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
-    return factory.createServerStep(domainPresenceInfo, config, servers, nextStep);
+    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, domain);
+    List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
+    domainPresenceInfo.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList())
+            .forEach(s -> addShutdownServerInfo(s, servers, ssi));
+    serversUpStepFactory.shutdownInfos.addAll(ssi);
+    return factory.createServerStep(domainPresenceInfo, config, serversUpStepFactory, nextStep);
+  }
+
+  private void addShutdownServerInfo(String serverName, List<String> servers,
+                                     List<DomainPresenceInfo.ServerShutdownInfo> ssi) {
+    if (serverName.equals(configSupport.createDomainConfig().getAdminServerName())) {
+      return;
+    } else if (!servers.contains(serverName)) {
+      ssi.add(new DomainPresenceInfo.ServerShutdownInfo(serverName, null));
+    }
   }
 
   private void addWlsServer(String serverName) {
@@ -713,6 +733,7 @@ public class ManagedServersUpStepTest {
     private static WlsDomainConfig config;
 
     private static Collection<String> servers;
+    private static Collection<String> preCreateServers;
     private static Step next;
     private static TestStepFactory factory = new TestStepFactory();
 
@@ -725,22 +746,26 @@ public class ManagedServersUpStepTest {
       return servers;
     }
 
+    static Collection<String> getPreCreateServers() {
+      return preCreateServers;
+    }
+
     static ServerStartupInfo getServerStartupInfo(String serverName) {
       for (ServerStartupInfo startupInfo : info.getServerStartupInfo()) {
         if (startupInfo.serverConfig.getName().equals(serverName)) {
           return startupInfo;
         }
       }
-
       return null;
     }
 
     @Override
     public Step createServerStep(
-        DomainPresenceInfo info, WlsDomainConfig config, Collection<String> servers, Step next) {
+            DomainPresenceInfo info, WlsDomainConfig config, ServersUpStepFactory factory, Step next) {
       TestStepFactory.info = info;
       TestStepFactory.config = config;
-      TestStepFactory.servers = servers;
+      TestStepFactory.servers = factory.servers;
+      TestStepFactory.preCreateServers = factory.preCreateServers;
       TestStepFactory.next = next;
       return new TerminalStep();
     }

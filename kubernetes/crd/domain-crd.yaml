@@ -36,7 +36,7 @@ spec:
                       distributed to already running WebLogic Server instances following
                       introspection when the `domainHomeSourceType` is PersistentVolume
                       or Image. Configuration overrides are generated during introspection
-                      from Secrets, the `overrideConfigMap` field, and WebLogic domain
+                      from Secrets, the `overridesConfigMap` field, and WebLogic domain
                       topology. Legal values are DYNAMIC, which means that the operator
                       will distribute updated configuration overrides dynamically
                       to running servers, and ON_RESTART, which means that servers
@@ -85,6 +85,10 @@ spec:
                         type: string
                         description: Name of a ConfigMap containing the WebLogic Deploy
                           Tooling model.
+                      modelHome:
+                        type: string
+                        description: Location of the WebLogic Deploy Tooling model
+                          home. Defaults to /u01/wdt/models.
                   secrets:
                     type: array
                     description: A list of names of the Secrets for WebLogic configuration
@@ -144,7 +148,7 @@ spec:
                   to the names of Kubernetes resources. This value is distinct and
                   need not match the domain name from the WebLogic domain configuration.
                   Defaults to the value of `metadata.name`.
-                pattern: ^[a-z0-9-.]{1,253}$
+                pattern: ^[a-z0-9-.]{1,45}$
               serverService:
                 type: object
                 description: Customization affecting the generation of Kubernetes
@@ -313,6 +317,8 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                          fsGroupChangePolicy:
+                            type: string
                           supplementalGroups:
                             type: array
                             items:
@@ -2662,9 +2668,9 @@ spec:
               logHome:
                 type: string
                 description: The directory in a server's container in which to store
-                  the domain, Node Manager, server logs, server *.out, and optionally
-                  HTTP access log files if `httpAccessLogInLogHome` is true. Ignored
-                  if `logHomeEnabled` is false.
+                  the domain, Node Manager, server logs, server *.out, introspector
+                  .out, and optionally HTTP access log files if `httpAccessLogInLogHome`
+                  is true. Ignored if `logHomeEnabled` is false.
               includeServerOutInPodLog:
                 type: boolean
                 description: Specifies whether the server .out file will be included
@@ -2824,6 +2830,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                            fsGroupChangePolicy:
+                              type: string
                             supplementalGroups:
                               type: array
                               items:
@@ -5123,6 +5131,14 @@ spec:
                           additionalProperties:
                             type: string
                           type: object
+                    maxConcurrentShutdown:
+                      description: The maximum number of WebLogic Server instances
+                        that will shut down in parallel for this cluster when it is
+                        being partially shut down by lowering its replica count. A
+                        value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`,
+                        which defaults to 1.
+                      type: number
+                      minimum: 0.0
                     serverStartPolicy:
                       description: 'The strategy for deciding whether to start a WebLogic
                         Server instance. Legal values are NEVER, or IF_NEEDED. Defaults
@@ -5196,6 +5212,14 @@ spec:
                   a cluster may have more cluster members running than its `replicas`
                   count. Defaults to 0.
                 minimum: 0.0
+              maxClusterConcurrentShutdown:
+                type: number
+                description: The default maximum number of WebLogic Server instances
+                  that a cluster will shut down in parallel when it is being partially
+                  shut down by lowering its replica count. You can override this default
+                  on a per cluster basis by setting the cluster's `maxConcurrentShutdown`
+                  field. A value of 0 means there is no limit. Defaults to 1.
+                minimum: 0.0
               domainHomeInImage:
                 type: boolean
                 description: Deprecated. Use `domainHomeSourceType` instead. Ignored
@@ -5229,7 +5253,7 @@ spec:
                   full domain shut down. For the FromModel `domainHomeSourceType`,
                   introspection also occurs when a running server must be restarted
                   because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted.
-                  See also `domains.spec.configuration.overridesConfigurationStrategy`.'
+                  See also `domains.spec.configuration.overrideDistributionStrategy`.'
               dataHome:
                 type: string
                 description: An optional directory in a server's container for data
@@ -5327,6 +5351,8 @@ spec:
                             type: string
                           gmsaCredentialSpecName:
                             type: string
+                      fsGroupChangePolicy:
+                        type: string
                       supplementalGroups:
                         type: array
                         items:
@@ -7724,6 +7750,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                            fsGroupChangePolicy:
+                              type: string
                             supplementalGroups:
                               type: array
                               items:
@@ -10091,6 +10119,15 @@ spec:
                     state:
                       description: Current state of this WebLogic Server instance.
                       type: string
+              introspectJobFailureCount:
+                type: number
+                description: Non-zero if the introspector job fails for any reason.
+                  You can configure an introspector job retry limit for jobs that
+                  log script failures using the Operator tuning parameter 'domainPresenceFailureRetryMaxCount'
+                  (default 5). You cannot configure a limit for other types of failures,
+                  such as a Domain resource reference to an unknown secret name; in
+                  which case, the retries are unlimited.
+                minimum: 0.0
               replicas:
                 type: number
                 description: The number of running cluster member Managed Servers

@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LastKnownStatus;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
@@ -171,8 +172,11 @@ public class ServerStatusReader {
             String state = null;
             ClientPool helper = ClientPool.getInstance();
             ApiClient client = helper.take();
-            try (LoggingContext stack = LoggingContext.setThreadContext().namespace(getNamespace(pod))) {
-              try {
+
+            try {
+              try (LoggingContext stack =
+                       LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
+
                 KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, CONTAINER_NAME);
                 kubernetesExec.setStdin(stdin);
                 kubernetesExec.setTty(tty);
@@ -194,16 +198,23 @@ public class ServerStatusReader {
                     state = WebLogicConstants.UNKNOWN_STATE;
                   }
                 }
-              } catch (InterruptedException ignore) {
-                Thread.currentThread().interrupt();
-              } catch (IOException | ApiException e) {
-                LOGGER.warning(MessageKeys.EXCEPTION, e);
-              } finally {
-                helper.recycle(client);
-                if (proc != null) {
-                  proc.destroy();
-                }
               }
+            } catch (InterruptedException ignore) {
+              Thread.currentThread().interrupt();
+            } catch (IOException | ApiException e) {
+              try (LoggingContext stack =
+                       LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
+                LOGGER.warning(MessageKeys.EXCEPTION, e);
+              }
+            } finally {
+              helper.recycle(client);
+              if (proc != null) {
+                proc.destroy();
+              }
+            }
+
+            try (LoggingContext stack =
+                      LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
               LOGGER.fine("readState: " + state + " for " + pod.getMetadata().getName());
               state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
               serverStateMap.put(serverName, state);
@@ -214,6 +225,11 @@ public class ServerStatusReader {
 
     private String getNamespace(@Nonnull V1Pod pod) {
       return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getNamespace).orElse(null);
+    }
+
+    public String getDomainUid(V1Pod pod) {
+      return KubernetesUtils.getDomainUidLabel(
+          Optional.ofNullable(pod).map(V1Pod::getMetadata).orElse(null));
     }
 
     private String chooseStateOrLastKnownServerStatus(

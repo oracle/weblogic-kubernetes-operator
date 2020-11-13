@@ -11,7 +11,11 @@ spec:
   selector:
     app: {{ template "apache.fullname" . }}
   ports:
+{{- if ( .Values.useNonPriviledgedPorts ) and eq .Values.useNonPriviledgedPorts "true"}}
+    - port: 8080
+{{- else}}
     - port: 80
+{{- end }}
       nodePort: {{ .Values.httpNodePort }}
       name: http
 {{- if .Values.virtualHostName }}

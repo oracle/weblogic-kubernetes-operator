@@ -7,13 +7,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -27,39 +30,34 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 public class ConfigMapConsumer implements Map<String, String> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final File mountPointDir;
   private final ScheduledExecutorService threadPool;
   private final AtomicReference<ScheduledFuture<?>> future = new AtomicReference<>(null);
-  private final Runnable onUpdate;
+  private File mountPointDir;
+  private Runnable onUpdate;
 
   /**
    * Construct config map consumer.
    * @param executorService executor
-   * @param mountPoint mount point
-   * @param onUpdate on update flag
    */
-  public ConfigMapConsumer(
-      ScheduledExecutorService executorService, String mountPoint, Runnable onUpdate) {
+  public ConfigMapConsumer(ScheduledExecutorService executorService) {
     this.threadPool = executorService;
-    this.mountPointDir = new File(mountPoint);
+  }
+
+  protected void scheduleUpdates(String mountPoint, Runnable onUpdate) {
     this.onUpdate = onUpdate;
+    this.mountPointDir = new File(mountPoint);
     if (mountPointDir.exists()) {
+      onUpdate.run();
       schedule();
     }
+
   }
 
   private void schedule() {
     long initialDelay = readTuningParameter("configMapUpdateInitialDelay", 3);
     long delay = readTuningParameter("configMapUpdateDelay", 10);
     ScheduledFuture<?> old =
-        future.getAndSet(
-            threadPool.scheduleWithFixedDelay(
-                () -> {
-                  onUpdate.run();
-                },
-                initialDelay,
-                delay,
-                TimeUnit.SECONDS));
+        future.getAndSet(threadPool.scheduleWithFixedDelay(onUpdate, initialDelay, delay, TimeUnit.SECONDS));
     if (old != null) {
       old.cancel(true);
     }
@@ -86,8 +84,7 @@ public class ConfigMapConsumer implements Map<String, String> {
 
   @Override
   public int size() {
-    String[] list = mountPointDir.list();
-    return list == null ? null : list.length;
+    return Optional.ofNullable(mountPointDir.list()).map(list -> list.length).orElse(0);
   }
 
   @Override
@@ -128,7 +125,7 @@ public class ConfigMapConsumer implements Map<String, String> {
   }
 
   @Override
-  public void putAll(Map<? extends String, ? extends String> m) {
+  public void putAll(@Nonnull Map<? extends String, ? extends String> m) {
     throw new UnsupportedOperationException();
   }
 
@@ -138,30 +135,31 @@ public class ConfigMapConsumer implements Map<String, String> {
   }
 
   @Override
+  @Nonnull
   public Set<String> keySet() {
     Set<String> keys = new HashSet<>();
     String[] list = mountPointDir.list();
     if (list != null) {
-      for (String s : list) {
-        keys.add(s);
-      }
+      Collections.addAll(keys, list);
     }
     return keys;
   }
 
   @Override
+  @Nonnull
   public Collection<String> values() {
     throw new UnsupportedOperationException();
   }
 
   @Override
+  @Nonnull
   public Set<Entry<String, String>> entrySet() {
     Set<Entry<String, String>> entries = new HashSet<>();
     String[] list = mountPointDir.list();
     if (list != null) {
       for (String s : list) {
         entries.add(
-            new Entry<String, String>() {
+            new Entry<>() {
 
               @Override
               public String getKey() {

@@ -18,6 +18,7 @@ import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerShutdownInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -29,9 +30,11 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
+import static java.util.Comparator.comparing;
 import static oracle.kubernetes.operator.DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStep;
 
@@ -40,8 +43,8 @@ public class ManagedServersUpStep extends Step {
       "Running servers for domain with UID: {0}, running list: {1}";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static NextStepFactory NEXT_STEP_FACTORY =
-      (info, config, servers, next) ->
-          scaleDownIfNecessary(info, config, servers, new ClusterServicesStep(next));
+      (info, config, factory, next) ->
+          scaleDownIfNecessary(info, config, factory, new ClusterServicesStep(next));
 
   public ManagedServersUpStep(Step next) {
     super(next);
@@ -54,34 +57,31 @@ public class ManagedServersUpStep extends Step {
   private static Step scaleDownIfNecessary(
       DomainPresenceInfo info,
       WlsDomainConfig domainTopology,
-      Collection<String> servers,
+      ServersUpStepFactory factory,
       Step next) {
 
     List<Step> steps = new ArrayList<>(Collections.singletonList(next));
 
-    List<String> serversToIgnore = new ArrayList<>(servers);
     if (info.getDomain().isShuttingDown()) {
       insert(steps, createAvailableHookStep());
-    } else {
-      serversToIgnore.add(domainTopology.getAdminServerName());
+      factory.shutdownInfos.add(new ServerShutdownInfo(domainTopology.getAdminServerName(), null));
     }
 
-    List<String> serversToStop = getServersToStop(info, serversToIgnore);
+    List<ServerShutdownInfo> serversToStop = getServersToStop(info, factory.shutdownInfos);
 
     if (!serversToStop.isEmpty()) {
       insert(steps,
-          Step.chain(createProgressingStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true, null),
-          new ServerDownIteratorStep(serversToStop, null)));
+          Step.chain(createProgressingStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
+          null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
     }
 
     return Step.chain(steps.toArray(new Step[0]));
   }
 
-  private static List<String> getServersToStop(
-      DomainPresenceInfo info, List<String> serversToIgnore) {
-    return info.getServerNames().stream()
-        .filter(n -> !serversToIgnore.contains(n))
-        .collect(Collectors.toList());
+  private static List<ServerShutdownInfo> getServersToStop(
+          DomainPresenceInfo info, List<ServerShutdownInfo> shutdownInfos) {
+    return shutdownInfos.stream()
+            .filter(ssi -> info.getServerNames().contains(ssi.getServerName())).collect(Collectors.toList());
   }
 
   private static Step createAvailableHookStep() {
@@ -108,34 +108,42 @@ public class ManagedServersUpStep extends Step {
     Optional.ofNullable(config).ifPresent(wlsDomainConfig -> addServersToFactory(factory, wlsDomainConfig));
 
     info.setServerStartupInfo(factory.getStartupInfos());
+    info.setServerShutdownInfo(factory.getShutdownInfos());
     LOGGER.exiting();
 
     return doNext(
         NEXT_STEP_FACTORY.createServerStep(
-            info, config, factory.servers, factory.createNextStep(getNext())),
+            info, config, factory, factory.createNextStep(getNext())),
         packet);
   }
 
   private void addServersToFactory(@Nonnull ServersUpStepFactory factory, @Nonnull WlsDomainConfig wlsDomainConfig) {
     Set<String> clusteredServers = new HashSet<>();
 
+    List<ServerConfig> pendingServers = new ArrayList<>();
     wlsDomainConfig.getClusterConfigs().values()
-        .forEach(wlsClusterConfig -> addClusteredServersToFactory(factory, clusteredServers, wlsClusterConfig));
+        .forEach(wlsClusterConfig -> addClusteredServersToFactory(
+            factory, clusteredServers, wlsClusterConfig, pendingServers));
 
     wlsDomainConfig.getServerConfigs().values().stream()
         .filter(wlsServerConfig -> !clusteredServers.contains(wlsServerConfig.getName()))
-        .forEach(wlsServerConfig -> factory.addServerIfNeeded(wlsServerConfig, null));
+        .forEach(wlsServerConfig -> factory.addServerIfAlways(wlsServerConfig, null, pendingServers));
+
+    for (ServerConfig serverConfig : pendingServers) {
+      factory.addServerIfNeeded(serverConfig.wlsServerConfig, serverConfig.wlsClusterConfig);
+    }
   }
 
-  private void addClusteredServersToFactory(@Nonnull ServersUpStepFactory factory, Set<String> clusteredServers,
-      @Nonnull WlsClusterConfig wlsClusterConfig) {
+  private void addClusteredServersToFactory(
+      @Nonnull ServersUpStepFactory factory, Set<String> clusteredServers,
+      @Nonnull WlsClusterConfig wlsClusterConfig, List<ServerConfig> pendingServers) {
     factory.logIfInvalidReplicaCount(wlsClusterConfig);
     // We depend on 'getServerConfigs()' returning an ascending 'numero-lexi'
     // sorted list so that a cluster's "lowest named" servers have precedence
     // when the  cluster's replica  count is lower than  the WL cluster size.
     wlsClusterConfig.getServerConfigs()
         .forEach(wlsServerConfig -> {
-          factory.addServerIfNeeded(wlsServerConfig, wlsClusterConfig);
+          factory.addServerIfAlways(wlsServerConfig, wlsClusterConfig, pendingServers);
           clusteredServers.add(wlsServerConfig.getName());
         });
   }
@@ -143,14 +151,16 @@ public class ManagedServersUpStep extends Step {
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
     Step createServerStep(
-        DomainPresenceInfo info, WlsDomainConfig config, Collection<String> servers, Step next);
+        DomainPresenceInfo info, WlsDomainConfig config, ServersUpStepFactory factory, Step next);
   }
 
-  class ServersUpStepFactory {
+  static class ServersUpStepFactory {
     final WlsDomainConfig domainTopology;
     final Domain domain;
-    Collection<ServerStartupInfo> startupInfos;
+    List<ServerStartupInfo> startupInfos;
+    List<ServerShutdownInfo> shutdownInfos = new ArrayList<>();
     final Collection<String> servers = new ArrayList<>();
+    final Collection<String> preCreateServers = new ArrayList<>();
     final Map<String, Integer> replicas = new HashMap<>();
 
     ServersUpStepFactory(WlsDomainConfig domainTopology, Domain domain) {
@@ -175,21 +185,30 @@ public class ManagedServersUpStep extends Step {
 
     private void addServerIfNeeded(@Nonnull WlsServerConfig serverConfig, WlsClusterConfig clusterConfig) {
       String serverName = serverConfig.getName();
-      if (servers.contains(serverName) || serverName.equals(domainTopology.getAdminServerName())) {
+      if (adminServerOrDone(serverName)) {
         return;
       }
 
-      String clusterName = clusterConfig == null ? null : clusterConfig.getClusterName();
+      String clusterName = getClusterName(clusterConfig);
       ServerSpec server = domain.getServer(serverName, clusterName);
 
       if (server.shouldStart(getReplicaCount(clusterName))) {
-        servers.add(serverName);
-        addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server));
-        addToCluster(clusterName);
+        addServerToStart(serverConfig, clusterName, server);
       } else if (shouldPrecreateServerService(server)) {
-        servers.add(serverName);
-        addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server, true));
+        preCreateServers.add(serverName);
+        addShutdownInfo(new ServerShutdownInfo(serverConfig, clusterName, server, true));
+      } else {
+        addShutdownInfo(new ServerShutdownInfo(serverConfig, clusterName, server, false));
       }
+    }
+
+    private void addServerToStart(@Nonnull WlsServerConfig serverConfig, String clusterName, ServerSpec server) {
+      servers.add(serverConfig.getName());
+      if (shouldPrecreateServerService(server)) {
+        preCreateServers.add(serverConfig.getName());
+      }
+      addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server));
+      addToCluster(clusterName);
     }
 
     boolean exceedsMaxConfiguredClusterSize(WlsClusterConfig clusterConfig) {
@@ -212,7 +231,16 @@ public class ManagedServersUpStep extends Step {
     }
 
     Collection<ServerStartupInfo> getStartupInfos() {
+      if (startupInfos != null) {
+        Collections.sort(
+            startupInfos,
+            comparing((ServerStartupInfo sinfo) -> OperatorUtils.getSortingString(sinfo.getServerName())));
+      }
       return startupInfos;
+    }
+
+    Collection<DomainPresenceInfo.ServerShutdownInfo> getShutdownInfos() {
+      return shutdownInfos;
     }
 
     private void addStartupInfo(ServerStartupInfo startupInfo) {
@@ -220,6 +248,13 @@ public class ManagedServersUpStep extends Step {
         startupInfos = new ArrayList<>();
       }
       startupInfos.add(startupInfo);
+    }
+
+    private void addShutdownInfo(DomainPresenceInfo.ServerShutdownInfo shutdownInfo) {
+      if (shutdownInfos == null) {
+        shutdownInfos = new ArrayList<>();
+      }
+      shutdownInfos.add(shutdownInfo);
     }
 
     private void addToCluster(String clusterName) {
@@ -273,6 +308,42 @@ public class ManagedServersUpStep extends Step {
     private void logIfInvalidReplicaCount(WlsClusterConfig clusterConfig) {
       logIfReplicasExceedsClusterServersMax(clusterConfig);
       logIfReplicasLessThanClusterServersMin(clusterConfig);
+    }
+
+    private void addServerIfAlways(
+        WlsServerConfig wlsServerConfig,
+        WlsClusterConfig wlsClusterConfig,
+        List<ServerConfig> pendingServers) {
+      String serverName = wlsServerConfig.getName();
+      if (adminServerOrDone(serverName)) {
+        return;
+      }
+      String clusterName = getClusterName(wlsClusterConfig);
+      ServerSpec server = domain.getServer(serverName, clusterName);
+      if (server.alwaysStart()) {
+        addServerToStart(wlsServerConfig, clusterName, server);
+      } else {
+        pendingServers.add(new ServerConfig(wlsClusterConfig, wlsServerConfig));
+      }
+    }
+
+    private boolean adminServerOrDone(String serverName) {
+      return servers.contains(serverName) || serverName.equals(domainTopology.getAdminServerName());
+    }
+
+    private static String getClusterName(WlsClusterConfig clusterConfig) {
+      return clusterConfig == null ? null : clusterConfig.getClusterName();
+    }
+
+  }
+
+  private static class ServerConfig {
+    protected WlsServerConfig wlsServerConfig;
+    protected WlsClusterConfig wlsClusterConfig;
+
+    ServerConfig(WlsClusterConfig cluster, WlsServerConfig server) {
+      this.wlsClusterConfig = cluster;
+      this.wlsServerConfig = server;
     }
   }
 }

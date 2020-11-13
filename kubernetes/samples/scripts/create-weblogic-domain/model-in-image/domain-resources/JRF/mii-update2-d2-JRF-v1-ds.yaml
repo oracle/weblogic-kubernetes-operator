@@ -40,7 +40,7 @@ spec:
   # Whether to enable overriding your log file location, see also 'logHome'
   #logHomeEnabled: false
   
-  # The location for domain log, server logs, server out, and Node Manager log files
+  # The location for domain log, server logs, server out, introspector out, and Node Manager log files
   # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
   #logHome: /shared/logs/sample-domain2
   

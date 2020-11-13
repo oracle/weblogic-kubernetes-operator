@@ -29,7 +29,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   public DomainCommonConfigurator() {
   }
 
-  DomainCommonConfigurator(@Nonnull Domain domain) {
+  public DomainCommonConfigurator(@Nonnull Domain domain) {
     super(domain);
     setApiVersion(domain);
   }
@@ -386,6 +386,10 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     public AdminService configureAdminService() {
       return adminServer.createAdminService();
     }
+
+    public AdminServer getAdminServer() { 
+      return adminServer; 
+    }
   }
 
   class ServerConfiguratorImpl implements ServerConfigurator {
@@ -734,6 +738,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withMaxConcurrentStartup(Integer maxConcurrentStartup) {
       cluster.setMaxConcurrentStartup(maxConcurrentStartup);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown) {
+      cluster.setMaxConcurrentShutdown(maxConcurrentShutdown);
       return this;
     }
 

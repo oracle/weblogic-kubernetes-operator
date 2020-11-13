@@ -14,6 +14,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ContainerState;
@@ -27,19 +28,15 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
-import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainValidationSteps;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -60,16 +57,12 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
-import oracle.kubernetes.weblogic.domain.model.AdminServer;
-import oracle.kubernetes.weblogic.domain.model.AdminService;
-import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
-import static oracle.kubernetes.operator.DomainStatusUpdater.ADMIN_SERVER_STARTING_PROGRESS_REASON;
-import static oracle.kubernetes.operator.DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
@@ -155,14 +148,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           .orElse(null);
   }
 
-  private static Step readExistingPods(DomainPresenceInfo info) {
-    return new CallBuilder()
-          .withLabelSelectors(
-                LabelConstants.forDomainUidSelector(info.getDomainUid()),
-                LabelConstants.CREATEDBYOPERATOR_LABEL)
-          .listPodAsync(info.getNamespace(), new PodListStep(info));
-  }
-
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
   static Step bringAdminServerUp(
@@ -201,22 +186,16 @@ public class DomainProcessorImpl implements DomainProcessor {
     steps.add(new BeforeAdminServiceStep(null));
     steps.add(PodHelper.createAdminPodStep(null));
 
-    Domain dom = info.getDomain();
-    AdminServer adminServer = dom.getSpec().getAdminServer();
-    AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
-    List<Channel> channels = adminService != null ? adminService.getChannels() : null;
-    if (channels != null && !channels.isEmpty()) {
+    if (Domain.isExternalServiceConfigured(info.getDomain().getSpec())) {
       steps.add(ServiceHelper.createForExternalServiceStep(null));
     }
-
     steps.add(ServiceHelper.createForServerStep(null));
     steps.add(new WatchPodReadyAdminStep(podAwaiterStepFactory, null));
     return Step.chain(steps.toArray(new Step[0]));
   }
 
   private static Step bringManagedServersUp(Step next) {
-    return DomainStatusUpdater.createProgressingStep(MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
-            new ManagedServersUpStep(next));
+    return new ManagedServersUpStep(next);
   }
 
   private FiberGate getMakeRightFiberGate(String ns) {
@@ -225,28 +204,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private FiberGate getStatusFiberGate(String ns) {
     return statusFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
-  }
-
-  /**
-   * Stop namespace.
-   * @param ns namespace
-   */
-  public void stopNamespace(String ns) {
-    try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
-      Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
-      if (map != null) {
-        for (DomainPresenceInfo dpi : map.values()) {
-          Domain dom = dpi.getDomain();
-          DomainPresenceInfo value =
-              (dom != null)
-                  ? new DomainPresenceInfo(dom)
-                  : new DomainPresenceInfo(dpi.getNamespace(), dpi.getDomainUid());
-          value.setDeleting(true);
-          value.setPopulated(true);
-          createMakeRightOperation(value).withExplicitRecheck().forDeletion().execute();
-        }
-      }
-    }
   }
 
   /**
@@ -405,7 +362,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         case "DELETED":
           delegate.runSteps(
               ConfigMapHelper.createScriptConfigMapStep(
-                  delegate.getOperatorNamespace(), c.getMetadata().getNamespace()));
+                    c.getMetadata().getNamespace()));
           break;
 
         case "ERROR":
@@ -480,15 +437,13 @@ public class DomainProcessorImpl implements DomainProcessor {
         delegate.scheduleWithFixedDelay(
             () -> {
               try {
-                V1SubjectRulesReviewStatus srrs =
-                    delegate.getSubjectRulesReviewStatus(info.getNamespace());
                 Packet packet = new Packet();
                 packet
                     .getComponents()
                     .put(
                         ProcessingConstants.DOMAIN_COMPONENT_NAME,
                         Component.createFor(
-                            info, delegate.getVersion(), V1SubjectRulesReviewStatus.class, srrs));
+                            info, delegate.getKubernetesVersion()));
                 packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
                 Step strategy =
                     ServerStatusReader.createStatusStep(main.statusUpdateTimeoutSeconds, null);
@@ -546,11 +501,6 @@ public class DomainProcessorImpl implements DomainProcessor {
   @Override
   public MakeRightDomainOperationImpl createMakeRightOperation(DomainPresenceInfo liveInfo) {
     return new MakeRightDomainOperationImpl(liveInfo);
-  }
-
-  @Override
-  public MakeRightDomainOperation createMakeRightOperation(Domain liveDomain) {
-    return createMakeRightOperation(new DomainPresenceInfo(liveDomain));
   }
 
   public Step createPopulatePacketServerMapsStep(oracle.kubernetes.operator.work.Step next) {
@@ -658,13 +608,16 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public void execute() {
-      if (!delegate.isNamespaceRunning(getNamespace())) {
-        return;
-      }
-      if (isShouldContinue()) {
-        internalMakeRightDomainPresence();
-      } else {
-        LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
+      try (LoggingContext ignored = LoggingContext.setThreadContext().presenceInfo(liveInfo)) {
+        if (!delegate.isNamespaceRunning(getNamespace())) {
+          return;
+        }
+
+        if (isShouldContinue()) {
+          internalMakeRightDomainPresence();
+        } else {
+          LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
+        }
       }
     }
 
@@ -680,11 +633,51 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private boolean isShouldContinue() {
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
+      int currentIntrospectFailureRetryCount = Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getIntrospectJobFailureCount)
+          .orElse(0);
+
+      String existingError = Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getMessage)
+          .orElse(null);
+
+      boolean exceededFailureRetryCount = (currentIntrospectFailureRetryCount
+          >= DomainPresence.getDomainPresenceFailureRetryMaxCount());
+
+      boolean isVersionsChanged = isImgRestartIntrospectVerChanged(liveInfo, cachedInfo);
+
       if (cachedInfo == null || cachedInfo.getDomain() == null) {
         return true;
+      } else if (exceededFailureRetryCount && !isVersionsChanged) {
+        LOGGER.fine("Stop introspection retry - exceeded configured domainPresenceFailureRetryMaxCount: "
+            + DomainPresence.getDomainPresenceFailureRetryMaxCount()
+            + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
+            + " by adding it to the weblogic-operator-cm configmap.");
+        return false;
+      } else if (existingError != null && existingError.contains("FatalIntrospectorError")) {
+        LOGGER.fine("Stop introspection retry - MII Fatal Error: "
+            + existingError);
+        return false;
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
+        if (exceededFailureRetryCount) {
+          Optional.ofNullable(liveInfo)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getStatus)
+              .map(o -> o.resetIntrospectJobFailureCount());
+        }
+
+        if (currentIntrospectFailureRetryCount > 0) {
+          LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED_RETRY_COUNT, cachedInfo.getDomain().getDomainUid(),
+              currentIntrospectFailureRetryCount,
+              DomainPresence.getDomainPresenceFailureRetryMaxCount());
+        }
+
         return true;
       }
       cachedInfo.setDomain(getDomain());
@@ -700,9 +693,9 @@ public class DomainProcessorImpl implements DomainProcessor {
           .getComponents()
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(liveInfo, delegate.getVersion(),
+              Component.createFor(liveInfo, delegate.getKubernetesVersion(),
                   PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
-                  V1SubjectRulesReviewStatus.class, delegate.getSubjectRulesReviewStatus(getNamespace())));
+                  JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
       runDomainPlan(
             getDomain(),
             getDomainUid(),
@@ -753,17 +746,59 @@ public class DomainProcessorImpl implements DomainProcessor {
           .orElse(true);
   }
 
+  private static boolean isImgRestartIntrospectVerChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
+    String liveIntrospectVersion = Optional.ofNullable(liveInfo)
+        .map(DomainPresenceInfo::getDomain)
+        .map(Domain::getSpec)
+        .map(DomainSpec::getIntrospectVersion)
+        .orElse(null);
+
+    String cachedIntropectVersion = Optional.ofNullable(cachedInfo)
+        .map(DomainPresenceInfo::getDomain)
+        .map(Domain::getSpec)
+        .map(DomainSpec::getIntrospectVersion)
+        .orElse(null);
+
+    if (!Objects.equals(liveIntrospectVersion, cachedIntropectVersion)) {
+      return true;
+    }
+
+    String liveRestartVersion = Optional.ofNullable(liveInfo)
+        .map(DomainPresenceInfo::getDomain)
+        .map(Domain::getRestartVersion)
+        .orElse(null);
+
+    String cachedRestartVersion = Optional.ofNullable(cachedInfo)
+        .map(DomainPresenceInfo::getDomain)
+        .map(Domain::getRestartVersion)
+        .orElse(null);
+
+    if (!Objects.equals(liveRestartVersion, cachedRestartVersion)) {
+      return true;
+    }
+
+    String liveIntrospectImage = Optional.ofNullable(liveInfo)
+        .map(DomainPresenceInfo::getDomain)
+        .map(Domain::getSpec)
+        .map(DomainSpec::getImage)
+        .orElse(null);
+
+    String cachedIntrospectImage = Optional.ofNullable(cachedInfo)
+        .map(DomainPresenceInfo::getDomain)
+        .map(Domain::getSpec)
+        .map(DomainSpec::getImage)
+        .orElse(null);
+
+    if (!Objects.equals(liveIntrospectImage, cachedIntrospectImage)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   private static boolean isCachedInfoNewer(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
     return liveInfo.getDomain() != null
         && KubernetesUtils.isFirstNewer(cachedInfo.getDomain().getMetadata(), liveInfo.getDomain().getMetadata());
-  }
-
-  private static Step readExistingServices(DomainPresenceInfo info) {
-    return new CallBuilder()
-        .withLabelSelectors(
-            LabelConstants.forDomainUidSelector(info.getDomainUid()),
-            LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .listServiceAsync(info.getNamespace(), new ServiceListStep(info));
   }
 
   @SuppressWarnings("unused")
@@ -849,8 +884,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     Step domainUpStrategy =
         Step.chain(
             domainIntrospectionSteps(info),
+            DomainValidationSteps.createAfterIntrospectValidationSteps(),
             new DomainStatusStep(info, null),
-            DomainStatusUpdater.createProgressingStep(ADMIN_SERVER_STARTING_PROGRESS_REASON,true, null),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
 
@@ -892,35 +927,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static class PodListStep extends ResponseStep<V1PodList> {
-    private final DomainPresenceInfo info;
-
-    PodListStep(DomainPresenceInfo info) {
-      this.info = info;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1PodList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-            ? onSuccess(packet, callResponse)
-            : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-      V1PodList result = callResponse.getResult();
-      if (result != null) {
-        for (V1Pod pod : result.getItems()) {
-          String serverName = PodHelper.getPodServerName(pod);
-          if (serverName != null) {
-            info.setServerPod(serverName, pod);
-          }
-        }
-      }
-      return doNext(packet);
-    }
-  }
-
   private static class TailStep extends Step {
 
     @Override
@@ -941,40 +947,48 @@ public class DomainProcessorImpl implements DomainProcessor {
     @Override
     public NextAction apply(Packet packet) {
       registerDomainPresenceInfo(info);
-      Step strategy = getNext();
-      if (!info.isPopulated() && info.isNotDeleting()) {
-        strategy = Step.chain(readExistingPods(info), readExistingServices(info), strategy);
+
+      return doNext(getNextSteps(), packet);
+    }
+
+    private Step getNextSteps() {
+      if (lookForPodsAndServices()) {
+        return Step.chain(getRecordExistingResourcesSteps(), getNext());
+      } else {
+        return getNext();
       }
-      return doNext(strategy, packet);
-    }
-  }
-
-  private static class ServiceListStep extends ResponseStep<V1ServiceList> {
-    private final DomainPresenceInfo info;
-
-    ServiceListStep(DomainPresenceInfo info) {
-      this.info = info;
     }
 
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1ServiceList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-            ? onSuccess(packet, callResponse)
-            : super.onFailure(packet, callResponse);
+    private boolean lookForPodsAndServices() {
+      return !info.isPopulated() && info.isNotDeleting();
     }
 
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1ServiceList> callResponse) {
-      V1ServiceList result = callResponse.getResult();
+    private Step getRecordExistingResourcesSteps() {
+      NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid());
 
-      if (result != null) {
-        for (V1Service service : result.getItems()) {
+      resources.addProcessing(new NamespacedResources.Processors() {
+        @Override
+        Consumer<V1PodList> getPodListProcessing() {
+          return list -> list.getItems().forEach(this::addPod);
+        }
+
+        private void addPod(V1Pod pod) {
+          Optional.ofNullable(PodHelper.getPodServerName(pod)).ifPresent(name -> info.setServerPod(name, pod));
+        }
+
+        @Override
+        Consumer<V1ServiceList> getServiceListProcessing() {
+          return list -> list.getItems().forEach(this::addService);
+        }
+
+        private void addService(V1Service service) {
           ServiceHelper.addToPresence(info, service);
         }
-      }
+      });
 
-      return doNext(packet);
+      return resources.createListSteps();
     }
+
   }
 
   private static class UpHeadStep extends Step {
@@ -1036,8 +1050,8 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static class DomainStatusUpdate {
     private final V1Pod pod;
     private final String domainUid;
-    private DomainProcessorDelegate delegate = null;
-    private DomainPresenceInfo info = null;
+    private DomainProcessorDelegate delegate;
+    private DomainPresenceInfo info;
     private PodWatcher.PodStatus podStatus;
 
     DomainStatusUpdate(V1Pod pod, String domainUid, DomainProcessorDelegate delegate,

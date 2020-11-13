@@ -33,6 +33,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 
 /**
  * Operator's mapping between custom resource Domain and runtime details about that domain,
@@ -46,6 +47,7 @@ public class DomainPresenceInfo {
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
   private final AtomicInteger retryCount = new AtomicInteger(0);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
+  private final AtomicReference<Collection<ServerShutdownInfo>> serverShutdownInfo;
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
@@ -62,6 +64,7 @@ public class DomainPresenceInfo {
     this.namespace = domain.getMetadata().getNamespace();
     this.domainUid = domain.getDomainUid();
     this.serverStartupInfo = new AtomicReference<>(null);
+    this.serverShutdownInfo = new AtomicReference<>(null);
   }
 
   /**
@@ -75,6 +78,7 @@ public class DomainPresenceInfo {
     this.namespace = namespace;
     this.domainUid = domainUid;
     this.serverStartupInfo = new AtomicReference<>(null);
+    this.serverShutdownInfo = new AtomicReference<>(null);
   }
 
   private static <K, V> boolean removeIfPresentAnd(
@@ -88,6 +92,41 @@ public class DomainPresenceInfo {
       }
     }
     return false;
+  }
+
+  /**
+   * Counts the number of unclustered servers and servers in the specified cluster that are scheduled.
+   * @param clusterName cluster name of the pod server
+   * @return Number of scheduled servers
+   */
+  public long getNumScheduledServers(String clusterName) {
+    return getServersInNoOtherCluster(clusterName)
+          .filter(PodHelper::isScheduled)
+          .count();
+  }
+
+  /**
+   * Counts the number of unclustered servers and servers in the specified cluster that are ready.
+   * @param clusterName cluster name of the pod server
+   * @return Number of ready servers
+   */
+  public long getNumReadyServers(String clusterName) {
+    return getServersInNoOtherCluster(clusterName)
+          .filter(PodHelper::hasReadyServer)
+          .count();
+  }
+
+  @Nonnull
+  private Stream<V1Pod> getServersInNoOtherCluster(String clusterName) {
+    return getServers().values().stream()
+          .map(ServerKubernetesObjects::getPod)
+          .map(AtomicReference::get)
+          .filter(this::isNotDeletingPod)
+          .filter(p -> hasClusterNameOrNull(p, clusterName));
+  }
+
+  boolean isNotDeletingPod(@Nullable V1Pod pod) {
+    return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getDeletionTimestamp).isEmpty();
   }
 
   public void setServerService(String serverName, V1Service service) {
@@ -462,6 +501,15 @@ public class DomainPresenceInfo {
     this.serverStartupInfo.set(serverStartupInfo);
   }
 
+  /**
+   * Sets server shutdown info.
+   *
+   * @param serverShutdownInfo Server shutdown info
+   */
+  public void setServerShutdownInfo(Collection<ServerShutdownInfo> serverShutdownInfo) {
+    this.serverShutdownInfo.set(serverShutdownInfo);
+  }
+
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("DomainPresenceInfo{");
@@ -610,6 +658,101 @@ public class DomainPresenceInfo {
           .append(serverSpec)
           .append(isServiceOnly)
           .toHashCode();
+    }
+  }
+
+  /** Details about a specific managed server that will be shutdown. */
+  public static class ServerShutdownInfo {
+    public final WlsServerConfig serverConfig;
+    private final String clusterName;
+    private final ServerSpec serverSpec;
+    private final boolean isServiceOnly;
+
+    /**
+     * Create server shutdown info.
+     *
+     * @param serverName the name of the server to shutdown
+     * @param clusterName the name of the cluster
+     */
+    public ServerShutdownInfo(String serverName, String clusterName) {
+      this(new WlsServerConfig(serverName, null, 0), clusterName, null, false);
+    }
+
+    /**
+     * Create server shutdown info.
+     *
+     * @param serverConfig Server config scan
+     * @param clusterName the name of the cluster
+     * @param serverSpec Server specifications
+     * @param isServiceOnly If service needs to be preserved
+     */
+    public ServerShutdownInfo(
+            WlsServerConfig serverConfig, String clusterName,
+            ServerSpec serverSpec, boolean isServiceOnly) {
+      this.serverConfig = serverConfig;
+      this.clusterName = clusterName;
+      this.serverSpec = serverSpec;
+      this.isServiceOnly = isServiceOnly;
+    }
+
+    public String getName() {
+      return serverConfig.getName();
+    }
+
+    public String getServerName() {
+      return serverConfig.getName();
+    }
+
+    public String getClusterName() {
+      return clusterName;
+    }
+
+    public boolean isServiceOnly() {
+      return  isServiceOnly;
+    }
+
+    public List<V1EnvVar> getEnvironment() {
+      return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
+    }
+
+    @Override
+    public String toString() {
+      return new ToStringBuilder(this)
+              .append("serverConfig", serverConfig)
+              .append("clusterName", clusterName)
+              .append("serverSpec", serverSpec)
+              .append("isServiceOnly", isServiceOnly)
+              .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      ServerShutdownInfo that = (ServerShutdownInfo) o;
+
+      return new EqualsBuilder()
+              .append(serverConfig, that.serverConfig)
+              .append(clusterName, that.clusterName)
+              .append(serverSpec, that.serverSpec)
+              .append(isServiceOnly, that.isServiceOnly)
+              .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+      return new HashCodeBuilder(17, 37)
+              .append(serverConfig)
+              .append(clusterName)
+              .append(serverSpec)
+              .append(isServiceOnly)
+              .toHashCode();
     }
   }
 }

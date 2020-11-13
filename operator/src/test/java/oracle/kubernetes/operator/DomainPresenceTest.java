@@ -7,9 +7,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Optional;
 import java.util.logging.Level;
+import java.util.stream.IntStream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -25,6 +25,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.OperatorServiceType;
+import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -37,8 +38,8 @@ import org.junit.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.helpers.TuningParametersStub.CALL_REQUEST_LIMIT;
 import static org.hamcrest.Matchers.anEmptyMap;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -49,46 +50,26 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private static final String NS = "default";
   private static final String UID = "UID1";
+  private static final int LAST_DOMAIN_NUM = 2 * CALL_REQUEST_LIMIT - 1;
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private Map<String, AtomicBoolean> namespaceStoppingMap;
+  private final DomainProcessorStub dp = createStub(DomainProcessorStub.class);
+  private final DomainNamespaces domainNamespaces = new DomainNamespaces();
 
-  private static Memento installStub(Class<?> containingClass, String fieldName, Object newValue)
-      throws NoSuchFieldException {
-    return StaticStubSupport.install(containingClass, fieldName, newValue);
-  }
-
-  /**
-   * Setup test environment.
-   * @throws Exception if StaticStubSupport fails to install
-   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().withLogLevel(Level.OFF));
     mementos.add(testSupport.install());
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
-    mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
-    mementos.add(StaticStubSupport.install(Main.class, "engine", testSupport.getEngine()));
-    testSupport.addContainerComponent("TF", ThreadFactory.class, this);
-
-    namespaceStoppingMap = getStoppingVariable();
-    namespaceStoppingMap.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
+    mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "INSTANCE", this));
+    mementos.add(NoopWatcherStarter.install());
+    mementos.add(TuningParametersStub.install());
   }
 
-  private Map<String, AtomicBoolean> getStoppingVariable() throws NoSuchFieldException {
-    Memento stoppingMemento = StaticStubSupport.preserve(Main.class, "namespaceStoppingMap");
-    return stoppingMemento.getOriginalValue();
-  }
-
-  /**
-   * Cleanup test environment.
-   * @throws Exception if test support fails.
-   */
   @After
   public void tearDown() throws Exception {
-    namespaceStoppingMap.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
     shutDownThreads();
     mementos.forEach(Memento::revert);
     testSupport.throwOnCompletionFailure();
@@ -96,16 +77,21 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   public void whenNoPreexistingDomains_createEmptyDomainPresenceInfoMap() {
-    DomainProcessorStub dp = createStub(DomainProcessorStub.class);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-
-    readExistingResources();
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(dp.getDomainPresenceInfos(), is(anEmptyMap()));
   }
 
-  private void readExistingResources() {
-    testSupport.runStepsToCompletion(Main.readExistingResources("operator", NS));
+  @Test
+  public void whenPreexistingDomainExistsWithoutPodsOrServices_addToPresenceMap() {
+    Domain domain = createDomain(UID, NS);
+    testSupport.defineResources(domain);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfo(dp, UID).getDomain(), equalTo(domain));
   }
 
   private void addDomainResource(String uid, String namespace) {
@@ -118,6 +104,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withMetadata(
             new V1ObjectMeta()
                 .namespace(namespace)
+                .name(uid)
                 .resourceVersion("1")
                 .creationTimestamp(DateTime.now()));
   }
@@ -164,10 +151,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     V1Service service = createServerService(UID, NS, "admin");
     testSupport.defineResources(service);
 
-    DomainProcessorStub dp = createStub(DomainProcessorStub.class);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-
-    readExistingResources();
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID).getServerService("admin"), equalTo(service));
   }
@@ -178,10 +163,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     V1Pod pod = createPodResource(UID, NS, "admin");
     testSupport.defineResources(pod);
 
-    DomainProcessorStub dp = createStub(DomainProcessorStub.class);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-
-    readExistingResources();
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID).getServerPod("admin"), equalTo(pod));
   }
@@ -200,10 +183,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     addPodResource(UID, NS, "admin");
     addEventResource(UID, "admin", "ignore this event");
 
-    DomainProcessorStub dp = createStub(DomainProcessorStub.class);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
-
-    readExistingResources();
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID).getLastKnownServerStatus("admin"), nullValue());
   }
@@ -228,42 +209,102 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         new V1PersistentVolumeClaim().metadata(createMetadata(UID, NS, "claim1"));
     testSupport.defineResources(service1, service2, volume, claim);
 
-    namespaceStoppingMap.get(NS).set(false);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    readExistingResources();
+    assertThat(dp.isDeletingStrandedResources(UID), is(true));
+  }
 
-    assertThat(testSupport.getResources(KubernetesTestSupport.SERVICE), empty());
+  @Test
+  public void dontRemoveNonStrandedResources() {
+    createDomains(LAST_DOMAIN_NUM);
+    V1Service service1 = createServerService("UID1", NS, "admin");
+    V1Service service2 = createServerService("UID" + LAST_DOMAIN_NUM, NS, "admin");
+    testSupport.defineResources(service1, service2);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(dp.isEstablishingDomain("UID1"), is(true));
+    assertThat(dp.isEstablishingDomain("UID" + LAST_DOMAIN_NUM), is(true));
+  }
+
+  private void createDomains(int lastDomainNum) {
+    IntStream.rangeClosed(1, lastDomainNum)
+          .boxed()
+          .map(i -> "UID" + i)
+          .map(uid -> createDomain(uid, NS))
+          .forEach(testSupport::defineResources);
   }
 
   public abstract static class DomainProcessorStub implements DomainProcessor {
     private final Map<String, DomainPresenceInfo> dpis = new HashMap<>();
+    private final List<MakeRightDomainOperationStub> operationStubs = new ArrayList<>();
 
     Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
       return dpis;
     }
 
+    boolean isDeletingStrandedResources(String uid) {
+      return Optional.ofNullable(getMakeRightOperations(uid))
+            .map(MakeRightDomainOperationStub::isDeletingStrandedResources)
+            .orElse(false);
+    }
+
+    private MakeRightDomainOperationStub getMakeRightOperations(String uid) {
+      return operationStubs.stream().filter(s -> uid.equals(s.getUid())).findFirst().orElse(null);
+    }
+
+    boolean isEstablishingDomain(String uid) {
+      return Optional.ofNullable(getMakeRightOperations(uid))
+            .map(MakeRightDomainOperationStub::isEstablishingDomain)
+            .orElse(false);
+    }
+
 
     @Override
     public MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo liveInfo) {
-      return createStrictStub(MakeRightDomainOperationImpl.class, liveInfo, dpis);
+      final MakeRightDomainOperationStub stub = createStrictStub(MakeRightDomainOperationStub.class, liveInfo, dpis);
+      operationStubs.add(stub);
+      return stub;
     }
 
-    abstract static class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
+    abstract static class MakeRightDomainOperationStub implements MakeRightDomainOperation {
       private final DomainPresenceInfo info;
       private final Map<String, DomainPresenceInfo> dpis;
+      private boolean explicitRecheck;
+      private boolean deleting;
 
-      MakeRightDomainOperationImpl(DomainPresenceInfo info, Map<String, DomainPresenceInfo> dpis) {
+      MakeRightDomainOperationStub(DomainPresenceInfo info, Map<String, DomainPresenceInfo> dpis) {
         this.info = info;
         this.dpis = dpis;
       }
 
+      boolean isDeletingStrandedResources() {
+        return explicitRecheck && deleting;
+      }
+
+      boolean isEstablishingDomain() {
+        return explicitRecheck && !deleting;
+      }
+
+      String getUid() {
+        return info.getDomainUid();
+      }
+
       @Override
       public MakeRightDomainOperation withExplicitRecheck() {
+        explicitRecheck = true;
         return this;
       }
 
       @Override
       public MakeRightDomainOperation forDeletion() {
+        deleting = true;
+        return this;
+      }
+
+      @Override
+      public MakeRightDomainOperation withDeleting(boolean deleting) {
+        this.deleting = deleting;
         return this;
       }
 

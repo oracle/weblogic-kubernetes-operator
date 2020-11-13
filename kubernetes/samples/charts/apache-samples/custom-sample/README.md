@@ -78,7 +78,7 @@ PathTrim /weblogic2
 </Location>
 ```
 
-* Place the `custom_mod_wl_apache.conf` file in a local directory `<host-config-dir>` on the host machine.
+* Create a PV / PVC (pv-claim-name) that can be used to store the `custom_mod_wl_apache.conf`. Refer to the [Sample for creating a PV or PVC](/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/README.md).
 
 ## 5. Prepare your own certificate and private key
 In production, Oracle strongly recommends that you provide your own certificates. Run the following commands to generate your own certificate and private key using `openssl`.
@@ -106,8 +106,8 @@ Edit the input parameters file, `input.yaml`. The file content is similar to bel
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Use this to provide your own Apache webtier configuration as needed; simply define this
-# path and put your own custom_mod_wl_apache.conf file under this path.
-volumePath: <host-config-dir>
+# Persistence Volume which contains your own custom_mod_wl_apache.conf file.
+persistentVolumeClaimName: <pv-claim-name>
 
 # The VirtualHostName of the Apache HTTP server. It is used to enable custom SSL configuration.
 virtualHostName: apache-sample-host
@@ -128,7 +128,7 @@ The Apache webtier Helm chart is located in the `kubernetes/samples/charts/apach
 
 ```
 $ cd kubernetes/samples/charts
-$ helm install --name my-release --values apache-samples/custom-sample/input.yaml --namespace apache-sample apache-webtier
+$ helm install my-release --values apache-samples/custom-sample/input.yaml --namespace apache-sample apache-webtier
 ```
 
 ## 8. Run the sample application
@@ -145,5 +145,5 @@ $ curl -k --silent https://${HOSTNAME}:30443/weblogic2/testwebapp/
 
 ## 9. Uninstall the Apache webtier
 ```
-$ helm delete --purge my-release
+$ helm uninstall my-release --namespace apache-sample
 ```

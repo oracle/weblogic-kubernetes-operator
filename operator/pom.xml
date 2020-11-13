@@ -7,7 +7,7 @@
   <parent>
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
-    <version>3.0.3</version>
+    <version>3.1.0</version>
   </parent>
 
   <artifactId>weblogic-kubernetes-operator</artifactId>
@@ -322,12 +322,6 @@
     <dependency>
       <groupId>javax.xml.bind</groupId>
       <artifactId>jaxb-api</artifactId>
-    </dependency>
-
-    <!-- for mvn exec:java -->
-    <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
     </dependency>
 
     <!-- test dependencies -->

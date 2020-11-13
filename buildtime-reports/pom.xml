@@ -8,7 +8,7 @@
     <parent>
         <artifactId>operator-parent</artifactId>
         <groupId>oracle.kubernetes</groupId>
-        <version>3.0.3</version>
+        <version>3.1.0</version>
     </parent>
 
     <artifactId>buildtime-reports</artifactId>
@@ -60,12 +60,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>operator-integration-tests</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>new-integration-tests</artifactId>
+            <artifactId>integration-tests</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

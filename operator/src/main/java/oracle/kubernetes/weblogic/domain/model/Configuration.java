@@ -36,12 +36,12 @@ public class Configuration {
   @Description(
       "Determines how updated configuration overrides are distributed to already running WebLogic Server instances "
       + "following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides "
-      + "are generated during introspection from Secrets, the `overrideConfigMap` field, and WebLogic domain topology. "
-      + "Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides "
-      + "dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration "
-      + "overrides only after the server's next restart. The selection of ON_RESTART will not cause servers to "
-      + "restart when there are updated configuration overrides available. See also `domains.spec.introspectVersion`. "
-      + "Defaults to DYNAMIC.")
+      + "are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain "
+      + "topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration "
+      + "overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated "
+      + "configuration overrides only after the server's next restart. The selection of ON_RESTART will not cause "
+      + "servers to restart when there are updated configuration overrides available. See also "
+      + "`domains.spec.introspectVersion`. Defaults to DYNAMIC.")
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
   @Description("The Istio service mesh integration settings.")
@@ -53,6 +53,11 @@ public class Configuration {
 
   public void setModel(Model model) {
     this.model = model;
+  }
+
+  public Configuration withModel(Model model) {
+    this.model = model;
+    return this;
   }
 
   public Opss getOpss() {

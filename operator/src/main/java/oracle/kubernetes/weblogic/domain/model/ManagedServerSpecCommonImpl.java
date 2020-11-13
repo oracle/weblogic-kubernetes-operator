@@ -25,4 +25,12 @@ public class ManagedServerSpecCommonImpl extends ServerSpecCommonImpl {
     }
     return super.shouldStart(currentReplicas);
   }
+
+  @Override
+  public boolean alwaysStart() {
+    if (isStartAdminServerOnly()) {
+      return false;
+    }
+    return super.alwaysStart();
+  }
 }

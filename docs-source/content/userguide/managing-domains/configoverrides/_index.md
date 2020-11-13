@@ -3,7 +3,7 @@ title = "Configuration overrides"
 date = 2019-02-23T16:45:16-05:00
 weight = 5
 pre = "<b> </b>"
-+++
++++ 
 
 #### Contents
 
@@ -372,11 +372,17 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
 * Make sure you've followed each step in the [Step-by-step guide](#step-by-step-guide).
 
 * If WebLogic Server instance Pods do not come up at all, then:
-  * In the domain's namespace, see if you can find a job named `DOMAIN_UID-introspect-domain-job` and a corresponding pod named something like `DOMAIN_UID-introspect-domain-job-xxxx`.  If so, examine:
+  * Examine your Domain resource status: `kubectl -n MYDOMAINNAMESPACE describe domain MYDOMAIN`
+  * In the domain's namespace, see if you can find a job named `DOMAIN_UID-introspector` and a corresponding pod named something like `DOMAIN_UID-introspector-xxxx`.  If so, examine:
       * `kubectl -n MYDOMAINNAMESPACE describe job INTROSPECTJOBNAME`
       * `kubectl -n MYDOMAINNAMESPACE logs INTROSPECTPODNAME`
   * Check your operator log for Warning/Error/Severe messages.
       * `kubectl -n MYOPERATORNAMESPACE logs OPERATORPODNAME`
+
+{{% notice tip %}}
+The introspector log is mirrored to the Domain resource `spec.logHome` directory
+when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
+{{% /notice %}}
 
 * If WebLogic Server instance Pods do start, then:
   * Search your Administration Server Pod's `kubectl log` for the keyword `situational`, for example `kubectl logs MYADMINPOD | grep -i situational`.
@@ -433,7 +439,7 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
 ### Internal design flow
 
 * The operator generates the final configuration overrides, which include the merging of operator-generated overrides and the processing of any customer-provided configuration overrides templates and Secrets, during its introspection phase.
-* The operator creates a Kubernetes Job for introspection named `DOMAIN_UID-introspect-domain-job`.
+* The operator creates a Kubernetes Job for introspection named `DOMAIN_UID-introspector`.
 * The introspector Job's Pod:
   * Mounts the Kubernetes ConfigMap and Secrets specified by using the operator Domain `configuration.overridesConfigMap`, `webLogicCredentialsSecret`, and `configuration.secrets` fields.
   * Reads the mounted configuration overrides templates from the ConfigMap and expands them to create the actual configuration overrides files for the domain:

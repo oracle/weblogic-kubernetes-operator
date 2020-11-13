@@ -36,10 +36,11 @@ public class ServerDownStep extends Step {
       next = getNext();
     } else {
       next = ServiceHelper.deleteServicesStep(serverName, getNext());
-      if (oldPod != null) {
-        PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
-        next = pw.waitForDelete(oldPod, next);
-      }
+    }
+
+    if (oldPod != null) {
+      PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
+      next = pw.waitForDelete(oldPod, next);
     }
 
     return doNext(oldPod != null ? PodHelper.deletePodStep(serverName, next) : next, packet);
