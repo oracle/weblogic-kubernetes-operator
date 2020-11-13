@@ -17,7 +17,7 @@
       <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/namespace-management/</guid>
-      <description>Each operator deployment manages a number of Kubernetes Namespaces. For more information, see Operator Helm configuration values. A number of Kubernetes resources must be present in a namespace before any WebLogic domain custom resources can be successfully deployed into it. Those Kubernetes resources are created either as part of the installation of the operator&amp;rsquo;s Helm chart, or created by the operator at runtime.
+      <description>Each operator deployment manages a number of Kubernetes namespaces. For more information, see Operator Helm configuration values. A number of Kubernetes resources must be present in a namespace before any WebLogic Server instances can be successfully started. Those Kubernetes resources are created either as part of the installation of a release of the operator&amp;rsquo;s Helm chart, or created by the operator.
 This FAQ describes some considerations to be aware of when you manage the namespaces while the operator is running.</description>
     </item>
     

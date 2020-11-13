@@ -12,18 +12,18 @@
     <title>Release Notes :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605198084" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605285049" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605198084"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605285049"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605198084"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605198084"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605285049"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605285049"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605198084"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605285049"></script>
 
     
   </div>
@@ -158,9 +158,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and load balancer" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and ingress controller" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/quickstart/install/">
-        Install the operator and load balancer
+        Install the operator and ingress controller
         
         </a>
     </li>
@@ -1747,6 +1747,30 @@
 
             
           
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/" title="Domain lifecycle operations" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/">
+          Domain lifecycle operations
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
         
         </ul>
               
@@ -2852,10 +2876,16 @@ if (!doNotTrack) {
 <th>Date</th>
 <th>Version</th>
 <th>Introduces backward incompatibilities?</th>
-<th>Changes</th>
+<th>Change</th>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>November 13, 2020</td>
+<td>v3.1.0</td>
+<td>no</td>
+<td>Enhanced options for specifying managed namespaces. Helm 3.1.3+ now required.</td>
+</tr>
 <tr>
 <td>November 9, 2020</td>
 <td>v3.0.3</td>
@@ -2973,6 +3003,30 @@ if (!doNotTrack) {
 </tbody>
 </table>
 <h3 id="change-log">Change log</h3>
+<h4 id="operator-310">Operator 3.1.0</h4>
+<ul>
+<li>All fixes included in 3.0.1, 3.0.2, and 3.0.3 are included in 3.1.0.</li>
+<li>Sample <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#domain-lifecycle-sample-scripts">scripts to start and stop server instances</a> (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2002">#2002</a>).</li>
+<li>Support running with <a href="/weblogic-kubernetes-operator/security/openshift/#create-a-custom-security-context-constraint">OpenShift restrictive SCC</a> (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2007">#2007</a>).</li>
+<li>Updated <a href="/weblogic-kubernetes-operator/faq/resource-settings/">default resource and Java options</a> (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1775">#1775</a>).</li>
+<li>Introspection failures are logged to the operator&rsquo;s log (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1787">#1787</a>).</li>
+<li>Mirror introspector log to a rotating file in the log home (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1827">#1827</a>).</li>
+<li>Reflect introspector status to domain status (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1832">#1832</a>).</li>
+<li>Ensure operator detects pod state changes even when watch events are not delivered (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1811">#1811</a>).</li>
+<li>Support configurable WDT model home (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1828">#1828</a>).</li>
+<li><a href="/weblogic-kubernetes-operator/faq/namespace-management/">Namespace management enhancements</a> (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1860">#1860</a>).</li>
+<li>Limit concurrent pod shut down while scaling down a cluster (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1892">#1892</a>).</li>
+<li>List continuation and watch bookmark support (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1881">#1881</a>).</li>
+<li>Fix scaling script when used with dedicated namespace mode (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1921">#1921</a>).</li>
+<li>Fix token substitution for mount paths (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1911">#1911</a>).</li>
+<li>Validate existence of service accounts during Helm chart processing (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1939">#1939</a>).</li>
+<li>Use Kubernetes Java Client 10.0.0 (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1937">#1937</a>).</li>
+<li>Better validation and guidance when using longer domainUID values (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/1979">#1979</a>).</li>
+<li>Update pods with label for introspection version (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2012">#2012</a>).</li>
+<li>Fix validation error during inrtrospector for certain static clusters (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2014">#2014</a>).</li>
+<li>Correct issue in wl-pod-wait.sh sample script (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2018">#2018</a>).</li>
+<li>Correct processing of ALWAYS serverStartPolicy (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2020">#2020</a>).</li>
+</ul>
 <h4 id="operator-303">Operator 3.0.3</h4>
 <ul>
 <li>The operator now responds to WebLogic Server instance pods that are stuck in the Terminating state when those pods are evicted from a node that has unexpectedly shut down and where Kubernetes has not removed the pod.</li>
@@ -4201,6 +4255,22 @@ if (!doNotTrack) {
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -4954,19 +5024,19 @@ if (!doNotTrack) {
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605198084"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605198084"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605198084"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605198084"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605198084"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605198084"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605285049"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605198084"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1605198084"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605198084"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605285049"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605198084" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605198084"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605285049" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605285049"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

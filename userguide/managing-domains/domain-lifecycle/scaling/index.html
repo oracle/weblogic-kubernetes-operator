@@ -12,18 +12,18 @@
     <title>Scaling :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1605198084" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605198084" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605285049" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605198084"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605285049"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605198084"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605198084"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605285049"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605285049"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605198084"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605285049"></script>
 
     
   </div>
@@ -158,9 +158,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and load balancer" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and ingress controller" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/quickstart/install/">
-        Install the operator and load balancer
+        Install the operator and ingress controller
         
         </a>
     </li>
@@ -1747,6 +1747,30 @@
 
             
           
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/" title="Domain lifecycle operations" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/">
+          Domain lifecycle operations
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
         
         </ul>
               
@@ -2914,8 +2938,25 @@ if (!doNotTrack) {
 </ul>
 <p>For example, when using <code>curl</code>:</p>
 <pre><code>curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H &quot;Authorization:Bearer ...&quot; -d '{ &quot;managedServerCount&quot;: 3 }' https://.../scaling
-</code></pre><p>If you omit the header, you&rsquo;ll get a <code>400 (bad request)</code> response. If you omit the Bearer Authentication header, then you&rsquo;ll get a <code>401 (Unauthorized)</code> response.</p>
-<h5 id="operator-rest-endpoints">Operator REST endpoints</h5>
+</code></pre><p>If you omit the header, you&rsquo;ll get a <code>400 (bad request)</code> response. If you omit the Bearer Authentication header, then you&rsquo;ll get a <code>401 (Unauthorized)</code> response.  If the service account or user associated with the <code>Bearer</code> token does not have permission to <code>patch</code> the WebLogic domain resource, then you&rsquo;ll get a <code>403 (Forbidden)</code> response.</p>
+
+<div class="notices note" ><p>To resolve a <code>403 (Forbidden)</code> response, when calling the operator&rsquo;s REST scaling API, you may need to add the <code>patch</code> request verb to the cluster role associated with the WebLogic <code>domains</code> resource.
+The example ClusterRole definition below grants <code>get</code>, <code>list</code>, <code>patch</code> and <code>update</code> access to the WebLogic <code>domains</code> resource</p>
+</div>
+
+<pre><code>kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: weblogic-domain-cluster-role
+rules:
+- apiGroups: [&quot;weblogic.oracle&quot;]
+  resources: [&quot;domains&quot;]
+  verbs: [&quot;get&quot;, &quot;list&quot;, &quot;patch&quot;, update&quot;]
+- apiGroups: [&quot;apiextensions.k8s.io&quot;]
+  resources: [&quot;customresourcedefinitions&quot;]
+  verbs: [&quot;get&quot;, &quot;list&quot;]
+---
+</code></pre><h5 id="operator-rest-endpoints">Operator REST endpoints</h5>
 <p>The WebLogic Server Kubernetes Operator can expose both an internal and external REST HTTPS endpoint.
 The internal REST endpoint is only accessible from within the Kubernetes cluster. The external REST endpoint
 is accessible from outside the Kubernetes cluster.
@@ -3037,7 +3078,7 @@ metadata:
 rules:
 - apiGroups: [&quot;weblogic.oracle&quot;]
   resources: [&quot;domains&quot;]
-  verbs: [&quot;get&quot;, &quot;list&quot;, &quot;update&quot;]
+  verbs: [&quot;get&quot;, &quot;list&quot;, &quot;patch&quot;, update&quot;]
 - apiGroups: [&quot;apiextensions.k8s.io&quot;]
   resources: [&quot;customresourcedefinitions&quot;]
   verbs: [&quot;get&quot;, &quot;list&quot;]
@@ -4375,6 +4416,22 @@ curl --noproxy '*' -v --cacert operator.cert.pem \
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -5130,19 +5187,19 @@ curl --noproxy '*' -v --cacert operator.cert.pem \
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605285049"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605285049"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605198085" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605198085"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605285049" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605285049"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

@@ -12,18 +12,18 @@
     <title>Debugging :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605198085" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605285049" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605285049"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605198085"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605198085"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605285049"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605285049"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605198085"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605285049"></script>
 
     
   </div>
@@ -158,9 +158,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and load balancer" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and ingress controller" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/quickstart/install/">
-        Install the operator and load balancer
+        Install the operator and ingress controller
         
         </a>
     </li>
@@ -1747,6 +1747,30 @@
 
             
           
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/" title="Domain lifecycle operations" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/">
+          Domain lifecycle operations
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
         
         </ul>
               
@@ -2883,33 +2907,38 @@ if (!doNotTrack) {
 $ kubectl -n sample-domain1-ns get pods -l weblogic.domainUID=sample-domain1
 NAME                                         READY   STATUS    RESTARTS   AGE
 sample-domain1-admin-server                  1/1     Running   0          19h
-sample-domain1-introspect-domain-job-v2l7k   0/1     Error     0          75m
+sample-domain1-introspector-v2l7k            0/1     Error     0          75m
 sample-domain1-managed-server1               1/1     Running   0          19h
 sample-domain1-managed-server2               1/1     Running   0          19h
 
 $ # let's look at the job's describe
-$ kubectl -n sample-domain1-ns describe job/sample-domain1-introspect-domain-job
+$ kubectl -n sample-domain1-ns describe job/sample-domain1-introspector
 
 ...
 
 $ # now let's look at the job's pod describe, in particular look at its 'events'
-$ kubectl -n sample-domain1-ns describe pod/sample-domain1-introspect-domain-job-v2l7k
+$ kubectl -n sample-domain1-ns describe pod/sample-domain1-introspector-v2l7k
 
 ...
 
 $ # finally let's look at job's pod's log
-$ kubectl -n sample-domain1-ns logs job/sample-domain1-introspect-domain-job
+$ kubectl -n sample-domain1-ns logs job/sample-domain1-introspector
 
 ...
 
 $ # alternative log command (will have same output as previous)
-# kubectl -n sample-domain1-ns logs pod/sample-domain1-introspect-domain-job-v2l7k
+# kubectl -n sample-domain1-ns logs pod/sample-domain1-introspector-v2l7k
 </code></pre><p>A common reason for the introspector job to fail is because of an error in a model file. Here&rsquo;s some sample log output from an introspector job that shows such a failure:</p>
 <pre><code>...
 
 SEVERE Messages:
       1. WLSDPLY-05007: Model file /u01/wdt/models/model1.yaml,/weblogic-operator/wdt-config-map/..2020_03_19_15_43_05.993607882/datasource.yaml contains an unrecognized section: TYPOresources. The recognized sections are domainInfo, topology, resources, appDeployments, kubernetes
 </code></pre>
+<div class="notices tip" ><p>The introspector log is mirrored to the Domain resource <code>spec.logHome</code> directory
+when <code>spec.logHome</code> is configured and <code>spec.logHomeEnabled</code> is true.</p>
+</div>
+
+
 <div class="notices tip" ><p>If a model file error references a model file in your <code>spec.configuration.model.configMap</code>, then you can correct the error by redeploying the ConfigMap with a corrected model file and then initiating a domain restart or roll. Similarly, if a model file error references a model file in your model image, then you can correct the error by deploying a corrected image, modifying your Domain YAML file to reference the new image, and then initiating a domain restart or roll.</p>
 </div>
 
@@ -4150,6 +4179,22 @@ $ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  \
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -4905,19 +4950,19 @@ $ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  \
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605285049"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605285049"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605198085" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605198085"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605285049" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605285049"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

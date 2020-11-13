@@ -12,18 +12,18 @@
     <title>Domain resource :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605198085" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605285049" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605285049"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605198085"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605198085"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605285049"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605285049"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605198085"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605285049"></script>
 
     
   </div>
@@ -158,9 +158,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and load balancer" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and ingress controller" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/quickstart/install/">
-        Install the operator and load balancer
+        Install the operator and ingress controller
         
         </a>
     </li>
@@ -1747,6 +1747,30 @@
 
             
           
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/" title="Domain lifecycle operations" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/">
+          Domain lifecycle operations
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
         
         </ul>
               
@@ -2880,6 +2904,7 @@ if (!doNotTrack) {
 <li>Create a Kubernetes Namespace for the Domain unless the intention is to use the default namespace.</li>
 <li>Make sure the WebLogic Server Kubernetes Operator is running and is configured to monitor the namespace.</li>
 <li>Make sure any resources that the domain resource references are deployed to the same namespace. For example, all domain resources have a <code>spec.webLogicCredentialsSecret</code> field that references a Kubernetes Secret containing the <code>username</code> and <code>password</code> of the WebLogic server administrative account.</li>
+<li>Make sure a domain resource configuration and its corresponding WebLogic configuration <a href="/weblogic-kubernetes-operator/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">meet Kubernetes resource name restrictions</a>.</li>
 </ul>
 <p>For example, see the <a href="/weblogic-kubernetes-operator/quickstart/">Quick Start</a>.</p>
 <h4 id="deploying-domain-resource-yaml-files">Deploying domain resource YAML files</h4>
@@ -2934,7 +2959,7 @@ DESCRIPTION:
 <p>The Domain <code>spec</code> section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers.</p>
 <p>Elements related to domain identification, container image, and domain home:</p>
 <ul>
-<li><code>domainUID</code>: Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of <code>metadata.name</code>.</li>
+<li><code>domainUID</code>: Domain unique identifier. This identifier is required to be no more than 45 characters, and practically, should be shorter in order to help ensure Kubernetes restrictions are met (for more details, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>). It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of <code>metadata.name</code>.</li>
 <li><code>image</code>: The WebLogic container image; required when <code>domainHomeSourceType</code> is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.</li>
 <li><code>imagePullPolicy</code>: The image pull policy for the WebLogic container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.</li>
 <li><code>imagePullSecrets</code>: A list of image pull Secrets for the WebLogic container image.</li>
@@ -2945,7 +2970,7 @@ DESCRIPTION:
 <p>Elements related to logging:</p>
 <ul>
 <li><code>includeServerOutInPodLog</code>: Specifies whether the server .out file will be included in the Pod&rsquo;s log. Defaults to true.</li>
-<li><code>logHome</code>: The directory in a server&rsquo;s container in which to store the domain, Node Manager, server logs, server *.out, and optionally HTTP access log files if <code>httpAccessLogInLogHome</code> is true. Ignored if <code>logHomeEnabled</code> is false.</li>
+<li><code>logHome</code>: The directory in a server&rsquo;s container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if <code>httpAccessLogInLogHome</code> is true. Ignored if <code>logHomeEnabled</code> is false.</li>
 <li><code>logHomeEnabled</code>: Specifies whether the log home folder is enabled. Defaults to true if <code>domainHomeSourceType</code> is PersistentVolume; false, otherwise.</li>
 <li><code>httpAccessLogInLogHome</code>: Specifies whether the server HTTP access log files will be written to the same directory specified in <code>logHome</code>. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain configuration. Defaults to true.</li>
 </ul>
@@ -2956,13 +2981,13 @@ DESCRIPTION:
 </ul>
 <p>Elements related to domain <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/">startup and shutdown</a>:</p>
 <ul>
-<li><code>serverStartPolicy</code>: The strategy for <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/">deciding whether to start</a> a WebLogic Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED.</li>
+<li><code>serverStartPolicy</code>: The strategy for <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers">deciding whether to start</a> a WebLogic Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED.</li>
 <li><code>serverStartState</code>: The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING.</li>
-<li><code>restartVersion</code>: Changes to this field cause the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/">operator to restart</a> WebLogic Server instances.</li>
+<li><code>restartVersion</code>: Changes to this field cause the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers">operator to restart</a> WebLogic Server instances.</li>
 <li><code>replicas</code>: The default number of cluster member Managed Server instances to start for each WebLogic cluster in the domain configuration, unless <code>replicas</code> is specified for that cluster under the <code>clusters</code> field. For each cluster, the operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as &ldquo;managed-server10&rdquo; come after &ldquo;managed-server9&rdquo;. The operator will then start Managed Servers from the sorted list, up to the <code>replicas</code> count, unless specific Managed Servers are specified as starting in their entry under the <code>managedServers</code> field. In that case, the specified Managed Servers will be started and then additional cluster members will be started, up to the <code>replicas</code> count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their entries under <code>managedServers</code>, then a cluster may have more cluster members running than its <code>replicas</code> count. Defaults to 0.</li>
 <li><code>maxClusterConcurrentStartup</code>: The maximum number of cluster member Managed Server instances that the operator will start in parallel for a given cluster, if <code>maxConcurrentStartup</code> is not specified for a specific cluster under the <code>clusters</code> field. A value of 0 means there is no configured limit. Defaults to 0.</li>
 <li><code>allowReplicasBelowMinDynClusterSize</code>: Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the <code>clusters</code> field. Defaults to true.</li>
-<li><code>introspectVersion</code>: Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the <code>domainHomeSourceType</code> is FromModel. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the FromModel <code>domainHomeSourceType</code>, introspection also occurs when a running server must be restarted because of changes to any of the fields <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/">listed here</a>. See also <code>overridesConfigurationStrategy</code>.</li>
+<li><code>introspectVersion</code>: Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration (see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/#initiating-introspection">Initiating introspection</a>). Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the <code>domainHomeSourceType</code> is FromModel. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the FromModel <code>domainHomeSourceType</code>, introspection also occurs when a running server must be restarted because of changes to any of the fields <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">listed here</a>. See also <code>overrideDistributionStrategy</code>.</li>
 </ul>
 <p>Elements related to specifying and overriding WebLogic domain configuration:</p>
 <ul>
@@ -2970,7 +2995,7 @@ DESCRIPTION:
 <p>These elements are under <code>configuration</code>.</p>
 <ul>
 <li><code>overridesConfigMap</code>: The name of the ConfigMap for WebLogic <a href="/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/">configuration overrides</a>. If this field is specified, then the value of <code>spec.configOverrides</code> is ignored.</li>
-<li><code>overrideDistributionStrategy</code>: Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the <code>domainHomeSourceType</code> is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the <code>overrideConfigMap</code> field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server&rsquo;s next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also <code>introspectVersion</code>. Defaults to DYNAMIC.</li>
+<li><code>overrideDistributionStrategy</code>: Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the <code>domainHomeSourceType</code> is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the <code>overridesConfigMap</code> field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server&rsquo;s next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also <code>introspectVersion</code>. Defaults to DYNAMIC.</li>
 <li><code>secrets</code>: A list of names of the Secrets for WebLogic <a href="/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/">configuration overrides</a> or model. If this field is specified, then the value of <code>spec.configOverrideSecrets</code> is ignored.</li>
 <li><code>introspectorJobActiveDeadlineSeconds</code>: The introspector job timeout value in seconds. If this field is specified, then the operator&rsquo;s ConfigMap <code>data.introspectorJobActiveDeadlineSeconds</code> value is ignored. Defaults to 120 seconds.</li>
 </ul>
@@ -4357,6 +4382,22 @@ DESCRIPTION:
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -5112,19 +5153,19 @@ DESCRIPTION:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605285049"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605285049"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605198085" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605198085"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605285049" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605285049"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

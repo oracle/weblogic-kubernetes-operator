@@ -12,18 +12,18 @@
     <title>Install the operator :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605198085" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605285049" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605285049"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605198085"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605198085"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605285049"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605285049"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605198085"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605285049"></script>
 
     
   </div>
@@ -158,9 +158,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and load balancer" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and ingress controller" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/quickstart/install/">
-        Install the operator and load balancer
+        Install the operator and ingress controller
         
         </a>
     </li>
@@ -1747,6 +1747,30 @@
 
             
           
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/" title="Domain lifecycle operations" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/">
+          Domain lifecycle operations
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
         
         </ul>
               
@@ -2844,9 +2868,9 @@
 
 
 
-	<p>The operator uses Helm to create and deploy the necessary resources and
-then run the operator in a Kubernetes cluster. This document describes how to install, upgrade,
-and remove the operator.</p>
+	<p>The operator uses Helm to create the necessary resources and
+then deploy the operator in a Kubernetes cluster. This document describes how to install, upgrade,
+and uninstall the operator.</p>
 <h4 id="content">Content</h4>
 <ul>
 <li><a href="#install-the-operator-helm-chart">Install the operator Helm chart</a></li>
@@ -2856,13 +2880,13 @@ and remove the operator.</p>
 </ul>
 <h4 id="install-the-operator-helm-chart">Install the operator Helm chart</h4>
 <p>Use the <code>helm install</code> command to install the operator Helm chart. As part of this, you must specify a &ldquo;release&rdquo; name for the operator.</p>
-<p>You can override default configuration values in the operator Helm chart by doing one of the following:</p>
+<p>You can override default configuration values in the chart by doing one of the following:</p>
 <ul>
 <li>Creating a custom YAML file containing the values to be overridden, and specifying the <code>--value</code> option on the Helm command line.</li>
 <li>Overriding individual values directly on the Helm command line, using the <code>--set</code> option.</li>
 </ul>
-<p>You supply the <code>–namespace</code> argument from the <code>helm install</code> command line to specify the namespace in which the operator should be installed.  If not specified, then it defaults to <code>default</code>.  If the namespace does not already exist, then Helm will automatically create it (and create a default service account in the new namespace), but will not remove it when the release is deleted.  If the namespace already exists, then Helm will re-use it.  These are standard Helm behaviors.</p>
-<p>Similarly, you may override the default <code>serviceAccount</code> configuration value to specify which service account in the operator&rsquo;s namespace, the operator should use.  If not specified, then it defaults to <code>default</code> (for example, the namespace&rsquo;s default service account).  If you want to use a different service account, then you must create the operator&rsquo;s namespace and the service account before installing the operator Helm chart.</p>
+<p>You supply the <code>–-namespace</code> argument from the <code>helm install</code> command line to specify the namespace in which the operator will be installed. If not specified, then it defaults to <code>default</code>.  If the namespace does not already exist, then Helm will automatically create it (and create a default service account in the new namespace), but will not remove it when the release is uninstalled. If the namespace already exists, then Helm will use it. These are standard Helm behaviors.</p>
+<p>Similarly, you may override the default <code>serviceAccount</code> configuration value to specify a service account in the operator&rsquo;s namespace, the operator will use. If not specified, then it defaults to <code>default</code> (for example, the namespace&rsquo;s default service account). If you want to use a different service account, then you must create the operator&rsquo;s namespace and the service account before installing the operator Helm chart.</p>
 <p>For example, using Helm 3.x:</p>
 <pre><code>$ kubectl create namespace weblogic-operator-namespace
 </code></pre><pre><code>$ helm install weblogic-operator kubernetes/charts/weblogic-operator \
@@ -2906,25 +2930,27 @@ This rolling restart will preserve WebLogic cluster availability guarantees (for
 </code></pre><p>Then install the 3.x operator using the <a href="#install-the-operator-helm-chart">installation</a> instructions above.</p>
 <p>The following instructions will be applicable to upgrade operators within the 3.x release family
 as additional versions are released.</p>
-<p>To upgrade the operator, use the <code>helm upgrade</code> command. When upgrading the operator,
+<p>To upgrade the operator, use the <code>helm upgrade</code> command. Make sure that the
+<code>weblogic-kubernetes-operator</code> repository on your local machine is at the
+operator release to which you are upgrading. When upgrading the operator,
 the <code>helm upgrade</code> command requires that you supply a new Helm chart and image. For example:</p>
 <pre><code>$ helm upgrade \
   --reuse-values \
-  --set image=oracle/weblogic-kubernetes-operator:3.0.3 \
+  --set image=oracle/weblogic-kubernetes-operator:3.1.0 \
   --namespace weblogic-operator-namespace \
   --wait \
   weblogic-operator \
   kubernetes/charts/weblogic-operator
-</code></pre><h4 id="remove-the-operator">Remove the operator</h4>
-<p>The <code>helm delete</code> command is used to remove an operator release and its associated resources from the Kubernetes cluster.  The release name used with the <code>helm delete</code> command is the same release name used with the <code>helm install</code> command (see <a href="#install-the-operator-helm-chart">Install the Helm chart</a>).  For example:</p>
-<pre><code>$ helm delete weblogic-operator -n weblogic-operator-namespace
+</code></pre><h4 id="uninstall-the-operator">Uninstall the operator</h4>
+<p>The <code>helm uninstall</code> command is used to remove an operator release and its associated resources from the Kubernetes cluster. The release name used with the <code>helm uninstall</code> command is the same release name used with the <code>helm install</code> command (see <a href="#install-the-operator-helm-chart">Install the Helm chart</a>). For example:</p>
+<pre><code>$ helm uninstall weblogic-operator -n weblogic-operator-namespace
 </code></pre>
-<div class="notices note" ><p>If the operator&rsquo;s namespace did not exist before the Helm chart was installed, then Helm will create it, however, <code>helm delete</code> will not remove it.</p>
+<div class="notices note" ><p>If the operator&rsquo;s namespace did not exist before the Helm chart was installed, then Helm will create it, however, <code>helm uninstall</code> will not remove it.</p>
 </div>
 
-<p>After removing the operator deployment, you should also remove the domain custom resource definition:</p>
+<p>After removing the operator deployment, you should also remove the Domain custom resource definition (CRD):</p>
 <pre><code>$ kubectl delete customresourcedefinition domains.weblogic.oracle
-</code></pre><p>Note that the domain custom resource definition is shared if there are multiple operators in the same cluster.</p>
+</code></pre><p>Note that the Domain custom resource definition is shared. Do not delete the CRD if there are other operators in the same cluster.</p>
 
 
 
@@ -4131,6 +4157,22 @@ the <code>helm upgrade</code> command requires that you supply a new Helm chart 
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -4886,19 +4928,19 @@ the <code>helm upgrade</code> command requires that you supply a new Helm chart 
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605285049"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605285049"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605198085" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605198085"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605285049" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605285049"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

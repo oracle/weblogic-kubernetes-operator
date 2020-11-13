@@ -17,7 +17,7 @@
       <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/namespace-management/</guid>
-      <description>Each operator deployment manages a number of Kubernetes Namespaces. For more information, see Operator Helm configuration values. A number of Kubernetes resources must be present in a namespace before any WebLogic domain custom resources can be successfully deployed into it. Those Kubernetes resources are created either as part of the installation of the operator&amp;rsquo;s Helm chart, or created by the operator at runtime.
+      <description>Each operator deployment manages a number of Kubernetes namespaces. For more information, see Operator Helm configuration values. A number of Kubernetes resources must be present in a namespace before any WebLogic Server instances can be successfully started. Those Kubernetes resources are created either as part of the installation of a release of the operator&amp;rsquo;s Helm chart, or created by the operator.
 This FAQ describes some considerations to be aware of when you manage the namespaces while the operator is running.</description>
     </item>
     
@@ -79,7 +79,7 @@ Because the target runtime environment for the operator is Oracle Linux, no part
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/</guid>
       <description>Contents  Useful Helm operations Operator Helm configuration values  Overall operator information Creating the operator pod WebLogic domain management Elastic Stack integration REST interface configuration Debugging options   Common mistakes and solutions  Note that the operator Helm chart is available from the GitHub chart repository, see Alternatively, install the operator Helm chart from the GitHub chart repository.
-Useful Helm operations Show the available operator configuration parameters and their default values:</description>
+Useful Helm operations Show the available operator configuration values and their defaults:</description>
     </item>
     
     <item>
@@ -88,7 +88,7 @@ Useful Helm operations Show the available operator configuration parameters and 
       <pubDate>Sat, 23 Feb 2019 17:04:41 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/</guid>
-      <description>Contents  Starting and stopping servers  Common starting and stopping scenarios   Shutdown options Restarting servers  Rolling restarts Common restarting scenarios    There are fields on the Domain that specify which servers should be running, which servers should be restarted, and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain (for example, by using kubectl or the Kubernetes REST API).</description>
+      <description>Contents  Starting and stopping servers  Common starting and stopping scenarios Domain lifecycle sample scripts   Shutdown options Restarting servers  Rolling restarts Common restarting scenarios    There are fields on the Domain that specify which servers should be running, which servers should be restarted, and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain (for example, by using kubectl or the Kubernetes REST API).</description>
     </item>
     
     <item>
@@ -139,7 +139,7 @@ You can have one or more operators in your Kubernetes cluster that manage one or
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/quickstart/introduction/</guid>
-      <description>Use this Quick Start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Server Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production. These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please refer to the User guide.
+      <description>Use this Quick Start guide to create a WebLogic Server deployment in a Kubernetes cluster with the Oracle WebLogic Server Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production. These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please refer to the User guide.
 All Kubernetes distributions and managed services have small differences. In particular, the way that persistent storage and load balancers are managed varies significantly.</description>
     </item>
     
@@ -282,7 +282,7 @@ When your domain home source type is Domain in PV or Domain in Image, the operat
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/</guid>
       <description>You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes. If the Administration Server was configured to expose a T3 channel using the exposeAdminT3Channel setting when creating the domain, then the matching T3 service can be used to connect. For example, if the domainUID is domain1, and the Administration Server name is admin-server, then the service would be called:
-domain1-admin-server-external This service will be in the same namespace as the domain.</description>
+domain1-admin-server-ext This service will be in the same namespace as the domain.</description>
     </item>
     
     <item>
@@ -362,10 +362,10 @@ The Oracle Database Docker images are only supported for non-production use. For
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/quickstart/get-images/</guid>
-      <description>Get these images and put them into your local registry.   If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store, and accept the license agreement for the WebLogic Server image.
-  Log in to the Docker store from your Docker client:
+      <description>Get these images and put them into your local registry.   If you don&amp;rsquo;t already have one, obtain a Docker Store account, log in to the Docker Store, and accept the license agreement for the WebLogic Server image.
+  Log in to the Docker Store from your Docker client:
 $ docker login   Pull the operator image:
-$ docker pull oracle/weblogic-kubernetes-operator:3.0.3   Pull the Traefik load balancer image:</description>
+$ docker pull oracle/weblogic-kubernetes-operator:3.1.0   Pull the Traefik ingress controller image:</description>
     </item>
     
     <item>
@@ -441,13 +441,15 @@ Because we want to balance separating destabilizing work into feature branches a
     </item>
     
     <item>
-      <title>Install the operator and load balancer</title>
+      <title>Install the operator and ingress controller</title>
       <link>/weblogic-kubernetes-operator/quickstart/install/</link>
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/quickstart/install/</guid>
-      <description>Grant the Helm service account the cluster-admin role. $ cat &amp;lt;&amp;lt;EOF | kubectl apply -f - apiVersion: rbac.authorization.k8s.io/v1 kind: ClusterRoleBinding metadata: name: helm-user-cluster-admin-role roleRef: apiGroup: rbac.authorization.k8s.io kind: ClusterRole name: cluster-admin subjects: - kind: ServiceAccount name: default namespace: kube-system EOF Use Helm to install the operator and Traefik load balancer. First, set up Helm:
-$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/ Create a Traefik (ingress-based) load balancer. Create a namespace for the load balancer.</description>
+      <description>Use Helm to install the operator and Traefik ingress controller. First, set up Helm:
+$ helm repo add traefik https://containous.github.io/traefik-helm-chart/ $ helm repo update Create a Traefik ingress controller. Create a namespace for the ingress controller.
+$ kubectl create namespace traefik Use the values.yaml in the sample but set kubernetes.namespaces specifically.
+$ helm install traefik-operator traefik/traefik \  --namespace traefik \  --values kubernetes/samples/charts/traefik/values.yaml \  --set &amp;#34;kubernetes.namespaces={traefik}&amp;#34; Install the operator.</description>
     </item>
     
     <item>
@@ -457,7 +459,7 @@ $ helm repo add stable https://kubernetes-charts.storage.googleapis.com/ Create 
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/</guid>
       <description>This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in Kubernetes environment.
-In order to manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic domain configuration using an &amp;ldquo;introspection&amp;rdquo; job. This Job will be named DOMAIN_UID-introspect-domain-job, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances.</description>
+In order to manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic domain configuration using an &amp;ldquo;introspection&amp;rdquo; job. This Job will be named DOMAIN_UID-introspector, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances.</description>
     </item>
     
     <item>
@@ -515,10 +517,10 @@ In the use case, you will:
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/quickstart/prepare/</guid>
-      <description>Create a namespace that can host one or more domains:
-$ kubectl create namespace sample-domain1-ns   Use helm to configure the operator to manage domains in this namespace:
-$ helm upgrade sample-weblogic-operator kubernetes/charts/weblogic-operator \  --namespace sample-weblogic-operator-ns \  --reuse-values \  --set &amp;#34;domainNamespaces={sample-domain1-ns}&amp;#34; \  --wait   Configure Traefik to manage ingresses created in this namespace:
-$ helm upgrade traefik-operator stable/traefik \  --namespace traefik \  --reuse-values \  --set &amp;#34;kubernetes.</description>
+      <description>  Create a namespace that can host one or more domains:
+$ kubectl create namespace sample-domain1-ns   Configure Traefik to manage ingresses created in this namespace:
+$ helm upgrade traefik-operator traefik/traefik \  --namespace traefik \  --reuse-values \  --set &amp;#34;kubernetes.namespaces={traefik,sample-domain1-ns}&amp;#34;   If you have reached this point while following the &amp;ldquo;Model in Image&amp;rdquo; sample, please stop here and return to the sample instructions.
+ </description>
     </item>
     
     <item>
@@ -588,7 +590,7 @@ It leaves the namespace intact, the operator running, the load balancer running 
       
       <guid>/weblogic-kubernetes-operator/quickstart/create-domain/</guid>
       <description>For use in the following steps:
- Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character). Pick or create a directory to which you can write output.    Create a Kubernetes Secret for the WebLogic administrator credentials containing the username and password for the domain, using the create-weblogic-credentials script:</description>
+ Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character). Pick or create a directory to which you can write output.    Create a Kubernetes Secret for the WebLogic domain administrator credentials containing the username and password for the domain, using the create-weblogic-credentials script:</description>
     </item>
     
     <item>
@@ -607,8 +609,9 @@ File permission handling on persistent volumes can differ between cloud provider
       <pubDate>Fri, 04 Oct 2019 08:08:08 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/openshift/</guid>
-      <description>OpenShift anyuid security context The Docker images that Oracle publishes default to the container user as oracle, which is UID 1000 and GID 1000. When running the Oracle images or layered images that retain the default user as oracle with OpenShift, the anyuid security context constraint is required to ensure proper access to the file system within the Docker image. This means that the administrator must:
- Ensure the anyuid security content is granted Ensure that WebLogic containers are annotated with openshift.</description>
+      <description>Security requirements to run WebLogic in OpenShift WebLogic Server Kubernetes Operator Docker images starting with version 3.1 and WebLogic Server Docker images obtained from Oracle Container Registry after August 2020 have an oracle user with UID 1000 with the default group set to root.
+Here is an excerpt from a standard WebLogic Dockerfile that demonstrates how the file system group ownership is configured in the standard WebLogic Server images:
+# Setup filesystem and oracle user # Adjust file permissions, go to /u01 as user &amp;#39;oracle&amp;#39; to proceed with WLS installation # ------------------------------------------------------------ RUN mkdir -p /u01 &amp;amp;&amp;amp; \  chmod 775 /u01 &amp;amp;&amp;amp; \  useradd -b /u01 -d /u01/oracle -m -s /bin/bash oracle &amp;amp;&amp;amp; \  chown oracle:root /u01 COPY --from=builder --chown=oracle:root /u01 /u01 OpenShift, by default, enforces the restricted security context constraint which allocates a high, random UID in the root group for each container.</description>
     </item>
     
     <item>
@@ -778,7 +781,7 @@ Check the introspector job If your introspector job failed, then examine the kub
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Releases    Date Version Introduces backward incompatibilities? Changes     November 9, 2020 v3.0.3 no This release contains a fix for pods that are stuck in the Terminating state after an unexpected shut down of a worker node.   September 15, 2020 v3.0.2 no This release contains several fixes, including improvements to log rotation and a fix that avoids unnecessarily updating the domain status.   August 13, 2020 v3.</description>
+      <description>Releases    Date Version Introduces backward incompatibilities? Change     November 13, 2020 v3.1.0 no Enhanced options for specifying managed namespaces. Helm 3.1.3+ now required.   November 9, 2020 v3.0.3 no This release contains a fix for pods that are stuck in the Terminating state after an unexpected shut down of a worker node.   September 15, 2020 v3.0.2 no This release contains several fixes, including improvements to log rotation and a fix that avoids unnecessarily updating the domain status.</description>
     </item>
     
   </channel>

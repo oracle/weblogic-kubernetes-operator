@@ -12,18 +12,18 @@
     <title>Manage WebLogic domains :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605198085" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605285049" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605285049"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605198085"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605198085"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605285049"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605285049"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605198085"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605285049"></script>
 
     
   </div>
@@ -158,9 +158,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and load balancer" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and ingress controller" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/quickstart/install/">
-        Install the operator and load balancer
+        Install the operator and ingress controller
         
         </a>
     </li>
@@ -1747,6 +1747,30 @@
 
             
           
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/" title="Domain lifecycle operations" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/">
+          Domain lifecycle operations
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
         
         </ul>
               
@@ -2810,6 +2834,7 @@
     <li>
       <ul>
         <li></li>
+        <li><a href="#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a></li>
         <li><a href="#creating-and-managing-weblogic-domains">Creating and managing WebLogic domains</a></li>
         <li><a href="#modifying-domain-configurations">Modifying domain configurations</a></li>
         <li><a href="#about-the-domain-resource">About the Domain resource</a></li>
@@ -2847,10 +2872,11 @@
 	<h4 id="contents">Contents</h4>
 <ul>
 <li><a href="#important-considerations-for-weblogic-domains-in-kubernetes">Important considerations for WebLogic domains in Kubernetes</a></li>
+<li><a href="#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a></li>
 <li><a href="#creating-and-managing-weblogic-domains">Creating and managing WebLogic domains</a></li>
 <li><a href="#modifying-domain-configurations">Modifying domain configurations</a></li>
 <li><a href="#about-the-domain-resource">About the Domain resource</a></li>
-<li><a href="#managing-life-cycle-operations">Managing life cycle operations</a></li>
+<li><a href="#managing-lifecycle-operations">Managing lifecycle operations</a></li>
 <li><a href="#scaling-clusters">Scaling clusters</a></li>
 <li><a href="#log-files">Log files</a></li>
 </ul>
@@ -2888,9 +2914,9 @@ the WebLogic Server name is <code>Admin_Server</code>, then its listen address b
 </li>
 <li>
 <p><em>Domain, Cluster, Server, and Network-Access-Point Names:</em> WebLogic domain, cluster, server, and network-access-point (channel)
-names must contain only the characters <code>A-Z</code>, <code>a-z</code>, <code>0-9</code>, <code>-</code>, or <code>_</code>.  This ensures that they can be converted to
-meet Kubernetes resource and DNS1123 naming requirements.  (When generating pod and service names, the operator will convert
-configured names to lower case and substitute a hyphen (<code>-</code>) for each underscore (<code>_</code>).)</p>
+names must contain only the characters <code>A-Z</code>, <code>a-z</code>, <code>0-9</code>, <code>-</code>, or <code>_</code>, and must be kept to a reasonable length.  This ensures that they can
+be safely used to form resource names that meet Kubernetes resource and DNS1123 naming requirements. For more details,
+see <a href="#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
 </li>
 <li>
 <p><em>Node Ports:</em> If you choose to expose any WebLogic channels outside the Kubernetes cluster using a <code>NodePort</code>, for example, the
@@ -2935,6 +2961,22 @@ that many cloud provider&rsquo;s volume providers may not support volumes across
 <li>Mixed clusters (configured servers targeted to a dynamic cluster)</li>
 </ul>
 <p>For up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments, see My Oracle Support Doc ID 2349228.1.</p>
+<h3 id="meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</h3>
+<p>Kubernetes requires that the names of some resource types follow the DNS label standard as defined in <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names">DNS Label Names</a> and <a href="https://tools.ietf.org/html/rfc1123">RFC 1123</a>. This requirement restricts the characters that are allowed in the names of these resources, and also limits the length of these names to no more than 63 characters.</p>
+<p>The following is a list of such Kubernetes resources that the operator generates when a domain resource is deployed, including how their names are constructed.</p>
+<ul>
+<li>A domain introspector job named <code>&lt;domainUID&gt;-&lt;introspectorJobNameSuffix&gt;</code>. The default suffix is <code>-introspector</code>, which can be overridden using the operator&rsquo;s Helm configuration <code>introspectorJobNameSuffix</code> (see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/#weblogic-domain-management">WebLogic domain management</a>).</li>
+<li>A ClusterIP type service and a pod for each WebLogic Server named <code>&lt;domainUID&gt;-&lt;serverName&gt;</code>.</li>
+<li>A ClusterIP type service for each WebLogic cluster named <code>&lt;domainUID&gt;-cluster-&lt;clusterName&gt;</code>.</li>
+<li>An optional NodePort type service, also known as an external service, for the WebLogic Administration Server named <code>&lt;domainUID&gt;-&lt;adminServerName&gt;-&lt;externalServiceNameSuffix&gt;</code>. The default suffix is <code>-ext</code>, which can be overridden using the operator&rsquo;s Helm configuration <code>externalServiceNameSuffix</code> (see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/#weblogic-domain-management">WebLogic domain management</a>).</li>
+</ul>
+<p>The operator puts in place certain validation checks and conversions to prevent these resources from violating Kubernetes restrictions.</p>
+<ul>
+<li>All the names previously described can contain only the characters <code>A-Z</code>, <code>a-z</code>, <code>0-9</code>, <code>-</code>, or <code>_</code>, and must start and end with an alphanumeric character. Note that when generating pod and service names, the operator will convert configured names to lower case and substitute a hyphen (<code>-</code>) for each underscore (<code>_</code>).</li>
+<li>A <code>domainUID</code> is required to be no more than 45 characters.</li>
+<li>WebLogic domain configuration names, such as the cluster names, Administration Server name, and Managed Server names must be kept to a legal length so that the resultant resource names do not exceed Kubernetes&rsquo; limits.</li>
+</ul>
+<p>When a domain resource or WebLogic domain configuration violates the limits, the domain startup will fail, and actual validation errors are reported in the domain resource&rsquo;s status.</p>
 <h3 id="creating-and-managing-weblogic-domains">Creating and managing WebLogic domains</h3>
 <p>You can locate a WebLogic domain either in a persistent volume (PV) or in a Docker image.
 For examples of each, see the <a href="/weblogic-kubernetes-operator/samples/simple/domains/">WebLogic Server Kubernetes Operator samples</a>.</p>
@@ -2981,12 +3023,12 @@ Servers, you can set corresponding system properties in <code>JAVA_OPTIONS</code
 cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/&#39;</span><span style="color:#f92672">)</span>
 create<span style="color:#f92672">(</span>dname,<span style="color:#e6db74">&#39;Log&#39;</span><span style="color:#f92672">)</span>
 cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/Log/&#39;</span> + dname<span style="color:#f92672">)</span>;
-  
+
 <span style="color:#75715e"># configured server log for a server named &#39;sname&#39;</span>
 cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/Servers/&#39;</span> + sname<span style="color:#f92672">)</span>
 create<span style="color:#f92672">(</span>sname, <span style="color:#e6db74">&#39;Log&#39;</span><span style="color:#f92672">)</span>
 cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/Servers/&#39;</span> + sname + <span style="color:#e6db74">&#39;/Log/&#39;</span> + sname<span style="color:#f92672">)</span>
-  
+
 <span style="color:#75715e"># templated (dynamic) server log for a template named &#39;tname&#39;</span>
 cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/ServerTemplates/&#39;</span> + tname<span style="color:#f92672">)</span>
 create<span style="color:#f92672">(</span>tname,<span style="color:#e6db74">&#39;Log&#39;</span><span style="color:#f92672">)</span>
@@ -2996,10 +3038,10 @@ cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/ServerTe
 <p>Here is sample WLST offline code for commonly tuned Log MBean attributes:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># minimum log file size before rotation in kilobytes</span>
 set<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;FileMinSize&#39;</span>, 1000<span style="color:#f92672">)</span>
-  
+
 <span style="color:#75715e"># maximum number of rotated files</span>
 set<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;FileCount&#39;</span>, 10<span style="color:#f92672">)</span>
-  
+
 <span style="color:#75715e"># set to true to rotate file every time on startup (instead of append)</span>
 set<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;RotateLogOnStartup&#39;</span>, <span style="color:#e6db74">&#39;true&#39;</span><span style="color:#f92672">)</span>
 </code></pre></div></li>
@@ -4249,6 +4291,22 @@ For more information, see <a href="https://kubernetes.io/docs/concepts/cluster-a
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -5004,19 +5062,19 @@ For more information, see <a href="https://kubernetes.io/docs/concepts/cluster-a
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605285049"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605285049"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605198085" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605198085"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605285049" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605285049"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

@@ -12,18 +12,18 @@
     <title>Runtime updates :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1605198085" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605198085" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1605285049" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1605285049" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1605285049"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605198085"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605198085"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1605285049"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1605285049"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605198085"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1605285049"></script>
 
     
   </div>
@@ -158,9 +158,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and load balancer" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and ingress controller" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/quickstart/install/">
-        Install the operator and load balancer
+        Install the operator and ingress controller
         
         </a>
     </li>
@@ -1747,6 +1747,30 @@
 
             
           
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/" title="Domain lifecycle operations" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/">
+          Domain lifecycle operations
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
         
         </ul>
               
@@ -2917,12 +2941,31 @@ if (!doNotTrack) {
 <p><em>Can we use custom configuration overrides to do the updates instead?</em></p>
 <p>No. Custom configuration overrides, which are WebLogic configuration overrides specified using a Domain YAML file <code>configuration.overridesConfigMap</code>, as described in <a href="/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/">Configuration overrides</a>, aren&rsquo;t supported in combination with Model in Image. Model in Image will generate an error if custom overrides are specified. This should not be a concern because model file, secret, or model image updates are simpler and more flexible than custom configuration override updates. Unlike configuration overrides, the syntax for a model file update exactly matches the syntax for specifying your model file in the first place.</p>
 <h4 id="supported-and-unsupported-updates">Supported and unsupported updates</h4>
+
+<div class="notices warning" ><p>The expected behavior is undefined when applying an unsupported update. If you need to make an unsupported update and no workaround is documented, then shut down your domain entirely before making the change.</p>
+</div>
+
+<h5 id="supported-updates">Supported updates</h5>
+<p>The following updates are <em>supported</em> except when they reference an area that is specifically documented as <a href="#unsupported-updates">unsupported</a> below:</p>
 <ul>
 <li>
-<p>You can add new MBeans or resources simply by specifying their corresponding model file YAML snippet along with their parent bean hierarchy. See <a href="#example-of-adding-a-data-source">Example of adding a data source</a>.</p>
+<p>You can add a new WebLogic cluster or standalone server.</p>
 </li>
 <li>
-<p>You can change or add secrets that your model references. For example, you can change a database password secret.</p>
+<p>You can add new MBeans or resources by specifying their corresponding model YAML file snippet along with their parent bean hierarchy. See <a href="#example-of-adding-a-data-source">Example of adding a data source</a>.</p>
+</li>
+<li>
+<p>You can change or add MBean attributes by specifying a YAML file snippet along with its parent bean hierarchy that references an existing MBean and the attribute. For example, to add or alter the maximum capacity of a data source named <code>mynewdatasource</code>:</p>
+<pre><code>resources:
+  JDBCSystemResource:
+    mynewdatasource:
+      JdbcResource:
+        JDBCConnectionPoolParams:
+          MaxCapacity: 5
+</code></pre><p>For more information, see <a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md#using-multiple-models">Using Multiple Models</a> in the WebLogic Deploy Tooling documentation.</p>
+</li>
+<li>
+<p>You can change or add secrets that your model macros reference (macros that use the <code>@@SECRET:secretname:secretkey@@</code> syntax). For example, you can change a database password secret.</p>
 </li>
 <li>
 <p>You can change or add environment variables that your model macros reference (macros that use the <code>@@ENV:myenvvar@@</code> syntax).</p>
@@ -2932,20 +2975,14 @@ if (!doNotTrack) {
 <pre><code>resources:
   JDBCSystemResource:
     !mynewdatasource:
-</code></pre><p>For more information, see <a href="https://github.com/oracle/weblogic-deploy-tooling#declaring-named-mbeans-to-delete">Declaring Named MBeans to Delete</a> in the WebLogic Deploying Tooling documentation.</p>
+</code></pre><p>For more information, see <a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md#declaring-named-mbeans-to-delete">Declaring Named MBeans to Delete</a> in the WebLogic Deploying Tooling documentation.</p>
 </li>
+</ul>
+<h5 id="unsupported-updates">Unsupported updates</h5>
+<p>The following updates are <em>unsupported</em>. If you need to make an unsupported update and no workaround is documented, then shut down your domain entirely before making the change.</p>
+<ul>
 <li>
-<p>You can add or alter an MBean attribute by specifying a YAML snippet along with its parent bean hierarchy that references an existing MBean and the attribute. For example, to add or alter the maximum capacity of a data source named <code>mynewdatasource</code>:</p>
-<pre><code>resources:
-  JDBCSystemResource:
-    mynewdatasource:
-      JdbcResource:
-        JDBCConnectionPoolParams:
-          MaxCapacity: 5
-</code></pre><p>For more information, see <a href="https://github.com/oracle/weblogic-deploy-tooling#using-multiple-models">Using Multiple Models</a> in the WebLogic Deploy Tooling documentation.</p>
-</li>
-<li>
-<p>There is no way to directly delete an attribute from an MBean that&rsquo;s already been specified by a model file. The work-around is to do this using two model files: add a model file that deletes the named bean/resource that is a parent to the attribute you want to delete, and add another model file that will be loaded after the first one, which fully defines the named bean/resource but without the attribute you want to delete.</p>
+<p>There is no way to directly delete an attribute from an MBean that&rsquo;s already been specified by a model file. The workaround is to do this using two model files: add a model file that deletes the named bean/resource that is a parent to the attribute you want to delete, and add another model file that will be loaded after the first one, which fully defines the named bean/resource but without the attribute you want to delete.</p>
 </li>
 <li>
 <p>There is no way to directly change the MBean name of an attribute. Instead, you can remove a named MBean using the <code>!</code> syntax as described above, and then add a new one as a replacement.</p>
@@ -2954,35 +2991,53 @@ if (!doNotTrack) {
 <p>You cannot change the domain name at runtime.</p>
 </li>
 <li>
-<p>The following types of runtime update configuration are <em>not</em> supported in this release of Model in Image. If you need to make these kinds of updates, shut down your domain entirely before making the change:</p>
-<ul>
-<li>Domain topology of an existing WebLogic cluster (cluster members)</li>
-<li>Network channel listen address, port, and enabled configuration of an existing cluster or server</li>
-<li>Server and domain log locations</li>
-<li>Node Manager related configuration</li>
-<li>Changing any existing MBean name</li>
-</ul>
-<p>Specifically, do not apply runtime updates for:</p>
-<ul>
-<li>Adding WebLogic Servers to a cluster, or removing them</li>
-<li>Adding or removing Network Access Points (custom channels) for existing servers</li>
-<li>Changing any of the following:
+<p>You cannot change the topology of an existing WebLogic cluster. Specifically, do not apply runtime updates for:</p>
 <ul>
 <li>Dynamic cluster size</li>
-<li>Default, SSL, and Admin channel <code>Enabled</code>, listen address, and port</li>
-<li>Network Access Point (custom channel), listen address, or port</li>
-<li>Server and domain log locations &ndash; use the <code>logHome</code> domain setting instead</li>
-<li>Node Manager access credentials</li>
+<li>Adding WebLogic Servers to a cluster or removing them</li>
 </ul>
 </li>
+<li>
+<p>You cannot change, add, or remove network listen address, port, protocol, and enabled configuration for existing clusters or servers at runtime.</p>
+<p>Specifically, do not apply runtime updates for:</p>
+<ul>
+<li>A Default, SSL, Admin channel <code>Enabled</code>, listen address, or port.</li>
+<li>A Network Access Point (custom channel) <code>Enabled</code>, listen address, protocol, or port.</li>
 </ul>
 <p>Note that it is permitted to override network access point <code>public</code> or <code>external</code> addresses and ports. External access to JMX (MBean) or online WLST requires that the network access point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don&rsquo;t require port matching).</p>
-</li>
-</ul>
 
 <div class="notices warning" ><p>Due to security considerations, we strongly recommend that T3 or any RMI protocol should not be exposed outside the cluster.</p>
 </div>
 
+</li>
+<li>
+<p>You cannot change, add, or remove server and domain log related settings in an MBean at runtime when the domain resource is configured to override the same MBeans using the <code>spec.logHome</code>, <code>spec.logHomeEnabled</code>, or <code>spec.httpAccessLogInLogHome</code> attributes.</p>
+</li>
+<li>
+<p>You cannot change embedded LDAP security entries for <a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-weblogic-users-groups-and-roles">users, groups, roles</a>, and <a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-weblogic-user-password-credential-mapping">credential mappings</a>. For example, you cannot add a user to the default security realm. If you need to make these kinds of updates, then shut down your domain entirely before making the change, or switch to an <a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-security-providers">external security provider</a>.</p>
+</li>
+<li>
+<p>The following summarizes the types of runtime update configuration that are <em>not</em> supported in this release of Model in Image unless a workaround is documented:</p>
+<ul>
+<li>Domain topology of an existing WebLogic cluster. Specifically:
+<ul>
+<li>Dynamic cluster size</li>
+<li>Adding WebLogic Servers to a cluster or removing them</li>
+</ul>
+</li>
+<li>Default and custom network channel configuration for an existing WebLogic cluster or server. Specifically:
+<ul>
+<li>Adding or removing Network Access Points (custom channels) for existing servers</li>
+<li>Changing a Default, SSL, Admin, or custom channel, <code>Enabled</code>, listen address, protocol, or port</li>
+</ul>
+</li>
+<li>Node Manager related configuration</li>
+<li>Changing any existing MBean name</li>
+<li>Deleting an MBean attribute</li>
+<li>Embedded LDAP entries</li>
+</ul>
+</li>
+</ul>
 <h4 id="changing-a-domain-restartversion">Changing a Domain <code>restartVersion</code></h4>
 <p>As was mentioned in the <a href="#overview">overview</a>, one way to tell the operator to apply your configuration changes to a running domain is by altering the Domain <code>restartVersion</code>. Here are some common ways to do this:</p>
 <ul>
@@ -4271,6 +4326,22 @@ in the Model in Image sample.</p>
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -5026,19 +5097,19 @@ in the Model in Image sample.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1605285049"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1605198085"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605198085"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1605285049"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1605285049"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605198085" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605198085"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1605285049" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1605285049"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
