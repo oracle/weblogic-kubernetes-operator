@@ -63,7 +63,7 @@ domainNamespaces:
 enableClusterRoleBinding: false
 
 # image specifies the Docker image containing the operator.
-image: "oracle/weblogic-kubernetes-operator:3.1.0"
+image: "oracle/weblogic-kubernetes-operator:3.2.0"
 
 # imagePullPolicy specifies the image pull policy for the operator's Docker image.
 imagePullPolicy: IfNotPresent
