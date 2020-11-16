@@ -12,33 +12,33 @@ weblogic-kubernetes-operator/integration-tests/src/test/resources - properties, 
 # How does WebLogic Server Kubernetes Operator integration test work ?
  - Build WebLogic Server Kubernetes Operator image from the downloaded Git branch.
  - Install the latest version of WebLogic Server Deploy Tooling (WDT) and WebLogic Image Tool (WIT).
- - Install supported istio service mesh.
- - Pull the specified version of WebLogic image from container-registry.oracle.com (OCR)
- - Install WebLogic Kubernetes Operator.
+ - Install supported Istio service mesh.
+ - Pull the specified version of WebLogic image from `container-registry.oracle.com` (OCR).
+ - Install WebLogic Server Kubernetes Operator.
  - Build a WebLogic domain resource.
- - Make sure WebLogic domain is running by verifying the corresponding server pod and kubernetes service status. 
- - After test execution, delete all the Namespaces, Kubernetes Objects created during test execution.
- - Archive the test standard output for each test class and kubernetes object details for each test method in the diagnostic directory for triage when tests fail or when the env variable COLLECT_LOGS_ON_SUCCESS is set to true.
+ - Make sure that the WebLogic domain is running by verifying the corresponding server pod and Kubernetes service status. 
+ - After test execution, delete all the namespaces, Kubernetes Objects created during test execution.
+ - Archive the test standard output for each test class and Kubernetes object details for each test method in the diagnostic directory for triage when tests fail or when the env variable `COLLECT_LOGS_ON_SUCCESS` is set to true.
  
-# How to run Operator integration tests locally on Oracle Linux
+# How to run operator integration tests locally on Oracle Linux.
 
-- Install supported version of Helm and Kubernetes cluster. For detail see [Weblogic Kubernetes Operator guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/).
-- Install supported version of JDK. Need JDK Version 11+ and above.
-- Clone the weblogic-kubernetes-operator repository
-- Setup a personal account on container-registry.oracle.com
-- Log into https://container-registry.oracle.com and accept Oracle Standard Terms and Restrictions to pull WebLogic images from container-registry.oracle.com/middleware/weblogic
-- Export the following environment variable before running the tests
+- Install supported version of Helm and Kubernetes cluster. For detail see [Weblogic Server Kubernetes Operator guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/).
+- Install supported version of JDK. Need JDK version 11+ or later.
+- Clone the `weblogic-kubernetes-operator` repository.
+- Set up a personal account on `container-registry.oracle.com`.
+- Log into `https://container-registry.oracle.com` and accept Oracle Standard Terms and Restrictions to pull WebLogic images from `container-registry.oracle.com/middleware/weblogic`.
+- Export the following environment variables before running the tests:
    ```
     export BASE_IMAGES_REPO="container-registry.oracle.com"
     export OCR_EMAIL=<ocr_email>
     export OCR_USERNAME=<ocr_username>
     export OCR_PASSWORD=<ocr_password> 
    ```
-- `cd  weblogic-kubernetes-operator` and run the following commands
+- `cd  weblogic-kubernetes-operator` and run the following commands:
   ```
-    # Build the Weblogic Kubernetes Operator binary 
+    # Build the Weblogic Server Kubernetes Operator binary 
     mvn clean install 
-    # Run tests in sequential
+    # Run tests in sequential order
     mvn -pl -integration-tests -P integration-tests clean verify
     # Run tests in parallel
     mvn -DPARALLEL=true -DNUMBER_OF_THREADS=2 -pl -integration-tests -P integration-tests verify
@@ -55,14 +55,14 @@ mvn -Dit.test="!ItCrossDomainTransaction,!ItMiiUpdateDomainConfig" -pl integrati
 ## Environment variables to manage test execution 
 | Variable | Description | Default Value
 | --- | --- | --- |
-| SKIP_CLEANUP  | Test infrastructure removes all kubernetes objects created during test execution. To retain all such objects for triaging test failures this environment variable should be set to true. User need to run weblogic-kubernetes-operator/src/integration-tests/bash/cleanup.sh to clean up kubernetes objects after traiging.    | false
-| COLLECT_LOGS_ON_SUCCESS  | Test infra does not keep the diagnostic log for successful tests. To archive the diagnostic log for successful tests, this environment variable should be set to true. | false
-| RESULT_ROOT  | Root directory for the integration test results and artifacts generated during test execution. | /tmp/it-testsresults
-| BASE_IMAGES_REPO  | The repository URL to download WebLogic and FMW image. Make sure you have access to this repository. Other supported repository is phx.ocir.io (OCIR)  | container-registry.oracle.com(OCR)
-| WEBLOGIC_IMAGE_NAME  | Name of the WebLogic image in the chosen repository.| middleware/weblogic (OCR) 
-| WEBLOGIC_IMAGE_TAG  | The tag for WebLogic base image. Generally, it represents the WebLogic Server version with JDK and/or installation type. Possible values are 12.2.1.3, 12.2.1.3-dev, 12.2.1.4-slim, 14.1.1.0-11 or 14.1.1.0-8. Please check the repository for the availability of these images. | 12.2.1.4
-| FMWINFRA_IMAGE_TAG  | The tag for Fusion Middleware Infrastructure base image. Generally, it represents the FMW version. Possible values are 12.2.1.3, 12.2.1.4. Please check the repository for the availability of these images. | 12.2.1.4
-| FMWINFRA_IMAGE_NAME  | Name of the Fusion Middleware Infrastructure image in the chosen repository.| `middleware/fmw-infrastructure` (OCR) 
+| `SKIP_CLEANUP`  | Test infrastructure removes all Kubernetes objects created during test execution. To retain all such objects for triaging test failures, this environment variable should be set to true. Users need to run `weblogic-kubernetes-operator/src/integration-tests/bash/cleanup.sh` to clean up Kubernetes objects after traiging.    | false
+| `COLLECT_LOGS_ON_SUCCESS`  | Test infrastructure does not keep the diagnostic log for successful tests. To archive the diagnostic log for successful tests, this environment variable should be set to true. | false
+| `RESULT_ROOT` | Root directory for the integration test results and artifacts generated during test execution. | `/tmp/it-testsresults`
+| `BASE_IMAGES_REPO`  | The repository URL to download WebLogic and FMW image. Make sure you have access to this repository. The other supported repository is `phx.ocir.io` (OCIR)  | `container-registry.oracle.com` (OCR)
+| `WEBLOGIC_IMAGE_NAME`  | Name of the WebLogic image in the chosen repository.| `middleware/weblogic` (OCR) 
+| `WEBLOGIC_IMAGE_TAG`  | The tag for WebLogic base image. Generally, it represents the WebLogic Server version with JDK and/or installation type. Possible values are 12.2.1.3, 12.2.1.3-dev, 12.2.1.4-slim, 14.1.1.0-11 or 14.1.1.0-8. Please check the repository for the availability of these images. | 12.2.1.4
+| `FMWINFRA_IMAGE_TAG`  | The tag for Fusion Middleware Infrastructure base image. Generally, it represents the FMW version. Possible values are 12.2.1.3, 12.2.1.4. Please check the repository for the availability of these images. | 12.2.1.4
+| `FMWINFRA_IMAGE_NAME` | Name of the Fusion Middleware Infrastructure image in the chosen repository.| `middleware/fmw-infrastructure` (OCR) 
 
 ## Logging/Archiving
 
