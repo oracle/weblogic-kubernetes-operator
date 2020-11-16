@@ -695,7 +695,7 @@ function createPrimordialDomain() {
     # Override online update since the domain needs to be restarted for security related changes.
     # Note: currently there is no way in WDT to update security information online
 
-    trace "Security changes detected or new deployment - override spec.configuration.useOnlineUpdate to false"
+    trace "Security changes detected or new deployment - override onlineUpdate.enabled to false"
     MII_USE_ONLINE_UPDATE=false
   fi
 
