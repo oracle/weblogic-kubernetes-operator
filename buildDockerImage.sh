@@ -33,7 +33,7 @@ while getopts "t:" optname; do
   esac
 done
 
-IMAGE_NAME=${name:-oracle/weblogic-kubernetes-operator:3.1.0}
+IMAGE_NAME=${name:-oracle/weblogic-kubernetes-operator:3.2.0}
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 # Proxy settings

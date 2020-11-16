@@ -18,8 +18,9 @@ public class HelmAccess {
   private static Function<String,String> getHelmVariableFunction = System::getenv;
 
   /**
-   * Returns the specied Helm variable.
+   * Returns the specified Helm variable.
    * @param variableName the name of the variable to return
+   * @return Variable value
    */
   public static String getHelmVariable(String variableName) {
     return getHelmVariableFunction.apply(variableName);
@@ -27,6 +28,7 @@ public class HelmAccess {
 
   /**
    * Return the comma-separated list of namespaces to be managed by the operator.
+   * @return Domain namespace list
    */
   public static @Nullable String getHelmSpecifiedNamespaceList() {
     return getHelmVariable(OPERATOR_DOMAIN_NAMESPACES);
