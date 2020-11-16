@@ -3,7 +3,6 @@
 
 resource "oci_file_storage_file_system" "oketest_fs" {
   #Required
-  #availability_domain = "${lookup(data.oci_identity_availability_domains.ADs.availability_domains[1],"name")}"
-  availability_domain = "${var.availability_domain_name}"
+  availability_domain = "${lookup(data.oci_identity_availability_domains.ADs.availability_domains[1],"name")}"
   compartment_id      = "${var.compartment_ocid}"
 }
