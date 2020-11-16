@@ -14,6 +14,9 @@ public class Prometheus {
    * @return true on success, false otherwise
    */
   public static boolean install(PrometheusParams params) {
+    HelmParams hp = params.getHelmParams();
+    hp.repoUrl("https://kubernetes-charts.storage.googleapis.com/");
+    hp.repoName("stable");
     return Helm.install(params.getHelmParams(), params.getValues());
   }
 
