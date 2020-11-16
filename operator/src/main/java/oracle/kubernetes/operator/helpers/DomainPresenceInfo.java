@@ -97,6 +97,7 @@ public class DomainPresenceInfo {
   /**
    * Counts the number of unclustered servers and servers in the specified cluster that are scheduled.
    * @param clusterName cluster name of the pod server
+   * @return Number of scheduled servers
    */
   public long getNumScheduledServers(String clusterName) {
     return getServersInNoOtherCluster(clusterName)
@@ -107,6 +108,7 @@ public class DomainPresenceInfo {
   /**
    * Counts the number of unclustered servers and servers in the specified cluster that are ready.
    * @param clusterName cluster name of the pod server
+   * @return Number of ready servers
    */
   public long getNumReadyServers(String clusterName) {
     return getServersInNoOtherCluster(clusterName)
