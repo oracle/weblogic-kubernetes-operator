@@ -1,17 +1,17 @@
 # Integration tests for Oracle WebLogic Server Kubernetes Operator
-This documentation describes the steps to run integration tests for the Oracle WebLogic Server Kubernetes Operator locally on a Oracle Linux environment. The tests are written in the JUnit5 framework and driven by maven profile.
+This documentation describes the steps to run integration tests for the Oracle WebLogic Server Kubernetes Operator locally on a Oracle Linux environment. The tests are written in the JUnit5 framework and driven by Maven profile.
 
 # Directory Configuration and Structure
-Directory structure of integration test source is distributed as follows 
+Directory structure of the integration test source is as follows: 
 ```
 weblogic-kubernetes-operator/integration-tests - location of module pom.xml  
 weblogic-kubernetes-operator/integration-tests/src/test/java/oracle/weblogic/kubernetes - integration test(JUnit5) classes and utility classes  
 weblogic-kubernetes-operator/integration-tests/src/test/resources - properties, YAML files and other bash scripts
 ```
 
-# How does WebLogic Kubernetes Operator integration test work
- - Build WebLogic Kubernetes Operator image from the downloaded git branch.
- - Install the latest version of WebLogic Deploy Tooling (WDT) and WebLogic Image Tool (WIT)
+# How does WebLogic Server Kubernetes Operator integration test work ?
+ - Build WebLogic Server Kubernetes Operator image from the downloaded Git branch.
+ - Install the latest version of WebLogic Server Deploy Tooling (WDT) and WebLogic Image Tool (WIT).
  - Install supported istio service mesh.
  - Pull the specified version of WebLogic image from container-registry.oracle.com (OCR)
  - Install WebLogic Kubernetes Operator.
@@ -60,15 +60,15 @@ mvn -Dit.test="!ItCrossDomainTransaction,!ItMiiUpdateDomainConfig" -pl integrati
 | RESULT_ROOT  | Root directory for the integration test results and artifacts generated during test execution. | /tmp/it-testsresults
 | BASE_IMAGES_REPO  | The repository URL to download WebLogic and FMW image. Make sure you have access to this repository. Other supported repository is phx.ocir.io (OCIR)  | container-registry.oracle.com(OCR)
 | WEBLOGIC_IMAGE_NAME  | Name of the WebLogic image in the chosen repository.| middleware/weblogic (OCR) 
-| WEBLOGIC_IMAGE_TAG  | The tag for WebLogic base image. Generally, it represents the WebLogic version with JDK and/or installation type. Possible values are 12.2.1.3, 12.2.1.3-dev, 12.2.1.4-slim, 14.1.1.0-11 or 14.1.1.0-8. Please check the repository for the availability of these images. | 12.2.1.4
+| WEBLOGIC_IMAGE_TAG  | The tag for WebLogic base image. Generally, it represents the WebLogic Server version with JDK and/or installation type. Possible values are 12.2.1.3, 12.2.1.3-dev, 12.2.1.4-slim, 14.1.1.0-11 or 14.1.1.0-8. Please check the repository for the availability of these images. | 12.2.1.4
 | FMWINFRA_IMAGE_TAG  | The tag for Fusion Middleware Infrastructure base image. Generally, it represents the FMW version. Possible values are 12.2.1.3, 12.2.1.4. Please check the repository for the availability of these images. | 12.2.1.4
-| FMWINFRA_IMAGE_NAME  | Name of the Fusion Middleware Infrastructure image in the chosen repository.| middleware/fmw-infrastructure (OCR) 
+| FMWINFRA_IMAGE_NAME  | Name of the Fusion Middleware Infrastructure image in the chosen repository.| `middleware/fmw-infrastructure` (OCR) 
 
 ## Logging/Archiving
 
-On completion of integration test execution, the results are archived in a directory based on environment variable  LOG_DIR  (the default value is /tmp/it-testsresults/it-diagnostic) and runtime artifacts are available in a directory based on environment variable RESULTS_ROOT (the default value is /tmp/it-testresults) . 
+After the completion of running the integration tests, the results are archived in a directory-based on environment variable  `LOG_DIR` (the default value is `/tmp/it-testsresults/diagnostic`) and runtime artifacts are available in a directory based on environment variable `RESULTS_ROOT` (the default value is `/tmp/it-testresults`) . 
 
-A typical diagnosticlogs directory content will look as follows after the completion of test ItMiiDomain. The standard output for the tests is captured in ItMiiDomain.out. For each test method ( say testCreateMiiDomain, testCreateMiiSecondDomain) a directory is created and the corresponding k8s object description log(s) and server pod logs are saved if the test fails or environment variable COLLECT_LOGS_ON_SUCCESS set to true.
+After the completion of the test `ItMiiDomain`, a typical diagnostic logs directory content will look as follows. The standard output for the tests is captured in `ItMiiDomain.out`. For each test method ( for example `testCreateMiiDomain`, `testCreateMiiSecondDomain`), a directory is created and the corresponding Kubernetes object description log(s) and server pod logs are saved if the test fails or environment variable `COLLECT_LOGS_ON_SUCCESS` set to true.
 
 ```
 itMiiDomain
@@ -104,4 +104,4 @@ itMiiDomain
     |-- ns-luaf.pod.domain1-managed-server1.container.weblogic-server.log
 ```
 ## Troubleshooting
-The diagnostic logs files in method scoped directory in ${LOGS_DIR}/`<testClass>`/`<testMehod>` and the test stdout ${LOGS_DIR}/`<testClass>`.out is the starting point to triage a test failure.
+The diagnostic logs files in the method-scoped directory in ${LOGS_DIR}/`<testClass>`/`<testMehod>` and the test stdout ${LOGS_DIR}/`<testClass>`.out is the starting point to triage a test failure.
