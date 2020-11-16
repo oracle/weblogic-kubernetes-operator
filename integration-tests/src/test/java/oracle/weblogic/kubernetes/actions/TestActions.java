@@ -272,11 +272,7 @@ public class TestActions {
    * @throws ApiException when getting domain resource fails
    */
   public static String getCurrentIntrospectVersion(String domainUid, String namespace) throws ApiException {
-    LoggingFacade logger = getLogger();
-    oracle.weblogic.domain.Domain domain = Domain.getDomainCustomResource(domainUid, namespace);
-    String introspectVersion = domain.getSpec().getIntrospectVersion();
-
-    return introspectVersion;
+    return Domain.getCurrentIntrospectVersion(domainUid, namespace);
   }
 
   /**
