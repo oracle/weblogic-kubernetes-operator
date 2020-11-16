@@ -312,7 +312,7 @@ Unsupported Changes:
 
 For any of these unsupported changes, the introspector job will fail and automatically retry up to 6 times.  You can either cancel the job, correct the problem, and wait for the job retry interval.
 
-- Topology changes, including SSL. The introspection job will fail and automatically retry periodically until maximum limit is reached.
+- Topology changes (listen-address, listen-port), including SSL, deleting Server or ServerTemplate. The introspection job will fail and automatically retry periodically until maximum limit is reached.
 - Dependency deletion. For example, trying to delete a datasource that is referenced by a persistent store, even if both of them are deleting at the same time. The introspection job will fail and automatically retry up to 6 times
 - There is a bug in WDT when setting topology:/Server/ServerDebug/DebugScope/* - DebugScope is not recognized.
 - Adding cluster or servers - check is not there yet.

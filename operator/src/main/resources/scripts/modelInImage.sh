@@ -574,7 +574,7 @@ function diff_model() {
   trace "Entering diff_model"
 
   export __WLSDEPLOY_STORE_MODEL__=1
-
+  # $1 - new model, $2 original model
   ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2
   ret=$?
   if [ $ret -ne 0 ]; then
@@ -592,7 +592,7 @@ function diff_model() {
   ${JAVA_HOME}/bin/java -cp ${CP} \
     ${JAVA_PROPS} \
     org.python.util.jython \
-    ${SCRIPTPATH}/model_diff.py > ${WDT_OUTPUT} 2>&1
+    ${SCRIPTPATH}/model_diff.py $2 > ${WDT_OUTPUT} 2>&1
   if [ $? -ne 0 ] ; then
     trace SEVERE "Failed to compare models. Check logs for error. Comparison output:"
     cat ${WDT_OUTPUT}
@@ -647,7 +647,8 @@ function createPrimordialDomain() {
 
     if [ ${cannot_perform_online_update} == "true" ] ; then
       trace SEVERE "Domain resource specified online update, but model changes cannot use online update. The  " \
-      " followings are not supported: adding a new application deployments, changing ListenPort or ListenAddress."
+      " followings are not supported: changing ListenPort, ListenAddress, SSL, " \
+      " deleting a ServerTemplate or Server."
       trace SEVERE $(cat /tmp/diffed_model.json)
       exitOrLoop
     fi

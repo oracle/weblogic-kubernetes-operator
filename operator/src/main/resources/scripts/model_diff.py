@@ -22,7 +22,7 @@ NOT_FOR_ONLINE_UPDATE=6
 
 class ModelDiffer:
 
-    def is_not_safe_for_online_update(self, model):
+    def is_not_safe_for_online_update(self, model, original_model):
         """
         Is it a safe difference to do online update.
         :param model: diffed model
@@ -41,13 +41,13 @@ class ModelDiffer:
                 if not thiskey.startswith('!'):
                     return 1
 
-        if self.in_forbidden_list(model):
+        if self.in_forbidden_list(model, original_model):
             return 1
 
         return 0
 
 
-    def is_safe_diff(self, model):
+    def is_safe_diff(self, model, original_model):
         """
         Is it a safe difference for update.
         :param model: diffed model
@@ -77,17 +77,13 @@ class ModelDiffer:
             if model['topology'].has_key('SecurityConfiguration'):
                 changed_items.append(SECURITY_INFO_UPDATED)
 
-        if self.is_not_safe_for_online_update(model):
+        if self.is_not_safe_for_online_update(model, original_model):
             changed_items.append(NOT_FOR_ONLINE_UPDATE)
 
         return 0
 
 
-    def in_forbidden_list(self, model):
-        # forbidden_list = [ '.ListenPort', '.ListenAddress' ]
-        # for forbidden in forbidden_list:
-        #     if itm.endswith(forbidden):
-        #         return 1
+    def in_forbidden_list(self, model, original_model):
 
         if os.environ.has_key('MII_USE_ONLINE_UPDATE'):
             if "false" == os.environ['MII_USE_ONLINE_UPDATE']:
@@ -95,11 +91,9 @@ class ModelDiffer:
         else:
             return 0
 
-        # if model.has_key('appDeployments'):
-        #     for thiskey in model['appDeployments']:
-        #         if not thiskey.startswith('!'):
-        #             return 1
-
+        # Do not allow change ListenAddress, Port, enabled, SSL
+        # Allow add
+        # Do not allow delete
         _TOPOLOGY = 'topology'
         _NAP = 'NetworkAccessPoint'
         _SSL = 'SSL'
@@ -110,6 +104,12 @@ class ModelDiffer:
                 if model[_TOPOLOGY].has_key(key):
                     temp = model[_TOPOLOGY][key]
                     for server in temp:
+                        # cannot delete server or template
+                        if server.startswith('!'):
+                            return 1
+                        # ok to add
+                        if server not in original_model['topology'][key]:
+                            continue
                         for not_this in forbidden_network_attributes:
                             if temp[server].has_key(not_this):
                                 return 1
@@ -136,14 +136,14 @@ class ModelFileDiffer:
         return eval(content)
 
     def compare(self):
-        # current_dict = self.eval_file(sys.argv[1])
+        original_model = self.eval_file(sys.argv[1])
         # past_dict = self.eval_file(sys.argv[2])
         obj = ModelDiffer()
         if os.path.exists('/tmp/diffed_model.json'):
             net_diff = self.eval_file('/tmp/diffed_model.json')
         else:
             net_diff = {}
-        return obj.is_safe_diff(net_diff)
+        return obj.is_safe_diff(net_diff, original_model)
 
 def debug(format_string, *arguments):
     if os.environ.has_key('DEBUG_INTROSPECT_JOB'):
@@ -153,7 +153,7 @@ def debug(format_string, *arguments):
 def main():
     try:
         obj = ModelFileDiffer()
-        rc=obj.compare()
+        obj.compare()
         rcfh = open('/tmp/model_diff_rc', 'w')
         rcfh.write(",".join(map(str,changed_items)))
         rcfh.close()
