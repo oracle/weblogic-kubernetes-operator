@@ -16,7 +16,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
@@ -74,7 +73,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Operator upgrade tests")
 @IntegrationTest
-@MustNotRunInParallel
 public class ItOperatorUpgrade {
 
   private static ConditionFactory withStandardRetryPolicy;
@@ -114,10 +112,9 @@ public class ItOperatorUpgrade {
    */
   @Test
   @DisplayName("Upgrade Operator from 2.5.0 to latest")
-  @MustNotRunInParallel
   public void testOperatorUpgradeFrom2_5_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("2.5.0", false);
+    upgradeOperator("2.5.0", TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, false);
   }
 
   /**
@@ -128,10 +125,9 @@ public class ItOperatorUpgrade {
    */
   @Test
   @DisplayName("Upgrade Operator from 2.6.0 to latest")
-  @MustNotRunInParallel
   public void testOperatorUpgradeFrom2_6_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("2.6.0", false);
+    upgradeOperator("2.6.0", TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
   }
 
   /**
@@ -144,10 +140,9 @@ public class ItOperatorUpgrade {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.0 to latest")
-  @MustNotRunInParallel
   public void testOperatorUpgradeFrom3_0_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("3.0.0", true);
+    upgradeOperator("3.0.0", TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -160,10 +155,9 @@ public class ItOperatorUpgrade {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.1 to latest")
-  @MustNotRunInParallel
   public void testOperatorUpgradeFrom3_0_1(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("3.0.1", true);
+    upgradeOperator("3.0.1", TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
 
@@ -177,10 +171,9 @@ public class ItOperatorUpgrade {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.2 to latest")
-  @MustNotRunInParallel
   public void testOperatorUpgradeFrom3_0_2(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("3.0.2", true);
+    upgradeOperator("3.0.2", TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
 
@@ -194,10 +187,24 @@ public class ItOperatorUpgrade {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.3 to latest")
-  @MustNotRunInParallel
   public void testOperatorUpgradeFrom3_0_3(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("3.0.3", true);
+    upgradeOperator("3.0.3", TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.1.0 to latest.
+   * Install 3.1.0 Operator from GitHub chart repository and create a domain.
+   * Deploy an application to the cluster in domain and verify the application can be
+   * accessed while the operator is upgraded and after the upgrade.
+   * Upgrade operator with latest Operator image and verify CRD version and image are updated
+   * and the domain can be managed by scaling the cluster using operator REST api.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.1.0 to latest")
+  public void testOperatorUpgradeFrom3_1_0(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    upgradeOperator("3.1.0", TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -217,7 +224,10 @@ public class ItOperatorUpgrade {
     }
   }
 
-  private void upgradeOperator(String operatorVersion, boolean useHelmUpgrade) {
+  // Since Operator version 3.1.0 the service pod prefix has been changed 
+  // from -external to -ext e.g.
+  // domain1-adminserver-ext  NodePort    10.96.46.242   30001:30001/TCP 
+  private void upgradeOperator(String operatorVersion, String externalServiceNameSuffix, boolean useHelmUpgrade) {
     logger.info("Assign a unique namespace for operator {0}", operatorVersion);
     assertNotNull(namespaces.get(0), "Namespace is null");
     final String opNamespace1 = namespaces.get(0);
@@ -251,12 +261,12 @@ public class ItOperatorUpgrade {
 
     // create domain
     createDomainHomeInImageAndVerify(
-        domainNamespace, operatorVersion, TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+        domainNamespace, operatorVersion, externalServiceNameSuffix);
 
     if (useHelmUpgrade) {
       // application high availability check only for 3.x releases and later
       // deploy application and access the application once to make sure the app is accessible
-      deployAndAccessApplication(domainNamespace);
+      deployAndAccessApplication(domainNamespace, externalServiceNameSuffix);
 
       // start a new thread to collect the availability data of the application while the
       // main thread performs operator upgrade
@@ -477,11 +487,11 @@ public class ItOperatorUpgrade {
     };
   }
 
-  private void deployAndAccessApplication(String namespace) {
+  private void deployAndAccessApplication(String namespace, String externalServiceNameSuffix) {
     logger.info("Getting node port for admin server default channel");
     int serviceNodePort = assertDoesNotThrow(() ->
             getServiceNodePort(namespace, getExternalServicePodName(adminServerPodName,
-                TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX), "default"),
+                externalServiceNameSuffix), "default"),
         "Getting admin server node port failed");
     assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
 
