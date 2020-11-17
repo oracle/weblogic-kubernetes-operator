@@ -33,7 +33,9 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -114,7 +116,7 @@ public class ItOperatorUpgrade {
   @DisplayName("Upgrade Operator from 2.5.0 to latest")
   public void testOperatorUpgradeFrom2_5_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("2.5.0", TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, false);
+    upgradeOperator("2.5.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, false);
   }
 
   /**
@@ -127,7 +129,7 @@ public class ItOperatorUpgrade {
   @DisplayName("Upgrade Operator from 2.6.0 to latest")
   public void testOperatorUpgradeFrom2_6_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("2.6.0", TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
+    upgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
   }
 
   /**
@@ -142,7 +144,7 @@ public class ItOperatorUpgrade {
   @DisplayName("Upgrade Operator from 3.0.0 to latest")
   public void testOperatorUpgradeFrom3_0_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("3.0.0", TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator("3.0.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -157,7 +159,7 @@ public class ItOperatorUpgrade {
   @DisplayName("Upgrade Operator from 3.0.1 to latest")
   public void testOperatorUpgradeFrom3_0_1(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("3.0.1", TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator("3.0.1", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
 
@@ -173,7 +175,7 @@ public class ItOperatorUpgrade {
   @DisplayName("Upgrade Operator from 3.0.2 to latest")
   public void testOperatorUpgradeFrom3_0_2(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("3.0.2", TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator("3.0.2", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
 
@@ -189,7 +191,7 @@ public class ItOperatorUpgrade {
   @DisplayName("Upgrade Operator from 3.0.3 to latest")
   public void testOperatorUpgradeFrom3_0_3(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("3.0.3", TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -204,7 +206,7 @@ public class ItOperatorUpgrade {
   @DisplayName("Upgrade Operator from 3.1.0 to latest")
   public void testOperatorUpgradeFrom3_1_0(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
-    upgradeOperator("3.1.0", TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator("3.1.0", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
