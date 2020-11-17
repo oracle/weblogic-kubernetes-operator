@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -14,36 +13,10 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1JobCondition;
-import io.kubernetes.client.openapi.models.V1JobSpec;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1SecurityContext;
-import io.kubernetes.client.openapi.models.V1Volume;
-import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -64,33 +37,32 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
-import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithModelConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkLogsOnPV;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkSystemResource;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readJdbcRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainWithNewSecretAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
@@ -99,16 +71,12 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
-import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test class verifies the following scenarios
@@ -231,9 +199,15 @@ class ItMiiUpdateDomainConfig {
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, domainNamespace);
 
     // create the domain CR with a pre-defined configmap
-    createDomainResource(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName,
-        replicaCount, configMapName, dbSecretName);
+    createDomainResourceWithLogHome(domainUid, domainNamespace,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
+        adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, replicaCount,
+        pvName, pvcName,"cluster-1", configMapName,
+        dbSecretName, false);
+
+    //    createDomainResource(domainUid, domainNamespace, adminSecretName,
+    //        OCIR_SECRET_NAME, encryptionSecretName,
+    //        replicaCount, configMapName, dbSecretName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -276,7 +250,7 @@ class ItMiiUpdateDomainConfig {
   public void testServerLogsAreOnPV() {
 
     // check server logs are written on PV and look for string RUNNING in log
-    checkLogsOnPV("grep RUNNING /shared/logs/" + adminServerName + ".log", adminServerPodName);
+    checkLogsOnPV(domainNamespace, "grep RUNNING /shared/logs/" + adminServerName + ".log", adminServerPodName);
   }
 
   /**
@@ -305,7 +279,7 @@ class ItMiiUpdateDomainConfig {
     logger.info("Found the WLDFSystemResource configuration");
 
     ExecResult result = null;
-    result = checkJdbcRuntime("TestDataSource");
+    result = readJdbcRuntime(domainNamespace, adminServerPodName, "TestDataSource");
     logger.info("checkJdbcRuntime: returned {0}", result.toString());
     assertTrue(result.stdout().contains("jdbc:oracle:thin:localhost"),
          String.format("DB URL does not match with RuntimeMBean Info"));
@@ -343,19 +317,7 @@ class ItMiiUpdateDomainConfig {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
     }
 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/configuration/model/configMap\",")
-        .append(" \"value\":  \"" + configMapName + "\"")
-        .append(" }]");
-    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean cmPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(configMap)  failed ");
-    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+    patchDomainResourceWithModelConfigMap(domainUid, domainNamespace, configMapName);
 
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
@@ -406,19 +368,7 @@ class ItMiiUpdateDomainConfig {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
     }
 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/configuration/model/configMap\",")
-        .append(" \"value\":  \"" + configMapName + "\"")
-        .append(" }]");
-    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean cmPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(configMap)  failed ");
-    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+    patchDomainResourceWithModelConfigMap(domainUid, domainNamespace, configMapName);
 
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
@@ -442,7 +392,7 @@ class ItMiiUpdateDomainConfig {
     logger.info("Found the JMSSystemResource configuration");
 
     // check JMS logs are written on PV
-    checkLogsOnPV("ls -ltr /shared/logs/*jms_messages.log", managedServerPrefix + "1");
+    checkLogsOnPV(domainNamespace,"ls -ltr /shared/logs/*jms_messages.log", managedServerPrefix + "1");
   }
 
   /**
@@ -473,19 +423,7 @@ class ItMiiUpdateDomainConfig {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
     }
 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/configuration/model/configMap\",")
-        .append(" \"value\":  \"" + configMapName + "\"")
-        .append(" }]");
-    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean cmPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(configMap)  failed ");
-    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+    patchDomainResourceWithModelConfigMap(domainUid, domainNamespace, configMapName);
 
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
@@ -533,21 +471,9 @@ class ItMiiUpdateDomainConfig {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
     }
 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/configuration/model/configMap\",")
-        .append(" \"value\":  \"" + configMapName + "\"")
-        .append(" }]");
-    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
+    patchDomainResourceWithModelConfigMap(domainUid, domainNamespace, configMapName);
 
-    patch = new V1Patch(new String(patchStr));
-    boolean cmPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(configMap)  failed ");
-    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
-
-    patchStr = new StringBuffer("[{");
+    StringBuffer patchStr = new StringBuffer("[{");
     patchStr.append(" \"op\": \"replace\",")
         .append(" \"path\": \"/spec/replicas\",")
         .append(" \"value\": 1")
@@ -611,21 +537,9 @@ class ItMiiUpdateDomainConfig {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
     }
 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/configuration/model/configMap\",")
-        .append(" \"value\":  \"" + configMapName + "\"")
-        .append(" }]");
-    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
+    patchDomainResourceWithModelConfigMap(domainUid, domainNamespace, configMapName);
 
-    patch = new V1Patch(new String(patchStr));
-    boolean cmPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(configMap)  failed ");
-    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
-
-    patchStr = new StringBuffer("[{");
+    StringBuffer patchStr = new StringBuffer("[{");
     patchStr.append(" \"op\": \"replace\",")
         .append(" \"path\": \"/spec/replicas\",")
         .append(" \"value\": 1")
@@ -720,102 +634,6 @@ class ItMiiUpdateDomainConfig {
   }
 
 
-  private static void createDatabaseSecret(
-        String secretName, String username, String password, 
-        String dburl, String domNamespace) throws ApiException {
-    Map<String, String> secretMap = new HashMap();
-    secretMap.put("username", username);
-    secretMap.put("password", password);
-    secretMap.put("url", dburl);
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-            .metadata(new V1ObjectMeta()
-                    .name(secretName)
-                    .namespace(domNamespace))
-            .stringData(secretMap)), "Create secret failed with ApiException");
-    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
-
-  }
-
-  private static void createDomainSecret(String secretName, String username, String password, String domNamespace)
-          throws ApiException {
-    Map<String, String> secretMap = new HashMap();
-    secretMap.put("username", username);
-    secretMap.put("password", password);
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-            .metadata(new V1ObjectMeta()
-                    .name(secretName)
-                    .namespace(domNamespace))
-            .stringData(secretMap)), "Create secret failed with ApiException");
-    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
-  }
-
-  private static void createDomainResource(
-      String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, 
-      int replicaCount, String configmapName, String dbSecretName) {
-    List<String> securityList = new ArrayList<>();
-    securityList.add(dbSecretName);
-    // create the domain CR
-    Domain domain = new Domain()
-            .apiVersion(DOMAIN_API_VERSION)
-            .kind("Domain")
-            .metadata(new V1ObjectMeta()
-                    .name(domainUid)
-                    .namespace(domNamespace))
-            .spec(new DomainSpec()
-                    .domainUid(domainUid)
-                    .domainHomeSourceType("FromModel")
-                    .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
-                    .addImagePullSecretsItem(new V1LocalObjectReference()
-                            .name(repoSecretName))
-                    .webLogicCredentialsSecret(new V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domNamespace))
-                    .includeServerOutInPodLog(true)
-                    .logHomeEnabled(Boolean.TRUE)
-                    .logHome("/shared/logs")
-                    .serverStartPolicy("IF_NEEDED")
-                    .serverPod(new ServerPod()
-                            .addEnvItem(new V1EnvVar()
-                                    .name("JAVA_OPTIONS")
-                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                            .addEnvItem(new V1EnvVar()
-                                    .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                            .addVolumesItem(new V1Volume()
-                                    .name(pvName)
-                                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
-                                        .claimName(pvcName)))
-                            .addVolumeMountsItem(new V1VolumeMount()
-                                .mountPath("/shared")
-                                .name(pvName)))
-                    .adminServer(new AdminServer()
-                            .serverStartState("RUNNING")
-                            .adminService(new AdminService()
-                                    .addChannelsItem(new Channel()
-                                            .channelName("default")
-                                            .nodePort(0))))
-                    .addClustersItem(new Cluster()
-                            .clusterName("cluster-1")
-                            .replicas(replicaCount)
-                            .serverStartState("RUNNING"))
-                    .configuration(new Configuration()
-                            .secrets(securityList)
-                            .model(new Model()
-                                    .domainType("WLS")
-                                    .configMap(configmapName)
-                                    .runtimeEncryptionSecret(encryptionSecretName))
-                        .introspectorJobActiveDeadlineSeconds(300L)));
-    setPodAntiAffinity(domain);
-    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
-            domainUid, domNamespace);
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domNamespace));
-    assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
-                    + "for %s in namespace %s", domainUid, domNamespace));
-  }
-
   private void checkPodNotCreated(String podName, String domainUid, String domNamespace) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -836,30 +654,32 @@ class ItMiiUpdateDomainConfig {
    * @returns true if MBEAN is found otherwise false
    **/
   private boolean checkManagedServerConfiguration(String managedServer) {
-    ExecResult result = null;
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-          .append("/management/tenant-monitoring/servers/")
-          .append(managedServer)
-          .append(" --silent --show-error ")
-          .append(" -o /dev/null")
-          .append(" -w %{http_code});")
-          .append("echo ${status}");
-    logger.info("checkManagedServerConfiguration: curl command {0}", new String(checkCluster));
-    try {
-      result = exec(new String(checkCluster), true);
-    } catch (Exception ex) {
-      logger.info("Exception in checkManagedServerConfiguration() {0}", ex);
-      return false;
-    }
-    logger.info("checkManagedServerConfiguration: curl command returned {0}", result.toString());
-    if (result.stdout().equals("200")) {
-      return true;
-    } else {
-      return false;
-    }
+    return checkSystemResource(domainNamespace, adminServerPodName,
+        "/management/tenant-monitoring/servers/" + managedServer, "200");
+    //    ExecResult result = null;
+    //    int adminServiceNodePort
+    //        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    //    checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    //    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    //          .append("/management/tenant-monitoring/servers/")
+    //          .append(managedServer)
+    //          .append(" --silent --show-error ")
+    //          .append(" -o /dev/null")
+    //          .append(" -w %{http_code});")
+    //          .append("echo ${status}");
+    //    logger.info("checkManagedServerConfiguration: curl command {0}", new String(checkCluster));
+    //    try {
+    //      result = exec(new String(checkCluster), true);
+    //    } catch (Exception ex) {
+    //      logger.info("Exception in checkManagedServerConfiguration() {0}", ex);
+    //      return false;
+    //    }
+    //    logger.info("checkManagedServerConfiguration: curl command returned {0}", result.toString());
+    //    if (result.stdout().equals("200")) {
+    //      return true;
+    //    } else {
+    //      return false;
+    //    }
   }
 
   // Crate a ConfigMap with a model file to add a new WebLogic cluster
@@ -911,109 +731,4 @@ class ItMiiUpdateDomainConfig {
               .command(curlString.toString()))
           .executeAndVerify(expectedStatusCode);
   }
-
-  private ExecResult checkJdbcRuntime(String resourcesName) {
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    ExecResult result = null;
-
-    curlString = new StringBuffer("curl --user weblogic:welcome1 ");
-    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-         .append("/management/wls/latest/datasources/id/")
-         .append(resourcesName)
-         .append("/")
-         .append(" --silent --show-error ");
-    logger.info("checkJdbcRuntime: curl command {0}", new String(curlString));
-    try {
-      result = exec(new String(curlString), true);
-    } catch (Exception ex) {
-      logger.info("checkJdbcRuntime: caught unexpected exception {0}", ex);
-      return null;
-    }
-    return result;
-  }
-
-  private static void createJobToChangePermissionsOnPvHostPath(String pvName, String pvcName, String namespace) {
-    logger.info("Running Kubernetes job to create domain");
-    V1Job jobBody = new V1Job()
-        .metadata(
-            new V1ObjectMeta()
-                .name("change-permissions-onpv-job-" + pvName) // name of the job
-                .namespace(namespace))
-        .spec(new V1JobSpec()
-            .backoffLimit(0) // try only once
-            .template(new V1PodTemplateSpec()
-                .spec(new V1PodSpec()
-                    .restartPolicy("Never")
-                    .addContainersItem(new V1Container()
-                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .addCommandItem("/bin/sh")
-                        .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:0 /shared")
-                        .addVolumeMountsItem(
-                            new V1VolumeMount()
-                                .name(pvName)
-                                .mountPath("/shared"))
-                        .securityContext(new V1SecurityContext()
-                            .runAsGroup(0L)
-                            .runAsUser(0L))) // mounted under /shared inside pod
-                    .volumes(Arrays.asList(
-                        new V1Volume()
-                            .name(pvName)
-                            .persistentVolumeClaim(
-                                new V1PersistentVolumeClaimVolumeSource()
-                                    .claimName(pvcName))))
-                    .imagePullSecrets(Arrays.asList(
-                        new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET)))))); // this secret is used only for non-kind cluster
-
-    String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
-
-    // check job status and fail test if the job failed
-    V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
-        "Getting the job failed");
-    if (job != null) {
-      V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-          v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
-          .findAny()
-          .orElse(null);
-      if (jobCondition != null) {
-        logger.severe("Job {0} failed to change permissions on PV hostpath", jobName);
-        List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
-            namespace, "job-name=" + jobName).getItems(),
-            "Listing pods failed");
-        if (!pods.isEmpty()) {
-          String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
-              "Failed to get pod log");
-          logger.severe(podLog);
-          fail("Change permissions on PV hostpath job failed");
-        }
-      }
-    }
-  }
-
-  private void checkLogsOnPV(String commandToExecuteInsidePod, String podName) {
-    logger.info("Checking logs are written on PV by running the command {0} on pod {1}, namespace {2}",
-        commandToExecuteInsidePod, podName, domainNamespace);
-    V1Pod serverPod = assertDoesNotThrow(() ->
-            Kubernetes.getPod(domainNamespace, null, podName),
-        String.format("Could not get the server Pod {0} in namespace {1}",
-            podName, domainNamespace));
-
-    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(serverPod, null, true,
-        "/bin/sh", "-c", commandToExecuteInsidePod),
-        String.format("Could not execute the command %s in pod %s, namespace %s",
-            commandToExecuteInsidePod, podName, domainNamespace));
-    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
-        commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
-
-    // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
-    // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
-    assertFalse(result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty(),
-        String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
-            commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout()));
-
-  }
-
 }

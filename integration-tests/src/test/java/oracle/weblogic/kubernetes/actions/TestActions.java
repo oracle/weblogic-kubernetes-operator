@@ -1511,6 +1511,30 @@ public class TestActions {
   }
 
   /**
+   * Patch the domain resource with a new model configMap.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param configMapName name of the configMap to be set in spec.configuration.model.configMap
+   */
+  public static void patchDomainResourceWithModelConfigMap(
+      String domainResourceName, String namespace, String configMapName) {
+    LoggingFacade logger = getLogger();
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/configuration/model/configMap\",")
+        .append(" \"value\":  \"" + configMapName + "\"")
+        .append(" }]");
+    logger.info("Configmap patch string: {0}", patchStr);
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+    boolean cmPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainResourceName, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "patchDomainCustomResourceWithModelConfigMap(configMap)  failed ");
+    assertTrue(cmPatched, "patchDomainCustomResourceWithModelConfigMap(configMap) failed");
+  }
+
+  /**
    * Get the name of the operator pod.
    *
    * @param release release name of the operator
