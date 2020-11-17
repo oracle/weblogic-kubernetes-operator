@@ -97,7 +97,7 @@ elif [ -O ${LIVENESS_PROBE_CUSTOM_SCRIPT} ]; then
   chmod 770 $LIVENESS_PROBE_CUSTOM_SCRIPT && $LIVENESS_PROBE_CUSTOM_SCRIPT
 fi
 if [ $? != 0 ]; then
-  trace SEVERE "Execution of custom script ${LIVENESS_PROBE_CUSTOM_SCRIPT} failed."
+  trace SEVERE "Execution of custom liveness probe script ${LIVENESS_PROBE_CUSTOM_SCRIPT} failed."
   exit $RETVAL
 fi
 

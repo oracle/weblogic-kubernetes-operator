@@ -138,9 +138,16 @@ public class DomainSpec extends BaseConfiguration {
   private Boolean httpAccessLogInLogHome;
 
   /**
-   * Full path of the liveness probe custom script.
+   * Full path of an optional liveness probe custom script for WebLogic server pods. This optional field
+   * is for advanced usage only and its value is not set by default. If the script specified by the value
+   * of this field is not found, then it is ignored and existing liveness probe script will perform
+   * its normal checks.
    */
-  @Description("Full path of the liveness probe custom script")
+  @Description("Full path of an optional liveness probe custom script for WebLogic server pods. "
+          + "This optional field is for advanced usage only and its value is not set by default. "
+          + "If the script specified by the value of this field is not found, then it is ignored "
+          + "and existing liveness probe script will perform its normal checks."
+  )
   private String livenessProbeCustomScript;
 
   /**

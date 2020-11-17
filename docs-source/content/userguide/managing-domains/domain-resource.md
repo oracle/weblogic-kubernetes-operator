@@ -203,7 +203,9 @@ The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverSer
 
 Elements related to customization of liveness probe:
 
-* `livenessProbeCustomScript`: Full path of the script to customize the liveness probe for WebLogic server instance pods. The generated liveness probe script `livenessProbe.sh` will invoke the custom script provided by this element and if the custom script fails with non-zero exit status, pod will fail the liveness probe and Kubernetes will restart the container.
+* `livenessProbeCustomScript`: Full path of an optional liveness probe custom script for WebLogic server instance pods. The existing liveness probe script `livenessProbe.sh` will invoke this custom script after the existing script performs its own checks. This element is optional and is for advanced usage only. Its value is not set by default. If the custom script fails with non-zero exit status, pod will fail the liveness probe and Kubernetes will restart the container. If the script specified by this element value is not found, then it is ignored.
+* `timeoutSeconds`: The liveness probe timeout seconds. This can be set using the `livenessProbe` attribute under the `serverPod` element in the Domain resource.
+* `periodSeconds`: The liveness probe period seconds. This can be set using the `livenessProbe` attribute under the `serverPod` element in the Domain resource.
 
 {{% notice note %}}
 For additional domain resource attribute reference material, see [Domain resource attribute references](#domain-resource-attribute-references).
