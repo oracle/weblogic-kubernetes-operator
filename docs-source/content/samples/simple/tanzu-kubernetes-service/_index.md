@@ -9,16 +9,17 @@ description: "Sample for using the operator to set up a WLS cluster on the Tanzu
 This sample demonstrates how to use the Oracle [WebLogic Server Kubernetes Operator](/weblogic-kubernetes-operator/) (hereafter “the operator”) to set up a WebLogic Server (WLS) cluster on the Tanzu Kubernetes Grid(TKG).
 After going through the steps, your WLS domain runs on an TKG Kubernetes cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
 
-TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. To learn more, please see the [Tanzu Kubernetes Grid (TKG)](/https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-index.html) overview page.
+TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. To learn more, please see the [Tanzu Kubernetes Grid (TKG)](https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-index.html) overview page.
 
 #### Contents
 
  - [Prerequisites](#prerequisites)
- - [Create the Tanzu kubernetes cluster](#create-the-tanzu-cluster)
+   - [Create the Tanzu kubernetes cluster](#create-the-tanzu-cluster)
+   - [Oracle container registry](#oracle-container-registry)
  - [Install WebLogic Server Kubernetes Operator](#install-weblogic-server-kubernetes-operator)
- - [Create image](#create-image)
+ - [Create docker image](#create-docker-image)
  - [Create WebLogic domain](#create-weblogic-domain)
- - [Create loadbalancer](#create-loadbalancer)
+ - [Invoke the web application](#invoke-the-web-application)
 
 #### Prerequisites
 
@@ -26,13 +27,13 @@ This sample assumes the following prerequisite environment setup.
 
 * Operating System: GNU/Linux.
 * [Git](https://git-scm.com/downloads), use `git --version` to test if `git` works.  This document was tested with version 2.17.1.
-* TKG CLI, use tkg version to test if tkg works. This document was tested with version 1.1.3
+* TKG CLI, use `tkg version` to test if tkg works. This document was tested with version v1.1.3
 * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/), use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.18.6.
 * [helm](https://helm.sh/docs/intro/install/), version 3.1 and later, use `helm version` to check the `helm` version.  This document was tested with version v3.2.1.
 
 ##### Create the Tanzu kubernetes cluster
 
-Create Kubernetes cluster using TKG CLI. See [Tanzu documentation](/https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-index.html) to setup your Kubernetes cluster
+Create Kubernetes cluster using TKG CLI. See [Tanzu documentation](https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-index.html) to setup your Kubernetes cluster.
 After your Kubernetes cluster is up and running run the following command to make sure kubectl can access the Kubernetes cluster you created above.
 
 ```bash
@@ -44,13 +45,29 @@ k8s-cluster-101-md-0-577b7dc766-m8wrc   Ready      <none>   2d20h   v1.18.6+vmwa
 k8s-cluster-101-md-0-577b7dc766-p2gkz   Ready      <none>   2d20h   v1.18.6+vmware.1   192.168.100.150   192.168.100.150   VMware Photon OS/Linux   4.19.132-1.ph3   containerd://1.3.4
 ```
 
-##### Install WebLogic Server Kubernetes Operator
+##### Oracle Container Registry
+
+You will need an Oracle account. The following steps will direct you to accept the license agreement for WebLogic Server.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.4, but other versions may work as well.
+
+1. Obtain the WebLogic Server image from the [Oracle Container Registry](https://container-registry.oracle.com/).
+
+   a. First time users, [follow these directions](/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/#obtaining-standard-images-from-the-oracle-container-registry).
+   
+   b. Find and then pull the WebLogic 12.2.1.4 install image:
+   
+      ```bash
+      $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
+      ```
+
+#### Install WebLogic Server Kubernetes Operator
 
 The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances. 
 The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
 Clone the Oracle WebLogic Server Kubernetes Operator repository to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.0.3
-Kubernetes Operators use Helm to manage Kubernetes applications. The operator’s Helm chart is located in the kubernetes/charts/weblogic-operator directory. Please install the operator by running the following commands.
+Kubernetes Operators, use [Helm](https://helm.sh/) to manage Kubernetes applications. The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Please install the operator by running the following commands.
+
+Clone repository
 
 ```bash
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
@@ -81,11 +98,11 @@ Create namespace and service account for WebLogic Kubernetes Operator
 
 ```bash
 $ kubectl create namespace sample-weblogic-operator-ns
-kubectl create servicnamespace/sample-weblogic-operator-ns created
+namespace/sample-weblogic-operator-ns created
 
 
 $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
-serviceaccount/sample-weblogic-operator-sa1 created
+serviceaccount/sample-weblogic-operator-sa created
 ```
 
 Install Operator
@@ -96,9 +113,8 @@ $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --set serviceAccount=sample-weblogic-operator-sa \
   --set "enableClusterRoleBinding=true" --wait
 
-kubectl get pods -n sample-weblogic-operator-ns
-NAME: sample-weblogic-operator
-LAST DEPLOYED: Fri Oct 30 10:33:58 2020
+NAME: weblogic-operator
+LAST DEPLOYED: Tue Nov 17 09:33:58 2020
 NAMESPACE: sample-weblogic-operator-ns
 STATUS: deployed
 REVISION: 1
@@ -108,44 +124,30 @@ TEST SUITE: None
 Verify the operator with the following command; the status will be running.
 
 ```bash
-root@cli-vm:~/weblogic-kubernetes-operator# helm list -A
+$ helm list -A
 NAME                        NAMESPACE                     REVISION   UPDATED                                 STATUS       CHART                   APP VERSION
-sample-weblogic-operator    sample-weblogic-operator-ns   1          2020-10-30 10:33:58.584239273 -0700 PDT deployed     weblogic-operator-3.0.3
+sample-weblogic-operator    sample-weblogic-operator-ns   1          2020-11-17 09:33:58.584239273 -0700 PDT deployed     weblogic-operator-3.0.3
 
 
-root@cli-vm:~/weblogic-kubernetes-operator# kubectl get pods -n sample-weblogic-operator-ns
+$ kubectl get pods -n sample-weblogic-operator-ns
 NAME                                 READY   STATUS    RESTARTS   AGE
 weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
 ```
 
 
-##### Oracle Container Registry
-
-You will need an Oracle account. The following steps will direct you to accept the license agreement for WebLogic Server.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.4, but other versions may work as well.
-
-1. Obtain the WebLogic Server image from the [Oracle Container Registry](https://container-registry.oracle.com/).
-
-   a. First time users, [follow these directions](/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/#obtaining-standard-images-from-the-oracle-container-registry).
-   
-   b. Find and then pull the WebLogic 12.2.1.4 install image:
-   
-      ```bash
-      $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
-      ```
-
-
-#### Create image
+#### Create docker image
 
  - Image creation
+    - [Image creation prerequisites](#image-creation-prerequisites)
     - [Image creation - Introduction](#image-creation---introduction)
     - [Understanding your first archive](#understanding-your-first-archive)
     - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
     - [Staging model files](#staging-model-files)
     - [Creating the image with WIT](#creating-the-image-with-wit)
 
-##### Image creation - Introduction
+##### Image creation prerequisites
 1. The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.
-2. Copy the sample to a new directory; for example, use directory /tmp/mii-sample.
+2. Copy the sample to a new directory; for example, use directory `/tmp/mii-sample`.
 
 ```bash
 $ mkdir /tmp/mii-sample
@@ -153,11 +155,11 @@ $ cp -r /root/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-web
 ```
 
 
-Note: We will refer to this working copy of the sample as /tmp/mii-sample; however, you can use a different location.
+Note: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
 
 Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your /tmp/mii-sample/model-images directory. Both WDT and WIT are required to create your Model in Image Docker images.
 
-For example, visit the GitHub WebLogic Deploy Tooling Releases and WebLogic Image Tool Releases web pages to determine the latest release version for each, and then, assuming the version numbers are 1.9.1 and 1.9.1 respectively, call:
+For example, visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.9.7` and `1.9.5` respectively, call:
 
 ```bash
 $ cd /tmp/mii-sample/model-images
@@ -167,9 +169,11 @@ $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/dow
 
 $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.9.5/imagetool.zip \
   -o /tmp/mii-sample/model-images/imagetool.zip
+```
+
 
 To set up the WebLogic Image Tool, run the following commands:
-
+```bash
 $ cd /tmp/mii-sample/model-images
 
 $ unzip imagetool.zip
@@ -180,36 +184,38 @@ $ ./imagetool/bin/imagetool.sh cache addInstaller \
   --path /tmp/mii-sample/model-images/weblogic-deploy.zip
 ```
 
-These steps will install WIT to the /tmp/mii-sample/model-images/imagetool directory, plus put a wdt_latest entry in the tool’s cache which points to the WDT ZIP file installer. You will use WIT later in the sample for creating model images.
+These steps will install WIT to the `/tmp/mii-sample/model-images/imagetool` directory, plus put a `wdt_latest` entry in the tool’s cache which points to the WDT ZIP file installer. You will use WIT later in the sample for creating model images.
 
-The goal of the initial use case ‘image creation’ is to demonstrate using the WebLogic Image Tool to create an image named model-in-image:WLS-v1 from files that you will stage to /tmp/mii-sample/model-images/model-in-image:WLS-v1/. 
+
+##### Image creation - Introduction
+
+The goal of the initial use case ‘image creation’ is to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that you will stage to `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. 
 The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called admin-server and a WebLogic cluster called cluster-1.
 
-Overall, a Model in Image image must contain a WebLogic installation and a WebLogic Deploy Tooling installation in its /u01/wdt/weblogic-deploy directory. 
-In addition, if you have WDT model archive files, then the image must also contain these files in its /u01/wdt/models directory. 
-Finally, an image optionally may also contain your WDT model YAML file and properties files in the same /u01/wdt/models directory. 
-If you do not specify a WDT model YAML file in your /u01/wdt/models directory, then the model YAML file must be supplied dynamically using a Kubernetes ConfigMap that is referenced by your Domain spec.model.configMap field. 
+Overall, a Model in Image image must contain a WebLogic installation and a WebLogic Deploy Tooling installation in its `/u01/wdt/weblogic-deploy` directory. 
+In addition, if you have WDT model archive files, then the image must also contain these files in its `/u01/wdt/models` directory. 
+Finally, an image optionally may also contain your WDT model YAML file and properties files in the same `/u01/wdt/models` directory. 
+If you do not specify a WDT model YAML file in your `/u01/wdt/models` directory, then the model YAML file must be supplied dynamically using a Kubernetes ConfigMap that is referenced by your Domain `spec.model.configMap` field. 
 We provide an example of using a model ConfigMap later in this sample.
 
-Here are the steps for creating the image model-in-image:WLS-v1:
+Here are the steps for creating the image `model-in-image:WLS-v1`:
 
 
 ##### Understanding your first archive
 
-The sample includes a predefined archive directory in /tmp/mii-sample/archives/archive-v1 that you will use to create an archive ZIP file for the image.
+The sample includes a predefined archive directory in `/tmp/mii-sample/archives/archive-v1` that you will use to create an archive ZIP file for the image.
 
-The archive top directory, named wlsdeploy, contains a directory named applications, which includes an ‘exploded’ sample JSP web application in the directory, myapp-v1. Three useful aspects to remember about WDT archives are:
+The archive top directory, named `wlsdeploy`, contains a directory named `applications`, which includes an ‘exploded’ sample JSP web application in the directory, myapp-v1. Three useful aspects to remember about WDT archives are:
   - A model image can contain multiple WDT archives.
   - WDT archives can contain multiple applications, libraries, and other components.
-  - WDT archives have a well defined directory structure, which always has wlsdeploy as the top directory.
+  - WDT archives have a [well defined directory structure](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/archive.md), which always has `wlsdeploy` as the top directory.
 
 The application displays important details about the WebLogic Server instance that it’s running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. 
-Also, you can see that application output reports that it’s at version v1; you will update this to v2 in a later use case that demonstrates upgrading the application.
-Staging a ZIP file of the archive
+
 
 ##### Staging a ZIP file of the archive
 
-When you create the image, you will use the files in the staging directory, /tmp/mii-sample/model-in-image__WLS-v1. In preparation, you need it to contain a ZIP file of the WDT application archive.
+When you create the image, you will use the files in the staging directory, `/tmp/mii-sample/model-in-image__WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
@@ -274,20 +280,20 @@ appDeployments:
 The model files:
 
 - Define a WebLogic domain with:
-    - Cluster cluster-1
-    - Administration Server admin-server
-    - A cluster-1 targeted ear application that’s located in the WDT archive ZIP file at wlsdeploy/applications/myapp-v1
+    - Cluster `cluster-1`
+    - Administration Server `admin-server`
+    - A `cluster-1` targeted ear application that’s located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`
 
 - Leverage macros to inject external values:
-    - The property file CLUSTER_SIZE property is referenced in the model YAML file DynamicClusterSize and MaxDynamicClusterSize fields using a PROP macro.
-    - The model file domain name is injected using a custom environment variable named CUSTOM_DOMAIN_NAME using an ENV macro.
+    - The property file `CLUSTER_SIZE` property is referenced in the model YAML file `DynamicClusterSize` and `MaxDynamicClusterSize` fields using a PROP macro.
+    - The model file domain name is injected using a custom environment variable named `CUSTOM_DOMAIN_NAME` using an ENV macro.
         - You set this environment variable later in this sample using an env field in its Domain.
         - _This conveniently provides a simple way to deploy multiple differently named domains using the same model image_.
-    - The model file administrator user name and password are set using a weblogic-credentials secret macro reference to the WebLogic credential secret.
-        - This secret is in turn referenced using the webLogicCredentialsSecret field in the Domain.
-        - The weblogic-credentials is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
+    - The model file administrator user name and password are set using a `weblogic-credentials` secret macro reference to the WebLogic credential secret.
+        - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
+        - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
 
-A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete discussion of Model in Images model file naming conventions, file loading order, and macro syntax, see Model files in the Model in Image user documentation.
+A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete discussion of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
 Creating the image with WIT
 
 ##### Creating the image with WIT
@@ -320,15 +326,15 @@ $ ./imagetool/bin/imagetool.sh update \
   --chown oracle:root
 ```
 
-If you don’t see the imagetool directory, then you missed a step in the prerequisites.
+If you don’t see the `imagetool` directory, then you missed a step in the prerequisites.
 
 This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
 
-  - Builds the final Docker image as a layer on the container-registry.oracle.com/middleware/weblogic:12.2.1.4 base image.
+  - Builds the final Docker image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
   - Copies the WDT ZIP file that’s referenced in the WIT cache into the image.
-      - Note that you cached WDT in WIT using the keyword latest when you set up the cache during the sample prerequisites steps.
-      - This lets WIT implicitly assume it’s the desired WDT version and removes the need to pass a -wdtVersion flag.
-  - Copies the specified WDT model, properties, and application archives to image location /u01/wdt/models.
+      - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
+      - This lets WIT implicitly assume it’s the desired WDT version and removes the need to pass a `-wdtVersion` flag.
+  - Copies the specified WDT model, properties, and application archives to image location `/u01/wdt/models`.
 
 When the command succeeds, it should end with output like the following:
 
@@ -343,15 +349,15 @@ Also, if you run the `docker images` command, then you will see a Docker image n
 
 #### Create WebLogic domain
 
-Deploy resources - Introduction
+##### Deploy resources - Introduction
 
-In this section, you will deploy the new image to namespace sample-domain1-ns, including the following steps:
+In this section, you will deploy the new image to namespace `sample-domain1-ns`, including the following steps:
 
 - Create a namespace for WebLogic domain
-- Update WebLogic Kubernetes Operator to manage domain namespace    
+- Update WebLogic Kubernetes Operator to manage WebLogic domain namespace    
 - Create a Secret containing your WebLogic administrator user name and password.
   - Create a Secret containing your Model in Image runtime encryption password:
-  - All Model in Image domains must supply a runtime encryption Secret with a password value.
+  - All Model in Image domains must supply a runtime encryption Secret with a `password` value.
   - It is used to encrypt configuration that is passed around internally by the operator.
   - The value must be kept private but can be arbitrary; you can optionally supply a different secret value every time you restart the domain.
 - Deploy a Domain YAML file that references the new image.
@@ -366,16 +372,20 @@ $ kubectl create namespace sample-domain1-ns
 ```
 
 ##### Upgrade operator
-Upgrade operator to manage WebLogic domains in namespace sample-domain1-ns
+Upgrade operator to manage WebLogic domains in namespace `sample-domain1-ns`
 
 ```bash
-$ cd /root/
-$ helm upgrade sample-weblogic-operator  kubernetes/charts/weblogic-operator --namespace sample-weblogic-operator-ns --reuse-values --set "domainNamespaces={sample-domain1-ns}" --wait
+$ cd /root/weblogic-kubernetes-operator
+$ helm upgrade weblogic-operator  kubernetes/charts/weblogic-operator \
+  --namespace sample-weblogic-operator-ns \
+  --reuse-values \
+  --set "domainNamespaces={sample-domain1-ns}" \
+  --wait
 ```
 
 ##### Secrets
 
-First, create the secrets needed by both WLS and JRF type model domains. In this case, you have two secrets.
+First, create the secrets needed by WLS type model domain. In this case, you have two secrets.
 
 Run the following kubectl commands to deploy the required secrets:
 
@@ -552,56 +562,47 @@ Run the following command to create the domain custom resource:
 ```bash
 $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
 ```
-> **Note**: If you are choosing not to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the above command. Previously, we suggested naming it /tmp/mii-sample/mii-initial.yaml.
+> **Note**: If you are choosing not to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the above command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
 
 Verify the WebLogic server pods are all running
 
 ```
-root@cli-vm:~/weblogic-kubernetes-operator# kubectl get pods -n sample-domain1-ns
-NAME                             READY   STATUS    RESTARTS   AGE
-sample-domain1-admin-server      1/1     Running   0          4m32s
-sample-domain1-managed-server1   1/1     Running   0          3m38s
-sample-domain1-managed-server2   1/1     Running   0          3m37s
+$ kubectl get all -n sample-domain1-ns
+NAME                                 READY   STATUS    RESTARTS   AGE
+pod/sample-domain1-admin-server      1/1     Running   0          41m
+pod/sample-domain1-managed-server1   1/1     Running   0          40m
+pod/sample-domain1-managed-server2   1/1     Running   0          40m
+
+NAME                                       TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+service/sample-domain1-admin-server        ClusterIP   None           <none>        7001/TCP   41m
+service/sample-domain1-cluster-cluster-1   ClusterIP   100.66.99.27   <none>        8001/TCP   40m
+service/sample-domain1-managed-server1     ClusterIP   None           <none>        8001/TCP   40m
+service/sample-domain1-managed-server2     ClusterIP   None           <none>        8001/TCP   40m
+
+
 ```
 
+#### Invoke the web application
 
-#### Create Loadbalancer
+##### Create loadbalancer
 
-Create Loadbalancer to access WebLogic server admin console and to access applications deployed in cluster
+Create loadbalancer to access WebLogic server admin console and to access applications deployed in cluster.
+Tanzu supports mettallb loadbalancer and nginx ingress for routing.
 
-Tanzu supports mettallb loadbalancer and nginx ingress for routing
 
-
-##### Install Metallb loadbalancer
+##### Install Metallb loadbalancer by running following commands.
 
 ```bash
+## create namespace metallb-system
 $ kubectl create ns metallb-system
-namespace/metallb-system created
 
-
+## deploy metallb loadbalancer
 $ kubectl apply -f https://raw.githubusercontent.com/google/metallb/v0.9.2/manifests/metallb.yaml -n metallb-system
-podsecuritypolicy.policy/controller created
-podsecuritypolicy.policy/speaker created
-serviceaccount/controller created
-serviceaccount/speaker created
-clusterrole.rbac.authorization.k8s.io/metallb-system:controller created
-clusterrole.rbac.authorization.k8s.io/metallb-system:speaker created
-role.rbac.authorization.k8s.io/config-watcher created
-role.rbac.authorization.k8s.io/pod-lister created
-clusterrolebinding.rbac.authorization.k8s.io/metallb-system:controller created
-clusterrolebinding.rbac.authorization.k8s.io/metallb-system:speaker created
-rolebinding.rbac.authorization.k8s.io/config-watcher created
-rolebinding.rbac.authorization.k8s.io/pod-lister created
-daemonset.apps/speaker created
-deployment.apps/controller created
 
-
-
+## create secret 
 $ kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
-secret/memberlist created
 
-
-$ cat /tkg/metallb-configmap.yaml
+$ cat metallb-configmap.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -614,9 +615,6 @@ data:
       protocol: layer2
       addresses:
       - 192.168.100.50-192.168.100.65
-
-
-
 
 $ kubectl apply -f metallb-configmap.yaml
 configmap/config created
@@ -643,107 +641,16 @@ replicaset.apps/controller-684f5d9b49   1         1         1       2m14s
 ##### Install Nginx
 
 ```bash
-
 $ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 $ helm repo update
-
-
 $ helm install ingress-nginx ingress-nginx/ingress-nginx
-NAME:   ingress-nginx
-LAST DEPLOYED: Sun Sep 13 09:59:19 2020
-NAMESPACE: default
-STATUS: DEPLOYED
-
-RESOURCES:
-==> v1/ClusterRole
-NAME           CREATED AT
-ingress-nginx  2020-09-13T17:00:27Z
-
-==> v1/ClusterRoleBinding
-NAME           ROLE                       AGE
-ingress-nginx  ClusterRole/ingress-nginx  49s
-
-==> v1/ConfigMap
-NAME                      DATA  AGE
-ingress-nginx-controller  0     49s
-
-==> v1/Deployment
-NAME                      READY  UP-TO-DATE  AVAILABLE  AGE
-ingress-nginx-controller  1/1    1           1          48s
-
-==> v1/Pod(related)
-NAME                                       READY  STATUS   RESTARTS  AGE
-ingress-nginx-controller-66dc9984d8-z5x46  1/1    Running  0         49s
-
-==> v1/Role
-NAME           CREATED AT
-ingress-nginx  2020-09-13T17:00:27Z
-
-==> v1/RoleBinding
-NAME           ROLE                AGE
-ingress-nginx  Role/ingress-nginx  49s
-
-==> v1/Service
-NAME                                TYPE          CLUSTER-IP      EXTERNAL-IP     PORT(S)                     AGE
-ingress-nginx-controller            LoadBalancer  100.66.153.199  192.168.100.50  80:30575/TCP,443:31235/TCP  48s
-ingress-nginx-controller-admission  ClusterIP     100.70.59.21    <none>          443/TCP                     48s
-
-==> v1/ServiceAccount
-NAME           SECRETS  AGE
-ingress-nginx  1        49s
-
-==> v1beta1/ValidatingWebhookConfiguration
-NAME                     WEBHOOKS  AGE
-ingress-nginx-admission  1         48s
-
-
-NOTES:
-The ingress-nginx controller has been installed.
-It may take a few minutes for the LoadBalancer IP to be available.
-You can watch the status by running 'kubectl --namespace default get services -o wide -w ingress-nginx-controller'
-
-An example Ingress that makes use of the controller:
-
-  apiVersion: networking.k8s.io/v1beta1
-  kind: Ingress
-  metadata:
-    annotations:
-      kubernetes.io/ingress.class: nginx
-    name: example
-    namespace: foo
-  spec:
-    rules:
-      - host: www.example.com
-        http:
-          paths:
-            - backend:
-                serviceName: exampleService
-                servicePort: 80
-              path: /
-    # This section is only required if TLS is to be enabled for the Ingress
-    tls:
-        - hosts:
-            - www.example.com
-          secretName: example-tls
-
-If TLS is enabled for the Ingress, a Secret containing the certificate and key must also be provided:
-
-  apiVersion: v1
-  kind: Secret
-  metadata:
-    name: example-tls
-    namespace: foo
-  data:
-    tls.crt: <base64 encoded cert>
-    tls.key: <base64 encoded key>
-  type: kubernetes.io/tls
 ```
 
 
-##### Create ingress routing for accessing cluster application
+##### Create ingress routing for accessing application deployed in cluster
 
 ```bash
-$ cat /root/cluster-ingress.yaml
+$ cat cluster-ingress.yaml
 
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -762,14 +669,14 @@ spec:
           serviceName: sample-domain1-cluster-cluster-1
           servicePort: 8001
 
-$ kubectl apply -f /root/cluster-ingress.yaml
+$ kubectl apply -f cluster-ingress.yaml
 ```
 
 ##### Create ingress for admin console access
 
 
 ```bash
-$ cat /root/admin-ingress.yaml
+$ cat admin-ingress.yaml
 
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -788,36 +695,22 @@ spec:
           serviceName: sample-domain1-admin-server
           servicePort: 7001
 
-$ kubectl apply -f /root/admin-ingress.yaml
+$ kubectl apply -f admin-ingress.yaml
 
-## Access admin console using loadbalancer ip (192.168.100.50)
-http://192.168.100.50/console
 ```
 
 ##### Verify ingresses are running
 
 ```bash
-root@cli-vm:~/weblogic-kubernetes-operator# kubectl get all -n sample-domain1-ns
-NAME                                 READY   STATUS    RESTARTS   AGE
-pod/sample-domain1-admin-server      1/1     Running   0          41m
-pod/sample-domain1-managed-server1   1/1     Running   0          40m
-pod/sample-domain1-managed-server2   1/1     Running   0          40m
-
-NAME                                       TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
-service/sample-domain1-admin-server        ClusterIP   None           <none>        7001/TCP   41m
-service/sample-domain1-cluster-cluster-1   ClusterIP   100.66.99.27   <none>        8001/TCP   40m
-service/sample-domain1-managed-server1     ClusterIP   None           <none>        8001/TCP   40m
-service/sample-domain1-managed-server2     ClusterIP   None           <none>        8001/TCP   40m
-
-
-root@cli-vm:~/weblogic-kubernetes-operator# kubectl apply -f ingress.yaml
-ingress.extensions/sample-nginx-ingress-hostrouting created
-
-root@cli-vm:~/weblogic-kubernetes-operator# kubectl get ingresses -n sample-domain1-ns
+$ kubectl get ingresses -n sample-domain1-ns
 NAME                               CLASS    HOSTS         ADDRESS          PORTS   AGE
 sample-nginx-ingress-adminconsole   <none>  *                              80      7m18s
 sample-nginx-ingress-hostrouting   <none>   domain1.org   192.168.100.50   80      7m18s
 ```
+
+##### Access admin console 
+Access admin console using loadbalancer ip (192.168.100.50)
+`http://192.168.100.50/console`
 
 ##### Access sample application 
 
