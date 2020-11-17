@@ -50,9 +50,9 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Sets the liveness probe custom script for domain including path .
+   * Sets the full path of liveness probe custom script for domain.
    *
-   * @param livenessProbeCustomScript the liveness probe custom script including path
+   * @param livenessProbeCustomScript full path of the liveness probe custom script
    * @return this object
    */
   public DomainConfigurator withLivenessProbeCustomScript(String livenessProbeCustomScript) {

@@ -135,9 +135,9 @@ public class Domain implements KubernetesObject {
   /**
    * check if the external service is configured for the admin server.
    *
+   * @param domainSpec Domain spec
    * @return true if the external service is configured
    */
-
   public static boolean isExternalServiceConfigured(DomainSpec domainSpec) {
     AdminServer adminServer = domainSpec.getAdminServer();
     AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;

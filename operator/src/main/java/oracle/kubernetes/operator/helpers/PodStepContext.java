@@ -524,7 +524,7 @@ public abstract class PodStepContext extends BasePodStepContext {
           .filter(this::isNotRunning)
           .ifPresent(s -> addDefaultEnvVarIfMissing(env, "STARTUP_MODE", s));
     Optional.ofNullable(getDomain().getLivenessProbeCustomScript())
-          .ifPresent(l -> addDefaultEnvVarIfMissing(env, "LIVENESS_PROBE_CUSTOM_SCRIPT", l));
+          .ifPresent(s -> addDefaultEnvVarIfMissing(env, "LIVENESS_PROBE_CUSTOM_SCRIPT", s));
   }
 
   private boolean isNotRunning(String desiredState) {
