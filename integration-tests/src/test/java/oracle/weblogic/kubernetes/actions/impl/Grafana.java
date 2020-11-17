@@ -14,12 +14,7 @@ public class Grafana {
    * @return true on success, false otherwise
    */
   public static boolean install(GrafanaParams params) {
-    HelmParams hp = params.getHelmParams();
-    hp.repoName("stable");
-    hp.repoUrl("https://charts.helm.sh/stable");
-    //hp.repoUrl("https://grafana.github.io/helm-charts");
-    //hp.chartDir("grafana");
-    return Helm.install(hp, params.getValues());
+    return Helm.install(params.getHelmParams(), params.getValues());
   }
 
   /**

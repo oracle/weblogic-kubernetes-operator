@@ -15,8 +15,8 @@ public class Prometheus {
    */
   public static boolean install(PrometheusParams params) {
     HelmParams hp = params.getHelmParams();
-    hp.repoUrl("https://prometheus-community.github.io/helm-charts");
-    hp.repoName("prometheus-community");
+    hp.repoUrl("https://charts.helm.sh/stable/");
+    hp.repoName("stable");
     return Helm.install(hp, params.getValues());
   }
 
