@@ -9,6 +9,7 @@ import java.util.List;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
@@ -31,7 +32,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkLogsOnPV;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkSystemResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkWorkManagerRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
@@ -378,9 +378,7 @@ class ItMiiDynamicUpdate {
 
   private boolean checkSystemResourceConfiguration(String resourcesType,
          String resourcesName, String expectedStatusCode) {
-    return checkSystemResource(domainNamespace, adminServerPodName,
-        "/management/weblogic/latest/domainConfig/"
-            + resourcesType + "/" + resourcesName + "/",
-        expectedStatusCode);
+    return CommonMiiTestUtils.checkSystemResourceConfiguration(domainNamespace,
+        adminServerPodName, resourcesType, resourcesName, expectedStatusCode);
   }
 }

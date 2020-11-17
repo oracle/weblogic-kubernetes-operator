@@ -15,11 +15,10 @@ import java.util.logging.Level;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
@@ -38,13 +37,11 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithModelConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
@@ -52,7 +49,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkLogsOnPV;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkSystemResource;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkWeblogicMBean;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
@@ -68,7 +65,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
@@ -204,10 +200,6 @@ class ItMiiUpdateDomainConfig {
         adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, replicaCount,
         pvName, pvcName,"cluster-1", configMapName,
         dbSecretName, false);
-
-    //    createDomainResource(domainUid, domainNamespace, adminSecretName,
-    //        OCIR_SECRET_NAME, encryptionSecretName,
-    //        replicaCount, configMapName, dbSecretName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -654,32 +646,8 @@ class ItMiiUpdateDomainConfig {
    * @returns true if MBEAN is found otherwise false
    **/
   private boolean checkManagedServerConfiguration(String managedServer) {
-    return checkSystemResource(domainNamespace, adminServerPodName,
+    return checkWeblogicMBean(domainNamespace, adminServerPodName,
         "/management/tenant-monitoring/servers/" + managedServer, "200");
-    //    ExecResult result = null;
-    //    int adminServiceNodePort
-    //        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    //    checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    //    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-    //          .append("/management/tenant-monitoring/servers/")
-    //          .append(managedServer)
-    //          .append(" --silent --show-error ")
-    //          .append(" -o /dev/null")
-    //          .append(" -w %{http_code});")
-    //          .append("echo ${status}");
-    //    logger.info("checkManagedServerConfiguration: curl command {0}", new String(checkCluster));
-    //    try {
-    //      result = exec(new String(checkCluster), true);
-    //    } catch (Exception ex) {
-    //      logger.info("Exception in checkManagedServerConfiguration() {0}", ex);
-    //      return false;
-    //    }
-    //    logger.info("checkManagedServerConfiguration: curl command returned {0}", result.toString());
-    //    if (result.stdout().equals("200")) {
-    //      return true;
-    //    } else {
-    //      return false;
-    //    }
   }
 
   // Crate a ConfigMap with a model file to add a new WebLogic cluster
@@ -707,28 +675,9 @@ class ItMiiUpdateDomainConfig {
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
   }
 
-  private boolean checkSystemResourceConfiguration(String resourcesType, 
+  private boolean checkSystemResourceConfiguration(String resourcesType,
          String resourcesName, String expectedStatusCode) {
-
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    ExecResult result = null;
-    curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-         .append("/management/weblogic/latest/domainConfig")
-         .append("/")
-         .append(resourcesType)
-         .append("/")
-         .append(resourcesName)
-         .append("/")
-         .append(" --silent --show-error ")
-         .append(" -o /dev/null ")
-         .append(" -w %{http_code});")
-         .append("echo ${status}");
-    logger.info("checkSystemResource: curl command {0}", new String(curlString));
-    return new Command()
-          .withParams(new CommandParams()
-              .command(curlString.toString()))
-          .executeAndVerify(expectedStatusCode);
+    return CommonMiiTestUtils.checkSystemResourceConfiguration(domainNamespace,
+        adminServerPodName, resourcesType, resourcesName, expectedStatusCode);
   }
 }

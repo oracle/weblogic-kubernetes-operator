@@ -446,7 +446,7 @@ public class CommonMiiTestUtils {
   public static boolean checkWorkManagerRuntime(
       String domainNamespace, String adminServerPodName,
       String serverName, String workManagerName, String expectedStatusCode) {
-    return checkSystemResource(
+    return checkWeblogicMBean(
         domainNamespace,
         adminServerPodName,
         "/management/weblogic/latest/domainRuntime/serverRuntimes/"
@@ -482,14 +482,15 @@ public class CommonMiiTestUtils {
   }
 
   /**
-   * Use REST APIs to check the system resource runtime mbean from the WebLogic server.
+   * Use REST APIs to check a runtime mbean from the WebLogic server.
+   *
    * @param domainNamespace Kubernetes namespace that the domain is hosted
    * @param adminServerPodName Name of the admin server pod to which the REST requests should be sent to
    * @param resourcePath Path of the system resource to be used in the REST API call
    * @param expectedStatusCode the expected response to verify
    * @return true if the REST API reply contains the expected response
    */
-  public static boolean checkSystemResource(String domainNamespace,
+  public static boolean checkWeblogicMBean(String domainNamespace,
          String adminServerPodName,  String resourcePath, String expectedStatusCode) {
     LoggingFacade logger = getLogger();
 
@@ -510,7 +511,27 @@ public class CommonMiiTestUtils {
   }
 
   /**
+   * Use REST APIs to check the system resource runtime mbean from the WebLogic server.
+   *
+   * @param domainNamespace Kubernetes namespace that the domain is hosted
+   * @param adminServerPodName Name of the admin server pod to which the REST requests should be sent to
+   * @param resourcesType Type of the system resource to be checked
+   * @param resourcesName Name of the system resource to be checked
+   * @param expectedStatusCode the expected response to verify
+   * @return true if the REST API reply contains the expected response
+   */
+  public static boolean checkSystemResourceConfiguration(String domainNamespace,
+      String adminServerPodName, String resourcesType,
+      String resourcesName, String expectedStatusCode) {
+    return checkWeblogicMBean(domainNamespace, adminServerPodName,
+        "/management/weblogic/latest/domainConfig/"
+            + resourcesType + "/" + resourcesName + "/",
+        expectedStatusCode);
+  }
+
+  /**
    * Create a job to change the permissions on the pv host path.
+   *
    * @param pvName Name of the persistent volume
    * @param pvcName Name of the persistent volume claim
    * @param namespace Namespace containing the persistent volume claim and where the job should be created in
