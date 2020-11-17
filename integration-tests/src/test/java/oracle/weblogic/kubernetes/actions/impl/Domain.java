@@ -544,6 +544,21 @@ public class Domain {
   }
 
   /**
+   * Get current introspectVersion for a given domain.
+   *
+   * @param domainUid domain id
+   * @param namespace namespace in which the domain resource exists
+   * @return String containing current introspectVersion
+   * @throws ApiException when getting domain resource fails
+   */
+  public static String getCurrentIntrospectVersion(String domainUid, String namespace) throws ApiException {
+    oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, namespace);
+    String introspectVersion = domain.getSpec().getIntrospectVersion();
+
+    return introspectVersion;
+  }
+
+  /**
    * Create cluster role, cluster role binding and role binding used by WLDF script action.
    *
    * @param domainNamespace WebLogic domain namespace
