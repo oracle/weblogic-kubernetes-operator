@@ -5236,6 +5236,9 @@ spec:
                 - NEVER
                 - IF_NEEDED
                 - ADMIN_ONLY
+              livenessProbeCustomScript:
+                type: string
+                description: Full path of the liveness probe custom script
               restartVersion:
                 type: string
                 description: 'Changes to this field cause the operator to restart
