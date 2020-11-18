@@ -1404,8 +1404,8 @@ public class ItTwoDomainsLoadBalancers {
 
     // create pv and pvc
     String labelSelector = String.format("sharing-pv in (%s)", "true");
-    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, defaultNamespace,
-  "default-sharing-weblogic-domain-storage-class", pvHostPath);
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector,
+        defaultNamespace, "default-sharing-weblogic-domain-storage-class", pvHostPath);
 
     for (int i = 1; i <= numberOfDomains; i++) {
       String domainUid = domainUids.get(i - 1);
