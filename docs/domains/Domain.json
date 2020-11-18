@@ -379,7 +379,7 @@
           ]
         },
         "livenessProbeCustomScript": {
-          "description": "Full path of the liveness probe custom script",
+          "description": "Full path of an optional liveness probe custom script for WebLogic server pods. This optional field is for advanced usage only and its value is not set by default. If the script specified by the value of this field is not found, then it is ignored and existing liveness probe script will perform its normal checks.",
           "type": "string"
         },
         "restartVersion": {
