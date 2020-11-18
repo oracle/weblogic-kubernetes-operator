@@ -630,7 +630,6 @@ function validateJqAvailable {
 }
 
 function validateYqAvailable {
-  osName=`uname`
   if [[ "$OSTYPE" == "darwin"* ]] && ! [ -x "$(command -v yq)" ]; then
     validationError "yq is not installed"
   fi
