@@ -54,7 +54,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -367,46 +366,7 @@ public class ItMiiDomainModelInPV {
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
         .kind("Pod");
-    /*
-       V1Pod podBody = new V1Pod()
-        .spec(new V1PodSpec()
-            .initContainers(Arrays.asList(new V1Container()
-                .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                .addCommandItem("/bin/sh")
-                .addArgsItem("-c")
-                .addArgsItem(argCommand)
-                .volumeMounts(Arrays.asList(
-                    new V1VolumeMount()
-                        .name(pvName)
-                        .mountPath(modelMountPath)))
-                .securityContext(new V1SecurityContext()
-                    .runAsGroup(0L)
-                    .runAsUser(0L))))
-            .containers(Arrays.asList(
-                new V1Container()
-                    .name("weblogic-container")
-                    .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                    .imagePullPolicy("IfNotPresent")
-                    .addCommandItem("sleep")
-                    .addArgsItem("600")
-                    .volumeMounts(Arrays.asList(
-                        new V1VolumeMount()
-                            .name(pvName) // mount the persistent volume to /shared inside the pod
-                            .mountPath(modelMountPath)))))
-            .imagePullSecrets(Arrays.asList(new V1LocalObjectReference()
-                .name(BASE_IMAGES_REPO_SECRET)))
-            // the persistent volume claim used by the test
-            .volumes(Arrays.asList(
-                new V1Volume()
-                    .name(pvName) // the persistent volume that needs to be archived
-                    .persistentVolumeClaim(
-                        new V1PersistentVolumeClaimVolumeSource()
-                            .claimName(pvcName)))))
-        .metadata(new V1ObjectMeta().name(podName))
-        .apiVersion("v1")
-        .kind("Pod");
-     */
+
     V1Pod wlsPod = assertDoesNotThrow(() -> Kubernetes.createPod(namespace, podBody));
 
     withStandardRetryPolicy

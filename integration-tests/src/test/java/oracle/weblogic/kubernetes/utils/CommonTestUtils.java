@@ -3310,11 +3310,13 @@ public class CommonTestUtils {
         );
 
   }
+
   /**
-   * Add initContainer to fix pvc owner for pod.
+   * Create container to fix pvc owner for pod.
    *
    * @param pvName name of pv
    * @param mountPath mounting path for pv
+   * @return container object with required ownership based on OKE_CLUSTER variable value.
    */
   public static synchronized V1Container createfixPVCOwnerContainer(String pvName, String mountPath) {
     String argCommand = "chown -R 1000:0 " + mountPath;

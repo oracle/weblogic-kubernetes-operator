@@ -430,21 +430,6 @@ public class ItIstioDomainInPV  {
                         new V1LocalObjectReference()
                             .name(BASE_IMAGES_REPO_SECRET))))));    // this secret is used only on non-kind cluster
 
-    /*
-    initContainers(Arrays.asList(new V1Container()
-                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .addCommandItem("/bin/sh")
-                        .addArgsItem("-c")
-                        .addArgsItem(argCommand)
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name(pvName)
-                                .mountPath("/shared")))
-                        .securityContext(new V1SecurityContext()
-                            .runAsGroup(0L)
-                            .runAsUser(0L))))
-     */
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create Job");
 
