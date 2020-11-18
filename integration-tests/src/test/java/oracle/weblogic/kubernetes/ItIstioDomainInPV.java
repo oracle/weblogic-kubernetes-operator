@@ -28,7 +28,6 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -74,6 +73,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
@@ -384,7 +384,7 @@ public class ItIstioDomainInPV  {
     String modelMountPath = "/shared";
     String argCommand = "chown -R 1000:0 " + modelMountPath;
     if (OKE_CLUSTER) {
-      argCommand = "chown 1000:0 "
+      argCommand = "chown -R 1000:0 "
           + modelMountPath
           + "/. && find " + modelMountPath
           + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:0";
@@ -401,19 +401,7 @@ public class ItIstioDomainInPV  {
                     .annotations(annotMap))
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
-                    .initContainers(Arrays.asList(new V1Container()
-                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .addCommandItem("/bin/sh")
-                        .addArgsItem("-c")
-                        .addArgsItem(argCommand)
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name(pvName)
-                                .mountPath("/shared")))
-                        .securityContext(new V1SecurityContext()
-                            .runAsGroup(0L)
-                            .runAsUser(0L))))
+                    .initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/shared")))
                     .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
                         .name("create-weblogic-domain-onpv-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
@@ -441,6 +429,22 @@ public class ItIstioDomainInPV  {
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
                             .name(BASE_IMAGES_REPO_SECRET))))));    // this secret is used only on non-kind cluster
+
+    /*
+    initContainers(Arrays.asList(new V1Container()
+                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+                        .addCommandItem("/bin/sh")
+                        .addArgsItem("-c")
+                        .addArgsItem(argCommand)
+                        .volumeMounts(Arrays.asList(
+                            new V1VolumeMount()
+                                .name(pvName)
+                                .mountPath("/shared")))
+                        .securityContext(new V1SecurityContext()
+                            .runAsGroup(0L)
+                            .runAsUser(0L))))
+     */
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create Job");
 

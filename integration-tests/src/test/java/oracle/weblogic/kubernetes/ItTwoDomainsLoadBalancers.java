@@ -148,6 +148,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVer
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyApache;
@@ -1075,14 +1076,6 @@ public class ItTwoDomainsLoadBalancers {
     createConfigMapFromFiles(domainScriptConfigMapName, domainScriptFiles, domainNamespace);
 
     logger.info("Running a Kubernetes job to create the domain");
-    String modelMountPath = "/shared";
-    String argCommand = "chown -R 1000:0 " + modelMountPath;
-    if (OKE_CLUSTER) {
-      argCommand = "chown 1000:0 "
-          + modelMountPath
-          + "/. && find " + modelMountPath
-          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:0";
-    }
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
@@ -1093,19 +1086,7 @@ public class ItTwoDomainsLoadBalancers {
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
-                    .initContainers(Collections.singletonList(new V1Container()
-                        .name("fix-pvc-owner")
-                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .addCommandItem("/bin/sh")
-                        .addArgsItem("-c")
-                        .addArgsItem(argCommand)
-                        .volumeMounts(Collections.singletonList(
-                            new V1VolumeMount()
-                                .name(pvName)
-                                .mountPath("/shared")))
-                        .securityContext(new V1SecurityContext()
-                            .runAsGroup(0L)
-                            .runAsUser(0L))))
+                    .initContainers(Collections.singletonList(createfixPVCOwnerContainer(pvName, "/shared")))
                     .containers(Collections.singletonList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)

@@ -142,6 +142,7 @@ import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -3130,11 +3131,6 @@ public class CommonTestUtils {
     logger.info("Running Kubernetes job to create domain for image: {1}: {2} "
         + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image,
         pvName, pvcName, domainScriptCM, namespace);
-    String argCommand = "chown -R 1000:0 /shared";
-    if (OKE_CLUSTER) {
-      argCommand = "chown 1000:0 /shared/. && find /shared/. -maxdepth 1 ! -name '.snapshot'"
-          + " ! -name '.' -print0 | xargs -r -0 chown -R 1000:0";
-    }
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
@@ -3145,19 +3141,7 @@ public class CommonTestUtils {
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
-                    .initContainers(Arrays.asList(new V1Container()
-                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(image)
-                        .addCommandItem("/bin/sh")
-                        .addArgsItem("-c")
-                        .addArgsItem(argCommand)
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name(pvName)
-                                .mountPath("/shared")))
-                        .securityContext(new V1SecurityContext()
-                            .runAsGroup(0L)
-                            .runAsUser(0L))))
+                    .initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/shared")))
                     .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
                         .name("create-weblogic-domain-onpv-container")
                         .image(image)
@@ -3325,5 +3309,34 @@ public class CommonTestUtils {
             }
         );
 
+  }
+  /**
+   * Add initContainer to fix pvc owner for pod.
+   *
+   * @param pvName name of pv
+   * @param mountPath mounting path for pv
+   */
+  public static synchronized V1Container createfixPVCOwnerContainer(String pvName, String mountPath) {
+    String argCommand = "chown -R 1000:0 " + mountPath;
+    if (OKE_CLUSTER) {
+      argCommand = "chown -R 1000:0 " + mountPath
+          + "/. && find "
+          + mountPath
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:0";
+    }
+    V1Container container = new V1Container()
+            .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .addCommandItem("/bin/sh")
+            .addArgsItem("-c")
+            .addArgsItem(argCommand)
+            .volumeMounts(Arrays.asList(
+                new V1VolumeMount()
+                    .name(pvName)
+                    .mountPath(mountPath)))
+            .securityContext(new V1SecurityContext()
+                .runAsGroup(0L)
+                .runAsUser(0L));
+    return container;
   }
 }

@@ -97,6 +97,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -936,14 +937,6 @@ class ItMiiUpdateDomainConfig {
 
   private static void createJobToChangePermissionsOnPvHostPath(String pvName, String pvcName, String namespace) {
     logger.info("Running Kubernetes job to create domain");
-    String modelMountPath = "/shared";
-    String argCommand = "chown -R 1000:0 " + modelMountPath;
-    if (OKE_CLUSTER) {
-      argCommand = "chown 1000:0 "
-          + modelMountPath
-          + "/. && find " + modelMountPath
-          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:1000";
-    }
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
@@ -954,19 +947,7 @@ class ItMiiUpdateDomainConfig {
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
-                    .addContainersItem(new V1Container()
-                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .addCommandItem("/bin/sh")
-                        .addArgsItem("-c")
-                        .addArgsItem(argCommand)
-                        .addVolumeMountsItem(
-                            new V1VolumeMount()
-                                .name(pvName)
-                                .mountPath("/shared"))
-                        .securityContext(new V1SecurityContext()
-                            .runAsGroup(0L)
-                            .runAsUser(0L))) // mounted under /shared inside pod
+                    .addContainersItem(createfixPVCOwnerContainer(pvName, "/shared")) // mounted under /shared inside pod
                     .volumes(Arrays.asList(
                         new V1Volume()
                             .name(pvName)

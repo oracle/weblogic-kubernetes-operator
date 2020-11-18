@@ -23,7 +23,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
@@ -77,6 +76,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -341,14 +341,34 @@ public class ItMiiDomainModelInPV {
     createSecretForBaseImages(namespace);
 
     final String podName = "weblogic-pv-pod-" + namespace;
-    String argCommand = "chown -R 1000:0 " + modelMountPath;
-    if (OKE_CLUSTER) {
-      argCommand = "chown 1000:0 " + modelMountPath
-          + "/. && find "
-          + modelMountPath
-          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:0";
-    }
     V1Pod podBody = new V1Pod()
+        .spec(new V1PodSpec()
+            .initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, modelMountPath)))
+            .containers(Arrays.asList(
+                new V1Container()
+                    .name("weblogic-container")
+                    .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+                    .imagePullPolicy("IfNotPresent")
+                    .addCommandItem("sleep")
+                    .addArgsItem("600")
+                    .volumeMounts(Arrays.asList(
+                        new V1VolumeMount()
+                            .name(pvName) // mount the persistent volume to /shared inside the pod
+                            .mountPath(modelMountPath)))))
+            .imagePullSecrets(Arrays.asList(new V1LocalObjectReference()
+                .name(BASE_IMAGES_REPO_SECRET)))
+            // the persistent volume claim used by the test
+            .volumes(Arrays.asList(
+                new V1Volume()
+                    .name(pvName) // the persistent volume that needs to be archived
+                    .persistentVolumeClaim(
+                        new V1PersistentVolumeClaimVolumeSource()
+                            .claimName(pvcName)))))
+        .metadata(new V1ObjectMeta().name(podName))
+        .apiVersion("v1")
+        .kind("Pod");
+    /*
+       V1Pod podBody = new V1Pod()
         .spec(new V1PodSpec()
             .initContainers(Arrays.asList(new V1Container()
                 .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
@@ -386,6 +406,7 @@ public class ItMiiDomainModelInPV {
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
         .kind("Pod");
+     */
     V1Pod wlsPod = assertDoesNotThrow(() -> Kubernetes.createPod(namespace, podBody));
 
     withStandardRetryPolicy
