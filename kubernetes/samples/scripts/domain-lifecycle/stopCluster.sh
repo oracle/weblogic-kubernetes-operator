@@ -75,22 +75,23 @@ function initialize {
 
   validateKubernetesCliAvailable
   validateJqAvailable
+  validateYqAvailable
 
   if [ -z "${clusterName}" ]; then
     validationError "Please specify cluster name using '-c' parameter e.g. '-c cluster-1'."
-  fi
-
-  isValidCluster=""
-  validateClusterName "${domainUid}" "${domainNamespace}" "${clusterName}" isValidCluster
-
-  if [ "${isValidCluster}" != 'true' ]; then
-    validationError "cluster ${clusterName} is not part of domain ${domainUid} in namespace ${domainNamespace}. "
   fi
 
   failIfValidationErrors
 }
 
 initialize
+
+isValidCluster=""
+validateClusterName "${domainUid}" "${domainNamespace}" "${clusterName}" isValidCluster
+if [ "${isValidCluster}" != 'true' ]; then
+  printError "cluster ${clusterName} is not part of domain ${domainUid} in namespace ${domainNamespace}. Please make sure that cluster name is correct."
+  exit 1
+fi
 
 # Get the domain in json format
 domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
