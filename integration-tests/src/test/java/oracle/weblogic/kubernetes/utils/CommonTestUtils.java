@@ -3321,10 +3321,10 @@ public class CommonTestUtils {
   public static synchronized V1Container createfixPVCOwnerContainer(String pvName, String mountPath) {
     String argCommand = "chown -R 1000:0 " + mountPath;
     if (OKE_CLUSTER) {
-      argCommand = "sudo chown -R 1000:0 " + mountPath
+      argCommand = "chown 1000:0 " + mountPath
           + "/. && find "
           + mountPath
-          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 sudo chown -R 1000:0";
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:0";
     }
     V1Container container = new V1Container()
             .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
