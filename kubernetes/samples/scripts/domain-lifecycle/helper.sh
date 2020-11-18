@@ -649,14 +649,6 @@ function validateKubernetesCliAvailable {
   fi
 }
 
-#
-# Function to exit and print an error message
-# $1 - text of message
-function fail {
-  printError $*
-  exit 1
-}
-
 # Function to print an error message
 function printError {
   echo [`timestamp`][ERROR] $*
@@ -720,6 +712,7 @@ function validationError {
 #
 function failIfValidationErrors {
   if [ "$validateErrors" = true ]; then
-    fail 'The errors listed above must be resolved before the script can continue'
+    printError 'The errors listed above must be resolved before the script can continue. Please see usage information below.'
+    usage 1
   fi
 }
