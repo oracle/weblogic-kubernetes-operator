@@ -4,12 +4,12 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
@@ -29,13 +29,11 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkLogsOnPV;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkWorkManagerRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readJdbcRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readMaxThreadsConstraintRuntimeForWorkManager;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readMinThreadsConstraintRuntimeForWorkManager;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigMapWithModelFiles;
@@ -84,7 +82,6 @@ class ItMiiDynamicUpdate {
   private static final String domainUid = "mii-dynamic-update";
   private static String pvName = domainUid + "-pv"; // name of the persistent volume
   private static String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
-  private static final String initialModelYamlFileName = "model.sysresources.yaml";
   private static final String configMapName = "dynamicupdate-test-configmap";//"wmconfigmap";
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
@@ -143,10 +140,8 @@ class ItMiiDynamicUpdate {
             "tiger", "jdbc:oracle:thin:localhost:/ORCLCDB", domainNamespace),
              String.format("createSecret failed for %s", dbSecretName));
 
-    createConfigMapAndVerify(
-        configMapName, domainUid, domainNamespace,
-        Arrays.asList(initialModelYamlFileName));
-
+    // create WDT config map without any files
+    createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.EMPTY_LIST);
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -198,54 +193,6 @@ class ItMiiDynamicUpdate {
   }
 
   /**
-   * Check server logs are written on PV.
-   */
-  @Test
-  @Order(1)
-  @DisplayName("Check the server logs are written on PV, look for string RUNNING in server log")
-  public void testServerLogsAreOnPV() {
-
-    // check server logs are written on PV and look for string RUNNING in log
-    checkLogsOnPV(domainNamespace, "grep RUNNING /shared/logs/" + adminServerName + ".log", adminServerPodName);
-  }
-
-  /**
-   * Create a WebLogic domain with a defined configmap in configuration/model 
-   * section of the domain resource.
-   * The configmap has multiple sparse WDT model files that define 
-   * a JDBCSystemResource, a JMSSystemResource and a WLDFSystemResource.
-   * Verify all the SystemResource configurations using the rest API call 
-   * using the public nodeport of the administration server.
-   */
-  @Test
-  @Order(2)
-  @DisplayName("Verify the pre-configured SystemResources in a model-in-image domain")
-  public void testMiiCheckSystemResources() {
-
-    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
-        "TestDataSource", "200"), "JDBCSystemResource not found");
-    logger.info("Found the JDBCSystemResource configuration");
-
-    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
-        "TestClusterJmsModule", "200"), "JMSSystemResources not found");
-    logger.info("Found the JMSSystemResource configuration");
-
-    assertTrue(checkSystemResourceConfiguration("WLDFSystemResources", 
-        "TestWldfModule", "200"), "WLDFSystemResources not found");
-    logger.info("Found the WLDFSystemResource configuration");
-
-    ExecResult result = null;
-    result = readJdbcRuntime(domainNamespace, adminServerPodName,"TestDataSource");
-    logger.info("checkJdbcRuntime: returned {0}", result.toString());
-    assertTrue(result.stdout().contains("jdbc:oracle:thin:localhost"),
-         String.format("DB URL does not match with RuntimeMBean Info"));
-    assertTrue(result.stdout().contains("scott"),
-         String.format("DB user name does not match with RuntimeMBean Info"));
-    logger.info("Found the JDBCSystemResource configuration");
-
-  }
-
-  /**
    * Create a configmap containing both the model yaml, and a sparse model file to add
    * a new work manager, a min threads constraint, and a max threads constraint
    * Patch the domain resource with the configmap.
@@ -255,7 +202,7 @@ class ItMiiDynamicUpdate {
    * Verify new work manager is configured.
    */
   @Test
-  @Order(3)
+  @Order(1)
   @DisplayName("Add a work manager to a model-in-image domain using dynamic update")
   public void testMiiAddWorkManager() {
 
@@ -263,7 +210,7 @@ class ItMiiDynamicUpdate {
     // BeforeEach method ensures that the server pods are running
 
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(initialModelYamlFileName, "model.config.wm.yaml"), withStandardRetryPolicy);
+        Arrays.asList("model.config.wm.yaml"), withStandardRetryPolicy);
 
     assertTrue(assertDoesNotThrow(() ->
             patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace),
@@ -292,7 +239,7 @@ class ItMiiDynamicUpdate {
    * Verify work manager configuration is updated.
    */
   @Test
-  @Order(4)
+  @Order(2)
   @DisplayName("Update work manager min/max threads constraints config to a model-in-image domain using dynamic update")
   public void testMiiUpdateWorkManager() {
 
@@ -300,7 +247,7 @@ class ItMiiDynamicUpdate {
     // BeforeEach method ensures that the server pods are running
 
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(initialModelYamlFileName, "model.update.wm.yaml"),
+        Arrays.asList("model.update.wm.yaml"),
         withStandardRetryPolicy);
 
     assertTrue(assertDoesNotThrow(() ->
@@ -367,11 +314,5 @@ class ItMiiDynamicUpdate {
     }
     logger.info("readMaxThreadsConstraintRuntime failed to read from WebLogic server ");
     return false;
-  }
-
-  private boolean checkSystemResourceConfiguration(String resourcesType,
-         String resourcesName, String expectedStatusCode) {
-    return CommonMiiTestUtils.checkSystemResourceConfiguration(domainNamespace,
-        adminServerPodName, resourcesType, resourcesName, expectedStatusCode);
   }
 }
