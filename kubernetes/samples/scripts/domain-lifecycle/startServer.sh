@@ -120,6 +120,7 @@ function initialize {
 
   validateKubernetesCliAvailable
   validateJqAvailable
+  validateYqAvailable
 
   # Validate that server name parameter is specified.
   if [ -z "${serverName}" ]; then

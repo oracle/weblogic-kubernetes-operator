@@ -66,6 +66,7 @@ function initialize {
 
   validateKubernetesCliAvailable
   validateJqAvailable
+  validateYqAvailable
   failIfValidationErrors
 }
 
