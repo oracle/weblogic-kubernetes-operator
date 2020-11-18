@@ -7,7 +7,7 @@ description: "Sample for using the operator to set up a WLS cluster on the Tanzu
 
 
 This sample demonstrates how to use the Oracle [WebLogic Server Kubernetes Operator](/weblogic-kubernetes-operator/) (hereafter “the operator”) to set up a WebLogic Server (WLS) cluster on the Tanzu Kubernetes Grid (TKG).
-After performing the sample steps, your WLS domain runs on a TKG Kubernetes cluster instance and you can manage your WLS domain by using the WebLogic Server Administration Console.
+After performing the sample steps, your WLS domain with domain source type of Model In Image runs on an TKG Kubernetes cluster instance. Once the domain has been provisioned you can monitor it using the WebLogic Administration console.
 
 TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. To learn more, see the [Tanzu Kubernetes Grid (TKG)](https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-index.html) overview page.
 
@@ -35,7 +35,7 @@ This sample assumes the following prerequisite environment setup.
 ##### Create the Tanzu Kubernetes cluster
 
 Create the Kubernetes cluster using the TKG CLI. See the [Tanzu documentation](https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-index.html) to set up your Kubernetes cluster.
-After your Kubernetes cluster is up and running, run the following command to make sure `kubectl` can access the Kubernetes cluster.
+After your Kubernetes cluster is up and running, run the following commands to make sure `kubectl` can access the Kubernetes cluster.
 
 ```bash
 $ kubectl get nodes -o wide
@@ -48,7 +48,7 @@ k8s-cluster-101-md-0-577b7dc766-p2gkz   Ready      <none>   2d20h   v1.18.6+vmwa
 
 ##### Oracle Container Registry
 
-You will need an Oracle account. The following steps will direct you to accept the license agreement for WebLogic Server.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.4, but other versions may work as well.
+You will need an Oracle Container Registry account. The following steps will direct you to accept Oracle Standard Terms and Restrictions to pull the WebLogic Server images.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.4, but other versions may work as well.
 
 Obtain the WebLogic Server image from the [Oracle Container Registry](https://container-registry.oracle.com/).
 
