@@ -36,7 +36,6 @@ import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -93,15 +92,12 @@ import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
@@ -945,11 +941,7 @@ public class ItTwoDomainsLoadBalancers {
 
       // create persistent volume and persistent volume claims
       Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume");
-      if (!OKE_CLUSTER) {
-        logger.info("Creating PV directory {0}", pvHostPath);
-        assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
-        assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
-      }
+
       V1PersistentVolume v1pv = new V1PersistentVolume()
           .spec(new V1PersistentVolumeSpec()
               .addAccessModesItem("ReadWriteMany")
@@ -961,19 +953,6 @@ public class ItTwoDomainsLoadBalancers {
               .build()
               .putLabelsItem("weblogic.domainUid", domainUid));
 
-      if (OKE_CLUSTER) {
-        v1pv.getSpec()
-            .storageClassName("oci-fss")
-            .nfs(new io.kubernetes.client.openapi.models.V1NFSVolumeSource()
-                .path(FSS_DIR)
-                .server(NFS_SERVER)
-                .readOnly(false));
-      } else {
-        v1pv.getSpec()
-            .storageClassName(domainUid + "-weblogic-domain-storage-class")
-            .hostPath(new V1HostPathVolumeSource()
-                .path(pvHostPath.toString()));
-      }
       V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
           .spec(new V1PersistentVolumeClaimSpec()
               .addAccessModesItem("ReadWriteMany")
@@ -987,15 +966,9 @@ public class ItTwoDomainsLoadBalancers {
               .build()
               .putLabelsItem("weblogic.domainUid", domainUid));
 
-      if (OKE_CLUSTER) {
-        v1pvc.getSpec()
-            .storageClassName("oci-fss");
-      } else {
-        v1pvc.getSpec()
-            .storageClassName(domainUid + "-weblogic-domain-storage-class");
-      }
       String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
-      createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace);
+      createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace,
+          domainUid + "-weblogic-domain-storage-class", pvHostPath);
 
       // run create a domain on PV job using WLST
       runCreateDomainOnPVJobUsingWlst(pvName, pvcName, domainUid, domainNamespace,
@@ -1405,12 +1378,6 @@ public class ItTwoDomainsLoadBalancers {
     // create WebLogic credentials secret
     createSecretWithUsernamePassword(wlSecretName, defaultNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), "default-sharing-persistentVolume");;
-    if (!OKE_CLUSTER) {
-      // create persistent volume
-      logger.info("Creating PV directory {0}", pvHostPath);
-      assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
-      assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
-    }
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
@@ -1422,21 +1389,6 @@ public class ItTwoDomainsLoadBalancers {
             .withName(defaultSharingPvName)
             .build()
             .putLabelsItem("sharing-pv", "true"));
-
-    if (OKE_CLUSTER) {
-      v1pv.getSpec()
-          .storageClassName("oci-fss")
-          .nfs(new io.kubernetes.client.openapi.models.V1NFSVolumeSource()
-              .path(FSS_DIR)
-              .server(NFS_SERVER)
-              .readOnly(false));
-    } else {
-      v1pv.getSpec()
-          .storageClassName("default-sharing-weblogic-domain-storage-class")
-          .hostPath(new V1HostPathVolumeSource()
-              .path(pvHostPath.toString()));
-    }
-
 
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
@@ -1450,16 +1402,10 @@ public class ItTwoDomainsLoadBalancers {
             .build()
             .putLabelsItem("sharing-pvc", "true"));
 
-    if (OKE_CLUSTER) {
-      v1pvc.getSpec()
-          .storageClassName("oci-fss");
-    } else {
-      v1pvc.getSpec()
-          .storageClassName("default-sharing-weblogic-domain-storage-class");
-    }
     // create pv and pvc
     String labelSelector = String.format("sharing-pv in (%s)", "true");
-    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, defaultNamespace);
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, defaultNamespace,
+  "default-sharing-weblogic-domain-storage-class", pvHostPath);
 
     for (int i = 1; i <= numberOfDomains; i++) {
       String domainUid = domainUids.get(i - 1);
@@ -2227,11 +2173,6 @@ public class ItTwoDomainsLoadBalancers {
   private void createPVPVCForApacheCustomConfiguration(String apacheNamespace) {
 
     Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), "apache-persistentVolume");
-    if (!OKE_CLUSTER) {
-      logger.info("Creating PV directory {0}", pvHostPath);
-      assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
-      assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
-    }
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
@@ -2244,20 +2185,6 @@ public class ItTwoDomainsLoadBalancers {
             .withName(apachePvName)
             .build()
             .putLabelsItem("apacheLabel", "apache-custom-config"));
-
-    if (OKE_CLUSTER) {
-      v1pv.getSpec()
-          .storageClassName("oci-fss")
-          .nfs(new io.kubernetes.client.openapi.models.V1NFSVolumeSource()
-              .path(FSS_DIR)
-              .server(NFS_SERVER)
-              .readOnly(false));
-    } else {
-      v1pv.getSpec()
-          .storageClassName("apache-storage-class")
-          .hostPath(new V1HostPathVolumeSource()
-              .path(pvHostPath.toString()));
-    }
 
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
@@ -2272,16 +2199,9 @@ public class ItTwoDomainsLoadBalancers {
             .build()
             .putLabelsItem("apacheLabel", "apache-custom-config"));
 
-    if (OKE_CLUSTER) {
-      v1pvc.getSpec()
-          .storageClassName("oci-fss");
-    } else {
-      v1pvc.getSpec()
-          .storageClassName("apache-storage-class");
-    }
-
     String labelSelector = String.format("apacheLabel in (%s)", "apache-custom-config");
-    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, apacheNamespace);
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, apacheNamespace,
+        "apache-storage-class", pvHostPath);
   }
 
   private void verifyHeadersInAdminServerLog(String podName, String namespace) {

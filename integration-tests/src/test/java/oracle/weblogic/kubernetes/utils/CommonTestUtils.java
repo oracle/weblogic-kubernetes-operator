@@ -81,6 +81,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 
+import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.readString;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -223,6 +224,7 @@ import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForSe
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -2665,6 +2667,50 @@ public class CommonTestUtils {
   }
 
   /**
+   * Create a persistent volume and persistent volume claim.
+   *
+   * @param v1pv V1PersistentVolume object to create the persistent volume
+   * @param v1pvc V1PersistentVolumeClaim object to create the persistent volume claim
+   * @param labelSelector String containing the labels the PV is decorated with
+   * @param namespace the namespace in which the persistence volume claim to be created
+   * @param storageClassName the name for storage class
+   * @param pvHostPath path to pv dir if hostpath is used, ignored if nfs
+   *
+   **/
+  public static void createPVPVCAndVerify(V1PersistentVolume v1pv,
+                                          V1PersistentVolumeClaim v1pvc,
+                                          String labelSelector,
+                                          String namespace, String storageClassName, Path pvHostPath) {
+    LoggingFacade logger = getLogger();
+    if (!OKE_CLUSTER) {
+      logger.info("Creating PV directory {0}", pvHostPath);
+      assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
+      assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
+    }
+    if (OKE_CLUSTER) {
+      v1pv.getSpec()
+          .storageClassName("oci-fss")
+          .nfs(new V1NFSVolumeSource()
+              .path(FSS_DIR)
+              .server(NFS_SERVER)
+              .readOnly(false));
+    } else {
+      v1pv.getSpec()
+          .storageClassName(storageClassName)
+          .hostPath(new V1HostPathVolumeSource()
+              .path(pvHostPath.toString()));
+    }
+    if (OKE_CLUSTER) {
+      v1pvc.getSpec()
+          .storageClassName("oci-fss");
+    } else {
+      v1pvc.getSpec()
+          .storageClassName(storageClassName);
+    }
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, namespace);
+  }
+
+  /**
    * Create ConfigMap from the specified files.
    * @param configMapName name of the ConfigMap to create
    * @param files files to be added in ConfigMap
@@ -2998,8 +3044,8 @@ public class CommonTestUtils {
         pvHostPath = Files.createDirectories(Paths.get(
             PV_ROOT, className, pvName));
         logger.info("Creating PV directory host path {0}", pvHostPath);
-        org.apache.commons.io.FileUtils.deleteDirectory(pvHostPath.toFile());
-        Files.createDirectories(pvHostPath);
+        deleteDirectory(pvHostPath.toFile());
+        createDirectories(pvHostPath);
       } catch (IOException ioex) {
         logger.severe(ioex.getMessage());
         fail("Create persistent volume host path failed");
@@ -3052,7 +3098,6 @@ public class CommonTestUtils {
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
             .volumeName(pvName)
-            .storageClassName("weblogic-domain-storage-class")
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("5Gi"))))
         .metadata(new V1ObjectMeta()
