@@ -83,7 +83,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       String labelSelector,
       String resourceVersion) {
     this(next, requestParams, factory, null, helper, timeoutSeconds, maxRetryCount,
-            fieldSelector, labelSelector, resourceVersion);
+            null, fieldSelector, labelSelector, resourceVersion);
   }
 
   /**
@@ -96,6 +96,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
    * @param helper Client pool
    * @param timeoutSeconds Timeout
    * @param maxRetryCount Max retry count
+   * @param gracePeriodSeconds Grace period
    * @param fieldSelector Field selector
    * @param labelSelector Label selector
    * @param resourceVersion Resource version
@@ -108,6 +109,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
           ClientPool helper,
           int timeoutSeconds,
           int maxRetryCount,
+          Integer gracePeriodSeconds,
           String fieldSelector,
           String labelSelector,
           String resourceVersion) {

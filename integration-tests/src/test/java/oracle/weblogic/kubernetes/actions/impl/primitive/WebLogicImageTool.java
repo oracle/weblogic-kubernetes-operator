@@ -5,11 +5,15 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.util.List;
 
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWdtParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWitParams;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+
 
 /**
  * Implementation of actions that use WebLogic Image Tool to create/update a WebLogic Docker image.
@@ -90,13 +94,17 @@ public class WebLogicImageTool {
   }
 
   private String buildiWitCommand() {
+    LoggingFacade logger = getLogger();
     String command =
         IMAGE_TOOL
         + " update "
         + " --tag " + params.modelImageName() + ":" + params.modelImageTag()
         + " --fromImage " + params.baseImageName() + ":" + params.baseImageTag()
-        + " --wdtDomainType " + params.domainType()
-        + " --chown oracle:root";
+        + " --wdtDomainType " + params.domainType();
+
+    if (params.domainType().equals("WLS")) {
+      command += " --chown oracle:root";
+    }
 
     if (params.wdtModelOnly()) {
       command += " --wdtModelOnly ";
@@ -132,6 +140,7 @@ public class WebLogicImageTool {
       command += " --additionalBuildFiles " + params.additionalBuildFiles();
     }
 
+    logger.info("Build image with command: {0} and domainType: {1}", command,  params.domainType());
     return command;
   }
 

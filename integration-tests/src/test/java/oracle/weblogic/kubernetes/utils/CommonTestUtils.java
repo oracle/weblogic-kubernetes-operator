@@ -19,10 +19,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -31,6 +33,8 @@ import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1LabelSelector;
+import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
@@ -40,6 +44,8 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
+import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
@@ -50,7 +56,10 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
+import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
@@ -176,6 +185,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallKibana;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
@@ -1630,6 +1640,22 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check whether the cluster's replica count matches with input parameter value.
+   *
+   * @param clusterName Name of cluster to check
+   * @param domainName Name of domain to which cluster belongs
+   * @param namespace cluster's namespace
+   * @param replicaCount replica count value to match
+   * @return
+   */
+  public static boolean checkClusterReplicaCountMatches(String clusterName, String domainName,
+                                                        String namespace, Integer replicaCount) throws ApiException {
+    Cluster cluster = TestActions.getDomainCustomResource(domainName, namespace).getSpec().getClusters()
+            .stream().filter(c -> c.clusterName().equals(clusterName)).findAny().orElse(null);
+    return Optional.ofNullable(cluster).get().replicas() == replicaCount;
+  }
+
+  /**
    * Create a Docker image for a model in image domain.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
@@ -2166,6 +2192,55 @@ public class CommonTestUtils {
         .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
   }
+
+  /**
+   * Create a RcuAccess secret with RCU schema prefix, RCU schema password and RCU database connection string in the
+   * specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param rcuPrefix  RCU schema prefix
+   * @param password RCU schema passoword
+   * @param rcuDbConnString RCU database connection string
+   */
+  public static void createRcuAccessSecret(String secretName, String namespace,
+      String rcuPrefix, String password, String rcuDbConnString) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("rcu_db_conn_string", rcuDbConnString);
+    secretMap.put("rcu_prefix", rcuPrefix);
+    secretMap.put("rcu_schema_password", password);
+
+    getLogger().info("Create RcuAccessSecret: {0} in namespace: {1}, with rcuPrefix {2}, password {3}, "
+        + "rcuDbConnString {4} ", secretName, namespace, rcuPrefix, password, rcuDbConnString);
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
+
+  /**
+   * Create a RcuAccess secret with RCU schema prefix, RCU schema password and RCU database connection string
+   * in the specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param opsswalletpassword  OPSS wallet password
+   */
+  public static void createOpsswalletpasswordSecret(String secretName, String namespace,
+      String opsswalletpassword) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("walletPassword", opsswalletpassword);
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
+
 
 
   /** Scale the WebLogic cluster to specified number of servers.
@@ -2864,6 +2939,43 @@ public class CommonTestUtils {
     return true;
   }
 
+  /**
+   * Check if the the application is accessible inside the WebLogic server pod.
+   * @param conditionFactory condition factory
+   * @param namespace namespace of the domain
+   * @param podName name of the pod
+   * @param internalPort internal port of the managed server running in the pod
+   * @param appPath path to access the application
+   * @param expectedStr expected response from the app
+   */
+  public static void checkAppIsRunning(
+      ConditionFactory conditionFactory,
+      String namespace,
+      String podName,
+      String internalPort,
+      String appPath,
+      String expectedStr
+  ) {
+
+    // check if the application is accessible inside of a server pod
+    conditionFactory
+        .conditionEvaluationListener(
+            condition -> getLogger().info("Waiting for application {0} is running on pod {1} in namespace {2} "
+                    + "(elapsed time {3}ms, remaining time {4}ms)",
+                appPath,
+                podName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> appAccessibleInPod(
+            namespace,
+            podName,
+            internalPort,
+            appPath,
+            expectedStr));
+
+  }
+
   /** Create a persistent volume.
    * @param pvName name of the persistent volume to create
    * @param domainUid domain UID
@@ -2890,11 +3002,11 @@ public class CommonTestUtils {
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName("weblogic-domain-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
             .accessModes(Arrays.asList("ReadWriteMany"))
+            .storageClassName("weblogic-domain-storage-class")
             .hostPath(new V1HostPathVolumeSource()
                 .path(pvHostPath.toString())))
         .metadata(new V1ObjectMeta()
@@ -2922,8 +3034,8 @@ public class CommonTestUtils {
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName("weblogic-domain-storage-class")
             .volumeName(pvName)
+            .storageClassName("weblogic-domain-storage-class")
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("5Gi"))))
         .metadata(new V1ObjectMeta()
@@ -3010,7 +3122,7 @@ public class CommonTestUtils {
                         .image(image)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:1000 /shared")
+                        .addArgsItem("chown -R 1000:0 /shared")
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
                                 .name(pvName)
@@ -3151,5 +3263,38 @@ public class CommonTestUtils {
 
   public static String getIntrospectJobName(String domainUid) {
     return domainUid + TestConstants.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX;
+  }
+
+  /**
+   * Set the inter-pod anti-affinity  for the domain custom resource
+   * so that server instances spread over the available Nodes.
+   *
+   * @param domain custom resource object
+   */
+  public static synchronized void setPodAntiAffinity(Domain domain) {
+    domain.getSpec()
+        .getClusters()
+        .stream()
+        .forEach(
+            cluster -> {
+              cluster
+                  .serverPod(new ServerPod()
+                      .affinity(new V1Affinity().podAntiAffinity(
+                          new V1PodAntiAffinity()
+                              .addPreferredDuringSchedulingIgnoredDuringExecutionItem(
+                                  new V1WeightedPodAffinityTerm()
+                                      .weight(100)
+                                      .podAffinityTerm(new V1PodAffinityTerm()
+                                          .topologyKey("kubernetes.io/hostname")
+                                          .labelSelector(new V1LabelSelector()
+                                              .addMatchExpressionsItem(new V1LabelSelectorRequirement()
+                                                  .key("weblogic.clusterName")
+                                                  .operator("In")
+                                                  .addValuesItem("$(CLUSTER_NAME)")))
+                                      )))));
+
+            }
+        );
+
   }
 }

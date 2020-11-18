@@ -45,7 +45,7 @@
 #                  default:  weblogic-deploy.zip
 #
 #   WDT_INSTALL_ZIP_URL   URL for downloading WDT install zip
-#                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.3/$WDT_INSTALL_ZIP_FILE
+#                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.7/$WDT_INSTALL_ZIP_FILE
 #
 #   https_proxy    Proxy for downloading WDT_INSTALL_ZIP_URL.
 #                  default: "http://www-proxy-hqdc.us.oracle.com:80"

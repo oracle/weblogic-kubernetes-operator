@@ -75,6 +75,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBa
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -258,7 +259,7 @@ public class ItIstioDomainInPV  {
                 .istio(new Istio()
                     .enabled(Boolean.TRUE)
                     .readinessPort(8888))));
-
+    setPodAntiAffinity(domain);
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
 
@@ -397,7 +398,7 @@ public class ItIstioDomainInPV  {
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:1000 /shared")
+                        .addArgsItem("chown -R 1000:0 /shared")
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
                                 .name(pvName)

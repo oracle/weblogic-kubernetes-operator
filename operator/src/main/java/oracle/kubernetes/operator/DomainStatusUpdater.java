@@ -602,7 +602,8 @@ public class DomainStatusUpdater {
       }
 
       private Integer getClusterMinimumSize(String clusterName) {
-        return getDomainConfig()
+        return getDomain().isAllowReplicasBelowMinDynClusterSize(clusterName)
+              ? 0 : getDomainConfig()
               .map(config -> config.getClusterConfig(clusterName))
               .map(WlsClusterConfig::getMinClusterSize)
               .orElse(0);

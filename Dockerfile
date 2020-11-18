@@ -43,17 +43,17 @@ RUN set -eux; \
         alternatives --install "/usr/bin/$base" "$base" "$bin" 20000; \
     done; \
     java -Xshare:dump; \
-    groupadd -g 1000 oracle; \
-    useradd -d /operator -M -s /bin/bash -g 1000 -u 1000 oracle; \
-    mkdir -p /operator/lib; \
-    mkdir /logs; \
-    chown -R 1000:1000 /operator /logs
+    useradd -d /operator -M -s /bin/bash -g root -u 1000 oracle; \
+    mkdir -m 775 /operator; \
+    mkdir -m 775 /logs; \
+    mkdir /operator/lib; \
+    chown -R oracle:root /operator /logs
 
-USER 1000
+USER oracle
 
-COPY src/scripts/* /operator/
-COPY operator/target/weblogic-kubernetes-operator.jar /operator/weblogic-kubernetes-operator.jar
-COPY operator/target/lib/*.jar /operator/lib/
+COPY --chown=oracle:root src/scripts/* /operator/
+COPY --chown=oracle:root operator/target/weblogic-kubernetes-operator.jar /operator/weblogic-kubernetes-operator.jar
+COPY --chown=oracle:root operator/target/lib/*.jar /operator/lib/
 
 HEALTHCHECK --interval=1m --timeout=10s \
   CMD /operator/livenessProbe.sh

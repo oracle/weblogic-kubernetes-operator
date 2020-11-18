@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.extensions;
 
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -51,6 +52,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINTYPE;
@@ -65,8 +67,10 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.STAGE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -301,14 +305,34 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   @Override
   public void close() {
     LoggingFacade logger = getLogger();
-    logger.info("Cleanup istio after all test suites are run");
-    uninstallIstio();
+    // check SKIP_CLEANUP environment variable to skip cleanup
+    if (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").toLowerCase().equals("true")) {
+      logger.info("Skipping RESULTS_ROOT clean up after test execution");
+    } else {
+      logger.info("Uninstall istio after all test suites are run");
+      uninstallIstio();
+      logger.info("Cleanup WIT/WDT binary form {0}", RESULTS_ROOT);
+      try {
+        Files.deleteIfExists(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
+        cleanupDirectory(DOWNLOAD_DIR);
+        cleanupDirectory(WIT_BUILD_DIR);
+        cleanupDirectory(STAGE_DIR);
+        cleanupDirectory((Paths.get(WORK_DIR, "imagetool")).toString());
+        // remove empty directory
+        Files.deleteIfExists(Paths.get(WORK_DIR, "imagetool"));
+        Files.deleteIfExists(Paths.get(STAGE_DIR));
+        Files.deleteIfExists(Paths.get(WIT_BUILD_DIR));
+        Files.deleteIfExists(Paths.get(DOWNLOAD_DIR));
+      } catch (IOException ioe) {
+        logger.severe("Failed to cleanup files @ " + RESULTS_ROOT, ioe);
+      }
 
-    logger.info("Cleanup images after all test suites are run");
-
-    // delete all the images from local repo
-    for (String image : pushedImages) {
-      deleteImage(image);
+      logger.info("Cleanup images after all test suites are run");
+      // delete all the images from local repo
+      for (String image : pushedImages) {
+        deleteImage(image);
+      }
     }
 
     // delete images from OCIR, if necessary

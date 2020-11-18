@@ -100,6 +100,7 @@ public interface TestConstants {
   public static final String WEBLOGIC_IMAGE_TAG = Optional.ofNullable(System.getenv("WEBLOGIC_IMAGE_TAG"))
       .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_WEBLOGIC_IMAGE_TAG : OCIR_WEBLOGIC_IMAGE_TAG);
   public static final String WLS_UPDATE_IMAGE_TAG = "14.1.1.0-11";
+  public static final String WLS_LATEST_IMAGE_TAG = "14.1.1.0-11";
 
   // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not provided and
   // if base images repo is OCR use OCR default image values
@@ -142,12 +143,13 @@ public interface TestConstants {
 
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostAddress()));
-  public static final String RESULTS_ROOT = System.getenv().getOrDefault("RESULT_ROOT",
-      System.getProperty("java.io.tmpdir")) + "/ittestsresults";
-  public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
-      System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
-  public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
-      System.getProperty("java.io.tmpdir") + "/ittestspvroot");
+  public static final String RESULTS_BASE = System.getenv().getOrDefault("RESULT_ROOT",
+      System.getProperty("java.io.tmpdir") + "/it-testsresults");
+
+  public static final String LOGS_DIR = RESULTS_BASE + "/diagnostics";
+  public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT", 
+      RESULTS_BASE + "/pvroot");
+  public static final String RESULTS_ROOT = RESULTS_BASE + "/workdir";
 
   // NGINX constants
   public static final String NGINX_REPO_URL = "https://kubernetes.github.io/ingress-nginx";
@@ -262,6 +264,7 @@ public interface TestConstants {
 
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";
+
 
   // default name suffixes
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";

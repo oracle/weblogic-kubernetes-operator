@@ -3,8 +3,10 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -15,6 +17,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -24,11 +27,11 @@ public class IstioUtils {
 
   /**
    * Install istio.
-  */
+   */
   public static void installIstio() {
     LoggingFacade logger = getLogger();
-    Path istioInstallPath = 
-         Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh");
+    Path istioInstallPath =
+        Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh");
     String installScript = istioInstallPath.toString();
     String command =
         String.format("%s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT);
@@ -38,15 +41,29 @@ public class IstioUtils {
             .command(command)
             .redirect(false))
         .execute());
+    
+    // Copy the istio (un)intsall scripts to RESULTS_ROOT, so that istio
+    // can be (un)installed manually when SKIP_CLEANUP is set to true
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh"),
+        Paths.get(RESULTS_ROOT, "install-istio.sh"), 
+        StandardCopyOption.REPLACE_EXISTING),
+        "Copy install-istio.sh to RESULTS_ROOT failed");
+
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh"),
+        Paths.get(RESULTS_ROOT, "uninstall-istio.sh"), 
+        StandardCopyOption.REPLACE_EXISTING),
+        "Copy uninstall-istio.sh to RESULTS_ROOT failed");
   }
 
   /**
    * Uninstall istio.
-  */
+   */
   public static void uninstallIstio() {
     LoggingFacade logger = getLogger();
     Path istioInstallPath = 
-         Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh");
+        Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh");
     String installScript = istioInstallPath.toString();
     String command =
         String.format("%s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT);
@@ -60,8 +77,9 @@ public class IstioUtils {
 
   /**
    * Get the http ingress port of istio installation.
+   *
    * @return ingress port for istio-ingressgateway
-  */
+   */
   public static int getIstioHttpIngressPort() {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
@@ -85,8 +103,9 @@ public class IstioUtils {
 
   /**
    * Get the secure https ingress port of istio installation.
+   *
    * @return secure ingress https port for istio-ingressgateway
-  */
+   */
   public static int getIstioSecureIngressPort() {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
@@ -110,6 +129,7 @@ public class IstioUtils {
 
   /**
    * Get the tcp ingress port of istio installation.
+   *
    * @return tcp ingress port for istio-ingressgateway
    */
   public static int getIstioTcpIngressPort() {
@@ -135,9 +155,10 @@ public class IstioUtils {
 
   /**
    * Deploy the Http Istio Gateway and Istio virtual service.
-   * @param configPath path to k8s configuration file 
+   *
+   * @param configPath path to k8s configuration file
    * @return true if deployment is success otherwise false
-  */
+   */
   public static boolean deployHttpIstioGatewayAndVirtualservice(Path configPath) {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
@@ -157,11 +178,12 @@ public class IstioUtils {
 
   /**
    * Deploy the tcp Istio Gateway and Istio virtual service.
-   * @param configPath path to k8s configuration file 
+   *
+   * @param configPath path to k8s configuration file
    * @return true if deployment is success otherwise false
-  */
+   */
   public static boolean deployTcpIstioGatewayAndVirtualservice(
-      Path configPath)  {
+      Path configPath) {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
@@ -175,16 +197,17 @@ public class IstioUtils {
       return false;
     }
     logger.info("deployIstioTcpGateway: kubectl returned {0}", result.toString());
-    return result.stdout().contains("istio-tcp-gateway created"); 
+    return result.stdout().contains("istio-tcp-gateway created");
   }
 
   /**
-   * Deploy the Istio DestinationRule. 
-   * @param configPath path to k8s configuration file 
+   * Deploy the Istio DestinationRule.
+   *
+   * @param configPath path to k8s configuration file
    * @return true if deployment is success otherwise false
-  */
+   */
   public static boolean deployIstioDestinationRule(
-       Path configPath) {
+      Path configPath) {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
@@ -198,7 +221,7 @@ public class IstioUtils {
       return false;
     }
     logger.info("deployIstioDestinationRule: kubectl returned {0}", result.toString());
-    return result.stdout().contains("destination-rule created"); 
+    return result.stdout().contains("destination-rule created");
   }
-  
+
 }

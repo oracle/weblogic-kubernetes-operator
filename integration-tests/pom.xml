@@ -7,7 +7,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>3.1.0</version>
+        <version>3.2.0</version>
     </parent>
 
     <artifactId>integration-tests</artifactId>
@@ -244,6 +244,20 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>**/It*</includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>wls-image-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItMiiSample.java,**/ItJrfDomainInPV.java,**/ItStickySession.java,**/ItSessionMigration.java</includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>fmw-image-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>**/ItMiiSample.java,**/ItJrfDomainInPV.java</includes-failsafe>
             </properties>
         </profile>
     </profiles>
