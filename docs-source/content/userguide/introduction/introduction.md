@@ -73,7 +73,6 @@ TKG support and limitations:
 * VSphere CSI driver supports only volumes with Read-Write-Once policy. This does not allow writing stores on PV.  
    * For applications requiring HA, use JMS and JTA stores in the database.
 * The ingress used for certification is NGINX, with MetalLB load balancer.
-* Public Internet access is allowed only on ports 80, 443.
 
 
 ### Oracle Linux Cloud Native Environment (OLCNE)
