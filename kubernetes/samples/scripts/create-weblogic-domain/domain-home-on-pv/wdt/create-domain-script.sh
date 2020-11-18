@@ -79,6 +79,7 @@ WDT_VERSION=${WDT_VERSION:-1.9.5}
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}
 
+
 # using "-" instead of ":-" in case proxy vars are explicitly set to "".
 https_proxy=${https_proxy-""}
 https_proxy2=${https_proxy2-"http://www-proxy-hqdc.us.oracle.com:80"}
@@ -266,6 +267,7 @@ function run_wdt {
   fi
 
   #chmod -R g+w $domain_home_dir || return 1
+
   return 0
 }
 

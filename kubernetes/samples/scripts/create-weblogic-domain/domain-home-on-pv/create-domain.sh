@@ -20,8 +20,7 @@
 # Initialize
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-#source ${scriptDir}/../../common/utility.sh
-source ${scriptDir}/utility.sh
+source ${scriptDir}/../../common/utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
@@ -79,7 +78,6 @@ function initOutputDir {
   # Create a directory for this domain's output files
   mkdir -p ${domainOutputDir}
 
-  #removeFileIfExists ${domainOutputDir}/${valuesInputFile}
   removeFileIfExists ${domainOutputDir}/create-domain-inputs.yaml
   removeFileIfExists ${domainOutputDir}/create-domain-job.yaml
   removeFileIfExists ${domainOutputDir}/delete-domain-job.yaml
@@ -99,11 +97,7 @@ function initialize {
   if [ -z "${valuesInputFile}" ]; then
     validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml)."
   else
-  
     checkInputFiles
-    #if [ ! -f ${valuesInputFile} ]; then
-    #  validationError "Unable to locate the input parameters file ${valuesInputFile}"
-    #fi
   fi
 
   if [ -z "${outputDir}" ]; then
@@ -148,14 +142,12 @@ function createDomainConfigmap {
   if [ -d "${scriptDir}/common" ]; then
     cp ${scriptDir}/common/* ${externalFilesTmpDir}/
   fi
-  #cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
-  cp ${domainOutputDir}/${valuesInputFile} ${externalFilesTmpDir}/create-domain-inputs.yaml
+  cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
  
   # Set the domainName in the inputs file that is contained in the configmap.
   # this inputs file can be used by the scripts, such as WDT, that creates the WebLogic
   # domain in the job.
   echo domainName: $domainName >> ${externalFilesTmpDir}/create-domain-inputs.yaml
-  #echo domainName: $domainName >> ${externalFilesTmpDir}/${valuesInputFile}
 
   if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
    bash ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir}
@@ -290,4 +282,3 @@ function printSummary {
 
 # Perform the sequence of steps to create a domain
 createDomain false
-
