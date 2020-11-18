@@ -7,7 +7,7 @@ description: "Sample for using the operator to set up a WLS cluster on the Tanzu
 
 
 This sample demonstrates how to use the Oracle [WebLogic Server Kubernetes Operator](/weblogic-kubernetes-operator/) (hereafter “the operator”) to set up a WebLogic Server (WLS) cluster on the Tanzu Kubernetes Grid (TKG).
-After performing the sample steps,, your WLS domain runs on a TKG Kubernetes cluster instance and you can manage your WLS domain by using the WebLogic Server Administration Console.
+After performing the sample steps, your WLS domain runs on a TKG Kubernetes cluster instance and you can manage your WLS domain by using the WebLogic Server Administration Console.
 
 TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. To learn more, see the [Tanzu Kubernetes Grid (TKG)](https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-index.html) overview page.
 
@@ -30,7 +30,7 @@ This sample assumes the following prerequisite environment setup.
 * [Git](https://git-scm.com/downloads); use `git --version` to test if `git` works.  This document was tested with version 2.17.1.
 * TKG CLI; use `tkg version` to test if tkg works. This document was tested with version v1.1.3.
 * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/); use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.18.6.
-* [helm](https://helm.sh/docs/intro/install/); version 3.1 or later; use `helm version` to check the `helm` version.  This document was tested with version v3.2.1.
+* [helm](https://helm.sh/docs/intro/install/) version 3.1 or later; use `helm version` to check the `helm` version.  This document was tested with version v3.2.1.
 
 ##### Create the Tanzu Kubernetes cluster
 
