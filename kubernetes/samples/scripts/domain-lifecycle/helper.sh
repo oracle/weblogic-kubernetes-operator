@@ -587,7 +587,7 @@ function getTopology {
   local __result=$3 
 
   osName=`uname`
-  if [ "${osName}" == 'Darwin' ]; then
+  if [[ "$OSTYPE" == "darwin"* ]]; then
     configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
       -n ${domainNamespace} -o yaml --ignore-not-found)
   else 
@@ -599,7 +599,7 @@ function getTopology {
       This script requires that the introspector job for the specified domain ran \
       successfully and generated this config map. Exiting."
     exit 1
-  elif [ "${osName}" == 'Darwin' ]; then
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
     jsonTopology=$(echo "${configMap}" | yq r - data.[topology.yaml] | yq r - -j)
   else
     topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
@@ -632,7 +632,7 @@ function validateJqAvailable {
 
 function validateYqAvailable {
   osName=`uname`
-  if [ "${osName}" == 'Darwin' ] && ! [ -x "$(command -v yq)" ]; then
+  if [[ "$OSTYPE" == "darwin"* ]] && ! [ -x "$(command -v yq)" ]; then
     validationError "yq is not installed"
   fi
 }
