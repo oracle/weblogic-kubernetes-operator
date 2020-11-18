@@ -943,7 +943,9 @@ class ItMiiUpdateDomainConfig {
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
-                    .addContainersItem(createfixPVCOwnerContainer(pvName, "/shared")) // mounted under /shared inside pod
+                    .addContainersItem(
+                        createfixPVCOwnerContainer(pvName,
+                        "/shared")) // mounted under /shared inside pod
                     .volumes(Arrays.asList(
                         new V1Volume()
                             .name(pvName)
