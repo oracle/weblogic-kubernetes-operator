@@ -73,7 +73,14 @@ function initialize {
 initialize
 
 # Get the domain in json format
-domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
+domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
+
+if [ -z "${domainJson}" ]; then
+  printError "Domain resource for domain '${domainUid}' not found in namespace '${domainNamespace}'. \
+    This script requires that the introspector job for the specified domain ran \
+    successfully and generated the domain resource. Exiting."
+  exit 1
+fi
 
 getDomainPolicy "${domainJson}" serverStartPolicy
 

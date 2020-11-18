@@ -586,7 +586,6 @@ function getTopology {
   local domainNamespace=$2
   local __result=$3 
 
-  osName=`uname`
   if [[ "$OSTYPE" == "darwin"* ]]; then
     configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
       -n ${domainNamespace} -o yaml --ignore-not-found)
