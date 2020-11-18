@@ -75,8 +75,6 @@ import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.stop;
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
@@ -1484,30 +1482,7 @@ public class TestActions {
    */
   public static String patchDomainResourceWithNewRestartVersion(
       String domainResourceName, String namespace) {
-    LoggingFacade logger = getLogger();
-    String oldVersion = assertDoesNotThrow(
-        () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
-        String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
-    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
-    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
-        domainResourceName, namespace, oldVersion, newVersion);
-
-    StringBuffer patchStr = new StringBuffer("[{");
-    patchStr.append(" \"op\": \"replace\",")
-        .append(" \"path\": \"/spec/restartVersion\",")
-        .append(" \"value\": \"")
-        .append(newVersion)
-        .append("\"")
-        .append(" }]");
-
-    logger.info("Restart version patch string: {0}", patchStr);
-    V1Patch patch = new V1Patch(new String(patchStr));
-    boolean rvPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainResourceName, namespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(restartVersion)  failed ");
-    assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
-
-    return String.valueOf(newVersion);
+    return Domain.patchDomainResourceWithNewRestartVersion(domainResourceName, namespace);
   }
 
   /**
@@ -1519,19 +1494,8 @@ public class TestActions {
    */
   public static void patchDomainResourceWithModelConfigMap(
       String domainResourceName, String namespace, String configMapName) {
-    LoggingFacade logger = getLogger();
-    StringBuffer patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/configuration/model/configMap\",")
-        .append(" \"value\":  \"" + configMapName + "\"")
-        .append(" }]");
-    logger.info("Configmap patch string: {0}", patchStr);
-
-    V1Patch patch = new V1Patch(new String(patchStr));
-    boolean cmPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainResourceName, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "patchDomainCustomResourceWithModelConfigMap(configMap)  failed ");
-    assertTrue(cmPatched, "patchDomainCustomResourceWithModelConfigMap(configMap) failed");
+    Domain.patchDomainResourceWithModelConfigMap(domainResourceName,
+        namespace, configMapName);
   }
 
   /**
