@@ -6,7 +6,7 @@ package oracle.kubernetes.operator;
 import java.util.Optional;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -30,7 +30,7 @@ public interface MakeRightDomainOperation {
 
   MakeRightDomainOperation interrupt();
 
-  MakeRightDomainOperation withEventData(EventHelper.EventData eventData);
+  MakeRightDomainOperation withEventData(EventData eventData);
 
   void execute();
 

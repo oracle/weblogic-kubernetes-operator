@@ -6,14 +6,14 @@ package oracle.kubernetes.operator;
 /** Constants used in Operator events. */
 public interface EventConstants {
 
-  public static final String DOMAIN_CHANGED = "DomainChanged";
-  public static final String DOMAIN_CREATED = "DomainCreated";
-  public static final String DOMAIN_DELETED = "DomainDeleted";
-  public static final String DOMAIN_PROCESSING_STARTED = "DomainProcessingStarted";
-  public static final String DOMAIN_PROCESSING_SUCCEEDED = "DomainProcessingSucceeded";
-  public static final String DOMAIN_PROCESSING_FAILED = "DomainProcessingFailed";
-  public static final String DOMAIN_PROCESSING_RETRYING = "DomainProcessingRetried";
-  public static final String DOMAIN_PROCESSING_ABORTED = "DomainProcessingAborted";
+  public static final String DOMAIN_CHANGED_EVENT = "DomainChanged";
+  public static final String DOMAIN_CREATED_EVENT = "DomainCreated";
+  public static final String DOMAIN_DELETED_EVENT = "DomainDeleted";
+  public static final String DOMAIN_PROCESSING_STARTED_EVENT = "DomainProcessingStarted";
+  public static final String DOMAIN_PROCESSING_SUCCEEDED_EVENT = "DomainProcessingSucceeded";
+  public static final String DOMAIN_PROCESSING_FAILED_EVENT = "DomainProcessingFailed";
+  public static final String DOMAIN_PROCESSING_RETRYING_EVENT = "DomainProcessingRetried";
+  public static final String DOMAIN_PROCESSING_ABORTED_EVENT = "DomainProcessingAborted";
   public static final String EVENT_KIND_DOMAIN = "Domain";
   public static final String EVENT_NORMAL = "Normal";
   public static final String EVENT_WARNING = " Warning";

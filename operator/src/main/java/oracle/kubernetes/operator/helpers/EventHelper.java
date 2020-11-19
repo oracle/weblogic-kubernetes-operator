@@ -110,7 +110,7 @@ public class EventHelper {
     DOMAIN_CREATED {
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_CREATED;
+        return EventConstants.DOMAIN_CREATED_EVENT;
       }
 
       @Override
@@ -121,7 +121,7 @@ public class EventHelper {
     DOMAIN_CHANGED {
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_CHANGED;
+        return EventConstants.DOMAIN_CHANGED_EVENT;
       }
 
       @Override
@@ -133,7 +133,7 @@ public class EventHelper {
     DOMAIN_DELETED {
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_DELETED;
+        return EventConstants.DOMAIN_DELETED_EVENT;
       }
 
       @Override
@@ -145,7 +145,7 @@ public class EventHelper {
     DOMAIN_PROCESSING_STARTED {
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_PROCESSING_STARTED;
+        return EventConstants.DOMAIN_PROCESSING_STARTED_EVENT;
       }
 
       @Override
@@ -156,7 +156,7 @@ public class EventHelper {
     DOMAIN_PROCESSING_SUCCEEDED {
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_PROCESSING_SUCCEEDED;
+        return EventConstants.DOMAIN_PROCESSING_SUCCEEDED_EVENT;
       }
 
       @Override
@@ -172,7 +172,7 @@ public class EventHelper {
 
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_PROCESSING_FAILED;
+        return EventConstants.DOMAIN_PROCESSING_FAILED_EVENT;
       }
 
       @Override
@@ -188,7 +188,7 @@ public class EventHelper {
     DOMAIN_PROCESSING_RETRYING {
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_PROCESSING_RETRYING;
+        return EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT;
       }
 
       @Override
@@ -204,7 +204,7 @@ public class EventHelper {
 
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_PROCESSING_ABORTED;
+        return EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
       }
 
       @Override

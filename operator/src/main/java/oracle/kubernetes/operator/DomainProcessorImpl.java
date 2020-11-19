@@ -594,7 +594,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     /**
-     * Set the event item that is associated with this operation.
+     * Set the event data that is associated with this operation.
      * @param eventData event data
      * @return the updated factory
      */
@@ -898,7 +898,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                             createMakeRightOperation(existing)
                                 .withDeleting(isDeleting)
                                 .withExplicitRecheck()
-                                .withEventData(new EventData(EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING, null))
+                                .withEventData(new EventData(EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING))
                                 .execute();
                           } else {
                             LOGGER.severe(
@@ -911,9 +911,9 @@ public class DomainProcessorImpl implements DomainProcessor {
                                 .withEventData(new EventData(DOMAIN_PROCESSING_ABORTED,
                                     String.format(
                                         "Unable to start domain \"%s\" after %s attempts due to exception: %s",
-                                domainUid,
-                                DomainPresence.getDomainPresenceFailureRetryMaxCount(),
-                                throwable)))
+                                        domainUid,
+                                        DomainPresence.getDomainPresenceFailureRetryMaxCount(),
+                                        throwable)))
                                 .execute();
                           }
                         }
@@ -932,8 +932,11 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   Step createDomainUpPlan(DomainPresenceInfo info) {
-    Step managedServerStrategy = bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(
-            Step.chain(createEventStep(EventItem.DOMAIN_PROCESSING_SUCCEEDED), new TailStep())));
+    Step managedServerStrategy = Step.chain(
+        bringManagedServersUp(null),
+        DomainStatusUpdater.createEndProgressingStep(null),
+        createEventStep(EventItem.DOMAIN_PROCESSING_SUCCEEDED),
+        new TailStep());
 
     Step domainUpStrategy =
         Step.chain(
@@ -950,7 +953,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private Step createEventStep(EventItem eventItem) {
-    return createEventStep(eventItem, null);
+    return createEventStep(eventItem, "");
   }
 
   private Step createEventStep(EventItem eventItem, String message) {
@@ -1008,7 +1011,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           .filter(this::isOperatorPod)
           .findFirst()
           .orElse(null);
-
 
       delegate.setOperatorPodName(
           Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse(null));
