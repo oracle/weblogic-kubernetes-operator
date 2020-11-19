@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -15,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ContainerState;
@@ -30,13 +32,19 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainValidationSteps;
+import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -66,9 +74,12 @@ import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
+import static oracle.kubernetes.operator.ProcessingConstants.OPERATOR_POD_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 public class DomainProcessorImpl implements DomainProcessor {
 
@@ -414,17 +425,26 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private void handleAddedDomain(Domain domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
-    createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().withExplicitRecheck().execute();
+    createMakeRightOperation(new DomainPresenceInfo(domain))
+        .interrupt()
+        .withExplicitRecheck()
+        .withEventData(new EventData(EventItem.DOMAIN_CREATED))
+        .execute();
   }
 
   private void handleModifiedDomain(Domain domain) {
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
-    createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().execute();
+    createMakeRightOperation(new DomainPresenceInfo(domain))
+        .interrupt()
+        .withEventData(new EventData(EventItem.DOMAIN_CHANGED))
+        .execute();
   }
 
   private void handleDeletedDomain(Domain domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domain.getDomainUid());
-    createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck().execute();
+    createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck()
+        .withEventData(new EventData(EventItem.DOMAIN_DELETED))
+        .execute();
   }
 
   private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
@@ -503,14 +523,11 @@ public class DomainProcessorImpl implements DomainProcessor {
     return new MakeRightDomainOperationImpl(liveInfo);
   }
 
-  public Step createPopulatePacketServerMapsStep(oracle.kubernetes.operator.work.Step next) {
-    return new PopulatePacketServerMapsStep(next);
+  public Step createPopulatePacketServerMapsStep() {
+    return new PopulatePacketServerMapsStep();
   }
 
   public static class PopulatePacketServerMapsStep extends Step {
-    public PopulatePacketServerMapsStep(Step next) {
-      super(next);
-    }
 
     @Override
     public NextAction apply(Packet packet) {
@@ -556,6 +573,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private boolean deleting;
     private boolean willInterrupt;
     private boolean inspectionRun;
+    private EventData eventData;
 
     /**
      * Create the operation.
@@ -572,6 +590,17 @@ public class DomainProcessorImpl implements DomainProcessor {
     @Override
     public MakeRightDomainOperation withExplicitRecheck() {
       explicitRecheck = true;
+      return this;
+    }
+
+    /**
+     * Set the event item that is associated with this operation.
+     * @param eventData event data
+     * @return the updated factory
+     */
+    @Override
+    public MakeRightDomainOperation withEventData(EventData eventData) {
+      this.eventData = eventData;
       return this;
     }
 
@@ -706,9 +735,21 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private StepAndPacket createDomainPlanSteps(Packet packet) {
-      return new StepAndPacket(
-          createPopulatePacketServerMapsStep(createSteps()),
-          packet);
+      Step step;
+      if (eventData != null && eventData.eventItem == DOMAIN_PROCESSING_ABORTED) {
+        step = createEventStep(eventData.eventItem, eventData.message);
+      } else {
+        step = Step.chain(
+          createPopulatePacketServerMapsStep(),
+          createGetOperatorPodStep(delegate),
+          createEventStep(EventItem.DOMAIN_PROCESSING_STARTED),
+          createSteps());
+        if (eventData != null) {
+          step = Step.chain(createEventStep(eventData.eventItem), step);
+        }
+      }
+
+      return new StepAndPacket(step, packet);
     }
 
     private Domain getDomain() {
@@ -854,7 +895,11 @@ public class DomainProcessorImpl implements DomainProcessor {
                                   + " is now: "
                                   + retryCount);
                           if (retryCount <= DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
-                            createMakeRightOperation(existing).withDeleting(isDeleting).withExplicitRecheck().execute();
+                            createMakeRightOperation(existing)
+                                .withDeleting(isDeleting)
+                                .withExplicitRecheck()
+                                .withEventData(new EventData(EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING, null))
+                                .execute();
                           } else {
                             LOGGER.severe(
                                 MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES,
@@ -862,6 +907,14 @@ public class DomainProcessorImpl implements DomainProcessor {
                                 ns,
                                 DomainPresence.getDomainPresenceFailureRetryMaxCount(),
                                 throwable);
+                            createMakeRightOperation(existing)
+                                .withEventData(new EventData(DOMAIN_PROCESSING_ABORTED,
+                                    String.format(
+                                        "Unable to start domain \"%s\" after %s attempts due to exception: %s",
+                                domainUid,
+                                DomainPresence.getDomainPresenceFailureRetryMaxCount(),
+                                throwable)))
+                                .execute();
                           }
                         }
                       }
@@ -879,7 +932,8 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   Step createDomainUpPlan(DomainPresenceInfo info) {
-    Step managedServerStrategy = bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(new TailStep()));
+    Step managedServerStrategy = bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(
+            Step.chain(createEventStep(EventItem.DOMAIN_PROCESSING_SUCCEEDED), new TailStep())));
 
     Step domainUpStrategy =
         Step.chain(
@@ -895,8 +949,85 @@ public class DomainProcessorImpl implements DomainProcessor {
           DomainPresenceStep.createDomainPresenceStep(info.getDomain(), domainUpStrategy, managedServerStrategy));
   }
 
+  private Step createEventStep(EventItem eventItem) {
+    return createEventStep(eventItem, null);
+  }
+
+  private Step createEventStep(EventItem eventItem, String message) {
+    return new EventHelper().createEventStep(new EventData(eventItem, message));
+  }
+
   Step createDomainUpInitialStep(DomainPresenceInfo info) {
     return new UpHeadStep(info);
+  }
+
+  GetOperatorPodStep createGetOperatorPodStep(DomainProcessorDelegate delegate) {
+    return new GetOperatorPodStep(delegate, getOperatorNamespace());
+  }
+
+  /**
+   * This step retrieves the operator pod to get the pod name.
+   */
+  class GetOperatorPodStep extends Step {
+    private DomainProcessorDelegate delegate;
+    private String ns;
+
+    private GetOperatorPodStep(@Nonnull DomainProcessorDelegate delegate, @Nonnull String ns) {
+      this.delegate = delegate;
+      this.ns = ns;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      if (delegate.getOperatorPodName() == null) {
+        return doNext(new CallBuilder().listPodAsync(ns, new GetOperatorPodResponseStep(delegate, getNext())), packet);
+      }
+      packet.put(
+          OPERATOR_POD_NAME,
+          delegate.getOperatorPodName());
+      return doNext(packet);
+    }
+  }
+
+  private class GetOperatorPodResponseStep extends ResponseStep<V1PodList> {
+    private final DomainProcessorDelegate delegate;
+    private final Step next;
+
+    GetOperatorPodResponseStep(DomainProcessorDelegate delegate, Step next) {
+      this.delegate = delegate;
+      this.next = next;
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
+      V1PodList podList = callResponse.getResult();
+      V1Pod pod = Optional.ofNullable(podList)
+          .map(V1PodList::getItems)
+          .orElseGet(Collections::emptyList)
+          .stream()
+          .filter(this::isOperatorPod)
+          .findFirst()
+          .orElse(null);
+
+
+      delegate.setOperatorPodName(
+          Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse(null));
+
+      packet.put(
+          OPERATOR_POD_NAME,
+          delegate.getOperatorPodName());
+
+      return doNext(next, packet);
+    }
+
+    private boolean isOperatorPod(V1Pod pod) {
+      Map<String, String> labels = Optional.ofNullable(pod)
+          .map(V1Pod::getMetadata)
+          .map(V1ObjectMeta::getLabels)
+          .orElseGet(Collections::emptyMap);
+      return "weblogic-operator".equals((String)labels.get("app"));
+
+    }
   }
 
   private Step createDomainDownPlan(DomainPresenceInfo info) {
@@ -905,7 +1036,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     return Step.chain(
         new DownHeadStep(info, ns),
         new DeleteDomainStep(info, ns, domainUid),
-        new UnregisterStep(info));
+        new UnregisterStep(info),
+        createEventStep(EventItem.DOMAIN_PROCESSING_SUCCEEDED));
   }
 
   private static class UnregisterStep extends Step {

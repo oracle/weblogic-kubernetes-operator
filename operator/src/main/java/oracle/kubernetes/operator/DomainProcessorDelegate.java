@@ -69,4 +69,10 @@ public interface DomainProcessorDelegate {
    */
   ScheduledFuture<?> scheduleWithFixedDelay(
       Runnable command, long initialDelay, long delay, TimeUnit unit);
+
+  String getOperatorPodName();
+
+  void setOperatorPodName(String podName);
+
+
 }

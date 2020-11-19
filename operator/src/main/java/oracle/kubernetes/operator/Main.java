@@ -128,6 +128,8 @@ public class Main {
     private final DomainProcessor domainProcessor;
     private final DomainNamespaces domainNamespaces = new DomainNamespaces();
 
+    private String operatorPodName;
+
     public MainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       buildVersion = getBuildVersion(buildProps);
       operatorImpl = getBranch(buildProps) + "." + getCommit(buildProps);
@@ -158,6 +160,16 @@ public class Main {
 
     private static String getBuildProperty(Properties buildProps, String key) {
       return Optional.ofNullable(buildProps.getProperty(key)).orElse("unknown");
+    }
+
+    @Override
+    public String getOperatorPodName() {
+      return operatorPodName;
+    }
+
+    @Override
+    public void setOperatorPodName(String podName) {
+      operatorPodName = podName;
     }
 
     @Override

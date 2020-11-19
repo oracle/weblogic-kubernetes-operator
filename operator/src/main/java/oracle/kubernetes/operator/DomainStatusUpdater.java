@@ -28,6 +28,8 @@ import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -178,7 +180,9 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createFailedStep(String reason, String message, Step next) {
-    return new FailedStep(null, reason, message, next);
+    return Step.chain(
+        new EventHelper().createEventStep(new EventData(EventHelper.EventItem.DOMAIN_PROCESSING_FAILED, message)),
+        new FailedStep(null, reason, message, next));
   }
 
   /**

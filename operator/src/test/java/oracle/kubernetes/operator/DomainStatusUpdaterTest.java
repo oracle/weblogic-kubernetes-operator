@@ -1038,7 +1038,7 @@ public class DomainStatusUpdaterTest {
     clearPacketServerStatusMaps();
 
     testSupport.runSteps(
-        processor.createPopulatePacketServerMapsStep(
+        Step.chain(processor.createPopulatePacketServerMapsStep(),
             DomainStatusUpdater.createStatusUpdateStep(endStep)));
 
     assertThat(getRecordedDomain().getMetadata().getResourceVersion(), equalTo(cachedResourceVersion));

@@ -20,6 +20,7 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 public abstract class DomainProcessorDelegateStub implements DomainProcessorDelegate {
   private final FiberTestSupport testSupport;
   private boolean waitedForIntrospection;
+  private String operatorPodName;
 
   public DomainProcessorDelegateStub(FiberTestSupport testSupport) {
     this.testSupport = testSupport;
@@ -67,6 +68,16 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   @Override
   public void runSteps(Step firstStep) {
     testSupport.runSteps(firstStep);
+  }
+
+  @Override
+  public String getOperatorPodName() {
+    return operatorPodName;
+  }
+
+  @Override
+  public void setOperatorPodName(String name) {
+    this.operatorPodName = name;
   }
 
   private static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {

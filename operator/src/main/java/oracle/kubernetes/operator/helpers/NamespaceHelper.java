@@ -19,14 +19,8 @@ import static oracle.kubernetes.operator.helpers.HelmAccess.getHelmVariable;
 public class NamespaceHelper {
   public static final String DEFAULT_NAMESPACE = "default";
 
-  private static final String operatorNamespace = computeOperatorNamespace();
-
-  private static String computeOperatorNamespace() {
-    return Optional.ofNullable(getHelmVariable("OPERATOR_NAMESPACE")).orElse(DEFAULT_NAMESPACE);
-  }
-
   public static String getOperatorNamespace() {
-    return operatorNamespace;
+    return Optional.ofNullable(getHelmVariable("OPERATOR_NAMESPACE")).orElse(DEFAULT_NAMESPACE);
   }
 
   /**
@@ -40,7 +34,7 @@ public class NamespaceHelper {
           .map(String::trim)
           .collect(Collectors.toUnmodifiableList());
 
-    return namespaces.isEmpty() ? Collections.singletonList(operatorNamespace) : namespaces;
+    return namespaces.isEmpty() ? Collections.singletonList(getOperatorNamespace()) : namespaces;
   }
 
 }
