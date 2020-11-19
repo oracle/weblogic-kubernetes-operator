@@ -181,7 +181,7 @@ public class DomainStatusUpdater {
    */
   public static Step createFailedStep(String reason, String message, Step next) {
     return Step.chain(
-        new EventHelper().createEventStep(new EventData(EventHelper.EventItem.DOMAIN_PROCESSING_FAILED, message)),
+        EventHelper.createEventStep(new EventData(EventHelper.EventItem.DOMAIN_PROCESSING_FAILED, message)),
         new FailedStep(null, reason, message, next));
   }
 

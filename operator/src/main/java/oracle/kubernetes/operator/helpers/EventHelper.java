@@ -9,6 +9,7 @@ import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -30,24 +31,17 @@ public class EventHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
-   * Constructor.
-   *
-   */
-  public EventHelper() {
-  }
-
-  /**
    * Factory for {@link Step} that asynchronously create an event.
    *
    * @param eventData event item
    * @return Step for creating an event
    */
-  public Step createEventStep(
+  public static Step createEventStep(
       EventData eventData) {
     return new CreateEventStep(eventData);
   }
 
-  private class CreateEventStep extends Step {
+  private static class CreateEventStep extends Step {
     private final EventData eventData;
 
     CreateEventStep(EventData eventData) {
@@ -58,7 +52,7 @@ public class EventHelper {
     public NextAction apply(Packet packet) {
       V1Event event = createEvent(packet, eventData);
 
-      //LOGGER.fine(MessageKeys.CREATING_EVENT, event.getReason());
+      LOGGER.fine(MessageKeys.CREATING_EVENT, event.getMessage());
 
       return doNext(new CallBuilder()
               .createEventAsync(
@@ -70,7 +64,7 @@ public class EventHelper {
     }
   }
 
-  private V1Event createEvent(
+  private static V1Event createEvent(
       Packet packet,
       EventData eventData) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
@@ -81,7 +75,7 @@ public class EventHelper {
         .action(eventData.eventItem.getAction());
   }
 
-  private V1Event createCommonElements(DomainPresenceInfo info, String operatorPodName, String eventReason) {
+  private static V1Event createCommonElements(DomainPresenceInfo info, String operatorPodName, String eventReason) {
     return new V1Event()
         .metadata(createMetadata(info, eventReason))
         .kind(EVENT_KIND_DOMAIN)
@@ -89,7 +83,7 @@ public class EventHelper {
         .reportingInstance(operatorPodName);
   }
 
-  private V1ObjectMeta createMetadata(
+  private static V1ObjectMeta createMetadata(
       DomainPresenceInfo info,
       String reason) {
     final V1ObjectMeta metadata =

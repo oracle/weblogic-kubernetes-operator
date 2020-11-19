@@ -957,7 +957,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private Step createEventStep(EventItem eventItem, String message) {
-    return new EventHelper().createEventStep(new EventData(eventItem, message));
+    return EventHelper.createEventStep(new EventData(eventItem, message));
   }
 
   Step createDomainUpInitialStep(DomainPresenceInfo info) {
