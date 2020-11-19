@@ -86,15 +86,19 @@ function initialize {
 
 initialize
 
+# Get the domain in json format
+domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
+if [ -z "${domainJson}" ]; then
+  printError "Unable to get domain resource for domain '${domainUid}' in namespace '${domainNamespace}'. Please make sure 'domain_uid' and 'namespace' provided with '-d' and '-n' arguments are correct."
+  exit 1
+fi
+
 isValidCluster=""
 validateClusterName "${domainUid}" "${domainNamespace}" "${clusterName}" isValidCluster
 if [ "${isValidCluster}" != 'true' ]; then
   printError "cluster ${clusterName} is not part of domain ${domainUid} in namespace ${domainNamespace}. Please make sure that cluster name is correct."
   exit 1
 fi
-
-# Get the domain in json format
-domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
 
 # Get server start policy for this server
 getClusterPolicy "${domainJson}" "${clusterName}" startPolicy
