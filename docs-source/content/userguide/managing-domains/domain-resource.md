@@ -201,11 +201,8 @@ Sub-sections related to the Administration Server, specific clusters, or specifi
 
 The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverService` are repeated under `adminServer` and under each entry of `clusters` or `managedServers`.  The values directly under `spec`, set the defaults for the entire domain.  The values under a specific entry under `clusters`, set the defaults for cluster members of that cluster.  The values under `adminServer` or an entry under `managedServers`, set the values for that specific server.  Values from the domain scope and values from the cluster (for cluster members) are merged with or overridden by the setting for the specific server depending on the element.  See [Startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}) for details about `serverStartPolicy` combinations.
 
-Elements related to customization of liveness probe:
-
-* `livenessProbeCustomScript`: Full path of an optional liveness probe custom script for WebLogic server instance pods. The existing liveness probe script `livenessProbe.sh` will invoke this custom script after the existing script performs its own checks. This element is optional and is for advanced usage only. Its value is not set by default. If the custom script fails with non-zero exit status, pod will fail the liveness probe and Kubernetes will restart the container. If the script specified by this element value is not found, then it is ignored.
-* `timeoutSeconds`: The liveness probe timeout seconds, defaults to 5 seconds. This can be changed using the `livenessProbe` attribute under the `serverPod` element in the Domain resource.
-* `periodSeconds`: The liveness probe period seconds, defaults to 15 seconds. This can be changed using the `livenessProbe` attribute under the `serverPod` element in the Domain resource.
+Elements related to customization of liveness and readiness probe:
+* See [Liveness probe customization]({{< relref "/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#liveness-probe-customization" >}}) for details about the elements related to liveness probe customization and [Readiness probe customization]({{< relref "/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#readiness-probe-customization" >}}) for details about the elements related to readiness probe customization.
 
 {{% notice note %}}
 For additional domain resource attribute reference material, see [Domain resource attribute references](#domain-resource-attribute-references).
