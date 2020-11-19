@@ -1430,6 +1430,7 @@ public class CallBuilder {
    *
    * @param name Name
    * @param namespace Namespace
+   * @param domainUid Domain UID
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
