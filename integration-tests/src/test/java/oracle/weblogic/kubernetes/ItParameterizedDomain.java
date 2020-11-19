@@ -1215,7 +1215,6 @@ class ItParameterizedDomain {
                                       String namespace,
                                       V1Container jobContainer) {
     logger.info("Running Kubernetes job to create domain");
-    String modelMountPath = "/u01/shared";
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
