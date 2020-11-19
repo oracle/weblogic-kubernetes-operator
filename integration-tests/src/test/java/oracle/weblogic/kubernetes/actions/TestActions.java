@@ -75,8 +75,6 @@ import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.stop;
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
@@ -1484,30 +1482,20 @@ public class TestActions {
    */
   public static String patchDomainResourceWithNewRestartVersion(
       String domainResourceName, String namespace) {
-    LoggingFacade logger = getLogger();
-    String oldVersion = assertDoesNotThrow(
-        () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
-        String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
-    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
-    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
-        domainResourceName, namespace, oldVersion, newVersion);
+    return Domain.patchDomainResourceWithNewRestartVersion(domainResourceName, namespace);
+  }
 
-    StringBuffer patchStr = new StringBuffer("[{");
-    patchStr.append(" \"op\": \"replace\",")
-        .append(" \"path\": \"/spec/restartVersion\",")
-        .append(" \"value\": \"")
-        .append(newVersion)
-        .append("\"")
-        .append(" }]");
-
-    logger.info("Restart version patch string: {0}", patchStr);
-    V1Patch patch = new V1Patch(new String(patchStr));
-    boolean rvPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainResourceName, namespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(restartVersion)  failed ");
-    assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
-
-    return String.valueOf(newVersion);
+  /**
+   * Patch the domain resource with a new model configMap.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param configMapName name of the configMap to be set in spec.configuration.model.configMap
+   */
+  public static void patchDomainResourceWithModelConfigMap(
+      String domainResourceName, String namespace, String configMapName) {
+    Domain.patchDomainResourceWithModelConfigMap(domainResourceName,
+        namespace, configMapName);
   }
 
   /**
