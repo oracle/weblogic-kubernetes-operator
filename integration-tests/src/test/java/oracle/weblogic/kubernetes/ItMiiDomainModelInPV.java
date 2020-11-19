@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -223,7 +224,14 @@ public class ItMiiDomainModelInPV {
         "Copying file to pod failed");
 
     logger.info("Changing file ownership {0} to oracle:root in PV", modelMountPath);
-    execInPod(pvPod, null, true, "chown -R oracle:root " + modelMountPath);
+    String argCommand = "chown -R 1000:root " + modelMountPath;
+    if (OKE_CLUSTER) {
+      argCommand = "chown 1000:root " + modelMountPath
+          + "/. && find "
+          + modelMountPath
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:root";
+    }
+    execInPod(pvPod, null, true, argCommand);
   }
 
   /**
