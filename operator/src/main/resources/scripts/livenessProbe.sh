@@ -61,6 +61,7 @@ source ${SCRIPTPATH}/utils.sh
 
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed:
 exportEffectiveDomainHome || exit $RETVAL
+exportInstallHomes || exit $RETVAL
 
 DN=${DOMAIN_NAME?}
 SN=${SERVER_NAME?}
