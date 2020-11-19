@@ -14,7 +14,7 @@ TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kube
 #### Contents
 
  - [Prerequisites](#prerequisites)
-   - [Create the Tanzu Kubernetes cluster](#create-the-tanzu-kubernetes-cluster)
+   - [Create a Tanzu Kubernetes cluster](#create-a-tanzu-kubernetes-cluster)
    - [Oracle Container Registry](#oracle-container-registry)
  - [Install WebLogic Server Kubernetes Operator](#install-weblogic-server-kubernetes-operator)
  - [Create Docker image](#create-docker-image)
@@ -25,17 +25,17 @@ TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kube
 
 This sample assumes the following prerequisite environment setup.
 
-* WebLogic Server Kubernetes operator: This document was tested with version v3.1.0.
+* WebLogic Server Kubernetes Operator: This document was tested with version v3.1.0.
 * Operating System: GNU/Linux.
 * [Git](https://git-scm.com/downloads); use `git --version` to test if `git` works.  This document was tested with version 2.17.1.
-* TKG CLI; use `tkg version` to test if tkg works. This document was tested with version v1.1.3.
+* TKG CLI; use `tkg version` to test if TKG works. This document was tested with version v1.1.3.
 * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/); use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.18.6.
-* [helm](https://helm.sh/docs/intro/install/) version 3.1 or later; use `helm version` to check the `helm` version.  This document was tested with version v3.2.1.
+* [Helm](https://helm.sh/docs/intro/install/) version 3.1 or later; use `helm version` to check the `helm` version.  This document was tested with version v3.2.1.
 
-##### Create the Tanzu Kubernetes cluster
+##### Create a Tanzu Kubernetes cluster
 
 Create the Kubernetes cluster using the TKG CLI. See the [Tanzu documentation](https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-index.html) to set up your Kubernetes cluster.
-After your Kubernetes cluster is up and running, run the following commands to make sure `kubectl` can access the Kubernetes cluster.
+After your Kubernetes cluster is up and running, run the following commands to make sure `kubectl` can access the Kubernetes cluster:
 
 ```bash
 $ kubectl get nodes -o wide
@@ -63,8 +63,8 @@ Obtain the WebLogic Server image from the [Oracle Container Registry](https://co
 The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.
 The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
-Clone the Oracle WebLogic Server Kubernetes Operator repository to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.0.
-Kubernetes Operators, use [Helm](https://helm.sh/) to manage Kubernetes applications. The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Install the operator by running the following commands.
+Clone the Oracle WebLogic Server Kubernetes Operator repository to your machine. We will use several scripts in this repository to create a WebLogic domain.
+Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Install the operator by running the following commands.
 
 Clone the repository.
 
@@ -346,8 +346,8 @@ Also, if you run the `docker images` command, then you will see a Docker image n
 
 In this section, you will deploy the new image to namespace `sample-domain1-ns`, including the following steps:
 
-- Create a namespace for WebLogic domain
-- Upgrade the operator to manage the WebLogic domain namespace    
+- Create a namespace for the WebLogic domain.
+- Upgrade the operator to manage the WebLogic domain namespace.   
 - Create a Secret containing your WebLogic administrator user name and password.
 - Create a Secret containing your Model in Image runtime encryption password:
     - All Model in Image domains must supply a runtime encryption Secret with a `password` value.
@@ -365,6 +365,7 @@ $ kubectl create namespace sample-domain1-ns
 ```
 
 ##### Upgrade the operator
+
 Upgrade the operator to manage the WebLogic domains in namespace `sample-domain1-ns`.
 
 ```bash
@@ -577,13 +578,11 @@ service/sample-domain1-managed-server2     ClusterIP   None           <none>    
 
 #### Invoke the web application
 
-##### Create a load balancer
-
 Create a load balancer to access the WebLogic Server Administration Console and applications deployed in the cluster.
 Tanzu supports the MetalLB load balancer and NGINX ingress for routing.
 
 
-##### Install the MetalLB load balancer by running following commands
+Install the MetalLB load balancer by running following commands:
 
 ```bash
 ## create namespace metallb-system
@@ -631,7 +630,7 @@ replicaset.apps/controller-684f5d9b49   1         1         1       2m14s
 ```
 
 
-##### Install NGINX
+Install NGINX.
 
 ```bash
 $ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
@@ -640,7 +639,7 @@ $ helm install ingress-nginx ingress-nginx/ingress-nginx
 ```
 
 
-##### Create ingress routing for accessing the application deployed in the cluster
+Create ingress routing for accessing the application deployed in the cluster.
 
 ```bash
 $ cat cluster-ingress.yaml
@@ -665,7 +664,7 @@ spec:
 $ kubectl apply -f cluster-ingress.yaml
 ```
 
-##### Create ingress for Administration Console access
+Create ingress for Administration Console access.
 
 ```bash
 $ cat admin-ingress.yaml
@@ -691,7 +690,7 @@ $ kubectl apply -f admin-ingress.yaml
 
 ```
 
-##### Verify ingresses are running
+Verify ingresses are running.
 
 ```bash
 $ kubectl get ingresses -n sample-domain1-ns
@@ -700,12 +699,9 @@ sample-nginx-ingress-adminconsole   <none>  *                              80   
 sample-nginx-ingress-hostrouting   <none>   domain1.org   192.168.100.50   80      7m18s
 ```
 
-##### Access the Administration Console
-Access the Administration Console using the load balancer IP address (`192.168.100.50`).
+Access the Administration Console using the load balancer IP address, `http://192.168.100.50/console`
 
-`http://192.168.100.50/console`
-
-##### Access the sample application
+Access the sample application.
 
 ```bash
 ## Access the sample application using the load balancer IP (192.168.100.50)
