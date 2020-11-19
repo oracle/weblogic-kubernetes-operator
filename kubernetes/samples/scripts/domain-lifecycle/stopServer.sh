@@ -131,7 +131,7 @@ initialize
 # Get the domain in json format
 domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
 if [ -z "${domainJson}" ]; then
-  printError "Unable to get domain resource for domain '${domainUid}' in namespace '${domainNamespace}'. Please make sure 'domain_uid' and 'namespace' provided with '-d' and '-n' arguments are correct."
+  printError "Unable to get domain resource for domain '${domainUid}' in namespace '${domainNamespace}'. Please make sure 'domain_uid' and 'namespace' specified by the '-d' and '-n' arguments are correct. Exiting."
   exit 1
 fi
 
