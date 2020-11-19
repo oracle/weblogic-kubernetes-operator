@@ -119,7 +119,7 @@ elasticSearchPort: 9200
 
 # javaLoggingLevel specifies the Java logging level for the operator.
 # Valid values are: "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
-javaLoggingLevel: "INFO"
+javaLoggingLevel: "FINEST"
 
 # nodeSelector specifies a matching rule that the Kubernetes scheduler will use when selecting the node
 # where the operator will run. If the nodeSelector value is specified, then this content will be added to
