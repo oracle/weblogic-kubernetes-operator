@@ -133,9 +133,9 @@ function initialize {
 initialize
 
 # Get the domain in json format
-domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
-if [ $? -ne 0 ]; then
-  printError "Unable to get domain resource. Please make sure 'domain_uid' and 'namespace' provided with '-d' and '-n' arguments are correct."
+domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
+if [ -z "${domainJson}" ]; then
+  printError "Unable to get domain resource for domain '${domainUid}' in namespace '${domainNamespace}'. Please make sure 'domain_uid' and 'namespace' provided with '-d' and '-n' arguments are correct."
   exit 1
 fi
 
