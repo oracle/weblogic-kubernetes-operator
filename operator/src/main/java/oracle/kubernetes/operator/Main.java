@@ -317,7 +317,8 @@ public class Main {
     try {
       delegate.runSteps(
           new Packet(),
-          Step.chain(createGetOperatorPodStep(delegate),createStartupSteps()),
+          //Step.chain(createGetOperatorPodStep(delegate),createStartupSteps()),
+          createStartupSteps(),
           completionAction);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);

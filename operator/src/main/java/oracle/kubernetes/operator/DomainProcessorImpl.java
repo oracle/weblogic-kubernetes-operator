@@ -728,17 +728,17 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private StepAndPacket createDomainPlanSteps(Packet packet) {
-      Step step;
       if (eventData != null && eventData.eventItem == DOMAIN_PROCESSING_ABORTED) {
-        step = Step.chain(createEventStep(eventData.eventItem, eventData.message), new TailStep());
-      } else {
-        step = Step.chain(
+        return new StepAndPacket(
+            Step.chain(createEventStep(eventData), new TailStep()),
+            packet);
+      }
+      Step step = Step.chain(
           createPopulatePacketServerMapsStep(),
           createEventStep(EventItem.DOMAIN_PROCESSING_STARTED),
           createSteps());
-        if (eventData != null) {
-          step = Step.chain(createEventStep(eventData.eventItem), step);
-        }
+      if (eventData != null) {
+        step = Step.chain(createEventStep(eventData), step);
       }
 
       return new StepAndPacket(step, packet);
@@ -942,6 +942,10 @@ public class DomainProcessorImpl implements DomainProcessor {
           createDomainUpInitialStep(info),
           ConfigMapHelper.readExistingIntrospectorConfigMap(info.getNamespace(), info.getDomainUid()),
           DomainPresenceStep.createDomainPresenceStep(info.getDomain(), domainUpStrategy, managedServerStrategy));
+  }
+
+  private Step createEventStep(EventData eventData) {
+    return EventHelper.createEventStep(eventData);
   }
 
   private Step createEventStep(EventItem eventItem) {

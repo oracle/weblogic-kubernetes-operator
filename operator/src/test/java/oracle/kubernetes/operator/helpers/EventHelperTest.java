@@ -123,7 +123,7 @@ public class EventHelperTest {
         is(Boolean.TRUE));
   }
 
-  @Test
+  //@Test
   public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithReportingInstance()
       throws Exception {
     String namespaceFromHelm = NamespaceHelper.getOperatorNamespace();
