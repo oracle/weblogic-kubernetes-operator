@@ -78,7 +78,6 @@ public class EventHelper {
   private static V1Event createCommonElements(DomainPresenceInfo info, String eventReason) {
     return new V1Event()
         .metadata(createMetadata(info, eventReason))
-        .kind(EVENT_KIND_DOMAIN)
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
         .reportingInstance(System.getProperty("MY_POD_NAME"));
   }

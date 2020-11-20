@@ -581,7 +581,6 @@ public class MainTest extends ThreadFactoryTestBase {
   abstract static class MainDelegateStub implements MainDelegate {
     private final FiberTestSupport testSupport;
     private final DomainNamespaces domainNamespaces;
-    private String operatorPodName;
 
     public MainDelegateStub(FiberTestSupport testSupport, DomainNamespaces domainNamespaces) {
       this.testSupport = testSupport;
@@ -591,8 +590,8 @@ public class MainTest extends ThreadFactoryTestBase {
     @Override
     public void runSteps(Packet packet, Step firstStep, Runnable completionAction) {
       testSupport.withPacket(packet)
-          .withCompletionAction(completionAction)
-          .runSteps(firstStep);
+                 .withCompletionAction(completionAction)
+                 .runSteps(firstStep);
     }
 
     @Override
