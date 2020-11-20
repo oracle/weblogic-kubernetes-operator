@@ -365,19 +365,9 @@ Create a namespace that can host one or more domains:
 
 ```bash
 $ kubectl create namespace sample-domain1-ns
-```
 
-##### Upgrade the operator
-
-Upgrade the operator to manage the WebLogic domains in namespace `sample-domain1-ns`.
-
-```bash
-$ cd /root/weblogic-kubernetes-operator
-$ helm upgrade weblogic-operator  kubernetes/charts/weblogic-operator \
-  --namespace sample-weblogic-operator-ns \
-  --reuse-values \
-  --set "domainNamespaces={sample-domain1-ns}" \
-  --wait
+## label the domain namespace so that the operator can autodetect and create WebLogic Server pods.
+$ kubectl label namespace sample-domain1-ns weblogic-operator=enabled
 ```
 
 ##### Secrets
