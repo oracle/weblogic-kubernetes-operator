@@ -48,7 +48,7 @@ Container Services for use with Kubernetes* on OCI Compute, and on "Authorized C
 
 ### Microsoft Azure Kubernetes Service
 
-[Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/) is a hosted Kubernetes environment.  The WebLogic Kubernetes
+[Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/) is a hosted Kubernetes environment.  The WebLogic Server Kubernetes
 Operator, Oracle WebLogic Sever 12c, and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
 referenced above).
 
@@ -61,6 +61,19 @@ AKS support and limitations:
 * Oracle databases running in Oracle Cloud Infrastructure are supported for Fusion Middleware
   Infrastructure MDS data stores only when accessed through an OCI FastConnect.
 * Windows Server containers are not currently supported, only Linux containers.
+
+### VMware Tanzu Kubernetes Service
+
+Tanzu Kubernetes Grid (TKG) is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. The WebLogic Server Kubernetes
+Operator and Oracle WebLogic Sever are fully supported and certified on VMware Tanzu Kubernetes Grid Multicloud 1.1.3 (with vSphere 6.7U3).
+
+TKG support and limitations:
+
+* Both Domain in Image and Model in Image domain home source types are supported. Domain in PV is not supported.
+* VSphere CSI driver supports only volumes with Read-Write-Once policy. This does not allow writing stores on PV.  
+   * For applications requiring HA, use JMS and JTA stores in the database.
+* The ingress used for certification is NGINX, with MetalLB load balancer.
+
 
 ### Oracle Linux Cloud Native Environment (OLCNE)
 
