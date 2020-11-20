@@ -21,7 +21,6 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTE
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_SUCCEEDED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.EVENT_KIND_DOMAIN;
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
