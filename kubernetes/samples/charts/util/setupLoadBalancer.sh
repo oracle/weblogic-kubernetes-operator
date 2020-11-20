@@ -4,7 +4,7 @@
 
 # This script is to create or delete Ingress controllers. 
 # Currently the script supports ingress controllers: Traefik, Voyager, and Nginx.
-# Usage $0 create|delete traefik|voyager|nginx traefik_version|voyager_version|nginx-version
+# Usage $0 create|delete traefik|voyager|nginx traefik_version|voyager_version|nginx_version
 
 UTILDIR="$(dirname "$(readlink -f "$0")")"
 VNAME=voyager-operator  # release name for Voyager
@@ -142,7 +142,9 @@ function createTraefik() {
   count=0
   tpod=$(kubectl get po -n ${TSPACE} --no-headers | awk '{print $1}')
   while test $count -lt $max; do
-    if test "$(kubectl get po -n ${TSPACE} --no-headers | awk '{print $2}')" = 1/1; then
+    status=$(kubectl get po -n ${TSPACE} --no-headers 2> /dev/null \
+                | awk '{print $2}')
+    if [ ${status} == "1/1" ]; then
       echo "Traefik operator pod is running now."
       kubectl get pod/${tpod} -n ${TSPACE}
       traefik_image=$(kubectl get po/${tpod} -n ${TSPACE} -o jsonpath='{.spec.containers[0].image}')
@@ -243,7 +245,8 @@ function createNginx() {
 
   if [ "$(helm list --namespace $NNAME | grep $NNAME |  wc -l)" = 0 ]; then
     echo "Installing Nginx operator."
-    helm install $NNAME ingress-nginx/ingress-nginx --namespace ${NSPACE} --version ${DefaultNginxVersion}
+    helm install $NNAME ingress-nginx/ingress-nginx \
+         --namespace ${NSPACE} --version ${DefaultNginxVersion}
   else
     echo "Nginx operator is already installed."
     exit 0;
@@ -255,7 +258,9 @@ function createNginx() {
   count=0
   tpod=$(kubectl get po -n ${NSPACE} --no-headers | awk '{print $1}')
   while test $count -lt $max; do
-    if test "$(kubectl get po -n ${NSPACE} --no-headers | awk '{print $2}')" = 1/1; then
+    status=$(kubectl get po -n ${NSPACE} --no-headers 2> /dev/null \
+                | awk '{print $2}')
+    if [ ${status} == "1/1" ]; then
       echo "Nginx operator pod is running now."
       kubectl get pod/${tpod} -n ${NSPACE}
       kubectl exec -it $tpod -n nginx -- /nginx-ingress-controller --version``
