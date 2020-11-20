@@ -110,7 +110,10 @@ Install the operator.
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --set serviceAccount=sample-weblogic-operator-sa \
-  --set "enableClusterRoleBinding=true" --wait
+  --set "enableClusterRoleBinding=true" \
+  --set "domainNamespaceSelectionStrategy=LabelSelector" \
+  --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
+  --wait
 
 NAME: weblogic-operator
 LAST DEPLOYED: Tue Nov 17 09:33:58 2020
@@ -639,12 +642,12 @@ $ helm install ingress-nginx ingress-nginx/ingress-nginx
 ```
 
 
-Create ingress for accessing the application deployed in the cluster and to access Administration console.
+Create ingress for accessing the application deployed in the cluster and to access the Administration console.
 
 ```bash
 $ cat ingress.yaml
 
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: sample-nginx-ingress-pathrouting
