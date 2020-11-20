@@ -50,6 +50,17 @@ public abstract class DomainConfigurator {
   }
 
   /**
+   * Sets the full path of liveness probe custom script for domain.
+   *
+   * @param livenessProbeCustomScript full path of the liveness probe custom script
+   * @return this object
+   */
+  public DomainConfigurator withLivenessProbeCustomScript(String livenessProbeCustomScript) {
+    getDomainSpec().setLivenessProbeCustomScript(livenessProbeCustomScript);
+    return this;
+  }
+
+  /**
    * Specifies whether the domain home is stored in the image.
    *
    * @param domainHomeInImage boolean indicating if the domain home is stored in the image
