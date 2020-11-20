@@ -533,6 +533,11 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/samples/simple/tanzu-kubernetes-service/</loc>
+    <lastmod>2020-11-16T13:34:31-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/faq/volumes/</loc>
     <lastmod>2020-01-07T15:02:28-05:00</lastmod>
   </url>
