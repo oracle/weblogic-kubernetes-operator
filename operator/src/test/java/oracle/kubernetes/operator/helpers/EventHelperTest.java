@@ -12,6 +12,7 @@ import java.util.Optional;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -96,6 +97,16 @@ public class EventHelperTest {
 
     assertThat("Event DOMAIN_PROCESSING_STARTED",
         containsEvent(getEvents(), DOMAIN_PROCESSING_STARTED_EVENT), is(Boolean.TRUE));
+  }
+
+  @Test
+  public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithExpectedNamespace() {
+    makeRightOperation.execute();
+
+    assertThat("Event DOMAIN_PROCESSING_STARTED message",
+        containsEventWithNamespace(getEvents(),
+            DOMAIN_PROCESSING_STARTED_EVENT),
+        is(Boolean.TRUE));
   }
 
   @Test
@@ -285,6 +296,14 @@ public class EventHelperTest {
     return (V1Event) Optional.ofNullable(events).get()
         .stream()
         .filter(e -> EventHelperTest.reasonMatches(e, reason)).findFirst().orElse(null);
+  }
+
+  private Object containsEventWithNamespace(List<V1Event> events, String reason) {
+    return Optional.ofNullable(getEventMatchesReason(events, reason))
+        .map(V1Event::getMetadata)
+        .map(V1ObjectMeta::getNamespace)
+        .orElse("")
+        .equals(OP_NS);
   }
 
   private Object containsEventWithMessage(List<V1Event> events, String reason, String message) {

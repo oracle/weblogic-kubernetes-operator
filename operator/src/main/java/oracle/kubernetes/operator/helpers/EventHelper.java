@@ -76,6 +76,8 @@ public class EventHelper {
   }
 
   private static V1Event createCommonElements(DomainPresenceInfo info, String eventReason) {
+    LOGGER.finest("EventHelper.createCommonElements: pod name = "
+        + System.getProperty(KubernetesConstants.OPERATOR_POD_NAME_ENV));
     return new V1Event()
         .metadata(createMetadata(info, eventReason))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
@@ -88,7 +90,7 @@ public class EventHelper {
     final V1ObjectMeta metadata =
         new V1ObjectMeta()
             .name(info.getDomainUid() + reason + System.currentTimeMillis())
-            .namespace(System.getProperty(KubernetesConstants.OPERATOR_NAMESPACE_ENV));
+            .namespace(NamespaceHelper.getOperatorNamespace());
 
     LOGGER.finest("EventHelper.createMetaData");
 
