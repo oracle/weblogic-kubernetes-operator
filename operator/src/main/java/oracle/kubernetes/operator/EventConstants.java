@@ -21,15 +21,17 @@ public interface EventConstants {
 
   public static final String DOMAIN_CREATED_PATTERN = "Domain resource %s was created";
   public static final String DOMAIN_CHANGED_PATTERN = "Domain resource %s was changed";
-  public static final String DOMAIN_DELETED_PATTERN = "Domain resource %s was delete";
+  public static final String DOMAIN_DELETED_PATTERN = "Domain resource %s was deleted";
   public static final String DOMAIN_PROCESSING_STARTED_PATTERN =
       "Creating or updating Kubernetes presence for WebLogic Domain with UID \"%s\"";
   public static final String DOMAIN_PROCESSING_SUCCEEDED_PATTERN =
       "Successfully completed processing domain resource \"%s\"";
   public static final String DOMAIN_PROCESSING_FAILED_PATTERN
-      = "Failed to complete processing domain resuource \"%s\" due to %s";
+      = "Failed to complete processing domain resource \"%s\" due to: %s";
   public static final String DOMAIN_PROCESSING_RETRYING_PATTERN
       = "Retrying the processing of domain resource \"%s\" after one or more failed attempts";
   public static final String DOMAIN_PROCESSING_ABORTED_PATTERN
-      = "Failed: processing of domain resource \"%s\" permanently aborted due to: \"%s\"";
+      = "Aborting the processing of domain resource \"%s\" permanently due to: %s";
+  String DOMAIN_PROCESSING_FAILED_ACTION = "Check operator pod log and introspector pod log";
+  String DOMAIN_PROCESSING_ABORTED_ACTION = "Check domain resource configuration";
 }

@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Optional;
+
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.EventConstants;
@@ -171,12 +173,13 @@ public class EventHelper {
 
       @Override
       public String getMessage(DomainPresenceInfo info, EventData eventData) {
-        return String.format(DOMAIN_PROCESSING_FAILED_PATTERN, info.getDomainUid(), eventData.message);
+        return String.format(DOMAIN_PROCESSING_FAILED_PATTERN,
+            info.getDomainUid(), Optional.ofNullable(eventData.message).orElse(""));
       }
 
       @Override
       public String getAction() {
-        return null;
+        return EventConstants.DOMAIN_PROCESSING_FAILED_ACTION;
       }
     },
     DOMAIN_PROCESSING_RETRYING {
@@ -203,12 +206,13 @@ public class EventHelper {
 
       @Override
       public String getMessage(DomainPresenceInfo info, EventData eventData) {
-        return String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, info.getDomainUid(), eventData.message);
+        return String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, info.getDomainUid(),
+            Optional.ofNullable(eventData.message).orElse(""));
       }
 
       @Override
       public String getAction() {
-        return null;
+        return EventConstants.DOMAIN_PROCESSING_ABORTED_ACTION;
       }
     };
 
@@ -224,7 +228,7 @@ public class EventHelper {
     public abstract String getMessage(DomainPresenceInfo info, EventData eventData);
 
     String getAction() {
-      return null;
+      return "";
     }
 
     String getType() {
@@ -237,7 +241,7 @@ public class EventHelper {
     public String message;
 
     public EventData(EventItem eventItem) {
-      this(eventItem, null);
+      this(eventItem, "");
     }
 
     public EventData(EventItem eventItem, String message) {

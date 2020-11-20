@@ -15,6 +15,8 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -306,7 +308,9 @@ public class EventHelperTest {
 
   private Object createOperatorPod(String name, String namespace) throws JsonProcessingException {
     return new V1Pod()
-          .metadata(createMetadata(name, namespace));
+        .metadata(createMetadata(name, namespace))
+        .status(new V1PodStatus().phase("Running")
+            .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
   }
 
   private V1ObjectMeta createMetadata(

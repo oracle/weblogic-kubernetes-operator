@@ -737,7 +737,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private StepAndPacket createDomainPlanSteps(Packet packet) {
       Step step;
       if (eventData != null && eventData.eventItem == DOMAIN_PROCESSING_ABORTED) {
-        step = createEventStep(eventData.eventItem, eventData.message);
+        step = Step.chain(createEventStep(eventData.eventItem, eventData.message), new TailStep());
       } else {
         step = Step.chain(
           createPopulatePacketServerMapsStep(),
@@ -1008,7 +1008,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           .map(V1PodList::getItems)
           .orElseGet(Collections::emptyList)
           .stream()
-          .filter(this::isOperatorPod)
+          .filter(this::isActiveOperatorPod)
           .findFirst()
           .orElse(null);
 
@@ -1022,13 +1022,12 @@ public class DomainProcessorImpl implements DomainProcessor {
       return doNext(next, packet);
     }
 
-    private boolean isOperatorPod(V1Pod pod) {
-      Map<String, String> labels = Optional.ofNullable(pod)
+    private boolean isActiveOperatorPod(V1Pod pod) {
+      return "weblogic-operator".equals((String)Optional.ofNullable(pod)
           .map(V1Pod::getMetadata)
           .map(V1ObjectMeta::getLabels)
-          .orElseGet(Collections::emptyMap);
-      return "weblogic-operator".equals((String)labels.get("app"));
-
+          .orElseGet(Collections::emptyMap).get("app"))
+          && PodHelper.getReadyStatus(pod);
     }
   }
 
