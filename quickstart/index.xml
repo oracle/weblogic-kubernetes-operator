@@ -62,10 +62,9 @@ $ helm install traefik-operator traefik/traefik \  --namespace traefik \  --valu
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/quickstart/prepare/</guid>
-      <description>  Create a namespace that can host one or more domains:
-$ kubectl create namespace sample-domain1-ns   Configure Traefik to manage ingresses created in this namespace:
-$ helm upgrade traefik-operator traefik/traefik \  --namespace traefik \  --reuse-values \  --set &amp;#34;kubernetes.namespaces={traefik,sample-domain1-ns}&amp;#34;   If you have reached this point while following the &amp;ldquo;Model in Image&amp;rdquo; sample, please stop here and return to the sample instructions.
- </description>
+      <description>Create and label a namespace that can host one or more domains:
+$ kubectl create namespace sample-domain1-ns $ kubectl label ns sample-domain1-ns weblogic-operator=enabled   Configure Traefik to manage ingresses created in this namespace:
+$ helm upgrade traefik-operator traefik/traefik \  --namespace traefik \  --reuse-values \  --set &amp;#34;kubernetes.namespaces={traefik,sample-domain1-ns}&amp;#34;   If you have reached this point while following the &amp;ldquo;Model in Image&amp;rdquo; sample, please stop here and return to the sample instructions.</description>
     </item>
     
     <item>

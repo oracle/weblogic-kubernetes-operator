@@ -585,7 +585,7 @@
 	"title": "Prepare for a domain",
 	"tags": [],
 	"description": "",
-	"content": "  Create a namespace that can host one or more domains:\n$ kubectl create namespace sample-domain1-ns   Configure Traefik to manage ingresses created in this namespace:\n$ helm upgrade traefik-operator traefik/traefik \\  --namespace traefik \\  --reuse-values \\  --set \u0026#34;kubernetes.namespaces={traefik,sample-domain1-ns}\u0026#34;   If you have reached this point while following the \u0026ldquo;Model in Image\u0026rdquo; sample, please stop here and return to the sample instructions.\n "
+	"content": "  Create and label a namespace that can host one or more domains:\n$ kubectl create namespace sample-domain1-ns $ kubectl label ns sample-domain1-ns weblogic-operator=enabled   Configure Traefik to manage ingresses created in this namespace:\n$ helm upgrade traefik-operator traefik/traefik \\  --namespace traefik \\  --reuse-values \\  --set \u0026#34;kubernetes.namespaces={traefik,sample-domain1-ns}\u0026#34;   If you have reached this point while following the \u0026ldquo;Model in Image\u0026rdquo; sample, please stop here and return to the sample instructions.\n "
 },
 {
 	"uri": "/weblogic-kubernetes-operator/faq/fan/",
