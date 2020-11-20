@@ -12,6 +12,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,10 +47,12 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -209,6 +212,9 @@ class ItMiiDynamicUpdate {
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
 
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList("model.config.wm.yaml"), withStandardRetryPolicy);
 
@@ -227,6 +233,9 @@ class ItMiiDynamicUpdate {
                         MANAGED_SERVER_NAME_BASE + "1",
                         workManagerName, "200"));
     logger.info("Found new work manager configuration");
+
+    assertEquals(adminPodCreationTime, getPodCreationTime(domainNamespace, adminServerPodName),
+        "servers should not roll");
   }
 
   /**
@@ -245,6 +254,9 @@ class ItMiiDynamicUpdate {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
+
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
 
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList("model.update.wm.yaml"),
@@ -272,6 +284,9 @@ class ItMiiDynamicUpdate {
                     () -> checkMaxThreadsConstraintRuntime(20));
 
     logger.info("Found updated work manager configuration");
+
+    assertEquals(adminPodCreationTime, getPodCreationTime(domainNamespace, adminServerPodName),
+        "servers should not roll");
   }
 
   private void verifyIntrospectorRuns() {
