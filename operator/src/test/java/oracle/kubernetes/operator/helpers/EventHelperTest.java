@@ -123,9 +123,8 @@ public class EventHelperTest {
         is(Boolean.TRUE));
   }
 
-  /*
-  @Test
 
+  @Test
   public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithReportingInstance()
       throws Exception {
     String namespaceFromHelm = NamespaceHelper.getOperatorNamespace();
@@ -142,7 +141,6 @@ public class EventHelperTest {
         containsEventWithInstance(getEvents(), DOMAIN_PROCESSING_STARTED_EVENT, WEBLOGIC_OPERATOR_POD_NAME),
         is(Boolean.TRUE));
   }
-   */
 
   @Test
   public void whenCreateEventStepCalled_domainProcessingSucceededEventCreated() {
