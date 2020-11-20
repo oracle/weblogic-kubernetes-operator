@@ -71,4 +71,4 @@ spec:
       securityContext: {}
       terminationGracePeriodSeconds: 30
       imagePullSecrets:
-           - name: docker-store
+           - name: docker-secret

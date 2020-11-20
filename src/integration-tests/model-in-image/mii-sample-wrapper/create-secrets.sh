@@ -15,7 +15,7 @@
 # Optional environment variables (see README for details):
 #
 #   WORKDIR, DOMAIN_UID, DOMAIN_NAMESPACE, WDT_DOMAIN_TYPE,
-#   DB_NAMESPACE, INCLUDE_MODEL_CONFIGMAP
+#   DB_NAMESPACE, INCLUDE_MODEL_CONFIGMAP, CORRECTED_DATASOURCE_SECRET
 #
 
 set -eu
@@ -78,11 +78,27 @@ fi
 
 if [ "${INCLUDE_MODEL_CONFIGMAP}" = "true" ]; then
   # this secret is referenced by the datasource in this sample's optional config.configMap
-  echo "@@ Info: Creating datasource secret"
-  $WORKDIR/utils/create-secret.sh $DRY_RUN \
-    -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
-    -n ${DOMAIN_NAMESPACE} \
-    -s ${DOMAIN_UID}-datasource-secret \
-    -l password=Oradoc_db1 \
-    -l url=jdbc:oracle:thin:@oracle-db.${DB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
+  if [ "${CORRECTED_DATASOURCE_SECRET}" = "true" ]; then
+    echo "@@ Info: Creating corrected datasource secret with correct URL and correct password"
+    $WORKDIR/utils/create-secret.sh $DRY_RUN \
+      -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
+      -n ${DOMAIN_NAMESPACE} \
+      -s ${DOMAIN_UID}-datasource-secret \
+      -l "user=sys as sysdba" \
+      -l password=Oradoc_db1 \
+      -l max-capacity=10 \
+      -l url=jdbc:oracle:thin:@oracle-db.${DB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
+  else
+    # specify an incorrect secret because we demonstrate dynamically correcting
+    # it using online updates in one of the use cases
+    echo "@@ Info: Creating incorrect datasource secret with wrong URL and wrong password"
+    $WORKDIR/utils/create-secret.sh $DRY_RUN \
+      -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
+      -n ${DOMAIN_NAMESPACE} \
+      -s ${DOMAIN_UID}-datasource-secret \
+      -l "user=sys as sysdba" \
+      -l password=incorrect_password \
+      -l max-capacity=1 \
+      -l url=jdbc:oracle:thin:@incorrect_address.svc.cluster.local:1521/devpdb.k8s
+  fi
 fi
