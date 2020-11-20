@@ -656,7 +656,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       if (cachedInfo == null || cachedInfo.getDomain() == null) {
         return true;
       } else if (exceededFailureRetryCount && !isVersionsChanged) {
-        LOGGER.fine("Stop introspection retry - exceeded configured domainPresenceFailureRetryMaxCount: "
+        LOGGER.severe("Stop introspection retry - exceeded configured domainPresenceFailureRetryMaxCount: "
             + DomainPresence.getDomainPresenceFailureRetryMaxCount()
             + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
             + " by adding it to the weblogic-operator-cm configmap.");
