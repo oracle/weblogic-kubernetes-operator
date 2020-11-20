@@ -518,6 +518,15 @@ public class Domain implements KubernetesObject {
     return Strings.emptyToNull(spec.getDomainHome());
   }
 
+  /**
+   * Returns full path of the liveness probe custom script for the domain. May be null, but will not be an empty string.
+   *
+   * @return Full path of the liveness probe custom script
+   */
+  public String getLivenessProbeCustomScript() {
+    return Strings.emptyToNull(spec.getLivenessProbeCustomScript());
+  }
+
   public boolean isShuttingDown() {
     return getEffectiveConfigurationFactory().isShuttingDown();
   }

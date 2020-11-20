@@ -61,6 +61,7 @@ source ${SCRIPTPATH}/utils.sh
 
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed:
 exportEffectiveDomainHome || exit $RETVAL
+exportInstallHomes || exit $RETVAL
 
 DN=${DOMAIN_NAME?}
 SN=${SERVER_NAME?}
@@ -88,6 +89,16 @@ if [ -f ${STATEFILE} ] && [ `grep -c "FAILED_NOT_RESTARTABLE" ${STATEFILE}` -eq 
   #          failure when the user detects that their applications
   #          are unresponsive.)
   trace SEVERE "WebLogic Server state is FAILED_NOT_RESTARTABLE."
+  exit $RETVAL
+fi
+
+if [ -x ${LIVENESS_PROBE_CUSTOM_SCRIPT} ]; then
+  $LIVENESS_PROBE_CUSTOM_SCRIPT
+elif [ -O ${LIVENESS_PROBE_CUSTOM_SCRIPT} ]; then
+  chmod 770 $LIVENESS_PROBE_CUSTOM_SCRIPT && $LIVENESS_PROBE_CUSTOM_SCRIPT
+fi
+if [ $? != 0 ]; then
+  trace SEVERE "Execution of custom liveness probe script ${LIVENESS_PROBE_CUSTOM_SCRIPT} failed."
   exit $RETVAL
 fi
 
