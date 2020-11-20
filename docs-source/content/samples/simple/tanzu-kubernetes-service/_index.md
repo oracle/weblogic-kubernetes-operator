@@ -302,7 +302,7 @@ At this point, you have staged all of the files needed for the image `model-in-i
   - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties`
   - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip`
 
-If you don’t see the `weblogic-deploy.zip` file, then you missed a step in the prerequisites.
+If you don’t see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites](#image-creation-prerequisites).
 
 Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` that’s layered on a base WebLogic image. You’ve already set up this tool during the prerequisite steps.
 
@@ -639,40 +639,15 @@ $ helm install ingress-nginx ingress-nginx/ingress-nginx
 ```
 
 
-Create ingress routing for accessing the application deployed in the cluster.
+Create ingress for accessing the application deployed in the cluster and to access Administration console.
 
 ```bash
-$ cat cluster-ingress.yaml
+$ cat ingress.yaml
 
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: sample-nginx-ingress-hostrouting
-  namespace: sample-domain1-ns
-  annotations:
-    kubernetes.io/ingress.class: nginx
-spec:
-  rules:
-  - host: 'domain1.org'
-    http:
-      paths:
-      - path:
-        backend:
-          serviceName: sample-domain1-cluster-cluster-1
-          servicePort: 8001
-
-$ kubectl apply -f cluster-ingress.yaml
-```
-
-Create ingress for Administration Console access.
-
-```bash
-$ cat admin-ingress.yaml
-
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: sample-nginx-ingress-adminconsole
+  name: sample-nginx-ingress-pathrouting
   namespace: sample-domain1-ns
   annotations:
     kubernetes.io/ingress.class: nginx
@@ -681,22 +656,25 @@ spec:
   - host:
     http:
       paths:
-      - path:
+      - path: /
+        backend:
+          serviceName: sample-domain1-cluster-cluster-1
+          servicePort: 8001
+      - path: /console
         backend:
           serviceName: sample-domain1-admin-server
           servicePort: 7001
 
-$ kubectl apply -f admin-ingress.yaml
+$ kubectl apply -f ingress.yaml
 
 ```
 
-Verify ingresses are running.
+Verify ingress is running.
 
 ```bash
 $ kubectl get ingresses -n sample-domain1-ns
-NAME                               CLASS    HOSTS         ADDRESS          PORTS   AGE
-sample-nginx-ingress-adminconsole   <none>  *                              80      7m18s
-sample-nginx-ingress-hostrouting   <none>   domain1.org   192.168.100.50   80      7m18s
+NAME                               CLASS    HOSTS   ADDRESS          PORTS   AGE
+sample-nginx-ingress-pathrouting   <none>   *       192.168.100.50   80      7m18s
 ```
 
 Access the Administration Console using the load balancer IP address, `http://192.168.100.50/console`
@@ -705,7 +683,7 @@ Access the sample application.
 
 ```bash
 ## Access the sample application using the load balancer IP (192.168.100.50)
-$ curl --show-error -H 'Host: domain1.org' http://192.168.100.50/myapp_war/index.jsp
+$ curl http://192.168.100.50/myapp_war/index.jsp
 
 
 <html><body><pre>
@@ -726,7 +704,7 @@ Found 0 local data sources:
 *****************************************************************
 </pre></body></html>
 
-root@cli-vm:~/weblogic-kubernetes-operator# curl --show-error -H 'Host: domain1.org' http://192.168.100.50/myapp_war/index.jsp
+$ curl http://192.168.100.50/myapp_war/index.jsp
 
 
 
