@@ -4,7 +4,7 @@ date: 2019-02-23T17:32:31-05:00
 weight: 6
 ---
 
-This use case demonstrates dynamically configuring Work Manager Threads Constraints in your running domain without restarting (rolling) running WebLogic Servers. This use case requires that the Update 1 use case has been run and expects that its `sample-domain1` domain is deployed and running.
+This use case demonstrates dynamically configuring Work Manager Threads Constraint and data source WebLogic configuration in your running domain without restarting (rolling) running WebLogic Servers. This use case requires that the Update 1 use case has been run and expects that its `sample-domain1` domain is deployed and running.
 
 In the use case, you will:
 
