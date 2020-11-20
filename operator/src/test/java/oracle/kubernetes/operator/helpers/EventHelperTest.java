@@ -17,7 +17,6 @@ import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.EventConstants;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -42,6 +41,8 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTE
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_SUCCEEDED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
@@ -55,9 +56,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class EventHelperTest {
-  private static final String WEBLOGIC_OPERATOR_POD_NAME = "my-weblogic-operator-1234";
+  private static final String OPERATOR_POD_NAME = "my-weblogic-operator-1234";
   private static final String OP_NS = "operator-namespace";
-  private static final String POD_NAME_ENV = KubernetesConstants.OPERATOR_POD_NAME_ENV;
+  private static final String POD_NAME_ENV = OPERATOR_POD_NAME_ENV;
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -82,8 +83,8 @@ public class EventHelperTest {
     testSupport.addDomainPresenceInfo(info);
     testSupport.defineResources(domain);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
-    HelmAccessStub.defineVariable(KubernetesConstants.OPERATOR_NAMESPACE_ENV, OP_NS);
-    System.setProperty(POD_NAME_ENV, WEBLOGIC_OPERATOR_POD_NAME);
+    HelmAccessStub.defineVariable(OPERATOR_NAMESPACE_ENV, OP_NS);
+    HelmAccessStub.defineVariable(OPERATOR_POD_NAME_ENV, OPERATOR_POD_NAME);
   }
 
   @After
@@ -145,7 +146,7 @@ public class EventHelperTest {
         namespaceFromHelm, equalTo(OP_NS));
 
     assertThat("Event reporting instance",
-        containsEventWithInstance(getEvents(), DOMAIN_PROCESSING_STARTED_EVENT, WEBLOGIC_OPERATOR_POD_NAME),
+        containsEventWithInstance(getEvents(), DOMAIN_PROCESSING_STARTED_EVENT, OPERATOR_POD_NAME),
         is(Boolean.TRUE));
   }
 

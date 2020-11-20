@@ -8,7 +8,6 @@ import java.util.Optional;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.EventConstants;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -25,6 +24,8 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_SUCCEE
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
 
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
 public class EventHelper {
@@ -77,11 +78,11 @@ public class EventHelper {
 
   private static V1Event createCommonElements(DomainPresenceInfo info, String eventReason) {
     LOGGER.finest("EventHelper.createCommonElements: pod name = "
-        + System.getProperty(KubernetesConstants.OPERATOR_POD_NAME_ENV));
+        + getOperatorPodName());
     return new V1Event()
         .metadata(createMetadata(info, eventReason))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
-        .reportingInstance(System.getProperty(KubernetesConstants.OPERATOR_POD_NAME_ENV));
+        .reportingInstance(getOperatorPodName());
   }
 
   private static V1ObjectMeta createMetadata(
@@ -90,7 +91,7 @@ public class EventHelper {
     final V1ObjectMeta metadata =
         new V1ObjectMeta()
             .name(info.getDomainUid() + reason + System.currentTimeMillis())
-            .namespace(NamespaceHelper.getOperatorNamespace());
+            .namespace(getOperatorNamespace());
 
     LOGGER.finest("EventHelper.createMetaData");
 
