@@ -194,6 +194,7 @@ public class NamespaceTest {
   abstract static class MainDelegateStub implements MainDelegate {
     private final DomainProcessor domainProcessor;
     private final DomainNamespaces domainNamespaces;
+    private String operatorPodName;
 
     MainDelegateStub(DomainProcessor domainProcessor, DomainNamespaces domainNamespaces) {
       this.domainProcessor = domainProcessor;
@@ -218,6 +219,16 @@ public class NamespaceTest {
     @Override
     public SemanticVersion getProductVersion() {
       return SemanticVersion.TEST_VERSION;
+    }
+
+    @Override
+    public String getOperatorPodName() {
+      return operatorPodName;
+    }
+
+    @Override
+    public void setOperatorPodName(String name) {
+      this.operatorPodName = name;
     }
   }
 

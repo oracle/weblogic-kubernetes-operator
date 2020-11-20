@@ -70,16 +70,6 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
     testSupport.runSteps(firstStep);
   }
 
-  @Override
-  public String getOperatorPodName() {
-    return operatorPodName;
-  }
-
-  @Override
-  public void setOperatorPodName(String name) {
-    this.operatorPodName = name;
-  }
-
   private static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {
     @Override
     public Step waitForReady(V1Pod pod, Step next) {

@@ -5,7 +5,6 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -16,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ContainerState;
@@ -32,9 +30,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
-import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainValidationSteps;
@@ -44,7 +40,6 @@ import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -74,12 +69,10 @@ import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
-import static oracle.kubernetes.operator.ProcessingConstants.OPERATOR_POD_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
-import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 public class DomainProcessorImpl implements DomainProcessor {
 
@@ -741,7 +734,6 @@ public class DomainProcessorImpl implements DomainProcessor {
       } else {
         step = Step.chain(
           createPopulatePacketServerMapsStep(),
-          createGetOperatorPodStep(delegate),
           createEventStep(EventItem.DOMAIN_PROCESSING_STARTED),
           createSteps());
         if (eventData != null) {
@@ -962,73 +954,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   Step createDomainUpInitialStep(DomainPresenceInfo info) {
     return new UpHeadStep(info);
-  }
-
-  GetOperatorPodStep createGetOperatorPodStep(DomainProcessorDelegate delegate) {
-    return new GetOperatorPodStep(delegate, getOperatorNamespace());
-  }
-
-  /**
-   * This step retrieves the operator pod to get the pod name.
-   */
-  class GetOperatorPodStep extends Step {
-    private DomainProcessorDelegate delegate;
-    private String ns;
-
-    private GetOperatorPodStep(@Nonnull DomainProcessorDelegate delegate, @Nonnull String ns) {
-      this.delegate = delegate;
-      this.ns = ns;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      if (delegate.getOperatorPodName() == null) {
-        return doNext(new CallBuilder().listPodAsync(ns, new GetOperatorPodResponseStep(delegate, getNext())), packet);
-      }
-      packet.put(
-          OPERATOR_POD_NAME,
-          delegate.getOperatorPodName());
-      return doNext(packet);
-    }
-  }
-
-  private class GetOperatorPodResponseStep extends ResponseStep<V1PodList> {
-    private final DomainProcessorDelegate delegate;
-    private final Step next;
-
-    GetOperatorPodResponseStep(DomainProcessorDelegate delegate, Step next) {
-      this.delegate = delegate;
-      this.next = next;
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-      V1PodList podList = callResponse.getResult();
-      V1Pod pod = Optional.ofNullable(podList)
-          .map(V1PodList::getItems)
-          .orElseGet(Collections::emptyList)
-          .stream()
-          .filter(this::isActiveOperatorPod)
-          .findFirst()
-          .orElse(null);
-
-      delegate.setOperatorPodName(
-          Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse(null));
-
-      packet.put(
-          OPERATOR_POD_NAME,
-          delegate.getOperatorPodName());
-
-      return doNext(next, packet);
-    }
-
-    private boolean isActiveOperatorPod(V1Pod pod) {
-      return "weblogic-operator".equals((String)Optional.ofNullable(pod)
-          .map(V1Pod::getMetadata)
-          .map(V1ObjectMeta::getLabels)
-          .orElseGet(Collections::emptyMap).get("app"))
-          && PodHelper.getReadyStatus(pod);
-    }
   }
 
   private Step createDomainDownPlan(DomainPresenceInfo info) {

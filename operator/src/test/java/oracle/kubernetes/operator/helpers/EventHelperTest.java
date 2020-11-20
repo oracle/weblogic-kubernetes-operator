@@ -46,11 +46,13 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTE
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_SUCCEEDED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.OPERATOR_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_SUCCEEDED;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -125,8 +127,11 @@ public class EventHelperTest {
   public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithReportingInstance()
       throws Exception {
     String namespaceFromHelm = NamespaceHelper.getOperatorNamespace();
-
-    makeRightOperation.execute();
+    testSupport.addToPacket(OPERATOR_POD_NAME, WEBLOGIC_OPERATOR_POD_NAME);
+    testSupport.runSteps(
+        new EventHelper().createEventStep(
+            new EventData(DOMAIN_PROCESSING_STARTED)
+        ));
 
     assertThat("Operator namespace ",
         namespaceFromHelm, equalTo(OP_NS));

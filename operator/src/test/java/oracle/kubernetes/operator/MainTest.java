@@ -581,6 +581,7 @@ public class MainTest extends ThreadFactoryTestBase {
   abstract static class MainDelegateStub implements MainDelegate {
     private final FiberTestSupport testSupport;
     private final DomainNamespaces domainNamespaces;
+    private String operatorPodName;
 
     public MainDelegateStub(FiberTestSupport testSupport, DomainNamespaces domainNamespaces) {
       this.testSupport = testSupport;
@@ -612,6 +613,17 @@ public class MainTest extends ThreadFactoryTestBase {
     @Override
     public SemanticVersion getProductVersion() {
       return SemanticVersion.TEST_VERSION;
+    }
+
+
+    @Override
+    public String getOperatorPodName() {
+      return operatorPodName;
+    }
+
+    @Override
+    public void setOperatorPodName(String name) {
+      this.operatorPodName = name;
     }
   }
 }
