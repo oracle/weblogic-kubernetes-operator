@@ -138,6 +138,23 @@ public class DomainSpec extends BaseConfiguration {
   private Boolean httpAccessLogInLogHome;
 
   /**
+   * Full path of an optional liveness probe custom script for WebLogic server instance pods.
+   * The existing liveness probe script `livenessProbe.sh` will invoke this custom script after the
+   * existing script performs its own checks. This element is optional and is for advanced usage only.
+   * Its value is not set by default. If the custom script fails with non-zero exit status,
+   * pod will fail the liveness probe and Kubernetes will restart the container.
+   * If the script specified by this element value is not found, then it is ignored.
+   */
+  @Description("Full path of an optional liveness probe custom script for WebLogic server instance pods. "
+          + "The existing liveness probe script `livenessProbe.sh` will invoke this custom script after the "
+          + "existing script performs its own checks. This element is optional and is for advanced usage only. "
+          + "Its value is not set by default. If the custom script fails with non-zero exit status, "
+          + "pod will fail the liveness probe and Kubernetes will restart the container. "
+          + "If the script specified by this element value is not found, then it is ignored."
+  )
+  private String livenessProbeCustomScript;
+
+  /**
    * The WebLogic Docker image.
    *
    * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4
@@ -388,6 +405,10 @@ public class DomainSpec extends BaseConfiguration {
     return Optional.ofNullable(domainHome).orElse(getDomainHomeSourceType().getDefaultDomainHome(getDomainUid()));
   }
 
+  public String getLivenessProbeCustomScript() {
+    return Optional.ofNullable(livenessProbeCustomScript).orElse("");
+  }
+
   /**
    * Domain home.
    *
@@ -396,6 +417,10 @@ public class DomainSpec extends BaseConfiguration {
    */
   public void setDomainHome(String domainHome) {
     this.domainHome = domainHome;
+  }
+
+  public void setLivenessProbeCustomScript(String livenessProbeCustomScript) {
+    this.livenessProbeCustomScript = livenessProbeCustomScript;
   }
 
   @Nullable
