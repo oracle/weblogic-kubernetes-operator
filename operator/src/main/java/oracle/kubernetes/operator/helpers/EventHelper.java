@@ -25,11 +25,9 @@ import static oracle.kubernetes.operator.EventConstants.EVENT_KIND_DOMAIN;
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
-import static oracle.kubernetes.operator.ProcessingConstants.OPERATOR_POD_NAME;
 
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
 public class EventHelper {
-
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
@@ -70,19 +68,19 @@ public class EventHelper {
       Packet packet,
       EventData eventData) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    return createCommonElements(info, (String) packet.get(OPERATOR_POD_NAME), eventData.eventItem.getReason())
+    return createCommonElements(info, eventData.eventItem.getReason())
         .type(eventData.eventItem.getType())
         .reason(eventData.eventItem.getReason())
         .message(eventData.eventItem.getMessage(info, eventData))
         .action(eventData.eventItem.getAction());
   }
 
-  private static V1Event createCommonElements(DomainPresenceInfo info, String operatorPodName, String eventReason) {
+  private static V1Event createCommonElements(DomainPresenceInfo info, String eventReason) {
     return new V1Event()
         .metadata(createMetadata(info, eventReason))
         .kind(EVENT_KIND_DOMAIN)
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
-        .reportingInstance(operatorPodName);
+        .reportingInstance(System.getProperty("MY_POD_NAME"));
   }
 
   private static V1ObjectMeta createMetadata(

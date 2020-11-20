@@ -9,14 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1Event;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodCondition;
-import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -46,7 +41,6 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTE
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_SUCCEEDED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
-import static oracle.kubernetes.operator.ProcessingConstants.OPERATOR_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
@@ -59,8 +53,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class EventHelperTest {
-  public static final String WEBLOGIC_OPERATOR_POD_NAME = "my-weblogic-operator";
+  private static final String WEBLOGIC_OPERATOR_POD_NAME = "my-weblogic-operator-1234";
   private static final String OP_NS = "operator-namespace";
+  private static final String POD_NAME_ENV = "MY_POD_NAME";
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -84,9 +79,9 @@ public class EventHelperTest {
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.addDomainPresenceInfo(info);
     testSupport.defineResources(domain);
-    testSupport.defineResources(createOperatorPod(WEBLOGIC_OPERATOR_POD_NAME, OP_NS));
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
     HelmAccessStub.defineVariable("OPERATOR_NAMESPACE", OP_NS);
+    System.setProperty(POD_NAME_ENV, WEBLOGIC_OPERATOR_POD_NAME);
   }
 
   @After
@@ -128,7 +123,7 @@ public class EventHelperTest {
   public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithReportingInstance()
       throws Exception {
     String namespaceFromHelm = NamespaceHelper.getOperatorNamespace();
-    testSupport.addToPacket(OPERATOR_POD_NAME, WEBLOGIC_OPERATOR_POD_NAME);
+    //testSupport.addToPacket(OPERATOR_POD_NAME, WEBLOGIC_OPERATOR_POD_NAME);
     testSupport.runSteps(
         new EventHelper().createEventStep(
             new EventData(DOMAIN_PROCESSING_STARTED)
@@ -310,24 +305,6 @@ public class EventHelperTest {
         .map(V1Event::getReportingInstance)
         .orElse("");
     return instance.equals(opName);
-  }
-
-  private Object createOperatorPod(String name, String namespace) throws JsonProcessingException {
-    return new V1Pod()
-        .metadata(createMetadata(name, namespace))
-        .status(new V1PodStatus().phase("Running")
-            .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
-  }
-
-  private V1ObjectMeta createMetadata(
-      String name,
-      String namespace) {
-    final V1ObjectMeta metadata =
-        new V1ObjectMeta()
-            .name(name)
-            .namespace(namespace);
-    metadata.putLabelsItem("app", "weblogic-operator");
-    return metadata;
   }
 
   private List<V1Event> getEvents() {

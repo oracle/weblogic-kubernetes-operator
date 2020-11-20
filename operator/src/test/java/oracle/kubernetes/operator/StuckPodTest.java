@@ -186,7 +186,6 @@ public class StuckPodTest {
     private final DomainProcessorStub domainProcessor = createStrictStub(DomainProcessorStub.class, this);
     private final DomainNamespaces domainNamespaces = new DomainNamespaces();
     private final KubernetesTestSupport testSupport;
-    private String operatorPodName;
 
     MainDelegateStub(KubernetesTestSupport testSupport) {
       this.testSupport = testSupport;
@@ -209,16 +208,6 @@ public class StuckPodTest {
     @Override
     public DomainNamespaces getDomainNamespaces() {
       return domainNamespaces;
-    }
-
-    @Override
-    public String getOperatorPodName() {
-      return operatorPodName;
-    }
-
-    @Override
-    public void setOperatorPodName(String name) {
-      this.operatorPodName = name;
     }
 
     abstract static class DomainProcessorStub implements DomainProcessor {

@@ -41,6 +41,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: "metadata.namespace"
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: "metadata.name"
         - name: "OPERATOR_VERBOSE"
           value: "false"
         - name: "JAVA_LOGGING_LEVEL"

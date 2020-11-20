@@ -36,7 +36,6 @@ public interface ProcessingConstants {
   String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
   String INTROSPECTOR_JOB_FAILURE_LOGGED = "introspectorJobfailureLogged";
   String WAIT_FOR_POD_READY = "waitForPodReady";
-  String OPERATOR_POD_NAME = "operatorPodName";
 
   /** Key to an object of type MakeRightDomainOperation. */
   String MAKE_RIGHT_DOMAIN_OPERATION = "makeRightOp";

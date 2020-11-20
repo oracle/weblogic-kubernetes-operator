@@ -591,8 +591,8 @@ public class MainTest extends ThreadFactoryTestBase {
     @Override
     public void runSteps(Packet packet, Step firstStep, Runnable completionAction) {
       testSupport.withPacket(packet)
-                 .withCompletionAction(completionAction)
-                 .runSteps(firstStep);
+          .withCompletionAction(completionAction)
+          .runSteps(firstStep);
     }
 
     @Override
@@ -613,17 +613,6 @@ public class MainTest extends ThreadFactoryTestBase {
     @Override
     public SemanticVersion getProductVersion() {
       return SemanticVersion.TEST_VERSION;
-    }
-
-
-    @Override
-    public String getOperatorPodName() {
-      return operatorPodName;
-    }
-
-    @Override
-    public void setOperatorPodName(String name) {
-      this.operatorPodName = name;
     }
   }
 }

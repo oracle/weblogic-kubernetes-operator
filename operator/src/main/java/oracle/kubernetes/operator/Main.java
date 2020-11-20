@@ -24,8 +24,6 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
@@ -35,8 +33,6 @@ import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
-import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -60,7 +56,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 
-import static oracle.kubernetes.operator.ProcessingConstants.OPERATOR_POD_NAME;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 /** A Kubernetes Operator for WebLogic. */
@@ -133,8 +128,6 @@ public class Main {
     private final DomainProcessor domainProcessor;
     private final DomainNamespaces domainNamespaces = new DomainNamespaces();
 
-    private String operatorPodName;
-
     public MainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       buildVersion = getBuildVersion(buildProps);
       operatorImpl = getBranch(buildProps) + "." + getCommit(buildProps);
@@ -165,16 +158,6 @@ public class Main {
 
     private static String getBuildProperty(Properties buildProps, String key) {
       return Optional.ofNullable(buildProps.getProperty(key)).orElse("unknown");
-    }
-
-    @Override
-    public String getOperatorPodName() {
-      return operatorPodName;
-    }
-
-    @Override
-    public void setOperatorPodName(String podName) {
-      operatorPodName = podName;
     }
 
     @Override
@@ -315,80 +298,9 @@ public class Main {
 
   void startOperator(Runnable completionAction) {
     try {
-      delegate.runSteps(
-          new Packet(),
-          //Step.chain(createGetOperatorPodStep(delegate),createStartupSteps()),
-          createStartupSteps(),
-          completionAction);
+      delegate.runSteps(new Packet(), createStartupSteps(), completionAction);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
-    }
-  }
-
-  GetOperatorPodStep createGetOperatorPodStep(MainDelegate delegate) {
-    return new GetOperatorPodStep(delegate, getOperatorNamespace());
-  }
-
-  /**
-   * This step retrieves the operator pod to get the pod name.
-   */
-  class GetOperatorPodStep extends Step {
-    private MainDelegate delegate;
-    private String ns;
-
-    private GetOperatorPodStep(@Nonnull MainDelegate delegate, @Nonnull String ns) {
-      this.delegate = delegate;
-      this.ns = ns;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      if (delegate.getOperatorPodName() == null) {
-        return doNext(new CallBuilder().listPodAsync(ns, new GetOperatorPodResponseStep(delegate, getNext())), packet);
-      }
-      packet.put(
-          OPERATOR_POD_NAME,
-          delegate.getOperatorPodName());
-      return doNext(packet);
-    }
-  }
-
-  private class GetOperatorPodResponseStep extends ResponseStep<V1PodList> {
-    private final MainDelegate delegate;
-    private final Step next;
-
-    GetOperatorPodResponseStep(MainDelegate delegate, Step next) {
-      this.delegate = delegate;
-      this.next = next;
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-      V1PodList podList = callResponse.getResult();
-      V1Pod pod = Optional.ofNullable(podList)
-          .map(V1PodList::getItems)
-          .orElseGet(Collections::emptyList)
-          .stream()
-          .filter(this::isActiveOperatorPod)
-          .findFirst()
-          .orElse(null);
-
-      delegate.setOperatorPodName(
-          Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse(null));
-
-      packet.put(
-          OPERATOR_POD_NAME,
-          delegate.getOperatorPodName());
-
-      return doNext(next, packet);
-    }
-
-    private boolean isActiveOperatorPod(V1Pod pod) {
-      return "weblogic-operator".equals((String)Optional.ofNullable(pod)
-          .map(V1Pod::getMetadata)
-          .map(V1ObjectMeta::getLabels)
-          .orElseGet(Collections::emptyMap).get("app"))
-          && PodHelper.getReadyStatus(pod);
     }
   }
 
