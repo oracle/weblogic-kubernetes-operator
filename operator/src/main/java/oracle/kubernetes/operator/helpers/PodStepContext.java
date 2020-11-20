@@ -898,7 +898,8 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<Object> callResponses) {
-      return doNext(replacePod(getNext()), packet);
+      PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
+      return doNext(pw.waitForDelete(pod, replacePod(getNext())), packet);
     }
   }
 
@@ -920,6 +921,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
       return doNext(pw.waitForReady(newPod, getNext()), packet);
     }
+
   }
 
   private class PatchPodResponseStep extends BaseResponseStep {
