@@ -1718,7 +1718,7 @@ public class CallBuilder {
       String namespace, V1Event body, ResponseStep<V1Event> responseStep) {
     return createRequestAsync(
         responseStep,
-        new RequestParams("createEvent", namespace, null, body,
+        new RequestParams("createEvent", namespace, body.getMetadata().getName(), body,
             getDomainUidLabel(Optional.ofNullable(body).map(V1Event::getMetadata).orElse(null))),
         createEvent);
   }
