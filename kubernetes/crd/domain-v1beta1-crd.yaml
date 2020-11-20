@@ -10187,7 +10187,7 @@ spec:
                     - Progressing
                     - Available
                     - OnlineUpdateComplete
-                    - OnlineUpdateRolledback
+                    - OnlineUpdateCanceled
                     - Failed
                   lastTransitionTime:
                     format: date-time

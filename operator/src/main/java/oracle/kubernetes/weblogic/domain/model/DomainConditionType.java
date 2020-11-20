@@ -12,7 +12,7 @@ public enum DomainConditionType {
   },
   Available,
   OnlineUpdateComplete,
-  OnlineUpdateRolledback,
+  OnlineUpdateCanceled,
   Failed {
     @Override
     String getStatusMessage(DomainCondition condition) {

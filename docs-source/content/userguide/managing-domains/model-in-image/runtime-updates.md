@@ -292,21 +292,25 @@ TBD/WIP: The implementation treats configMap (using a different configmap) as 'o
   
 Sample use cases:
 
+Dynamic attributes examples:
 
 |Use case|Expected Outcome|Actions Required|
   |---------------------|-------------|-------|
   |Changing a data source connection pool capacity (dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
   |Changing a data source credentials (dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
-  |Changing a data source driver parameters properties (non dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
   |Changing an application targeting (dynamic attribute)|Changes are committed in running domain and effective immediately|No action required|
   |Adding a data source (dynamic changes)|Changes are committed in running domain and effective immediately| No action required|
   |Remove all targets of a datasource (dynamic changes)|Changes are committed in running domain and effective immediately| No action required|
   |Deleting an application (dynamic changes)|Changes are committed in running domain and effective immediately| No action required|
+
+Non dynamic attributes examples:
+
+|Use case|Expected Outcome|Actions Required|
+  |---------------------|-------------|-------|
+  |Changing a data source driver parameters properties (non dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
   |Changing WebLogic administrator credentials (non dynamic changes)|Changes are committed, domain will rolling restart|No action required|
   |Changing image in the domain resource YAML at the same time|Offline changes are applied and domain will rolling restart|No action required|
   |Changing security settings under domainInfo or SecurityConfiguration section (non dynamic changes)|Changes are committed, domain will rolling restart|No action required|
-  |Changing the listen port, address, SSL on a server or channel (unsupported online changes)|Error in the introspect job, job will retry until error is corrected or cancel|Use offline updates or recreate the domain|
-
 
 Unsupported Changes:
 
@@ -326,16 +330,61 @@ If you set domain.spec.configuration.cancelChangesfRestartRequired` to `true`, t
 The changes in your configmap and domain resources need to be reverted manually, the introspection job will not retry and the domain will remain unchanged.   
 If the changes do not require restart then all changes are effective immediately. 
 
-Status updates
+Checking online update status
 
 When the introspection job finished, the domain status will be updated according to the result.
+
+You can use the command to display the domain status
+
+`kubectl -n <ns> describe domain <domain name>`
 
 |Scenarios|Domain status ||
   |---------------------|-------------|-------|
   |Successful updates|Domain status will have a condition OnlineUpdateComplete with message and introspectionVersion|
-  |Changes rolled back per request|Domain status will have a condition OnlineUpdateRolledback with message and introspectionVersion|
+  |Changes rolled back per request|Domain status will have a condition OnlineUpdateCanceled with message and introspectionVersion|
   |Any other errors| Domain status message will display the error message. No condition is set in the status condition|
 
+For example, after a successful online update, you will see this in the `Domain Status` section
+
+```
+Status:
+  Clusters:
+    Cluster Name:      cluster-1
+    Maximum Replicas:  5
+    Minimum Replicas:  0
+    Ready Replicas:    2
+    Replicas:          2
+    Replicas Goal:     2
+  Conditions:
+    Last Transition Time:        2020-11-18T15:19:11.837Z
+    Message:                     Online update successful. No restart necessary
+    Reason:                      Online update applied, introspectVersion updated to 67
+    Status:                      True
+    Type:                        OnlineUpdateComplete
+    Last Transition Time:        2020-11-18T15:19:11.867Z
+    Reason:                      ServersReady
+    Status:                      True
+    Type:                        Available
+
+```
+
+If the changes will result in restart but you have specified 'cacelIfRestartRequired' under `onlineUpdate`, you will see this
+
+```
+  Conditions:
+    Last Transition Time:  2020-11-20T17:13:00.170Z
+    Message:               Online update completed successfully, but the changes require restart and the domain resource specified option to cancel all changes if restart require. The changes are: Server re-start is REQUIRED for the set of changes in progress.
+
+The following non-dynamic attribute(s) have been changed on MBeans 
+that require server re-start:
+MBean Changed : com.bea:Name=oracle.jdbc.fanEnabled,Type=weblogic.j2ee.descriptor.wl.JDBCPropertyBean,Parent=[sample-domain1]/JDBCSystemResources[Bubba-DS],Path=JDBCResource[Bubba-DS]/JDBCDriverParams/Properties/Properties[oracle.jdbc.fanEnabled]
+Attributes changed : Value
+    Reason:                      Online update applied, introspectVersion updated to 67
+    Status:                      True
+    Type:                        OnlineUpdateCanceled
+
+```
+ 
 Error Recovery
 
 - When updating a domain with `cancelChangesfRestartRequired` is set to true, if the changes involve non-dynamic changes, all changes are canceled. User must correct the models immediately or use offline update instead. This avoids the mismatch between the models in the configmap and the domain's configuration.   

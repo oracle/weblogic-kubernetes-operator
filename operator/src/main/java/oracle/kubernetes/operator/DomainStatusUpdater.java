@@ -350,7 +350,8 @@ public class DomainStatusUpdater {
                 .orElse(false);
             if (onlineUpdate) {
               DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.OnlineUpdateComplete)
-                  .withMessage("Online update failed. Check status message for reasons.")
+                  .withMessage("Online update failed")
+                  .withReason("Check status message for reasons")
                   .withStatus("False");
               newStatus.addCondition(onlineUpdateCondition);
             }

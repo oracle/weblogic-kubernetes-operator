@@ -892,9 +892,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     @Override
     public NextAction apply(Packet packet) {
       V1Pod currentPod = info.getServerPod(getServerName());
-      String dynamicUpdateResult = Optional.ofNullable((String)packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))
-          .orElse(null);
-
       // reset introspect failure job count - if any
 
       Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
@@ -902,8 +899,19 @@ public abstract class PodStepContext extends BasePodStepContext {
           .map(Domain::getStatus)
           .ifPresent(a -> a.resetIntrospectJobFailureCount());
 
+      String dynamicUpdateResult = Optional.ofNullable((String)packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))
+          .orElse(null);
+
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
+      } else if ("104".equals(dynamicUpdateResult)) {
+        // We got here because the introspectVersion changed and cancel changes return code from WDT
+        // Changes rolled back per user request in the domain.spec.configuration, keep the pod.
+        //
+        if (Objects.equals("104", dynamicUpdateResult)) {
+          return returnCancelUpdateStep(packet);
+        }
+        return returnCancelUpdateStep(packet);
       } else if (!canUseCurrentPod(currentPod)) {
         if (Objects.equals("0", dynamicUpdateResult)) {
           if (miiDomainZipHash != null) {
@@ -922,33 +930,29 @@ public abstract class PodStepContext extends BasePodStepContext {
             return  doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
           }
         }
-
-
         LOGGER.info(
             MessageKeys.CYCLING_POD,
             Objects.requireNonNull(currentPod.getMetadata()).getName(),
             getReasonToRecycle(currentPod));
         return doNext(replaceCurrentPod(currentPod, getNext()), packet);
       } else if (mustPatchPod(currentPod)) {
-        // We got here because the introspectVersion changed and cancel changes return code from WDT
-        // Changes rolled back per user request in the domain.spec.configuration, keep the pod.
-        //
-        if (Objects.equals("104", dynamicUpdateResult)) {
-          String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
-              ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
-              .orElse(null);
-          updateDomainConditions("Online update completed successfully, but the changes require restart and "
-                  + "the domain resource specified option to cancel all changes if restart require. The changes are: "
-                  + dynamicUpdateRollBackFile,
-              DomainConditionType.OnlineUpdateRolledback);
-
-          return doNext(packet);
-        }
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else {
         logPodExists();
         return doNext(packet);
       }
+    }
+
+    private NextAction returnCancelUpdateStep(Packet packet) {
+      String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
+          ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
+          .orElse(null);
+      updateDomainConditions("Online update completed successfully, but the changes require restart and "
+              + "the domain resource specified option to cancel all changes if restart require. The changes are: "
+              + dynamicUpdateRollBackFile,
+          DomainConditionType.OnlineUpdateCanceled);
+
+      return doNext(packet);
     }
 
     private void updateDomainConditions(String message, DomainConditionType domainSourceType) {
@@ -961,7 +965,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
       onlineUpdateCondition
           .withMessage(message)
-          .withReason("IntrospectVersion " + introspectVersion)
+          .withReason("Online update applied, introspectVersion updated to " + introspectVersion)
           .withStatus("True");
 
       DomainStatus x =  Optional.ofNullable(info)
@@ -977,7 +981,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
-          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateRolledback));
+          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateCanceled));
 
       Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)
