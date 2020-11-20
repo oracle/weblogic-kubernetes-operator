@@ -128,12 +128,15 @@ function initialize {
 
 # create domain configmap using what is in the createDomainFilesDir
 function createDomainConfigmap {
+
   # Use the default files if createDomainFilesDir is not specified
+  echo BR before createDomainFilesDir is ${createDomainFilesDir}
   if [ -z "${createDomainFilesDir}" ]; then
     createDomainFilesDir=${scriptDir}/wlst
   elif [[ ! ${createDomainFilesDir} == /* ]]; then
     createDomainFilesDir=${scriptDir}/${createDomainFilesDir}
   fi
+  echo BR after createDomainFilesDir is ${createDomainFilesDir}
 
   # customize the files with domain information
   externalFilesTmpDir=$domainOutputDir/tmp
@@ -189,25 +192,27 @@ function createDomainHome {
   echo Creating the domain by creating the job ${createJobOutput}
   kubectl create -f ${createJobOutput}
 
-  POD_NAME=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
-  echo "Waiting for results to be available from $POD_NAME"
-  kubectl wait --timeout=600s --for=condition=ContainersReady pod $POD_NAME
-  #echo "Fetching results"
-  sleep 30
-  max=30
-  count=0
-  kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
-  kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
-  while [ $? -eq 1 -a $count -lt $max ]; do
-    sleep 5
+  if [ "$useWdt" = true ]; then
+    POD_NAME=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
+    echo "Waiting for results to be available from $POD_NAME"
+    kubectl wait --timeout=600s --for=condition=ContainersReady pod $POD_NAME
+    #echo "Fetching results"
+    sleep 30
+    max=30
+    count=0
     kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
-    count=`expr $count + 1`
     kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
-  done
-  kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/domaincreate.yaml ${domainOutputDir}/domain.yaml
-  touch donee
-  kubectl cp donee ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/
-  rm -rf donee
+    while [ $? -eq 1 -a $count -lt $max ]; do
+      sleep 5
+      kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
+      count=`expr $count + 1`
+      kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
+    done
+    kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/domaincreate.yaml ${domainOutputDir}/domain.yaml
+    touch donee
+    kubectl cp donee ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/
+    rm -rf donee
+  fi
 
   echo "Waiting for the job to complete..."
   JOB_STATUS="0"

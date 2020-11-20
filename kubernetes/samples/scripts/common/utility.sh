@@ -561,9 +561,12 @@ function createFiles {
   # Generate the yaml file for creating the domain resource
   # We want to use wdt's extractDomainResource.sh to get the domain resource
   # for domain on pv use case. For others, generate domain resource here
-  if [ "${domainHomeSourceType}" != "PersistentVolume" ]; then
-    echo domainHomeSourceType is ${domainHomeSourceType}
-    echo Should not be here
+  echo domainHomeSourceType is ${domainHomeSourceType}
+  echo wdtDomainType is ${wdtDomainType}
+  echo useWdt is ${useWdt}
+
+  if [ "${domainHomeSourceType}" != "PersistentVolume" ] || [ "${wdtDomainType}" != "WLS" ] ||
+         [ "${useWdt}" != true ];
     echo Generating ${dcrOutput}
 
     cp ${dcrInput} ${dcrOutput}
