@@ -25,7 +25,6 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_SUCCEE
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
-import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
 
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
@@ -58,7 +57,7 @@ public class EventHelper {
 
       return doNext(new CallBuilder()
               .createEventAsync(
-                  NamespaceHelper.getOperatorNamespace(),
+                  event.getMetadata().getNamespace(),
                   event,
                   new DefaultResponseStep<>(getNext())),
           packet);
@@ -76,14 +75,15 @@ public class EventHelper {
         .message(eventData.eventItem.getMessage(info, eventData))
         .action(eventData.eventItem.getAction())
         .involvedObject(
-            new V1ObjectReference().name(getOperatorPodName()).kind("Pod").namespace(getOperatorNamespace()));
+            new V1ObjectReference().name(info.getDomainUid()).namespace(info.getNamespace()));
   }
 
   private static V1Event createCommonElements(DomainPresenceInfo info, String eventReason) {
     return new V1Event()
         .metadata(createMetadata(info, eventReason))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
-        .reportingInstance(getOperatorPodName());
+        .reportingInstance(getOperatorPodName())
+        .apiVersion("V1");
   }
 
   private static V1ObjectMeta createMetadata(
@@ -92,7 +92,7 @@ public class EventHelper {
     final V1ObjectMeta metadata =
         new V1ObjectMeta()
             .name(info.getDomainUid() + reason + System.currentTimeMillis())
-            .namespace(getOperatorNamespace());
+            .namespace(info.getNamespace());
 
     LOGGER.finest("EventHelper.createMetaData");
 

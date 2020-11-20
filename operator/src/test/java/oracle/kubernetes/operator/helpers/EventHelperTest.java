@@ -13,6 +13,7 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectReference;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -28,6 +29,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createFailedStep;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
@@ -122,6 +124,16 @@ public class EventHelperTest {
   }
 
   @Test
+  public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithInvolvedObject()
+      throws Exception {
+    makeRightOperation.execute();
+
+    assertThat("Event involved object",
+        containsEventWithInvolvedObject(getEvents(), DOMAIN_PROCESSING_STARTED_EVENT, UID, NS),
+        is(Boolean.TRUE));
+  }
+
+  @Test
   public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithReportingComponent()
       throws Exception {
     makeRightOperation.execute();
@@ -131,12 +143,11 @@ public class EventHelperTest {
         is(Boolean.TRUE));
   }
 
-
   @Test
   public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithReportingInstance()
       throws Exception {
     String namespaceFromHelm = NamespaceHelper.getOperatorNamespace();
-    //testSupport.addToPacket(OPERATOR_POD_NAME, WEBLOGIC_OPERATOR_POD_NAME);
+
     testSupport.runSteps(
         new EventHelper().createEventStep(
             new EventData(DOMAIN_PROCESSING_STARTED)
@@ -304,7 +315,7 @@ public class EventHelperTest {
         .map(V1Event::getMetadata)
         .map(V1ObjectMeta::getNamespace)
         .orElse("")
-        .equals(OP_NS);
+        .equals(NS);
   }
 
   private Object containsEventWithMessage(List<V1Event> events, String reason, String message) {
@@ -322,10 +333,19 @@ public class EventHelperTest {
   }
 
   private Object containsEventWithInstance(List<V1Event> events, String reason, String opName) {
-    String instance = Optional.ofNullable(getEventMatchesReason(events, reason))
+    return opName.equals(Optional.ofNullable(getEventMatchesReason(events, reason))
         .map(V1Event::getReportingInstance)
-        .orElse("");
-    return instance.equals(opName);
+        .orElse(""));
+  }
+
+  private Object containsEventWithInvolvedObject(List<V1Event> events, String reason, String name, String namespace) {
+    return referenceMatches(Optional.ofNullable(getEventMatchesReason(events, reason))
+        .map(V1Event::getInvolvedObject)
+        .orElse(null), name, namespace);
+  }
+
+  private Object referenceMatches(V1ObjectReference reference, String name, String namespace) {
+    return reference != null && name.equals(reference.getName()) && namespace.equals(reference.getNamespace());
   }
 
   private List<V1Event> getEvents() {
