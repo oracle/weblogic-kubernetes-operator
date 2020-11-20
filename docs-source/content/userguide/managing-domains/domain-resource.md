@@ -201,6 +201,9 @@ Sub-sections related to the Administration Server, specific clusters, or specifi
 
 The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverService` are repeated under `adminServer` and under each entry of `clusters` or `managedServers`.  The values directly under `spec`, set the defaults for the entire domain.  The values under a specific entry under `clusters`, set the defaults for cluster members of that cluster.  The values under `adminServer` or an entry under `managedServers`, set the values for that specific server.  Values from the domain scope and values from the cluster (for cluster members) are merged with or overridden by the setting for the specific server depending on the element.  See [Startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}) for details about `serverStartPolicy` combinations.
 
+Elements related to customization of liveness and readiness probe:
+* See [Liveness probe customization]({{< relref "/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#liveness-probe-customization" >}}) for details about the elements related to liveness probe customization and [Readiness probe customization]({{< relref "/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#readiness-probe-customization" >}}) for details about the elements related to readiness probe customization.
+
 {{% notice note %}}
 For additional domain resource attribute reference material, see [Domain resource attribute references](#domain-resource-attribute-references).
 {{% /notice %}}

@@ -1299,6 +1299,10 @@ window.onload = function() {
             "ADMIN_ONLY"
           ]
         },
+        "livenessProbeCustomScript": {
+          "description": "Full path of the liveness probe custom script",
+          "type": "string"
+        },
         "restartVersion": {
           "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
           "type": "string"
