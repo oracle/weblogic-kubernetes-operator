@@ -5236,6 +5236,17 @@ spec:
                 - NEVER
                 - IF_NEEDED
                 - ADMIN_ONLY
+              livenessProbeCustomScript:
+                type: string
+                description: Full path of an optional liveness probe custom script
+                  for WebLogic server instance pods. The existing liveness probe script
+                  `livenessProbe.sh` will invoke this custom script after the existing
+                  script performs its own checks. This element is optional and is
+                  for advanced usage only. Its value is not set by default. If the
+                  custom script fails with non-zero exit status, pod will fail the
+                  liveness probe and Kubernetes will restart the container. If the
+                  script specified by this element value is not found, then it is
+                  ignored.
               restartVersion:
                 type: string
                 description: 'Changes to this field cause the operator to restart

@@ -628,6 +628,13 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID));
   }
 
+  @Test
+  public void whenPodCreated_withLivenessCustomScriptSpecified_hasEnvVariable() {
+    final String customScript = "/u01/customLiveness.sh";
+    domainPresenceInfo.getDomain().getSpec().setLivenessProbeCustomScript(customScript);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LIVENESS_PROBE_CUSTOM_SCRIPT", customScript));
+  }
+
   private static final String OVERRIDE_DATA_DIR = "/u01/data";
   private static final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + UID;
 
