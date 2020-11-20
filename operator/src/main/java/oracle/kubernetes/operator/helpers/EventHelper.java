@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectReference;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -57,7 +58,7 @@ public class EventHelper {
 
       return doNext(new CallBuilder()
               .createEventAsync(
-                  packet.getSpi(DomainPresenceInfo.class).getNamespace(),
+                  NamespaceHelper.getOperatorNamespace(),
                   event,
                   new DefaultResponseStep<>(getNext())),
           packet);
@@ -73,12 +74,12 @@ public class EventHelper {
         .type(eventData.eventItem.getType())
         .reason(eventData.eventItem.getReason())
         .message(eventData.eventItem.getMessage(info, eventData))
-        .action(eventData.eventItem.getAction());
+        .action(eventData.eventItem.getAction())
+        .involvedObject(
+            new V1ObjectReference().name(getOperatorPodName()).kind("Pod").namespace(getOperatorNamespace()));
   }
 
   private static V1Event createCommonElements(DomainPresenceInfo info, String eventReason) {
-    LOGGER.finest("EventHelper.createCommonElements: pod name = "
-        + getOperatorPodName());
     return new V1Event()
         .metadata(createMetadata(info, eventReason))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)

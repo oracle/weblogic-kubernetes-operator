@@ -902,7 +902,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                             createMakeRightOperation(existing)
                                 .withEventData(new EventData(DOMAIN_PROCESSING_ABORTED,
                                     String.format(
-                                        "Unable to start domain \"%s\" after %s attempts due to exception: %s",
+                                        "Unable to start domain %s after %s attempts due to exception: %s",
                                         domainUid,
                                         DomainPresence.getDomainPresenceFailureRetryMaxCount(),
                                         throwable)))

@@ -12,11 +12,10 @@ public interface EventConstants {
   public static final String DOMAIN_PROCESSING_STARTED_EVENT = "DomainProcessingStarted";
   public static final String DOMAIN_PROCESSING_SUCCEEDED_EVENT = "DomainProcessingSucceeded";
   public static final String DOMAIN_PROCESSING_FAILED_EVENT = "DomainProcessingFailed";
-  public static final String DOMAIN_PROCESSING_RETRYING_EVENT = "DomainProcessingRetried";
+  public static final String DOMAIN_PROCESSING_RETRYING_EVENT = "DomainProcessingRetrying";
   public static final String DOMAIN_PROCESSING_ABORTED_EVENT = "DomainProcessingAborted";
-  public static final String EVENT_KIND_DOMAIN = "Domain";
   public static final String EVENT_NORMAL = "Normal";
-  public static final String EVENT_WARNING = " Warning";
+  public static final String EVENT_WARNING = "Warning";
   public static final String WEBLOGIC_OPERATOR_COMPONENT = "weblogic.operator";
 
   public static final String DOMAIN_CREATED_PATTERN = "Domain resource %s was created";

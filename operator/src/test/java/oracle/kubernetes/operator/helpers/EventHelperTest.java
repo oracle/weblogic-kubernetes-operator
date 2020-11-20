@@ -271,7 +271,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenMakeRightCalled_withAbortedEventData_domainProcessingFailedEventCreated() {
+  public void whenMakeRightCalled_withAbortedEventData_domainProcessingAbortedEventCreated() {
     makeRightOperation
         .withEventData(new EventData(DOMAIN_PROCESSING_ABORTED, "Test this failure"))
         .execute();
@@ -281,7 +281,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenMakeRightCalled_withAbortedEventData_domainProcessingFailedEventCreatedWithExpectedMessage() {
+  public void whenMakeRightCalled_withAbortedEventData_domainProcessingAbortedEventCreatedWithExpectedMessage() {
     makeRightOperation
         .withEventData(new EventData(DOMAIN_PROCESSING_ABORTED, "Test this failure"))
         .execute();
