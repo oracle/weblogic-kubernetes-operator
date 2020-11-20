@@ -8,6 +8,7 @@ import java.util.Optional;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.EventConstants;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -78,7 +79,7 @@ public class EventHelper {
     return new V1Event()
         .metadata(createMetadata(info, eventReason))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
-        .reportingInstance(System.getProperty("MY_POD_NAME"));
+        .reportingInstance(System.getProperty(KubernetesConstants.OPERATOR_POD_NAME_ENV));
   }
 
   private static V1ObjectMeta createMetadata(
@@ -87,7 +88,7 @@ public class EventHelper {
     final V1ObjectMeta metadata =
         new V1ObjectMeta()
             .name(info.getDomainUid() + reason + System.currentTimeMillis())
-            .namespace(info.getNamespace());
+            .namespace(System.getProperty(KubernetesConstants.OPERATOR_NAMESPACE_ENV));
 
     LOGGER.finest("EventHelper.createMetaData");
 

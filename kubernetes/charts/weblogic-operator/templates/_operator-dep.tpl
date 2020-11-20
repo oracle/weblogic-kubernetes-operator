@@ -41,7 +41,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: "metadata.namespace"
-        - name: MY_POD_NAME
+        - name: "OPERATOR_POD_NAME"
           valueFrom:
             fieldRef:
               fieldPath: "metadata.name"

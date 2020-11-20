@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.EventConstants;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -55,7 +56,7 @@ import static org.hamcrest.Matchers.is;
 public class EventHelperTest {
   private static final String WEBLOGIC_OPERATOR_POD_NAME = "my-weblogic-operator-1234";
   private static final String OP_NS = "operator-namespace";
-  private static final String POD_NAME_ENV = "MY_POD_NAME";
+  private static final String POD_NAME_ENV = KubernetesConstants.OPERATOR_POD_NAME_ENV;
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -80,7 +81,7 @@ public class EventHelperTest {
     testSupport.addDomainPresenceInfo(info);
     testSupport.defineResources(domain);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
-    HelmAccessStub.defineVariable("OPERATOR_NAMESPACE", OP_NS);
+    HelmAccessStub.defineVariable(KubernetesConstants.OPERATOR_NAMESPACE_ENV, OP_NS);
     System.setProperty(POD_NAME_ENV, WEBLOGIC_OPERATOR_POD_NAME);
   }
 
