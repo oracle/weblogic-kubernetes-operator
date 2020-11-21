@@ -424,7 +424,9 @@ Here are the steps for this use case:
         ---TestPool Failure Reason---
         NOTE: Ignore 'mynewdatasource' failures until the MII sample's Update 4 use case.
         ---
-        Connection test failed ... Unknown host specified
+        ...
+        ... invalid host/username/password
+        ...
         -----------------------------
 
     *****************************************************************

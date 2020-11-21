@@ -92,10 +92,6 @@ http_proxy https_proxy ::: Proxies
   If running behind a proxy, then set as needed to allow curl access
   to github.com. Used by 'stage-tooling.sh'.
 
-http_proxy https_proxy ::: Proxies
-  If running behind a proxy, then set as needed to allow curl access
-  to github.com. Used by 'stage-tooling.sh'.
-
 DOWNLOAD_WDT ::: When to download the WDT installer zip.
   Set to 'always' to always download WDT even if WORKDIR already has 
   a download, default is 'when-missing'. Used by './stage-tooling.sh'.

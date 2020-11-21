@@ -78,7 +78,7 @@ Here are the steps for this use case:
       --from-literal='user=sys as sysdba' \
       --from-literal='password=incorrect_password' \
       --from-literal='max-capacity=1' \
-      --from-literal='url=jdbc:oracle:thin:@incorrect_address.svc.cluster.local:1521/devpdb.k8s'
+      --from-literal='url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s'
    $ kubectl -n sample-domain1-ns label  secret \
       sample-domain2-datasource-secret \
       weblogic.domainUID=sample-domain2
@@ -93,7 +93,7 @@ Here are the steps for this use case:
      - You use a different set of secrets for the new domain for two reasons:
        - To make it easier to keep the life cycle and/or CI/CD process for the two domains simple and independent.
        - To 'future proof' the new domain so that changes to the original domain's secrets or new domain's secrets can be independent.
-     - We deliberately use an incorrect password and url for the data source secret because we will demonstrate dynamically changing and correcting the data source attributes for `sample-domain1` in [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}).
+     - We deliberately specify an incorrect password and a low maximum pool capacity in the data source secret because we will demonstrate dynamically changing and correcting the data source attributes for `sample-domain1` in the [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case.
 
    If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation. Note that we are using the RCU prefix `FMW2` for this domain, because the first domain is already using `FMW1`.
 
@@ -469,7 +469,9 @@ Here are the steps for this use case:
         ---TestPool Failure Reason---
         NOTE: Ignore 'mynewdatasource' failures until the MII sample's Update 4 use case.
         ---
-        Connection test failed ... Unknown host specified
+        ...
+        ... invalid host/username/password
+        ...
         -----------------------------
 
     *****************************************************************

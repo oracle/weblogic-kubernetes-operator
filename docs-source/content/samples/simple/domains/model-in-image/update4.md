@@ -4,25 +4,27 @@ date: 2019-02-23T17:32:31-05:00
 weight: 6
 ---
 
-This use case demonstrates dynamically configuring Work Manager Threads Constraint and data source WebLogic configuration in your running domain without restarting (rolling) running WebLogic Servers. This use case requires that the Update 1 use case has been run and expects that its `sample-domain1` domain is deployed and running.
+This use case demonstrates dynamically changing Work Manager Threads Constraint and data source WebLogic configuration in your running domain without restarting (rolling) running WebLogic Servers. This use case requires that the Update 1 use case has been run and expects that its `sample-domain1` domain is deployed and running.
 
 In the use case, you will:
 
  - Update the ConfigMap containing the WDT model created in the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case with changes to Work Manager Threads Constraint configuration.
- - Update the data source secret created in the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case to provide the correct URL and password, and to 
- - Update the Domain YAML file to enable online update feature.
+ - Update the data source secret created in the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case to provide the correct password and an increased maximum pool capacity.
+ - Update the Domain YAML file to enable the Model in Image online update feature.
  - Update the Domain YAML file to trigger a domain introspection, which applies the new configuration values without restarting servers.
- - Optionally start a database (in order to demonstrate that the updated datasource attributes have taken effect).
+ - Optionally start a database (in order to demonstrate that the updated data source attributes have taken effect).
 
 Here are the steps:
 
-1. Make sure you have deployed the domain from the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case.
+1. Make sure you have deployed the domain from the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case, or have deployed an updated version of this same domain from the [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}) use case.
 
-1. Update the model YAML file from the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case, with the desired changes to the Minimum and Maximum Threads Constraints.
+   There should be three WebLogic Server pods with names that start with `sample-domain1` running in the `sample-domain1-ns` namespace, a domain named `sample-domain1`, a ConfigMap named `sample-domain1-wdt-config-map`, and a Secret named `sample-domain1-datasource-secret`.
+
+1. Add Work Manager Threads Constraint configuration WDT model updates to the existing data source model updates in the Model in Image model ConfigMap.
+
+   In this step we will update the model ConfigMap from the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case with the desired changes to the Minimum and Maximum Threads Constraints.
 
    Here's an example model configuration that updates the configured count values for the `SampleMinThreads` Minimum Threads Constraint and `SampleMaxThreads` Maximum Threads Constraint:
-
-
    ```
    resources:
      SelfTuning:
@@ -33,12 +35,9 @@ Here are the steps:
          SampleMaxThreads:
            Count: 20
    ```
-   Place the above model snippet in a file named `/tmp/mii-sample/myworkmanager.yaml` and then use it in the later step where you deploy the model ConfigMap, or use the same data source that's provided in `/tmp/mii-sample/model-configmaps/workmanager/model.20.workmanager.yaml`.
-
-1. Replace the ConfigMap created in Update 1 use case with a ConfigMap with the WDT model containing both the data source and configuration updates.
+   Optionally place the above model snippet in a file named `/tmp/mii-sample/myworkmanager.yaml` and then use it below when deploying the updated model ConfigMap, or simply use the same model snippet that's provided in `/tmp/mii-sample/model-configmaps/workmanager/model.20.workmanager.yaml`.
 
    Run the following commands:
-
 
    ```
    $ kubectl -n sample-domain1-ns delete configmap sample-domain1-wdt-config-map
@@ -49,15 +48,14 @@ Here are the steps:
      weblogic.domainUID=sample-domain1
    ```
 
-     - If you've created your own model YAML file, then substitute the file names in the `--from-file=` parameters (we suggested `/tmp/mii-sample/myworkmanager.yaml` and `/tmp/mii-sample/mydatasource.xml` earlier).
-     - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory.
-     - The `-from-file=` paramater can be specified multiple times to put contents from all specified files or directories into the ConfigMap.
+   Notes:
+     - If you've created your own model YAML file(s), then substitute the file names in the `--from-file=` parameters (we suggested `/tmp/mii-sample/myworkmanager.yaml` and `/tmp/mii-sample/mydatasource.xml` earlier).
+     - The `-from-file=` parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory. It can be specified multiple times on the same command line to load the contents from multiple locations into the ConfigMap.
+     - You name and label the ConfigMap using its associated domain UID for two reasons:
+       - To make it obvious which ConfigMap belong to which domains.
+       - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
-   You name and label the ConfigMap using its associated domain UID for two reasons:
-     - To make it obvious which ConfigMap belong to which domains.
-     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
-
-1. Update the data source secret that you created in the Update 1 use case with a correct URL, a correct password, as well as with an increased maximum pool capacity:
+1. Update the data source secret that you created in the Update 1 use case with a correct password as well as with an increased maximum pool capacity:
 
    ```
    $ kubectl -n sample-domain1-ns delete secret sample-domain1-datasource-secret
@@ -74,7 +72,7 @@ Here are the steps:
 
 1. Optionally start the database.
 
-    - If the database is running, then the sample application that we will run at the end of this step will verify that your updates to the data source secret took effect.
+    - If the database is running, then the sample application that we will run at the end of this use case will verify that your updates to the data source secret took effect.
 
     - If you are taking the `JRF` path through the sample, then the database will already be running. 
 
@@ -84,38 +82,49 @@ Here are the steps:
 
 1. Update your Domain YAML file to enable `onlineUpdate`.
 
-    - Operator will attempt to use the online update to the running domain without 
-      restarting the servers if only changes made are updating dynamic attributes of the WebLogic Domain.
+   If `onlineUpdate` is enabled for your domain and the only model changes are to WebLogic Domain dynamic attributes, then the Operator will attempt to online update the running domains without restarting the servers when you update the domain's `introspectVersion`.
 
-    - Option 1: Edit your domain custom resource.
-      - Call `kubectl -n sample-domain1-ns edit domain sample-domain1`.
-      - Add or edit the value of the `spec.configuration.model.onlineUpdate` field so it contains  `enabled: true` and save.
-
-   - Option 2: Dynamically change your domain using `kubectl patch`.
-     - Use `kubectl patch` to set the value. For example:
+   - Option 1: Edit your domain custom resource.
+     - Call `kubectl -n sample-domain1-ns edit domain sample-domain1`.
+     - Add or edit the value of the `spec.configuration.model.onlineUpdate` stanza so it contains `enabled: true` and save.
+     - The updated domain should look something like this:
        ```
-       $ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/configuration/model/onlineUpdate", "value": {"enabled" : "true"} }]' 
+       ...
+       spec:
+         ...
+         configuration:
+           ...
+           model:
+             ...
+             onlineUpdate:
+               enabled: true
        ```
-   - Option 3: Use the sample helper script.
-     - Call `/tmp/mii-sample/utils/patch-enable-online-update.sh -n sample-domain1-ns -d sample-domain1`.
-     - This will perform the same `kubectl patch` commands as Option 2.
 
-1. Inform the operator to introspect the WebLogic domain configuration.
+    - Option 2: Dynamically change your domain using `kubectl patch`. For example:
+      ```
+      $ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/configuration/model/onlineUpdate", "value": {"enabled" : 'true'} }]' 
+      ```
 
-   Now that the updated configuration is deployed in a ConfigMap, we need to tell the operator to 
+    - Option 3: Use the sample helper script.
+      - Call `/tmp/mii-sample/utils/patch-enable-online-update.sh -n sample-domain1-ns -d sample-domain1`.
+      - This will perform the same `kubectl patch` commands as Option 2.
+
+1. Ask the operator to introspect the updated WebLogic domain configuration.
+
+   Now that the updated Work Manager configuration is deployed in an updated model ConfigMap and the updated
+   data source confguration is reflected in the updated data source Secret, we need to tell the operator to 
    rerun its introspector job in order to regenerate its configuration. 
-   When the `enabled` value in `spec.configuration.model.onlineUpdate` `true`, and all the changes are 
-   dynamic changes, the domain introspector can apply the changes to the servers without doing a server restart.
+
    Change the `spec.introspectVersion` of the domain to trigger domain instrospection to be performed. 
    To do this:
 
    - Option 1: Edit your domain custom resource.
      - Call `kubectl -n sample-domain1-ns edit domain sample-domain1`.
-     - Edit the value of the `spec.introspectVersion` field and save.
-       - The field is a string; typically, you use a number in this field and increment it.
+     - Change the value of the `spec.introspectVersion` field and save.
+     - The field is a string; typically, you use a number in this field and increment it.
 
    - Option 2: Dynamically change your domain using `kubectl patch`.
-     - To get the current `introspectVersion` call:
+     - Get the current `introspectVersion`:
        ```
        $ kubectl -n sample-domain1-ns get domain sample-domain1 '-o=jsonpath={.spec.introspectVersion}'
        ```
@@ -130,15 +139,20 @@ Here are the steps:
      - Call `/tmp/mii-sample/utils/patch-introspect-version.sh -n sample-domain1-ns -d sample-domain1`.
      - This will perform the same `kubectl patch` command as Option 2.
 
+   Because we have set the `enabled` value in `spec.configuration.model.onlineUpdate` to `true`, and all of 
+   the model changes we have specified are for WebLogic dynamic configuration attributes, we expect that the
+   domain introspector job will apply the changes to the WebLogic Servers without restarting (rolling) their pods.
 
 1. Wait for the introspector job to run to completion.
 
-   - One way to do this is to call `kubectl get pods -n sample-domain1-ns --watch` and wait for the introspector pod to get into `Terminating` state.
+   - One way to do this is to call `kubectl get pods -n sample-domain1-ns --watch` and wait for the introspector pod to get into `Terminating` state and exit.
        ```
        sample-domain1-introspector-vgxxl   0/1     Terminating         0          78s
        ```
 
-   - Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, reach their target `introspectVersion`, and reach their target `image` before exiting.
+   - Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`.
+
+     This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, reach their target `introspectVersion`, and reach their target `image` before exiting.
 
      {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
    ```
@@ -185,10 +199,63 @@ Here are the steps:
      {{%expand "Click here to view sample output from `wl-pod-wait.sh` that shows the introspector running and that shows each domain pod reach its new `introspectVersion`." %}}
    ```
    $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p 3
-   TBD
+   @@ [2020-11-21T05:55:26][seconds=0] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
+   @@ [2020-11-21T05:55:26][seconds=0] Info:   ready='true'
+   @@ [2020-11-21T05:55:26][seconds=0] Info:   image='model-in-image:WLS-v2'
+   @@ [2020-11-21T05:55:26][seconds=0] Info:   domainRestartVersion='1'
+   @@ [2020-11-21T05:55:26][seconds=0] Info:   introspectVersion='2'
+   @@ [2020-11-21T05:55:26][seconds=0] Info:   namespace='sample-domain1-ns'
+   @@ [2020-11-21T05:55:26][seconds=0] Info:   domainUID='sample-domain1'
+   
+   @@ [2020-11-21T05:55:26][seconds=0] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-11-21T05:55:26][seconds=0] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+   
+   NAME                                 RVERSION  IVERSION  IMAGE                    READY   PHASE      
+   -----------------------------------  --------  --------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'        '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-introspector-4gpdj'  ''        ''        ''                       ''      'Pending'  
+   'sample-domain1-managed-server1'     '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server2'     '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'  
+   
+   @@ [2020-11-21T05:55:28][seconds=2] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-11-21T05:55:28][seconds=2] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+   
+   NAME                                 RVERSION  IVERSION  IMAGE                    READY   PHASE      
+   -----------------------------------  --------  --------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'        '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-introspector-4gpdj'  ''        ''        ''                       ''      'Running'  
+   'sample-domain1-managed-server1'     '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server2'     '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'  
+   
+   @@ [2020-11-21T05:56:53][seconds=87] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-11-21T05:56:53][seconds=87] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+   
+   NAME                                 RVERSION  IVERSION  IMAGE                    READY   PHASE        
+   -----------------------------------  --------  --------  -----------------------  ------  -----------  
+   'sample-domain1-admin-server'        '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'    
+   'sample-domain1-introspector-4gpdj'  ''        ''        ''                       ''      'Succeeded'  
+   'sample-domain1-managed-server1'     '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'    
+   'sample-domain1-managed-server2'     '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'    
+   
+   @@ [2020-11-21T05:56:54][seconds=88] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-11-21T05:56:54][seconds=88] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+   
+   NAME                              RVERSION  IVERSION  IMAGE                    READY   PHASE      
+   --------------------------------  --------  --------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'     '1'       '2'       'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server1'  '1'       '2'       'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server2'  '1'       '2'       'model-in-image:WLS-v2'  'true'  'Running'  
+   
+   @@ [2020-11-21T05:56:54][seconds=88] Info: Success!
    ```
+     {{% /expand %}}
 
-1. Call the sample web application to determine if the configuration of the Minimum and Maximum Threads Constraints have been updated to the new values.
+   - If the introspector job fails, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
+
+1. Call the sample web application to:
+
+   - Determine if the configuration of the Minimum and Maximum Threads Constraints have been updated to the new values
+   - Determine if the data source can now contact the database (assuming you deployed the database)
 
    Send a web application request to the ingress controller:
 
@@ -231,6 +298,8 @@ Here are the steps:
     </pre></body></html>
 
     ```
+
+The `testPool='Passed'` for 'mynewdatasource' verifies that your update to the data source Secret to correct the password succeeded.
 
 If you see a `testPool='Failed'` error, then it is likely you did not deploy the database or your database is not deployed correctly.
 

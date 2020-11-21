@@ -17,10 +17,10 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
    - Sample steps
      - [Prerequisites for all domain types]({{< relref "/samples/simple/domains/model-in-image/prerequisites#prerequisites-for-all-domain-types" >}})
      - [Additional prerequisites for JRF domains]({{< relref "/samples/simple/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}})
-     - [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}) use case: An initial WebLogic domain
+     - [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}): Deploying an initial WebLogic domain
      - [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}): Dynamically adding a data source using a model ConfigMap and a domain restart (roll)
      - [Update 2]({{< relref "/samples/simple/domains/model-in-image/update2.md" >}}): Deploying an additional domain
-     - [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}): Updating an application in an image
+     - [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}): Updating an application using an updated image and a domain restart (roll)
      - [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}): Dynamically updating WebLogic configuration without restarting (rolling) servers
      - [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}})
 
@@ -104,7 +104,7 @@ This sample demonstrates five Model in Image use cases:
      - A WDT model for Work Manager Min and Max Threads Constraints, plus the same data source as the Update 1 use case
    - Kubernetes Secrets:
      - Same as the Update 1 and Update 3 use case, except:
-     - An updated data source secret with a new URL, password, and maximum pool capacity.
+     - An updated data source secret with a new password and an increased maximum pool capacity.
    - A Domain, same as Update 1 or Update 3 use case, plus:
      - `spec.configuration.model.onlineUpdate` set to `enabled: true`
 

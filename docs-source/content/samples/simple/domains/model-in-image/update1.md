@@ -74,13 +74,13 @@ Here are the steps:
       --from-literal='user=sys as sysdba' \
       --from-literal='password=incorrect_password' \
       --from-literal='max-capacity=1' \
-      --from-literal='url=jdbc:oracle:thin:@incorrect_address.svc.cluster.local:1521/devpdb.k8s'
+      --from-literal='url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s'
    $ kubectl -n sample-domain1-ns label  secret \
       sample-domain1-datasource-secret \
       weblogic.domainUID=sample-domain1
    ```
 
-    We deliberately use an incorrect password and url because we will demonstrate dynamically changing and correcting the data source attributes in [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) without requiring rolling the domain.
+    We deliberately specify an incorrect password and a low maximum pool capacity because we will demonstrate dynamically changing and correcting the data source attributes in the [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case without requiring rolling the domain.
 
     You name and label secrets using their associated domain UID for two reasons:
      - To make it obvious which secret belongs to which domains.
@@ -470,7 +470,9 @@ Here are the steps:
         ---TestPool Failure Reason---
         NOTE: Ignore 'mynewdatasource' failures until the MII sample's Update 4 use case.
         ---
-        Connection test failed ... Unknown host specified
+        ...
+        ... invalid host/username/password
+        ...
         -----------------------------
     
     *****************************************************************

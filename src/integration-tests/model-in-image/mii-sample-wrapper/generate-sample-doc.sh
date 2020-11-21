@@ -136,9 +136,13 @@ for phase in initial update1 update2 update3 update4; do
   export ARCHIVE_SOURCEDIR="archives/archive-$archive_version"
   if [ $configmap != "None" ]; then
     export INCLUDE_MODEL_CONFIGMAP=true
+  else
+    export INCLUDE_MODEL_CONFIGMAP=false
   fi
   if [ $corrected_datasource_secret = "true" ]; then
     export CORRECTED_DATASOURCE_SECRET=true
+  else
+    export CORRECTED_DATASOURCE_SECRET=false
   fi
   export CUSTOM_DOMAIN_NAME=domain$domain_num
   export MODEL_IMAGE_NAME=model-in-image
@@ -180,8 +184,9 @@ for phase in initial update1 update2 update3 update4; do
   chmod +x $WORKDIR/$domain_path.secrets.sh
    
   # setup script for the configmap
-  file_param=''
+
   if [ "$configmap" != "None" ]; then
+    file_param=''
     for i in ${configmap//,/ }
       do
        file_param="${file_param}-f ${WORKDIR}/model-configmaps/$i "

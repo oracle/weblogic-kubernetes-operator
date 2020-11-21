@@ -188,7 +188,6 @@ function getDomainValue() {
   local __retvar=$2
   set +e
   attvalue=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath="$ljpath" 2>&1)
-  # attvalue=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jpath='{.spec.restartVersion}' 2>&1)
   if [ $? -ne 0 ]; then
     if [ $expected -ne 0 ]; then
       echo "@@ Error: Could not obtain '$1' from '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed? Err='$attvalue'"
