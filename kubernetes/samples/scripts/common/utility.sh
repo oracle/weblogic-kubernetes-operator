@@ -566,7 +566,7 @@ function createFiles {
   echo useWdt is ${useWdt}
 
   if [ "${domainHomeSourceType}" != "PersistentVolume" ] || [ "${wdtDomainType}" != "WLS" ] ||
-         [ "${useWdt}" != true ];
+         [ "${useWdt}" != true ]; then
     echo Generating ${dcrOutput}
 
     cp ${dcrInput} ${dcrOutput}
