@@ -17,6 +17,7 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_PATTERN;
@@ -69,7 +70,7 @@ public class EventHelper {
       Packet packet,
       EventData eventData) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    return createCommonElements(info, eventData.eventItem.getReason())
+    return createCommonElements(info, eventData.eventItem)
         .type(eventData.eventItem.getType())
         .reason(eventData.eventItem.getReason())
         .message(eventData.eventItem.getMessage(info, eventData))
@@ -78,12 +79,12 @@ public class EventHelper {
             new V1ObjectReference().name(info.getDomainUid()).namespace(info.getNamespace()));
   }
 
-  private static V1Event createCommonElements(DomainPresenceInfo info, String eventReason) {
+  private static V1Event createCommonElements(DomainPresenceInfo info, EventItem eventItem) {
     return new V1Event()
-        .metadata(createMetadata(info, eventReason))
+        .metadata(createMetadata(info, eventItem.getReason()))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
         .reportingInstance(getOperatorPodName())
-        .apiVersion("V1");
+        .lastTimestamp(eventItem.getLastTimestamp());
   }
 
   private static V1ObjectMeta createMetadata(
@@ -234,6 +235,10 @@ public class EventHelper {
 
     String getType() {
       return EVENT_NORMAL;
+    }
+
+    public DateTime getLastTimestamp() {
+      return DateTime.now();
     }
   }
 
