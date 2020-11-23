@@ -688,6 +688,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
+        addDomainProcessingRetryEvent();
         if (exceededFailureRetryCount) {
           Optional.ofNullable(liveInfo)
               .map(DomainPresenceInfo::getDomain)
@@ -707,11 +708,14 @@ public class DomainProcessorImpl implements DomainProcessor {
       return false;
     }
 
-    private boolean hasAbortedEvent() {
-      if (Optional.ofNullable(eventData).map(EventData::getItem).equals(DOMAIN_PROCESSING_ABORTED)) {
-        return true;
+    private void addDomainProcessingRetryEvent() {
+      if (eventData == null) {
+        eventData = new EventData(DOMAIN_PROCESSING_RETRYING);
       }
-      return false;
+    }
+
+    private boolean hasAbortedEvent() {
+      return (DOMAIN_PROCESSING_ABORTED.equals(Optional.ofNullable(eventData).map(EventData::getItem)));
     }
 
     private boolean changeEventToAborted(String message) {
