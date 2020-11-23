@@ -680,7 +680,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             + DomainPresence.getDomainPresenceFailureRetryMaxCount()
             + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
             + " by adding it to the weblogic-operator-cm configmap.");
-        String message = "exceeded configured domainPresenceFailureRetryMaxCount: " +
+        String message = "exceeded configured domainPresenceFailureRetryMaxCount: "
             + DomainPresence.getDomainPresenceFailureRetryMaxCount();
         return ensureAbortedEventPresent(message);
       } else if (existingError != null && existingError.contains("FatalIntrospectorError")) {
