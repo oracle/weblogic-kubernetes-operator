@@ -257,10 +257,7 @@ function getSortedListOfServers {
   local sortedServers=()
   local otherServers=()
 
-  getConfigMap "${domainUid}" "${domainNamespace}" configMap
-  topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
-  jsonTopology=$(python -c \
-    'import sys, yaml, json; print json.dumps(yaml.safe_load('"${topology}"'), indent=4)')
+  getTopology "${domainUid}" "${domainNamespace}" jsonTopology
   clusterTopology=$(echo ${jsonTopology} | jq -r '.domain | .configuredClusters[] | select (.name == '\"${clusterName}\"')')
   dynaCluster=$(echo ${clusterTopology} | jq .dynamicServersConfig)
   if [ "${dynaCluster}" == "null" ]; then
@@ -509,10 +506,7 @@ function validateServerAndFindCluster {
 
   eval $__isValidServer=false
   eval $__clusterName=UNKNOWN
-  getConfigMap "${domainUid}" "${domainNamespace}" configMap
-  topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
-  jsonTopology=$(python -c \
-    'import sys, yaml, json; print json.dumps(yaml.safe_load('"${topology}"'), indent=4)')
+  getTopology "${domainUid}" "${domainNamespace}" jsonTopology
   adminServer=$(echo $jsonTopology | jq -r .domain.adminServerName)
   if [ "${serverName}" == "${adminServer}" ]; then
     printError "Server '${serverName}' is administration server. The '${script}' script doesn't support starting or stopping administration server."
@@ -578,12 +572,7 @@ function validateClusterName {
   local clusterName=$3
   local __isValidCluster=$4
 
-  getConfigMap "${domainUid}" "${domainNamespace}" configMap
-  configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
-    -n ${domainNamespace} -o json)
-  topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
-  jsonTopology=$(python -c \
-    'import sys, yaml, json; print json.dumps(yaml.safe_load('"${topology}"'), indent=4)')
+  getTopology "${domainUid}" "${domainNamespace}" jsonTopology
   clusters=($(echo $jsonTopology | jq -cr .domain.configuredClusters[].name))
   if  checkStringInArray "${clusterName}" "${clusters[@]}" ; then
     eval $__isValidCluster=true
@@ -592,20 +581,31 @@ function validateClusterName {
   fi
 }
 
-function getConfigMap {
+function getTopology {
   local domainUid=$1
   local domainNamespace=$2
   local __result=$3 
 
-  configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
-    -n ${domainNamespace} -o json --ignore-not-found)
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
+      -n ${domainNamespace} -o yaml --ignore-not-found)
+  else 
+    configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
+      -n ${domainNamespace} -o json --ignore-not-found)
+  fi
   if [ -z "${configMap}" ]; then
     printError "Domain config map '${domainUid}-weblogic-domain-introspect-cm' not found. \
       This script requires that the introspector job for the specified domain ran \
       successfully and generated this config map. Exiting."
     exit 1
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    jsonTopology=$(echo "${configMap}" | yq r - data.[topology.yaml] | yq r - -j)
+  else
+    topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
+    jsonTopology=$(python -c \
+    'import sys, yaml, json; print json.dumps(yaml.safe_load('"${topology}"'), indent=4)')
   fi
-  eval $__result="'${configMap}'"
+  eval $__result="'${jsonTopology}'"
 }
 
 
@@ -629,6 +629,12 @@ function validateJqAvailable {
   fi
 }
 
+function validateYqAvailable {
+  if [[ "$OSTYPE" == "darwin"* ]] && ! [ -x "$(command -v yq)" ]; then
+    validationError "yq is not installed"
+  fi
+}
+
 # try to execute python to see whether python is available
 function validatePythonAvailable {
   if ! [ -x "$(command -v python)" ]; then
@@ -641,14 +647,6 @@ function validateKubernetesCliAvailable {
   if ! [ -x "$(command -v ${kubernetesCli})" ]; then
     validationError "${kubernetesCli} is not installed"
   fi
-}
-
-#
-# Function to exit and print an error message
-# $1 - text of message
-function fail {
-  printError $*
-  exit 1
 }
 
 # Function to print an error message
@@ -714,6 +712,7 @@ function validationError {
 #
 function failIfValidationErrors {
   if [ "$validateErrors" = true ]; then
-    fail 'The errors listed above must be resolved before the script can continue'
+    printError 'The errors listed above must be resolved before the script can continue. Please see usage information below.'
+    usage 1
   fi
 }
