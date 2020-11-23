@@ -240,7 +240,7 @@ function createNginx() {
     echo "Nginx chart repository is already added."
   fi
 
-  if [ "$(helm list --namespace $NNAME | grep $NNAME |  wc -l)" = 0 ]; then
+  if [ "$(helm list --namespace ${NSPACE} | grep $NNAME |  wc -l)" = 0 ]; then
     echo "Installing Nginx operator."
     helm install $NNAME ingress-nginx/ingress-nginx \
          --namespace ${NSPACE} --version ${DefaultNginxVersion}
