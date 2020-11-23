@@ -47,6 +47,7 @@ function phase_setup() {
       image_version=v1
       archive_version=v1
       configmap=None
+      corrected_datasource_secret=false
       ;;
     # Same as initial, plus a data source targeted to 'cluster-1' which is dynamically supplied using a model configmap. 
     update1)
@@ -55,6 +56,7 @@ function phase_setup() {
       image_version=v1
       archive_version=v1
       configmap=datasource
+      corrected_datasource_secret=false
       ;;
     # Same as update1, with a second domain with its own uid 'sample-domain2' that's based on the update1 domain's resource file.
     update2)
@@ -63,6 +65,7 @@ function phase_setup() {
       image_version=v1
       archive_version=v1
       configmap=datasource
+      corrected_datasource_secret=false
       ;;
     # Similar to update1, except deploy an updated web-app 'v2' while keeping the original app in the archive.
     update3)
@@ -71,6 +74,7 @@ function phase_setup() {
       image_version=v2
       archive_version=v2
       configmap=datasource
+      corrected_datasource_secret=false
       ;;
     # Similar to update1, plus update work manager configuration using dynamic update without restarting servers.
     update4)
@@ -79,6 +83,7 @@ function phase_setup() {
       image_version=v2
       archive_version=v2
       configmap=datasource,workmanager
+      corrected_datasource_secret=true
       ;;
     *)
       echo "Error: Unknown phase $1." 
@@ -131,6 +136,13 @@ for phase in initial update1 update2 update3 update4; do
   export ARCHIVE_SOURCEDIR="archives/archive-$archive_version"
   if [ $configmap != "None" ]; then
     export INCLUDE_MODEL_CONFIGMAP=true
+  else
+    export INCLUDE_MODEL_CONFIGMAP=false
+  fi
+  if [ $corrected_datasource_secret = "true" ]; then
+    export CORRECTED_DATASOURCE_SECRET=true
+  else
+    export CORRECTED_DATASOURCE_SECRET=false
   fi
   export CUSTOM_DOMAIN_NAME=domain$domain_num
   export MODEL_IMAGE_NAME=model-in-image
@@ -172,8 +184,9 @@ for phase in initial update1 update2 update3 update4; do
   chmod +x $WORKDIR/$domain_path.secrets.sh
    
   # setup script for the configmap
-  file_param=''
+
   if [ "$configmap" != "None" ]; then
+    file_param=''
     for i in ${configmap//,/ }
       do
        file_param="${file_param}-f ${WORKDIR}/model-configmaps/$i "

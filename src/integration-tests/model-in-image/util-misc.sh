@@ -64,11 +64,15 @@ function get_curl_command() {
 # testapp
 #
 # Use 'testapp internal|traefik cluster-1|cluster-2 somestring' to invoke the test
-# WebLogic cluster's jsp app and check that the given string is
-# is reflected there-in.
+# WebLogic cluster's jsp app and check that the given string is reflected there-in.
 #
-#   "internal" invokes curl on the admin server
-#   "traefik" invokes curl locally through the traefik node port
+# $1 "internal" invokes curl using kubectl exec on the admin server pod
+#               with an URL that has the cluster service name
+#    "traefik"  invokes curl locally using the traefik node port
+# $2 cluster-1 or cluster-2
+# $3 search string expected in curl output
+# $4 quiet mode: 'true' or 'false' (anything not 'false' is treated as true)
+# $5 max retries (default 15)
 #
 # For example, 'testapp internal "Hello World!"'.
 
@@ -81,6 +85,9 @@ function testapp() {
   local traefik_nodeport=''
   local max_tries="${4:-15}"
   local quiet="${5:-false}"
+  local target_file_prefix="$WORKDIR/test-out/$PPID.$(printf "%3.3u" ${COMMAND_OUTFILE_COUNT:-0})"
+  local target_file=${target_file_prefix}.$(timestamp).testapp.curl.$1.$((num_tries + 1)).out
+  local start_secs=$SECONDS
 
   while [ 1 = 1 ] 
   do
@@ -112,10 +119,14 @@ EOF
 
     fi
 
-    target_file=$WORKDIR/test-out/$PPID.$(printf "%3.3u" ${COMMAND_OUTFILE_COUNT:-0}).$(timestamp).testapp.curl.$1.out
 
-    if [ $quiet = 'false' ] || [ $num_tries -eq 0 ]; then
-      echo -n "@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command'. Output file '$target_file'."
+    local outstr="@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command', "
+    if [ $quiet = 'false' ]; then
+      echo -n "${outstr} output file '$target_file'."
+    else
+      if [ $num_tries -eq 0 ]; then
+        echo -n "${outstr} output file prefix '$target_file_prefix'."
+      fi
     fi
 
     set +e
@@ -132,17 +143,19 @@ EOF
       num_tries=$((num_tries + 1))
       if [ $num_tries -gt $max_tries ]; then
         echo
-        echo "@@ Error: '$3' not found in app response for command '$command' after try number '$num_tries'. Contents of reponse file '$target_file':"
+        echo "@@ Error: '$3' not found in app response for command '$command' after try number '$num_tries'. Total seconds=$((SECONDS-start_secs)). Contents of response file '$target_file':"
         cat $target_file
         return 1
       fi
       if [ $quiet = 'false' ]; then
-        echo "@@ Info: Curl command failed on try number '$num_tries'. Sleeping 5 seconds and retrying."
+        echo
+        echo -n "@@ Info: Curl command failed on try number '$num_tries' with curl output file '$target_file'. Total seconds=$((SECONDS-start_secs)). Sleeping 5 seconds and retrying."
       fi
+      target_file=${target_file_prefix}.$(timestamp).testapp.curl.$1.$((num_tries + 1)).out
       sleep 5
 
     else
-      echo ".. Success!"
+      echo ".. Output file '$target_file'. Total seconds=$((SECONDS-start_secs)). Success!"
       return 0
     fi
 
@@ -217,13 +230,12 @@ function doCommand() {
   set +e
   eval $command > $out_file 2>&1
   local err_code=$?
+  printdots_end
   if [ $err_code -ne 0 ]; then
-    echo
     trace "Error: Error running command '$command', output='$out_file'. Output contains:"
     cat $out_file
     trace "Error: Error running command '$command', output='$out_file'. Output dumped above."
   fi
-  printdots_end
   set -e
 
   return $err_code
