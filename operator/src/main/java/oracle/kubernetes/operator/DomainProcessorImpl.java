@@ -680,15 +680,18 @@ public class DomainProcessorImpl implements DomainProcessor {
             + DomainPresence.getDomainPresenceFailureRetryMaxCount()
             + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
             + " by adding it to the weblogic-operator-cm configmap.");
-        return hasAbortedEvent();
+        String message = "exceeded configured domainPresenceFailureRetryMaxCount: " +
+            + DomainPresence.getDomainPresenceFailureRetryMaxCount();
+        return ensureAbortedEventPresent(message);
       } else if (existingError != null && existingError.contains("FatalIntrospectorError")) {
         String message = "Stop introspection retry - MII Fatal Error: " + existingError;
         LOGGER.fine(message);
-        return changeEventToAborted(message);
+        return ensureAbortedEventPresent(message);
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
         addDomainProcessingRetryEvent();
+
         if (exceededFailureRetryCount) {
           Optional.ofNullable(liveInfo)
               .map(DomainPresenceInfo::getDomain)
@@ -709,7 +712,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private void addDomainProcessingRetryEvent() {
-      if (eventData == null) {
+      if (isEventPresent()) {
         eventData = new EventData(DOMAIN_PROCESSING_RETRYING);
       }
     }
@@ -718,12 +721,17 @@ public class DomainProcessorImpl implements DomainProcessor {
       return (DOMAIN_PROCESSING_ABORTED.equals(Optional.ofNullable(eventData).map(EventData::getItem)));
     }
 
-    private boolean changeEventToAborted(String message) {
-      if (Optional.ofNullable(eventData).map(EventData::getItem).equals(DOMAIN_PROCESSING_RETRYING)) {
-        eventData.eventItem(DOMAIN_PROCESSING_ABORTED).message(message);
+    private boolean ensureAbortedEventPresent(String message) {
+      if (!hasAbortedEvent()) {
+        eventData = new EventData(DOMAIN_PROCESSING_ABORTED, message);
+        LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
         return true;
       }
       return false;
+    }
+
+    private boolean isEventPresent() {
+      return eventData == null;
     }
 
     private void internalMakeRightDomainPresence() {
@@ -759,9 +767,14 @@ public class DomainProcessorImpl implements DomainProcessor {
           createSteps());
       if (eventData != null) {
         step = Step.chain(createEventStep(eventData), step);
+        clearProcessedEvent();
       }
 
       return new StepAndPacket(step, packet);
+    }
+
+    private void clearProcessedEvent() {
+      eventData = null;
     }
 
     private Domain getDomain() {
