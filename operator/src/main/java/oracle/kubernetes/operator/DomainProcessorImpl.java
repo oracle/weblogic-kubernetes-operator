@@ -72,6 +72,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_O
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
 
 public class DomainProcessorImpl implements DomainProcessor {
@@ -679,11 +680,11 @@ public class DomainProcessorImpl implements DomainProcessor {
             + DomainPresence.getDomainPresenceFailureRetryMaxCount()
             + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
             + " by adding it to the weblogic-operator-cm configmap.");
-        return false;
+        return hasAbortedEvent();
       } else if (existingError != null && existingError.contains("FatalIntrospectorError")) {
-        LOGGER.fine("Stop introspection retry - MII Fatal Error: "
-            + existingError);
-        return false;
+        String message = "Stop introspection retry - MII Fatal Error: " + existingError;
+        LOGGER.fine(message);
+        return changeEventToAborted(message);
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
@@ -703,6 +704,21 @@ public class DomainProcessorImpl implements DomainProcessor {
         return true;
       }
       cachedInfo.setDomain(getDomain());
+      return false;
+    }
+
+    private boolean hasAbortedEvent() {
+      if (Optional.ofNullable(eventData).map(EventData::getItem).equals(DOMAIN_PROCESSING_ABORTED)) {
+        return true;
+      }
+      return false;
+    }
+
+    private boolean changeEventToAborted(String message) {
+      if (Optional.ofNullable(eventData).map(EventData::getItem).equals(DOMAIN_PROCESSING_RETRYING)) {
+        eventData.eventItem(DOMAIN_PROCESSING_ABORTED).message(message);
+        return true;
+      }
       return false;
     }
 
@@ -728,7 +744,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private StepAndPacket createDomainPlanSteps(Packet packet) {
-      if (eventData != null && eventData.eventItem == DOMAIN_PROCESSING_ABORTED) {
+      if (eventData != null && eventData.getItem() == DOMAIN_PROCESSING_ABORTED) {
         return new StepAndPacket(
             Step.chain(createEventStep(eventData), new TailStep()),
             packet);
