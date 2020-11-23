@@ -8,7 +8,6 @@ import java.util.Optional;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
-import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -19,9 +18,23 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.joda.time.DateTime;
 
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_ACTION;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_ACTION;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_SUCCEEDED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_SUCCEEDED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
@@ -52,9 +65,8 @@ public class EventHelper {
 
     @Override
     public NextAction apply(Packet packet) {
+      LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
       V1Event event = createEvent(packet, eventData);
-
-      LOGGER.fine(MessageKeys.CREATING_EVENT, event.getMessage());
 
       return doNext(new CallBuilder()
               .createEventAsync(
@@ -108,58 +120,58 @@ public class EventHelper {
     DOMAIN_CREATED {
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_CREATED_EVENT;
+        return DOMAIN_CREATED_EVENT;
       }
 
       @Override
-      public String getMessage(DomainPresenceInfo info, EventData eventData) {
-        return String.format(EventConstants.DOMAIN_CREATED_PATTERN, info.getDomainUid());
+      public String getPattern() {
+        return DOMAIN_CREATED_PATTERN;
       }
     },
     DOMAIN_CHANGED {
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_CHANGED_EVENT;
+        return DOMAIN_CHANGED_EVENT;
       }
 
       @Override
-      public String getMessage(DomainPresenceInfo info, EventData eventData) {
-        return String.format(EventConstants.DOMAIN_CHANGED_PATTERN, info.getDomainUid());
+      public String getPattern() {
+        return DOMAIN_CHANGED_PATTERN;
       }
 
     },
     DOMAIN_DELETED {
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_DELETED_EVENT;
+        return DOMAIN_DELETED_EVENT;
       }
 
       @Override
-      public String getMessage(DomainPresenceInfo info, EventData eventData) {
-        return String.format(EventConstants.DOMAIN_DELETED_PATTERN, info.getDomainUid());
+      public String getPattern() {
+        return DOMAIN_DELETED_PATTERN;
       }
 
     },
     DOMAIN_PROCESSING_STARTED {
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_PROCESSING_STARTED_EVENT;
+        return DOMAIN_PROCESSING_STARTED_EVENT;
       }
 
       @Override
-      public String getMessage(DomainPresenceInfo info, EventData eventData) {
-        return String.format(EventConstants.DOMAIN_PROCESSING_STARTED_PATTERN, info.getDomainUid());
+      public String getPattern() {
+        return DOMAIN_PROCESSING_STARTED_PATTERN;
       }
     },
     DOMAIN_PROCESSING_SUCCEEDED {
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_PROCESSING_SUCCEEDED_EVENT;
+        return DOMAIN_PROCESSING_SUCCEEDED_EVENT;
       }
 
       @Override
-      public String getMessage(DomainPresenceInfo info, EventData eventData) {
-        return String.format(DOMAIN_PROCESSING_SUCCEEDED_PATTERN, info.getDomainUid());
+      public String getPattern() {
+        return DOMAIN_PROCESSING_SUCCEEDED_PATTERN;
       }
     },
     DOMAIN_PROCESSING_FAILED {
@@ -170,7 +182,12 @@ public class EventHelper {
 
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_PROCESSING_FAILED_EVENT;
+        return DOMAIN_PROCESSING_FAILED_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return DOMAIN_PROCESSING_FAILED_PATTERN;
       }
 
       @Override
@@ -181,18 +198,18 @@ public class EventHelper {
 
       @Override
       public String getAction() {
-        return EventConstants.DOMAIN_PROCESSING_FAILED_ACTION;
+        return DOMAIN_PROCESSING_FAILED_ACTION;
       }
     },
     DOMAIN_PROCESSING_RETRYING {
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT;
+        return DOMAIN_PROCESSING_RETRYING_EVENT;
       }
 
       @Override
-      public String getMessage(DomainPresenceInfo info, EventData eventData) {
-        return String.format(DOMAIN_PROCESSING_RETRYING_PATTERN, info.getDomainUid());
+      public String getPattern() {
+        return DOMAIN_PROCESSING_RETRYING_PATTERN;
       }
     },
     DOMAIN_PROCESSING_ABORTED {
@@ -203,9 +220,13 @@ public class EventHelper {
 
       @Override
       public String getReason() {
-        return EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
+        return DOMAIN_PROCESSING_ABORTED_EVENT;
       }
 
+      @Override
+      public String getPattern() {
+        return DOMAIN_PROCESSING_ABORTED_PATTERN;
+      }
       @Override
       public String getMessage(DomainPresenceInfo info, EventData eventData) {
         return String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, info.getDomainUid(),
@@ -214,13 +235,21 @@ public class EventHelper {
 
       @Override
       public String getAction() {
-        return EventConstants.DOMAIN_PROCESSING_ABORTED_ACTION;
+        return DOMAIN_PROCESSING_ABORTED_ACTION;
       }
     };
 
-    public abstract String getReason();
+    public String getMessage(DomainPresenceInfo info, EventData eventData) {
+      return String.format(getPattern(), info.getDomainUid());
+    }
 
-    public abstract String getMessage(DomainPresenceInfo info, EventData eventData);
+    public DateTime getLastTimestamp() {
+      return DateTime.now();
+    }
+
+    protected abstract String getPattern();
+
+    public abstract String getReason();
 
     String getAction() {
       return "";
@@ -230,9 +259,6 @@ public class EventHelper {
       return EVENT_NORMAL;
     }
 
-    public DateTime getLastTimestamp() {
-      return DateTime.now();
-    }
   }
 
   public static class EventData {

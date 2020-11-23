@@ -636,7 +636,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           return;
         }
 
-        if (isShouldContinue()) {
+        if (shouldContinue()) {
           internalMakeRightDomainPresence();
         } else {
           LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
@@ -654,61 +654,87 @@ public class DomainProcessorImpl implements DomainProcessor {
       return inspectionRun;
     }
 
-    private boolean isShouldContinue() {
+    private boolean shouldContinue() {
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
-      int currentIntrospectFailureRetryCount = Optional.ofNullable(liveInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getIntrospectJobFailureCount)
-          .orElse(0);
 
-      String existingError = Optional.ofNullable(liveInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getMessage)
-          .orElse(null);
+      String existingError = getExistingError();
 
-      boolean exceededFailureRetryCount = (currentIntrospectFailureRetryCount
-          >= DomainPresence.getDomainPresenceFailureRetryMaxCount());
-
-      boolean isVersionsChanged = isImgRestartIntrospectVerChanged(liveInfo, cachedInfo);
-
-      if (cachedInfo == null || cachedInfo.getDomain() == null) {
+      if (hasNoDomain(cachedInfo)) {
         return true;
-      } else if (exceededFailureRetryCount && !isVersionsChanged) {
-        LOGGER.fine("Stop introspection retry - exceeded configured domainPresenceFailureRetryMaxCount: "
-            + DomainPresence.getDomainPresenceFailureRetryMaxCount()
-            + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
-            + " by adding it to the weblogic-operator-cm configmap.");
+      } else if (hasExceededRetryCount() && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
         String message = "exceeded configured domainPresenceFailureRetryMaxCount: "
             + DomainPresence.getDomainPresenceFailureRetryMaxCount();
+        LOGGER.fine("Stop introspection retry - "
+            + message
+            + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
+            + " by adding it to the weblogic-operator-cm configmap.");
+
         return ensureAbortedEventPresent(message);
-      } else if (existingError != null && existingError.contains("FatalIntrospectorError")) {
+      } else if (isFatalIntrospectorError(existingError)) {
         String message = "Stop introspection retry - MII Fatal Error: " + existingError;
         LOGGER.fine(message);
         return ensureAbortedEventPresent(message);
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
-      } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
+      } else if (shouldRetry(cachedInfo)) {
         addDomainProcessingRetryEvent();
-
-        if (exceededFailureRetryCount) {
-          Optional.ofNullable(liveInfo)
-              .map(DomainPresenceInfo::getDomain)
-              .map(Domain::getStatus)
-              .map(o -> o.resetIntrospectJobFailureCount());
-        }
-
-        if (currentIntrospectFailureRetryCount > 0) {
-          LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED_RETRY_COUNT, cachedInfo.getDomain().getDomainUid(),
-              currentIntrospectFailureRetryCount,
-              DomainPresence.getDomainPresenceFailureRetryMaxCount());
-        }
+        resetIntrospectorJobFailureCount();
+        logRetryCount(cachedInfo);
 
         return true;
       }
       cachedInfo.setDomain(getDomain());
       return false;
+    }
+
+    private void resetIntrospectorJobFailureCount() {
+      if (hasExceededRetryCount()) {
+        Optional.ofNullable(liveInfo)
+            .map(DomainPresenceInfo::getDomain)
+            .map(Domain::getStatus)
+            .map(o -> o.resetIntrospectJobFailureCount());
+      }
+    }
+
+    private boolean hasExceededRetryCount() {
+      return getCurrentIntrospectFailureRetryCount()
+          >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
+    }
+
+    private String getExistingError() {
+      return Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getMessage)
+          .orElse(null);
+    }
+
+    private Integer getCurrentIntrospectFailureRetryCount() {
+      return Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getIntrospectJobFailureCount)
+          .orElse(0);
+    }
+
+    private void logRetryCount(DomainPresenceInfo cachedInfo) {
+      if (getCurrentIntrospectFailureRetryCount() > 0) {
+        LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED_RETRY_COUNT, cachedInfo.getDomain().getDomainUid(),
+            getCurrentIntrospectFailureRetryCount(),
+            DomainPresence.getDomainPresenceFailureRetryMaxCount());
+      }
+    }
+
+    private boolean shouldRetry(DomainPresenceInfo cachedInfo) {
+      return explicitRecheck || isSpecChanged(liveInfo, cachedInfo);
+    }
+
+    private boolean isFatalIntrospectorError(String existingError) {
+      return existingError != null && existingError.contains("FatalIntrospectorError");
+    }
+
+    private boolean hasNoDomain(DomainPresenceInfo cachedInfo) {
+      return cachedInfo == null || cachedInfo.getDomain() == null;
     }
 
     private void addDomainProcessingRetryEvent() {
@@ -813,53 +839,32 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static boolean isImgRestartIntrospectVerChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
-    String liveIntrospectVersion = Optional.ofNullable(liveInfo)
-        .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getSpec)
-        .map(DomainSpec::getIntrospectVersion)
-        .orElse(null);
+    return !Objects.equals(getIntrospectVersion(liveInfo), getIntrospectVersion(cachedInfo))
+        || !Objects.equals(getRestartVersion(liveInfo), getRestartVersion(cachedInfo))
+        || !Objects.equals(getntrospectImage(liveInfo), getntrospectImage(cachedInfo));
+  }
 
-    String cachedIntropectVersion = Optional.ofNullable(cachedInfo)
-        .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getSpec)
-        .map(DomainSpec::getIntrospectVersion)
-        .orElse(null);
-
-    if (!Objects.equals(liveIntrospectVersion, cachedIntropectVersion)) {
-      return true;
-    }
-
-    String liveRestartVersion = Optional.ofNullable(liveInfo)
-        .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getRestartVersion)
-        .orElse(null);
-
-    String cachedRestartVersion = Optional.ofNullable(cachedInfo)
-        .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getRestartVersion)
-        .orElse(null);
-
-    if (!Objects.equals(liveRestartVersion, cachedRestartVersion)) {
-      return true;
-    }
-
-    String liveIntrospectImage = Optional.ofNullable(liveInfo)
+  private static String getntrospectImage(DomainPresenceInfo info) {
+    return Optional.ofNullable(info)
         .map(DomainPresenceInfo::getDomain)
         .map(Domain::getSpec)
         .map(DomainSpec::getImage)
         .orElse(null);
+  }
 
-    String cachedIntrospectImage = Optional.ofNullable(cachedInfo)
+  private static String getRestartVersion(DomainPresenceInfo info) {
+    return Optional.ofNullable(info)
+        .map(DomainPresenceInfo::getDomain)
+        .map(Domain::getRestartVersion)
+        .orElse(null);
+  }
+
+  private static String getIntrospectVersion(DomainPresenceInfo info) {
+    return Optional.ofNullable(info)
         .map(DomainPresenceInfo::getDomain)
         .map(Domain::getSpec)
-        .map(DomainSpec::getImage)
+        .map(DomainSpec::getIntrospectVersion)
         .orElse(null);
-
-    if (!Objects.equals(liveIntrospectImage, cachedIntrospectImage)) {
-      return true;
-    } else {
-      return false;
-    }
   }
 
   private static boolean isCachedInfoNewer(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
