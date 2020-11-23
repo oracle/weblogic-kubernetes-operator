@@ -218,13 +218,6 @@ public class EventHelper {
       }
     };
 
-    public EventItem message(String message) {
-      this.message = message;
-      return this;
-    }
-
-    String message;
-
     public abstract String getReason();
 
     public abstract String getMessage(DomainPresenceInfo info, EventData eventData);
@@ -243,8 +236,8 @@ public class EventHelper {
   }
 
   public static class EventData {
-    public EventItem eventItem;
-    public String message;
+    private EventItem eventItem;
+    private String message;
 
     public EventData(EventItem eventItem) {
       this(eventItem, "");
@@ -253,6 +246,24 @@ public class EventHelper {
     public EventData(EventItem eventItem, String message) {
       this.eventItem = eventItem;
       this.message = message;
+    }
+
+    public EventData eventItem(EventItem item) {
+      this.eventItem = item;
+      return this;
+    }
+
+    public EventData message(String message) {
+      this.message = message;
+      return this;
+    }
+
+    public EventItem getItem() {
+      return eventItem;
+    }
+
+    public String getMessage() {
+      return message;
     }
 
     @Override
