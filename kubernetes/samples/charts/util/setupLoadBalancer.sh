@@ -72,8 +72,7 @@ function createVoyager() {
   count=0
   vpod=$(kubectl get po -n ${VSPACE} --no-headers | awk '{print $1}')
   while test $count -lt $max; do
-    status=$(kubectl get po -n ${VSPACE} --no-headers 2> /dev/null \
-                | awk '{print $2}')
+    status=$(kubectl get po -n ${VSPACE} --no-headers 2> /dev/null | awk '{print $2}')
     if [ ${status} == "1/1" ]; then
       echo "Voyager operator pod is running now."
       kubectl get pod/${vpod} -n ${VSPACE}
@@ -94,8 +93,7 @@ function createVoyager() {
   crd="ingresses.voyager.appscode.com"
   echo "Checking availability of Custom Resource Definition [${crd}]"
   while test $count -lt $max; do
-   obj=$(kubectl get crd ${crd} -n ${VSPACE} \
-          --no-headers 2>/dev/null | awk '{print $1}')
+   obj=$(kubectl get crd ${crd} -n ${VSPACE} --no-headers 2>/dev/null | awk '{print $1}')
    if [ "${obj}" == "${crd}" ];  then
       echo "Custom Resource Definition [${crd}] is available now."
       kubectl get crd ${crd} -n ${VSPACE} --no-headers
@@ -142,8 +140,7 @@ function createTraefik() {
   count=0
   tpod=$(kubectl get po -n ${TSPACE} --no-headers | awk '{print $1}')
   while test $count -lt $max; do
-    status=$(kubectl get po -n ${TSPACE} --no-headers 2> /dev/null \
-                | awk '{print $2}')
+    status=$(kubectl get po -n ${TSPACE} --no-headers 2> /dev/null | awk '{print $2}')
     if [ ${status} == "1/1" ]; then
       echo "Traefik operator pod is running now."
       kubectl get pod/${tpod} -n ${TSPACE}
@@ -258,12 +255,11 @@ function createNginx() {
   count=0
   tpod=$(kubectl get po -n ${NSPACE} --no-headers | awk '{print $1}')
   while test $count -lt $max; do
-    status=$(kubectl get po -n ${NSPACE} --no-headers 2> /dev/null \
-                | awk '{print $2}')
+    status=$(kubectl get po -n ${NSPACE} --no-headers 2> /dev/null | awk '{print $2}')
     if [ ${status} == "1/1" ]; then
       echo "Nginx operator pod is running now."
       kubectl get pod/${tpod} -n ${NSPACE}
-      kubectl exec -it $tpod -n nginx -- /nginx-ingress-controller --version``
+      kubectl exec -it $tpod -n ${NSPACE} -- /nginx-ingress-controller --version``
       exit 0;
     fi
     count=`expr $count + 1`
@@ -296,7 +292,7 @@ function main() {
     usage
   fi
   if [ "$2" != traefik ] && [ "$2" != voyager ] && [ "$2" != nginx ]; then
-    echo "[ERROR] The second parameter MUST be either traefik, voyager or inginx "
+    echo "[ERROR] The second parameter MUST be either traefik, voyager or nginx "
     usage
   fi
 
