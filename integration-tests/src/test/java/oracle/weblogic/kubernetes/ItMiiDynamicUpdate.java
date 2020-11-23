@@ -5,7 +5,10 @@ package oracle.weblogic.kubernetes;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -30,6 +33,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkWorkManagerRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
@@ -54,21 +58,14 @@ import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test class verifies the following scenarios
  *
- * <p>testServerLogsAreOnPV
- * domain logHome is on PV, check server logs are on PV
- *
- * <p>testMiiCheckSystemResources
- *  Check the System Resources in a pre-configured ConfigMap
- *
- * <p>testAddWorkManager
+ * <p>testMiiAddWorkManager
  *  Add a new work manager to a running WebLogic domain
  *
- * <p>testUpdateWorkManager
+ * <p>testMiiUpdateWorkManager
  *  Update dynamic work manager configurations in a running WebLogic domain.
  *
  */
@@ -212,30 +209,39 @@ class ItMiiDynamicUpdate {
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
 
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
     // get the creation time of the admin server pod before patching
     DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
+    }
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
+    }
 
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList("model.config.wm.yaml"), withStandardRetryPolicy);
 
-    assertTrue(assertDoesNotThrow(() ->
-            patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace),
-        "Patch domain with new IntrospectVersion threw ApiException"),
-        "Failed to patch domain with new IntrospectVersion");
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     verifyIntrospectorRuns();
 
     withStandardRetryPolicy.conditionEvaluationListener(
         condition ->
-            logger.info("Waiting for work manager configuration to be updated. Elapsed time{1}, remaining time {2}",
+            logger.info("Waiting for work manager configuration to be updated. "
+                + "Elapsed time {0}ms, remaining time {1}ms",
                 condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
                     () -> checkWorkManagerRuntime(domainNamespace, adminServerPodName,
                         MANAGED_SERVER_NAME_BASE + "1",
                         workManagerName, "200"));
     logger.info("Found new work manager configuration");
 
-    assertEquals(adminPodCreationTime, getPodCreationTime(domainNamespace, adminServerPodName),
-        "servers should not roll");
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
   }
 
   /**
@@ -255,38 +261,34 @@ class ItMiiDynamicUpdate {
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
 
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
     // get the creation time of the admin server pod before patching
     DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
+    }
 
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList("model.update.wm.yaml"),
         withStandardRetryPolicy);
 
-    assertTrue(assertDoesNotThrow(() ->
-            patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace),
-        "Patch domain with new IntrospectVersion threw ApiException"),
-        "Failed to patch domain with new IntrospectVersion");
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     verifyIntrospectorRuns();
 
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition ->
-            logger.info("Waiting for min threads constraint configuration to be updated. "
-                    + "Elapsed time{1}, remaining time {2}",
-                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
-                    () -> checkMinThreadsConstraintRuntime(2));
+    verifyMinThreadsConstraintRuntime(2);
 
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition ->
-            logger.info("Waiting for max threads constraint configuration to be updated. "
-                    + "Elapsed time{1}, remaining time {2}",
-                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
-                    () -> checkMaxThreadsConstraintRuntime(20));
+    verifyMaxThredsConstraintRuntime(20);
 
     logger.info("Found updated work manager configuration");
 
-    assertEquals(adminPodCreationTime, getPodCreationTime(domainNamespace, adminServerPodName),
-        "servers should not roll");
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
   }
 
   private void verifyIntrospectorRuns() {
@@ -295,6 +297,48 @@ class ItMiiDynamicUpdate {
     String introspectPodName = getIntrospectJobName(domainUid);
     checkPodExists(introspectPodName, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
+  }
+
+  private void verifyPodsNotRolled(Map<String, DateTime> podsCreationTimes) {
+    for (Map.Entry<String, DateTime> entry : podsCreationTimes.entrySet()) {
+      assertEquals(
+          entry.getValue(),
+          getPodCreationTime(domainNamespace, entry.getKey()),
+          "pod '" + entry.getKey() + "' should not roll");
+    }
+  }
+
+  private void verifyPodIntrospectVersionUpdated(Set<String> podNames, String expectedIntrospectVersion) {
+    for (String podName : podNames) {
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition ->
+                  logger.info(
+                      "Checking for updated introspectVersion for pod {0}. "
+                          + "Elapsed time {1}ms, remaining time {2}ms",
+                      podName, condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS()))
+          .until(
+              () ->
+                  podIntrospectVersionUpdated(podName, domainNamespace, expectedIntrospectVersion));
+    }
+  }
+
+  private void verifyMinThreadsConstraintRuntime(int count) {
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition ->
+            logger.info("Waiting for min threads constraint configuration to be updated. "
+                    + "Elapsed time {0}ms, remaining time {1}ms",
+                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
+                    () -> checkMinThreadsConstraintRuntime(count));
+  }
+
+  private void verifyMaxThredsConstraintRuntime(int count) {
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition ->
+            logger.info("Waiting for max threads constraint configuration to be updated. "
+                    + "Elapsed time {0}ms, remaining time {1}ms",
+                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
+                    () -> checkMaxThreadsConstraintRuntime(count));
   }
 
   /*
