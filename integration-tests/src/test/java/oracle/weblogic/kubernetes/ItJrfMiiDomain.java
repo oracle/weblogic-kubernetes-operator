@@ -238,8 +238,8 @@ public class ItJrfMiiDomain {
    */
   @Order(2)
   @Test
-  @DisplayName("Reuse same RCU to restart JRF domain")
-  public void testReuseRCUtoRestartDomain() {
+  @DisplayName("Reuse the same RCU schema to restart JRF domain")
+  public void testReuseRCUschemalToRestartDomain() {
 
     saveAndRestoreOpssWalletfileSecret(jrfDomainNamespace, domainUid, opsswalletfileSecretName);
     shutdownDomain();
