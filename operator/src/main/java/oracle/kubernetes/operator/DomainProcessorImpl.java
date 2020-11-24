@@ -659,7 +659,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
       String existingError = getExistingError();
 
-      if (hasNoDomain(cachedInfo)) {
+      if (isNewDomain(cachedInfo)) {
         return true;
       } else if (hasExceededRetryCount() && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
         String message = "exceeded configured domainPresenceFailureRetryMaxCount: "
@@ -678,8 +678,12 @@ public class DomainProcessorImpl implements DomainProcessor {
         return false;  // we have already cached this
       } else if (shouldRetry(cachedInfo)) {
         addDomainProcessingRetryEvent();
-        resetIntrospectorJobFailureCount();
-        logRetryCount(cachedInfo);
+        if (hasExceededRetryCount()) {
+          resetIntrospectorJobFailureCount();
+        }
+        if (getCurrentIntrospectFailureRetryCount() > 0) {
+          logRetryCount(cachedInfo);
+        }
 
         return true;
       }
@@ -688,12 +692,10 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private void resetIntrospectorJobFailureCount() {
-      if (hasExceededRetryCount()) {
-        Optional.ofNullable(liveInfo)
-            .map(DomainPresenceInfo::getDomain)
-            .map(Domain::getStatus)
-            .map(o -> o.resetIntrospectJobFailureCount());
-      }
+      Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(o -> o.resetIntrospectJobFailureCount());
     }
 
     private boolean hasExceededRetryCount() {
@@ -718,11 +720,9 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private void logRetryCount(DomainPresenceInfo cachedInfo) {
-      if (getCurrentIntrospectFailureRetryCount() > 0) {
-        LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED_RETRY_COUNT, cachedInfo.getDomain().getDomainUid(),
-            getCurrentIntrospectFailureRetryCount(),
-            DomainPresence.getDomainPresenceFailureRetryMaxCount());
-      }
+      LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED_RETRY_COUNT, cachedInfo.getDomain().getDomainUid(),
+          getCurrentIntrospectFailureRetryCount(),
+          DomainPresence.getDomainPresenceFailureRetryMaxCount());
     }
 
     private boolean shouldRetry(DomainPresenceInfo cachedInfo) {
@@ -733,12 +733,12 @@ public class DomainProcessorImpl implements DomainProcessor {
       return existingError != null && existingError.contains("FatalIntrospectorError");
     }
 
-    private boolean hasNoDomain(DomainPresenceInfo cachedInfo) {
+    private boolean isNewDomain(DomainPresenceInfo cachedInfo) {
       return cachedInfo == null || cachedInfo.getDomain() == null;
     }
 
     private void addDomainProcessingRetryEvent() {
-      if (isEventPresent()) {
+      if (isEventAbsent()) {
         eventData = new EventData(DOMAIN_PROCESSING_RETRYING);
       }
     }
@@ -756,7 +756,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       return false;
     }
 
-    private boolean isEventPresent() {
+    private boolean isEventAbsent() {
       return eventData == null;
     }
 
