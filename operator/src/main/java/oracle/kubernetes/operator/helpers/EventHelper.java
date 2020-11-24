@@ -227,6 +227,7 @@ public class EventHelper {
       public String getPattern() {
         return DOMAIN_PROCESSING_ABORTED_PATTERN;
       }
+      
       @Override
       public String getMessage(DomainPresenceInfo info, EventData eventData) {
         return String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, info.getDomainUid(),
