@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
@@ -588,7 +589,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected V1PodSpec createSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec = createPodSpec(tuningParameters)
         .readinessGates(getReadinessGates())
-        .initContainers(getServerSpec().getInitContainers());
+        .initContainers(getServerSpec().getInitContainers().stream()
+                .map(c -> c.env(getEnvironmentVariables(tuningParameters))).collect(Collectors.toList()));
 
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
