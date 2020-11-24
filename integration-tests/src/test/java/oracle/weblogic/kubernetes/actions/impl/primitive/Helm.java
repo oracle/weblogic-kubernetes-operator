@@ -51,6 +51,7 @@ public class Helm {
       if (helmParams.getRepoName() != null) {
         // call 'helm repo add <repo_name> <repo_url>' first to add the repo
         addRepo(helmParams.getRepoName(), helmParams.getRepoUrl());
+        updateRepo();
         chartRef = helmParams.getRepoName() + "/" + helmParams.getChartName();
       } else {
         chartRef = helmParams.getChartName() + " --repo " + helmParams.getRepoUrl();
@@ -172,6 +173,15 @@ public class Helm {
   public static boolean addRepo(String repoName, String repoUrl) {
     String addRepoCmd = "helm repo add " + repoName + " " + repoUrl;
     return exec(addRepoCmd);
+  }
+
+  /**
+   * Update a chart repository.
+   * @return true on success, false otherwise
+   */
+  public static boolean updateRepo() {
+    String updateRepoCmd = "helm repo update ";
+    return exec(updateRepoCmd);
   }
 
   /**

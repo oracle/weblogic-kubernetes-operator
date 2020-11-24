@@ -116,6 +116,7 @@ function initialize {
 
   validateKubernetesCliAvailable
   validateJqAvailable
+  validateYqAvailable
 
   # Validate that server name parameter is specified.
   if [ -z "${serverName}" ]; then
@@ -127,16 +128,19 @@ function initialize {
 
 initialize
 
+# Get the domain in json format
+domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
+if [ -z "${domainJson}" ]; then
+  printError "Unable to get domain resource for domain '${domainUid}' in namespace '${domainNamespace}'. Please make sure the 'domain_uid' and 'namespace' specified by the '-d' and '-n' arguments are correct. Exiting."
+  exit 1
+fi
+
 # Validate that specified server is either part of a cluster or is an independent managed server
 validateServerAndFindCluster "${domainUid}" "${domainNamespace}" "${serverName}" isValidServer clusterName
 if [ "${isValidServer}" != 'true' ]; then
   printError "Server ${serverName} is not part of any cluster and it's not an independent managed server. Please make sure that server name specified is correct."
   exit 1
 fi
-
-
-# Get the domain in json format
-domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json)
 
 getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
 if [ -n "${clusterName}" ]; then

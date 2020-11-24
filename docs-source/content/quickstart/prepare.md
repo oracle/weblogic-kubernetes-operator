@@ -6,10 +6,11 @@ weight: 5
 ---
 
 
-1.  Create a namespace that can host one or more domains:
+1.  Create and label a namespace that can host one or more domains:
 
     ```bash
     $ kubectl create namespace sample-domain1-ns
+    $ kubectl label ns sample-domain1-ns weblogic-operator=enabled
     ```
 
 1.  Configure Traefik to manage ingresses created in this namespace:

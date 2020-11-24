@@ -12,6 +12,13 @@ data:
   externalOperatorCert: {{ .externalOperatorCert | quote }}
     {{- end }}
   {{- end }}
+  {{- $configmap := (lookup "v1" "ConfigMap" .Release.Namespace "weblogic-operator-cm") }}
+  {{- if (and $configmap $configmap.data) }}
+  {{- $internalOperatorCert := index $configmap.data "internalOperatorCert" }}
+  {{- if $internalOperatorCert }}
+  internalOperatorCert: {{ $internalOperatorCert }}
+  {{- end }}
+  {{- end }}
   serviceaccount: {{ .serviceAccount | quote }}
   domainNamespaceSelectionStrategy: {{ (default "List" .domainNamespaceSelectionStrategy) | quote }}
   domainNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}

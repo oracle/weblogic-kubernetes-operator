@@ -135,9 +135,9 @@ public class Domain implements KubernetesObject {
   /**
    * check if the external service is configured for the admin server.
    *
+   * @param domainSpec Domain spec
    * @return true if the external service is configured
    */
-
   public static boolean isExternalServiceConfigured(DomainSpec domainSpec) {
     AdminServer adminServer = domainSpec.getAdminServer();
     AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
@@ -516,6 +516,15 @@ public class Domain implements KubernetesObject {
    */
   public String getDomainHome() {
     return Strings.emptyToNull(spec.getDomainHome());
+  }
+
+  /**
+   * Returns full path of the liveness probe custom script for the domain. May be null, but will not be an empty string.
+   *
+   * @return Full path of the liveness probe custom script
+   */
+  public String getLivenessProbeCustomScript() {
+    return Strings.emptyToNull(spec.getLivenessProbeCustomScript());
   }
 
   public boolean isShuttingDown() {
