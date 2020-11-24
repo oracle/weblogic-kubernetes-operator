@@ -50,6 +50,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CH
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_SUCCEEDED;
@@ -205,6 +206,17 @@ public class EventHelperTest {
   }
 
   @Test
+  public void whenMakeRightCalled_withFailedEventData_domainProcessingFailedEventCreatedWithExpectedAction() {
+    testSupport.runSteps(createFailedStep("FAILED", "Test this failure", new TerminalStep()));
+
+    assertThat("Event DOMAIN_PROCESSING_FAILED action",
+        containsEventWithAction(getEvents(),
+            DOMAIN_PROCESSING_FAILED_EVENT,
+            DOMAIN_PROCESSING_FAILED.getAction()),
+        is(Boolean.TRUE));
+  }
+
+  @Test
   public void whenMakeRightCalled_withRetryingEventData_domainProcessingRetryingEventCreated() {
     makeRightOperation.withEventData(new EventData(DOMAIN_PROCESSING_RETRYING)).execute();
 
@@ -342,6 +354,12 @@ public class EventHelperTest {
     return referenceMatches(Optional.ofNullable(getEventMatchesReason(events, reason))
         .map(V1Event::getInvolvedObject)
         .orElse(null), name, namespace);
+  }
+
+  private Object containsEventWithAction(List<V1Event> events, String reason, String action) {
+    return action.equals(Optional.ofNullable(getEventMatchesReason(events, reason))
+        .map(V1Event::getAction)
+        .orElse(null));
   }
 
   private Object referenceMatches(V1ObjectReference reference, String name, String namespace) {
