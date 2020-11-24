@@ -8,7 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Changes |
 | --- | --- | --- | --- |
-| November 24, 2020 | v3.0.4 | no | This release contains a back-ported fix from 3.1.0 for managed server pods that do not properly restart following a rolling activity. |
+| November 24, 2020 | v3.0.4 | no | This release contains a back-ported fix from 3.1.0 for Managed Server pods that do not properly restart following a rolling activity. |
 | November 4, 2020 | v3.0.3 | no | This release contains a fix for pods that are stuck in the Terminating state after an unexpected shut down of a worker node. |
 | September 15, 2020 | v3.0.2 | no | This release contains several fixes, including improvements to log rotation and a fix that avoids unnecessarily updating the domain status. |
 | August 13, 2020 | v3.0.1 | no | Fixed an issue preventing the REST interface from working after a Helm upgrade. Helm 3.1.3+ now required. |
@@ -33,7 +33,7 @@ draft: false
 
 #### Operator 3.0.4
 
-* The operator now correctly completes restarting managed server pods in order to complete a rolling activity. This fix is already present in 3.1.0.
+* The operator now correctly completes restarting Managed Server pods in order to complete a rolling activity. This fix is already present in 3.1.0.
 
 #### Operator 3.0.3
 
