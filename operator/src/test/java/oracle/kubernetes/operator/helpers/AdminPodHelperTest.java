@@ -112,11 +112,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Override
   protected void verifyPodReplaced() {
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new NullPodAwaiterStepFactory(terminalStep));
-
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getReplacedMessageKey()));
@@ -145,11 +140,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenDeleteReportsNotFound_replaceAdminPod() {
-    testSupport.addComponent(
-        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-        PodAwaiterStepFactory.class,
-        new NullPodAwaiterStepFactory(terminalStep));
-
     initializeExistingPod(getIncompatiblePod());
     testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, CallBuilder.NOT_FOUND);
 
