@@ -80,7 +80,7 @@ Here are the steps:
       weblogic.domainUID=sample-domain1
    ```
 
-    We deliberately specify an incorrect password and a low maximum pool capacity because we will demonstrate dynamically changing and correcting the data source attributes in the [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case without requiring rolling the domain.
+    We deliberately specify an incorrect password and a low maximum pool capacity because we will demonstrate dynamically correcting the data source attributes in the [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case without requiring rolling the domain.
 
     You name and label secrets using their associated domain UID for two reasons:
      - To make it obvious which secret belongs to which domains.
@@ -450,21 +450,21 @@ Here are the steps:
     ```
     <html><body><pre>
     *****************************************************************
-    
+
     Hello World! This is version 'v1' of the mii-sample JSP web-app.
-    
+
     Welcome to WebLogic Server 'managed-server1'!
-    
+
       domain UID  = 'sample-domain1'
       domain name = 'domain1'
-    
+
     Found 1 local cluster runtime:
       Cluster 'cluster-1'
-    
+
     Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
-    
+
     Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
-    
+
     Found 1 local data source:
       Datasource 'mynewdatasource':  State='Running', testPool='Failed'
         ---TestPool Failure Reason---
@@ -474,7 +474,7 @@ Here are the steps:
         ... invalid host/username/password
         ...
         -----------------------------
-    
+
     *****************************************************************
     </pre></body></html>
 
@@ -482,7 +482,7 @@ Here are the steps:
 
 A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes in [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}).
 
-If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide. 
+If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
 If you plan to run the [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}) or [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case, then leave your domain running.
 

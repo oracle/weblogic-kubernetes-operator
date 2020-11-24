@@ -21,7 +21,7 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
      - [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}): Dynamically adding a data source using a model ConfigMap and a domain restart (roll)
      - [Update 2]({{< relref "/samples/simple/domains/model-in-image/update2.md" >}}): Deploying an additional domain
      - [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}): Updating an application using an updated image and a domain restart (roll)
-     - [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}): Dynamically updating WebLogic configuration without restarting (rolling) servers
+     - [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}): Dynamically updating the WebLogic configuration without restarting (rolling) servers
      - [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}})
 
 
@@ -96,7 +96,7 @@ This sample demonstrates five Model in Image use cases:
   - A Domain:
     - Same as the Update 1 use case, except `spec.image` is `model-in-image:WLS-v2`
 
-- [Update 4]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}): Demonstrates dynamically updating the running Update 1 or Update 3 domain WebLogic configuration without requiring a domain restart (roll).
+- [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}): Demonstrates dynamically updating the running Update 1 or Update 3 WebLogic domain configuration without requiring a domain restart (roll).
 
    - Image `model-in-image:WLS-v1` or `model-in-image:WLS-v2`:
      - Same image as Update 1 or Update 3 use cases
@@ -104,7 +104,7 @@ This sample demonstrates five Model in Image use cases:
      - A WDT model for Work Manager Min and Max Threads Constraints, plus the same data source as the Update 1 use case
    - Kubernetes Secrets:
      - Same as the Update 1 and Update 3 use case, except:
-     - An updated data source secret with a new password and an increased maximum pool capacity.
+     - An updated data source secret with a new password and an increased maximum pool capacity
    - A Domain, same as Update 1 or Update 3 use case, plus:
      - `spec.configuration.model.onlineUpdate` set to `enabled: true`
 
@@ -118,7 +118,7 @@ Location | Description |
 `archives` | Source code location for WebLogic Deploy Tooling application ZIP archives. |
 `model-images` | Staging for each model image's WDT YAML files, WDT properties, and WDT archive ZIP files. The directories in `model images` are named for their respective images. |
 `model-configmaps/datasource` | Staging files for a model ConfigMap that configures a data source. |
-`model-configmaps/workmanager` | Staging files for a model ConfigMap that configures Work Manager Threads Constraints. |
+`model-configmaps/workmanager` | Staging files for a model ConfigMap that configures the Work Manager threads constraints. |
 `ingresses` | Ingress resources. |
 `utils/wl-pod-wait.sh` | Utility script for watching the pods in a domain reach their expected `restartVersion`, `introspectVersion`, image name, and ready state. |
 `utils/patch-introspect-version.sh` | Utility script for updating a running domain `spec.introspectVersion` field (which causes it to 're-instrospect' and 'roll' only if non-dynamic attributes are updated). |
