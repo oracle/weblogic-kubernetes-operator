@@ -61,7 +61,6 @@ import static org.hamcrest.Matchers.is;
 public class EventHelperTest {
   private static final String OPERATOR_POD_NAME = "my-weblogic-operator-1234";
   private static final String OP_NS = "operator-namespace";
-  private static final String POD_NAME_ENV = OPERATOR_POD_NAME_ENV;
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
