@@ -23,7 +23,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
@@ -55,6 +54,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -76,6 +76,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -223,7 +224,14 @@ public class ItMiiDomainModelInPV {
         "Copying file to pod failed");
 
     logger.info("Changing file ownership {0} to oracle:root in PV", modelMountPath);
-    execInPod(pvPod, null, true, "chown -R oracle:root " + modelMountPath);
+    String argCommand = "chown -R 1000:root " + modelMountPath;
+    if (OKE_CLUSTER) {
+      argCommand = "chown 1000:root " + modelMountPath
+          + "/. && find "
+          + modelMountPath
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:root";
+    }
+    execInPod(pvPod, null, true, argCommand);
   }
 
   /**
@@ -342,19 +350,7 @@ public class ItMiiDomainModelInPV {
     final String podName = "weblogic-pv-pod-" + namespace;
     V1Pod podBody = new V1Pod()
         .spec(new V1PodSpec()
-            .initContainers(Arrays.asList(new V1Container()
-                .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                .addCommandItem("/bin/sh")
-                .addArgsItem("-c")
-                .addArgsItem("chown -R 1000:0 " + modelMountPath)
-                .volumeMounts(Arrays.asList(
-                    new V1VolumeMount()
-                        .name(pvName)
-                        .mountPath(modelMountPath)))
-                .securityContext(new V1SecurityContext()
-                    .runAsGroup(0L)
-                    .runAsUser(0L))))
+            .initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, modelMountPath)))
             .containers(Arrays.asList(
                 new V1Container()
                     .name("weblogic-container")
@@ -378,6 +374,7 @@ public class ItMiiDomainModelInPV {
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
         .kind("Pod");
+
     V1Pod wlsPod = assertDoesNotThrow(() -> Kubernetes.createPod(namespace, podBody));
 
     withStandardRetryPolicy
