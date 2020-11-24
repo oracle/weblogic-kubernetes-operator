@@ -36,6 +36,7 @@ import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1NFSVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -80,6 +81,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 
+import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.readString;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -98,6 +100,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
+import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -106,6 +109,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
@@ -121,6 +125,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
@@ -138,6 +143,7 @@ import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -218,6 +224,7 @@ import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForSe
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -2660,6 +2667,50 @@ public class CommonTestUtils {
   }
 
   /**
+   * Create a persistent volume and persistent volume claim.
+   *
+   * @param v1pv V1PersistentVolume object to create the persistent volume
+   * @param v1pvc V1PersistentVolumeClaim object to create the persistent volume claim
+   * @param labelSelector String containing the labels the PV is decorated with
+   * @param namespace the namespace in which the persistence volume claim to be created
+   * @param storageClassName the name for storage class
+   * @param pvHostPath path to pv dir if hostpath is used, ignored if nfs
+   *
+   **/
+  public static void createPVPVCAndVerify(V1PersistentVolume v1pv,
+                                          V1PersistentVolumeClaim v1pvc,
+                                          String labelSelector,
+                                          String namespace, String storageClassName, Path pvHostPath) {
+    LoggingFacade logger = getLogger();
+    if (!OKE_CLUSTER) {
+      logger.info("Creating PV directory {0}", pvHostPath);
+      assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
+      assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
+    }
+    if (OKE_CLUSTER) {
+      v1pv.getSpec()
+          .storageClassName("oci-fss")
+          .nfs(new V1NFSVolumeSource()
+              .path(FSS_DIR)
+              .server(NFS_SERVER)
+              .readOnly(false));
+    } else {
+      v1pv.getSpec()
+          .storageClassName(storageClassName)
+          .hostPath(new V1HostPathVolumeSource()
+              .path(pvHostPath.toString()));
+    }
+    if (OKE_CLUSTER) {
+      v1pvc.getSpec()
+          .storageClassName("oci-fss");
+    } else {
+      v1pvc.getSpec()
+          .storageClassName(storageClassName);
+    }
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, namespace);
+  }
+
+  /**
    * Create ConfigMap from the specified files.
    * @param configMapName name of the ConfigMap to create
    * @param files files to be added in ConfigMap
@@ -2988,15 +3039,17 @@ public class CommonTestUtils {
         pvName, domainUid, className);
     Path pvHostPath = null;
     // when tests are running in local box the PV directories need to exist
-    try {
-      pvHostPath = Files.createDirectories(Paths.get(
-          PV_ROOT, className, pvName));
-      logger.info("Creating PV directory host path {0}", pvHostPath);
-      org.apache.commons.io.FileUtils.deleteDirectory(pvHostPath.toFile());
-      Files.createDirectories(pvHostPath);
-    } catch (IOException ioex) {
-      logger.severe(ioex.getMessage());
-      fail("Create persistent volume host path failed");
+    if (!OKE_CLUSTER) {
+      try {
+        pvHostPath = Files.createDirectories(Paths.get(
+            PV_ROOT, className, pvName));
+        logger.info("Creating PV directory host path {0}", pvHostPath);
+        deleteDirectory(pvHostPath.toFile());
+        createDirectories(pvHostPath);
+      } catch (IOException ioex) {
+        logger.severe(ioex.getMessage());
+        fail("Create persistent volume host path failed");
+      }
     }
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
@@ -3005,14 +3058,24 @@ public class CommonTestUtils {
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
-            .accessModes(Arrays.asList("ReadWriteMany"))
-            .storageClassName("weblogic-domain-storage-class")
-            .hostPath(new V1HostPathVolumeSource()
-                .path(pvHostPath.toString())))
+            .accessModes(Arrays.asList("ReadWriteMany")))
         .metadata(new V1ObjectMeta()
             .name(pvName)
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
+    if (OKE_CLUSTER) {
+      v1pv.getSpec()
+          .storageClassName("oci-fss")
+          .nfs(new V1NFSVolumeSource()
+          .path(FSS_DIR)
+          .server(NFS_SERVER)
+          .readOnly(false));
+    } else {
+      v1pv.getSpec()
+          .storageClassName("weblogic-domain-storage-class")
+          .hostPath(new V1HostPathVolumeSource()
+          .path(pvHostPath.toString()));
+    }
     boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Failed to create persistent volume");
     assertTrue(success, "PersistentVolume creation failed");
@@ -3035,7 +3098,6 @@ public class CommonTestUtils {
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
             .volumeName(pvName)
-            .storageClassName("weblogic-domain-storage-class")
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("5Gi"))))
         .metadata(new V1ObjectMeta()
@@ -3044,6 +3106,13 @@ public class CommonTestUtils {
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
 
+    if (OKE_CLUSTER) {
+      v1pvc.getSpec()
+          .storageClassName("oci-fss");
+    } else {
+      v1pvc.getSpec()
+          .storageClassName("weblogic-domain-storage-class");
+    }
     boolean success = assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
         "Failed to create persistent volume claim");
     assertTrue(success, "PersistentVolumeClaim creation failed");
@@ -3117,19 +3186,7 @@ public class CommonTestUtils {
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
-                    .initContainers(Arrays.asList(new V1Container()
-                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(image)
-                        .addCommandItem("/bin/sh")
-                        .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:0 /shared")
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name(pvName)
-                                .mountPath("/shared")))
-                        .securityContext(new V1SecurityContext()
-                            .runAsGroup(0L)
-                            .runAsUser(0L))))
+                    .initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/shared")))
                     .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
                         .name("create-weblogic-domain-onpv-container")
                         .image(image)
@@ -3290,11 +3347,43 @@ public class CommonTestUtils {
                                               .addMatchExpressionsItem(new V1LabelSelectorRequirement()
                                                   .key("weblogic.clusterName")
                                                   .operator("In")
+
                                                   .addValuesItem("$(CLUSTER_NAME)")))
                                       )))));
 
             }
         );
 
+  }
+
+  /**
+   * Create container to fix pvc owner for pod.
+   *
+   * @param pvName name of pv
+   * @param mountPath mounting path for pv
+   * @return container object with required ownership based on OKE_CLUSTER variable value.
+   */
+  public static synchronized V1Container createfixPVCOwnerContainer(String pvName, String mountPath) {
+    String argCommand = "chown -R 1000:0 " + mountPath;
+    if (OKE_CLUSTER) {
+      argCommand = "chown 1000:0 " + mountPath
+          + "/. && find "
+          + mountPath
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:0";
+    }
+    V1Container container = new V1Container()
+            .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .addCommandItem("/bin/sh")
+            .addArgsItem("-c")
+            .addArgsItem(argCommand)
+            .volumeMounts(Arrays.asList(
+                new V1VolumeMount()
+                    .name(pvName)
+                    .mountPath(mountPath)))
+            .securityContext(new V1SecurityContext()
+                .runAsGroup(0L)
+                .runAsUser(0L));
+    return container;
   }
 }
