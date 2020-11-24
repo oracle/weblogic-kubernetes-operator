@@ -253,11 +253,10 @@ public class TestActions {
    *
    * @param domainUid UID of the domain to patch with introspectVersion
    * @param namespace namespace in which the domain resource exists
-   * @return true if patching is successful, otherwise false
-   * @throws ApiException when patching fails
+   * @return introspectVersion new introspectVersion of the domain resource
    */
-  public static boolean patchDomainResourceWithNewIntrospectVersion(
-      String domainUid, String namespace) throws ApiException {
+  public static String patchDomainResourceWithNewIntrospectVersion(
+      String domainUid, String namespace) {
     return Domain.patchDomainResourceWithNewIntrospectVersion(domainUid, namespace);
   }
 

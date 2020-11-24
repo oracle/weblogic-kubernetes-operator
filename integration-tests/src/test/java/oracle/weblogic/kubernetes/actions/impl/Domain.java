@@ -182,23 +182,26 @@ public class Domain {
    *
    * @param domainUid UID of the domain to patch with introspectVersion
    * @param namespace namespace in which the domain resource exists
-   * @return true if patching is successful, otherwise false
-   * @throws ApiException when patching fails
+   * @return introspectVersion new introspectVersion of the domain resource
    */
-  public static boolean patchDomainResourceWithNewIntrospectVersion(
-      String domainUid, String namespace) throws ApiException {
+  public static String patchDomainResourceWithNewIntrospectVersion(
+      String domainUid, String namespace) {
     LoggingFacade logger = getLogger();
     StringBuffer patchStr;
-    oracle.weblogic.domain.Domain res = getDomainCustomResource(domainUid, namespace);
+    oracle.weblogic.domain.Domain res = assertDoesNotThrow(
+        () -> getDomainCustomResource(domainUid, namespace),
+        String.format("Failed to get the introspectVersion of %s in namespace %s", domainUid, namespace));
+    int introspectVersion = 2;
     // construct the patch string
     if (res.getSpec().getIntrospectVersion() == null) {
       patchStr = new StringBuffer("[{")
           .append("\"op\": \"add\", ")
           .append("\"path\": \"/spec/introspectVersion\", ")
-          .append("\"value\": \"2")
+          .append("\"value\": \"")
+          .append(introspectVersion)
           .append("\"}]");
     } else {
-      int introspectVersion = Integer.parseInt(res.getSpec().getIntrospectVersion()) + 1;
+      introspectVersion = Integer.parseInt(res.getSpec().getIntrospectVersion()) + 1;
       patchStr = new StringBuffer("[{")
           .append("\"op\": \"replace\", ")
           .append("\"path\": \"/spec/introspectVersion\", ")
@@ -213,8 +216,10 @@ public class Domain {
 
     // patch the domain
     V1Patch patch = new V1Patch(new String(patchStr));
-    return patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    boolean ivPatched = patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    assertTrue(ivPatched, "patchDomainCustomResource(introspectVersion) failed");
 
+    return String.valueOf(introspectVersion);
   }
 
   /**
