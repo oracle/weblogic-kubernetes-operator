@@ -265,6 +265,13 @@ public interface TestConstants {
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";
 
+  //OKE constants
+  public static final boolean OKE_CLUSTER = Boolean.parseBoolean(Optional.ofNullable(System.getenv("OKE_CLUSTER"))
+      .orElse("false"));
+  public static final String NFS_SERVER = Optional.ofNullable(System.getenv("NFS_SERVER"))
+      .orElse("");
+  public static final String FSS_DIR = Optional.ofNullable(System.getenv("FSS_DIR"))
+      .orElse("");
 
   // default name suffixes
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
