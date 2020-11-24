@@ -93,7 +93,7 @@ $ kubectl get crd domains.weblogic.oracle
 
 #### Domain resource attribute references
 
-The domain resource `metadata` section names the Domain and its namespace.  The name of the Domain is the default value for the `domain UID` which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name. The Domain name must be unique in the namespace and the domain UID should be unique across the cluster.  The domain UID, Domain resource name, and domain name (from the WebLogic domain configuration) may all be different.
+The domain resource `metadata` section names the Domain and its namespace.  The name of the Domain is the default value for the `domainUID` which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name. The Domain name must be unique in the namespace and the `domainUID` should be unique across the cluster.  The `domainUID`, Domain resource name, and domain name (from the WebLogic domain configuration) may all be different.
 
 The domain resource `spec` section describes the intended running state of the domain, including intended runtime state of WebLogic Server instances, number of cluster members started, and details about Kubernetes Pod or Service generation, such as resource constraints, scheduling requirements, or volume mounts.
 
