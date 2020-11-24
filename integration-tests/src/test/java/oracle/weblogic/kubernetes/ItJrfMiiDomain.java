@@ -182,7 +182,6 @@ public class ItJrfMiiDomain {
         String.format("createSecret failed for %s", encryptionSecretName));
 
     // create RCU access secret
-
     logger.info("Creating RCU access secret: {0}, with prefix: {1}, dbUrl: {2}, schemapassword: {3})",
         rcuaccessSecretName, RCUSCHEMAPREFIX, RCUSCHEMAPASSWORD, dbUrl);
     assertDoesNotThrow(() -> createRcuAccessSecret(
@@ -201,8 +200,6 @@ public class ItJrfMiiDomain {
         String.format("createSecret failed for %s", opsswalletpassSecretName));
 
     logger.info("Create an image with jrf model file");
-
-    // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
     jrfMiiImage = createMiiImageAndVerify(
         "jrf-mii-image",
