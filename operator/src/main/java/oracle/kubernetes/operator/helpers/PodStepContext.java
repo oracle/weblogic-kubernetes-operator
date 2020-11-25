@@ -893,7 +893,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Pod> callResponse) {
-      return doNext(DomainStatusUpdater.createFailedStep(callResponse, null), packet);
+      return doNext(DomainStatusUpdater.createFailedAndEventStep(callResponse, null), packet);
     }
   }
 

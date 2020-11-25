@@ -639,7 +639,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         if (shouldContinue()) {
           internalMakeRightDomainPresence();
         } else {
-          LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
+          logNotStartingDomain();
         }
       }
     }
@@ -676,8 +676,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         return ensureAbortedEventPresent(message);
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
-      } else if (shouldRetry(cachedInfo)) {
-        addDomainProcessingRetryEvent();
+      } else if (shouldRecheck(cachedInfo)) {
         if (hasExceededRetryCount()) {
           resetIntrospectorJobFailureCount();
         }
@@ -725,7 +724,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           DomainPresence.getDomainPresenceFailureRetryMaxCount());
     }
 
-    private boolean shouldRetry(DomainPresenceInfo cachedInfo) {
+    private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
       return explicitRecheck || isSpecChanged(liveInfo, cachedInfo);
     }
 
@@ -737,23 +736,40 @@ public class DomainProcessorImpl implements DomainProcessor {
       return cachedInfo == null || cachedInfo.getDomain() == null;
     }
 
-    private void addDomainProcessingRetryEvent() {
-      if (isEventAbsent()) {
-        eventData = new EventData(DOMAIN_PROCESSING_RETRYING);
-      }
+    private boolean hasAbortedEvent() {
+      return (DOMAIN_PROCESSING_ABORTED.equals(Optional.ofNullable(eventData).map(EventData::getItem).orElse(null)));
     }
 
-    private boolean hasAbortedEvent() {
-      return (DOMAIN_PROCESSING_ABORTED.equals(Optional.ofNullable(eventData).map(EventData::getItem)));
+    private boolean hasRetryingEvent() {
+      return (DOMAIN_PROCESSING_RETRYING.equals(Optional.ofNullable(eventData).map(EventData::getItem).orElse(null)));
     }
 
     private boolean ensureAbortedEventPresent(String message) {
+      if (hasRetryCountReset()) {
+        return false;
+      }
+
+      if (hasRetryingEvent()) {
+        eventData.eventItem(DOMAIN_PROCESSING_ABORTED).message(message);
+      }
+
       if (!hasAbortedEvent()) {
         eventData = new EventData(DOMAIN_PROCESSING_ABORTED, message);
-        LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
+      }
+
+      if (hasAbortedEvent()) {
+        logNotStartingDomain();
         return true;
       }
       return false;
+    }
+
+    private void logNotStartingDomain() {
+      LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
+    }
+
+    private boolean hasRetryCountReset() {
+      return liveInfo.getRetryCount() == 0;
     }
 
     private boolean isEventAbsent() {
@@ -782,25 +798,24 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private StepAndPacket createDomainPlanSteps(Packet packet) {
-      if (eventData != null && eventData.getItem() == DOMAIN_PROCESSING_ABORTED) {
-        return new StepAndPacket(
-            Step.chain(createEventStep(eventData), new TailStep()),
-            packet);
-      }
-      Step step = Step.chain(
-          createPopulatePacketServerMapsStep(),
-          createEventStep(EventItem.DOMAIN_PROCESSING_STARTED),
-          createSteps());
-      if (eventData != null) {
-        step = Step.chain(createEventStep(eventData), step);
-        clearProcessedEvent();
+      if (containsAbortedEventData()) {
+        return new StepAndPacket(Step.chain(createEventStep(eventData), new TailStep()), packet);
       }
 
-      return new StepAndPacket(step, packet);
+      return new StepAndPacket(
+          getEventStep(Step.chain(createPopulatePacketServerMapsStep(),  createSteps())), packet);
     }
 
-    private void clearProcessedEvent() {
-      eventData = null;
+    private Step getEventStep(Step next) {
+      if (eventData != null) {
+        Step step = Step.chain(createEventStep(eventData), next);
+        return step;
+      }
+      return next;
+    }
+
+    private boolean containsAbortedEventData() {
+      return eventData != null && eventData.getItem() == DOMAIN_PROCESSING_ABORTED;
     }
 
     private Domain getDomain() {
@@ -895,7 +910,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.startFiberIfLastFiberMatches(
                 domainUid,
                 Fiber.getCurrentIfSet(),
-                DomainStatusUpdater.createFailedStep(throwable, null),
+                DomainStatusUpdater.createFailedAndEventStep(throwable, null),
                 plan.packet,
                 new CompletionCallback() {
                   @Override
@@ -1167,7 +1182,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       switch (podStatus) {
         case PHASE_FAILED:
           delegate.runSteps(
-                  DomainStatusUpdater.createFailedStep(
+                  DomainStatusUpdater.createFailedAndEventStep(
                           info, pod.getStatus().getReason(), pod.getStatus().getMessage(), null));
           break;
         case WAITING_NON_NULL_MESSAGE:
@@ -1176,7 +1191,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                   .map(V1ContainerState::getWaiting)
                   .ifPresent(waiting ->
                     delegate.runSteps(
-                            DomainStatusUpdater.createFailedStep(
+                            DomainStatusUpdater.createFailedAndEventStep(
                                     info, waiting.getReason(), waiting.getMessage(), null)));
           break;
         case TERMINATED_ERROR_REASON:
@@ -1184,14 +1199,14 @@ public class DomainProcessorImpl implements DomainProcessor {
                   .map(V1ContainerStatus::getState)
                   .map(V1ContainerState::getTerminated)
                   .ifPresent(terminated -> delegate.runSteps(
-                          DomainStatusUpdater.createFailedStep(
+                          DomainStatusUpdater.createFailedAndEventStep(
                                   info, terminated.getReason(), terminated.getMessage(), null)));
           break;
         case UNSCHEDULABLE:
           Optional.ofNullable(getMatchingPodCondition())
                   .ifPresent(condition ->
                           delegate.runSteps(
-                                  DomainStatusUpdater.createFailedStep(
+                                  DomainStatusUpdater.createFailedAndEventStep(
                                           info, condition.getReason(), condition.getMessage(), null)));
           break;
         case SUCCESS:
@@ -1200,7 +1215,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                   .map(V1ContainerState::getWaiting)
                   .ifPresent(waiting ->
                           delegate.runSteps(
-                                  DomainStatusUpdater.createProgressingStep(
+                                  DomainStatusUpdater.createProgressingStartedEventStep(
                                           info, waiting.getReason(), false, null)));
           break;
         default:

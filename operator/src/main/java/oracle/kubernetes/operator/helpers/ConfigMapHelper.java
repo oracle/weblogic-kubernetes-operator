@@ -588,7 +588,7 @@ public class ConfigMapHelper {
     @Override
     public NextAction apply(Packet packet) {
       List<String> errors = getErrors(packet);
-      Step step = DomainStatusUpdater.createFailedStep(DomainStatusUpdater.BAD_TOPOLOGY, perLine(errors), null);
+      Step step = DomainStatusUpdater.createFailedAndEventStep(DomainStatusUpdater.BAD_TOPOLOGY, perLine(errors), null);
       return doNext(step, packet);
     }
 

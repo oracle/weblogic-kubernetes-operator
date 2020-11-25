@@ -20,6 +20,7 @@ import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -31,7 +32,7 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createFailedStep;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createFailedAndEventStep;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_PATTERN;
@@ -163,10 +164,11 @@ public class EventHelperTest {
 
   @Test
   public void whenCreateEventStepCalled_domainProcessingSucceededEventCreated() {
-    testSupport.runSteps(
+    testSupport.runSteps(Step.chain(
         new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_SUCCEEDED)
-        ));
+            new EventData(DOMAIN_PROCESSING_STARTED)),
+        new EventHelper().createEventStep(
+            new EventData(DOMAIN_PROCESSING_SUCCEEDED))));
 
     assertThat("Event DOMAIN_PROCESSING_SUCCEEDED",
         containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_SUCCEEDED_EVENT), is(Boolean.TRUE));
@@ -174,8 +176,12 @@ public class EventHelperTest {
 
   @Test
   public void whenCreateEventStepCalled_domainProcessingSucceededEventCreatedWithExpectedMessage() {
-    testSupport.runSteps(
-        new EventHelper().createEventStep(new EventData(DOMAIN_PROCESSING_SUCCEEDED)));
+    testSupport.runSteps(Step.chain(
+        new EventHelper().createEventStep(
+            new EventData(DOMAIN_PROCESSING_STARTED)),
+        new EventHelper().createEventStep(
+            new EventData(DOMAIN_PROCESSING_SUCCEEDED)))
+    );
 
     assertThat("Event DOMAIN_PROCESSING_SUCCEEDED message",
         containsEventWithMessage(getEvents(),
@@ -184,10 +190,34 @@ public class EventHelperTest {
         is(Boolean.TRUE));
   }
 
+  @Test
+  public void whenCreateEventStepCalledWithOutStartedEvent_domainProcessingSucceededEventNotCreated() {
+    testSupport.runSteps(
+        new EventHelper().createEventStep(
+            new EventData(DOMAIN_PROCESSING_SUCCEEDED)));
+
+    assertThat("Event DOMAIN_PROCESSING_SUCCEEDED",
+        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_SUCCEEDED_EVENT), is(Boolean.FALSE));
+  }
+
+  @Test
+  public void whenCreateEventStepCalledWithRetryingAndEvent_domainProcessingSucceededEventCreated() {
+    testSupport.runSteps(Step.chain(
+        new EventHelper().createEventStep(
+            new EventData(DOMAIN_PROCESSING_RETRYING)),
+        new EventHelper().createEventStep(
+            new EventData(DOMAIN_PROCESSING_STARTED)),
+        new EventHelper().createEventStep(
+            new EventData(DOMAIN_PROCESSING_SUCCEEDED)))
+    );
+
+    assertThat("Event DOMAIN_PROCESSING_SUCCEEDED",
+        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_SUCCEEDED_EVENT), is(Boolean.TRUE));
+  }
 
   @Test
   public void whenMakeRightCalled_withFailedEventData_domainProcessingFailedEventCreated() {
-    testSupport.runSteps(createFailedStep("FAILED", "Test failure", new TerminalStep()));
+    testSupport.runSteps(createFailedAndEventStep("FAILED", "Test failure", new TerminalStep()));
 
     assertThat("Event DOMAIN_PROCESSING_FAILED",
         containsEvent(getEvents(), DOMAIN_PROCESSING_FAILED_EVENT), is(Boolean.TRUE));
@@ -195,7 +225,7 @@ public class EventHelperTest {
 
   @Test
   public void whenMakeRightCalled_withFailedEventData_domainProcessingFailedEventCreatedWithExpectedMessage() {
-    testSupport.runSteps(createFailedStep("FAILED", "Test this failure", new TerminalStep()));
+    testSupport.runSteps(createFailedAndEventStep("FAILED", "Test this failure", new TerminalStep()));
 
     assertThat("Event DOMAIN_PROCESSING_FAILED message",
         containsEventWithMessage(getEvents(),
@@ -206,7 +236,7 @@ public class EventHelperTest {
 
   @Test
   public void whenMakeRightCalled_withFailedEventData_domainProcessingFailedEventCreatedWithExpectedAction() {
-    testSupport.runSteps(createFailedStep("FAILED", "Test this failure", new TerminalStep()));
+    testSupport.runSteps(createFailedAndEventStep("FAILED", "Test this failure", new TerminalStep()));
 
     assertThat("Event DOMAIN_PROCESSING_FAILED action",
         containsEventWithAction(getEvents(),

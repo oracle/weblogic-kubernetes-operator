@@ -43,4 +43,5 @@ public interface ProcessingConstants {
   /** Field selectors to filter the events the operator will watch. */
   String READINESS_PROBE_FAILURE_EVENT_FILTER =
       "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
+  String EVENT_TYPE = "eventType";
 }

@@ -429,7 +429,7 @@ public class DomainPresenceInfo {
     return retryCount.incrementAndGet();
   }
 
-  int getRetryCount() {
+  public int getRetryCount() {
     return retryCount.get();
   }
 

@@ -9,6 +9,7 @@ import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -39,6 +40,7 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_SUCCEE
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
 
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
@@ -56,7 +58,7 @@ public class EventHelper {
     return new CreateEventStep(eventData);
   }
 
-  private static class CreateEventStep extends Step {
+  public static class CreateEventStep extends Step {
     private final EventData eventData;
 
     CreateEventStep(EventData eventData) {
@@ -65,9 +67,14 @@ public class EventHelper {
 
     @Override
     public NextAction apply(Packet packet) {
+      if (eventData.eventItem == EventItem.DOMAIN_PROCESSING_SUCCEEDED
+          && DOMAIN_PROCESSING_STARTED != packet.get(ProcessingConstants.EVENT_TYPE)) {
+        return doNext(packet);
+      }
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
       V1Event event = createEvent(packet, eventData);
-
+      packet.put(ProcessingConstants.EVENT_TYPE,
+          eventData.eventItem == DOMAIN_PROCESSING_STARTED ? DOMAIN_PROCESSING_STARTED : EventItem.EMPTY);
       return doNext(new CallBuilder()
               .createEventAsync(
                   event.getMetadata().getNamespace(),
@@ -237,6 +244,17 @@ public class EventHelper {
       @Override
       public String getAction() {
         return DOMAIN_PROCESSING_ABORTED_ACTION;
+      }
+    },
+    EMPTY {
+      @Override
+      protected String getPattern() {
+        return null;
+      }
+
+      @Override
+      public String getReason() {
+        return "";
       }
     };
 

@@ -631,7 +631,7 @@ public class ServiceHelper {
       }
 
       private NextAction updateDomainStatus(Packet packet, CallResponse<V1Service> callResponse) {
-        return doNext(DomainStatusUpdater.createFailedStep(callResponse, null), packet);
+        return doNext(DomainStatusUpdater.createFailedAndEventStep(callResponse, null), packet);
       }
 
       @Override

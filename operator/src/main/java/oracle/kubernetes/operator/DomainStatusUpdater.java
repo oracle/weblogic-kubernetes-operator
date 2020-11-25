@@ -50,6 +50,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
+import org.apache.commons.lang.exception.ExceptionUtils;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -57,6 +58,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
@@ -101,7 +103,7 @@ public class DomainStatusUpdater {
    * @param next Next step
    * @return Step
    */
-  public static Step createProgressingStep(String reason, boolean isPreserveAvailable, Step next) {
+  public static Step createProgressingStartedEventStep(String reason, boolean isPreserveAvailable, Step next) {
     return new ProgressingStep(null, reason, isPreserveAvailable, next);
   }
 
@@ -114,9 +116,10 @@ public class DomainStatusUpdater {
    * @param next Next step
    * @return Step
    */
-  public static Step createProgressingStep(DomainPresenceInfo info, String reason, boolean isPreserveAvailable,
-                                           Step next) {
-    return new ProgressingStep(info, reason, isPreserveAvailable, next);
+  public static Step createProgressingStartedEventStep(
+      DomainPresenceInfo info, String reason, boolean isPreserveAvailable, Step next) {
+    return Step.chain(EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_STARTED)),
+        new ProgressingStep(info, reason, isPreserveAvailable, next));
   }
 
   /**
@@ -147,7 +150,7 @@ public class DomainStatusUpdater {
    * @param next Next step
    * @return Step
    */
-  public static Step createFailedStep(CallResponse<?> callResponse, Step next) {
+  public static Step createFailedAndEventStep(CallResponse<?> callResponse, Step next) {
     FailureStatusSource failure = UnrecoverableErrorBuilder.fromFailedCall(callResponse);
 
     LOGGER.severe(MessageKeys.CALL_FAILED, failure.getMessage(), failure.getReason());
@@ -156,7 +159,7 @@ public class DomainStatusUpdater {
       LOGGER.fine(MessageKeys.EXCEPTION, apiException);
     }
 
-    return createFailedStep(failure.getReason(), failure.getMessage(), next);
+    return createFailedAndEventStep(failure.getReason(), failure.getMessage(), next);
   }
 
   /**
@@ -166,9 +169,9 @@ public class DomainStatusUpdater {
    * @param next Next step
    * @return Step
    */
-  static Step createFailedStep(Throwable throwable, Step next) {
-    return throwable.getMessage() == null ? createFailedStep("Exception", throwable.toString(), next)
-        : createFailedStep("Exception", throwable.getMessage(), next);
+  static Step createFailedAndEventStep(Throwable throwable, Step next) {
+    return throwable.getMessage() == null ? createFailedAndEventStep("Exception", throwable.toString(), next)
+        : createFailedAndEventStep("Exception", throwable.getMessage(), next);
   }
 
   /**
@@ -179,10 +182,8 @@ public class DomainStatusUpdater {
    * @param next Next step
    * @return Step
    */
-  public static Step createFailedStep(String reason, String message, Step next) {
-    return Step.chain(
-        EventHelper.createEventStep(new EventData(EventHelper.EventItem.DOMAIN_PROCESSING_FAILED, message)),
-        new FailedStep(null, reason, message, next));
+  public static Step createFailedAndEventStep(String reason, String message, Step next) {
+    return createFailedAndEventStep(null, reason, message, next);
   }
 
   /**
@@ -194,8 +195,25 @@ public class DomainStatusUpdater {
    * @param next Next step
    * @return Step
    */
-  public static Step createFailedStep(DomainPresenceInfo info, String reason, String message, Step next) {
-    return new FailedStep(info, reason, message, next);
+  public static Step createFailedAndEventStep(DomainPresenceInfo info, String reason, String message, Step next) {
+    LOGGER.fine(ExceptionUtils.getStackTrace(
+        new Exception("XX create FAILED event: reason = " + reason + " message = " + message)));
+    return Step.chain(
+        new FailedStep(info, reason, message, null),
+        EventHelper.createEventStep(
+            new EventData(EventHelper.EventItem.DOMAIN_PROCESSING_FAILED, getEventMessage(reason, message))),
+        next);
+  }
+
+  private static String getEventMessage(String reason, String message) {
+    if (message != null && message.length() > 0) {
+      return message;
+    }
+
+    if (reason != null && reason.length() > 0) {
+      return reason;
+    }
+    return "Unknown condition";
   }
 
   abstract static class DomainStatusUpdaterStep extends Step {
