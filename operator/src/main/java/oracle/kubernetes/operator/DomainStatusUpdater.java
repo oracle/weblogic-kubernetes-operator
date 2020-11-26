@@ -50,7 +50,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
-import org.apache.commons.lang.exception.ExceptionUtils;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -103,7 +102,7 @@ public class DomainStatusUpdater {
    * @param next Next step
    * @return Step
    */
-  public static Step createProgressingStartedEventStep(String reason, boolean isPreserveAvailable, Step next) {
+  public static Step createProgressingStep(String reason, boolean isPreserveAvailable, Step next) {
     return new ProgressingStep(null, reason, isPreserveAvailable, next);
   }
 
@@ -116,10 +115,37 @@ public class DomainStatusUpdater {
    * @param next Next step
    * @return Step
    */
+  public static Step createProgressingStep(
+      DomainPresenceInfo info, String reason, boolean isPreserveAvailable, Step next) {
+    return new ProgressingStep(info, reason, isPreserveAvailable, next);
+  }
+
+  /**
+   * Asynchronous step to set Domain condition to Progressing and create DOMAIN_PROCESSING_STARTED event.
+   *
+   * @param reason Progressing reason
+   * @param isPreserveAvailable true, if existing Available=True condition should be preserved
+   * @param next Next step
+   * @return Step
+   */
+  public static Step createProgressingStartedEventStep(String reason, boolean isPreserveAvailable, Step next) {
+    return Step.chain(EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_STARTED)),
+        createProgressingStep(reason, isPreserveAvailable, next));
+  }
+
+  /**
+   * Asynchronous step to set Domain condition to Progressing and create DOMAIN_PROCESSING_STARTED event.
+   *
+   * @param info Domain presence info
+   * @param reason Progressing reason
+   * @param isPreserveAvailable true, if existing Available=True condition should be preserved
+   * @param next Next step
+   * @return Step
+   */
   public static Step createProgressingStartedEventStep(
       DomainPresenceInfo info, String reason, boolean isPreserveAvailable, Step next) {
     return Step.chain(EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_STARTED)),
-        new ProgressingStep(info, reason, isPreserveAvailable, next));
+        createProgressingStep(info, reason, isPreserveAvailable, next));
   }
 
   /**
@@ -144,7 +170,8 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain condition to Failed after an asynchronous call failure.
+   * Asynchronous step to set Domain condition to Failed after an asynchronous call failure and
+   * and to generate DOMAIN_PROCESSING_FAILED event.
    *
    * @param callResponse the response from an unrecoverable call
    * @param next Next step
@@ -163,7 +190,7 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain condition to Failed.
+   * Asynchronous step to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
    *
    * @param throwable Throwable that caused failure
    * @param next Next step
@@ -175,7 +202,7 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain condition to Failed.
+   * Asynchronous step to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
    *
    * @param reason the reason for the failure
    * @param message a fuller description of the problem
@@ -187,7 +214,7 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain condition to Failed.
+   * Asynchronous step to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
    *
    * @param info Domain presence info
    * @param reason the reason for the failure
@@ -196,8 +223,6 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createFailedAndEventStep(DomainPresenceInfo info, String reason, String message, Step next) {
-    LOGGER.fine(ExceptionUtils.getStackTrace(
-        new Exception("XX create FAILED event: reason = " + reason + " message = " + message)));
     return Step.chain(
         new FailedStep(info, reason, message, null),
         EventHelper.createEventStep(

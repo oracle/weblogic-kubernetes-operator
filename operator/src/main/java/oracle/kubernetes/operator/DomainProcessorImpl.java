@@ -1215,7 +1215,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                   .map(V1ContainerState::getWaiting)
                   .ifPresent(waiting ->
                           delegate.runSteps(
-                                  DomainStatusUpdater.createProgressingStartedEventStep(
+                                  DomainStatusUpdater.createProgressingStep(
                                           info, waiting.getReason(), false, null)));
           break;
         default:

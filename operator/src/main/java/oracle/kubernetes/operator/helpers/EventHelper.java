@@ -41,6 +41,7 @@ import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_SUCCEEDED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
 
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
@@ -67,14 +68,20 @@ public class EventHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (eventData.eventItem == EventItem.DOMAIN_PROCESSING_SUCCEEDED
-          && DOMAIN_PROCESSING_STARTED != packet.get(ProcessingConstants.EVENT_TYPE)) {
+      if (hasProcessingNotStarted(packet)) {
         return doNext(packet);
       }
+
+      if (isDuplicatedStartedEvent(packet)) {
+        return doNext(packet);
+      }
+
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
-      V1Event event = createEvent(packet, eventData);
+
       packet.put(ProcessingConstants.EVENT_TYPE,
           eventData.eventItem == DOMAIN_PROCESSING_STARTED ? DOMAIN_PROCESSING_STARTED : EventItem.EMPTY);
+
+      V1Event event = createEvent(packet, eventData);
       return doNext(new CallBuilder()
               .createEventAsync(
                   event.getMetadata().getNamespace(),
@@ -83,6 +90,17 @@ public class EventHelper {
           packet);
 
     }
+
+    private boolean isDuplicatedStartedEvent(Packet packet) {
+      return eventData.eventItem == EventItem.DOMAIN_PROCESSING_STARTED
+          && packet.get(ProcessingConstants.EVENT_TYPE) == EventItem.DOMAIN_PROCESSING_STARTED;
+    }
+
+    private boolean hasProcessingNotStarted(Packet packet) {
+      return eventData.eventItem == DOMAIN_PROCESSING_SUCCEEDED
+          && packet.get(ProcessingConstants.EVENT_TYPE) != DOMAIN_PROCESSING_STARTED;
+    }
+
   }
 
   private static V1Event createEvent(

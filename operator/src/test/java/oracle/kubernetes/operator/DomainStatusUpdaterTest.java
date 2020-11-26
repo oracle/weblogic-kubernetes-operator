@@ -415,7 +415,7 @@ public class DomainStatusUpdaterTest {
     info.addValidationWarning(validationWarning);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
-    testSupport.runSteps(DomainStatusUpdater.createProgressingStartedEventStep(reason, true, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, true, endStep));
 
     assertThat(getRecordedDomain().getStatus().getMessage(), containsString(validationWarning));
   }
@@ -720,7 +720,7 @@ public class DomainStatusUpdaterTest {
 
     testSupport.runSteps(
           Step.chain(
-                DomainStatusUpdater.createProgressingStartedEventStep("Modifying", false, null),
+                DomainStatusUpdater.createProgressingStep("Modifying", false, null),
                 DomainStatusUpdater.createAvailableStep("Test complete", null))
     );
 
@@ -804,7 +804,7 @@ public class DomainStatusUpdaterTest {
   public void whenDomainHasNoStatus_progressingStepUpdatesItWithProgressingTrueAndReason() {
     domain.setStatus(null);
 
-    testSupport.runSteps(DomainStatusUpdater.createProgressingStartedEventStep(reason, false, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, false, endStep));
 
     assertThat(getRecordedDomain(), hasCondition(Progressing).withStatus("True").withReason(reason));
   }
@@ -812,7 +812,7 @@ public class DomainStatusUpdaterTest {
   @Test
   public void
       whenDomainHasNoProgressingCondition_progressingStepUpdatesItWithProgressingTrueAndReason() {
-    testSupport.runSteps(DomainStatusUpdater.createProgressingStartedEventStep(reason, false, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, false, endStep));
 
     assertThat(getRecordedDomain(), hasCondition(Progressing).withStatus("True").withReason(reason));
   }
@@ -822,7 +822,7 @@ public class DomainStatusUpdaterTest {
       whenDomainHasProgressingNonTrueCondition_progressingStepUpdatesItWithProgressingTrueAndReason() {
     domain.getStatus().addCondition(new DomainCondition(Progressing).withStatus("?"));
 
-    testSupport.runSteps(DomainStatusUpdater.createProgressingStartedEventStep(reason, false, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, false, endStep));
 
     assertThat(getRecordedDomain(), hasCondition(Progressing).withStatus("True").withReason(reason));
     assertThat(getRecordedDomain().getStatus().getConditions(), hasSize(1));
@@ -837,7 +837,7 @@ public class DomainStatusUpdaterTest {
                 .withStatus("True")
                 .withReason(generator.getUniqueString()));
 
-    testSupport.runSteps(DomainStatusUpdater.createProgressingStartedEventStep(reason, false, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, false, endStep));
 
     assertThat(getRecordedDomain(), hasCondition(Progressing).withStatus("True").withReason(reason));
     assertThat(getRecordedDomain().getStatus().getConditions(), hasSize(1));
@@ -850,7 +850,7 @@ public class DomainStatusUpdaterTest {
         .getStatus()
         .addCondition(new DomainCondition(Progressing).withStatus("True").withReason(reason));
 
-    testSupport.runSteps(DomainStatusUpdater.createProgressingStartedEventStep(reason, false, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, false, endStep));
 
     assertThat(testSupport.getNumCalls(), equalTo(0));
   }
@@ -859,7 +859,7 @@ public class DomainStatusUpdaterTest {
   public void whenDomainHasFailedCondition_progressingStepRemovesIt() {
     domain.getStatus().addCondition(new DomainCondition(Failed));
 
-    testSupport.runSteps(DomainStatusUpdater.createProgressingStartedEventStep(reason, false, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, false, endStep));
 
     assertThat(getRecordedDomain(), not(hasCondition(Failed)));
   }
@@ -868,7 +868,7 @@ public class DomainStatusUpdaterTest {
   public void whenDomainHasAvailableCondition_progressingStepRemovesIt() {
     domain.getStatus().addCondition(new DomainCondition(Available));
 
-    testSupport.runSteps(DomainStatusUpdater.createProgressingStartedEventStep(reason, false, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, false, endStep));
 
     assertThat(getRecordedDomain(), not(hasCondition(Available)));
   }
@@ -877,7 +877,7 @@ public class DomainStatusUpdaterTest {
   public void whenDomainHasAvailableCondition_progressingStepWithPreserveAvailableIgnoresIt() {
     domain.getStatus().addCondition(new DomainCondition(Available));
 
-    testSupport.runSteps(DomainStatusUpdater.createProgressingStartedEventStep(reason, true, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, true, endStep));
 
     assertThat(getRecordedDomain(), hasCondition(Available));
   }
