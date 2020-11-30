@@ -221,7 +221,9 @@ function prepareMIIServer() {
         # expand the archive domain libraries to the domain lib
         cd ${DOMAIN_HOME}/lib || return 1
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
-
+        # Flatten the jars to the domain lib root
+        mv wlsdeploy/domainLibraries/* .
+        rm -fr wlsdeploy/
         if [ $? -ne 0 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domain libs ${IMG_ARCHIVES_ROOTDIR}/${file}"
           return 1
