@@ -36,7 +36,6 @@ import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -52,7 +51,6 @@ import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -145,6 +143,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVer
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyApache;
@@ -167,6 +166,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+//import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test operator manages multiple domains.
@@ -942,19 +942,12 @@ public class ItTwoDomainsLoadBalancers {
       // create persistent volume and persistent volume claims
       Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume");
 
-      logger.info("Creating PV directory {0}", pvHostPath);
-      assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
-      assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
-
       V1PersistentVolume v1pv = new V1PersistentVolume()
           .spec(new V1PersistentVolumeSpec()
               .addAccessModesItem("ReadWriteMany")
-              .storageClassName(domainUid + "-weblogic-domain-storage-class")
               .volumeMode("Filesystem")
               .putCapacityItem("storage", Quantity.fromString("2Gi"))
-              .persistentVolumeReclaimPolicy("Retain")
-              .hostPath(new V1HostPathVolumeSource()
-                  .path(pvHostPath.toString())))
+              .persistentVolumeReclaimPolicy("Retain"))
           .metadata(new V1ObjectMetaBuilder()
               .withName(pvName)
               .build()
@@ -974,7 +967,8 @@ public class ItTwoDomainsLoadBalancers {
               .putLabelsItem("weblogic.domainUid", domainUid));
 
       String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
-      createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace);
+      createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace,
+          domainUid + "-weblogic-domain-storage-class", pvHostPath);
 
       // run create a domain on PV job using WLST
       runCreateDomainOnPVJobUsingWlst(pvName, pvcName, domainUid, domainNamespace,
@@ -1064,19 +1058,7 @@ public class ItTwoDomainsLoadBalancers {
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
-                    .initContainers(Collections.singletonList(new V1Container()
-                        .name("fix-pvc-owner")
-                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .addCommandItem("/bin/sh")
-                        .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:0 /shared")
-                        .volumeMounts(Collections.singletonList(
-                            new V1VolumeMount()
-                                .name(pvName)
-                                .mountPath("/shared")))
-                        .securityContext(new V1SecurityContext()
-                            .runAsGroup(0L)
-                            .runAsUser(0L))))
+                    .initContainers(Collections.singletonList(createfixPVCOwnerContainer(pvName, "/shared")))
                     .containers(Collections.singletonList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
@@ -1395,23 +1377,14 @@ public class ItTwoDomainsLoadBalancers {
 
     // create WebLogic credentials secret
     createSecretWithUsernamePassword(wlSecretName, defaultNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create persistent volume
-    Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), "default-sharing-persistentVolume");
-
-    logger.info("Creating PV directory {0}", pvHostPath);
-    assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
-    assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
+    Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), "default-sharing-persistentVolume");;
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName("default-sharing-weblogic-domain-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("6Gi"))
-            .persistentVolumeReclaimPolicy("Retain")
-            .hostPath(new V1HostPathVolumeSource()
-                .path(pvHostPath.toString())))
+            .persistentVolumeReclaimPolicy("Retain"))
         .metadata(new V1ObjectMetaBuilder()
             .withName(defaultSharingPvName)
             .build()
@@ -1420,7 +1393,6 @@ public class ItTwoDomainsLoadBalancers {
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName("default-sharing-weblogic-domain-storage-class")
             .volumeName(defaultSharingPvName)
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("6Gi"))))
@@ -1432,7 +1404,8 @@ public class ItTwoDomainsLoadBalancers {
 
     // create pv and pvc
     String labelSelector = String.format("sharing-pv in (%s)", "true");
-    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, defaultNamespace);
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector,
+        defaultNamespace, "default-sharing-weblogic-domain-storage-class", pvHostPath);
 
     for (int i = 1; i <= numberOfDomains; i++) {
       String domainUid = domainUids.get(i - 1);
@@ -2198,11 +2171,8 @@ public class ItTwoDomainsLoadBalancers {
    * @param apacheNamespace namespace in which to create PVC
    */
   private void createPVPVCForApacheCustomConfiguration(String apacheNamespace) {
-    Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), "apache-persistentVolume");
 
-    logger.info("Creating PV directory {0}", pvHostPath);
-    assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
-    assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
+    Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), "apache-persistentVolume");
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
@@ -2210,9 +2180,7 @@ public class ItTwoDomainsLoadBalancers {
             .storageClassName("apache-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("1Gi"))
-            .persistentVolumeReclaimPolicy("Retain")
-            .hostPath(new V1HostPathVolumeSource()
-                .path(pvHostPath.toString())))
+            .persistentVolumeReclaimPolicy("Retain"))
         .metadata(new V1ObjectMetaBuilder()
             .withName(apachePvName)
             .build()
@@ -2232,7 +2200,8 @@ public class ItTwoDomainsLoadBalancers {
             .putLabelsItem("apacheLabel", "apache-custom-config"));
 
     String labelSelector = String.format("apacheLabel in (%s)", "apache-custom-config");
-    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, apacheNamespace);
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, apacheNamespace,
+        "apache-storage-class", pvHostPath);
   }
 
   private void verifyHeadersInAdminServerLog(String podName, String namespace) {
