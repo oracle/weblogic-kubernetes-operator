@@ -57,7 +57,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
@@ -129,7 +129,7 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createProgressingStartedEventStep(String reason, boolean isPreserveAvailable, Step next) {
-    return Step.chain(EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_STARTED)),
+    return Step.chain(EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createProgressingStep(reason, isPreserveAvailable, next));
   }
 
@@ -144,7 +144,7 @@ public class DomainStatusUpdater {
    */
   public static Step createProgressingStartedEventStep(
       DomainPresenceInfo info, String reason, boolean isPreserveAvailable, Step next) {
-    return Step.chain(EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_STARTED)),
+    return Step.chain(EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createProgressingStep(info, reason, isPreserveAvailable, next));
   }
 

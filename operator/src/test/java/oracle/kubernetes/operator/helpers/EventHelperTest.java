@@ -37,12 +37,12 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_SUCCEEDED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
@@ -51,10 +51,10 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CH
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_SUCCEEDED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -100,7 +100,7 @@ public class EventHelperTest {
     makeRightOperation.execute();
 
     assertThat("Event DOMAIN_PROCESSING_STARTED",
-        containsEvent(getEvents(), DOMAIN_PROCESSING_STARTED_EVENT), is(Boolean.TRUE));
+        containsEvent(getEvents(), DOMAIN_PROCESSING_STARTING_EVENT), is(Boolean.TRUE));
   }
 
   @Test
@@ -109,7 +109,7 @@ public class EventHelperTest {
 
     assertThat("Event DOMAIN_PROCESSING_STARTED message",
         containsEventWithNamespace(getEvents(),
-            DOMAIN_PROCESSING_STARTED_EVENT),
+            DOMAIN_PROCESSING_STARTING_EVENT),
         is(Boolean.TRUE));
   }
 
@@ -119,8 +119,8 @@ public class EventHelperTest {
 
     assertThat("Event DOMAIN_PROCESSING_STARTED message",
         containsEventWithMessage(getEvents(),
-            DOMAIN_PROCESSING_STARTED_EVENT,
-            String.format(DOMAIN_PROCESSING_STARTED_PATTERN, UID)),
+            DOMAIN_PROCESSING_STARTING_EVENT,
+            String.format(DOMAIN_PROCESSING_STARTING_PATTERN, UID)),
             is(Boolean.TRUE));
   }
 
@@ -130,7 +130,7 @@ public class EventHelperTest {
     makeRightOperation.execute();
 
     assertThat("Event involved object",
-        containsEventWithInvolvedObject(getEvents(), DOMAIN_PROCESSING_STARTED_EVENT, UID, NS),
+        containsEventWithInvolvedObject(getEvents(), DOMAIN_PROCESSING_STARTING_EVENT, UID, NS),
         is(Boolean.TRUE));
   }
 
@@ -140,7 +140,7 @@ public class EventHelperTest {
     makeRightOperation.execute();
 
     assertThat("Event reporting component",
-        containsEventWithComponent(getEvents(), DOMAIN_PROCESSING_STARTED_EVENT),
+        containsEventWithComponent(getEvents(), DOMAIN_PROCESSING_STARTING_EVENT),
         is(Boolean.TRUE));
   }
 
@@ -151,14 +151,14 @@ public class EventHelperTest {
 
     testSupport.runSteps(
         new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_STARTED)
+            new EventData(DOMAIN_PROCESSING_STARTING)
         ));
 
     assertThat("Operator namespace ",
         namespaceFromHelm, equalTo(OP_NS));
 
     assertThat("Event reporting instance",
-        containsEventWithInstance(getEvents(), DOMAIN_PROCESSING_STARTED_EVENT, OPERATOR_POD_NAME),
+        containsEventWithInstance(getEvents(), DOMAIN_PROCESSING_STARTING_EVENT, OPERATOR_POD_NAME),
         is(Boolean.TRUE));
   }
 
@@ -166,27 +166,27 @@ public class EventHelperTest {
   public void whenCreateEventStepCalled_domainProcessingSucceededEventCreated() {
     testSupport.runSteps(Step.chain(
         new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_STARTED)),
+            new EventData(DOMAIN_PROCESSING_STARTING)),
         new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_SUCCEEDED))));
+            new EventData(DOMAIN_PROCESSING_COMPLETED))));
 
     assertThat("Event DOMAIN_PROCESSING_SUCCEEDED",
-        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_SUCCEEDED_EVENT), is(Boolean.TRUE));
+        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(Boolean.TRUE));
   }
 
   @Test
   public void whenCreateEventStepCalled_domainProcessingSucceededEventCreatedWithExpectedMessage() {
     testSupport.runSteps(Step.chain(
         new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_STARTED)),
+            new EventData(DOMAIN_PROCESSING_STARTING)),
         new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_SUCCEEDED)))
+            new EventData(DOMAIN_PROCESSING_COMPLETED)))
     );
 
     assertThat("Event DOMAIN_PROCESSING_SUCCEEDED message",
         containsEventWithMessage(getEvents(),
-            EventConstants.DOMAIN_PROCESSING_SUCCEEDED_EVENT,
-            String.format(DOMAIN_PROCESSING_SUCCEEDED_PATTERN, UID)),
+            EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT,
+            String.format(DOMAIN_PROCESSING_COMPLETED_PATTERN, UID)),
         is(Boolean.TRUE));
   }
 
@@ -194,10 +194,10 @@ public class EventHelperTest {
   public void whenCreateEventStepCalledWithOutStartedEvent_domainProcessingSucceededEventNotCreated() {
     testSupport.runSteps(
         new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_SUCCEEDED)));
+            new EventData(DOMAIN_PROCESSING_COMPLETED)));
 
     assertThat("Event DOMAIN_PROCESSING_SUCCEEDED",
-        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_SUCCEEDED_EVENT), is(Boolean.FALSE));
+        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(Boolean.FALSE));
   }
 
   @Test
@@ -206,13 +206,13 @@ public class EventHelperTest {
         new EventHelper().createEventStep(
             new EventData(DOMAIN_PROCESSING_RETRYING)),
         new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_STARTED)),
+            new EventData(DOMAIN_PROCESSING_STARTING)),
         new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_SUCCEEDED)))
+            new EventData(DOMAIN_PROCESSING_COMPLETED)))
     );
 
     assertThat("Event DOMAIN_PROCESSING_SUCCEEDED",
-        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_SUCCEEDED_EVENT), is(Boolean.TRUE));
+        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(Boolean.TRUE));
   }
 
   @Test

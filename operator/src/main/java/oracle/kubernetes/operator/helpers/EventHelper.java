@@ -28,20 +28,20 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_ACTION;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_ACTION;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_SUCCEEDED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_SUCCEEDED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_SUCCEEDED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
 
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
@@ -79,7 +79,7 @@ public class EventHelper {
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
 
       packet.put(ProcessingConstants.EVENT_TYPE,
-          eventData.eventItem == DOMAIN_PROCESSING_STARTED ? DOMAIN_PROCESSING_STARTED : EventItem.EMPTY);
+          eventData.eventItem == DOMAIN_PROCESSING_STARTING ? DOMAIN_PROCESSING_STARTING : EventItem.EMPTY);
 
       V1Event event = createEvent(packet, eventData);
       return doNext(new CallBuilder()
@@ -92,13 +92,13 @@ public class EventHelper {
     }
 
     private boolean isDuplicatedStartedEvent(Packet packet) {
-      return eventData.eventItem == EventItem.DOMAIN_PROCESSING_STARTED
-          && packet.get(ProcessingConstants.EVENT_TYPE) == EventItem.DOMAIN_PROCESSING_STARTED;
+      return eventData.eventItem == EventItem.DOMAIN_PROCESSING_STARTING
+          && packet.get(ProcessingConstants.EVENT_TYPE) == EventItem.DOMAIN_PROCESSING_STARTING;
     }
 
     private boolean hasProcessingNotStarted(Packet packet) {
-      return eventData.eventItem == DOMAIN_PROCESSING_SUCCEEDED
-          && packet.get(ProcessingConstants.EVENT_TYPE) != DOMAIN_PROCESSING_STARTED;
+      return eventData.eventItem == DOMAIN_PROCESSING_COMPLETED
+          && packet.get(ProcessingConstants.EVENT_TYPE) != DOMAIN_PROCESSING_STARTING;
     }
 
   }
@@ -177,26 +177,26 @@ public class EventHelper {
       }
 
     },
-    DOMAIN_PROCESSING_STARTED {
+    DOMAIN_PROCESSING_STARTING {
       @Override
       public String getReason() {
-        return DOMAIN_PROCESSING_STARTED_EVENT;
+        return DOMAIN_PROCESSING_STARTING_EVENT;
       }
 
       @Override
       public String getPattern() {
-        return DOMAIN_PROCESSING_STARTED_PATTERN;
+        return DOMAIN_PROCESSING_STARTING_PATTERN;
       }
     },
-    DOMAIN_PROCESSING_SUCCEEDED {
+    DOMAIN_PROCESSING_COMPLETED {
       @Override
       public String getReason() {
-        return DOMAIN_PROCESSING_SUCCEEDED_EVENT;
+        return DOMAIN_PROCESSING_COMPLETED_EVENT;
       }
 
       @Override
       public String getPattern() {
-        return DOMAIN_PROCESSING_SUCCEEDED_PATTERN;
+        return DOMAIN_PROCESSING_COMPLETED_PATTERN;
       }
     },
     DOMAIN_PROCESSING_FAILED {

@@ -980,7 +980,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     Step managedServerStrategy = Step.chain(
         bringManagedServersUp(null),
         DomainStatusUpdater.createEndProgressingStep(null),
-        createEventStep(EventItem.DOMAIN_PROCESSING_SUCCEEDED),
+        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED),
         new TailStep());
 
     Step domainUpStrategy =
@@ -1020,7 +1020,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         new DownHeadStep(info, ns),
         new DeleteDomainStep(info, ns, domainUid),
         new UnregisterStep(info),
-        createEventStep(EventItem.DOMAIN_PROCESSING_SUCCEEDED));
+        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED));
   }
 
   private static class UnregisterStep extends Step {
