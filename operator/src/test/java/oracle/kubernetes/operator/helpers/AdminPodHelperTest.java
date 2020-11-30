@@ -30,6 +30,8 @@ import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.Matchers.hasInitContainer;
+import static oracle.kubernetes.operator.helpers.Matchers.hasInitContainerWithEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
@@ -509,14 +511,33 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   public void whenDomainHasInitContainers_createAdminPodWithThem() {
     getConfigurator()
         .withInitContainer(
-            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
-        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+            createInitContainer("container1", "busybox", ADMIN_SERVER, "sh", "-c", "echo admin server && sleep 120"))
+        .withInitContainer(createInitContainer("container2", "oraclelinux", ADMIN_SERVER, "ls /oracle"));
 
     assertThat(
         getCreatedPodSpecInitContainers(),
         allOf(
-            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
-            hasContainer("container2", "oraclelinux", "ls /oracle")));
+            hasInitContainer("container1", "busybox", ADMIN_SERVER, "sh", "-c", "echo admin server && sleep 120"),
+            hasInitContainer("container2", "oraclelinux", ADMIN_SERVER, "ls /oracle")));
+  }
+
+  @Test
+  public void whenDomainWithEnvVarHasInitContainers_verifyAdminPodInitContainersHaveEnvVar() {
+    getConfigurator().withEnvironmentVariable("item1", "value1")
+            .withInitContainer(
+                    createInitContainer("container1", "busybox", ADMIN_SERVER, "sh",
+                            "-c", "echo admin server && sleep 120"))
+            .withInitContainer(createInitContainer("container2", "oraclelinux", ADMIN_SERVER,
+                    "ls /oracle"));
+
+    assertThat(
+            getCreatedPodSpecInitContainers(),
+            allOf(
+                    hasInitContainerWithEnvVar("container1", "busybox", ADMIN_SERVER,
+                            new V1EnvVar().name("item1").value("value1"),
+                            "sh", "-c", "echo admin server && sleep 120"),
+                    hasInitContainerWithEnvVar("container2", "oraclelinux", ADMIN_SERVER,
+                            new V1EnvVar().name("item1").value("value1"),  "ls /oracle")));
   }
 
   @Test
@@ -524,30 +545,50 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator()
         .configureAdminServer()
         .withInitContainer(
-            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
-        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+            createInitContainer("container1", "busybox", ADMIN_SERVER, "sh", "-c", "echo admin server && sleep 120"))
+        .withInitContainer(createInitContainer("container2", "oraclelinux", ADMIN_SERVER, "ls /oracle"));
 
     assertThat(
         getCreatedPodSpecInitContainers(),
         allOf(
-            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
-            hasContainer("container2", "oraclelinux", "ls /oracle")));
+            hasInitContainer("container1", "busybox", ADMIN_SERVER, "sh", "-c", "echo admin server && sleep 120"),
+            hasInitContainer("container2", "oraclelinux", ADMIN_SERVER, "ls /oracle")));
+  }
+
+  @Test
+  public void whenServerWithEnvVarHasInitContainers_verifyAdminPodInitContainersHaveEnvVar() {
+    getConfigurator().withEnvironmentVariable("item1", "value1")
+            .configureAdminServer()
+            .withInitContainer(
+                    createInitContainer("container1", "busybox", ADMIN_SERVER, "sh", "-c",
+                            "echo admin server && sleep 120"))
+            .withInitContainer(createInitContainer("container2", "oraclelinux", ADMIN_SERVER,
+                    "ls /oracle"));
+
+    assertThat(
+            getCreatedPodSpecInitContainers(),
+            allOf(
+                    hasInitContainerWithEnvVar("container1", "busybox", ADMIN_SERVER,
+                            new V1EnvVar().name("item1").value("value1"),
+                            "sh", "-c", "echo admin server && sleep 120"),
+                    hasInitContainerWithEnvVar("container2", "oraclelinux", ADMIN_SERVER,
+                            new V1EnvVar().name("item1").value("value1"), "ls /oracle")));
   }
 
   @Test
   public void whenServerHasDuplicateInitContainers_createAdminPodWithCombination() {
     getConfigurator()
         .withInitContainer(
-            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
-        .withInitContainer(createContainer("container2", "oraclelinux", "ls /top"))
+            createInitContainer("container1", "busybox", ADMIN_SERVER, "sh", "-c", "echo admin server && sleep 120"))
+        .withInitContainer(createInitContainer("container2", "oraclelinux", ADMIN_SERVER, "ls /top"))
         .configureAdminServer()
-        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+        .withInitContainer(createInitContainer("container2", "oraclelinux", ADMIN_SERVER, "ls /oracle"));
 
     assertThat(
         getCreatedPodSpecInitContainers(),
         allOf(
-            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
-            hasContainer("container2", "oraclelinux", "ls /oracle")));
+            hasInitContainer("container1", "busybox", ADMIN_SERVER, "sh", "-c", "echo admin server && sleep 120"),
+            hasInitContainer("container2", "oraclelinux", ADMIN_SERVER, "ls /oracle")));
   }
 
   @Test
