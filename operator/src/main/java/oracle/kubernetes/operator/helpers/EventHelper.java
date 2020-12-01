@@ -130,10 +130,8 @@ public class EventHelper {
       String reason) {
     final V1ObjectMeta metadata =
         new V1ObjectMeta()
-            .name(info.getDomainUid() + reason + System.currentTimeMillis())
+            .name(String.format("%s.%s.%s", info.getDomainUid(), reason, System.currentTimeMillis()))
             .namespace(info.getNamespace());
-
-    LOGGER.finest("EventHelper.createMetaData");
 
     metadata
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, info.getDomainUid())
