@@ -52,7 +52,6 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CR
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -231,17 +230,6 @@ public class EventHelperTest {
         containsEventWithMessage(getEvents(),
             DOMAIN_PROCESSING_FAILED_EVENT,
             String.format(DOMAIN_PROCESSING_FAILED_PATTERN, UID, "Test this failure")),
-        is(Boolean.TRUE));
-  }
-
-  @Test
-  public void whenMakeRightCalled_withFailedEventData_domainProcessingFailedEventCreatedWithExpectedAction() {
-    testSupport.runSteps(createFailedAndEventStep("FAILED", "Test this failure", new TerminalStep()));
-
-    assertThat("Event DOMAIN_PROCESSING_FAILED action",
-        containsEventWithAction(getEvents(),
-            DOMAIN_PROCESSING_FAILED_EVENT,
-            DOMAIN_PROCESSING_FAILED.getAction()),
         is(Boolean.TRUE));
   }
 

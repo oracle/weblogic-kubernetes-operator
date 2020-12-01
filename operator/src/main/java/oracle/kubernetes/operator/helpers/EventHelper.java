@@ -26,12 +26,10 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_ACTION;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_ACTION;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT;
@@ -108,25 +106,23 @@ public class EventHelper {
       Packet packet,
       EventData eventData) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    return createCommonElements(info, eventData.eventItem)
+    return new V1Event()
+        .metadata(createMetadata(info, eventData.eventItem.getReason()))
+        .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
+        .reportingInstance(getOperatorPodName())
+        .lastTimestamp(eventData.eventItem.getLastTimestamp())
         .type(eventData.eventItem.getType())
         .reason(eventData.eventItem.getReason())
         .message(eventData.eventItem.getMessage(info, eventData))
-        .action(eventData.eventItem.getAction())
-        .involvedObject(
-            new V1ObjectReference()
-                .name(info.getDomainUid())
-                .namespace(info.getNamespace())
-                .kind(KubernetesConstants.DOMAIN)
-                .apiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE));
+        .involvedObject(createInvolvedObject(info));
   }
 
-  private static V1Event createCommonElements(DomainPresenceInfo info, EventItem eventItem) {
-    return new V1Event()
-        .metadata(createMetadata(info, eventItem.getReason()))
-        .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
-        .reportingInstance(getOperatorPodName())
-        .lastTimestamp(eventItem.getLastTimestamp());
+  private static V1ObjectReference createInvolvedObject(DomainPresenceInfo info) {
+    return new V1ObjectReference()
+        .name(info.getDomainUid())
+        .namespace(info.getNamespace())
+        .kind(KubernetesConstants.DOMAIN)
+        .apiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE);
   }
 
   private static V1ObjectMeta createMetadata(
@@ -226,10 +222,6 @@ public class EventHelper {
             info.getDomainUid(), Optional.ofNullable(eventData.message).orElse(""));
       }
 
-      @Override
-      public String getAction() {
-        return DOMAIN_PROCESSING_FAILED_ACTION;
-      }
     },
     DOMAIN_PROCESSING_RETRYING {
       @Override
@@ -264,10 +256,6 @@ public class EventHelper {
             Optional.ofNullable(eventData.message).orElse(""));
       }
 
-      @Override
-      public String getAction() {
-        return DOMAIN_PROCESSING_ABORTED_ACTION;
-      }
     },
     EMPTY {
       @Override
@@ -292,10 +280,6 @@ public class EventHelper {
     protected abstract String getPattern();
 
     public abstract String getReason();
-
-    String getAction() {
-      return "";
-    }
 
     String getType() {
       return EVENT_NORMAL;

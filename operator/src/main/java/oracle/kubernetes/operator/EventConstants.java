@@ -31,6 +31,4 @@ public interface EventConstants {
       = "Retrying the processing of domain resource %s after one or more failed attempts";
   String DOMAIN_PROCESSING_ABORTED_PATTERN
       = "Aborting the processing of domain resource %s permanently due to: %s";
-  String DOMAIN_PROCESSING_FAILED_ACTION = "Check operator pod log and introspector pod log";
-  String DOMAIN_PROCESSING_ABORTED_ACTION = "Check domain resource configuration";
 }
