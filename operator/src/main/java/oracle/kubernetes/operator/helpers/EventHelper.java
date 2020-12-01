@@ -8,6 +8,7 @@ import java.util.Optional;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -113,7 +114,11 @@ public class EventHelper {
         .message(eventData.eventItem.getMessage(info, eventData))
         .action(eventData.eventItem.getAction())
         .involvedObject(
-            new V1ObjectReference().name(info.getDomainUid()).namespace(info.getNamespace()));
+            new V1ObjectReference()
+                .name(info.getDomainUid())
+                .namespace(info.getNamespace())
+                .kind(KubernetesConstants.DOMAIN)
+                .apiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE));
   }
 
   private static V1Event createCommonElements(DomainPresenceInfo info, EventItem eventItem) {
