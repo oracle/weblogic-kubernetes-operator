@@ -4,7 +4,7 @@
 
 # This script is to create or delete Ingress controllers. 
 # Currently the script supports ingress controllers: Traefik, Voyager, and Nginx.
-# Usage $0 create|delete traefik|voyager|nginx traefik_version|voyager_version|nginx-version
+# Usage $0 create|delete traefik|voyager|nginx traefik_version|voyager_version|nginx_version
 
 UTILDIR="$(dirname "$(readlink -f "$0")")"
 VNAME=voyager-operator  # release name for Voyager
@@ -16,8 +16,9 @@ TSPACE=traefik          # namespace for Traefik
 NSPACE=nginx            # namespace for Nginx
 
 # https://hub.helm.sh/charts/appscode/voyager
+# https://artifacthub.io/packages/helm/appscode/voyager
 # https://github.com/voyagermesh/voyager#supported-versions
-DefaultVoyagerVersion=10.0.0
+DefaultVoyagerVersion=12.0.0
 
 # https://github.com/containous/traefik/releases
 DefaultTraefikVersion=2.2.1
@@ -33,7 +34,7 @@ fi
 
 function createNameSpace() {
  ns=$1
- namespace=`kubectl get namespace ${ns} | grep ${ns} | awk '{print $1}'`
+ namespace=`kubectl get namespace ${ns} 2> /dev/null | grep ${ns} | awk '{print $1}'`
  if [ -z ${namespace} ]; then
    echo "Adding namespace[$ns] to Kubernetes cluster"
    kubectl create namespace ${ns}
@@ -44,8 +45,7 @@ function createVoyager() {
   createNameSpace $VSPACE
   echo "Creating Voyager operator on namespace ${VSPACE}"
   echo
-
-  if [ "$(helm search appscode/voyager | grep voyager |  wc -l)" = 0 ]; then
+  if [ "$(helm search repo appscode/voyager | grep voyager | wc -l)" = 0 ]; then
     echo "Add AppsCode chart repository"
     helm repo add appscode https://charts.appscode.com/stable/
     helm repo update
@@ -59,6 +59,7 @@ function createVoyager() {
       --namespace ${VSPACE} \
       --set cloudProvider=baremetal \
       --set apiserver.enableValidatingWebhook=false \
+      --set apiserver.healthcheck.enabled=false \
       --set ingressClass=voyager
   else
     echo "Voyager operator is already installed."
@@ -71,17 +72,41 @@ function createVoyager() {
   count=0
   vpod=$(kubectl get po -n ${VSPACE} --no-headers | awk '{print $1}')
   while test $count -lt $max; do
-    if test "$(kubectl get po -n ${VSPACE} --no-headers | awk '{print $2}')" = 1/1; then
+    status=$(kubectl get po -n ${VSPACE} --no-headers 2> /dev/null | awk '{print $2}')
+    if [ ${status} == "1/1" ]; then
       echo "Voyager operator pod is running now."
       kubectl get pod/${vpod} -n ${VSPACE}
-      exit 0;
+      break;
     fi
     count=`expr $count + 1`
     sleep 2
   done
-  echo "ERROR: Voyager operator pod failed to start."
-  kubectl describe pod/${vpod}  -n ${VSPACE}
-  exit 1
+  if test $count -eq $max; then
+    echo "ERROR: Voyager operator pod failed to start."
+    exit 1
+  fi
+  kubectl describe pod/${vpod} -n ${VSPACE}
+  helm list -n ${VSPACE}
+  
+  max=20
+  count=0
+  crd="ingresses.voyager.appscode.com"
+  echo "Checking availability of Custom Resource Definition [${crd}]"
+  while test $count -lt $max; do
+   obj=$(kubectl get crd ${crd} -n ${VSPACE} --no-headers 2>/dev/null | awk '{print $1}')
+   if [ "${obj}" == "${crd}" ];  then
+      echo "Custom Resource Definition [${crd}] is available now."
+      kubectl get crd ${crd} -n ${VSPACE} --no-headers
+      break;
+   fi
+   count=`expr $count + 1`
+   sleep 2
+  done
+  if test $count -eq $max; then
+    echo "ERROR: Resource Definition can not be created" 
+    exit 1
+  fi
+  exit 0
 }
 
 function createTraefik() {
@@ -115,7 +140,8 @@ function createTraefik() {
   count=0
   tpod=$(kubectl get po -n ${TSPACE} --no-headers | awk '{print $1}')
   while test $count -lt $max; do
-    if test "$(kubectl get po -n ${TSPACE} --no-headers | awk '{print $2}')" = 1/1; then
+    status=$(kubectl get po -n ${TSPACE} --no-headers 2> /dev/null | awk '{print $2}')
+    if [ ${status} == "1/1" ]; then
       echo "Traefik operator pod is running now."
       kubectl get pod/${tpod} -n ${TSPACE}
       traefik_image=$(kubectl get po/${tpod} -n ${TSPACE} -o jsonpath='{.spec.containers[0].image}')
@@ -214,9 +240,10 @@ function createNginx() {
     echo "Nginx chart repository is already added."
   fi
 
-  if [ "$(helm list --namespace $NNAME | grep $NNAME |  wc -l)" = 0 ]; then
+  if [ "$(helm list --namespace ${NSPACE} | grep $NNAME |  wc -l)" = 0 ]; then
     echo "Installing Nginx operator."
-    helm install $NNAME ingress-nginx/ingress-nginx --namespace ${NSPACE} --version ${DefaultNginxVersion}
+    helm install $NNAME ingress-nginx/ingress-nginx \
+         --namespace ${NSPACE} --version ${DefaultNginxVersion}
   else
     echo "Nginx operator is already installed."
     exit 0;
@@ -228,10 +255,11 @@ function createNginx() {
   count=0
   tpod=$(kubectl get po -n ${NSPACE} --no-headers | awk '{print $1}')
   while test $count -lt $max; do
-    if test "$(kubectl get po -n ${NSPACE} --no-headers | awk '{print $2}')" = 1/1; then
+    status=$(kubectl get po -n ${NSPACE} --no-headers 2> /dev/null | awk '{print $2}')
+    if [ ${status} == "1/1" ]; then
       echo "Nginx operator pod is running now."
       kubectl get pod/${tpod} -n ${NSPACE}
-      kubectl exec -it $tpod -n nginx -- /nginx-ingress-controller --version``
+      kubectl exec -it $tpod -n ${NSPACE} -- /nginx-ingress-controller --version``
       exit 0;
     fi
     count=`expr $count + 1`
@@ -264,7 +292,7 @@ function main() {
     usage
   fi
   if [ "$2" != traefik ] && [ "$2" != voyager ] && [ "$2" != nginx ]; then
-    echo "[ERROR] The second  parameter MUST be either traefik or voyager or inginx "
+    echo "[ERROR] The second parameter MUST be either traefik, voyager or nginx "
     usage
   fi
 
@@ -275,7 +303,7 @@ function main() {
       createTraefik
     elif [ "$2" = voyager ]; then
       VoyagerVersion="${3:-${DefaultVoyagerVersion}}"
-      echo "Selected voyager version [$VoyagerVersion]"
+      echo "Selected Voyager version [$VoyagerVersion]"
       createVoyager
     else
       createNginx
