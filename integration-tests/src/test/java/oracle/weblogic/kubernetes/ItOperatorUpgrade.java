@@ -502,7 +502,7 @@ public class ItOperatorUpgrade {
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
     logger.info("Deploying application {0} to domain {1} cluster target cluster-1 in namespace {2}",
         archivePath, domainUid, namespace);
-    logger.info("Deploying webapp {0} to admin server", archivePath);
+    logger.info("Deploying webapp {0} to admin server and cluster", archivePath);
     deployUsingWlst(adminServerPodName, 
           "7001", ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
           "cluster-1,admin-server", archivePath, namespace);
