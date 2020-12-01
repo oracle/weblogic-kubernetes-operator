@@ -232,8 +232,8 @@ function prepareMIIServer() {
 
         if [ -d ${WLSDEPLOY_DOMAINLIB} ] && [ "$(ls -A ${WLSDEPLOY_DOMAINLIB})" ] ; then
           mv ${WLSDEPLOY_DOMAINLIB}/* .
-          rm -fr wlsdeploy/
         fi
+        rm -fr wlsdeploy/
 
         # expand the archive apps and shared lib to the wlsdeploy/* directories
         # the config.xml is referencing them from that path
