@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -566,6 +567,28 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
         allOf(
             hasInitContainer("container1", "busybox", SERVER_NAME, "sh", "-c", "echo managed server && sleep 120"),
             hasInitContainer("container2", "oraclelinux", SERVER_NAME, "ls /oracle")));
+  }
+
+  @Test
+  public void whenInitContainersHaveEnvVar_verifyInitContainersAfterPopulatingEnvStillHaveOriginalEnvVar() {
+    V1EnvVar envVar = toEnvVar(ITEM1, END_VALUE_1);
+    List<V1EnvVar> envVars = new ArrayList<>();
+    envVars.add(envVar);
+    getConfigurator()
+            .configureServer(SERVER_NAME)
+            .withInitContainer(
+                    createContainer("container1", "busybox",
+                            "sh", "-c",
+                            "echo managed server && sleep 120").env(envVars))
+            .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle").env(envVars));
+
+    assertThat(
+            getCreatedPodSpecInitContainers(),
+            allOf(
+                    hasInitContainerWithEnvVar("container1", "busybox", SERVER_NAME, envVar,
+                            "sh", "-c", "echo managed server && sleep 120"),
+                    hasInitContainerWithEnvVar("container2", "oraclelinux", SERVER_NAME, envVar,
+                            "ls /oracle")));
   }
 
   @Test

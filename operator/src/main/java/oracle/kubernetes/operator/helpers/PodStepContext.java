@@ -599,7 +599,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
-    List<V1EnvVar> envVars = Optional.ofNullable(c.getEnv()).orElse(new ArrayList<>());
+    List<V1EnvVar> envVars = new ArrayList<>();
+    Optional.ofNullable(c.getEnv()).ifPresent(envVars::addAll);
     envVars.addAll(getEnvironmentVariables(tuningParameters));
     return envVars;
   }
