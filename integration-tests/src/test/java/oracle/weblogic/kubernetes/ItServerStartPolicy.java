@@ -170,9 +170,9 @@ class ItServerStartPolicy {
   private final String managedServerPrefix = domainUid + "-managed-server";
   private static LoggingFacade logger = null;
 
-  private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
-  private final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
-  private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
+  private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
+  private static final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
+  private static final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
 
 
   /**
@@ -240,6 +240,9 @@ class ItServerStartPolicy {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+
+    //copy the samples directory to a temporary location
+    setupSample();
   }
 
   /**
@@ -281,7 +284,7 @@ class ItServerStartPolicy {
    * Restart the Administration server by patching the resource definition with 
    *  spec/adminServer/serverStartPolicy set to IF_NEEDED.
    * Make sure that the Administration server is in RUNNING state.
-   * Verify that the sample script, stopServer.sh can not shutdown admin server
+   * Verify that the sample script, stopServer.sh can not start or shutdown admin server
    */
   @Test
   @DisplayName("Restart the Administration server with serverStartPolicy")
@@ -312,6 +315,13 @@ class ItServerStartPolicy {
     assertFalse(assertDoesNotThrow(() -> isCfgRestarted.call().booleanValue()),
          "Configured managed server pod must not be restated");
 
+    // verify that the sample script can not start admin server
+    String result =  assertDoesNotThrow(() ->
+        executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", false),
+        String.format("Failed to run %s", START_SERVER_SCRIPT));
+    assertTrue(result.contains("script doesn't support starting or stopping administration server"),
+        "The script shouldn't start the admin server");
+
     patchServerStartPolicy("/spec/adminServer/serverStartPolicy", "IF_NEEDED");
     logger.info("Domain is patched to start administration server");
 
@@ -319,13 +329,9 @@ class ItServerStartPolicy {
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, 
             domainUid, domainNamespace);
-    logger.info("AdminServer restart success");
-
-    //copy the samples directory to a temporary location
-    setupSample();
 
     // verify that the sample script can not shutdown admin server
-    String result =  assertDoesNotThrow(() ->
+    result =  assertDoesNotThrow(() ->
           executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", false),
           String.format("Failed to run %s", STOP_SERVER_SCRIPT));
     assertTrue(result.contains("script doesn't support starting or stopping administration server"),
@@ -351,9 +357,6 @@ class ItServerStartPolicy {
     checkPodReadyAndServiceExists(configServerPodName, 
               domainUid, domainNamespace);
     logger.info("(BeforePatch) configured cluster managed server is RUNNING");
-
-    //copy the samples directory to a temporary location
-    setupSample();
 
     // Verify all clustered server pods are shutdown after stopCluster script execution
     logger.info("Stop configured cluster using the script");
@@ -397,12 +400,7 @@ class ItServerStartPolicy {
 
     DateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
 
-    checkPodReadyAndServiceExists(dynamicServerPodName, 
-              domainUid, domainNamespace);
-    logger.info("(BeforePatch) dynamic cluster managed server is RUNNING");
-
-    //copy the samples directory to a temporary location
-    setupSample();
+    checkPodReadyAndServiceExists(dynamicServerPodName, domainUid, domainNamespace);
 
     // Verify all clustered server pods are shut down after stopCluster script execution
     logger.info("Stop dynamic cluster using the script");
@@ -443,9 +441,6 @@ class ItServerStartPolicy {
     String configServerPodName = domainUid + "-config-cluster-server1";
     String standaloneServerPodName = domainUid + "-standalone-managed";
 
-    //copy the samples directory to a temporary location
-    setupSample();
-
     // Verify all WebLogic server instance pods are shut down after stopDomain script execution
     logger.info("Stop entire WebLogic domain using the script");
     executeLifecycleScript(STOP_DOMAIN_SCRIPT, DOMAIN, null);
@@ -457,7 +452,6 @@ class ItServerStartPolicy {
     }
     checkPodDeleted(configServerPodName, domainUid, domainNamespace);
     checkPodDeleted(standaloneServerPodName, domainUid, domainNamespace);
-    logger.info("!!! Domain shutdown (NEVER) success !!!");
 
     // Patch the Domain with serverStartPolicy set to ADMIN_ONLY
     // Here only Admin server pod should come up
@@ -473,8 +467,6 @@ class ItServerStartPolicy {
     checkPodDeleted(configServerPodName, domainUid, domainNamespace);
     checkPodDeleted(standaloneServerPodName, domainUid, domainNamespace);
 
-    logger.info("!!! Domain restart (ADMIN_ONLY) success !!!");
-
     // Verify all WebLogic server instance pods are started after startDomain script execution
     logger.info("Start entire WebLogic domain using the script");
     executeLifecycleScript(START_DOMAIN_SCRIPT, DOMAIN, null);
@@ -489,16 +481,15 @@ class ItServerStartPolicy {
           domainUid, domainNamespace);
     checkPodReadyAndServiceExists(standaloneServerPodName, 
           domainUid, domainNamespace);
-    logger.info("!!! Domain restart (IF_NEEDED) success !!!");
+    logger.info("startDomain.sh successfully started the domain");
   }
 
   /**
-   * Add a second managed server (config-cluster-server2) in a configured 
-   * cluster with serverStartPolicy IF_NEEDED. 
-   * Initially, the server will not come up since the replica count is set to 1.
+   * The domain custom resource has a second configured manged server with serverStartPolicy IF_NEEDED
+   * Initially, the server will not come up since the replica count is set to 1
    * Update the serverStartPolicy for config-cluster-server2 to ALWAYS
    * by patching the resource definition with 
-   *  spec/managedServers/1/serverStartPolicy set to ALWAYS.
+   *  spec/managedServers/1/serverStartPolicy set to ALWAYS
    * Make sure that managed server config-cluster-server2 is up and running
    * Verify that if server start policy is ALWAYS and the server is selected
    * to start based on the replica count, it means that server is already started or is
@@ -522,9 +513,6 @@ class ItServerStartPolicy {
     checkPodReadyAndServiceExists(serverPodName, 
           domainUid, domainNamespace);
     logger.info("Configured cluster managed server is RUNNING");
-
-    //copy the samples directory to a temporary location
-    setupSample();
 
     // Verify that if server start policy is ALWAYS and the server is selected
     // to start based on the replica count, it means that server is already started or is
@@ -571,9 +559,6 @@ class ItServerStartPolicy {
           domainUid, domainNamespace);
     logger.info("Second managed server in dynamic cluster is RUNNING");
 
-    //copy the samples directory to a temporary location
-    setupSample();
-
     // Verify that if server start policy is ALWAYS and the server is selected
     // to start based on the replica count, it means that server is already started or is
     // in the process of starting. In this case, script exits without making any changes.
@@ -614,9 +599,6 @@ class ItServerStartPolicy {
 
     // Make sure that managed server(2) is not running 
     checkPodDeleted(serverPodName2, domainUid, domainNamespace);
-
-    //copy the samples directory to a temporary location
-    setupSample();
 
     // shutdown config-cluster-server1 with keep_replica_constant option
     executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, keepReplicaCountConstantParameter);
@@ -718,9 +700,6 @@ class ItServerStartPolicy {
             domainUid, domainNamespace);
     logger.info("Configured managed server restart success");
 
-    //copy the samples directory to a temporary location
-    setupSample();
-
     // Verify that if server start policy is ALWAYS and the server is selected
     // to start based on the replica count, it means that server is already started or is
     // in the process of starting. In this case, script exits without making any changes.
@@ -766,9 +745,6 @@ class ItServerStartPolicy {
         domainUid, domainNamespace);
     logger.info("Standalone managed server restart success");
 
-    //copy the samples directory to a temporary location
-    setupSample();
-
     // Verify that if server start policy is IF_NEEDED and the server is selected
     // to start based on the replica count, it means that server is already started or is
     // in the process of starting. In this case, script exits without making any changes.
@@ -778,15 +754,13 @@ class ItServerStartPolicy {
 
   /**
    * Negative test to verify:
-   * (a) the sample script can not stop or start a non-exist server
-   * (b) the sample script can not stop or start a non-exist cluster
-   * (c) the sample script can not stop or start a non-exist domain.
+   * (a) the sample script can not stop or start a non-existing server
+   * (b) the sample script can not stop or start a non-existing cluster
+   * (c) the sample script can not stop or start a non-existing domain.
    */
   @Test
-  @DisplayName("Restart the configured cluster with serverStartPolicy")
-  public void testRestartWrongComponentNeg() {
-    //copy the samples directory to a temporary location
-    setupSample();
+  @DisplayName("Verify that the sample script can not stop or start non-existing components")
+  public void testRestartWrongComponent() {
     String wrongServerName = "ms1";
     String regex = ".*" + wrongServerName + ".*\\s*is not part";
 
@@ -838,32 +812,34 @@ class ItServerStartPolicy {
    * e.g. the max cluster size is 2, the sample script can't start server 3
    */
   @Test
-  @DisplayName("Restart the configured cluster with serverStartPolicy")
-  public void testStartMSBeyondLimitNeg() {
-    String serverName = "config-cluster-server3";
-    String regex = ".*" + serverName + ".*\\s*is not part";
+  @DisplayName("Verify that the sample script can not start a server that exceeds the max cluster size")
+  public void testStartMangedServerBeyondMaxClusyterLimit() {
+    String configServerName = "config-cluster-server3";
+    String dynServerName = "managed-server6";
 
-    //copy the samples directory to a temporary location
-    setupSample();
-
-    // verify that the script can not start a server that exceeds the max cluster size
+    // verify that the script can not start a server in config cluster that exceeds the max cluster size
+    String regex = ".*" + configServerName + ".*\\s*is not part";
     String result =  assertDoesNotThrow(() ->
-        executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, "", false),
+        executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, configServerName, "", false),
+        String.format("Failed to run %s", START_SERVER_SCRIPT));
+    assertTrue(verifyExecuteResult(result, regex),"The script shouldn't stop a server that is beyong the limit");
+
+    // verify that the script can not start a server in dynamic cluster that exceeds the max cluster size
+    regex = ".*outside the range of allowed servers";
+    result =  assertDoesNotThrow(() ->
+        executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, dynServerName, "", false),
         String.format("Failed to run %s", START_SERVER_SCRIPT));
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't stop a server that is beyong the limit");
   }
 
   /**
-   * Negative test to verify that after the admin server is stopped, the sample script can start or stop a server.
+   * Verify that after the admin server is stopped, the sample script can start or stop a server.
    */
-  @Disabled
+  @Disabled("Due to the bug OWLS-86251")
   @Test
-  @DisplayName("Shutdown Admin server and start/stop a manged server")
-  public void testServerRestartMSWithoutAdminNeg() {
+  @DisplayName("In the absence of Administration Server, sample script can start/stop a managed server")
+  public void testServerRestartMSWithoutAdmin() {
     String serverName = "config-cluster-server1";
-
-    //copy the samples directory to a temporary location
-    setupSample();
 
     try {
       // shutdown the admin server
@@ -1070,7 +1046,7 @@ class ItServerStartPolicy {
   }
 
   // copy samples directory to a temporary location
-  private void setupSample() {
+  private static void setupSample() {
     assertDoesNotThrow(() -> {
       // copy ITTESTS_DIR + "../kubernates/samples" to WORK_DIR + "/sample-testing"
       logger.info("Deleting and recreating {0}", tempSamplePath);
