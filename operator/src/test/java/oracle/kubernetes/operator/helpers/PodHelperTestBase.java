@@ -181,11 +181,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     return new V1Container().name(name).image(image).command(Arrays.asList(command));
   }
 
-  static V1Container createInitContainer(String name, String image, String serverName, String... command) {
-    return new V1Container().name(name).image(image).command(Arrays.asList(command))
-            .env(getPredefinedEnvVariables(serverName));
-  }
-
   static List<V1EnvVar> getPredefinedEnvVariables(String serverName) {
     List<V1EnvVar> envVars  = new ArrayList<>();
     envVars.add(createEnvVar("DOMAIN_NAME", DOMAIN_NAME));

@@ -590,12 +590,18 @@ public abstract class PodStepContext extends BasePodStepContext {
     V1PodSpec podSpec = createPodSpec(tuningParameters)
         .readinessGates(getReadinessGates())
         .initContainers(getServerSpec().getInitContainers().stream()
-                .map(c -> c.env(getEnvironmentVariables(tuningParameters))).collect(Collectors.toList()));
+                .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));
 
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
     }
     return podSpec;
+  }
+
+  private List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
+    List<V1EnvVar> envVars = Optional.ofNullable(c.getEnv()).orElse(new ArrayList<>());
+    envVars.addAll(getEnvironmentVariables(tuningParameters));
+    return envVars;
   }
 
   // ---------------------- model methods ------------------------------

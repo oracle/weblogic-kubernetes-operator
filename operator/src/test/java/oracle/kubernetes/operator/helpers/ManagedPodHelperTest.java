@@ -541,9 +541,9 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   public void whenDomainHasInitContainers_createPodWithThem() {
     getConfigurator()
         .withInitContainer(
-            createInitContainer(
-                "container1", "busybox", SERVER_NAME, "sh", "-c", "echo managed server && sleep 120"))
-        .withInitContainer(createInitContainer("container2", "oraclelinux", SERVER_NAME, "ls /oracle"));
+            createContainer(
+                "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
 
     assertThat(
         getCreatedPodSpecInitContainers(),
@@ -557,9 +557,9 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     getConfigurator()
         .configureServer(SERVER_NAME)
         .withInitContainer(
-            createInitContainer(
-                "container1", "busybox", SERVER_NAME, "sh", "-c", "echo managed server && sleep 120"))
-        .withInitContainer(createInitContainer("container2", "oraclelinux", SERVER_NAME, "ls /oracle"));
+            createContainer(
+                "container1", "busybox",  "sh", "-c", "echo managed server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
 
     assertThat(
         getCreatedPodSpecInitContainers(),
@@ -576,10 +576,10 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     getConfigurator()
             .configureServer(SERVER_NAME)
             .withInitContainer(
-                    createInitContainer("container1", "busybox", SERVER_NAME,
+                    createContainer("container1", "busybox",
                             "sh", "-c",
                             "echo managed server && sleep 120"))
-            .withInitContainer(createInitContainer("container2", "oraclelinux", SERVER_NAME,
+            .withInitContainer(createContainer("container2", "oraclelinux",
                     "ls /oracle"));
 
     assertThat(
@@ -595,11 +595,11 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   public void whenServerHasDuplicateInitContainers_createPodWithCombination() {
     getConfigurator()
         .withInitContainer(
-            createInitContainer(
-                "container1", "busybox", SERVER_NAME, "sh", "-c", "echo managed server && sleep 120"))
-        .withInitContainer(createInitContainer("container2", "oraclelinux", SERVER_NAME, "ls /top"))
+            createContainer(
+                "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /top"))
         .configureServer(SERVER_NAME)
-        .withInitContainer(createInitContainer("container2", "oraclelinux", SERVER_NAME, "ls /oracle"));
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
 
     assertThat(
         getCreatedPodSpecInitContainers(),
@@ -613,9 +613,9 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
         .withInitContainer(
-            createInitContainer(
-                "container1", "busybox", SERVER_NAME, "sh", "-c", "echo managed server && sleep 120"))
-        .withInitContainer(createInitContainer("container2", "oraclelinux", SERVER_NAME, "ls /oracle"));
+            createContainer(
+                "container1", "busybox",  "sh", "-c", "echo managed server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
     assertThat(
@@ -629,16 +629,16 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   public void whenServerAndClusterHasDuplicateInitContainers_createPodWithCombination() {
     getConfigurator()
         .withInitContainer(
-            createInitContainer(
-                "container1", "busybox", SERVER_NAME, "sh", "-c", "echo managed server && sleep 120"))
-        .withInitContainer(createInitContainer("container2", "oraclelinux", SERVER_NAME, "ls /top"))
+            createContainer(
+                "container1", "busybox","sh", "-c", "echo managed server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /top"))
         .configureServer(SERVER_NAME)
-        .withInitContainer(createInitContainer("container2", "oraclelinux", SERVER_NAME, "ls /oracle"));
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
         .withInitContainer(
-            createInitContainer("container1", "busybox", SERVER_NAME, "sh", "-c", "echo cluster && sleep 120"))
-        .withInitContainer(createInitContainer("container3", "oraclelinux", SERVER_NAME, "ls /cluster"));
+            createContainer("container1", "busybox", "sh", "-c", "echo cluster && sleep 120"))
+        .withInitContainer(createContainer("container3", "oraclelinux", "ls /cluster"));
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
     assertThat(
