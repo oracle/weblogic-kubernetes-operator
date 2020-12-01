@@ -84,11 +84,31 @@ public class Matchers {
   }
 
   private static V1Container createInitContainerWithEnvVar(String name, String image, String serverName,
-                                                       V1EnvVar envVar, String... command) {
+                                                           V1EnvVar envVar, String... command) {
     List<V1EnvVar> envVars = new ArrayList<>(Arrays.asList(envVar));
-    envVars.addAll(PodHelperTestBase.getPredefinedEnvVariables(serverName));
+    PodHelperTestBase.getPredefinedEnvVariables(serverName).forEach(predefEnvVar ->
+            addIfMissing(envVars, predefEnvVar.getName(), predefEnvVar.getValue()));
     return new V1Container().name(name).image(image).command(Arrays.asList(command))
             .env(envVars);
+  }
+
+  protected static void addEnvVar(List<V1EnvVar> vars, String name, String value) {
+    vars.add(new V1EnvVar().name(name).value(value));
+  }
+
+  protected static boolean listHasEnvVar(List<V1EnvVar> vars, String name) {
+    for (V1EnvVar var : vars) {
+      if (name.equals(var.getName())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  protected static void addIfMissing(List<V1EnvVar> vars, String name, String value) {
+    if (!listHasEnvVar(vars, name)) {
+      addEnvVar(vars, name, value);
+    }
   }
 
   @SuppressWarnings("unused")

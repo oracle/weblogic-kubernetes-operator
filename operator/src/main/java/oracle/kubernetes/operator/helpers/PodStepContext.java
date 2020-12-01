@@ -602,7 +602,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
     Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
     getEnvironmentVariables(tuningParameters).forEach(envVar ->
-            addDefaultEnvVarIfMissing(initContainerEnvVars, envVar.getName(), envVar.getValue()));
+            addIfMissing(initContainerEnvVars, envVar.getName(), envVar.getValue()));
     return initContainerEnvVars;
   }
 

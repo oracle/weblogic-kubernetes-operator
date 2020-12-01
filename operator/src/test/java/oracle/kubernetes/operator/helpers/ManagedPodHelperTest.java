@@ -592,6 +592,28 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenInitContainersHaveEnvVar_verifyInitContainersEnvVarTakesPrecedenceOverPreConfiguredEnvVar() {
+    V1EnvVar envVar = toEnvVar("DOMAIN_NAME", "LOCAL_DOMAIN_NAME");
+    List<V1EnvVar> envVars = new ArrayList<>();
+    envVars.add(envVar);
+    getConfigurator()
+            .configureServer(SERVER_NAME)
+            .withInitContainer(
+                    createContainer("container1", "busybox",
+                            "sh", "-c",
+                            "echo managed server && sleep 120").env(envVars))
+            .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle").env(envVars));
+
+    assertThat(
+            getCreatedPodSpecInitContainers(),
+            allOf(
+                    hasInitContainerWithEnvVar("container1", "busybox", SERVER_NAME, envVar,
+                            "sh", "-c", "echo managed server && sleep 120"),
+                    hasInitContainerWithEnvVar("container2", "oraclelinux", SERVER_NAME, envVar,
+                            "ls /oracle")));
+  }
+
+  @Test
   public void whenServerWithEnvVarHasInitContainers_verifyInitContainersHaveEnvVar() {
     V1EnvVar envVar = toEnvVar(ITEM1, END_VALUE_1);
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));

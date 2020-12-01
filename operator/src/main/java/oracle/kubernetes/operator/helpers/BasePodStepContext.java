@@ -119,6 +119,12 @@ public abstract class BasePodStepContext extends StepContextBase {
     return false;
   }
 
+  protected void addIfMissing(List<V1EnvVar> vars, String name, String value) {
+    if (!hasEnvVar(vars, name)) {
+      addEnvVar(vars, name, value);
+    }
+  }
+
   protected void addDefaultEnvVarIfMissing(List<V1EnvVar> vars, String name, String value) {
     if (!hasEnvVar(vars, name)) {
       addEnvVar(vars, name, value);
