@@ -737,11 +737,11 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private boolean hasAbortedEvent() {
-      return (DOMAIN_PROCESSING_ABORTED.equals(Optional.ofNullable(eventData).map(EventData::getItem).orElse(null)));
+      return (DOMAIN_PROCESSING_ABORTED == (Optional.ofNullable(eventData).map(EventData::getItem).orElse(null)));
     }
 
     private boolean hasRetryingEvent() {
-      return (DOMAIN_PROCESSING_RETRYING.equals(Optional.ofNullable(eventData).map(EventData::getItem).orElse(null)));
+      return (DOMAIN_PROCESSING_RETRYING == (Optional.ofNullable(eventData).map(EventData::getItem).orElse(null)));
     }
 
     private boolean ensureAbortedEventPresent(String message) {
@@ -770,10 +770,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private boolean hasRetryCountReset() {
       return liveInfo.getRetryCount() == 0;
-    }
-
-    private boolean isEventAbsent() {
-      return eventData == null;
     }
 
     private void internalMakeRightDomainPresence() {
