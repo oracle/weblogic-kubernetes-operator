@@ -260,5 +260,12 @@
                 <includes-failsafe>**/ItMiiSample.java,**/ItJrfDomainInPV.java</includes-failsafe>
             </properties>
         </profile>
+        <profile>
+            <id>oke-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItJrfDomainInPV.java,**/ItStickySession.java,**/ItSessionMigration.java</includes-failsafe>
+            </properties>
+        </profile>
     </profiles>
 </project>
