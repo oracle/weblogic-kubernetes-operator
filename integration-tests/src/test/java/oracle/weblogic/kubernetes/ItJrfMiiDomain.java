@@ -232,7 +232,7 @@ public class ItJrfMiiDomain {
    * Save the OPSS key wallet from a running JRF domain's introspector configmap to a file
    * Restore the OPSS key wallet file to a Kubernetes secret.
    * Shutdown the domain.
-   * Using the same RCU restart the same JRF domain with restored OPSS key wallet file secret.
+   * Using the same RCU schema to restart the same JRF domain with restored OPSS key wallet file secret.
    * Verify Pod is ready and service exists for both admin server and managed servers.
    * Verify EM console is accessible.
    */
@@ -240,20 +240,18 @@ public class ItJrfMiiDomain {
   @Test
   @DisplayName("Reuse the same RCU schema to restart JRF domain")
   public void testReuseRCUschemalToRestartDomain() {
-
     saveAndRestoreOpssWalletfileSecret(jrfDomainNamespace, domainUid, opsswalletfileSecretName);
     shutdownDomain();
     patchDomainWithWalletFileSecret(opsswalletfileSecretName);
     startupDomain();
     verifyDomainReady();
-
   }
 
   /**
    * Save the OPSS key wallet from a running JRF domain's introspector configmap to a file.
    * @param namespace namespace where JRF domain exists
    * @param domainUid unique domain Uid
-   * @param walletfileSecretName the name of wallet file secret
+   * @param walletfileSecretName name of wallet file secret
    */
   private void saveAndRestoreOpssWalletfileSecret(String namespace, String domainUid,
        String walletfileSecretName) {
@@ -334,15 +332,15 @@ public class ItJrfMiiDomain {
   /**
    * Construct a domain object with the given parameters that can be used to create a domain resource.
    * @param domainUid unique Uid of the domain
-   * @param domNamespace the namespace where the domain exists
-   * @param adminSecretName the name of admin secret
-   * @param repoSecretName the name of repository secret
-   * @param encryptionSecretName the name of encryption secret
-   * @param rcuAccessSecretName the name of RCU access secret
-   * @param opssWalletPasswordSecretName the name of opss wallet password secret
+   * @param domNamespace  namespace where the domain exists
+   * @param adminSecretName  name of admin secret
+   * @param repoSecretName name of repository secret
+   * @param encryptionSecretName name of encryption secret
+   * @param rcuAccessSecretName name of RCU access secret
+   * @param opssWalletPasswordSecretName name of opss wallet password secret
    * @param replicaCount count of replicas
-   * @param miiImage the name of mii image
-   * @return
+   * @param miiImage name of model in image
+   * @return Domain WebLogic domain
    */
   private Domain createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,

@@ -3388,7 +3388,7 @@ public class CommonTestUtils {
                 .runAsUser(0L));
     return container;
   }
-  
+
   /**
    * Patch the domain with server start policy.
    *
@@ -3422,8 +3422,8 @@ public class CommonTestUtils {
   /**
    * Check if the pods are deleted.
    * @param podName pod name
-   * @param domainUid the unique id of the domain
-   * @param domNamespace the namespace where domain exists
+   * @param domainUid unique id of the domain
+   * @param domNamespace namespace where domain exists
    */
   public static void checkPodDeleted(String podName, String domainUid, String domNamespace) {
     final LoggingFacade logger = getLogger();
