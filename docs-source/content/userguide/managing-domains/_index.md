@@ -14,6 +14,7 @@ description: "Important considerations for WebLogic domains in Kubernetes."
 * [About the Domain resource](#about-the-domain-resource)
 * [Managing lifecycle operations](#managing-lifecycle-operations)
 * [Scaling clusters](#scaling-clusters)
+* [About domain events](#about-domain-events)
 * [Log files](#log-files)
 
 #### Important considerations for WebLogic domains in Kubernetes
@@ -146,12 +147,17 @@ See [Starting and stopping]({{< relref "/userguide/managing-domains/domain-lifec
 
 ### Scaling clusters
 
-The operator let's you initiate scaling of clusters in various ways:
+The operator let you initiate scaling of clusters in various ways:
 
 * [Using kubectl to edit the Domain resource]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#on-demand-updating-the-domain-resource-directly" >}})
 * [Using the operator's REST APIs]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#calling-the-operators-rest-scale-api" >}})
 * [Using WLDF policies]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api" >}})
 * [Using a Prometheus action]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api" >}})
+
+### About domain events
+
+The operator generates Kubernetes events at the key points of a domain processing.
+For more information, see [Domain events]({{< relref "/userguide/managing-domains/domain-events.md" >}}).
 
 ### Log files
 
