@@ -264,7 +264,9 @@
             <id>oke-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItJrfDomainInPV.java,**/ItStickySession.java,**/ItSessionMigration.java</includes-failsafe>
+                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItJrfDomainInPV.java,
+                    **/ItStickySession.java,**/ItSessionMigration.java,**/ItIstioTwoDomainsInImage,**/ItPodsRestart,**/ItUsabilityOperatorHelmChart,**/ItInitContainers,**/ItOperatorUpgrade,**/ItOperatorRestart,
+                    **/ItPodsShutdownOption,**/ItManageNs</includes-failsafe>
             </properties>
         </profile>
     </profiles>
