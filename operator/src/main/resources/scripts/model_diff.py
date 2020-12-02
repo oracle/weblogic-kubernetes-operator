@@ -34,12 +34,6 @@ class ModelDiffer:
                 return 0
         else:
             return 0
-        # case to handle include deletion, redeploy...
-        #
-        if model.has_key('appDeployments'):
-            for thiskey in model['appDeployments']:
-                if not thiskey.startswith('!'):
-                    return 1
 
         if self.in_forbidden_list(model, original_model):
             return 1
