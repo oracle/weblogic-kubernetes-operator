@@ -27,6 +27,7 @@ function usage {
   echo usage: ${script} -o dir -i file [-e] [-v] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated yaml files, must be specified."
+  echo "  -m model file name, optional."
   echo "  -e Also create the resources in the generated yaml files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -h Help"
@@ -38,11 +39,13 @@ function usage {
 #
 doValidation=false
 executeIt=false
-while getopts "evhi:o:" opt; do
+while getopts "evhm:i:o:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
     o) outputDir="${OPTARG}"
+    ;;
+    m) modelFile="${OPTARG}"
     ;;
     v) doValidation=true
     ;;
@@ -149,8 +152,13 @@ function createDomainConfigmap {
   # domain in the job.
   echo domainName: $domainName >> ${externalFilesTmpDir}/create-domain-inputs.yaml
 
-  if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
-   bash ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir}
+  # If the user specifies a model file, use that. Otherwise, use the one in wdt directory
+  if [ -z ${modelFile} ]; then
+    if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
+       bash ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir}
+    fi
+  else
+    cp ${modelFile} ${externalFilesTmpDir}/wdt_model.yaml
   fi
  
   # Now that we have the model file in the domainoutputdir/tmp,
