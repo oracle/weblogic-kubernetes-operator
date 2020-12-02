@@ -94,52 +94,72 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>testAdminServerRestart
  *  Restart the Administration Server by changing serverStartPolicy 
  *   IF_NEEDED->NEVER->IF_NEEDED
+ *  Verify that the sample script can not start admin server
  *
  * <p>testDomainRestart
- *  Restart the entire domain by changing serverStartPolicy 
- *   IF_NEEDED->NEVER->ADMIN_ONLY->IF_NEEDED
+ *  Restart the entire domain by using the sample script stopDomain.sh and startDomain.sh
  *
  * <p>testConfigClusterRestart
- *  Restart all servers in configured cluster by changing serverStartPolicy 
- *   IF_NEEDED->NEVER->IF_NEEDED
+ *  Restart all servers in configured cluster by
+ *    using the sample script stopCluster.sh and startCluster.sh
  *
  * <p>testDynamicClusterRestart
- *  Restart all servers in dynamic cluster by changing serverStartPolicy 
- *   IF_NEEDED->NEVER->IF_NEEDED
+ *  Restart all servers in dynamic cluster by
+ *    using the sample script stopCluster.sh and startCluster.sh
  *
  * <p>testConfigClusterStartServerUsingAlways
  *  Restart a server in configured cluster (beyond replica count) 
  *   IF_NEEDED->ALWAYS->IF_NEEDED
+ *  Verify that if server start policy is ALWAYS and the server is selected
+ *   to start based on the replica count, the sample script exits without making any changes
  *
  * <p>testDynamicClusterStartServerUsingAlways
  *  Restart a server in dynamic cluster (beyond replica count) 
  *   IF_NEEDED->ALWAYS->IF_NEEDED
+ *  Verify that if server start policy is ALWAYS and the server is selected
+ *   to start based on the replica count, the sample script exits without making any changes
  *
  * <p>testConfigClusterReplicaCountIsMaintained
- *  Change the serverStartPolicy of a running managed server (say ms1) in config
- *  cluster to NEVER. 
+ *  Shutdown a running managed server (say ms1) in a config
+ *    cluster using the sample script stopServer.sh
  *  Make sure next managed server (say ms2) is scheduled to run to maintain the 
- *  replica count while the running managed server ms1 goes down.
- *  Change the serverStartPolicy of server ms1 to IF_NEEDED.
+ *    replica count while the running managed server ms1 goes down.
+ *  Start server ms1 in a config cluster using the sample script startServer.sh
  *  Make sure server ms2 goes down and server ms1 is re-scheduled to maintain 
- *  the replica count
+ *    the replica count
  *
  * <p>testDynamicClusterReplicaCountIsMaintained
- *  Change the serverStartPolicy of a running managed server (say ms1) in a 
- *  dynamic cluster to NEVER. 
+ *  Shutdown a running managed server (say ms1) in a dynamic
+ *    cluster using the sample script stopServer.sh
  *  Make sure next managed server (say ms2) is scheduled to run to maintain the 
- *  replica count while the running managed server ms1 goes down.
- *  Change the serverStartPolicy of server ms1 to IF_NEEDED.
+ *    replica count while the running managed server ms1 goes down.
+ *  Start server ms1 in a dynamic cluster using the sample script startServer.sh.
  *  Make sure server ms2 goes down and server ms1 is re-scheduled to maintain 
- *  the replica count
+ *    the replica count
  *
  * <p>testStandaloneManagedRestartIfNeeded
  *  Restart standalone server by changing serverStartPolicy 
  *   IF_NEEDED->NEVER->IF_NEEDED
+ *  Verify that if server start policy is IF_NEEDED and the server is selected
+ *   to start based on the replica count, the sample script exits without making any changes
  *
  * <p>testStandaloneManagedRestartAlways
  *  Restart standalone server by changing serverStartPolicy 
  *   IF_NEEDED->NEVER->ALWAYS
+ *  Verify that if server start policy is ALWAYS and the server is selected
+ *   to start based on the replica count, the sample script exits without making any changes
+ *
+ * <p>testStartDynamicClusterServerRandomlyPicked
+ *   Start a dynamic cluster managed server picked randomly within the max cluster size
+ *
+ * <p>testRestartNonExistingComponent
+ *   Verify that the sample script can not stop or start non-existing domain, cluster or server
+ *
+ * <p>testStartManagedServerBeyondMaxClusterLimit
+ *   Verify that the sample script can not start a server that exceeds the max cluster size
+ *
+ * <p>testServerRestartManagedServerWithoutAdmin
+ *   In the absence of Administration Server, sample script can start/stop a managed server
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -748,13 +768,14 @@ class ItServerStartPolicy {
 
   /**
    * Start a dynamic cluster managed server within the max cluster size
-   * and verify the replica count increased.
+   * and the managed server name is not next in line to be started by the Operator but one a customer picks .
    */
   @Test
-  @DisplayName("Start a dynamic cluster managed server within the max cluster size and verify replica number increased")
-  public void testDynamicClusterReplicaCountIncrease() {
+  @DisplayName("Pick a dynamic cluster managed server randomly within the max cluster size and verify it starts")
+  public void testStartDynamicClusterServerRandomlyPicked() {
     String serverName = "managed-server3";
-    String serverPodName = domainUid + "-" + serverName;
+    String serverPodName3 = domainUid + "-" + serverName;
+    String serverPodName1 = domainUid + "-managed-server1";
     String serverPodName2 = domainUid + "-managed-server2";
 
     // Make sure that managed server(2) is not running
@@ -763,8 +784,13 @@ class ItServerStartPolicy {
     // Verify that starting a dynamic cluster managed server within the max cluster size succeeds
     executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
 
-    checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
-    logger.info("Dynamic cluster managed server {0} is RUNNING", serverPodName);
+    // Make sure that managed server(1) is still running
+    checkPodReadyAndServiceExists(serverPodName1, domainUid, domainNamespace);
+    logger.info("Dynamic cluster managed server {0} is still RUNNING", serverPodName1);
+
+    // Verify that a randomly picked dynamic cluster managed server within the max cluster size starts successfully
+    checkPodReadyAndServiceExists(serverPodName3, domainUid, domainNamespace);
+    logger.info("Replica Count Increased and a new Dynamic cluster managed server {0} is RUNNING", serverPodName3);
   }
 
   /**
