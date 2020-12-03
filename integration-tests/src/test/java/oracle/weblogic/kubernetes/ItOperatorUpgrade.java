@@ -103,19 +103,6 @@ public class ItOperatorUpgrade {
   }
 
   /**
-   * Operator upgrade from 2.5.0 to latest.
-   * Install 2.5.0 release Operator from GitHub chart repository and create a domain.
-   * Delete Operator and install latest Operator and verify CRD version is updated
-   * and the domain can be managed by scaling the cluster using operator REST api.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 2.5.0 to latest")
-  public void testOperatorUpgradeFrom2_5_0(@Namespaces(3) List<String> namespaces) {
-    this.namespaces = namespaces;
-    upgradeOperator("2.5.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, false);
-  }
-
-  /**
    * Operator upgrade from 2.6.0 to latest.
    * Install 2.6.0 Operator from GitHub chart repository and create a domain.
    * Delete Operator and install latest Operator and verify CRD version is updated
