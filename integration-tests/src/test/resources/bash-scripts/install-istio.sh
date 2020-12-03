@@ -5,9 +5,12 @@
 # Description:
 #
 #  This script install a given version of istio using Helm v3.x
-#  Default istio version is 1.5.4 
+#  Default istio version is 1.7.3 
 #  https://istio.io/docs/setup/install/istioctl/
 #  https://istio.io/latest/docs/setup/install/standalone-operator/
+#  https://github.com/istio/istio/releases
+#  https://github.com/istio/istio/tags
+
 
 # Usage:
 #
@@ -23,25 +26,24 @@ workdir=$2
 istiodir=${workdir}/istio-${version}
 echo "Installing Istio version [${version}] in location [${istiodir}]"
 
-helm repo add istio.io https://storage.googleapis.com/istio-release/releases/${version}/charts/
-
 kubectl delete namespace istio-system --ignore-not-found
-kubectl create namespace istio-system
+# istio installation will create the namespace 'istio-system' 
+# kubectl create namespace istio-system
 
 ( cd $workdir;  
-  curl -L https://istio.io/downloadIstio | ISTIO_VERSION=${version} sh 
+  curl -L https://istio.io/downloadIstio | ISTIO_VERSION=${version} TARGET_ARCH=x86_64 sh -
 )
 
-( cd ${istiodir}/install/kubernetes/helm
-  helm template istio-init istio-init --namespace istio-system | kubectl apply -f -
-  kubectl -n istio-system wait --for=condition=complete job --all
-  helm template istio --namespace istio-system | kubectl apply -f -
+( cd ${istiodir}
+  bin/istioctl x precheck 
+  bin/istioctl install --set profile=demo -y
+  bin/istioctl verify-install
+  bin/istioctl version
 )
 }
 
-
 # MAIN
-version=${1:-1.5.4}
+version=${1:-1.7.3}
 workdir=${2:-`pwd`}
 
 if [ ! -d ${workdir} ]; then 
