@@ -39,6 +39,7 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTI
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
@@ -67,7 +68,11 @@ public class EventHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (hasProcessingNotStarted(packet)) {
+      if (hasProcessingNotStarted(packet) && (eventData.eventItem == DOMAIN_PROCESSING_COMPLETED)) {
+        return doNext(packet);
+      }
+
+      if (hasNotFailedOrRetried(packet) && (eventData.eventItem == DOMAIN_PROCESSING_ABORTED)) {
         return doNext(packet);
       }
 
@@ -77,8 +82,7 @@ public class EventHelper {
 
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
 
-      packet.put(ProcessingConstants.EVENT_TYPE,
-          eventData.eventItem == DOMAIN_PROCESSING_STARTING ? DOMAIN_PROCESSING_STARTING : EventItem.EMPTY);
+      packet.put(ProcessingConstants.EVENT_TYPE, eventData.eventItem);
 
       V1Event event = createEvent(packet, eventData);
       return doNext(new CallBuilder()
@@ -90,14 +94,18 @@ public class EventHelper {
 
     }
 
+    private boolean hasNotFailedOrRetried(Packet packet) {
+      return packet.get(ProcessingConstants.EVENT_TYPE) != EventItem.DOMAIN_PROCESSING_FAILED
+          && packet.get(ProcessingConstants.EVENT_TYPE) != EventItem.DOMAIN_PROCESSING_RETRYING;
+    }
+
     private boolean isDuplicatedStartedEvent(Packet packet) {
       return eventData.eventItem == EventItem.DOMAIN_PROCESSING_STARTING
           && packet.get(ProcessingConstants.EVENT_TYPE) == EventItem.DOMAIN_PROCESSING_STARTING;
     }
 
     private boolean hasProcessingNotStarted(Packet packet) {
-      return eventData.eventItem == DOMAIN_PROCESSING_COMPLETED
-          && packet.get(ProcessingConstants.EVENT_TYPE) != DOMAIN_PROCESSING_STARTING;
+      return packet.get(ProcessingConstants.EVENT_TYPE) != DOMAIN_PROCESSING_STARTING;
     }
 
   }

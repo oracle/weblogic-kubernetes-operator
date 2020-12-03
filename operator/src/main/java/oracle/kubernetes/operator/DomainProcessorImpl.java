@@ -72,6 +72,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_O
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
 
@@ -679,15 +680,23 @@ public class DomainProcessorImpl implements DomainProcessor {
       } else if (shouldRecheck(cachedInfo)) {
         if (hasExceededRetryCount()) {
           resetIntrospectorJobFailureCount();
+          ensureRetryingEventPresent();
         }
         if (getCurrentIntrospectFailureRetryCount() > 0) {
           logRetryCount(cachedInfo);
+          ensureRetryingEventPresent();
         }
 
         return true;
       }
       cachedInfo.setDomain(getDomain());
       return false;
+    }
+
+    private void ensureRetryingEventPresent() {
+      if (eventData == null) {
+        eventData = new EventData(DOMAIN_PROCESSING_RETRYING);
+      }
     }
 
     private void resetIntrospectorJobFailureCount() {
@@ -737,19 +746,16 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private boolean hasAbortedEvent() {
-      return (DOMAIN_PROCESSING_ABORTED == (Optional.ofNullable(eventData).map(EventData::getItem).orElse(null)));
+      return DOMAIN_PROCESSING_ABORTED == (Optional.ofNullable(eventData).map(EventData::getItem).orElse(null));
     }
 
-    private boolean hasRetryingEvent() {
-      return (DOMAIN_PROCESSING_RETRYING == (Optional.ofNullable(eventData).map(EventData::getItem).orElse(null)));
+    private boolean hasRetryingOrFailedEvent() {
+      EventItem eventItem = (Optional.ofNullable(eventData).map(EventData::getItem).orElse(null));
+      return DOMAIN_PROCESSING_RETRYING == eventItem || DOMAIN_PROCESSING_FAILED == eventItem;
     }
 
     private boolean ensureAbortedEventPresent(String message) {
-      if (hasRetryCountReset()) {
-        return false;
-      }
-
-      if (hasRetryingEvent()) {
+      if (hasRetryingOrFailedEvent()) {
         eventData.eventItem(DOMAIN_PROCESSING_ABORTED).message(message);
       }
 
@@ -757,19 +763,13 @@ public class DomainProcessorImpl implements DomainProcessor {
         eventData = new EventData(DOMAIN_PROCESSING_ABORTED, message);
       }
 
-      if (hasAbortedEvent()) {
-        logNotStartingDomain();
-        return true;
-      }
-      return false;
+      logNotStartingDomain();
+      return true;
+
     }
 
     private void logNotStartingDomain() {
       LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
-    }
-
-    private boolean hasRetryCountReset() {
-      return liveInfo.getRetryCount() == 0;
     }
 
     private void internalMakeRightDomainPresence() {

@@ -26,7 +26,7 @@ public interface EventConstants {
   String DOMAIN_PROCESSING_COMPLETED_PATTERN =
       "Successfully completed processing domain resource %s";
   String DOMAIN_PROCESSING_FAILED_PATTERN
-      = "Failed to complete processing domain resource %s due to: %s, the processing will be retried if required";
+      = "Failed to complete processing domain resource %s due to: %s, the processing will be retried if needed";
   String DOMAIN_PROCESSING_RETRYING_PATTERN
       = "Retrying the processing of domain resource %s after one or more failed attempts";
   String DOMAIN_PROCESSING_ABORTED_PATTERN

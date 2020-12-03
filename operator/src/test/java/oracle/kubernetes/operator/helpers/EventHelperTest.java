@@ -52,6 +52,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CR
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -312,19 +313,25 @@ public class EventHelperTest {
 
   @Test
   public void whenMakeRightCalled_withAbortedEventData_domainProcessingAbortedEventCreated() {
-    makeRightOperation
-        .withEventData(new EventData(DOMAIN_PROCESSING_ABORTED, "Test this failure"))
-        .execute();
+    testSupport.runSteps(Step.chain(
+        new EventHelper().createEventStep(
+            new EventData(DOMAIN_PROCESSING_FAILED)),
+        new EventHelper().createEventStep(
+            new EventData(DOMAIN_PROCESSING_ABORTED).message("Test this failure")))
+    );
 
-    assertThat("Event DOMAIN_PROCESSING_ABORTED",
+    assertThat("Event DOMAIN_PROCESSING_FAILED",
         containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT), is(Boolean.TRUE));
   }
 
   @Test
   public void whenMakeRightCalled_withAbortedEventData_domainProcessingAbortedEventCreatedWithExpectedMessage() {
-    makeRightOperation
-        .withEventData(new EventData(DOMAIN_PROCESSING_ABORTED, "Test this failure"))
-        .execute();
+    testSupport.runSteps(Step.chain(
+        new EventHelper().createEventStep(
+            new EventData(DOMAIN_PROCESSING_FAILED)),
+        new EventHelper().createEventStep(
+            new EventData(DOMAIN_PROCESSING_ABORTED).message("Test this failure")))
+    );
 
     assertThat("Event DOMAIN_PROCESSING_ABORTED message",
         containsEventWithMessage(getEvents(),

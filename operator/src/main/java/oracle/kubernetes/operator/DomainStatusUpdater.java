@@ -381,7 +381,6 @@ public class DomainStatusUpdater {
             // e.g. domain validation error is not counted as introspection error
             if ("BackoffLimitExceeded".equals(reason)) {
               newStatus.incrementIntrospectJobFailureCount();
-              info.incrementAndGetFailureCount();
             }
           }
         }
