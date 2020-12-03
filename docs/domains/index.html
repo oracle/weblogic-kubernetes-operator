@@ -1114,17 +1114,9 @@ window.onload = function() {
           "description": "Settings for OPSS security.",
           "$ref": "#/definitions/Opss"
         },
-        "useOnlineUpdate": {
-          "description": "Use online update.",
-          "type": "boolean"
-        },
         "model": {
           "description": "Model in image model files and properties.",
           "$ref": "#/definitions/Model"
-        },
-        "rollBackIfRestartRequired": {
-          "description": "Rollback the changes if the update require domain restart.",
-          "type": "boolean"
         },
         "secrets": {
           "description": "A list of names of the Secrets for WebLogic configuration overrides or model. If this field is specified, then the value of `spec.configOverrideSecrets` is ignored.",
@@ -1164,6 +1156,8 @@ window.onload = function() {
           "enum": [
             "Progressing",
             "Available",
+            "OnlineUpdateComplete",
+            "OnlineUpdateRolledback",
             "Failed"
           ]
         },
@@ -1487,9 +1481,58 @@ window.onload = function() {
           "description": "Name of a ConfigMap containing the WebLogic Deploy Tooling model.",
           "type": "string"
         },
+        "onlineUpdate": {
+          "description": "Online update option for Model In Image dynamic update.",
+          "$ref": "#/definitions/OnlineUpdate"
+        },
         "modelHome": {
           "description": "Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.",
           "type": "string"
+        }
+      }
+    },
+    "OnlineUpdate": {
+      "type": "object",
+      "properties": {
+        "deployTimeoutMilliSeconds": {
+          "description": "WLST deploy application or libraries timout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "stopApplicationTimeoutMilliSeconds": {
+          "description": "WLST stopApplication timout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "connectTimeoutMilliSeconds": {
+          "description": "WLST connect to running domain timout in milliseconds. Default: 120000.",
+          "type": "number"
+        },
+        "startApplicationTimeoutMilliSeconds": {
+          "description": "WLST startApplication timout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "setServerGroupsTimeoutMilliSeconds": {
+          "description": "WLST set server groups timout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "rollBackIfRestartRequired": {
+          "description": "If set to true, it will rollback the changes if the update require domain restart. All changes are rolled back, the domain continues to run without interruption. It is the user responsibility to revert the content changes in the configmap specified in `domain.spec.configuration.model.configmap` or secrets. User can detect the changes have been rolled back when describing the domain `kubectl -n \u003cns\u003e describe domain \u003cdomain name\u003e under the condition `OnlineUpdateRolledback`",
+          "type": "boolean"
+        },
+        "enabled": {
+          "description": "Enable online update.",
+          "type": "boolean"
+        },
+        "undeployTimeoutMilliSeconds": {
+          "description": "WLST undeploy application or libraries timout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "redeployTimeoutMilliSeconds": {
+          "description": "WLST redeploy application or libraries timout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "activateTimeoutMilliSeconds": {
+          "description": "WLST activate changes timout in milliseconds. Default: 180000.",
+          "type": "number"
         }
       }
     },

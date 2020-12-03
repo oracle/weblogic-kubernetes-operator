@@ -61,9 +61,9 @@ public class IntrospectorJobEnvVars {
   public static final String MII_USE_ONLINE_UPDATE = "MII_USE_ONLINE_UPDATE";
 
   /**
-   * MII rollback if restart require.
+   * MII cancel changes if restart require.
    */
-  public static final String MII_ROLLBACK_IFRESTART = "MII_ROLLBACK_IFRESTART";
+  public static final String MII_CANCEL_CHANGES_IFRESTART_REQUIRED = "MII_CANCEL_CHANGES_IFRESTART_REQ";
 
   /**
    * WDT CONNECT TIMEOUT.

@@ -150,7 +150,7 @@ public class Model {
   /**
    * Check to see if the only change in the spec is introspectVersion.
    * @param other - another DomainSpec object for comparison
-   * @return true if the change is only introspectVersion and/or useOnlineUpdate
+   * @return true if the change is only introspectVersion and/or onlineUpdate.enabled=true
    */
 
   public boolean isSpecChangeForOnlineUpdateOnly(Object other) {

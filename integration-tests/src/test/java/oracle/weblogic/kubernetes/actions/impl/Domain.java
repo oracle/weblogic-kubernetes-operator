@@ -56,6 +56,8 @@ import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clus
 import static oracle.weblogic.kubernetes.assertions.impl.RoleBinding.roleBindingExists;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Domain {
 
@@ -180,23 +182,26 @@ public class Domain {
    *
    * @param domainUid UID of the domain to patch with introspectVersion
    * @param namespace namespace in which the domain resource exists
-   * @return true if patching is successful, otherwise false
-   * @throws ApiException when patching fails
+   * @return introspectVersion new introspectVersion of the domain resource
    */
-  public static boolean patchDomainResourceWithNewIntrospectVersion(
-      String domainUid, String namespace) throws ApiException {
+  public static String patchDomainResourceWithNewIntrospectVersion(
+      String domainUid, String namespace) {
     LoggingFacade logger = getLogger();
     StringBuffer patchStr;
-    oracle.weblogic.domain.Domain res = getDomainCustomResource(domainUid, namespace);
+    oracle.weblogic.domain.Domain res = assertDoesNotThrow(
+        () -> getDomainCustomResource(domainUid, namespace),
+        String.format("Failed to get the introspectVersion of %s in namespace %s", domainUid, namespace));
+    int introspectVersion = 2;
     // construct the patch string
     if (res.getSpec().getIntrospectVersion() == null) {
       patchStr = new StringBuffer("[{")
           .append("\"op\": \"add\", ")
           .append("\"path\": \"/spec/introspectVersion\", ")
-          .append("\"value\": \"2")
+          .append("\"value\": \"")
+          .append(introspectVersion)
           .append("\"}]");
     } else {
-      int introspectVersion = Integer.parseInt(res.getSpec().getIntrospectVersion()) + 1;
+      introspectVersion = Integer.parseInt(res.getSpec().getIntrospectVersion()) + 1;
       patchStr = new StringBuffer("[{")
           .append("\"op\": \"replace\", ")
           .append("\"path\": \"/spec/introspectVersion\", ")
@@ -211,8 +216,69 @@ public class Domain {
 
     // patch the domain
     V1Patch patch = new V1Patch(new String(patchStr));
-    return patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    boolean ivPatched = patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    assertTrue(ivPatched, "patchDomainCustomResource(introspectVersion) failed");
 
+    return String.valueOf(introspectVersion);
+  }
+
+  /**
+   * Patch the domain resource with a new restartVersion.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @return restartVersion new restartVersion of the domain resource
+   */
+  public static String patchDomainResourceWithNewRestartVersion(
+      String domainResourceName, String namespace) {
+    LoggingFacade logger = getLogger();
+    String oldVersion = assertDoesNotThrow(
+        () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
+        String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
+    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
+    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
+        domainResourceName, namespace, oldVersion, newVersion);
+
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append(" \"op\": \"replace\",")
+        .append(" \"path\": \"/spec/restartVersion\",")
+        .append(" \"value\": \"")
+        .append(newVersion)
+        .append("\"")
+        .append(" }]");
+
+    logger.info("Restart version patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(new String(patchStr));
+    boolean rvPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainResourceName, namespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(restartVersion)  failed ");
+    assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
+
+    return String.valueOf(newVersion);
+  }
+
+  /**
+   * Patch the domain resource with a new model configMap.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param configMapName name of the configMap to be set in spec.configuration.model.configMap
+   */
+  public static void patchDomainResourceWithModelConfigMap(
+      String domainResourceName, String namespace, String configMapName) {
+    LoggingFacade logger = getLogger();
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/configuration/model/configMap\",")
+        .append(" \"value\":  \"" + configMapName + "\"")
+        .append(" }]");
+    logger.info("Configmap patch string: {0}", patchStr);
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+    boolean cmPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainResourceName, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "patchDomainCustomResourceWithModelConfigMap(configMap)  failed ");
+    assertTrue(cmPatched, "patchDomainCustomResourceWithModelConfigMap(configMap) failed");
   }
 
   /**

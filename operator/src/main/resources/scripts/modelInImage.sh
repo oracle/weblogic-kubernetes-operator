@@ -42,8 +42,8 @@ WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./ur
 ARCHIVE_ZIP_CHANGED=0
 WDT_ARTIFACTS_CHANGED=0
 RESTART_REQUIRED=103
-PROG_ROLLBACK_IF_RESTART_EXIT_CODE=104
-MII_UPDATE_ROLLEDBACK=false
+PROG_CANCELCHGS_IF_RESTART_EXIT_CODE=104
+MII_UPDATE_CANCELED=false
 
 # return codes for model_diff
 UNSAFE_ONLINE_UPDATE=0
@@ -556,7 +556,8 @@ function createModelDomain() {
   elif [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
     trace "Using existing primordial domain"
     cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${LOCAL_PRIM_DOMAIN_ZIP} && tar -xzf ${LOCAL_PRIM_DOMAIN_ZIP}
-
+    # create empty lib since we don't archive it in primordial
+    mkdir ${DOMAIN_HOME}/lib
     # Since the SerializedSystem ini is encrypted, restore it first
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
     encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
@@ -574,7 +575,7 @@ function diff_model() {
   trace "Entering diff_model"
 
   export __WLSDEPLOY_STORE_MODEL__=1
-
+  # $1 - new model, $2 original model
   ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2
   ret=$?
   if [ $ret -ne 0 ]; then
@@ -592,7 +593,7 @@ function diff_model() {
   ${JAVA_HOME}/bin/java -cp ${CP} \
     ${JAVA_PROPS} \
     org.python.util.jython \
-    ${SCRIPTPATH}/model_diff.py > ${WDT_OUTPUT} 2>&1
+    ${SCRIPTPATH}/model_diff.py $2 > ${WDT_OUTPUT} 2>&1
   if [ $? -ne 0 ] ; then
     trace SEVERE "Failed to compare models. Check logs for error. Comparison output:"
     cat ${WDT_OUTPUT}
@@ -647,7 +648,8 @@ function createPrimordialDomain() {
 
     if [ ${cannot_perform_online_update} == "true" ] ; then
       trace SEVERE "Domain resource specified online update, but model changes cannot use online update. The  " \
-      " followings are not supported: adding a new application deployments, changing ListenPort or ListenAddress."
+      " followings are not supported: changing ListenPort, ListenAddress, SSL, " \
+      " deleting a ServerTemplate or Server."
       trace SEVERE $(cat /tmp/diffed_model.json)
       exitOrLoop
     fi
@@ -682,8 +684,8 @@ function createPrimordialDomain() {
 
   if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
 
-    if [  "true" == "${MII_ROLLBACK_IFRESTART}" ] && [  ${recreate_domain} -eq 1  ] ; then
-      trace SEVERE "Non dynamic security changes detected and 'rollBackIfRestartRequired=true', will not perform " \
+    if [  "true" == "${MII_CANCEL_CHANGES_IFRESTART_REQ}" ] && [  ${recreate_domain} -eq 1  ] ; then
+      trace SEVERE "Non dynamic security changes detected and 'cancelChangesIfRestartRequired=true', will not perform " \
         "update. You can use offline update to update the domain by setting " \
         "'domain.spec.configuration.model.onlineUpdate.enabled' to false and try again."
       exit 1
@@ -695,7 +697,7 @@ function createPrimordialDomain() {
     # Override online update since the domain needs to be restarted for security related changes.
     # Note: currently there is no way in WDT to update security information online
 
-    trace "Security changes detected or new deployment - override spec.configuration.useOnlineUpdate to false"
+    trace "Security changes detected or new deployment - override onlineUpdate.enabled to false"
     MII_USE_ONLINE_UPDATE=false
   fi
 
@@ -965,7 +967,7 @@ function wdtHandleOnlineUpdate() {
   local admin_pwd=$(cat /weblogic-operator/secrets/password)
 
   local ROLLBACK_FLAG=""
-  if [ ! -z "${MII_ROLLBACK_IFRESTART}" ] && [ "${MII_ROLLBACK_IFRESTART}" == "true" ]; then
+  if [ ! -z "${MII_CANCEL_CHANGES_IFRESTART_REQ}" ] && [ "${MII_CANCEL_CHANGES_IFRESTART_REQ}" == "true" ]; then
       #ROLLBACK_FLAG="-rollback_if_require_restart"
       ROLLBACK_FLAG="-rollback_if_restart_required"
   fi
@@ -984,26 +986,30 @@ function wdtHandleOnlineUpdate() {
   echo ${admin_pwd} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} \
    -admin_url ${admin_url} -admin_user ${admin_user} -model_file \
    /tmp/diffed_model.yaml -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG} ${archive_list} \
-   -discard_current_edit -output_dir /tmp
+   -discard_current_edit -output_dir /tmp  >  ${WDT_OUTPUT}
 
   local ret=$?
 
   trace "Completed online update="${ret}
   if [ ${ret} -eq ${RESTART_REQUIRED} ] ; then
     trace ">>>  updatedomainResult=${ret}"
-  elif [ ${ret} -eq ${PROG_ROLLBACK_IF_RESTART_EXIT_CODE} ] ; then
+  elif [ ${ret} -eq ${PROG_CANCELCHGS_IF_RESTART_EXIT_CODE} ] ; then
+    trace "Online update completed but all changes are canceled. This is because the changes involved non-dynamic " \
+      "mbean attributes and 'domain.spec.configuration.model.cancelChangesIfRestartRequried=ture'.  Following is " \
+      "the output from WDT updateDomain command."
     trace ">>>  updatedomainResult=${ret}"
     if [ -f /tmp/rollback.file ] ; then
       echo ">>> /tmp/rollback.file"
       cat /tmp/rollback.file
       echo ">>> EOF"
     fi
-    MII_UPDATE_ROLLEDBACK=true
+    MII_UPDATE_CANCELED=true
   elif [ ${ret} -ne 0 ] ; then
-    trace "Introspect job terminated: Online update failed. Check error in the logs"
-    trace "Note: Changes in the optional configmap and/or image may needs to be corrected"
+    trace SEVERE "Online update failed. Check error in the logs " \
+       "Note: Changes in the optional configmap and/or image may needs to be corrected"
+    cat ${WDT_OUTPUT}
     trace ">>>  updatedomainResult=${ret}"
-    exit 1
+    exitOrLoop
   else
     trace ">>>  updatedomainResult=${ret}"
   fi

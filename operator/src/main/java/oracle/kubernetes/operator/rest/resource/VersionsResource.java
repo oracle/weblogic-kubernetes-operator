@@ -61,14 +61,12 @@ public class VersionsResource extends BaseResource {
    */
   @Path("{version}")
   public VersionResource getVersionResource(@PathParam("version") String version) {
-    LOGGER.entering(href(), version);
     if (!VersionUtils.isVersion(version)) {
       WebApplicationException e = notFound(version);
       LOGGER.throwing(e);
       throw e;
     }
     VersionResource result = new VersionResource(this, version);
-    LOGGER.exiting(result);
     return result;
   }
 }

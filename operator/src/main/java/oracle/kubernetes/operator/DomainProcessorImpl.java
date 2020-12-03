@@ -656,7 +656,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       if (cachedInfo == null || cachedInfo.getDomain() == null) {
         return true;
       } else if (exceededFailureRetryCount && !isVersionsChanged) {
-        LOGGER.fine("Stop introspection retry - exceeded configured domainPresenceFailureRetryMaxCount: "
+        LOGGER.severe("Stop introspection retry - exceeded configured domainPresenceFailureRetryMaxCount: "
             + DomainPresence.getDomainPresenceFailureRetryMaxCount()
             + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
             + " by adding it to the weblogic-operator-cm configmap.");
@@ -673,8 +673,8 @@ public class DomainProcessorImpl implements DomainProcessor {
             .map(Domain::getDomainHomeSourceType)
             .orElse(DomainSourceType.Image);
 
-        // For MII, reset the useOnlineUpdate to false if changes in the spec involves more than introspectVersion and
-        // useOnlineUpdate, disable online update ??
+        // For MII, reset the onlineUpdate.enabled to false if changes in the spec involves more than introspectVersion
+        // and onlineUpdate, disable online update ??
 
         if (domainSourceType.equals(DomainSourceType.FromModel) && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo)) {
           LOGGER.info("DomainType is FromModel and Online changes requested in the spec involves more than "

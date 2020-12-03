@@ -294,7 +294,8 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_READINESS_PORT, Integer.toString(getIstioReadinessPort()));
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_POD_NAMESPACE, getNamespace());
       addEnvVar(vars, IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE, Boolean.toString(isUseOnlineUpdate()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_ROLLBACK_IFRESTART, Boolean.toString(isRollbackIfRestartRequire()));
+      addEnvVar(vars, IntrospectorJobEnvVars.MII_CANCEL_CHANGES_IFRESTART_REQUIRED,
+          Boolean.toString(isCancelChangesIfRestartRequire()));
 
       addEnvVarIfLongNotNull(vars, IntrospectorJobEnvVars.WDT_ACTIVATE_TIMEOUT,
           getDomain().getWDTActivateTimeout());

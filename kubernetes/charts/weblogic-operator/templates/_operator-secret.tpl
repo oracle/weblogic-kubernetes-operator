@@ -10,7 +10,7 @@ data:
   externalOperatorKey: {{ .externalOperatorKey | quote }}
   {{- end }}
   {{- $secret := (lookup "v1" "Secret" .Release.Namespace "weblogic-operator-secrets") }}
-  {{- if $secret }}
+  {{- if (and $secret $secret.data) }}
   {{- $internalOperatorKey := index $secret.data "internalOperatorKey" }}
   {{- if $internalOperatorKey }}
   internalOperatorKey: {{ $internalOperatorKey }}

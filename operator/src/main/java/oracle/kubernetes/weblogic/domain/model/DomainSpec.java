@@ -744,15 +744,15 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Test if the MII domain updates should rollback the udpate if it requires restart.
+   * Test if the MII domain updates should cancel changes the udpate if it requires restart.
    *
    * @return true or false
    */
-  boolean isRollbackIfRestartRequire() {
+  boolean isCancelChangesIfRestartRequire() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel)
         .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getRollBackIfRestartRequired)
+        .map(OnlineUpdate::getCancelChangesIfRestartRequired)
         .orElse(false);
   }
 
@@ -964,8 +964,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(getImagePullPolicy(), rhs.getImagePullPolicy())
             .append(imagePullSecrets, rhs.imagePullSecrets)
             .append(adminServer, rhs.adminServer)
-            .append(managedServers, rhs.managedServers)
-            .append(clusters, rhs.clusters)
             .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
             .append(logHomeEnabled, rhs.logHomeEnabled)

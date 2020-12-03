@@ -522,7 +522,7 @@ public class ConfigMapHelper {
           packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE, updateDomainResult);
           if (data.containsKey(rollbackFileKey)) {
             String rollbackFileContent = data.get(rollbackFileKey);
-            packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE_ROLLBACKFILE, rollbackFileContent);
+            packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE, rollbackFileContent);
             data.remove(rollbackFileKey);
           }
         }

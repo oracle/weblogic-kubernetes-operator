@@ -168,7 +168,7 @@ public class Configuration {
   /**
    * Check to see if the only change in the spec is introspectVersion.
    * @param other - another DomainSpec object for comparison
-   * @return true if the change is only introspectVersion and/or useOnlineUpdate
+   * @return true if the change is only introspectVersion and/or onlineUpdate.enabled=true
    */
 
   public boolean isSpecChangeForOnlineUpdateOnly(Object other) {
@@ -182,10 +182,8 @@ public class Configuration {
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(opss, rhs.opss)
-            .append(secrets, rhs.secrets)
             .append(overrideDistributionStrategy, rhs.overrideDistributionStrategy)
             .append(overridesConfigMap, rhs.overridesConfigMap)
-            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
             .append(istio, rhs.istio);
 
     boolean isEqual = builder.isEquals();

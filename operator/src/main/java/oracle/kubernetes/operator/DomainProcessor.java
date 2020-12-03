@@ -20,6 +20,7 @@ public interface DomainProcessor {
    * Ensures that the domain is up-to-date. This may involve validation and introspection of the domain itself,
    * changes to Kubernetes resources such as pods and services.
    * @param liveInfo an info object that tracks what is know about the domain
+   * @return Make-right operation
    */
   MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo liveInfo);
 

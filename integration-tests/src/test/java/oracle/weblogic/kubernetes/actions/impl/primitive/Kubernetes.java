@@ -635,6 +635,27 @@ public class Kubernetes {
   }
 
   /**
+   * Get the introspectVersion label from a given pod.
+   *
+   * @param namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName  name of the pod
+   * @return value of introspectVersion label, null if unset or the pod is not available
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static String getPodIntrospectVersion(String namespace, String labelSelector, String podName)
+      throws ApiException {
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null) {
+      // return the value of the introspectVersion label
+      return pod.getMetadata().getLabels().get("weblogic.introspectVersion");
+    } else {
+      getLogger().info("getPodIntrospectVersion(): Pod doesn't exist");
+      return null;
+    }
+  }
+
+  /**
    * List all pods in given namespace.
    *
    * @param namespace Namespace in which to list all pods

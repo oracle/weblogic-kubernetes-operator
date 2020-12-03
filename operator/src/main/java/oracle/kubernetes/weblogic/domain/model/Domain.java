@@ -135,9 +135,9 @@ public class Domain implements KubernetesObject {
   /**
    * check if the external service is configured for the admin server.
    *
+   * @param domainSpec Domain spec
    * @return true if the external service is configured
    */
-
   public static boolean isExternalServiceConfigured(DomainSpec domainSpec) {
     AdminServer adminServer = domainSpec.getAdminServer();
     AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
@@ -620,16 +620,16 @@ public class Domain implements KubernetesObject {
   }
 
   /**
-   * Returns if rollback changes if restart is required.
+   * Returns if cancelChangesIfRestartRequired is set to true.
    *
-   * @return true to rollback changes if restart is required
+   * @return true if cancelChangesIfRestartRequired is set to true
    */
-  public boolean isRollbackIfRestartRequire() {
+  public boolean isCancelChangesIfRestartRequire() {
     return Optional.ofNullable(spec)
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getModel)
         .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getRollBackIfRestartRequired)
+        .map(OnlineUpdate::getCancelChangesIfRestartRequired)
         .orElse(false);
   }
 
