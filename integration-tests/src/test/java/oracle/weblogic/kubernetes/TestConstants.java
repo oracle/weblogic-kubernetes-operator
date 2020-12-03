@@ -260,7 +260,7 @@ public interface TestConstants {
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
   // istio constants
-  public static final String ISTIO_VERSION = "1.5.4";
+  public static final String ISTIO_VERSION = "1.7.3";
 
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";
