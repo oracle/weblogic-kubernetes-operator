@@ -762,20 +762,14 @@ function createDomain {
 }
 
 #
-# Function to create a domain
+# Function to update a domain
 # $1 - boolean value indicating the location of the domain home
 #      true means domain home in image
 #      false means domain home on PV
 #
 function updateDomain {
-  if [ "$#" != 1 ]; then
-    fail "The function must be called with domainHomeInImage parameter."
-  fi
 
-  domainHomeInImage="${1}"
-  if [ "true" != "${domainHomeInImage}" ] && [ "false" != "${domainHomeInImage}" ]; then
-    fail "The value of domainHomeInImage must be true or false: ${domainHomeInImage}"
-  fi
+  domainHomeInImage="false"
 
   # Setup the environment for running this script and perform initial validation checks
   initialize
@@ -787,7 +781,7 @@ function updateDomain {
   validateDomainSecret
 
   # Validate the domain's persistent volume claim
-  if [ "${doValidation}" == true ] && [ "${domainHomeInImage}" == false -o "${logHomeOnPV}" == true ]; then
+  if [ "${doValidation}" == true ]; then
     validateDomainPVC
   fi
 

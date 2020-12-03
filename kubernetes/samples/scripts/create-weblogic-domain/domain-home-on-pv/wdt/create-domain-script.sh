@@ -266,8 +266,6 @@ function run_wdt {
     echo @@ "Info:  WDT updateDomain.sh succeeded."
   fi
 
-  #chmod -R g+w $domain_home_dir || return 1
-
   return 0
 }
 
@@ -295,10 +293,10 @@ else
    run_wdt "create" || exit 1
 fi
 
-echo "Does ${WDT_DIR}/done exist?"
-while [ ! -f "${WDT_DIR}/donee" ]; do
-   echo @@ "${WDT_DIR}/donee does not exist yet"
+echo "Does ${WDT_DIR}/doneExtract exist?"
+while [ ! -f "${WDT_DIR}/doneExtract" ]; do
+   echo @@ "${WDT_DIR}/doneExtract does not exist yet"
    sleep 20
 done
-echo "Found it and removing the done file"
-rm -rf ${WDT_DIR}/donee || exit 1
+echo "Found it and removing the doneExtract file"
+rm -rf ${WDT_DIR}/doneExtract || exit 1

@@ -21,7 +21,7 @@ prepareDomainHomeDir
 
 # Execute the script to create the domain
 source $script create
-exitIfError $? "ERROR: $script failed."
+exitIfError $? "ERROR: $script failed when creating domain."
 
 # DON'T REMOVE THIS
 # This script has to contain this log message. 

@@ -82,7 +82,7 @@ function initOutputDir {
   mkdir -p ${domainOutputDir}
 
   removeFileIfExists ${domainOutputDir}/create-domain-inputs.yaml
-  removeFileIfExists ${domainOutputDir}/create-domain-job.yaml
+  removeFileIfExists ${domainOutputDir}/update-domain-job.yaml
   removeFileIfExists ${domainOutputDir}/delete-domain-job.yaml
   removeFileIfExists ${domainOutputDir}/domain.yaml
 }
@@ -197,6 +197,10 @@ function updateDomainHome {
   echo update the domain by creating the job ${createJobOutput}
   kubectl create -f ${createJobOutput}
 
+  # When using WDT to create a domain, a job to create a domain is started. It then creates
+  # a pod which will run a script that creates a domain. The script then will extract the domain
+  # resource using  WDT's extractDomainResource tool. So, the following code loops until the
+  # domain resource is created by exec'ing into the pod to look for the presence of domainCreate.yaml file.
   POD_NAME=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
   echo "Waiting for results to be available from $POD_NAME"
   kubectl wait --timeout=600s --for=condition=ContainersReady pod $POD_NAME
@@ -212,9 +216,14 @@ function updateDomainHome {
     kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domainupdate.yaml"
   done
   kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/domainupdate.yaml ${domainOutputDir}/domain.yaml
-  touch donee
-  kubectl cp donee ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/
-  rm -rf donee
+
+  # The pod waits for this script to copy the domain resource yaml (domainCreate.yaml) out of the pod and into
+  # the output directory as domain.yaml. To let the pod know that domainCreate.yaml has been copied, a file called
+  # doneExtract is copied into the pod. When the script running in the pod sees the doneExtract file, it exits.
+
+  touch doneExtract
+  kubectl cp doneExtract ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/
+  rm -rf doneExtract
 
   echo "Waiting for the job to complete..."
   JOB_STATUS="0"
@@ -287,4 +296,4 @@ function printSummary {
 }
 
 # Perform the sequence of steps to create a domain
-updateDomain false
+updateDomain

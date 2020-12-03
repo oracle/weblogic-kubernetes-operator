@@ -358,7 +358,7 @@ function validateDomainFilesDir {
   if [ -z "${createDomainFilesDir}" ] || [ "${createDomainFilesDir}" == "wlst" ]; then
     useWdt=false
   fi
-  echo BR useWdt is ${useWdt}
+  echo useWdt is ${useWdt}
 }
 
 #
