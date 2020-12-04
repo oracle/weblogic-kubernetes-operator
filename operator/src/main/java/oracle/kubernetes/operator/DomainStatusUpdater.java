@@ -57,6 +57,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
@@ -269,7 +270,22 @@ public class DomainStatusUpdater {
 
       return context.isStatusUnchanged(newStatus)
             ? doNext(packet)
-            : doNext(createDomainStatusReplaceStep(context, newStatus), packet);
+            : doNext(createAbortEventIfNeeded(
+                newStatus, context.getStatus(), createDomainStatusReplaceStep(context, newStatus)),
+                packet);
+    }
+
+    private Step createAbortEventIfNeeded(DomainStatus newStatus, DomainStatus oldStatus, Step next) {
+      if (hasJustExceededMaxRetryCount(newStatus, oldStatus)) {
+        return Step.chain(next, EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_ABORTED)));
+      }
+      return next;
+    }
+
+    private boolean hasJustExceededMaxRetryCount(DomainStatus newStatus, DomainStatus oldStatus) {
+      return oldStatus != null
+          && newStatus.getIntrospectJobFailureCount() == (oldStatus.getIntrospectJobFailureCount() + 1)
+          && newStatus.getIntrospectJobFailureCount() >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
     }
 
     private Step createDomainStatusReplaceStep(DomainStatusUpdaterContext context, DomainStatus newStatus) {

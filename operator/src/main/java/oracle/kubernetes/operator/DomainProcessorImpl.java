@@ -662,6 +662,8 @@ public class DomainProcessorImpl implements DomainProcessor {
 
       if (isNewDomain(cachedInfo)) {
         return true;
+      } else if (shouldReportAbortedEvent()) {
+        return true;
       } else if (hasExceededRetryCount() && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
         String message = "exceeded configured domainPresenceFailureRetryMaxCount: "
             + DomainPresence.getDomainPresenceFailureRetryMaxCount();
@@ -670,7 +672,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
             + " by adding it to the weblogic-operator-cm configmap.");
 
-        return ensureAbortedEventPresent(message);
+        return false;
       } else if (isFatalIntrospectorError(existingError)) {
         String message = "Stop introspection retry - MII Fatal Error: " + existingError;
         LOGGER.fine(message);
@@ -680,7 +682,6 @@ public class DomainProcessorImpl implements DomainProcessor {
       } else if (shouldRecheck(cachedInfo)) {
         if (hasExceededRetryCount()) {
           resetIntrospectorJobFailureCount();
-          ensureRetryingEventPresent();
         }
         if (getCurrentIntrospectFailureRetryCount() > 0) {
           logRetryCount(cachedInfo);
@@ -691,6 +692,10 @@ public class DomainProcessorImpl implements DomainProcessor {
       }
       cachedInfo.setDomain(getDomain());
       return false;
+    }
+
+    private boolean shouldReportAbortedEvent() {
+      return Optional.ofNullable(eventData).map(EventData::getItem).orElse(null) == DOMAIN_PROCESSING_ABORTED;
     }
 
     private void ensureRetryingEventPresent() {
@@ -755,14 +760,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private boolean ensureAbortedEventPresent(String message) {
-      if (hasRetryingOrFailedEvent()) {
-        eventData.eventItem(DOMAIN_PROCESSING_ABORTED).message(message);
-      }
-
-      if (!hasAbortedEvent()) {
-        eventData = new EventData(DOMAIN_PROCESSING_ABORTED, message);
-      }
-
+      eventData = new EventData(DOMAIN_PROCESSING_ABORTED, message);
       logNotStartingDomain();
       return true;
 

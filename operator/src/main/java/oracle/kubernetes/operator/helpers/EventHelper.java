@@ -72,10 +72,6 @@ public class EventHelper {
         return doNext(packet);
       }
 
-      if (hasNotFailedOrRetried(packet) && (eventData.eventItem == DOMAIN_PROCESSING_ABORTED)) {
-        return doNext(packet);
-      }
-
       if (isDuplicatedStartedEvent(packet)) {
         return doNext(packet);
       }
