@@ -155,13 +155,12 @@ To shut down a specific standalone server, add it to the Domain and set its `ser
 ```
 {{% notice note %}}
 The Administration Server can be shut down by setting the `serverStartPolicy` of the `adminServer` to `NEVER`.
-Care should be taken when shutting down the Administration Server, as it may not be able to start up 
-any Managed Servers in the WebLogic domain while the Administration Server is not available.
-A Managed Server will try to start up in 
+Care should be taken when shutting down the Administration Server. If a Managed Server cannot connect 
+to the Administration Server during startup, it will try to start up in
 [*Managed Server Independence (MSI)* mode](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/start/failures.html#GUID-CA4696B6-B462-4FD8-92A9-F27DEA8A2E87)
-if it cannot connect to the Administration Server during startup, but this could fail due to reasons such as 
-no accessible [*Authentication Provider*](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/secmg/atn_intro.html#GUID-E56E30B4-5C18-4A21-A683-AC166792A9DE)
-from the Managed Server pod. 
+but this could fail due to reasons such as no accessible
+[*Authentication Provider*](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/secmg/atn_intro.html#GUID-E56E30B4-5C18-4A21-A683-AC166792A9DE)
+from the Managed Server pod.
 {{% /notice %}}
 
 
