@@ -1399,7 +1399,7 @@ class ItParameterizedDomain {
   }
 
   /**
-   * Wait for file exists in the pod in the given namespace.
+   * Wait for file existing in the pod in the given namespace up to 1 minute.
    * @param namespace the Kubernetes namespace that the pod is in
    * @param podName the name of the Kubernetes pod in which the command is expected to run
    * @param fileName the filename to check
