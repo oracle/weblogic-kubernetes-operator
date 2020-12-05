@@ -7,15 +7,15 @@
 #      $ ./buildDockerImage.sh [-t <image-name>]
 #
 # -------------------------
-FROM oraclelinux:7-slim
+FROM oraclelinux:8-slim
 
 # Maintainer
 # ----------
 MAINTAINER Ryan Eberhard <ryan.eberhard@oracle.com>
 
 RUN set -eux; \
-    yum -y install gzip tar openssl; \
-    rm -rf /var/cache/yum
+    microdnf -y install gzip tar openssl; \
+    microdnf clean all
 
 # Default to UTF-8 file.encoding
 ENV LANG en_US.UTF-8
@@ -24,7 +24,7 @@ ENV JAVA_HOME /usr/local/java
 ENV PATH /operator:$JAVA_HOME/bin:$PATH
 
 ENV JAVA_VERSION 15
-ENV JAVA_URL https://download.java.net/java/GA/jdk15/779bf45e88a44cbd9ea6621d33e33db1/36/GPL/openjdk-15_linux-x64_bin.tar.gz
+ENV JAVA_URL https://download.java.net/java/GA/jdk15.0.1/51f4f36ad4ef43e39d0dfdbaf6549e32/9/GPL/openjdk-15.0.1_linux-x64_bin.tar.gz
 
 # Install Java and make the operator run with a non-root user id (1000 is the `oracle` user)
 RUN set -eux; \
