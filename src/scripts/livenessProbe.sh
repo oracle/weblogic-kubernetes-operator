@@ -6,10 +6,13 @@
 #
 RETVAL=$(test -f /operator/debug-config/livenessProbeSuccessOverride ; echo $?)
 
-test `find /operator/.alive -mmin -1`
+FILE=/operator/.alive
+OLDTIME=60
+CURTIME=$(date +%s)
+FILETIME=$(stat $FILE -c %Y)
+TIMEDIFF=$(expr $CURTIME - $FILETIME)
 
-if(($?==0)); then
-    exit 0
-else
-    exit $RETVAL
+if [ $TIMEDIFF -gt $OLDTIME ]; then
+  exit $RETVAL
 fi
+exit 0
