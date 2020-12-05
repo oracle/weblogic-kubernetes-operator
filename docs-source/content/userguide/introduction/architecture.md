@@ -67,7 +67,7 @@ During a rolling event caused by a change to the Domain's `image` field, contain
 Within the container, the following aspects are configured by the operator:
 
 *	The `ENTRYPOINT` is configured by a script that starts up a Node Manager process, and then uses WLST to request that Node Manager start the server.  Node Manager is used to start servers so that the socket connection to the server will be available to obtain server status even when the server is unresponsive.  This is used by the liveness probe.
-* The liveness probe is configured to check that the server is alive by querying the Node Manager process.  The liveness probe is by default configured to check liveness every 15 seconds, and to timeout after 5 seconds.  If a pod fails the liveness probe, Kubernetes will restart that container.
+* The liveness probe is configured to check that the server is alive by querying the Node Manager process.  The liveness probe is by default configured to check liveness every 45 seconds, and to timeout after 5 seconds.  If a pod fails the liveness probe, Kubernetes will restart that container.
 *	The readiness probe is configured to use the WebLogic Server ReadyApp framework.  The readiness probe is used to determine if the server is ready to accept user requests.  The readiness is used to determine when a server should be included in a load balancer's endpoints, when a restarted server is fully started in the case of a rolling restart, and for various other purposes.
 *	A shutdown hook is configured that will execute a script that performs a graceful shutdown of the server.  This ensures that servers have an opportunity to shut down cleanly before they are killed.
 
