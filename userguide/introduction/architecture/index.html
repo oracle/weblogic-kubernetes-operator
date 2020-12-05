@@ -12,18 +12,18 @@
     <title>Architecture :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1606248383" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1606248383" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1606248383" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1606248383" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1606248383" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1606248383" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1606248383" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1606248383" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1606248383" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1607127985" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1607127985" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1607127985" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1607127985" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1607127985" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1607127985" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1607127985" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1607127985" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1607127985" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1606248383"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1607127985"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1606248383"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1606248383"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1607127985"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1607127985"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1606248383"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1607127985"></script>
 
     
   </div>
@@ -2954,7 +2954,7 @@ $ docker pull oracle/weblogic-kubernetes-operator:3.1.0
 Within the container, the following aspects are configured by the operator:</p>
 <ul>
 <li>The <code>ENTRYPOINT</code> is configured by a script that starts up a Node Manager process, and then uses WLST to request that Node Manager start the server.  Node Manager is used to start servers so that the socket connection to the server will be available to obtain server status even when the server is unresponsive.  This is used by the liveness probe.</li>
-<li>The liveness probe is configured to check that the server is alive by querying the Node Manager process.  The liveness probe is by default configured to check liveness every 15 seconds, and to timeout after 5 seconds.  If a pod fails the liveness probe, Kubernetes will restart that container.</li>
+<li>The liveness probe is configured to check that the server is alive by querying the Node Manager process.  The liveness probe is by default configured to check liveness every 45 seconds, and to timeout after 5 seconds.  If a pod fails the liveness probe, Kubernetes will restart that container.</li>
 <li>The readiness probe is configured to use the WebLogic Server ReadyApp framework.  The readiness probe is used to determine if the server is ready to accept user requests.  The readiness is used to determine when a server should be included in a load balancer&rsquo;s endpoints, when a restarted server is fully started in the case of a rolling restart, and for various other purposes.</li>
 <li>A shutdown hook is configured that will execute a script that performs a graceful shutdown of the server.  This ensures that servers have an opportunity to shut down cleanly before they are killed.</li>
 </ul>
@@ -4959,19 +4959,19 @@ Within the container, the following aspects are configured by the operator:</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1606248383"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1606248383"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1606248383"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1606248383"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1606248383"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1606248383"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1607127985"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1607127985"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1607127985"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1607127985"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1607127985"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1607127985"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1606248383"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1606248383"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1606248383"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1607127985"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1607127985"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1607127985"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1606248383" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1606248383"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1607127985" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1607127985"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
