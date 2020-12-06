@@ -53,6 +53,9 @@ import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.EXCEEDE_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
@@ -270,14 +273,23 @@ public class DomainStatusUpdater {
 
       return context.isStatusUnchanged(newStatus)
             ? doNext(packet)
-            : doNext(createAbortEventIfNeeded(
+            : doNext(createAbortedEventStepIfNeeded(
                 newStatus, context.getStatus(), createDomainStatusReplaceStep(context, newStatus)),
                 packet);
     }
 
-    private Step createAbortEventIfNeeded(DomainStatus newStatus, DomainStatus oldStatus, Step next) {
+    private Step createAbortedEventStepIfNeeded(DomainStatus newStatus, DomainStatus oldStatus, Step next) {
       if (hasJustExceededMaxRetryCount(newStatus, oldStatus)) {
-        return Step.chain(next, EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_ABORTED)));
+        return Step.chain(next,
+            EventHelper.createEventStep(
+                new EventData(DOMAIN_PROCESSING_ABORTED)
+                    .message(EXCEEDE_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG)));
+      }
+      if (hasJustGotFatalIntrospectorError(newStatus, oldStatus)) {
+        return Step.chain(next,
+            EventHelper.createEventStep(
+                new EventData(DOMAIN_PROCESSING_ABORTED)
+                    .message(FATAL_INTROSPECTOR_ERROR_MSG + newStatus.getMessage())));
       }
       return next;
     }
@@ -286,6 +298,11 @@ public class DomainStatusUpdater {
       return oldStatus != null
           && newStatus.getIntrospectJobFailureCount() == (oldStatus.getIntrospectJobFailureCount() + 1)
           && newStatus.getIntrospectJobFailureCount() >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
+    }
+
+    private boolean hasJustGotFatalIntrospectorError(DomainStatus newStatus, DomainStatus oldStatus) {
+      return newStatus.getMessage() != null && newStatus.getMessage().contains(FATAL_INTROSPECTOR_ERROR)
+          && (oldStatus.getMessage() == null || !oldStatus.getMessage().contains(FATAL_INTROSPECTOR_ERROR));
     }
 
     private Step createDomainStatusReplaceStep(DomainStatusUpdaterContext context, DomainStatus newStatus) {

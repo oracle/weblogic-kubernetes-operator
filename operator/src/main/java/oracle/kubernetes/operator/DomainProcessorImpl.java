@@ -68,11 +68,11 @@ import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
 
@@ -662,21 +662,14 @@ public class DomainProcessorImpl implements DomainProcessor {
 
       if (isNewDomain(cachedInfo)) {
         return true;
-      } else if (shouldReportAbortedEvent()) {
+      } else if (needReportAbortedEvent()) {
         return true;
       } else if (hasExceededRetryCount() && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
-        String message = "exceeded configured domainPresenceFailureRetryMaxCount: "
-            + DomainPresence.getDomainPresenceFailureRetryMaxCount();
-        LOGGER.fine("Stop introspection retry - "
-            + message
-            + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
-            + " by adding it to the weblogic-operator-cm configmap.");
-
+        LOGGER.fine(ProcessingConstants.EXCEEDE_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG);
         return false;
       } else if (isFatalIntrospectorError(existingError)) {
-        String message = "Stop introspection retry - MII Fatal Error: " + existingError;
-        LOGGER.fine(message);
-        return ensureAbortedEventPresent(message);
+        LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);
+        return false;
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
       } else if (shouldRecheck(cachedInfo)) {
@@ -694,7 +687,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       return false;
     }
 
-    private boolean shouldReportAbortedEvent() {
+    private boolean needReportAbortedEvent() {
       return Optional.ofNullable(eventData).map(EventData::getItem).orElse(null) == DOMAIN_PROCESSING_ABORTED;
     }
 
@@ -743,27 +736,11 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private boolean isFatalIntrospectorError(String existingError) {
-      return existingError != null && existingError.contains("FatalIntrospectorError");
+      return existingError != null && existingError.contains(FATAL_INTROSPECTOR_ERROR);
     }
 
     private boolean isNewDomain(DomainPresenceInfo cachedInfo) {
       return cachedInfo == null || cachedInfo.getDomain() == null;
-    }
-
-    private boolean hasAbortedEvent() {
-      return DOMAIN_PROCESSING_ABORTED == (Optional.ofNullable(eventData).map(EventData::getItem).orElse(null));
-    }
-
-    private boolean hasRetryingOrFailedEvent() {
-      EventItem eventItem = (Optional.ofNullable(eventData).map(EventData::getItem).orElse(null));
-      return DOMAIN_PROCESSING_RETRYING == eventItem || DOMAIN_PROCESSING_FAILED == eventItem;
-    }
-
-    private boolean ensureAbortedEventPresent(String message) {
-      eventData = new EventData(DOMAIN_PROCESSING_ABORTED, message);
-      logNotStartingDomain();
-      return true;
-
     }
 
     private void logNotStartingDomain() {
