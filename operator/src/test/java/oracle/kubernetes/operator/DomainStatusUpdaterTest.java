@@ -425,7 +425,7 @@ public class DomainStatusUpdaterTest {
     info.addValidationWarning(validationWarning);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
-    testSupport.runSteps(DomainStatusUpdater.createFailedAndEventStep(failure, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure, endStep));
 
     assertThat(getRecordedDomain().getStatus().getMessage(), not(containsString(validationWarning)));
   }
@@ -975,7 +975,7 @@ public class DomainStatusUpdaterTest {
   public void whenDomainLacksStatus_failedStepUpdatesDomainWithFailedTrueAndException() {
     domain.setStatus(null);
 
-    testSupport.runSteps(DomainStatusUpdater.createFailedAndEventStep(failure, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure, endStep));
 
     assertThat(
           getRecordedDomain(),
@@ -986,7 +986,7 @@ public class DomainStatusUpdaterTest {
 
   @Test
   public void whenDomainLacksFailedCondition_failedStepUpdatesDomainWithFailedTrueAndException() {
-    testSupport.runSteps(DomainStatusUpdater.createFailedAndEventStep(failure, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure, endStep));
 
     assertThat(
           getRecordedDomain(),
@@ -997,7 +997,7 @@ public class DomainStatusUpdaterTest {
   public void whenDomainHasFailedFalseCondition_failedStepUpdatesItWithTrueAndException() {
     domain.getStatus().addCondition(new DomainCondition(Failed).withStatus("False"));
 
-    testSupport.runSteps(DomainStatusUpdater.createFailedAndEventStep(failure, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure, endStep));
 
     assertThat(
           getRecordedDomain(),
@@ -1009,7 +1009,7 @@ public class DomainStatusUpdaterTest {
   public void whenDomainHasProgressingTrueCondition_failedStepRemovesIt() {
     domain.getStatus().addCondition(new DomainCondition(Progressing).withStatus("True"));
 
-    testSupport.runSteps(DomainStatusUpdater.createFailedAndEventStep(failure, endStep));
+    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure, endStep));
 
     assertThat(getRecordedDomain(), not(hasCondition(Progressing)));
   }

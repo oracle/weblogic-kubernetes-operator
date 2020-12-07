@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.Optional;
+import javax.validation.constraints.NotNull;
 
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -87,12 +88,6 @@ public class EventHelper {
                   event,
                   new DefaultResponseStep<>(getNext())),
           packet);
-
-    }
-
-    private boolean hasNotFailedOrRetried(Packet packet) {
-      return packet.get(ProcessingConstants.EVENT_TYPE) != EventItem.DOMAIN_PROCESSING_FAILED
-          && packet.get(ProcessingConstants.EVENT_TYPE) != EventItem.DOMAIN_PROCESSING_RETRYING;
     }
 
     private boolean isDuplicatedStartedEvent(Packet packet) {
@@ -323,6 +318,10 @@ public class EventHelper {
     @Override
     public String toString() {
       return "EventData: " + eventItem;
+    }
+
+    public static boolean isProcessingAbortedEvent(@NotNull EventData eventData) {
+      return eventData.eventItem == DOMAIN_PROCESSING_ABORTED;
     }
   }
 }

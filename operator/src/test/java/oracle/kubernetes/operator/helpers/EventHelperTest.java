@@ -32,7 +32,7 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createFailedAndEventStep;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureRelatedSteps;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_PATTERN;
@@ -55,6 +55,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PR
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
+import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -100,7 +101,7 @@ public class EventHelperTest {
     makeRightOperation.execute();
 
     assertThat("Event DOMAIN_PROCESSING_STARTED",
-        containsEvent(getEvents(), DOMAIN_PROCESSING_STARTING_EVENT), is(Boolean.TRUE));
+        containsEvent(getEvents(), DOMAIN_PROCESSING_STARTING_EVENT), is(true));
   }
 
   @Test
@@ -109,8 +110,7 @@ public class EventHelperTest {
 
     assertThat("Event DOMAIN_PROCESSING_STARTED message",
         containsEventWithNamespace(getEvents(),
-            DOMAIN_PROCESSING_STARTING_EVENT),
-        is(Boolean.TRUE));
+            DOMAIN_PROCESSING_STARTING_EVENT), is(true));
   }
 
   @Test
@@ -120,8 +120,7 @@ public class EventHelperTest {
     assertThat("Event DOMAIN_PROCESSING_STARTED message",
         containsEventWithMessage(getEvents(),
             DOMAIN_PROCESSING_STARTING_EVENT,
-            String.format(DOMAIN_PROCESSING_STARTING_PATTERN, UID)),
-            is(Boolean.TRUE));
+            String.format(DOMAIN_PROCESSING_STARTING_PATTERN, UID)), is(true));
   }
 
   @Test
@@ -130,8 +129,7 @@ public class EventHelperTest {
     makeRightOperation.execute();
 
     assertThat("Event involved object",
-        containsEventWithInvolvedObject(getEvents(), DOMAIN_PROCESSING_STARTING_EVENT, UID, NS),
-        is(Boolean.TRUE));
+        containsEventWithInvolvedObject(getEvents(), DOMAIN_PROCESSING_STARTING_EVENT, UID, NS), is(true));
   }
 
   @Test
@@ -140,8 +138,7 @@ public class EventHelperTest {
     makeRightOperation.execute();
 
     assertThat("Event reporting component",
-        containsEventWithComponent(getEvents(), DOMAIN_PROCESSING_STARTING_EVENT),
-        is(Boolean.TRUE));
+        containsEventWithComponent(getEvents(), DOMAIN_PROCESSING_STARTING_EVENT), is(true));
   }
 
   @Test
@@ -149,195 +146,171 @@ public class EventHelperTest {
       throws Exception {
     String namespaceFromHelm = NamespaceHelper.getOperatorNamespace();
 
-    testSupport.runSteps(
-        new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_STARTING)
-        ));
+    testSupport.runSteps(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)));
 
     assertThat("Operator namespace ",
         namespaceFromHelm, equalTo(OP_NS));
 
     assertThat("Event reporting instance",
-        containsEventWithInstance(getEvents(), DOMAIN_PROCESSING_STARTING_EVENT, OPERATOR_POD_NAME),
-        is(Boolean.TRUE));
+        containsEventWithInstance(getEvents(), DOMAIN_PROCESSING_STARTING_EVENT, OPERATOR_POD_NAME), is(true));
   }
 
   @Test
   public void whenCreateEventStepCalled_domainProcessingSucceededEventCreated() {
     testSupport.runSteps(Step.chain(
-        new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_STARTING)),
-        new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_COMPLETED))));
+        createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
 
     assertThat("Event DOMAIN_PROCESSING_SUCCEEDED",
-        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(Boolean.TRUE));
+        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
   }
 
   @Test
   public void whenCreateEventStepCalled_domainProcessingSucceededEventCreatedWithExpectedMessage() {
     testSupport.runSteps(Step.chain(
-        new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_STARTING)),
-        new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_COMPLETED)))
+        createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED)))
     );
 
     assertThat("Event DOMAIN_PROCESSING_SUCCEEDED message",
         containsEventWithMessage(getEvents(),
             EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT,
-            String.format(DOMAIN_PROCESSING_COMPLETED_PATTERN, UID)),
-        is(Boolean.TRUE));
+            String.format(DOMAIN_PROCESSING_COMPLETED_PATTERN, UID)), is(true));
   }
 
   @Test
   public void whenCreateEventStepCalledWithOutStartedEvent_domainProcessingSucceededEventNotCreated() {
-    testSupport.runSteps(
-        new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_COMPLETED)));
+    testSupport.runSteps(createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED)));
 
     assertThat("Event DOMAIN_PROCESSING_SUCCEEDED",
-        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(Boolean.FALSE));
+        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(false));
   }
 
   @Test
   public void whenCreateEventStepCalledWithRetryingAndEvent_domainProcessingSucceededEventCreated() {
     testSupport.runSteps(Step.chain(
-        new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_RETRYING)),
-        new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_STARTING)),
-        new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_COMPLETED)))
+        createEventStep(new EventData(DOMAIN_PROCESSING_RETRYING)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED)))
     );
 
     assertThat("Event DOMAIN_PROCESSING_SUCCEEDED",
-        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(Boolean.TRUE));
+        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
   }
 
   @Test
   public void whenMakeRightCalled_withFailedEventData_domainProcessingFailedEventCreated() {
-    testSupport.runSteps(createFailedAndEventStep("FAILED", "Test failure", new TerminalStep()));
+    testSupport.runSteps(createFailureRelatedSteps("FAILED", "Test failure", new TerminalStep()));
 
     assertThat("Event DOMAIN_PROCESSING_FAILED",
-        containsEvent(getEvents(), DOMAIN_PROCESSING_FAILED_EVENT), is(Boolean.TRUE));
+        containsEvent(getEvents(), DOMAIN_PROCESSING_FAILED_EVENT), is(true));
   }
 
   @Test
   public void whenMakeRightCalled_withFailedEventData_domainProcessingFailedEventCreatedWithExpectedMessage() {
-    testSupport.runSteps(createFailedAndEventStep("FAILED", "Test this failure", new TerminalStep()));
+    testSupport.runSteps(createFailureRelatedSteps("FAILED", "Test this failure", new TerminalStep()));
 
     assertThat("Event DOMAIN_PROCESSING_FAILED message",
         containsEventWithMessage(getEvents(),
             DOMAIN_PROCESSING_FAILED_EVENT,
-            String.format(DOMAIN_PROCESSING_FAILED_PATTERN, UID, "Test this failure")),
-        is(Boolean.TRUE));
+            String.format(DOMAIN_PROCESSING_FAILED_PATTERN, UID, "Test this failure")), is(true));
   }
 
   @Test
   public void whenMakeRightCalled_withRetryingEventData_domainProcessingRetryingEventCreated() {
-    makeRightOperation.withEventData(new EventData(DOMAIN_PROCESSING_RETRYING)).execute();
+    makeRightOperation.withEventData(DOMAIN_PROCESSING_RETRYING, null).execute();
 
     assertThat("Event DOMAIN_PROCESSING_RETRYING",
-        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT), is(Boolean.TRUE));
+        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT), is(true));
   }
 
   @Test
   public void whenMakeRightCalled_withRetryingEventData_domainProcessingRetryingEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(new EventData(DOMAIN_PROCESSING_RETRYING)).execute();
+    makeRightOperation.withEventData(DOMAIN_PROCESSING_RETRYING, null).execute();
 
     assertThat("Event DOMAIN_PROCESSING_RETRYING message",
         containsEventWithMessage(getEvents(),
             EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT,
-            String.format(DOMAIN_PROCESSING_RETRYING_PATTERN, UID)),
-        is(Boolean.TRUE));
+            String.format(DOMAIN_PROCESSING_RETRYING_PATTERN, UID)), is(true));
   }
 
   @Test
   public void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreated() {
-    makeRightOperation.withEventData(new EventData(DOMAIN_CREATED)).execute();
+    makeRightOperation.withEventData(DOMAIN_CREATED, null).execute();
 
     assertThat("Event DOMAIN_CREATED",
-        containsEvent(getEvents(), EventConstants.DOMAIN_CREATED_EVENT), is(Boolean.TRUE));
+        containsEvent(getEvents(), EventConstants.DOMAIN_CREATED_EVENT), is(true));
   }
 
   @Test
   public void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(new EventData(DOMAIN_CREATED)).execute();
+    makeRightOperation.withEventData(DOMAIN_CREATED, null).execute();
 
     assertThat("Event DOMAIN_CREATED message",
         containsEventWithMessage(getEvents(),
             EventConstants.DOMAIN_CREATED_EVENT,
-            String.format(DOMAIN_CREATED_PATTERN, UID)),
-        is(Boolean.TRUE));
+            String.format(DOMAIN_CREATED_PATTERN, UID)), is(true));
   }
 
   @Test
   public void whenMakeRightCalled_withChangedEventData_domainChangedEventCreated() {
-    makeRightOperation.withEventData(new EventData(DOMAIN_CHANGED)).execute();
+    makeRightOperation.withEventData(DOMAIN_CHANGED, null).execute();
 
     assertThat("Event DOMAIN_CHANGED",
-        containsEvent(getEvents(), EventConstants.DOMAIN_CHANGED_EVENT), is(Boolean.TRUE));
+        containsEvent(getEvents(), EventConstants.DOMAIN_CHANGED_EVENT), is(true));
   }
 
   @Test
   public void whenMakeRightCalled_withChangedEventData_domainChangedEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(new EventData(DOMAIN_CHANGED)).execute();
+    makeRightOperation.withEventData(DOMAIN_CHANGED, null).execute();
 
     assertThat("Event DOMAIN_CHANGED message",
         containsEventWithMessage(getEvents(),
             EventConstants.DOMAIN_CHANGED_EVENT,
-            String.format(DOMAIN_CHANGED_PATTERN, UID)),
-        is(Boolean.TRUE));
+            String.format(DOMAIN_CHANGED_PATTERN, UID)), is(true));
   }
 
 
   @Test
   public void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreated() {
-    makeRightOperation.withEventData(new EventData(DOMAIN_DELETED)).execute();
+    makeRightOperation.withEventData(DOMAIN_DELETED, null).execute();
 
     assertThat("Event DOMAIN_DELETED",
-        containsEvent(getEvents(), EventConstants.DOMAIN_DELETED_EVENT), is(Boolean.TRUE));
+        containsEvent(getEvents(), EventConstants.DOMAIN_DELETED_EVENT), is(true));
   }
 
   @Test
   public void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(new EventData(DOMAIN_DELETED)).execute();
+    makeRightOperation.withEventData(DOMAIN_DELETED, null).execute();
 
     assertThat("Event DOMAIN_DELETED message",
         containsEventWithMessage(getEvents(),
             EventConstants.DOMAIN_DELETED_EVENT,
-            String.format(DOMAIN_DELETED_PATTERN, UID)),
-        is(Boolean.TRUE));
+            String.format(DOMAIN_DELETED_PATTERN, UID)), is(true));
   }
 
   @Test
   public void whenMakeRightCalled_withAbortedEventData_domainProcessingAbortedEventCreated() {
     testSupport.runSteps(Step.chain(
-        new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_FAILED)),
-        new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_ABORTED).message("Test this failure")))
+        createEventStep(new EventData(DOMAIN_PROCESSING_FAILED)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_ABORTED).message("Test this failure")))
     );
 
     assertThat("Event DOMAIN_PROCESSING_FAILED",
-        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT), is(Boolean.TRUE));
+        containsEvent(getEvents(), EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT), is(true));
   }
 
   @Test
   public void whenMakeRightCalled_withAbortedEventData_domainProcessingAbortedEventCreatedWithExpectedMessage() {
     testSupport.runSteps(Step.chain(
-        new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_FAILED)),
-        new EventHelper().createEventStep(
-            new EventData(DOMAIN_PROCESSING_ABORTED).message("Test this failure")))
+        createEventStep(new EventData(DOMAIN_PROCESSING_FAILED)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_ABORTED).message("Test this failure")))
     );
 
     assertThat("Event DOMAIN_PROCESSING_ABORTED message",
         containsEventWithMessage(getEvents(),
             EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT,
-            String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, UID, "Test this failure")),
-        is(Boolean.TRUE));
+            String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, UID, "Test this failure")), is(true));
   }
 
   private V1Event getEventMatchesReason(List<V1Event> events, String reason) {

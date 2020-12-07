@@ -174,14 +174,14 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain condition to Failed after an asynchronous call failure and
+   * Asynchronous steps to set Domain condition to Failed after an asynchronous call failure
    * and to generate DOMAIN_PROCESSING_FAILED event.
    *
    * @param callResponse the response from an unrecoverable call
    * @param next Next step
    * @return Step
    */
-  public static Step createFailedAndEventStep(CallResponse<?> callResponse, Step next) {
+  public static Step createFailureRelatedSteps(CallResponse<?> callResponse, Step next) {
     FailureStatusSource failure = UnrecoverableErrorBuilder.fromFailedCall(callResponse);
 
     LOGGER.severe(MessageKeys.CALL_FAILED, failure.getMessage(), failure.getReason());
@@ -190,35 +190,35 @@ public class DomainStatusUpdater {
       LOGGER.fine(MessageKeys.EXCEPTION, apiException);
     }
 
-    return createFailedAndEventStep(failure.getReason(), failure.getMessage(), next);
+    return createFailureRelatedSteps(failure.getReason(), failure.getMessage(), next);
   }
 
   /**
-   * Asynchronous step to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
    *
    * @param throwable Throwable that caused failure
    * @param next Next step
    * @return Step
    */
-  static Step createFailedAndEventStep(Throwable throwable, Step next) {
-    return throwable.getMessage() == null ? createFailedAndEventStep("Exception", throwable.toString(), next)
-        : createFailedAndEventStep("Exception", throwable.getMessage(), next);
+  static Step createFailureRelatedSteps(Throwable throwable, Step next) {
+    return throwable.getMessage() == null ? createFailureRelatedSteps("Exception", throwable.toString(), next)
+        : createFailureRelatedSteps("Exception", throwable.getMessage(), next);
   }
 
   /**
-   * Asynchronous step to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
    *
    * @param reason the reason for the failure
    * @param message a fuller description of the problem
    * @param next Next step
    * @return Step
    */
-  public static Step createFailedAndEventStep(String reason, String message, Step next) {
-    return createFailedAndEventStep(null, reason, message, next);
+  public static Step createFailureRelatedSteps(String reason, String message, Step next) {
+    return createFailureRelatedSteps(null, reason, message, next);
   }
 
   /**
-   * Asynchronous step to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
    *
    * @param info Domain presence info
    * @param reason the reason for the failure
@@ -226,7 +226,7 @@ public class DomainStatusUpdater {
    * @param next Next step
    * @return Step
    */
-  public static Step createFailedAndEventStep(DomainPresenceInfo info, String reason, String message, Step next) {
+  public static Step createFailureRelatedSteps(DomainPresenceInfo info, String reason, String message, Step next) {
     return Step.chain(
         new FailedStep(info, reason, message, null),
         EventHelper.createEventStep(

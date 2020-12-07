@@ -423,7 +423,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
         .withExplicitRecheck()
-        .withEventData(new EventData(EventItem.DOMAIN_CREATED))
+        .withEventData(EventItem.DOMAIN_CREATED, null)
         .execute();
   }
 
@@ -431,14 +431,14 @@ public class DomainProcessorImpl implements DomainProcessor {
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
-        .withEventData(new EventData(EventItem.DOMAIN_CHANGED))
+        .withEventData(EventItem.DOMAIN_CHANGED, null)
         .execute();
   }
 
   private void handleDeletedDomain(Domain domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck()
-        .withEventData(new EventData(EventItem.DOMAIN_DELETED))
+        .withEventData(EventItem.DOMAIN_DELETED, null)
         .execute();
   }
 
@@ -590,12 +590,12 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     /**
      * Set the event data that is associated with this operation.
-     * @param eventData event data
+     * @param eventItem event data
+     * @param message event message
      * @return the updated factory
      */
-    @Override
-    public MakeRightDomainOperation withEventData(EventData eventData) {
-      this.eventData = eventData;
+    public MakeRightDomainOperation withEventData(EventItem eventItem, String message) {
+      this.eventData = new EventData(eventItem).message(message);
       return this;
     }
 
@@ -662,7 +662,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
       if (isNewDomain(cachedInfo)) {
         return true;
-      } else if (needReportAbortedEvent()) {
+      } else if (shouldReportAbortedEvent()) {
         return true;
       } else if (hasExceededRetryCount() && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
         LOGGER.fine(ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG);
@@ -687,7 +687,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       return false;
     }
 
-    private boolean needReportAbortedEvent() {
+    private boolean shouldReportAbortedEvent() {
       return Optional.ofNullable(eventData).map(EventData::getItem).orElse(null) == DOMAIN_PROCESSING_ABORTED;
     }
 
@@ -778,15 +778,11 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private Step getEventStep(Step next) {
-      if (eventData != null) {
-        Step step = Step.chain(createEventStep(eventData), next);
-        return step;
-      }
-      return next;
+      return Optional.ofNullable(eventData).map(ed -> Step.chain(createEventStep(ed), next)).orElse(next);
     }
 
     private boolean containsAbortedEventData() {
-      return eventData != null && eventData.getItem() == DOMAIN_PROCESSING_ABORTED;
+      return Optional.ofNullable(eventData).map(EventData::isProcessingAbortedEvent).orElse(false);
     }
 
     private Domain getDomain() {
@@ -827,10 +823,10 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static boolean isImgRestartIntrospectVerChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
     return !Objects.equals(getIntrospectVersion(liveInfo), getIntrospectVersion(cachedInfo))
         || !Objects.equals(getRestartVersion(liveInfo), getRestartVersion(cachedInfo))
-        || !Objects.equals(getntrospectImage(liveInfo), getntrospectImage(cachedInfo));
+        || !Objects.equals(getIntrospectImage(liveInfo), getIntrospectImage(cachedInfo));
   }
 
-  private static String getntrospectImage(DomainPresenceInfo info) {
+  private static String getIntrospectImage(DomainPresenceInfo info) {
     return Optional.ofNullable(info)
         .map(DomainPresenceInfo::getDomain)
         .map(Domain::getSpec)
@@ -881,7 +877,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.startFiberIfLastFiberMatches(
                 domainUid,
                 Fiber.getCurrentIfSet(),
-                DomainStatusUpdater.createFailedAndEventStep(throwable, null),
+                DomainStatusUpdater.createFailureRelatedSteps(throwable, null),
                 plan.packet,
                 new CompletionCallback() {
                   @Override
@@ -914,7 +910,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                             createMakeRightOperation(existing)
                                 .withDeleting(isDeleting)
                                 .withExplicitRecheck()
-                                .withEventData(new EventData(EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING))
+                                .withEventData(EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING, null)
                                 .execute();
                           } else {
                             LOGGER.severe(
@@ -924,12 +920,12 @@ public class DomainProcessorImpl implements DomainProcessor {
                                 DomainPresence.getDomainPresenceFailureRetryMaxCount(),
                                 throwable);
                             createMakeRightOperation(existing)
-                                .withEventData(new EventData(DOMAIN_PROCESSING_ABORTED,
+                                .withEventData(DOMAIN_PROCESSING_ABORTED,
                                     String.format(
                                         "Unable to start domain %s after %s attempts due to exception: %s",
                                         domainUid,
                                         DomainPresence.getDomainPresenceFailureRetryMaxCount(),
-                                        throwable)))
+                                        throwable))
                                 .execute();
                           }
                         }
@@ -1153,7 +1149,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       switch (podStatus) {
         case PHASE_FAILED:
           delegate.runSteps(
-                  DomainStatusUpdater.createFailedAndEventStep(
+                  DomainStatusUpdater.createFailureRelatedSteps(
                           info, pod.getStatus().getReason(), pod.getStatus().getMessage(), null));
           break;
         case WAITING_NON_NULL_MESSAGE:
@@ -1162,7 +1158,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                   .map(V1ContainerState::getWaiting)
                   .ifPresent(waiting ->
                     delegate.runSteps(
-                            DomainStatusUpdater.createFailedAndEventStep(
+                            DomainStatusUpdater.createFailureRelatedSteps(
                                     info, waiting.getReason(), waiting.getMessage(), null)));
           break;
         case TERMINATED_ERROR_REASON:
@@ -1170,14 +1166,14 @@ public class DomainProcessorImpl implements DomainProcessor {
                   .map(V1ContainerStatus::getState)
                   .map(V1ContainerState::getTerminated)
                   .ifPresent(terminated -> delegate.runSteps(
-                          DomainStatusUpdater.createFailedAndEventStep(
+                          DomainStatusUpdater.createFailureRelatedSteps(
                                   info, terminated.getReason(), terminated.getMessage(), null)));
           break;
         case UNSCHEDULABLE:
           Optional.ofNullable(getMatchingPodCondition())
                   .ifPresent(condition ->
                           delegate.runSteps(
-                                  DomainStatusUpdater.createFailedAndEventStep(
+                                  DomainStatusUpdater.createFailureRelatedSteps(
                                           info, condition.getReason(), condition.getMessage(), null)));
           break;
         case SUCCESS:
