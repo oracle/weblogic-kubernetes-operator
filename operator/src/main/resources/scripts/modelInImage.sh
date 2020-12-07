@@ -502,7 +502,8 @@ function createModelDomain() {
   elif [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
     trace "Using existing primordial domain"
     cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${LOCAL_PRIM_DOMAIN_ZIP} && tar -xzf ${LOCAL_PRIM_DOMAIN_ZIP}
-
+    # create empty lib since we don't archive it in primordial zip and WDT will fail without it
+    mkdir ${DOMAIN_HOME}/lib
     # Since the SerializedSystem ini is encrypted, restore it first
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
     encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
