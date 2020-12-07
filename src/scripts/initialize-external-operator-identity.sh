@@ -46,7 +46,7 @@ function getExternalIdentity {
     -H "Content-Type: application/json" \
     -X GET \
     $KUBERNETES_MASTER/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME | \
-    python -c "import sys, json; print json.load(sys.stdin)['data']['tls.crt']" \
+    jq -r '.["data"]["tls.crt"]' \
     >> ${EXTERNAL_CERT_PEM}
 
   curl -s \
@@ -55,7 +55,7 @@ function getExternalIdentity {
     -H "Content-Type: application/json" \
     -X GET \
     $KUBERNETES_MASTER/api/v1/namespaces/$NAMESPACE/secrets/$SECRET_NAME | \
-    python -c "import sys, json; print json.load(sys.stdin)['data']['tls.key']" | base64 --decode \
+    jq -r '.["data"]["tls.key"]' | base64 --decode \
     >> ${EXTERNAL_KEY_PEM}
 }
 
