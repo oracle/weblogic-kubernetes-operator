@@ -475,7 +475,7 @@ public class JobHelper {
         }
         //Introspector job is incomplete, update domain status and terminate processing
         return doNext(
-            DomainStatusUpdater.createFailedAndEventStep(
+            DomainStatusUpdater.createFailureRelatedSteps(
               onSeparateLines(jobConditionsReason),
               onSeparateLines(severeStatuses),
                 null),
