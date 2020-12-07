@@ -303,7 +303,7 @@ public class FileUtils {
     ExecResult result = execCommand(namespace, podName, null, true,
         "/bin/sh", "-c", "find " + filename);
 
-    if (result.exitValue() == 0 && result.stdout().contains(filename)) {
+    if (result.stdout().contains(filename)) {
       return true;
     } else {
       return false;
