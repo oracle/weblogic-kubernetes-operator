@@ -665,7 +665,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       } else if (needReportAbortedEvent()) {
         return true;
       } else if (hasExceededRetryCount() && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
-        LOGGER.fine(ProcessingConstants.EXCEEDE_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG);
+        LOGGER.fine(ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG);
         return false;
       } else if (isFatalIntrospectorError(existingError)) {
         LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);

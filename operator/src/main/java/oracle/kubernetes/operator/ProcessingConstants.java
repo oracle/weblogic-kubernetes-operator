@@ -47,7 +47,7 @@ public interface ProcessingConstants {
   String EVENT_TYPE = "eventType";
   String FATAL_INTROSPECTOR_ERROR = "FatalIntrospectorError";
 
-  String EXCEEDE_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG = "Stop introspection retry - "
+  String EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG = "Stop introspection retry - "
       + "exceeded configured domainPresenceFailureRetryMaxCount: "
       + DomainPresence.getDomainPresenceFailureRetryMaxCount()
       + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"

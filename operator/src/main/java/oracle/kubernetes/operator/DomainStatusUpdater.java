@@ -53,7 +53,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.ProcessingConstants.EXCEEDE_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
+import static oracle.kubernetes.operator.ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -283,7 +283,7 @@ public class DomainStatusUpdater {
         return Step.chain(next,
             EventHelper.createEventStep(
                 new EventData(DOMAIN_PROCESSING_ABORTED)
-                    .message(EXCEEDE_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG)));
+                    .message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG)));
       }
       if (hasJustGotFatalIntrospectorError(newStatus, oldStatus)) {
         return Step.chain(next,
