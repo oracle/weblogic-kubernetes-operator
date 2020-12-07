@@ -8,60 +8,61 @@ pre = "<b> </b>"
 #### Contents
 
 - [Overview](#overview)
-- [Operator generated events types](#operator-generated-events-types)
-- [Operator generated event details](#operator-generated-event-details)
+- [Operator-generated event types](#operator-generated-event-types)
+- [Operator-generated event details](#operator-generated-event-details)
 - [How to access domain events](#how-to-access-the-events)
-- [Examples of key events](#examples-of-key-events)
+- [Examples of generated events](#examples-of-generated-events)
 
 #### Overview
 
-The document describes Kubernetes events that the operator generates about domain resources that it manages at the key points of its domain processing workflow. Those events provide an addiitonal way of monitoring your domain resources. Note that the kubernetes server also generates events for the standard Kubernetes resources, such as pods, services, and jobs that the operator generates on behalf of deployed domain custom resources.
+This document describes Kubernetes events that the operator generates about domain resources that it manages, during key points of its domain processing workflow. These events provide an additional way of monitoring your domain resources. Note that the Kubernetes server also generates events for standard Kubernetes resources, such as pods, services, and jobs that the operator generates on behalf of deployed domain custom resources.
 
-#### Operator generated events types
+#### Operator-generated event types
 
-The operator generates the following event types:
- * _DomainCreated:_ indicates that a new domain is created
- * _DomainChanged:_ indicates that a change has been made to an existing domain
- * _DomainDeleted:_ indicates that an existing domain has been deleted
- * _DomainProcessingStarting:_ indicates that the operator has started to process a new domain or to update an existing domain. This event may be a result of a DomainCreate, DomainChanged or DomainDeleted event, or a result of a retry after a failed attempt.
- * _DomainProcessingFailed:_ indicates that the operator has encountered a problem while it was processing the domain resource. The failure could either be a configuration error, or a Kubernetes API error.
- * _DomainProcessingRetrying:_ indicates that the operator is going to retry the processing of a domain after it encountered an failure.
- * _DomainProcessingCompleted:_ indicates that the operator successfully completed the processing of a domain resource.
- * _DomainProcessingAborted:_ indicates that the operator gave up on processing a domain when the operator encountered a fatal error or a failure that persists after the specified maximum number of retries.
+The operator generates these event types, which indicate the following:
 
-#### Operator generated event details
+ *  `DomainCreated`: A new domain is created.
+ *  `DomainChanged`: A change has been made to an existing domain.
+ *  `DomainDeleted`: An existing domain has been deleted.
+ *  `DomainProcessingStarting`: The operator has started to process a new domain or to update an existing domain. This event may be a result of a `DomainCreate`, `DomainChanged`, or `DomainDeleted` event, or a result of a retry after a failed attempt.
+ *  `DomainProcessingFailed`: The operator has encountered a problem while it was processing the domain resource. The failure either could be a configuration error or a Kubernetes API error.
+ *  `DomainProcessingRetrying`: The operator is going to retry the processing of a domain after it encountered an failure.
+ *  `DomainProcessingCompleted`:  The operator successfully completed the processing of a domain resource.
+ *  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error or a failure that persisted after the specified maximum number of retries.
 
-Each operator generated event contains the following fields:
- * _metadata:_
-   - _namespace:_ the same as the domain resource namespace
-   - _labels:_  `weblogic.createdByOperator=true` and `weblogic.domainUID=<domainUID>`
- * _type:_ a string field that describes the type of the event. Possible values are `Normal` or `Warning`.
- * _reportingComponent:_ a string that describes the component that reports the event. The value is `weblogic.operator` for all operator generated events.
- * _reportingInstance:_ a string that describes the instance that reports the event. The value is the Kubernetes pod name of the operator instance that generates the event.
- * _lastTimestamp:_ a DateTime field that presents the timestamp of last occurrence of this event.
- * _reason:_ a short, machine understandable string that gives the reason for the transition into the object's current status.
- * _message:_ a string that describes the details of the event.
- * _involvedObject:_ a V1ObjectReference object that describes the Kubernetes resources with which this event is associated.
-   - _name:_ a string that describes the name of the domain resource, which is the `domainUID`.
-   - _namespace:_ a string that describes the namespace of the event, which is the namespace of the domain resource.
-   - _kind:_ a string that describes the kind of the Kubernetes resource with which this event is associated. The value is `Domain` for all operator generated events.
-   - _apiVersion:_ a string that describes the apiVersion of the involved object, which is the apiVersion of the domain resource, for example, `weblogic.oracle/v8`.
+#### Operator-generated event details
+
+Each operator-generated event contains the following fields:
+ *  `metadata`
+    *  `namespace`:  Same as the domain resource namespace.
+    *  `labels`:   `weblogic.createdByOperator=true` and `weblogic.domainUID=<domainUID>`.
+ *  `type`:  String field that describes the type of the event. Possible values are `Normal` or `Warning`.
+ *  `reportingComponent`:  String that describes the component that reports the event. The value is `weblogic.operator` for all operator-generated events.
+ *  `reportingInstance`:  String that describes the instance that reports the event. The value is the Kubernetes pod name of the operator instance that generates the event.
+ *  `lastTimestamp`:  `DateTime` field that presents the timestamp of the last occurrence of this event.
+ *  `reason`:  Short, machine understandable string that gives the reason for the transition to the object's current status.
+ *  `message`:  String that describes the details of the event.
+ *  `involvedObject`:  `V1ObjectReference` object that describes the Kubernetes resources with which this event is associated.
+    *  `name`:  String that describes the name of the domain resource, which is the `domainUID`.
+    *  `namespace`:  String that describes the namespace of the event, which is the namespace of the domain resource.
+    *  `kind`:  String that describes the kind of the Kubernetes resource with which this event is associated. The value is `Domain` for all operator-generated events.
+    *  `apiVersion`:  String that describes the `apiVersion` of the involved object, which is the `apiVersion` of the domain resource, for example, `weblogic.oracle/v8`.
 
 #### How to access the events
- 
-To access the events that are associated with all domain resources in a particular namespace, use this command:
- 
+
+To access the events that are associated with all domain resources in a particular namespace, run:
+
  ```none
  $ kubectl get events -n [namespace]
  ```
 
-To get the events and sort them by their last timestamp, use this command:
+To get the events and sort them by their last timestamp, run:
 
 ```none
  $ kubectl get events -n [namespace] --sort-by=lastTimestamp
 ```
 
-Here is an example output of the command:
+Example output of the command:
 
 ```none
 
@@ -90,7 +91,7 @@ LAST SEEN   TYPE      REASON                      OBJECT                        
 
 ```
 
-To get all events that are generated by the operator, use this command:
+To get all events that are generated by the operator, run:
 
 ```none
  $ kubectl get events -n [namespace] --selector=weblogic.createdByOperator=true
@@ -98,9 +99,9 @@ To get all events that are generated by the operator, use this command:
 
 #### Examples of generated events
 
-Here are a couple of examples of operator-generated events from the output of `kubectl describe event` command or `kubectl get events` command.
+Here are some examples of operator-generated events from the output of the `kubectl describe event` or `kubectl get events` commands.
 
-An example of DomainProcessingStarting event:
+Example of a `DomainProcessingStarting` event:
 
 ```none
 
@@ -134,7 +135,7 @@ Events:  <none>
 
 ```
 
-An example of DomainProcessingFailed event:
+Example of a `DomainProcessingFailed` event:
 
 ```none
 Name:             sample-domain1.DomainProcessingFailed.1606844109483
@@ -167,7 +168,7 @@ Events:  <none>
 
 ```
 
-An example of DomainProcessingCompleted event:
+Example of a `DomainProcessingCompleted` event:
 
 ```none
 
@@ -201,7 +202,7 @@ Events:  <none>
 
 ```
 
-An example of DomainProcessingAborted event:
+Example of a `DomainProcessingAborted` event:
 
 ```none
 
@@ -235,8 +236,10 @@ Events:  <none>
 
 ```
 
-An example of domain processing completed after failure and retries: the scenarios is that the operator initially failed to process the domain resource because the specified image was missing, and then completed the processing during a retry after the image is recreated.
-Note that this is not a full list of events; some of the events that are generated by the Kubernetes server are removed to make the list less cluttered.
+Example of domain processing completed after failure and retries:
+
+The scenario is that the operator initially failed to process the domain resource because the specified image was missing, and then completed the processing during a retry after the image was recreated.
+Note that this is not a full list of events; some of the events that are generated by the Kubernetes server have been removed to make the list less cluttered.
 
 ```none
 
