@@ -181,6 +181,31 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     return new V1Container().name(name).image(image).command(Arrays.asList(command));
   }
 
+  static List<V1EnvVar> getPredefinedEnvVariables(String serverName) {
+    List<V1EnvVar> envVars  = new ArrayList<>();
+    envVars.add(createEnvVar("DOMAIN_NAME", DOMAIN_NAME));
+    envVars.add(createEnvVar("DOMAIN_HOME", "/u01/oracle/user_projects/domains"));
+    envVars.add(createEnvVar("ADMIN_NAME", ADMIN_SERVER));
+    envVars.add(createEnvVar("ADMIN_PORT", Integer.toString(ADMIN_PORT)));
+    envVars.add(createEnvVar("SERVER_NAME", serverName));
+    envVars.add(createEnvVar("DOMAIN_UID", UID));
+    envVars.add(createEnvVar("NODEMGR_HOME", NODEMGR_HOME));
+    envVars.add(createEnvVar("LOG_HOME", null));
+    envVars.add(createEnvVar("SERVER_OUT_IN_POD_LOG", Boolean.toString(INCLUDE_SERVER_OUT_IN_POD_LOG)));
+    envVars.add(createEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, serverName)));
+    envVars.add(createEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)));
+    envVars.add(createEnvVar(
+            "USER_MEM_ARGS",
+            "-Djava.security.egd=file:/dev/./urandom"));
+    envVars.add(createEnvVar("ADMIN_USERNAME", null));
+    envVars.add(createEnvVar("ADMIN_PASSWORD", null));
+    return envVars;
+  }
+
+  private static V1EnvVar createEnvVar(String name, String value) {
+    return new V1EnvVar().name(name).value(value);
+  }
+
   private String getServerName() {
     return serverName;
   }
