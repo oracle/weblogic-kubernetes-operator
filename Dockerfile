@@ -14,7 +14,7 @@ FROM oraclelinux:8-slim
 MAINTAINER Ryan Eberhard <ryan.eberhard@oracle.com>
 
 RUN set -eux; \
-    microdnf -y install gzip tar openssl; \
+    microdnf -y install gzip tar openssl jq; \
     microdnf clean all
 
 # Default to UTF-8 file.encoding
