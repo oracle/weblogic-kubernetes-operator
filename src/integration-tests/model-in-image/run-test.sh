@@ -354,6 +354,8 @@ if [ "$DO_INITIAL_MAIN" = "true" ]; then
   doCommand -c "export INCLUDE_CONFIGMAP=false"
   doCommand -c "export CORRECTED_DATASOURCE_SECRET=false"
 
+  dumpInfo
+
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
   doCommand    "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
@@ -369,6 +371,8 @@ if [ "$DO_INITIAL_MAIN" = "true" ]; then
     testapp internal cluster-1 "Hello World!"
     testapp traefik  cluster-1 "Hello World!"
   fi
+
+  dumpInfo
 fi
 
 #
@@ -385,6 +389,8 @@ if [ "$DO_UPDATE1" = "true" ]; then
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
   doCommand -c "export CORRECTED_DATASOURCE_SECRET=false"
 
+  dumpInfo
+
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
   doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
@@ -398,6 +404,8 @@ if [ "$DO_UPDATE1" = "true" ]; then
     testapp internal cluster-1 "mynewdatasource"
     testapp traefik  cluster-1 "mynewdatasource"
   fi
+
+  dumpInfo
 fi
 
 #
@@ -416,6 +424,8 @@ if [ "$DO_UPDATE2" = "true" ]; then
   doCommand -c "export CORRECTED_DATASOURCE_SECRET=false"
   doCommand -c "export CUSTOM_DOMAIN_NAME=domain2"
 
+  dumpInfo
+
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
   doCommand    "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
@@ -432,6 +442,8 @@ if [ "$DO_UPDATE2" = "true" ]; then
     testapp internal cluster-1 "name....domain1"
     testapp traefik  cluster-1 "name....domain1"
   fi
+
+  dumpInfo
 fi
 
 #
@@ -450,6 +462,8 @@ fi
 if [ "$DO_UPDATE3_MAIN" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE3-MAIN ======"
 
+  dumpInfo
+
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update3.yaml"
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
@@ -466,6 +480,8 @@ if [ "$DO_UPDATE3_MAIN" = "true" ]; then
     testapp internal cluster-1 "v2"
     testapp traefik  cluster-1 "v2"
   fi
+
+  dumpInfo
 fi
 
 #
@@ -488,6 +504,9 @@ if [ "$DO_UPDATE4" = "true" ]; then
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
   doCommand -c "export CORRECTED_DATASOURCE_SECRET=true"
 
+  dumpInfo
+  podInfoBefore="$(getPodInfo | grep -v introspectVersion)"
+
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
   doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f  \${WORKDIR}/model-configmaps/datasource -f \${WORKDIR}/model-configmaps/workmanager -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
@@ -499,11 +518,22 @@ if [ "$DO_UPDATE4" = "true" ]; then
   if [ ! "$DRY_RUN" = "true" ]; then
     testapp internal cluster-1 "'SampleMinThreads' with configured count: 2" 60 quiet
     testapp internal cluster-1 "'SampleMaxThreads' with configured count: 20" 
-
     if [ "$DO_ASSUME_DB" = "true" ]; then
       testapp internal cluster-1 "Datasource 'mynewdatasource':  State='Running', testPool='Passed'"
     fi
+
+    podInfoAfter="$(getPodInfo | grep -v introspectVersion)"
+    if [ "$podInfoBefore" = "$podInfoAfter" ]; then
+      trace "No roll detected. Good!"
+    else
+      dumpInfo
+      trace "Info: Pods before:" && echo "${podInfoBefore}"
+      trace "Info: Pods after:" && echo "${podInfoAfter}"
+      trace "Error: Unexpected roll detected."
+      exit 1
+    fi
   fi
+  dumpInfo
 fi
 
 trace "Woo hoo! Finished without errors! Total runtime $SECONDS seconds."
