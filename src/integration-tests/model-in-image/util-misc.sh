@@ -162,6 +162,55 @@ EOF
   done
 }
 
+#
+# getPodInfo
+#   outputs interesting labels, timestamps, and other info for current DOMAIN_UID and DOMAIN_NAMESPACE pods
+#
+
+function getPodInfo() {
+  local jpath=''
+  jpath+='{range .items[*]}'
+  jpath+='{" name="}'
+  jpath+='{"\""}{.metadata.name}{"\""}'
+  jpath+='{"\n   creationTimestamp="}'
+  jpath+='{"\""}{.metadata.creationTimestamp}{"\""}'
+  jpath+='{"\n   domainRestartVersion="}'
+  jpath+='{"\""}{.metadata.labels.weblogic\.domainRestartVersion}{"\""}'
+  jpath+='{"\n   introspectVersion="}'
+  jpath+='{"\""}{.metadata.labels.weblogic\.introspectVersion}{"\""}'
+  jpath+='{"\n   image="}'
+  jpath+='{"\""}{.spec.containers[?(@.name=="weblogic-server")].image}{"\""}'
+  jpath+='{"\n   ready="}'
+  jpath+='{"\""}{.status.containerStatuses[?(@.name=="weblogic-server")].ready}{"\""}'
+  jpath+='{"\n   phase="}'
+  jpath+='{"\""}{.status.phase}{"\""}'
+  jpath+='{"\n   startTime="}'
+  jpath+='{"\""}{.status.startTime}{"\""}'
+  jpath+='{"\n"}'
+  jpath+='{end}'
+
+  local cur_pods="$( kubectl -n ${DOMAIN_NAMESPACE} get pods \
+                  -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
+                  -o=jsonpath="$jpath" )"
+
+  echo "$cur_pods"
+}
+
+# dumpInfo
+#
+#   dump pod info to a file (for tracing/debugging purposes)
+#   file name is $WORKDIR/test-out/$PPID.$COUNT.$(timestamp).getPodInfo.out
+#
+
+function dumpInfo() {
+  [ "$DRY_RUN" = "true" ] && return
+  COMMAND_OUTFILE_COUNT=${COMMAND_OUTFILE_COUNT:-0}
+  COMMAND_OUTFILE_COUNT=$((COMMAND_OUTFILE_COUNT + 1))
+  mkdir -p $WORKDIR/test-out
+  local out_file="$WORKDIR/test-out/$PPID.$(printf "%3.3u" $COMMAND_OUTFILE_COUNT).$(timestamp).getPodInfo.out"
+  trace Info: Running command "'getPodInfo'," "output='$out_file'."
+  getPodInfo > $out_file 2>&1
+}
 
 # doCommand
 #
