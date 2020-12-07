@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.custom.Quantity;
@@ -56,6 +57,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -68,6 +70,8 @@ import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.readString;
 import static java.nio.file.Paths.get;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -132,6 +136,7 @@ import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillRe
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -470,32 +475,17 @@ class ItParameterizedDomain {
 
     // check in admin server pod, the default admin server data file moved to DATA_HOME_OVERRIDE
     String defaultAdminDataFile = DATA_HOME_OVERRIDE + "/" + domainUid + "/_WLS_ADMIN-SERVER000000.DAT";
-    assertTrue(assertDoesNotThrow(() ->
-        doesFileExistInPod(domainNamespace, adminServerPodName, defaultAdminDataFile),
-        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace)),
-        String.format("can not find file %s in pod %s in namespace %s",
-            defaultAdminDataFile, adminServerPodName, domainNamespace));
+    waitForFileExistsInPod(domainNamespace, adminServerPodName, defaultAdminDataFile);
 
     // check in managed server pod, the custom data file for JMS and default managed server datafile are created
     // in DATA_HOME_OVERRIDE
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + i;
       String customDataFile = DATA_HOME_OVERRIDE + "/" + domainUid + "/FILESTORE-0@MANAGED-SERVER" + i + "000000.DAT";
-      assertTrue(assertDoesNotThrow(() ->
-              doesFileExistInPod(domainNamespace, managedServerPodName, customDataFile),
-          String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-              customDataFile, managedServerPodName, domainNamespace)),
-          String.format("can not find file %s in pod %s in namespace %s",
-              customDataFile, managedServerPodName, domainNamespace));
+      waitForFileExistsInPod(domainNamespace, managedServerPodName, customDataFile);
 
       String defaultMSDataFile = DATA_HOME_OVERRIDE + "/" + domainUid + "/_WLS_MANAGED-SERVER" + i + "000000.DAT";
-      assertTrue(assertDoesNotThrow(() ->
-              doesFileExistInPod(domainNamespace, managedServerPodName, defaultMSDataFile),
-          String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-              defaultMSDataFile, managedServerPodName, domainNamespace)),
-          String.format("can not find file %s in pod %s in namespace %s",
-              defaultMSDataFile, managedServerPodName, domainNamespace));
+      waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
     }
   }
 
@@ -519,22 +509,12 @@ class ItParameterizedDomain {
     // check in admin server pod, there is a data file for JMS server created in /u01/oracle/customFileStore
     String dataFileToCheck = "/u01/oracle/customFileStore/FILESTORE-0000000.DAT";
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-    assertTrue(assertDoesNotThrow(
-        () -> doesFileExistInPod(domainNamespace, adminServerPodName, dataFileToCheck),
-        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace)),
-        String.format("did not find file %s in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace));
+    waitForFileExistsInPod(domainNamespace, adminServerPodName, dataFileToCheck);
 
     // check in admin server pod, the default admin server data file is in default data store
     String defaultAdminDataFile =
         "/u01/domains/" + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
-    assertTrue(assertDoesNotThrow(() ->
-            doesFileExistInPod(domainNamespace, adminServerPodName, defaultAdminDataFile),
-        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace)),
-        String.format("did not find file %s in pod %s in namespace %s",
-            defaultAdminDataFile, adminServerPodName, domainNamespace));
+    waitForFileExistsInPod(domainNamespace, adminServerPodName, defaultAdminDataFile);
 
     // check in managed server pod, there is no custom data file for JMS is created
     for (int i = 1; i <= replicaCount; i++) {
@@ -550,12 +530,7 @@ class ItParameterizedDomain {
 
         String defaultMSDataFile = "/u01/domains/" + domainUid + "/servers/cluster-" + j + "-managed-server" + i
             + "/data/store/default/_WLS_CLUSTER-" + j + "-MANAGED-SERVER" + i + "000000.DAT";
-        assertTrue(assertDoesNotThrow(() ->
-                doesFileExistInPod(domainNamespace, managedServerPodName, defaultMSDataFile),
-            String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-                defaultMSDataFile, managedServerPodName, domainNamespace)),
-            String.format("can not find file %s in pod %s in namespace %s",
-                defaultMSDataFile, managedServerPodName, domainNamespace));
+        waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
       }
     }
   }
@@ -580,22 +555,12 @@ class ItParameterizedDomain {
     // check in admin server pod, there is a data file for JMS server created in /u01/oracle/customFileStore
     String dataFileToCheck = "/u01/oracle/customFileStore/FILESTORE-0000000.DAT";
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-    assertTrue(assertDoesNotThrow(
-        () -> doesFileExistInPod(domainNamespace, adminServerPodName, dataFileToCheck),
-        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace)),
-        String.format("did not find file %s in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace));
+    waitForFileExistsInPod(domainNamespace, adminServerPodName, dataFileToCheck);
 
     // check in admin server pod, the default admin server data file is in default data store
     String defaultAdminDataFile =
         "/u01/shared/domains/" + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
-    assertTrue(assertDoesNotThrow(() ->
-            doesFileExistInPod(domainNamespace, adminServerPodName, defaultAdminDataFile),
-        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace)),
-        String.format("did not find file %s in pod %s in namespace %s",
-            defaultAdminDataFile, adminServerPodName, domainNamespace));
+    waitForFileExistsInPod(domainNamespace, adminServerPodName, defaultAdminDataFile);
 
     // check in managed server pod, there is no custom data file for JMS is created
     for (int i = 1; i <= replicaCount; i++) {
@@ -610,12 +575,7 @@ class ItParameterizedDomain {
 
       String defaultMSDataFile = "/u01/shared/domains/" + domainUid + "/servers/managed-server" + i
           + "/data/store/default/_WLS_MANAGED-SERVER" + i + "000000.DAT";
-      assertTrue(assertDoesNotThrow(() ->
-              doesFileExistInPod(domainNamespace, managedServerPodName, defaultMSDataFile),
-          String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-              defaultMSDataFile, managedServerPodName, domainNamespace)),
-          String.format("can not find file %s in pod %s in namespace %s",
-              defaultMSDataFile, managedServerPodName, domainNamespace));
+      waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
     }
   }
 
@@ -1422,5 +1382,46 @@ class ItParameterizedDomain {
     }
     killServerScript.setExecutable(true, false);
     return killServerScript;
+  }
+
+  /**
+   * Check whether a file exists in a pod in the given namespace.
+   *
+   * @param namespace the Kubernetes namespace that the pod is in
+   * @param podName the name of the Kubernetes pod in which the command is expected to run
+   * @param fileName the filename to check
+   * @return true if the file exists, otherwise return false
+   */
+  private Callable<Boolean> fileExistsInPod(String namespace, String podName, String fileName) {
+    return () -> {
+      return doesFileExistInPod(namespace, podName, fileName);
+    };
+  }
+
+  /**
+   * Wait for file existing in the pod in the given namespace up to 1 minute.
+   * @param namespace the Kubernetes namespace that the pod is in
+   * @param podName the name of the Kubernetes pod in which the command is expected to run
+   * @param fileName the filename to check
+   */
+  private void waitForFileExistsInPod(String namespace, String podName, String fileName) {
+
+    ConditionFactory withStandardRetryPolicy =
+        with().pollDelay(1, SECONDS)
+            .and().with().pollInterval(5, SECONDS)
+            .atMost(1, MINUTES).await();
+
+    logger.info("Wait for file {0} existing in pod {1} in namespace {2}", fileName, podName, namespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for file {0} existing in pod {1} in namespace {2} "
+                    + "(elapsed time {3}ms, remaining time {4}ms)",
+                fileName,
+                podName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> fileExistsInPod(namespace, podName, fileName),
+            "fileExistsInPod failed with IOException, ApiException or InterruptedException"));
   }
 }
