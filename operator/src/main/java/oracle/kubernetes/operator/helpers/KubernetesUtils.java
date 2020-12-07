@@ -77,9 +77,9 @@ public class KubernetesUtils {
         Map<String, String> required) {
     for (String name : required.keySet()) {
       if (!current.containsKey(name)) {
-        patchBuilder.add(basePath + name, required.get(name));
+        patchBuilder.add(basePath + name.replace("/", "~1"), required.get(name));
       } else {
-        patchBuilder.replace(basePath + name, required.get(name));
+        patchBuilder.replace(basePath + name.replace("/", "~1"), required.get(name));
       }
     }
   }
