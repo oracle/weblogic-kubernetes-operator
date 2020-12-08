@@ -24,7 +24,7 @@ To check the Domain status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAINUI
 
 #### Check the Domain events
 
-To check events for the domain: `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
+To check events for the Domain: `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
 
 For more information, see [Domain events]({{< relref "/userguide/managing-domains/domain-events.md" >}}).
 
