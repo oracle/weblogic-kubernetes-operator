@@ -308,7 +308,7 @@ class ItMiiDynamicUpdate {
   }
 
   /**
-   * Recreate configmap containing application config target to both admin and cluster.
+   * Recreate configmap containing previous test model and application config target to both admin and cluster.
    * Patch the domain resource with the configmap.
    * Update the introspect version of the domain resource.
    * Wait for introspector to complete
@@ -416,7 +416,7 @@ class ItMiiDynamicUpdate {
 
     // Replace contents of an existing configMap
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(pathToRemoveTargetYaml.toString()), withStandardRetryPolicy);
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToRemoveTargetYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
