@@ -60,6 +60,7 @@ public class DomainV2Test extends DomainTestBase {
       new V1Sysctl().name("net.ipv4.route.min_pmtu").value("552");
   private static final V1Sysctl CLUSTER_SYSCTL =
       new V1Sysctl().name("kernel.shm_rmid_forced").value("0");
+  public static final String LIVENESS_PROBE_CUSTOM_SCRIPT = "/u01/customLiveness.sh";
 
   @Before
   public void setUp() {
@@ -1362,6 +1363,12 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomainReadFromYaml_livenessCustomScriptMatches() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    assertThat(domain.getLivenessProbeCustomScript(), is(LIVENESS_PROBE_CUSTOM_SCRIPT));
+  }
+
+  @Test
   public void whenVolumesConfiguredOnMultipleLevels_useCombination() {
     configureDomain(domain)
         .withAdditionalVolume("name1", "/domain-tmp1")
@@ -1469,6 +1476,13 @@ public class DomainV2Test extends DomainTestBase {
     configureDomain(domain).withLogHomeEnabled(true);
 
     assertThat(domain.getSpec().isLogHomeEnabled(), is(true));
+  }
+
+  @Test
+  public void whenLivenessProbeCustomScriptSet_useValue() {
+    configureDomain(domain).withLivenessProbeCustomScript(LIVENESS_PROBE_CUSTOM_SCRIPT);
+
+    assertThat(domain.getLivenessProbeCustomScript(), equalTo(LIVENESS_PROBE_CUSTOM_SCRIPT));
   }
 
   @Test

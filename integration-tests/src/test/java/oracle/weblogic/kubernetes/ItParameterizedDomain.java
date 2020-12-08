@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.custom.Quantity;
@@ -24,7 +25,6 @@ import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobSpec;
@@ -41,7 +41,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -58,6 +57,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -70,6 +70,8 @@ import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.readString;
 import static java.nio.file.Paths.get;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -120,6 +122,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSec
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
@@ -132,8 +135,8 @@ import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForSe
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -472,32 +475,17 @@ class ItParameterizedDomain {
 
     // check in admin server pod, the default admin server data file moved to DATA_HOME_OVERRIDE
     String defaultAdminDataFile = DATA_HOME_OVERRIDE + "/" + domainUid + "/_WLS_ADMIN-SERVER000000.DAT";
-    assertTrue(assertDoesNotThrow(() ->
-        doesFileExistInPod(domainNamespace, adminServerPodName, defaultAdminDataFile),
-        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace)),
-        String.format("can not find file %s in pod %s in namespace %s",
-            defaultAdminDataFile, adminServerPodName, domainNamespace));
+    waitForFileExistsInPod(domainNamespace, adminServerPodName, defaultAdminDataFile);
 
     // check in managed server pod, the custom data file for JMS and default managed server datafile are created
     // in DATA_HOME_OVERRIDE
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + i;
       String customDataFile = DATA_HOME_OVERRIDE + "/" + domainUid + "/FILESTORE-0@MANAGED-SERVER" + i + "000000.DAT";
-      assertTrue(assertDoesNotThrow(() ->
-              doesFileExistInPod(domainNamespace, managedServerPodName, customDataFile),
-          String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-              customDataFile, managedServerPodName, domainNamespace)),
-          String.format("can not find file %s in pod %s in namespace %s",
-              customDataFile, managedServerPodName, domainNamespace));
+      waitForFileExistsInPod(domainNamespace, managedServerPodName, customDataFile);
 
       String defaultMSDataFile = DATA_HOME_OVERRIDE + "/" + domainUid + "/_WLS_MANAGED-SERVER" + i + "000000.DAT";
-      assertTrue(assertDoesNotThrow(() ->
-              doesFileExistInPod(domainNamespace, managedServerPodName, defaultMSDataFile),
-          String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-              defaultMSDataFile, managedServerPodName, domainNamespace)),
-          String.format("can not find file %s in pod %s in namespace %s",
-              defaultMSDataFile, managedServerPodName, domainNamespace));
+      waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
     }
   }
 
@@ -521,22 +509,12 @@ class ItParameterizedDomain {
     // check in admin server pod, there is a data file for JMS server created in /u01/oracle/customFileStore
     String dataFileToCheck = "/u01/oracle/customFileStore/FILESTORE-0000000.DAT";
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-    assertTrue(assertDoesNotThrow(
-        () -> doesFileExistInPod(domainNamespace, adminServerPodName, dataFileToCheck),
-        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace)),
-        String.format("did not find file %s in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace));
+    waitForFileExistsInPod(domainNamespace, adminServerPodName, dataFileToCheck);
 
     // check in admin server pod, the default admin server data file is in default data store
     String defaultAdminDataFile =
         "/u01/domains/" + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
-    assertTrue(assertDoesNotThrow(() ->
-            doesFileExistInPod(domainNamespace, adminServerPodName, defaultAdminDataFile),
-        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace)),
-        String.format("did not find file %s in pod %s in namespace %s",
-            defaultAdminDataFile, adminServerPodName, domainNamespace));
+    waitForFileExistsInPod(domainNamespace, adminServerPodName, defaultAdminDataFile);
 
     // check in managed server pod, there is no custom data file for JMS is created
     for (int i = 1; i <= replicaCount; i++) {
@@ -552,12 +530,7 @@ class ItParameterizedDomain {
 
         String defaultMSDataFile = "/u01/domains/" + domainUid + "/servers/cluster-" + j + "-managed-server" + i
             + "/data/store/default/_WLS_CLUSTER-" + j + "-MANAGED-SERVER" + i + "000000.DAT";
-        assertTrue(assertDoesNotThrow(() ->
-                doesFileExistInPod(domainNamespace, managedServerPodName, defaultMSDataFile),
-            String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-                defaultMSDataFile, managedServerPodName, domainNamespace)),
-            String.format("can not find file %s in pod %s in namespace %s",
-                defaultMSDataFile, managedServerPodName, domainNamespace));
+        waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
       }
     }
   }
@@ -582,22 +555,12 @@ class ItParameterizedDomain {
     // check in admin server pod, there is a data file for JMS server created in /u01/oracle/customFileStore
     String dataFileToCheck = "/u01/oracle/customFileStore/FILESTORE-0000000.DAT";
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-    assertTrue(assertDoesNotThrow(
-        () -> doesFileExistInPod(domainNamespace, adminServerPodName, dataFileToCheck),
-        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace)),
-        String.format("did not find file %s in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace));
+    waitForFileExistsInPod(domainNamespace, adminServerPodName, dataFileToCheck);
 
     // check in admin server pod, the default admin server data file is in default data store
     String defaultAdminDataFile =
         "/u01/shared/domains/" + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
-    assertTrue(assertDoesNotThrow(() ->
-            doesFileExistInPod(domainNamespace, adminServerPodName, defaultAdminDataFile),
-        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-            dataFileToCheck, adminServerPodName, domainNamespace)),
-        String.format("did not find file %s in pod %s in namespace %s",
-            defaultAdminDataFile, adminServerPodName, domainNamespace));
+    waitForFileExistsInPod(domainNamespace, adminServerPodName, defaultAdminDataFile);
 
     // check in managed server pod, there is no custom data file for JMS is created
     for (int i = 1; i <= replicaCount; i++) {
@@ -612,12 +575,7 @@ class ItParameterizedDomain {
 
       String defaultMSDataFile = "/u01/shared/domains/" + domainUid + "/servers/managed-server" + i
           + "/data/store/default/_WLS_MANAGED-SERVER" + i + "000000.DAT";
-      assertTrue(assertDoesNotThrow(() ->
-              doesFileExistInPod(domainNamespace, managedServerPodName, defaultMSDataFile),
-          String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-              defaultMSDataFile, managedServerPodName, domainNamespace)),
-          String.format("can not find file %s in pod %s in namespace %s",
-              defaultMSDataFile, managedServerPodName, domainNamespace));
+      waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
     }
   }
 
@@ -919,19 +877,12 @@ class ItParameterizedDomain {
     Path pvHostPath =
         get(PV_ROOT, ItParameterizedDomain.class.getSimpleName(), pvcName);
 
-    logger.info("Creating PV directory {0}", pvHostPath);
-    assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
-    assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
-
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName(domainUid + "-weblogic-domain-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
-            .persistentVolumeReclaimPolicy("Recycle")
-            .hostPath(new V1HostPathVolumeSource()
-                .path(pvHostPath.toString())))
+            .persistentVolumeReclaimPolicy("Recycle"))
         .metadata(new V1ObjectMetaBuilder()
             .withName(pvName)
             .build()
@@ -941,7 +892,6 @@ class ItParameterizedDomain {
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName(domainUid + "-weblogic-domain-storage-class")
             .volumeName(pvName)
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("5Gi"))))
@@ -953,7 +903,8 @@ class ItParameterizedDomain {
             .putLabelsItem("weblogic.domainUid", domainUid));
 
     String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
-    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace);
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace,
+        domainUid + "-weblogic-domain-storage-class", pvHostPath);
 
     // create a temporary WebLogic domain property file as a input for WDT model file
     File domainPropertiesFile = assertDoesNotThrow(() -> createTempFile("domainonpv", "properties"),
@@ -1224,7 +1175,6 @@ class ItParameterizedDomain {
                                       String namespace,
                                       V1Container jobContainer) {
     logger.info("Running Kubernetes job to create domain");
-
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
@@ -1235,19 +1185,7 @@ class ItParameterizedDomain {
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
-                    .addInitContainersItem(new V1Container()
-                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .addCommandItem("/bin/sh")
-                        .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:0 /u01/shared")
-                        .addVolumeMountsItem(
-                            new V1VolumeMount()
-                                .name(pvName)
-                                .mountPath("/u01/shared"))
-                        .securityContext(new V1SecurityContext()
-                            .runAsGroup(0L)
-                            .runAsUser(0L)))
+                    .addInitContainersItem(createfixPVCOwnerContainer(pvName, "/u01/shared"))
                     .addContainersItem(jobContainer  // container containing WLST or WDT details
                         .name("create-weblogic-domain-onpv-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
@@ -1444,5 +1382,46 @@ class ItParameterizedDomain {
     }
     killServerScript.setExecutable(true, false);
     return killServerScript;
+  }
+
+  /**
+   * Check whether a file exists in a pod in the given namespace.
+   *
+   * @param namespace the Kubernetes namespace that the pod is in
+   * @param podName the name of the Kubernetes pod in which the command is expected to run
+   * @param fileName the filename to check
+   * @return true if the file exists, otherwise return false
+   */
+  private Callable<Boolean> fileExistsInPod(String namespace, String podName, String fileName) {
+    return () -> {
+      return doesFileExistInPod(namespace, podName, fileName);
+    };
+  }
+
+  /**
+   * Wait for file existing in the pod in the given namespace up to 1 minute.
+   * @param namespace the Kubernetes namespace that the pod is in
+   * @param podName the name of the Kubernetes pod in which the command is expected to run
+   * @param fileName the filename to check
+   */
+  private void waitForFileExistsInPod(String namespace, String podName, String fileName) {
+
+    ConditionFactory withStandardRetryPolicy =
+        with().pollDelay(1, SECONDS)
+            .and().with().pollInterval(5, SECONDS)
+            .atMost(1, MINUTES).await();
+
+    logger.info("Wait for file {0} existing in pod {1} in namespace {2}", fileName, podName, namespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for file {0} existing in pod {1} in namespace {2} "
+                    + "(elapsed time {3}ms, remaining time {4}ms)",
+                fileName,
+                podName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> fileExistsInPod(namespace, podName, fileName),
+            "fileExistsInPod failed with IOException, ApiException or InterruptedException"));
   }
 }

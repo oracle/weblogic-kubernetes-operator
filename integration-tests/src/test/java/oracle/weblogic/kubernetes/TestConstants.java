@@ -143,12 +143,13 @@ public interface TestConstants {
 
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostAddress()));
-  public static final String RESULTS_ROOT = System.getenv().getOrDefault("RESULT_ROOT",
-      System.getProperty("java.io.tmpdir")) + "/ittestsresults";
-  public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
-      System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
-  public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
-      System.getProperty("java.io.tmpdir") + "/ittestspvroot");
+  public static final String RESULTS_BASE = System.getenv().getOrDefault("RESULT_ROOT",
+      System.getProperty("java.io.tmpdir") + "/it-testsresults");
+
+  public static final String LOGS_DIR = RESULTS_BASE + "/diagnostics";
+  public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT", 
+      RESULTS_BASE + "/pvroot");
+  public static final String RESULTS_ROOT = RESULTS_BASE + "/workdir";
 
   // NGINX constants
   public static final String NGINX_REPO_URL = "https://kubernetes.github.io/ingress-nginx";
@@ -260,11 +261,18 @@ public interface TestConstants {
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
   // istio constants
-  public static final String ISTIO_VERSION = "1.5.4";
+  public static final String ISTIO_VERSION = "1.7.3";
 
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";
 
+  //OKE constants
+  public static final boolean OKE_CLUSTER = Boolean.parseBoolean(Optional.ofNullable(System.getenv("OKE_CLUSTER"))
+      .orElse("false"));
+  public static final String NFS_SERVER = Optional.ofNullable(System.getenv("NFS_SERVER"))
+      .orElse("");
+  public static final String FSS_DIR = Optional.ofNullable(System.getenv("FSS_DIR"))
+      .orElse("");
 
   // default name suffixes
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";

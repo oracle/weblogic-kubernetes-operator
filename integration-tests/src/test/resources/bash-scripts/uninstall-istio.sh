@@ -5,7 +5,7 @@
 # Description:
 #
 #  This script uninstall a given version of istio using Helm v3.x
-#  Default istio version is 1.5.4 
+#  Default istio version is 1.7.3 
 #  https://istio.io/docs/setup/install/istioctl/
 #  https://istio.io/latest/docs/setup/install/standalone-operator/
 
@@ -21,20 +21,16 @@ version=$1
 workdir=$2
 
 istiodir=${workdir}/istio-${version}
-
 echo "Uninstalling Istio version [${version}] from location [${istiodir}]"
-
 ( cd ${istiodir}
-  helm template istio-init install/kubernetes/helm/istio-init --namespace istio-system | kubectl delete -f -
-  kubectl -n istio-system wait --for=condition=complete job --all
-  helm template istio install/kubernetes/helm/istio --namespace istio-system | kubectl delete -f -
+  bin/istioctl x uninstall --purge -y
 )
 kubectl delete namespace istio-system --ignore-not-found
 rm -rf ${istiodir}
 }
 
 # MAIN
-version=${1:-1.5.4}
+version=${1:-1.7.3}
 workdir=${2:-`pwd`}
 
 istiodir=${workdir}/istio-${version}
