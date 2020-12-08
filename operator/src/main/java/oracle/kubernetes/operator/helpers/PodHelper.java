@@ -272,7 +272,7 @@ public class PodHelper {
 
     @Override
     Step createProgressingStep(Step actionStep) {
-      return DomainStatusUpdater.createProgressingStep(
+      return DomainStatusUpdater.createProgressingStartedEventStep(
           DomainStatusUpdater.ADMIN_SERVER_STARTING_PROGRESS_REASON, false, actionStep);
     }
 
@@ -431,7 +431,7 @@ public class PodHelper {
 
     @Override
     Step createProgressingStep(Step actionStep) {
-      return DomainStatusUpdater.createProgressingStep(
+      return DomainStatusUpdater.createProgressingStartedEventStep(
           DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, actionStep);
     }
 

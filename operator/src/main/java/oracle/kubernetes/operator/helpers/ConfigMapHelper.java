@@ -42,6 +42,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.joda.time.DateTime;
 
 import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.DomainStatusUpdater.BAD_TOPOLOGY;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION;
@@ -588,7 +589,7 @@ public class ConfigMapHelper {
     @Override
     public NextAction apply(Packet packet) {
       List<String> errors = getErrors(packet);
-      Step step = DomainStatusUpdater.createFailedStep(DomainStatusUpdater.BAD_TOPOLOGY, perLine(errors), null);
+      Step step = DomainStatusUpdater.createFailureRelatedSteps(BAD_TOPOLOGY, perLine(errors), null);
       return doNext(step, packet);
     }
 

@@ -47,7 +47,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStep;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 
@@ -348,7 +348,7 @@ public class JobHelper {
             Step.chain(
                 DomainValidationSteps.createAdditionalDomainValidationSteps(
                     context.getJobModel().getSpec().getTemplate().getSpec()),
-                createProgressingStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
+                createProgressingStartedEventStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
                 context.createNewJob(null),
                 readDomainIntrospectorPodLogStep(null),
                 deleteDomainIntrospectorJobStep(null),
@@ -475,7 +475,7 @@ public class JobHelper {
         }
         //Introspector job is incomplete, update domain status and terminate processing
         return doNext(
-            DomainStatusUpdater.createFailedStep(
+            DomainStatusUpdater.createFailureRelatedSteps(
               onSeparateLines(jobConditionsReason),
               onSeparateLines(severeStatuses),
                 null),

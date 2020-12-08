@@ -11,6 +11,7 @@ Here are some suggestions for debugging problems with Model in Image after your 
 #### Contents
 
  - [Check the Domain status](#check-the-domain-status)
+ - [Check the Domain events](#check-the-domain-events)
  - [Check the introspector job](#check-the-introspector-job)
  - [Check the WebLogic Server pods](#check-the-weblogic-server-pods)
  - [Check the operator log](#check-the-operator-log)
@@ -20,6 +21,12 @@ Here are some suggestions for debugging problems with Model in Image after your 
 #### Check the Domain status
 
 To check the Domain status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID`.
+
+#### Check the Domain events
+
+To check events for the Domain: `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
+
+For more information, see [Domain events]({{< relref "/userguide/managing-domains/domain-events.md" >}}).
 
 #### Check the introspector job
 
