@@ -31,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
+import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
@@ -226,6 +227,11 @@ public class CallBuilder {
           wrap(
               createSelfSubjectRulesReviewAsync(
                   usage, (V1SelfSubjectRulesReview) requestParams.body, callback));
+  private final CallFactory<V1Event> createEvent =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createEventAsync(
+                  usage, requestParams.namespace, (V1Event) requestParams.body, callback));
   private final CallFactory<String> readPodLog =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -1698,6 +1704,30 @@ public class CallBuilder {
   public Step listEventAsync(String namespace, ResponseStep<V1EventList> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("listEvent", namespace, null, null, callParams), listEvent);
+  }
+
+  /**
+   * Asynchronous step for creating event.
+   *
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createEventAsync(
+      String namespace, V1Event body, ResponseStep<V1Event> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("createEvent", namespace, null, body,
+            getDomainUidLabel(Optional.ofNullable(body).map(V1Event::getMetadata).orElse(null))),
+        createEvent);
+  }
+
+  private Call createEventAsync(
+      ApiClient client, String namespace, V1Event body, ApiCallback<V1Event> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .createNamespacedEventAsync(namespace, body, pretty, null, null, callback);
   }
 
   private Call listNamespaceAsync(

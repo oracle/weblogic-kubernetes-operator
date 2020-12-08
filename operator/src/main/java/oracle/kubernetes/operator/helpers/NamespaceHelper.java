@@ -11,6 +11,8 @@ import java.util.stream.Stream;
 
 import com.google.common.base.Strings;
 
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.helpers.HelmAccess.getHelmVariable;
 
 /**
@@ -19,14 +21,12 @@ import static oracle.kubernetes.operator.helpers.HelmAccess.getHelmVariable;
 public class NamespaceHelper {
   public static final String DEFAULT_NAMESPACE = "default";
 
-  private static final String operatorNamespace = computeOperatorNamespace();
-
-  private static String computeOperatorNamespace() {
-    return Optional.ofNullable(getHelmVariable("OPERATOR_NAMESPACE")).orElse(DEFAULT_NAMESPACE);
+  public static String getOperatorNamespace() {
+    return Optional.ofNullable(getHelmVariable(OPERATOR_NAMESPACE_ENV)).orElse(DEFAULT_NAMESPACE);
   }
 
-  public static String getOperatorNamespace() {
-    return operatorNamespace;
+  public static String getOperatorPodName() {
+    return Optional.ofNullable(getHelmVariable(OPERATOR_POD_NAME_ENV)).orElse("");
   }
 
   /**
@@ -41,7 +41,7 @@ public class NamespaceHelper {
           .map(String::trim)
           .collect(Collectors.toUnmodifiableList());
 
-    return namespaces.isEmpty() ? Collections.singletonList(operatorNamespace) : namespaces;
+    return namespaces.isEmpty() ? Collections.singletonList(getOperatorNamespace()) : namespaces;
   }
 
 }
