@@ -116,7 +116,7 @@ public class PodHelper {
   }
 
   static boolean isNotAdminServer(@Nullable V1Pod pod, String adminServerName) {
-    return getServerName(pod) != adminServerName;
+    return Optional.ofNullable(getServerName(pod)).map(s -> !s.equals(adminServerName)).orElse(true);
   }
 
   private static String getServerName(@Nullable V1Pod pod) {
