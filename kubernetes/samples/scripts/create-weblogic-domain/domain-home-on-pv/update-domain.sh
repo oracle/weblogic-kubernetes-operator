@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -82,7 +82,7 @@ function initOutputDir {
   mkdir -p ${domainOutputDir}
 
   removeFileIfExists ${domainOutputDir}/create-domain-inputs.yaml
-  removeFileIfExists ${domainOutputDir}/create-domain-job.yaml
+  removeFileIfExists ${domainOutputDir}/update-domain-job.yaml
   removeFileIfExists ${domainOutputDir}/delete-domain-job.yaml
   removeFileIfExists ${domainOutputDir}/domain.yaml
 }
@@ -107,7 +107,7 @@ function initialize {
     validationError "You must use the -o option to specify the name of an existing directory to store the generated yaml files in."
   fi
 
-  createJobInput="${scriptDir}/create-domain-job-template.yaml"
+  createJobInput="${scriptDir}/update-domain-job-template.yaml"
   if [ ! -f ${createJobInput} ]; then
     validationError "The template file ${createJobInput} for creating a WebLogic domain was not found"
   fi
@@ -131,7 +131,6 @@ function initialize {
 
 # create domain configmap using what is in the createDomainFilesDir
 function createDomainConfigmap {
-
   # Use the default files if createDomainFilesDir is not specified
   if [ -z "${createDomainFilesDir}" ]; then
     createDomainFilesDir=${scriptDir}/wlst
@@ -161,15 +160,13 @@ function createDomainConfigmap {
   else
     cp ${modelFile} ${externalFilesTmpDir}/wdt_model.yaml
   fi
-
-
  
   # Now that we have the model file in the domainoutputdir/tmp,
-  # we can add the kubernetes section to the model file. 
+  # we can add the kubernetes section to the model file.
   updateModelFile
 
   # create the configmap and label it properly
-  local cmName=${domainUID}-create-weblogic-sample-domain-job-cm
+  local cmName=${domainUID}-update-weblogic-sample-domain-job-cm
   kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir --dry-run -o yaml | kubectl apply -f -
 
   echo Checking the configmap $cmName was created
@@ -178,7 +175,7 @@ function createDomainConfigmap {
     fail "The configmap ${cmName} was not created"
   fi
 
-  kubectl label configmap ${cmName} -n $namespace weblogic.domainUID=$domainUID weblogic.domainName=$domainName
+  kubectl label configmap ${cmName} -n $namespace weblogic.resourceVersion=domain-v2 weblogic.domainUID=$domainUID weblogic.domainName=$domainName
 
   rm -rf $externalFilesTmpDir
   rm -f domain.properties
@@ -187,54 +184,50 @@ function createDomainConfigmap {
 #
 # Function to run the job that creates the domain
 #
-function createDomainHome {
+function updateDomainHome {
 
   # create the config map for the job
   createDomainConfigmap
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
-  CONTAINER_NAME="create-weblogic-sample-domain-job"
+  CONTAINER_NAME="update-weblogic-sample-domain-job"
   JOB_NAME="${domainUID}-${CONTAINER_NAME}"
   deleteK8sObj job $JOB_NAME ${createJobOutput}
 
-  echo Creating the domain by creating the job ${createJobOutput}
+  echo update the domain by creating the job ${createJobOutput}
   kubectl create -f ${createJobOutput}
 
   # When using WDT to create a domain, a job to create a domain is started. It then creates
   # a pod which will run a script that creates a domain. The script then will extract the domain
   # resource using  WDT's extractDomainResource tool. So, the following code loops until the
   # domain resource is created by exec'ing into the pod to look for the presence of domainCreate.yaml file.
+  POD_NAME=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
+  echo "Waiting for results to be available from $POD_NAME"
+  kubectl wait --timeout=600s --for=condition=ContainersReady pod $POD_NAME
+  sleep 30
+  max=30
+  count=0
+  kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
+  kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domainupdate.yaml"
+  while [ $? -eq 1 -a $count -lt $max ]; do
+    sleep 5
+    #kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
+    count=`expr $count + 1`
+    kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domainupdate.yaml"
+  done
+  kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/domainupdate.yaml ${domainOutputDir}/domain.yaml
 
-  if [ "$useWdt" = true ]; then
-    POD_NAME=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
-    echo "Waiting for results to be available from $POD_NAME"
-    kubectl wait --timeout=600s --for=condition=ContainersReady pod $POD_NAME
-    #echo "Fetching results"
-    sleep 30
-    max=30
-    count=0
-    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
-    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
-    while [ $? -eq 1 -a $count -lt $max ]; do
-      sleep 5
-      kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
-      count=`expr $count + 1`
-      kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
-    done
-    kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/domaincreate.yaml ${domainOutputDir}/domain.yaml
+  # The pod waits for this script to copy the domain resource yaml (domainCreate.yaml) out of the pod and into
+  # the output directory as domain.yaml. To let the pod know that domainCreate.yaml has been copied, a file called
+  # doneExtract is copied into the pod. When the script running in the pod sees the doneExtract file, it exits.
 
-    # The pod waits for this script to copy the domain resource yaml (domainCreate.yaml) out of the pod and into
-    # the output directory as domain.yaml. To let the pod know that domainCreate.yaml has been copied, a file called
-    # doneExtract is copied into the pod. When the script running in the pod sees the doneExtract file, it exits.
-
-    touch doneExtract
-    kubectl cp doneExtract ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/
-    rm -rf doneExtract
-  fi
+  touch doneExtract
+  kubectl cp doneExtract ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/
+  rm -rf doneExtract
 
   echo "Waiting for the job to complete..."
   JOB_STATUS="0"
-  max=30
+  max=20
   count=0
   while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
     sleep 30
@@ -303,4 +296,4 @@ function printSummary {
 }
 
 # Perform the sequence of steps to create a domain
-createDomain false
+updateDomain
