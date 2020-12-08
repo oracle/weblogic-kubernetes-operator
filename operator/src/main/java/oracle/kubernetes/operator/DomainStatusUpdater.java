@@ -28,6 +28,8 @@ import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -51,10 +53,15 @@ import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
@@ -112,9 +119,37 @@ public class DomainStatusUpdater {
    * @param next Next step
    * @return Step
    */
-  public static Step createProgressingStep(DomainPresenceInfo info, String reason, boolean isPreserveAvailable,
-                                           Step next) {
+  public static Step createProgressingStep(
+      DomainPresenceInfo info, String reason, boolean isPreserveAvailable, Step next) {
     return new ProgressingStep(info, reason, isPreserveAvailable, next);
+  }
+
+  /**
+   * Asynchronous step to set Domain condition to Progressing and create DOMAIN_PROCESSING_STARTED event.
+   *
+   * @param reason Progressing reason
+   * @param isPreserveAvailable true, if existing Available=True condition should be preserved
+   * @param next Next step
+   * @return Step
+   */
+  public static Step createProgressingStartedEventStep(String reason, boolean isPreserveAvailable, Step next) {
+    return Step.chain(EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+        createProgressingStep(reason, isPreserveAvailable, next));
+  }
+
+  /**
+   * Asynchronous step to set Domain condition to Progressing and create DOMAIN_PROCESSING_STARTED event.
+   *
+   * @param info Domain presence info
+   * @param reason Progressing reason
+   * @param isPreserveAvailable true, if existing Available=True condition should be preserved
+   * @param next Next step
+   * @return Step
+   */
+  public static Step createProgressingStartedEventStep(
+      DomainPresenceInfo info, String reason, boolean isPreserveAvailable, Step next) {
+    return Step.chain(EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+        createProgressingStep(info, reason, isPreserveAvailable, next));
   }
 
   /**
@@ -139,13 +174,14 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain condition to Failed after an asynchronous call failure.
+   * Asynchronous steps to set Domain condition to Failed after an asynchronous call failure
+   * and to generate DOMAIN_PROCESSING_FAILED event.
    *
    * @param callResponse the response from an unrecoverable call
    * @param next Next step
    * @return Step
    */
-  public static Step createFailedStep(CallResponse<?> callResponse, Step next) {
+  public static Step createFailureRelatedSteps(CallResponse<?> callResponse, Step next) {
     FailureStatusSource failure = UnrecoverableErrorBuilder.fromFailedCall(callResponse);
 
     LOGGER.severe(MessageKeys.CALL_FAILED, failure.getMessage(), failure.getReason());
@@ -154,35 +190,35 @@ public class DomainStatusUpdater {
       LOGGER.fine(MessageKeys.EXCEPTION, apiException);
     }
 
-    return createFailedStep(failure.getReason(), failure.getMessage(), next);
+    return createFailureRelatedSteps(failure.getReason(), failure.getMessage(), next);
   }
 
   /**
-   * Asynchronous step to set Domain condition to Failed.
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
    *
    * @param throwable Throwable that caused failure
    * @param next Next step
    * @return Step
    */
-  static Step createFailedStep(Throwable throwable, Step next) {
-    return throwable.getMessage() == null ? createFailedStep("Exception", throwable.toString(), next)
-        : createFailedStep("Exception", throwable.getMessage(), next);
+  static Step createFailureRelatedSteps(Throwable throwable, Step next) {
+    return throwable.getMessage() == null ? createFailureRelatedSteps("Exception", throwable.toString(), next)
+        : createFailureRelatedSteps("Exception", throwable.getMessage(), next);
   }
 
   /**
-   * Asynchronous step to set Domain condition to Failed.
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
    *
    * @param reason the reason for the failure
    * @param message a fuller description of the problem
    * @param next Next step
    * @return Step
    */
-  public static Step createFailedStep(String reason, String message, Step next) {
-    return new FailedStep(null, reason, message, next);
+  public static Step createFailureRelatedSteps(String reason, String message, Step next) {
+    return createFailureRelatedSteps(null, reason, message, next);
   }
 
   /**
-   * Asynchronous step to set Domain condition to Failed.
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
    *
    * @param info Domain presence info
    * @param reason the reason for the failure
@@ -190,8 +226,23 @@ public class DomainStatusUpdater {
    * @param next Next step
    * @return Step
    */
-  public static Step createFailedStep(DomainPresenceInfo info, String reason, String message, Step next) {
-    return new FailedStep(info, reason, message, next);
+  public static Step createFailureRelatedSteps(DomainPresenceInfo info, String reason, String message, Step next) {
+    return Step.chain(
+        new FailedStep(info, reason, message, null),
+        EventHelper.createEventStep(
+            new EventData(EventHelper.EventItem.DOMAIN_PROCESSING_FAILED, getEventMessage(reason, message))),
+        next);
+  }
+
+  private static String getEventMessage(String reason, String message) {
+    if (message != null && message.length() > 0) {
+      return message;
+    }
+
+    if (reason != null && reason.length() > 0) {
+      return reason;
+    }
+    return "Unknown condition";
   }
 
   abstract static class DomainStatusUpdaterStep extends Step {
@@ -222,7 +273,36 @@ public class DomainStatusUpdater {
 
       return context.isStatusUnchanged(newStatus)
             ? doNext(packet)
-            : doNext(createDomainStatusReplaceStep(context, newStatus), packet);
+            : doNext(createAbortedEventStepIfNeeded(
+                newStatus, context.getStatus(), createDomainStatusReplaceStep(context, newStatus)),
+                packet);
+    }
+
+    private Step createAbortedEventStepIfNeeded(DomainStatus newStatus, DomainStatus oldStatus, Step next) {
+      if (hasJustExceededMaxRetryCount(newStatus, oldStatus)) {
+        return Step.chain(next,
+            EventHelper.createEventStep(
+                new EventData(DOMAIN_PROCESSING_ABORTED)
+                    .message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG)));
+      }
+      if (hasJustGotFatalIntrospectorError(newStatus, oldStatus)) {
+        return Step.chain(next,
+            EventHelper.createEventStep(
+                new EventData(DOMAIN_PROCESSING_ABORTED)
+                    .message(FATAL_INTROSPECTOR_ERROR_MSG + newStatus.getMessage())));
+      }
+      return next;
+    }
+
+    private boolean hasJustExceededMaxRetryCount(DomainStatus newStatus, DomainStatus oldStatus) {
+      return oldStatus != null
+          && newStatus.getIntrospectJobFailureCount() == (oldStatus.getIntrospectJobFailureCount() + 1)
+          && newStatus.getIntrospectJobFailureCount() >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
+    }
+
+    private boolean hasJustGotFatalIntrospectorError(DomainStatus newStatus, DomainStatus oldStatus) {
+      return newStatus.getMessage() != null && newStatus.getMessage().contains(FATAL_INTROSPECTOR_ERROR)
+          && (oldStatus.getMessage() == null || !oldStatus.getMessage().contains(FATAL_INTROSPECTOR_ERROR));
     }
 
     private Step createDomainStatusReplaceStep(DomainStatusUpdaterContext context, DomainStatus newStatus) {
