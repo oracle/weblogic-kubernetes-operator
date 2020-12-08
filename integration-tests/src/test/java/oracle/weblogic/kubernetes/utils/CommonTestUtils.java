@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -183,6 +184,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.installVoyager;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
@@ -3385,5 +3387,56 @@ public class CommonTestUtils {
                 .runAsGroup(0L)
                 .runAsUser(0L));
     return container;
+  }
+
+  /**
+   * Patch the domain with server start policy.
+   *
+   * @param patchPath JSON path of the patch
+   * @param policy server start policy
+   * @param domainNamespace namespace where domain exists
+   * @param domainUid unique id of domain
+   */
+  public static void patchServerStartPolicy(String patchPath, String policy, String domainNamespace,
+      String domainUid) {
+    final LoggingFacade logger = getLogger();
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"")
+        .append(patchPath)
+        .append("\",")
+        .append(" \"value\":  \"")
+        .append(policy)
+        .append("\"")
+        .append(" }]");
+
+    logger.info("The domain resource patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(new String(patchStr));
+    boolean crdPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(managedShutdown) failed");
+    assertTrue(crdPatched, "patchDomainCustomResource failed");
+  }
+
+  /**
+   * Check if the pods are deleted.
+   * @param podName pod name
+   * @param domainUid unique id of the domain
+   * @param domNamespace namespace where domain exists
+   */
+  public static void checkPodDeleted(String podName, String domainUid, String domNamespace) {
+    final LoggingFacade logger = getLogger();
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
+            String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
+                podName, domNamespace)));
   }
 }
