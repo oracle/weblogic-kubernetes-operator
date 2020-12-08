@@ -105,17 +105,17 @@ public abstract class BasePodStepContext extends StepContextBase {
     vars.add(new V1EnvVar().name(name).value(value));
   }
 
-  protected void addEnvVarIfLongNotNull(List<V1EnvVar> vars, String name, Long value) {
-    if (value != null) {
-      vars.add(new V1EnvVar().name(name).value(Long.toString(value)));
-    }
-  }
-
   private void addEnvVar(List<V1EnvVar> vars, String name, String value, V1EnvVarSource valueFrom) {
     if ((value != null) && (!value.isEmpty())) {
       addEnvVar(vars, name, value);
     } else {
       addEnvVarWithValueFrom(vars, name, valueFrom);
+    }
+  }
+
+  protected void addEnvVarIfLongNotNull(List<V1EnvVar> vars, String name, Long value) {
+    if (value != null) {
+      vars.add(new V1EnvVar().name(name).value(Long.toString(value)));
     }
   }
 
