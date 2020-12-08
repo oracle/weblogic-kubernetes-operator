@@ -4,8 +4,9 @@
  existing domain, such as an on-premises domain, and then create the same domain in a Persistent Volume (PV)
 in Kubernetes. The [Discover Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/discover.md) generates a WDT model YAML file (a metadata representation of the
 domain configuration) and a properties file, which contains a key=value pair for each property in the model.
-This sample updates the domain using both the WDT [Update Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/update.md) and
-[Extract Domain Resource Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/kubernetes.md).
+This sample creates the domain using the WDT [Create Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/create.md)
+and updates the domain using the [Update Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/update.md).
+In both cases, the sample uses the [Extract Domain Resource Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/kubernetes.md) to generate the `domain.yaml` file.
 
 **NOTE**: When introspecting an existing domain with WDT, the resulting model might need to be modified for compatibility
 with specific target environments, such as the Oracle WebLogic Server Kubernetes Operator. Also, you should update the
