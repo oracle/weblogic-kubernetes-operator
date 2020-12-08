@@ -5,7 +5,8 @@
 #
 # This is a utility script that waits until a domain's pods have all exited,
 # or waits until a domain's pods have all reached the ready state plus have
-# have the same domain restart version and image as the pod's domain resource.
+# have the same domain restart version, introspect version, and image as the
+# pod's domain resource.
 # 
 # See 'usage()' below for  details.
 #
@@ -34,15 +35,18 @@ function usage() {
 
     -n <namespace>  : Defaults to 'sample-domain1-ns'.
 
-    pod_count > 0   : Wait until exactly 'pod_count' WebLogic Server pods for
-                      a domain all (a) are ready, (b) have the same 
-                      'domainRestartVersion' label value as the
-                      current domain resource's 'spec.restartVersion, and
-                      (c) have the same image as the current domain
-                      resource's image.
-
-    pod_count = 0   : Wait until there are no running WebLogic Server pods
+    -p 0            : Wait until there are no running WebLogic Server pods
                       for a domain. The default.
+
+    -p <pod_count>  : Wait until all of the following are true
+                      for exactly 'pod_count' WebLogic Server pods
+                      in the domain:
+                      - ready
+                      - same 'weblogic.domainRestartVersion' label value as
+                        the domain resource's 'spec.restartVersion'
+                      - same 'weblogic.introspectVersion' label value as
+                        the domain resource's 'spec.introspectVersion'
+                      - same image as the the domain resource's image
 
     -t <timeout>    : Timeout in seconds. Defaults to '$timeout_secs_def'.
 
@@ -172,6 +176,31 @@ function print_table() {
   done
 }
 
+#
+# get domain value specified by $1:
+#   for example '.spec.introspectVersion' or '.spec.restartVersion'
+# and place result in the env var named by $2
+# if expected>0 and echo an Error and exit script non-zero
+#
+function getDomainValue() {
+  local attvalue
+  local ljpath="{$1}"
+  local __retvar=$2
+  set +e
+  attvalue=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath="$ljpath" 2>&1)
+  if [ $? -ne 0 ]; then
+    if [ $expected -ne 0 ]; then
+      echo "@@ Error: Could not obtain '$1' from '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed? Err='$attvalue'"
+      exit 1
+    else
+      # We're waiting for 0 pods - it doesn't matter what the value is
+      attvalue='':
+    fi
+  fi
+  eval "$__retvar='$attvalue'"
+  set -e
+}
+
 tmpfileorig=$(tempfile)
 tmpfilecur=$(tempfile)
 tmpfiletmp=$(tempfile)
@@ -183,10 +212,11 @@ cur_pods=0
 reported=0
 last_pod_count_secs=$SECONDS
 origRV="--not-known--"
+origIV="--not-known--"
 origImage="--not-known--"
 
 # col_headers must line up with the jpath
-col_headers="NAME VERSION IMAGE READY PHASE"
+col_headers="NAME RVERSION IVERSION IMAGE READY PHASE"
 
 # be careful! if changing jpath, then it must
 # correspond with the regex below and col_headers above
@@ -197,6 +227,8 @@ jpath+='{range .items[*]}'
   jpath+='{";"}{.metadata.name}{";"}'
   jpath+='{" domainRestartVersion="}'
   jpath+='{";"}{.metadata.labels.weblogic\.domainRestartVersion}{";"}'
+  jpath+='{" introspectVersion="}'
+  jpath+='{";"}{.metadata.labels.weblogic\.introspectVersion}{";"}'
   jpath+='{" image="}'
   jpath+='{";"}{.spec.containers[?(@.name=="weblogic-server")].image}{";"}'
   jpath+='{" ready="}'
@@ -206,53 +238,46 @@ jpath+='{range .items[*]}'
   jpath+='{"\n"}'
 jpath+='{end}'
 
-# Loop until we reach the desired pod count for pods at the desired restart version, or
-# until we reach the timeout.
+# Loop until we reach the desired pod count for pods at the desired restart version,
+# introspect version, and image -- or until we reach the timeout.
 
 while [ 1 -eq 1 ]; do
 
+
   #
-  # Get the current domain resource's spec.restartVersion. If this fails, then
-  # assume the domain resource isn't deployed and that the restartVersion is "".
+  # Get the current domain resource's spec.restartVersion, spec.introspectVersion,
+  # and spec.image. If this fails then assume the domain resource isn't deployed.
   #
 
-  set +e
-  currentRV=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='{.spec.restartVersion}' 2>&1)
-  if [ $? -ne 0 ]; then
-    if [ $expected -ne 0 ]; then
-      echo "@@ Error: Could not obtain 'spec.restartVersion' from '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed?"
-      exit 1
-    else
-      currentRV=''
-    fi
+  getDomainValue ".spec.restartVersion"    currentRV
+  getDomainValue ".spec.introspectVersion" currentIV
+  getDomainValue ".spec.image"             currentImage
+ 
+  ret="${currentRV}${currentIV}${currentImage}"
+  if [ ! "${ret/Error:/}" = "${ret}" ]; then
+    echo $ret
+    exit 1
   fi
 
-  currentImage=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='{.spec.image}' 2>&1)
-  if [ $? -ne 0 ]; then
-    if [ $expected -ne 0 ]; then
-      echo "@@ Error: Could not obtain 'spec.image' from '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed?"
-      exit 1
-    else
-      currentImage=''
-    fi
-  fi
-  set -e
-
   #
-  # Force new reporting for the rare case where domain resource RV or 
+  # Force new reporting for the rare case where domain resource RV, IV, or 
   # image changed since we last reported.
   #
 
-  if [ ! "$origRV" = "$currentRV" ] || [ ! "$origImage" = "$currentImage" ]; then
+  if [ ! "$origRV" = "$currentRV" ] \
+     || [ ! "$origIV" = "$currentIV" ] \
+     || [ ! "$origImage" = "$currentImage" ]
+  then
     [ "$reported" = "1" ] && echo
     reported=0
+    origIV="$currentIV"
     origRV="$currentRV"
     origImage="$currentImage"
   fi
 
   #
   # If 'expected' = 0, get the current number of pods regardless of their
-  # restart version, image, or ready state. 
+  # restart version, introspect version, image, or ready state. 
   # 
   # If "expected != 0" get the number of ready pods with the current domain
   # resource restart version and image. 
@@ -274,6 +299,7 @@ while [ 1 -eq 1 ]; do
   else
 
     regex="domainRestartVersion=;$currentRV;"
+    regex+=" introspectVersion=;$currentIV;"
     regex+=" image=;$currentImage;"
     regex+=" ready=;true;"
 
@@ -285,7 +311,12 @@ while [ 1 -eq 1 ]; do
     set -e
 
     lead_string="Waiting up to $timeout_secs seconds for exactly '$expected' WebLogic Server pods to reach the following criteria:"
-    criteria="ready='true' image='$currentImage' domainRestartVersion='$currentRV' namespace='$DOMAIN_NAMESPACE' domainUID='$DOMAIN_UID'"
+    criteria="ready='true'"
+    criteria+=" image='$currentImage' "
+    criteria+=" domainRestartVersion='$currentRV'"
+    criteria+=" introspectVersion='$currentIV'"
+    criteria+=" namespace='$DOMAIN_NAMESPACE'"
+    criteria+=" domainUID='$DOMAIN_UID'"
 
   fi
 
