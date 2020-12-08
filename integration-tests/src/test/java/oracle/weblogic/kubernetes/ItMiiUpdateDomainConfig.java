@@ -180,7 +180,7 @@ class ItMiiUpdateDomainConfig {
 
     createConfigMapAndVerify(
         configMapName, domainUid, domainNamespace,
-        Arrays.asList("model.sysresources.yaml"));
+        Arrays.asList(MODEL_DIR + "/model.sysresources.yaml"));
 
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
@@ -298,7 +298,7 @@ class ItMiiUpdateDomainConfig {
     String configMapName = "deletesysrescm";
     createConfigMapAndVerify(
         configMapName, domainUid, domainNamespace,
-        Arrays.asList("model.delete.sysresources.yaml"));
+        Arrays.asList(MODEL_DIR + "/model.delete.sysresources.yaml"));
 
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
@@ -349,7 +349,7 @@ class ItMiiUpdateDomainConfig {
     String configMapName = "dsjmsconfigmap";
     createConfigMapAndVerify(
         configMapName, domainUid, domainNamespace,
-        Arrays.asList("model.jdbc2.yaml", "model.jms2.yaml"));
+        Arrays.asList(MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jms2.yaml"));
 
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching

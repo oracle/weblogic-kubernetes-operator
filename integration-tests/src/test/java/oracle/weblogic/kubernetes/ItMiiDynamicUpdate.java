@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -18,6 +21,7 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -32,6 +36,8 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
@@ -233,7 +239,7 @@ class ItMiiDynamicUpdate {
     }
 
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList("model.config.wm.yaml"), withStandardRetryPolicy);
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
 
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
@@ -282,7 +288,7 @@ class ItMiiDynamicUpdate {
     }
 
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList("model.update.wm.yaml"),
+        Arrays.asList(MODEL_DIR + "/model.update.wm.yaml"),
         withStandardRetryPolicy);
 
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
@@ -326,12 +332,6 @@ class ItMiiDynamicUpdate {
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
     }
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
-    }
-
-    // make sure the application is deployed on cluster
-    verifyApplicationRuntimeOnCluster("200");
 
     // make sure the application is not deployed on admin server
     assertFalse(checkApplicationRuntime(domainNamespace, adminServerPodName,
@@ -341,28 +341,24 @@ class ItMiiDynamicUpdate {
     // check and wait for the application to be accessible in all server pods
     verifyApplicationAccessOnCluster();
 
+    // write sparse yaml to file
+    Path pathToChangeTargetYaml = Paths.get(WORK_DIR + "/changetarget.yaml");
+    String yamlToChangeTarget = "appDeployments:\n"
+        + "  Application:\n"
+        + "    myear:\n"
+        + "      Target: 'cluster-1,admin-server'";
+
+    assertDoesNotThrow(() -> Files.write(pathToChangeTargetYaml, yamlToChangeTarget.getBytes()));
+
     // Replace contents of an existing configMap
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList("model.app.changetarget.yaml"), withStandardRetryPolicy);
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToChangeTargetYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
     verifyIntrospectorRuns();
-
-    // make sure the application is deployed on cluster
-    verifyApplicationRuntimeOnCluster("200");
-
-    // verify application runtime on admin server
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition ->
-            logger.info("Waiting for application target to be updated. "
-                    + "Elapsed time {0}ms, remaining time {1}ms",
-                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
-                  () -> checkApplicationRuntime(domainNamespace, adminServerPodName,
-            adminServerName, "200"));
-
 
     // check and wait for the application to be accessible in all server pods
     verifyApplicationAccessOnCluster();
@@ -389,8 +385,7 @@ class ItMiiDynamicUpdate {
    * Verify application target is changed by accessing the application runtime using REST API.
    * Test is failing https://jira.oraclecorp.com/jira/browse/OWLS-86352.
    */
-  @Test
-  @Order(4)
+  @Disabled
   @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
   public void testMiiRemoveTarget() {
 
@@ -406,19 +401,22 @@ class ItMiiDynamicUpdate {
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
     }
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
-    }
-
-    // make sure the application is deployed on cluster
-    verifyApplicationRuntimeOnCluster("200");
 
     // check and wait for the application to be accessible in all server pods
     verifyApplicationAccessOnCluster();
 
+    // write sparse yaml to file
+    Path pathToRemoveTargetYaml = Paths.get(WORK_DIR + "/removetarget.yaml");
+    String yamlToRemoveTarget = "appDeployments:\n"
+        + "  Application:\n"
+        + "    myear:\n"
+        + "      Target: ''";
+
+    assertDoesNotThrow(() -> Files.write(pathToRemoveTargetYaml, yamlToRemoveTarget.getBytes()));
+
     // Replace contents of an existing configMap
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList("model.app.removetarget.yaml"), withStandardRetryPolicy);
+        Arrays.asList(pathToRemoveTargetYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);

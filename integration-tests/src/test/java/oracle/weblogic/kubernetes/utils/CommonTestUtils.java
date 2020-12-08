@@ -2738,7 +2738,7 @@ public class CommonTestUtils {
    * @param configMapName the name of the Kubernetes ConfigMap to be created
    * @param domainUid the domain to which the cluster belongs
    * @param namespace Kubernetes namespace that the domain is hosted
-   * @param modelFiles list of the names of the WDT mode files in the ConfigMap
+   * @param modelFiles list of the file names along with path for the WDT model files in the ConfigMap
    */
   public static void createConfigMapAndVerify(
       String configMapName,
@@ -2778,17 +2778,16 @@ public class CommonTestUtils {
   /**
    * Read the content of a model file as a String and add it to a map.
    */
-  private static void addModelFile(Map<String, String> data, String modelFileName) {
+  private static void addModelFile(Map<String, String> data, String modelFile) {
     LoggingFacade logger = getLogger();
-    logger.info("Add model file {0}", modelFileName);
-    String dsModelFile = String.format("%s/%s", MODEL_DIR, modelFileName);
+    logger.info("Add model file {0}", modelFile);
 
-    String cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
-        String.format("Failed to read model file %s", dsModelFile));
+    String cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(modelFile)),
+        String.format("Failed to read model file %s", modelFile));
     assertNotNull(cmData,
-        String.format("Failed to read model file %s", dsModelFile));
+        String.format("Failed to read model file %s", modelFile));
 
-    data.put(modelFileName, cmData);
+    data.put(modelFile.substring(modelFile.lastIndexOf("/") + 1), cmData);
   }
 
   /**
