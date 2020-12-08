@@ -19,6 +19,30 @@ function printError {
   echo [ERROR] $*
 }
 
+# Function to see if there is more than 1 input file.
+# This could happen if the user has a properties file from
+# running wdt discover domain on a on-prem domain
+function checkInputFiles {
+  if [[ "${valuesInputFile}" =~ [,] ]] ; then
+    echo "Found a comma separated list of input files"
+    IFS=','
+    read -a temp <<< "${valuesInputFile}"
+
+    # We want to keep valuesInputFile pointing to the yaml since
+    # the validate function expects it.
+    local extension=$(echo "${temp[0]}" | sed 's/^.*\.//')
+    if [ ${extension} == 'yaml' ]; then
+       valuesInputFile=${temp[0]}
+       valuesInputFile1=${temp[1]}
+    else
+       valuesInputFile=${temp[1]}
+       valuesInputFile1=${temp[0]}
+    fi
+  else
+    echo "Found only 1 input file"
+  fi
+}
+
 #
 # Function to parse a yaml file and generate the bash exports
 # $1 - Input filename
@@ -42,6 +66,17 @@ function parseYaml {
 }
 
 #
+# Function to parse a properties file and generate the bash exports
+# $1 - Input filename
+# $2 - Output filename
+function parseProperties {
+  while IFS='=' read -r key value
+  do
+    echo "export ${key}=\"${value}\"" >> $2
+  done < $1
+}
+
+#
 # Function to remove a file if it exists 
 #
 function removeFileIfExists {
@@ -58,6 +93,10 @@ function parseCommonInputs {
   tmpFile=$(mktemp /tmp/javaoptions_tmp-XXXXXXXXX.dat)  
   parseYaml ${valuesInputFile} ${exportValuesFile}
 
+  if [ ! -z ${valuesInputFile1} ]; then
+   parseProperties ${valuesInputFile1} ${exportValuesFile}
+  fi
+
   if [ ! -f ${exportValuesFile} ]; then
     echo Unable to locate the parsed output of ${valuesInputFile}.
     fail 'The file ${exportValuesFile} could not be found.'
@@ -67,6 +106,18 @@ function parseCommonInputs {
   echo Input parameters being used
   cat ${exportValuesFile}
   echo
+
+  # If we have 2 input files, we need to create a combined inputs file
+  # exportsValueFile contains all the properties already
+  # We just need to remove the term export from the file
+  if [ ! -z ${valuesInputFile1} ]; then
+    propsFile="domain.properties"
+    cat ${exportValuesFile} > ${propsFile}
+    sed  -i 's/export //g' ${propsFile}
+    sed  -i 's/"//g' ${propsFile}
+    valuesInputFile=${propsFile}
+    cat ${valuesInputFile}
+  fi
 
   # javaOptions may contain tokens that are not allowed in export command
   # we need to handle it differently. 
@@ -252,11 +303,18 @@ function buildServerPodResources {
 #
 function createFiles {
 
+  update=false
+  if [ "$#" == 1 ]; then
+    echo Trying to update the domain
+    update=true
+  fi
+
   # Make sure the output directory has a copy of the inputs file.
   # The user can either pre-create the output directory, put the inputs
   # file there, and create the domain from it, or the user can put the
   # inputs file some place else and let this script create the output directory
   # (if needed) and copy the inputs file there.
+  echo createFiles - valuesInputFile is ${valuesInputFile}
   copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-domain-inputs.yaml"
 
   if [ "${domainHomeInImage}" == "true" ]; then
@@ -403,9 +461,12 @@ function createFiles {
       createDomainScriptsMountPath="/u01/weblogic"
     fi
 
-    if [ -z "${createDomainScriptName}" ]; then
+    if [ "${update}" == "true" ]; then
+      createDomainScriptName="update-domain-job.sh"
+    elif [ -z "${createDomainScriptName}" ]; then
       createDomainScriptName="create-domain-job.sh"
     fi
+    echo createDomainScriptName is ${createDomainScriptName}
 
     # Must escape the ':' value in image for sed to properly parse and replace
     image=$(echo ${image} | sed -e "s/\:/\\\:/g")
@@ -472,7 +533,10 @@ function createFiles {
     sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${deleteJobOutput}
   fi
 
+  echo Printing domainHomeSourceType
+  echo domainHomeSourceType is ${domainHomeSourceType}
   if [ "${domainHomeSourceType}" == "FromModel" ]; then
+    echo domainHomeSourceType is FromModel
     # leave domainHomeSourceType to FromModel
     if [ "${logHomeOnPV}" == "true" ]; then
       logHomeOnPVPrefix="${enabledPrefix}"
@@ -481,6 +545,7 @@ function createFiles {
     fi
   elif [ "${domainHomeInImage}" == "true" ]; then
     domainHomeSourceType="Image"
+    echo domainHomeSourceType is Image
     if [ "${logHomeOnPV}" == "true" ]; then
       logHomeOnPVPrefix="${enabledPrefix}"
     else
@@ -488,80 +553,154 @@ function createFiles {
     fi
   else
     domainHomeSourceType="PersistentVolume"
+    echo domainHomeSourceType is PV
     logHomeOnPVPrefix="${enabledPrefix}"
     logHomeOnPV=true
   fi
 
   # Generate the yaml file for creating the domain resource
-  echo Generating ${dcrOutput}
+  # We want to use wdt's extractDomainResource.sh to get the domain resource
+  # for domain on pv use case. For others, generate domain resource here
+  echo domainHomeSourceType is ${domainHomeSourceType}
+  echo wdtDomainType is ${wdtDomainType}
+  echo useWdt is ${useWdt}
 
-  cp ${dcrInput} ${dcrOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
-  sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_HOME_SOURCE_TYPE%:${domainHomeSourceType}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
-  sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
-  sed -i -e "s:%LOG_HOME_ON_PV_PREFIX%:${logHomeOnPVPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%LOG_HOME_ENABLED%:${logHomeOnPV}:g" ${dcrOutput}
-  sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
-  sed -i -e "s:%HTTP_ACCESS_LOG_IN_LOG_HOME%:${httpAccessLogInLogHome}:g" ${dcrOutput}
-  sed -i -e "s:%DATA_HOME%:${dataHome}:g" ${dcrOutput}
-  sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
-  sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
+  if [ "${domainHomeSourceType}" != "PersistentVolume" ] || [ "${wdtDomainType}" != "WLS" ] ||
+         [ "${useWdt}" != true ]; then
+    echo Generating ${dcrOutput}
 
-  if [ "${istioEnabled}" == "true" ]; then
+    cp ${dcrInput} ${dcrOutput}
+    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
+    sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
+    sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
+    sed -i -e "s:%DOMAIN_HOME_SOURCE_TYPE%:${domainHomeSourceType}:g" ${dcrOutput}
+    sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
+    sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
+    sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
+    sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
+    sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
+    sed -i -e "s:%LOG_HOME_ON_PV_PREFIX%:${logHomeOnPVPrefix}:g" ${dcrOutput}
+    sed -i -e "s:%LOG_HOME_ENABLED%:${logHomeOnPV}:g" ${dcrOutput}
+    sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
+    sed -i -e "s:%HTTP_ACCESS_LOG_IN_LOG_HOME%:${httpAccessLogInLogHome}:g" ${dcrOutput}
+    sed -i -e "s:%DATA_HOME%:${dataHome}:g" ${dcrOutput}
+    sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
+    sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
+    sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
+    sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
+
+    if [ "${istioEnabled}" == "true" ]; then
       exposeAdminNodePortPrefix="${disabledPrefix}"
-  fi
-
-  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
-  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
-  sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
-  sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
-  sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
-  # MII settings are used for model-in-image integration testing
-  sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%MII_CONFIG_MAP_PREFIX%:${miiConfigMapPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%MII_CONFIG_MAP%:${miiConfigMap}:g" ${dcrOutput}
-  sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${dcrOutput}
-
-  buildServerPodResources
-  if [ -z "${serverPodResources}" ]; then
-    sed -i -e "/%OPTIONAL_SERVERPOD_RESOURCES%/d" ${dcrOutput}
-  else
-    if [[ $(uname) -eq "Darwin" ]]; then
-      serverPodResources=$(echo "${serverPodResources}" | sed -e 's/\\n/%NEWLINE%/g')
-      sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
-      sed -i -e $'s|%NEWLINE%|\\\n|g' ${dcrOutput}
-    else
-      sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
     fi
-  fi
 
-  if [ "${domainHomeInImage}" == "true" ]; then
+    sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
+    sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${dcrOutput}
+    sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
+    sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
+    sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
+    sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
+    sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
+    sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
+    sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
+    # MII settings are used for model-in-image integration testing
+    sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${dcrOutput}
+    sed -i -e "s:%MII_CONFIG_MAP_PREFIX%:${miiConfigMapPrefix}:g" ${dcrOutput}
+    sed -i -e "s:%MII_CONFIG_MAP%:${miiConfigMap}:g" ${dcrOutput}
+    sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${dcrOutput}
+
+    buildServerPodResources
+    if [ -z "${serverPodResources}" ]; then
+      sed -i -e "/%OPTIONAL_SERVERPOD_RESOURCES%/d" ${dcrOutput}
+    else
+      if [[ $(uname) -eq "Darwin" ]]; then
+        serverPodResources=$(echo "${serverPodResources}" | sed -e 's/\\n/%NEWLINE%/g')
+        sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
+        sed -i -e $'s|%NEWLINE%|\\\n|g' ${dcrOutput}
+      else
+        sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
+      fi
+    fi
+
+    if [ "${domainHomeInImage}" == "true" ]; then
  
-    # now we know which image to use, update the domain yaml file
-    if [ -z $image ]; then
-      sed -i -e "s|%WEBLOGIC_IMAGE%|${defaultImageName}|g" ${dcrOutput}
+      # now we know which image to use, update the domain yaml file
+      if [ -z $image ]; then
+        sed -i -e "s|%WEBLOGIC_IMAGE%|${defaultImageName}|g" ${dcrOutput}
+      else
+        sed -i -e "s|%WEBLOGIC_IMAGE%|${image}|g" ${dcrOutput}
+      fi
     else
-      sed -i -e "s|%WEBLOGIC_IMAGE%|${image}|g" ${dcrOutput}
+      sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
     fi
-  else
-    sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
   fi
 
   # Remove any "...yaml-e" and "...properties-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e
   rm -f ${domainOutputDir}/*.properties-e
+
+}
+
+
+#
+# Function to markup the wdt model file
+#
+function updateModelFile {
+  # Update the wdt model file with kubernetes section
+  modelFile="${domainOutputDir}/tmp/wdt_model.yaml"
+  cat ${scriptDir}/wdt_k8s_model_template.yaml >> ${modelFile}
+
+  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${modelFile}
+  sed -i -e "s:%NAMESPACE%:$namespace:g" ${modelFile}
+  sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${modelFile}
+  sed -i -e "s:%DOMAIN_HOME_SOURCE_TYPE%:${domainHomeSourceType}:g" ${modelFile}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${modelFile}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${modelFile}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${modelFile}
+  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${modelFile}
+  sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${modelFile}
+  sed -i -e "s:%LOG_HOME_ON_PV_PREFIX%:${logHomeOnPVPrefix}:g" ${modelFile}
+  sed -i -e "s:%LOG_HOME_ENABLED%:${logHomeOnPV}:g" ${modelFile}
+  sed -i -e "s:%LOG_HOME%:${logHome}:g" ${modelFile}
+  sed -i -e "s:%HTTP_ACCESS_LOG_IN_LOG_HOME%:${httpAccessLogInLogHome}:g" ${modelFile}
+  sed -i -e "s:%DATA_HOME%:${dataHome}:g" ${modelFile}
+  sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${modelFile}
+  sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${modelFile}
+  sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${modelFile}
+  sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${modelFile}
+
+  if [ "${istioEnabled}" == "true" ]; then
+      exposeAdminNodePortPrefix="${disabledPrefix}"
+  fi
+
+  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${modelFile}
+  sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${modelFile}
+  sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${modelFile}
+  sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${modelFile}
+  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${modelFile}
+  sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${modelFile}
+  sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${modelFile}
+  sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${modelFile}
+  sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${modelFile}
+  # MII settings are used for model-in-image integration testing
+  sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${modelFile}
+  sed -i -e "s:%MII_CONFIG_MAP_PREFIX%:${miiConfigMapPrefix}:g" ${modelFile}
+  sed -i -e "s:%MII_CONFIG_MAP%:${miiConfigMap}:g" ${modelFile}
+  sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${modelFile}
+
+  #buildServerPodResources
+  if [ -z "${serverPodResources}" ]; then
+    sed -i -e "/%OPTIONAL_SERVERPOD_RESOURCES%/d" ${modelFile}
+  else
+    if [[ $(uname) -eq "Darwin" ]]; then
+      serverPodResources=$(echo "${serverPodResources}" | sed -e 's/\\n/%NEWLINE%/g')
+      sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${modelFile}
+      sed -i -e $'s|%NEWLINE%|\\\n|g' ${modelFile}
+    else
+      sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${modelFile}
+    fi
+  fi
+
+  sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${modelFile}
 }
 
 #
@@ -613,6 +752,41 @@ function createDomain {
 
   # Create the WebLogic domain home
   createDomainHome
+
+  if [ "${executeIt}" = true ]; then
+    createDomainResource
+  fi
+
+  # Print a summary
+  printSummary
+}
+
+#
+# Function to update a domain
+# $1 - boolean value indicating the location of the domain home
+#      true means domain home in image
+#      false means domain home on PV
+#
+function updateDomain {
+
+  domainHomeInImage="false"
+
+  # Setup the environment for running this script and perform initial validation checks
+  initialize
+
+  # Generate files for creating the domain
+  createFiles update
+
+  # Check that the domain secret exists and contains the required elements
+  validateDomainSecret
+
+  # Validate the domain's persistent volume claim
+  if [ "${doValidation}" == true ]; then
+    validateDomainPVC
+  fi
+
+  # Create the WebLogic domain home
+  updateDomainHome
 
   if [ "${executeIt}" = true ]; then
     createDomainResource
