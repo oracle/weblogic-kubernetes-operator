@@ -128,9 +128,9 @@ public class DomainPresenceInfoTest {
     addServer("MS5", null);
     addScheduledServer("MS6", null);
 
-    assertThat(info.getNumScheduledServers("cluster1"), equalTo(2L));
-    assertThat(info.getNumScheduledServers("cluster2"), equalTo(2L));
-    assertThat(info.getNumScheduledServers(null), equalTo(1L));
+    assertThat(info.getNumScheduledManagedServers("cluster1", "admin-server"), equalTo(2L));
+    assertThat(info.getNumScheduledManagedServers("cluster2", "admin-server"), equalTo(2L));
+    assertThat(info.getNumScheduledManagedServers(null, "admin-server"), equalTo(1L));
   }
 
   private void addScheduledServer(String serverName, String clusterName) {
