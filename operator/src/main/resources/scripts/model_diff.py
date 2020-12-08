@@ -93,6 +93,10 @@ class ModelDiffer:
         _SSL = 'SSL'
         forbidden_network_attributes = [ 'ListenAddress', 'ListenPort', 'ListenPortEnabled' ]
         if model.has_key(_TOPOLOGY):
+            # Do not allow changing topology level attributes
+            for key in model[_TOPOLOGY]:
+                if not isinstance(model[_TOPOLOGY][key], dict):
+                    return 1
             for key in [ 'Server', 'ServerTemplate']:
                 # topology.Server|ServerTemplate
                 if model[_TOPOLOGY].has_key(key):
