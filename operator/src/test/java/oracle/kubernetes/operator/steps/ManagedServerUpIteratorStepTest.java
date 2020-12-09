@@ -94,7 +94,7 @@ public class ManagedServerUpIteratorStepTest {
   private final Step nextStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
-  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfoWithServers();
+  private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfoWithServers(ADMIN);
   private final WlsDomainConfig domainConfig = createDomainConfig();
   private final Collection<ServerStartupInfo> startupInfos = new ArrayList<>();
 
@@ -110,7 +110,6 @@ public class ManagedServerUpIteratorStepTest {
 
   private DomainPresenceInfo createDomainPresenceInfoWithServers(String... serverNames) {
     DomainPresenceInfo dpi = new DomainPresenceInfo(domain);
-    addServer(dpi, ADMIN);
     Arrays.asList(serverNames).forEach(serverName -> addServer(dpi, serverName));
     return dpi;
   }
@@ -245,6 +244,19 @@ public class ManagedServerUpIteratorStepTest {
 
     invokeStepWithServerStartupInfos();
     testSupport.setTime(SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
+
+    assertThat(getStartedManagedServers(), hasSize(1));
+  }
+
+  @Test
+  public void whenAdminServerNotRunning_managedServerPodIsCreated() {
+    domainPresenceInfo = createDomainPresenceInfoWithServers();
+    addWlsCluster(CLUSTER1, MS1);
+    testSupport
+            .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
+            .addDomainPresenceInfo(domainPresenceInfo);
+
+    invokeStepWithServerStartupInfos();
 
     assertThat(getStartedManagedServers(), hasSize(1));
   }
