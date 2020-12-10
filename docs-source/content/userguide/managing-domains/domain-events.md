@@ -29,6 +29,7 @@ The operator generates these event types, which indicate the following:
  *  `DomainProcessingRetrying`: The operator is going to retry the processing of a domain after it encountered an failure.
  *  `DomainProcessingCompleted`:  The operator successfully completed the processing of a domain resource.
  *  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error or a failure that persisted after the specified maximum number of retries.
+ *  `InvalidReplicasValue`:  An invalid replicas value is found in a `Cluster` inside a domain resource. Please update the domain resource with a replicas value that is supported by the cluster whose name is specified in the event.
 
 #### Operator-generated event details
 
@@ -238,6 +239,39 @@ Metadata:
 Reason:                DomainProcessingAborted
 Reporting Component:   weblogic.operator
 Reporting Instance:    weblogic-operator-7c5577bb75-vflcq
+Source:
+Type:    Warning
+Events:  <none>
+
+```
+Example of a `InvalidReplicasValue` event:
+
+```none
+
+Name:             sample-domain1.InvalidReplicasValue.1607639075047
+Namespace:        sample-domain1-ns
+Labels:           weblogic.createdByOperator=true
+                  weblogic.domainUID=sample-domain1
+Annotations:      <none>
+API Version:      v1
+Event Time:       <nil>
+First Timestamp:  <nil>
+Involved Object:
+  API Version:   weblogic.oracle/v8
+  Kind:          Domain
+  Name:          sample-domain1
+  Namespace:     sample-domain1-ns
+Kind:            Event
+Last Timestamp:  2020-12-10T22:24:35Z
+Message:         Invalid replicas value in domain resource sample-domain1: Replica request of 5 exceeds the maximum dynamic server count of 2 configured for cluster cluster-1
+Metadata:
+  Creation Timestamp:  2020-12-10T22:24:35Z
+  Resource Version:    10071657
+  Self Link:           /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.InvalidReplicasValue.1607639075047
+  UID:                 8a9a4396-509b-4314-b634-376ed9245896
+Reason:                InvalidReplicasValue
+Reporting Component:   weblogic.operator
+Reporting Instance:    weblogic-operator-67c75bc4bf-8m4sb
 Source:
 Type:    Warning
 Events:  <none>
