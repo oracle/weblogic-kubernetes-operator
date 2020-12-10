@@ -1655,7 +1655,7 @@ public class CommonTestUtils {
    * @param domainName Name of domain to which cluster belongs
    * @param namespace cluster's namespace
    * @param replicaCount replica count value to match
-   * @return
+   * @return true, if the cluster's replica count matches the input parameter value.
    */
   public static boolean checkClusterReplicaCountMatches(String clusterName, String domainName,
                                                         String namespace, Integer replicaCount) throws ApiException {

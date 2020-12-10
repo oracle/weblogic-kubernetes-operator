@@ -370,7 +370,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
 
     return new CallBuilder()
-            .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
+        .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 
