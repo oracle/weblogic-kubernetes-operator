@@ -182,13 +182,21 @@ public class ManagedServerUpIteratorStep extends Step {
     private boolean hasServerAvailableToStart(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String adminServerName = ((WlsDomainConfig) packet.get(DOMAIN_TOPOLOGY)).getAdminServerName();
-      return ((numStarted.get() <= info.getNumScheduledManagedServers(clusterName, adminServerName)
+      return ((numStartedManagedServers() <= info.getNumScheduledManagedServers(clusterName, adminServerName)
               && (canStartConcurrently(info.getNumReadyManagedServers(clusterName, adminServerName)))));
     }
 
     private boolean canStartConcurrently(long numReady) {
-      return ((this.maxConcurrency > 0) && (numStarted.get() < (this.maxConcurrency + numReady)))
-          || (this.maxConcurrency == 0);
+      return ((this.maxConcurrency > 0) && (numStartedManagedServers() < (this.maxConcurrency + numReady)))
+          || ignoreConcurrencyLimits();
+    }
+
+    private int numStartedManagedServers() {
+      return numStarted.get();
+    }
+
+    private boolean ignoreConcurrencyLimits() {
+      return this.maxConcurrency == 0;
     }
   }
 

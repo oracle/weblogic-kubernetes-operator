@@ -94,7 +94,7 @@ public class ManagedServerUpIteratorStepTest {
   private final Step nextStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
-  private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfoWithServers(ADMIN);
+  private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfoWithAdminServer();
   private final WlsDomainConfig domainConfig = createDomainConfig();
   private final Collection<ServerStartupInfo> startupInfos = new ArrayList<>();
 
@@ -108,9 +108,9 @@ public class ManagedServerUpIteratorStepTest {
             .withCluster(clusterConfig);
   }
 
-  private DomainPresenceInfo createDomainPresenceInfoWithServers(String... serverNames) {
+  private DomainPresenceInfo createDomainPresenceInfoWithAdminServer() {
     DomainPresenceInfo dpi = new DomainPresenceInfo(domain);
-    Arrays.asList(serverNames).forEach(serverName -> addServer(dpi, serverName));
+    addServer(dpi, ADMIN);
     return dpi;
   }
 
@@ -249,16 +249,20 @@ public class ManagedServerUpIteratorStepTest {
   }
 
   @Test
-  public void whenAdminServerNotRunning_managedServerPodIsCreated() {
-    domainPresenceInfo = createDomainPresenceInfoWithServers();
+  public void whileAdminServerStopped_canStartManagedServer() {
+    createDomainPresenceInfoWithNoAdminServer();
     addWlsCluster(CLUSTER1, MS1);
-    testSupport
-            .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
-            .addDomainPresenceInfo(domainPresenceInfo);
 
     invokeStepWithServerStartupInfos();
 
     assertThat(getStartedManagedServers(), hasSize(1));
+  }
+
+  private void createDomainPresenceInfoWithNoAdminServer() {
+    domainPresenceInfo = new DomainPresenceInfo(domain);
+    testSupport
+            .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
+            .addDomainPresenceInfo(domainPresenceInfo);
   }
 
   @Test

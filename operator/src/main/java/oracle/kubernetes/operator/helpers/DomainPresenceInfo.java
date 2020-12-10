@@ -96,9 +96,21 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Counts the number of unclustered managed servers and managed servers in the specified cluster that are scheduled.
+   * Counts the number of unclustered servers and servers in the specified cluster that are scheduled.
    * @param clusterName cluster name of the pod server
    * @return Number of scheduled servers
+   */
+  public long getNumScheduledServers(String clusterName) {
+    return getServersInNoOtherCluster(clusterName)
+            .filter(PodHelper::isScheduled)
+            .count();
+  }
+
+  /**
+   * Counts the number of unclustered managed servers and managed servers in the specified cluster that are scheduled.
+   * @param clusterName cluster name of the pod server
+   * @param adminServerName Name of the admin server
+   * @return Number of scheduled managed servers
    */
   public long getNumScheduledManagedServers(String clusterName, String adminServerName) {
     return getManagedServersInNoOtherCluster(clusterName, adminServerName)
