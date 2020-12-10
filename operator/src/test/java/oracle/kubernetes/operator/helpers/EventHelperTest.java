@@ -313,8 +313,8 @@ public class EventHelperTest {
             String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, UID, "Test this failure")), is(true));
   }
 
-  private V1Event getEventMatchesReason(List<V1Event> events, String reason) {
-    return (V1Event) Optional.ofNullable(events).get()
+  private static V1Event getEventMatchesReason(List<V1Event> events, String reason) {
+    return Optional.ofNullable(events).get()
         .stream()
         .filter(e -> EventHelperTest.reasonMatches(e, reason)).findFirst().orElse(null);
   }
@@ -347,7 +347,18 @@ public class EventHelperTest {
         .orElse(""));
   }
 
-  private Object containsEventWithInvolvedObject(List<V1Event> events, String reason, String name, String namespace) {
+  /**
+   * Returns true if an event in the provided list matches the given reason, name, and
+   * namespace.
+   *
+   * @param events A List of events to be checked
+   * @param reason Reason of the event to be matched
+   * @param name name of the involved object in the event to be matched
+   * @param namespace namespace of the involved object in the event to be matched
+   * @return true if an event in the provided list matches the given conditions.
+   */
+  public static boolean containsEventWithInvolvedObject(List<V1Event> events, String reason,
+      String name, String namespace) {
     return referenceMatches(Optional.ofNullable(getEventMatchesReason(events, reason))
         .map(V1Event::getInvolvedObject)
         .orElse(null), name, namespace);
@@ -359,7 +370,7 @@ public class EventHelperTest {
         .orElse(null));
   }
 
-  private Object referenceMatches(V1ObjectReference reference, String name, String namespace) {
+  private static boolean referenceMatches(V1ObjectReference reference, String name, String namespace) {
     return reference != null && name.equals(reference.getName()) && namespace.equals(reference.getNamespace());
   }
 

@@ -39,6 +39,8 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTI
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
+import static oracle.kubernetes.operator.EventConstants.INVALID_REPLICAS_VALUE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.INVALID_REPLICAS_VALUE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
@@ -253,6 +255,28 @@ public class EventHelper {
             Optional.ofNullable(eventData.message).orElse(""));
       }
 
+    },
+    INVALID_REPLICAS_VALUE {
+      @Override
+      public String getType() {
+        return EVENT_WARNING;
+      }
+
+      @Override
+      public String getReason() {
+        return INVALID_REPLICAS_VALUE_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return INVALID_REPLICAS_VALUE_PATTERN;
+      }
+
+      @Override
+      public String getMessage(DomainPresenceInfo info, EventData eventData) {
+        return String.format(INVALID_REPLICAS_VALUE_PATTERN,
+            info.getDomainUid(), Optional.ofNullable(eventData.message).orElse(""));
+      }
     },
     EMPTY {
       @Override
