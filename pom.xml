@@ -672,8 +672,8 @@
     <maven-dependency-plugin-version>3.1.2</maven-dependency-plugin-version>
     <exec-maven-plugin-version>3.0.0</exec-maven-plugin-version>
     <spotbugs-maven-plugin-version>4.1.4</spotbugs-maven-plugin-version>
-    <spotbugs-version>4.1.4</spotbugs-version>
-    <checkstyle-version>8.36.2</checkstyle-version>
+    <spotbugs-version>4.2.0</spotbugs-version>
+    <checkstyle-version>8.38</checkstyle-version>
     <pmd-java-version>6.21.0</pmd-java-version>
     <directory-maven-version>0.1</directory-maven-version>
     <maven-jxr-plugin-version>3.0.0</maven-jxr-plugin-version>
@@ -710,7 +710,8 @@
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
     <skip.unit.tests>false</skip.unit.tests>
-    <jacoco.version>0.8.5</jacoco.version>
+    <jacoco.version>0.8.6</jacoco.version>
+    <git-commit-id-plugin-version>4.0.0</git-commit-id-plugin-version>
     <aggregate.report.dir>buildtime-reports/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
     <checkstyle.config.location>${root.basedir}/build-tools/checkstyle/customized_google_checks.xml</checkstyle.config.location>
   </properties>
