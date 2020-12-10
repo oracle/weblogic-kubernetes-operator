@@ -168,16 +168,32 @@ class ItInitContainers {
         "can't start or verify domain in namespace " + domain1Namespace);
 
     //check if init container got executed in the server pods
-    assertTrue(assertDoesNotThrow(() -> getPodLog(domain1Uid + "-admin-server", domain1Namespace,"busybox")
-            .contains("Hi from Domain"),
-        "failed to init busybox container command for admin server"));
-    assertTrue(assertDoesNotThrow(() -> getPodLog(domain1Uid + "-managed-server1", domain1Namespace,"busybox")
-            .contains("Hi from Domain"),
-        "failed to init busybox container command for managed server1"));
-    assertTrue(assertDoesNotThrow(() -> getPodLog(domain1Uid + "-managed-server2", domain1Namespace,"busybox")
-            .contains("Hi from Domain"),
-        "failed to init busybox container command for managed server2"));
+    assertTrue(checkPodLogContainMsg(domain1Uid + "-admin-server",domain1Namespace,"Hi from Domain"),
+         "failed to init busybox container command for admin server");
+    assertTrue(checkPodLogContainMsg(domain1Uid + "-managed-server1",domain1Namespace,"Hi from Domain"),
+        "failed to init busybox container command for managed server1");
+    assertTrue(checkPodLogContainMsg(domain1Uid + "-managed-server2",domain1Namespace,"Hi from Domain"),
+        "failed to init busybox container command for managed server2");
 
+  }
+
+  private boolean checkPodLogContainMsg(String podName, String podNamespace, String msg) {
+    String podLog = null;
+    try {
+      podLog = getPodLog(podName, podNamespace,"busybox");
+    } catch (Exception ex) {
+      logger.info("Caught unexpected exception while calling getPodLog for pod "
+          + podName
+          + ex.getMessage()
+          + ex.getStackTrace());
+      return false;
+    }
+    if (podLog != null) {
+      return podLog.contains(msg);
+    } else {
+      logger.info("getPodLog returns null , can't retrieve pod's log for " + podName);
+      return false;
+    }
   }
 
   /**
