@@ -8,7 +8,11 @@
 # This is the script WebLogic Operator WLS Pods use to start their WL Server.
 #
 
-SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+if [ -z ${SCRIPTPATH+x} ]; then
+  SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+fi
+
+echo "script path is ${SCRIPTPATH}"
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exitOrLoop
 
@@ -183,9 +187,7 @@ function prepareMIIServer() {
   fi
 
   trace "Model-in-Image: Restoring primordial domain"
-  cd / || return 1
-  base64 -d /weblogic-operator/introspector/primordial_domainzip.secure > /tmp/domain.tar.gz || return 1
-  tar -xzf /tmp/domain.tar.gz || return 1
+  restorePrimordialDomain || return 1
 
   trace "Model-in-Image: Restore domain secret"
   # decrypt the SerializedSystemIni first
@@ -201,10 +203,7 @@ function prepareMIIServer() {
   # restore the config zip
   #
   trace "Model-in-Image: Restore domain config"
-  cd / || return 1
-  base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz || return 1
-  tar -xzf /tmp/domain.tar.gz || return 1
-  chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh  || return 1
+  restoreDomainConfig || return 1
 
   # restore the archive apps and libraries
   #

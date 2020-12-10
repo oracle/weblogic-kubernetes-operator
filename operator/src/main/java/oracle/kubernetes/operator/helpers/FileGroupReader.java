@@ -46,7 +46,7 @@ class FileGroupReader {
    * Given a file path, loads the contents of the files into a map.
    *
    * @param rootDir the path to the top-level directory
-   * @return a map of file paths to string contents.
+   * @return a map of file names to string contents.
    * @throws IOException if an error occurs during the read
    */
   static Map<String, String> loadContents(Path rootDir) throws IOException {

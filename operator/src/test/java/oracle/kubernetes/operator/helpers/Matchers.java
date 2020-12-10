@@ -5,12 +5,15 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
@@ -85,7 +88,7 @@ public class Matchers {
 
   private static V1Container createInitContainerWithEnvVar(String name, String image, String serverName,
                                                            V1EnvVar envVar, String... command) {
-    List<V1EnvVar> envVars = new ArrayList<>(Arrays.asList(envVar));
+    List<V1EnvVar> envVars = new ArrayList<>(Collections.singletonList(envVar));
     PodHelperTestBase.getPredefinedEnvVariables(serverName).forEach(predefEnvVar ->
             addIfMissing(envVars, predefEnvVar.getName(), predefEnvVar.getValue()));
     return new V1Container().name(name).image(image).command(Arrays.asList(command))
@@ -111,9 +114,53 @@ public class Matchers {
     }
   }
 
+  public static class VolumeMatcher extends TypeSafeDiagnosingMatcher<V1Volume> {
+    private final String expectedName;
+    private final String expectedConfigMapName;
+
+    private VolumeMatcher(String expectedName, String expectedConfigMapName) {
+      this.expectedName = expectedName;
+      this.expectedConfigMapName = expectedConfigMapName;
+    }
+
+    public static VolumeMatcher volume(String expectedName, String expectedConfigMapName) {
+      return new VolumeMatcher(expectedName, expectedConfigMapName);
+    }
+
+    @Override
+    protected boolean matchesSafely(V1Volume item, Description mismatchDescription) {
+      if (isExpectedVolume(item)) {
+        return true;
+      }
+
+      describe(mismatchDescription, item.getName(), getConfigMapName(item));
+      return false;
+    }
+
+    private void describe(Description description, String name, String configMapName) {
+      description.appendText("volume with name: ").appendValue(name);
+      if (expectedConfigMapName != null) {
+        description.appendText(", config map name: ").appendValue(configMapName);
+      }
+    }
+
+    private boolean isExpectedVolume(V1Volume volume) {
+      return expectedName.equals(volume.getName())
+          && expectedConfigMapName.equals(getConfigMapName(volume));
+    }
+
+    private String getConfigMapName(V1Volume volume) {
+      return Optional.ofNullable(volume.getConfigMap()).map(V1ConfigMapVolumeSource::getName).orElse(null);
+    }
+
+    @Override
+    public void describeTo(Description description) {
+      describe(description, expectedName, expectedConfigMapName);
+    }
+  }
+
   @SuppressWarnings("unused")
-  public static class VolumeMountMatcher
-      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1VolumeMount> {
+  public static class VolumeMountMatcher extends TypeSafeDiagnosingMatcher<V1VolumeMount> {
     private final String expectedName;
     private final String expectedPath;
     private final boolean readOnly;
@@ -214,6 +261,7 @@ public class Matchers {
     }
   }
 
+  @SuppressWarnings("unused")
   static class EnvVarMatcher extends TypeSafeDiagnosingMatcher<V1EnvVar> {
     private static final String DONTCARE = "SENTINEL_DONT_CARE";
     private final String expectedName;
@@ -239,21 +287,19 @@ public class Matchers {
 
     @Override
     protected boolean matchesSafely(V1EnvVar item, Description mismatchDescription) {
-      if (expectedValueRegEx == DONTCARE) {
-        if (expectedName.equals(item.getName())) {
-          return true;
-        }
-        mismatchDescription.appendText("EnvVar with name ").appendValue(item.getName());
-        return false;
-      }
       if (expectedValueRegEx == null) {
         if (expectedName.equals(item.getName()) && item.getValue() == null) {
           return true;
         }
         mismatchDescription.appendText("EnvVar with name ").appendValue(item.getName());
         return false;
-      }
-      if (expectedName.equals(item.getName()) 
+      } else if (expectedValueRegEx.equals(DONTCARE)) {
+        if (expectedName.equals(item.getName())) {
+          return true;
+        }
+        mismatchDescription.appendText("EnvVar with name ").appendValue(item.getName());
+        return false;
+      } else if (expectedName.equals(item.getName())
           && item.getValue() != null 
           && item.getValue().matches(expectedValueRegEx)) {
         return true;
@@ -269,7 +315,7 @@ public class Matchers {
     @Override
     public void describeTo(Description description) {
       description.appendText("EnvVar with name=").appendValue(expectedName);
-      if (expectedValueRegEx != DONTCARE) {
+      if (!expectedValueRegEx.equals(DONTCARE)) {
         description.appendText(" value=").appendValue(expectedValueRegEx);
       }
     }
