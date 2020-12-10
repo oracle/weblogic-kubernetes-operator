@@ -14,7 +14,7 @@
     <module>swagger</module>
     <module>integration-tests</module>
     <module>kubernetes</module>
-    <module>json-schema-maven-plugin</module>
+    <module>operator-build-maven-plugin</module>
     <module>json-schema</module>
     <module>buildtime-reports</module>
   </modules>
