@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -18,6 +21,7 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -28,12 +32,16 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkApplicationRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkWorkManagerRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
@@ -42,6 +50,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToCha
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readMaxThreadsConstraintRuntimeForWorkManager;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readMinThreadsConstraintRuntimeForWorkManager;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigMapWithModelFiles;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -57,6 +66,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -78,6 +88,7 @@ class ItMiiDynamicUpdate {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
+  private static ConditionFactory withQuickRetryPolicy;
   private static int replicaCount = 1;
   private static final String domainUid = "mii-dynamic-update";
   private static String pvName = domainUid + "-pv"; // name of the persistent volume
@@ -103,6 +114,11 @@ class ItMiiDynamicUpdate {
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .atMost(5, MINUTES).await();
+
+    // create a reusable quick retry policy
+    withQuickRetryPolicy = with().pollDelay(0, SECONDS)
+        .and().with().pollInterval(4, SECONDS)
+        .atMost(10, SECONDS).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -223,7 +239,7 @@ class ItMiiDynamicUpdate {
     }
 
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList("model.config.wm.yaml"), withStandardRetryPolicy);
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
 
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
@@ -272,7 +288,7 @@ class ItMiiDynamicUpdate {
     }
 
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList("model.update.wm.yaml"),
+        Arrays.asList(MODEL_DIR + "/model.update.wm.yaml"),
         withStandardRetryPolicy);
 
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
@@ -290,6 +306,144 @@ class ItMiiDynamicUpdate {
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
 
   }
+
+  /**
+   * Recreate configmap containing previous test model and application config target to both admin and cluster.
+   * Patch the domain resource with the configmap.
+   * Update the introspect version of the domain resource.
+   * Wait for introspector to complete
+   * Verify application target is changed by accessing the application runtime using REST API.
+   * Verify the application can be accessed on both admin server and from all servers in cluster.
+   */
+  @Test
+  @Order(3)
+  @DisplayName("Change target for the application deployment using mii dynamic update")
+  public void testMiiChangeTarget() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
+    }
+
+    // make sure the application is not deployed on admin server
+    assertFalse(checkApplicationRuntime(domainNamespace, adminServerPodName,
+        adminServerName, "200"),
+        "Application deployed on " + adminServerName + " before the dynamic update");
+
+    // check and wait for the application to be accessible in all server pods
+    verifyApplicationAccessOnCluster();
+
+    // write sparse yaml to file
+    Path pathToChangeTargetYaml = Paths.get(WORK_DIR + "/changetarget.yaml");
+    String yamlToChangeTarget = "appDeployments:\n"
+        + "  Application:\n"
+        + "    myear:\n"
+        + "      Target: 'cluster-1,admin-server'";
+
+    assertDoesNotThrow(() -> Files.write(pathToChangeTargetYaml, yamlToChangeTarget.getBytes()));
+
+    // Replace contents of an existing configMap
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToChangeTargetYaml.toString()), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    // check and wait for the application to be accessible in all server pods
+    verifyApplicationAccessOnCluster();
+
+    // check and wait for the application to be accessible in admin pod
+    checkAppIsRunning(
+        withQuickRetryPolicy,
+        domainNamespace,
+        adminServerPodName,
+        "7001",
+        "sample-war/index.jsp",
+        "Hello World");
+
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+  }
+
+  /**
+   * Recreate configmap containing application config target to none.
+   * Patch the domain resource with the configmap.
+   * Update the introspect version of the domain resource.
+   * Wait for introspector to complete
+   * Verify application target is changed by accessing the application runtime using REST API.
+   * Test is failing https://jira.oraclecorp.com/jira/browse/OWLS-86352.
+   */
+  @Disabled
+  @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
+  public void testMiiRemoveTarget() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
+    }
+
+    // check and wait for the application to be accessible in all server pods
+    verifyApplicationAccessOnCluster();
+
+    // write sparse yaml to file
+    Path pathToRemoveTargetYaml = Paths.get(WORK_DIR + "/removetarget.yaml");
+    String yamlToRemoveTarget = "appDeployments:\n"
+        + "  Application:\n"
+        + "    myear:\n"
+        + "      Target: ''";
+
+    assertDoesNotThrow(() -> Files.write(pathToRemoveTargetYaml, yamlToRemoveTarget.getBytes()));
+
+    // Replace contents of an existing configMap
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToRemoveTargetYaml.toString()), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    // make sure the application is not deployed on cluster
+    verifyApplicationRuntimeOnCluster("404");
+
+    // make sure the application is not deployed on admin
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition ->
+            logger.info("Waiting for application target to be updated. "
+                    + "Elapsed time {0}ms, remaining time {1}ms",
+                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
+                  () -> checkApplicationRuntime(domainNamespace, adminServerPodName,
+            adminServerName, "404"));
+
+
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+  }
+
+
 
   private void verifyIntrospectorRuns() {
     //verify the introspector pod is created and runs
@@ -373,5 +527,40 @@ class ItMiiDynamicUpdate {
     }
     logger.info("readMaxThreadsConstraintRuntime failed to read from WebLogic server ");
     return false;
+  }
+
+  /**
+   * Check application runtime using REST Api.
+   * @param expectedStatusCode expected status code
+   */
+  private void verifyApplicationRuntimeOnCluster(String expectedStatusCode) {
+    // make sure the application is deployed on cluster
+    for (int i = 1; i <= replicaCount; i++) {
+      final int j = i;
+      withStandardRetryPolicy.conditionEvaluationListener(
+          condition ->
+              logger.info("Waiting for application target to be updated. "
+                      + "Elapsed time {0}ms, remaining time {1}ms",
+                  condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
+                    () -> checkApplicationRuntime(domainNamespace, adminServerPodName,
+              MANAGED_SERVER_NAME_BASE + j, expectedStatusCode));
+
+    }
+  }
+
+  /**
+   * Verify the application access on all the servers pods in the cluster.
+   */
+  private void verifyApplicationAccessOnCluster() {
+    // check and wait for the application to be accessible in all server pods
+    for (int i = 1; i <= replicaCount; i++) {
+      checkAppIsRunning(
+          withQuickRetryPolicy,
+          domainNamespace,
+          managedServerPrefix + i,
+          "8001",
+          "sample-war/index.jsp",
+          MII_APP_RESPONSE_V1 + i);
+    }
   }
 }

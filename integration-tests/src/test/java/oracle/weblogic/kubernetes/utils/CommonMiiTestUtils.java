@@ -456,6 +456,26 @@ public class CommonMiiTestUtils {
         expectedStatusCode);
   }
 
+  /**
+   * Use REST APIs to check the application runtime mbean from the WebLogic server.
+   * @param domainNamespace Kubernetes namespace that the domain is hosted
+   * @param adminServerPodName Name of the admin server pod to which the REST requests should be sent to
+   * @param serverName Name of the server from which to look for the runtime mbean
+   * @param expectedStatusCode the expected response to verify
+   * @return true if the REST API reply contains the expected response
+   */
+  public static boolean checkApplicationRuntime(
+      String domainNamespace, String adminServerPodName,
+      String serverName, String expectedStatusCode) {
+    return checkWeblogicMBean(
+        domainNamespace,
+        adminServerPodName,
+        "/management/weblogic/latest/domainRuntime/serverRuntimes/"
+            + serverName
+            + "/applicationRuntimes/" + MII_BASIC_APP_DEPLOYMENT_NAME,
+        expectedStatusCode);
+  }
+
   private static ExecResult readRuntimeResource(String domainNamespace, String adminServerPodName,
       String resourcePath, String callerName) {
     LoggingFacade logger = getLogger();
