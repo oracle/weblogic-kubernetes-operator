@@ -42,31 +42,48 @@ function phase_setup() {
   case "$1" in 
     # An initial domain with admin server, web-app 'v1', and a single cluster 'cluster-1' with 2 replicas.
     initial)
+      setup_domain_resource=true
       domain_num=1
       image_version=v1
       archive_version=v1
-      configmap=false
+      configmap=None
+      corrected_datasource_secret=false
       ;;
     # Same as initial, plus a data source targeted to 'cluster-1' which is dynamically supplied using a model configmap. 
     update1)
+      setup_domain_resource=true
       domain_num=1
       image_version=v1
       archive_version=v1
-      configmap=true
+      configmap=datasource
+      corrected_datasource_secret=false
       ;;
     # Same as update1, with a second domain with its own uid 'sample-domain2' that's based on the update1 domain's resource file.
     update2)
+      setup_domain_resource=true
       domain_num=2
       image_version=v1
       archive_version=v1
-      configmap=true
+      configmap=datasource
+      corrected_datasource_secret=false
       ;;
     # Similar to update1, except deploy an updated web-app 'v2' while keeping the original app in the archive.
     update3)
+      setup_domain_resource=true
       domain_num=1
       image_version=v2
       archive_version=v2
-      configmap=true
+      configmap=datasource
+      corrected_datasource_secret=false
+      ;;
+    # Similar to update1, plus update work manager configuration using dynamic update without restarting servers.
+    update4)
+      setup_domain_resource=false
+      domain_num=1
+      image_version=v2
+      archive_version=v2
+      configmap=datasource,workmanager
+      corrected_datasource_secret=true
       ;;
     *)
       echo "Error: Unknown phase $1." 
@@ -110,14 +127,23 @@ chmod +x $WORKDIR/model-images/download-tooling.sh
 # Stage everything else
 #
 
-for phase in initial update1 update2 update3; do
+for phase in initial update1 update2 update3 update4; do
 
   phase_setup $phase
 
   export DOMAIN_NAMESPACE=sample-domain1-ns
   export DOMAIN_UID=sample-domain$domain_num
   export ARCHIVE_SOURCEDIR="archives/archive-$archive_version"
-  export INCLUDE_MODEL_CONFIGMAP=$configmap
+  if [ $configmap != "None" ]; then
+    export INCLUDE_MODEL_CONFIGMAP=true
+  else
+    export INCLUDE_MODEL_CONFIGMAP=false
+  fi
+  if [ $corrected_datasource_secret = "true" ]; then
+    export CORRECTED_DATASOURCE_SECRET=true
+  else
+    export CORRECTED_DATASOURCE_SECRET=false
+  fi
   export CUSTOM_DOMAIN_NAME=domain$domain_num
   export MODEL_IMAGE_NAME=model-in-image
   export INTROSPECTOR_DEADLINE_SECONDS=600
@@ -138,17 +164,19 @@ for phase in initial update1 update2 update3; do
     $SCRIPTDIR/build-model-image.sh -dry \
       | grep dryrun | sed 's/dryrun://' \
       > $WORKDIR/$MODEL_DIR/build-image.sh
-    chmod +x $WORKDIR/$MODEL_DIR/build-image.sh
+     chmod +x $WORKDIR/$MODEL_DIR/build-image.sh
   fi
 
   # setup domain resource 
 
   domain_path=domain-resources/$type/mii-$phase-d$domain_num-$MODEL_IMAGE_TAG
-  if [ "$configmap" = "true" ]; then
+  if [ "$configmap" != "None" ]; then
     domain_path=$domain_path-ds
   fi
   export DOMAIN_RESOURCE_FILENAME=$domain_path.yaml
-  $SCRIPTDIR/stage-domain-resource.sh
+  if [ "$setup_domain_resource" = "true" ]; then
+    $SCRIPTDIR/stage-domain-resource.sh
+  fi
 
   # setup secret script for the domain resource
 
@@ -157,10 +185,16 @@ for phase in initial update1 update2 update3; do
    
   # setup script for the configmap
 
-  if [ "$configmap" = "true" ]; then
+  if [ "$configmap" != "None" ]; then
+    file_param=''
+    for i in ${configmap//,/ }
+      do
+       file_param="${file_param}-f ${WORKDIR}/model-configmaps/$i "
+      done
+
     $WORKDIR/utils/create-configmap.sh \
       -c ${DOMAIN_UID}-wdt-config-map \
-      -f ${WORKDIR}/model-configmaps/datasource \
+      ${file_param} \
       -d $DOMAIN_UID \
       -n $DOMAIN_NAMESPACE \
       -dry kubectl | grep dryrun | sed 's/dryrun://' \

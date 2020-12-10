@@ -3,11 +3,12 @@
 
 package oracle.weblogic.kubernetes.actions;
 
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_BASE;
+
 public interface ActionConstants {
 
   // Work directory for the integration test suite
-  public static final String WORK_DIR
-      = System.getProperty("java.io.tmpdir") + "/it-results";
+  public static final String WORK_DIR = RESULTS_BASE + "/workdir";
   // Integration tests directory
   public static final String ITTESTS_DIR = System.getProperty("user.dir");
   // Directory for resources

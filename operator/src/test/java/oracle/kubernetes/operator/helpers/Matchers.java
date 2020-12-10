@@ -3,7 +3,9 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nonnull;
@@ -30,6 +32,16 @@ public class Matchers {
   public static Matcher<Iterable<? super V1Container>> hasContainer(
       String name, String image, String... command) {
     return hasItem(createContainer(name, image, command));
+  }
+
+  public static Matcher<Iterable<? super V1Container>> hasInitContainer(
+          String name, String image, String serverName, String... command) {
+    return hasItem(createInitContainer(name, image, serverName, command));
+  }
+
+  public static Matcher<Iterable<? super V1Container>> hasInitContainerWithEnvVar(
+          String name, String image, String serverName, V1EnvVar envVar, String... command) {
+    return hasItem(createInitContainerWithEnvVar(name, image, serverName, envVar, command));
   }
 
   public static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
@@ -64,6 +76,39 @@ public class Matchers {
 
   private static V1Container createContainer(String name, String image, String... command) {
     return new V1Container().name(name).image(image).command(Arrays.asList(command));
+  }
+
+  private static V1Container createInitContainer(String name, String image, String serverName, String... command) {
+    return new V1Container().name(name).image(image).command(Arrays.asList(command))
+            .env(PodHelperTestBase.getPredefinedEnvVariables(serverName));
+  }
+
+  private static V1Container createInitContainerWithEnvVar(String name, String image, String serverName,
+                                                           V1EnvVar envVar, String... command) {
+    List<V1EnvVar> envVars = new ArrayList<>(Arrays.asList(envVar));
+    PodHelperTestBase.getPredefinedEnvVariables(serverName).forEach(predefEnvVar ->
+            addIfMissing(envVars, predefEnvVar.getName(), predefEnvVar.getValue()));
+    return new V1Container().name(name).image(image).command(Arrays.asList(command))
+            .env(envVars);
+  }
+
+  protected static void addEnvVar(List<V1EnvVar> vars, String name, String value) {
+    vars.add(new V1EnvVar().name(name).value(value));
+  }
+
+  protected static boolean listHasEnvVar(List<V1EnvVar> vars, String name) {
+    for (V1EnvVar var : vars) {
+      if (name.equals(var.getName())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  protected static void addIfMissing(List<V1EnvVar> vars, String name, String value) {
+    if (!listHasEnvVar(vars, name)) {
+      addEnvVar(vars, name, value);
+    }
   }
 
   @SuppressWarnings("unused")

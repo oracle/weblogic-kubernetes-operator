@@ -29,26 +29,31 @@ appscode/voyager   v12.0.0       v12.0.0    	Voyager by AppsCode - Secure HAProx
 
 ```
 $ kubectl create ns voyager
-$ helm install voyager-operator appscode/voyager --version 10.0.0 \
+$ helm install voyager-operator appscode/voyager --version 12.0.0 \
   --namespace voyager \
   --set cloudProvider=baremetal \
+  --set apiserver.healthcheck.enabled=false \
   --set apiserver.enableValidatingWebhook=false
 ```
 
-Wait until the Voyager operator is running.
+Wait until the Voyager operator and Kubernetes objects are ready.
 ```
-$ kubectl -n voyager get all
-NAME                                    READY   STATUS    RESTARTS   AGE
-pod/voyager-operator-5686bc6556-9bs5z   1/1     Running   0          46m
+$ kubectl -n voyager get pod
+NAME                         READY   STATUS    RESTARTS   AGE
+pod/voyager-operator-9bs5z   1/1     Running   0          46m
+$ kubectl -n voyager get svc
+NAME               TYPE      CLUSTER-IP     EXTERNAL-IP   PORT(S)
+voyager-operator   ClusterIP 10.105.254.144 <none>     443/TCP,56791/TCP
+$ kubectl -n voyager get deployment
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+voyager-operator   1/1     1            1           9m16s
+$ kubectl -n voyager get replicaset
+NAME                        DESIRED   CURRENT   READY   AGE
+voyager-operator-799fff9f   1         1         1       10m
+$ kubectl get crd/ingresses.voyager.appscode.com -n voyager
+NAME                             CREATED AT
+ingresses.voyager.appscode.com   2020-11-19T23:45:34Z
 
-NAME                       TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)             AGE
-service/voyager-operator   ClusterIP   10.105.254.144   <none>        443/TCP,56791/TCP   46m
-
-NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/voyager-operator   1/1     1            1           46m
-
-NAME                                          DESIRED   CURRENT   READY   AGE
-replicaset.apps/voyager-operator-5686bc6556   1         1         1       46m
 ```
 > **NOTE**: All the generated Kubernetes resources of the Voyager operator have names controlled by the Voyager Helm chart. In our case, we use `releaseName` of `voyager-operator`.
 
