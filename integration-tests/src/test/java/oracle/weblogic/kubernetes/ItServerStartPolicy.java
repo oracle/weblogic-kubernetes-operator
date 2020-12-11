@@ -462,7 +462,7 @@ class ItServerStartPolicy {
    * The configured cluster has a second managed server(config-cluster-server2)
    * with serverStartPolicy set to IF_NEEDED. Initially, the server will not 
    * come up since the replica count for the cluster is set to 1. 
-   * Update the serverStartPolicy for the server config-cluster-server2 to i
+   * Update the serverStartPolicy for the server config-cluster-server2 to 
    * ALWAYS by patching the resource definition with 
    *  spec/managedServers/1/serverStartPolicy set to ALWAYS
    * Make sure that managed server config-cluster-server2 is up and running
