@@ -24,10 +24,13 @@ import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 
 /**
  * A step which will bring up the specified managed servers in parallel.
@@ -168,7 +171,7 @@ public class ManagedServerUpIteratorStep extends Step {
 
       if (startDetailsQueue.isEmpty()) {
         return doNext(new ManagedServerUpAfterStep(getNext()), packet);
-      } else if (hasServerAvailableToStart(packet.getSpi(DomainPresenceInfo.class))) {
+      } else if (hasServerAvailableToStart(packet)) {
         numStarted.getAndIncrement();
         return doForkJoin(this, packet, Collections.singletonList(startDetailsQueue.poll()));
       } else {
@@ -176,14 +179,27 @@ public class ManagedServerUpIteratorStep extends Step {
       }
     }
 
-    private boolean hasServerAvailableToStart(DomainPresenceInfo info) {
-      return ((numStarted.get() < info.getNumScheduledServers(clusterName))
-              && (canStartConcurrently(info.getNumReadyServers(clusterName))));
+    private boolean hasServerAvailableToStart(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      String adminServerName = ((WlsDomainConfig) packet.get(DOMAIN_TOPOLOGY)).getAdminServerName();
+      return ((getNumServersStarted() <= info.getNumScheduledManagedServers(clusterName, adminServerName)
+              && (canStartConcurrently(info.getNumReadyManagedServers(clusterName, adminServerName)))));
     }
 
     private boolean canStartConcurrently(long numReady) {
-      return ((this.maxConcurrency > 0) && (numStarted.get() < (this.maxConcurrency + numReady - 1)))
-          || (this.maxConcurrency == 0);
+      return (ignoreConcurrencyLimits() || numNotReady(numReady) < this.maxConcurrency);
+    }
+
+    private long numNotReady(long numReady) {
+      return getNumServersStarted() - numReady;
+    }
+
+    private int getNumServersStarted() {
+      return numStarted.get();
+    }
+
+    private boolean ignoreConcurrencyLimits() {
+      return this.maxConcurrency == 0;
     }
   }
 
