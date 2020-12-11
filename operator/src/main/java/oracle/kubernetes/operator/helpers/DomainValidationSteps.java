@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -24,10 +23,9 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
-import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.DomainStatusUpdater.BAD_DOMAIN;
@@ -146,33 +144,38 @@ public class DomainValidationSteps {
     }
 
 
-    private void logAndAddWarning(List<String> validationWarnings, String messageKey, Object... params) {
+    private void logAndAddWarning(DomainPresenceInfo info, String messageKey, Object... params) {
       LOGGER.warning(messageKey, params);
-      validationWarnings.add(LOGGER.formatMessage(messageKey, params));
+      info.addValidationWarning(LOGGER.formatMessage(messageKey, params));
     }
 
     private void validate(DomainPresenceInfo info, WlsDomainConfig wlsDomainConfig) {
-      List<String> validationWarnings = new ArrayList<>();
+      DomainSpec domainSpec = info.getDomain().getSpec();
 
-      Domain domain = info.getDomain();
-
-      // log warnings for clusters that are specified in domain resource but not configured
-      // in the WebLogic domain
-      for (Cluster cluster : domain.getSpec().getClusters()) {
-        if (!wlsDomainConfig.containsCluster(cluster.getClusterName())) {
-          logAndAddWarning(validationWarnings, MessageKeys.NO_CLUSTER_IN_DOMAIN, cluster.getClusterName());
-        }
-      }
-      // log warnings for managed servers that are specified in domain resource but not configured
-      // in the WebLogic domain
-      for (ManagedServer server : domain.getSpec().getManagedServers()) {
-        if (!wlsDomainConfig.containsServer(server.getServerName())) {
-          logAndAddWarning(validationWarnings, MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN, server.getServerName());
-        }
-      }
       info.clearValidationWarnings();
-      for (String warning: validationWarnings) {
-        info.addValidationWarning(warning);
+
+      // log warnings for each cluster that is specified in domain resource but not configured
+      // in the WebLogic domain
+      domainSpec.getClusters().forEach(
+          c -> logAndAddWarningIfClusterDoesNotExist(wlsDomainConfig, c.getClusterName(), info));
+
+      // log warnings for each managed server that is specified in domain resource but not configured
+      // in the WebLogic domain
+      domainSpec.getManagedServers().forEach(
+          s -> logAndAddWarningIfServerDoesNotExist(wlsDomainConfig, s.getServerName(), info));
+    }
+
+    private void logAndAddWarningIfClusterDoesNotExist(WlsDomainConfig domainConfig, String clusterName,
+        DomainPresenceInfo info) {
+      if (!domainConfig.containsCluster(clusterName)) {
+        logAndAddWarning(info, MessageKeys.NO_CLUSTER_IN_DOMAIN, clusterName);
+      }
+    }
+
+    private void logAndAddWarningIfServerDoesNotExist(WlsDomainConfig domainConfig, String serverName,
+        DomainPresenceInfo info) {
+      if (!domainConfig.containsServer(serverName)) {
+        logAndAddWarning(info, MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN, serverName);
       }
     }
 

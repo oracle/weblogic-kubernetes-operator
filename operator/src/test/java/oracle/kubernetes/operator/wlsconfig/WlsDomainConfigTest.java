@@ -728,6 +728,71 @@ public class WlsDomainConfigTest {
             "domain.configuredClusters[0].servers", withServerConfig("ms2", "host2", 8001)));
   }
 
+  @Test
+  public void containsServer_returnsTrue_forExistingStandaloneServer() {
+    WlsDomainConfig domainConfig =
+        new WlsDomainConfig("test-domain")
+            .addWlsServer("ms1","host1", 8001);
+
+    assertThat(domainConfig.containsServer("ms1"), equalTo(true));
+  }
+
+  @Test
+  public void containsServer_returnsTrue_forExistingConfiguredClusteredServer() {
+    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
+    support.addWlsCluster("cluster-1", "ms1");
+
+    assertThat(support.createDomainConfig().containsServer("ms1"), equalTo(true));
+  }
+
+  @Test
+  public void containsServer_returnsTrue_forExistingDynamicClusterServer() {
+    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
+    support.addDynamicWlsCluster("cluster-1", "ms1");
+
+    assertThat(support.createDomainConfig().containsServer("ms1"), equalTo(true));
+  }
+
+  @Test
+  public void containsServer_returnsFalse_forNonExistingServer() {
+    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
+    support.addWlsCluster("cluster-1", "ms1");
+    support.addDynamicWlsCluster("dynamic-cluster", "dyn1");
+    support.addWlsServer("standalone");
+
+    assertThat(support.createDomainConfig().containsServer("notthere"), equalTo(false));
+  }
+
+  @Test
+  public void containsServer_returnsFalse_forNullServerName() {
+    WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("domain");
+
+    assertThat(wlsDomainConfig.containsServer(null), equalTo(false));
+  }
+
+  @Test
+  public void containsCluster_returnsFalse_forNonExistingCluster() {
+    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
+    support.addWlsCluster("cluster-1", "ms1");
+
+    assertThat(support.createDomainConfig().containsCluster("notthere"), equalTo(false));
+  }
+
+  @Test
+  public void containsCluster_returnsTrue_forExistingCluster() {
+    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
+    support.addWlsCluster("cluster-1", "ms1");
+
+    assertThat(support.createDomainConfig().containsCluster("cluster-1"), equalTo(true));
+  }
+
+  @Test
+  public void containsCluster_returnsFalse_forNullServerName() {
+    WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("domain");
+
+    assertThat(wlsDomainConfig.containsCluster(null), equalTo(false));
+  }
+
   @SuppressWarnings("unused")
   static class WlsServerConfigMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<
