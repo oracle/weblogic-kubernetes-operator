@@ -533,9 +533,7 @@ function restorePrimordialDomain() {
 # $1 the name of the encoded file in the config map
 function restoreEncodedTar() {
   cd / || return 1
-  indexRange="$(getIndexRange $1)"
-  # shellcheck disable=SC2046
-  cat $(buildConfigMapElements $1 $indexRange) > /tmp/domain.secure
+  cat ${OPERATOR_ROOT}/introspector*/${1} > /tmp/domain.secure
   base64 -d "/tmp/domain.secure" > /tmp/domain.tar.gz || return 1
 
   tar -xzf /tmp/domain.tar.gz || return 1

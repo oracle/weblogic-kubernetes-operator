@@ -15,42 +15,6 @@ setUp() {
   echo "<ignored>" > $INTROSPECTOR_MAP/primordial_domainzip.secure
 }
 
-testIndexRangeWhenRangeFileMissing() {
-  actual=$(getIndexRange "domainzip.secure")
-  expected="0 0"
-
-  assertEquals "$expected" "$actual"
-}
-
-testIndexRangeWhenRangeFilePresent() {
-  echo "0 2" > $INTROSPECTOR_MAP/domainzip.secure.range
-  actual=$(getIndexRange "domainzip.secure")
-  expected="0 2"
-
-  assertEquals "$expected" "$actual"
-}
-
-testBuildConfigMapMultipleElements() {
-  actual=$(buildConfigMapElements "domain.secure" 0 2)
-  expected="$INTROSPECTOR_MAP/domain.secure ${INTROSPECTOR_MAP}_1/domain.secure ${INTROSPECTOR_MAP}_2/domain.secure"
-
-  assertEquals "$expected" "$actual"
-}
-
-testBuildConfigMapOneElementAtZero() {
-  actual=$(buildConfigMapElements "domain.secure" 0 0)
-  expected="$INTROSPECTOR_MAP/domain.secure"
-
-  assertEquals "$expected" "$actual"
-}
-
-testBuildConfigMapOneElementAfterZero() {
-  actual=$(buildConfigMapElements "domain.secure" 1 1)
-  expected="${INTROSPECTOR_MAP}_1/domain.secure"
-
-  assertEquals "$expected" "$actual"
-}
-
 testRestoreDomainConfig_failsIfUnableToCDToRoot() {
   DISALLOW="CD"
 
