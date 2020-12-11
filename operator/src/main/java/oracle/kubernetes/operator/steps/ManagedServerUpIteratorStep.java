@@ -187,7 +187,11 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     private boolean canStartConcurrently(long numReady) {
-      return (ignoreConcurrencyLimits() || (getNumServersStarted() < (this.maxConcurrency + numReady)));
+      return (ignoreConcurrencyLimits() || numPodsNotReady(numReady) < this.maxConcurrency);
+    }
+
+    private long numPodsNotReady(long numReady) {
+      return getNumServersStarted() - numReady;
     }
 
     private int getNumServersStarted() {
