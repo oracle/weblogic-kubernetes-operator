@@ -539,44 +539,6 @@ function restoreEncodedTar() {
   tar -xzf /tmp/domain.tar.gz || return 1
 }
 
-# Returns the index range for an encoded file in an introspector config map
-# args:
-# $1 the key of the encoded file in the map
-function getIndexRange() {
-  rangeFile="$OPERATOR_ROOT/introspector/$1.range"
-  if [ -f "$rangeFile" ]; then
-    cat "$rangeFile"
-  else
-    echo "0 0"
-  fi
-}
-
-# Creates a string containing entries from one or more config maps
-# args:
-# $1 the key of the entry in each map
-# $2 the index of the first configmap containing the entry key
-# $3 the index of the last configmap containing the entry key
-function buildConfigMapElements() {
-  result=""
-  
-  for ((i=$2;i<=$3;i++)); do
-    result="$result ${OPERATOR_ROOT}/introspector$(getSuffix $i)/${1}"
-  done
-
-  echo $result
-}
-
-# Returns the suffix for a config map mount address
-# args:
-# $1 the index of the map (0 means no suffix)
-function getSuffix() {
-  if [ "$1" -eq 0 ]; then
-    echo ""
-  else
-    echo "_$1"
-  fi
-}
-
 
 function diff_model() {
   trace "Entering diff_model"
