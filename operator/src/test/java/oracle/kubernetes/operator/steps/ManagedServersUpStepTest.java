@@ -628,22 +628,6 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenReplicasExceedsMaxDynClusterSize_logMessage() {
-    List<LogRecord> messages = new ArrayList<>();
-    consoleHandlerMemento.withLogLevel(Level.WARNING)
-        .collectLogMessages(messages, REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT);
-
-    startNoServers();
-    setCluster1Replicas(10);
-
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(messages, containsWarning(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT));
-  }
-
-  @Test
   public void whenReplicasLessThanDynClusterSize_createsEvent() {
     setCluster1Replicas(0);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
@@ -665,6 +649,22 @@ public class ManagedServersUpStepTest {
 
     assertThat(domainPresenceInfo.getValidationWarningsAsString(),
         stringContainsInOrder("0", "less than",  "minimum dynamic server", "2", "cluster1"));
+  }
+
+  @Test
+  public void whenReplicasExceedsMaxDynClusterSize_logMessage() {
+    List<LogRecord> messages = new ArrayList<>();
+    consoleHandlerMemento.withLogLevel(Level.WARNING)
+        .collectLogMessages(messages, REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT);
+
+    startNoServers();
+    setCluster1Replicas(10);
+
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(messages, containsWarning(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT));
   }
 
   @Test
@@ -722,8 +722,6 @@ public class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(getEvents(), empty());
-    assertThat(domainPresenceInfo.getValidationWarningsAsString(),
-        stringContainsInOrder("10", "exceeds",  "maximum dynamic server", "5", "cluster1"));
   }
 
   @Test
@@ -737,7 +735,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void withValidReplicas_noValidationWarning() {
+  public void withValidReplicas_noValidationWarnings() {
     setCluster1Replicas(2);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
 

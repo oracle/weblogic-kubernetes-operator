@@ -170,7 +170,7 @@ public class ManagedServersUpStep extends Step {
     final Collection<String> servers = new ArrayList<>();
     final Collection<String> preCreateServers = new ArrayList<>();
     final Map<String, Integer> replicas = new HashMap<>();
-    Step eventStep;
+    private Step eventStep;
 
     ServersUpStepFactory(WlsDomainConfig domainTopology, Domain domain,
         DomainPresenceInfo info, boolean skipEventCreation) {
@@ -288,7 +288,7 @@ public class ManagedServersUpStep extends Step {
             domain.getReplicaCount(clusterName),
             clusterConfig.getMaxDynamicClusterSize(),
             clusterName);
-        createInvalidReplicaEventAndStatus(message);
+        addInvalidReplicasValueEventAndWarning(message);
       }
     }
 
@@ -304,7 +304,7 @@ public class ManagedServersUpStep extends Step {
             domain.getReplicaCount(clusterName),
             clusterConfig.getMinDynamicClusterSize(),
             clusterName);
-        createInvalidReplicaEventAndStatus(message);
+        addInvalidReplicasValueEventAndWarning(message);
 
         // Reset current replica count so we don't scale down less than minimum
         // dynamic cluster size
@@ -312,7 +312,8 @@ public class ManagedServersUpStep extends Step {
       }
     }
 
-    private void createInvalidReplicaEventAndStatus(String message) {
+    private void addInvalidReplicasValueEventAndWarning(String message) {
+      LOGGER.warning(message);
       if (!skipEventCreation) {
         eventStep = createEventStep(new EventData(EventItem.INVALID_REPLICAS_VALUE, message));
       }
