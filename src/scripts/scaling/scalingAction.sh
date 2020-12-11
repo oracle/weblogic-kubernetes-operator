@@ -1,17 +1,18 @@
 #!/bin/bash
 # Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+currdate=`date`
 
-echo "called scalingAction.sh" >> scalingAction.log
+echo "### $currdate ###" >> scalingAction.log
 
 # script parameters
-scaling_action=""
-wls_domain_uid=""
-wls_cluster_name=""
-wls_domain_namespace="default"
+scaling_action="scaleUp"
+wls_domain_uid="sample-domain1"
+wls_cluster_name="cluster-1"
+wls_domain_namespace="sample-domain1-ns"
 operator_service_name="internal-weblogic-operator-svc"
-operator_namespace="weblogic-operator"
-operator_service_account="weblogic-operator"
+operator_namespace="sample-weblogic-operator-ns"
+operator_service_account="sample-weblogic-operator-sa"
 scaling_size=1
 access_token=""
 kubernetes_master="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
@@ -100,52 +101,73 @@ echo "operator_namespace: $operator_namespace" >> scalingAction.log
 echo "scaling_size: $scaling_size" >> scalingAction.log
 
 # Query WebLogic Operator Service Port
-STATUS=`curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" -X GET $kubernetes_master/api/v1/namespaces/$operator_namespace/services/$operator_service_name/status`
+STATUS=$(curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" -X GET $kubernetes_master/api/v1/namespaces/$operator_namespace/services/$operator_service_name/status)
 if [ $? -ne 0 ]
   then
-    echo "Failed to retrieve status of $operator_service_name in name space: $operator_namespace" >> scalingAction.log
-    echo "STATUS: $STATUS" >> scalingAction.log
+    echo "$currdate Failed to retrieve status of $operator_service_name in name space: $operator_namespace" >> scalingAction.log
+    echo "$currdate STATUS: $STATUS" >> scalingAction.log
     exit 1
 fi
 
-cat > cmds.py << INPUT
+if [ -x "$(command -v jq)" ]; then
+  extractPortCmd="(.spec.ports[] | select (.name == \"rest\") | .port)"
+  port=$(echo "${STATUS}" | jq "${extractPortCmd}")
+else
+cat > cmds-$$.py << INPUT
 import sys, json
 for i in json.load(sys.stdin)["spec"]["ports"]:
   if i["name"] == "rest":
     print(i["port"])
 INPUT
-port=`echo ${STATUS} | python cmds.py`
+port=$(echo "${STATUS}" | python cmds-$$.py)
+fi
 echo "port: $port" >> scalingAction.log
 
 # Retrieve Custom Resource Definition for WebLogic domain
 CRD=`curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" -X GET $kubernetes_master/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/domains.weblogic.oracle`
 if [ $? -ne 0 ]
   then
-    echo "Failed to retrieve Custom Resource Definition for WebLogic domain" >> scalingAction.log
-    echo "CRD: $CRD" >> scalingAction.log
+    echo "$currdate Failed to retrieve Custom Resource Definition for WebLogic domain" >> scalingAction.log
+    echo "$currdate CRD: $CRD" >> scalingAction.log
     exit 1
 fi
 
 # Find domain version
-cat > cmds.py << INPUT
+if [ -x "$(command -v jq)" ]; then
+  domain_api_version=$(echo "${CRD}" | jq -r '.spec.version')
+  echo "domain_api_version: $domain_api_version" >> scalingAction.log
+else
+cat > cmds-$$.py << INPUT
 import sys, json
 print(json.load(sys.stdin)["spec"]["version"])
 INPUT
-domain_api_version=`echo ${CRD} | python cmds.py`
-echo "domain_api_version: $domain_api_version" >> scalingAction.log
+domain_api_version=`echo ${CRD} | python cmds-$$.py`
+fi
 
 # Reteive Custom Resource Domain 
 DOMAIN=`curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" $kubernetes_master/apis/weblogic.oracle/$domain_api_version/namespaces/$wls_domain_namespace/domains/$domain_uid`
 if [ $? -ne 0 ]
   then
-    echo "Failed to retrieve WebLogic Domain Custom Resource Definition" >> scalingAction.log
-    echo "DOMAIN: $DOMAIN" >> scalingAction.log
+    echo "$currdate Failed to retrieve WebLogic Domain Custom Resource Definition" >> scalingAction.log
     exit 1
 fi
-echo "DOMAIN: $DOMAIN" >> scalingAction.log
+
+if [ -x "$(command -v jq)" ]; then
+  echo "DOMAIN: $(echo ${DOMAIN} | jq .)" >> scalingAction.log
+else
+  echo "DOMAIN: $DOMAIN" >> scalingAction.log
+fi
 
 # Verify if cluster is defined in clusters
-cat > cmds.py << INPUT
+if [ -x "$(command -v jq)" ]; then
+  inClusterStartupCmd="(.items[].spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\"))"
+  clusterDefinedInCRD=$(echo "${DOMAIN}" | jq "${inClusterStartupCmd}")
+  in_cluster_startup="False"
+  if [ "${clusterDefinedInCRD}" != "" ]; then
+    in_cluster_startup="True"
+  fi
+else
+cat > cmds-$$.py << INPUT
 import sys, json
 outer_loop_must_break = False
 for i in json.load(sys.stdin)["items"]:
@@ -158,16 +180,21 @@ for i in json.load(sys.stdin)["items"]:
 if outer_loop_must_break == False:
   print False
 INPUT
-in_cluster_startup=`echo ${DOMAIN} | python cmds.py`
+in_cluster_startup=`echo ${DOMAIN} | python cmds-$$.py`
+fi
 
 # Retrieve replica count, of WebLogic Cluster, from Domain Custom Resource
 # depending on whether the specified cluster is defined in clusters
 # or not.
 if [ $in_cluster_startup == "True" ]
 then
-  echo "$wls_cluster_name defined in clusters" >> scalingAction.log
+  echo "$currdate $wls_cluster_name defined in clusters" >> scalingAction.log
 
-cat > cmds.py << INPUT
+if [ -x "$(command -v jq)" ]; then
+  numManagedServersCmd="(.items[].spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\") | .replicas)"
+  num_ms=$(echo "${DOMAIN}" | jq "${numManagedServersCmd}")
+else
+cat > cmds-$$.py << INPUT
 import sys, json
 for i in json.load(sys.stdin)["items"]:
   j = i["spec"]["clusters"]
@@ -175,20 +202,31 @@ for i in json.load(sys.stdin)["items"]:
     if j[index]["clusterName"] == "$wls_cluster_name":
       print j[index]["replicas"]
 INPUT
-  num_ms=`echo ${DOMAIN} | python cmds.py`
+  num_ms=`echo ${DOMAIN} | python cmds-$$.py`
+fi
 else
-  echo "$wls_cluster_name NOT defined in clusters" >> scalingAction.log
-cat > cmds.py << INPUT
+  echo "$currdate $wls_cluster_name NOT defined in clusters" >> scalingAction.log
+
+if [ -x "$(command -v jq)" ]; then
+  num_ms=$(echo "${DOMAIN}" | jq -r '.items[].spec.replicas' ) 
+else
+cat > cmds-$$.py << INPUT
 import sys, json
 for i in json.load(sys.stdin)["items"]:
   print i["spec"]["replicas"]
 INPUT
-  num_ms=`echo ${DOMAIN} | python cmds.py`
+  num_ms=`echo ${DOMAIN} | python cmds-$$.py`
 fi
-echo "current number of managed servers is $num_ms" >> scalingAction.log
+fi
 
-# Cleanup cmds.py
-[ -e cmds.py ] && rm cmds.py
+if [ "${num_ms}" == "null" ]; then
+  num_ms=0
+fi
+
+echo "$currdate current number of managed servers is $num_ms" >> scalingAction.log
+
+# Cleanup cmds-$$.py
+[ -e cmds-$$.py ] && rm cmds-$$.py
 
 # Calculate new managed server count
 if [ "$scaling_action" == "scaleUp" ]
@@ -200,8 +238,6 @@ else
   new_ms=$(($num_ms - $scaling_size))
 fi
 
-echo "new_ms is $new_ms" >> scalingAction.log
-
 request_body=$(cat <<EOF
 {
     "managedServerCount": $new_ms 
@@ -209,43 +245,44 @@ request_body=$(cat <<EOF
 EOF
 )
 
-echo "request_body: $request_body" >> scalingAction.log
-
 content_type="Content-Type: application/json"
 accept_resp_type="Accept: application/json"
 requested_by="X-Requested-By: WLDF"
 authorization="Authorization: Bearer $access_token"
-pem_filename="weblogic_operator.pem"
+pem_filename="weblogic_operator-$$.pem"
 
 # Create PEM file for Opertor SSL Certificate
 if [ ${INTERNAL_OPERATOR_CERT} ]
 then
   echo ${INTERNAL_OPERATOR_CERT} | base64 --decode >  $pem_filename
 else
-  echo "Operator Cert File not found" >> scalingAction.log
+  echo "$currdate Operator Cert File not found" >> scalingAction.log
   exit 1
 fi
 
 # Operator Service REST URL for scaling
 operator_url="https://$operator_service_name.$operator_namespace.svc.cluster.local:$port/operator/v1/domains/$wls_domain_uid/clusters/$wls_cluster_name/scale"
-echo "operator_url: $operator_url" >> scalingAction.log
+
+##OFSS handling##
+echo "$currdate | domainName: $wls_domain_uid | clusterName: $wls_cluster_name | action: $scaling_action | port: $port | apiVer: $domain_api_version | inClusterPresent: $in_cluster_startup | oldReplica: $num_ms | newReplica: $new_ms | operator_url: $operator_url " >> scalingAction.log
+####
 
 # send REST request to Operator
 if [ -e $pem_filename ]
 then
   result=`curl --cacert $pem_filename -X POST -H "$content_type" -H "$requested_by" -H "$authorization" -d "$request_body" $operator_url`
 else
-  echo "Operator PEM formatted file not found" >> scalingAction.log
+  echo "$currdate Operator PEM formatted file not found" >> scalingAction.log
   exit 1
 fi
 
 if [ $? -ne 0 ]
 then
-  echo "Failed scaling request to WebLogic Operator" >> scalingAction.log
-  echo $result >> scalingAction.log
+  echo "$currdate Failed scaling request to WebLogic Operator" >> scalingAction.log
+  echo "$currdate $result" >> scalingAction.log
   exit 1
 fi
-echo $result >> scalingAction.log
+echo "$currdate $result" >> scalingAction.log
 
 # Cleanup generated operator PEM file
 [ -e $pem_filename ] && rm $pem_filename 
