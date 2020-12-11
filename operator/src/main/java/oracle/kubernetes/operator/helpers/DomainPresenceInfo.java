@@ -34,6 +34,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
+import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
 
 /**
  * Operator's mapping between custom resource Domain and runtime details about that domain,
@@ -101,17 +102,40 @@ public class DomainPresenceInfo {
    */
   public long getNumScheduledServers(String clusterName) {
     return getServersInNoOtherCluster(clusterName)
+            .filter(PodHelper::isScheduled)
+            .count();
+  }
+
+  /**
+   * Counts the number of unclustered managed servers and managed servers in the specified cluster that are scheduled.
+   * @param clusterName cluster name of the pod server
+   * @param adminServerName Name of the admin server
+   * @return Number of scheduled managed servers
+   */
+  public long getNumScheduledManagedServers(String clusterName, String adminServerName) {
+    return getManagedServersInNoOtherCluster(clusterName, adminServerName)
           .filter(PodHelper::isScheduled)
           .count();
   }
 
   /**
-   * Counts the number of unclustered servers and servers in the specified cluster that are ready.
+   * Counts the number of unclustered servers (including admin) and servers in the specified cluster that are ready.
    * @param clusterName cluster name of the pod server
    * @return Number of ready servers
    */
   public long getNumReadyServers(String clusterName) {
     return getServersInNoOtherCluster(clusterName)
+            .filter(PodHelper::hasReadyServer)
+            .count();
+  }
+
+  /**
+   * Counts the number of unclustered managed servers and managed servers in the specified cluster that are ready.
+   * @param clusterName cluster name of the pod server
+   * @return Number of ready servers
+   */
+  public long getNumReadyManagedServers(String clusterName, String adminServerName) {
+    return getManagedServersInNoOtherCluster(clusterName, adminServerName)
           .filter(PodHelper::hasReadyServer)
           .count();
   }
@@ -119,9 +143,19 @@ public class DomainPresenceInfo {
   @Nonnull
   private Stream<V1Pod> getServersInNoOtherCluster(String clusterName) {
     return getServers().values().stream()
+            .map(ServerKubernetesObjects::getPod)
+            .map(AtomicReference::get)
+            .filter(this::isNotDeletingPod)
+            .filter(p -> hasClusterNameOrNull(p, clusterName));
+  }
+
+  @Nonnull
+  private Stream<V1Pod> getManagedServersInNoOtherCluster(String clusterName, String adminServerName) {
+    return getServers().values().stream()
           .map(ServerKubernetesObjects::getPod)
           .map(AtomicReference::get)
           .filter(this::isNotDeletingPod)
+          .filter(p -> isNotAdminServer(p, adminServerName))
           .filter(p -> hasClusterNameOrNull(p, clusterName));
   }
 
