@@ -869,7 +869,7 @@ class ItServerStartPolicy {
    * is not saved once the server is shutdown unless we use domain-on-pv model
    * So in MII case, startServer.sh script update the replica count but the 
    * server startup is defered till we re-start the adminserver. Here the 
-   * operator tries to starti the managed server but it will keep on failing 
+   * operator tries to start the managed server but it will keep on failing 
    * until AdminServer is available.   
    */
   @Order(15)
@@ -947,7 +947,7 @@ class ItServerStartPolicy {
    * is not saved once the server is shutdown unless we use domain-on-pv model
    * So in MII case, startServer.sh script update the replica count but the 
    * server startup is defered till we re-start the adminserver. Here the 
-   * operator tries to starti the managed server but it will keep on failing 
+   * operator tries to start the managed server but it will keep on failing 
    * until AdminServer is available.   
    */
   @Order(16)
