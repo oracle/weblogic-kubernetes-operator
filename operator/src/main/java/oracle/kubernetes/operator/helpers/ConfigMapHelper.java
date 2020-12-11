@@ -662,13 +662,6 @@ public class ConfigMapHelper {
       setContentValue(NUM_CONFIG_MAPS, Integer.toString(numTargets));
     }
 
-    @Override
-    public void recordEntryLocation(String key, int firstTarget, int lastTarget) {
-      if (isEncodedZip(key)) {
-        setContentValue(createRangeName(key), firstTarget + " " + lastTarget);
-      }
-    }
-
     private boolean isEncodedZip(String key) {
       return ENCODED_ZIP_PATTERN.matcher(key).matches();
     }

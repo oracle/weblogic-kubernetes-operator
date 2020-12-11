@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hamcrest.Description;
 import org.hamcrest.Matchers;
@@ -99,27 +98,6 @@ public class ConfigMapSplitterTest {
     assertThat(result.get(2).numTargets, equalTo(0));
   }
 
-  @Test
-  public void whenDataSplit_recordLocationOfSplitEntry() {
-    data.put("a", "aValue");
-    data.put("b", "123456789".repeat(250));
-
-    final List<TestTarget> result = splitter.split(data);
-
-    assertThat(result.get(0).splitEntries.get("b"), equalTo(new ImmutablePair<>(0, 2)));
-  }
-
-  @Test
-  public void recordLocationsOfNonSplitItemsPastFirstMap() {
-    data.put("a", createLargeData(0.5));
-    data.put("b", createLargeData(0.6));
-    data.put("c", createLargeData(0.7));
-
-    final List<TestTarget> result = splitter.split(data);
-
-    assertThat(result.get(0).splitEntries.get("c"), equalTo(new ImmutablePair<>(1, 1)));
-  }
-  
   private static class TestTarget implements SplitterTarget {
     private final Map<String, String> data;
     private final Map<String, Pair<Integer,Integer>> splitEntries = new HashMap<>();
@@ -134,11 +112,6 @@ public class ConfigMapSplitterTest {
     @Override
     public void recordNumTargets(int numTargets) {
       this.numTargets = numTargets;
-    }
-
-    @Override
-    public void recordEntryLocation(String key, int firstTarget, int lastTarget) {
-      splitEntries.put(key, new ImmutablePair<>(firstTarget, lastTarget));
     }
 
     private String getB() {

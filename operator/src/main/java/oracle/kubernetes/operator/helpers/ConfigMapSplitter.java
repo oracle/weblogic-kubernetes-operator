@@ -30,7 +30,6 @@ public class ConfigMapSplitter<T extends SplitterTarget> {
   private final List<T> result = new ArrayList<>();
   private Map<String, String> current;
   private int remainingRoom;
-  private final Map<String, Location> locations = new HashMap<>();
 
   /**
    * Constructs a splitter object.
@@ -76,15 +75,11 @@ public class ConfigMapSplitter<T extends SplitterTarget> {
    * @param entry a data entry
    */
   private void addToSplitResult(DataEntry entry) {
-    int startIndex = result.size();
     while (entry.getRemainingLength() > 0) {
       remainingRoom -= entry.addToMap(current, remainingRoom);
       if (remainingRoom == 0) {
         recordSplitResult();
         startSplitResult();
-      }
-      if (!result.isEmpty()) {
-        locations.put(entry.key, createLocation(entry, startIndex));
       }
     }
   }
@@ -95,14 +90,6 @@ public class ConfigMapSplitter<T extends SplitterTarget> {
 
   private void recordTargetInfo(T target, int size) {
     target.recordNumTargets(size);
-
-    for (Location location : locations.values()) {
-      target.recordEntryLocation(location.key, location.first, location.last);
-    }
-  }
-
-  private Location createLocation(DataEntry entry, int startIndex) {
-    return new Location(entry, startIndex, result.size());
   }
 
   static class DataEntry implements Comparable<DataEntry> {
@@ -136,19 +123,6 @@ public class ConfigMapSplitter<T extends SplitterTarget> {
     public int compareTo(@Nonnull DataEntry o) {
       return Integer.compare(getRemainingLength(), o.getRemainingLength());
     }
-  }
-
-  static class Location {
-    private final String key;
-    private final int first;
-    private final int last;
-
-    Location(DataEntry entry, int first, int last) {
-      this.key = entry.key;
-      this.first = first;
-      this.last = last;
-    }
-
   }
 
 }

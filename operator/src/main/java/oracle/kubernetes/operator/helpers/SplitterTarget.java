@@ -14,12 +14,4 @@ public interface SplitterTarget {
    * @param numTargets the number of created targets
    */
   void recordNumTargets(int numTargets);
-
-  /**
-   * Records the location of a entry that was split.
-   * @param key the key of the split entry
-   * @param firstTarget the index of first target in which the entry was recorded
-   * @param lastTarget the index of the last target in which the entry was recorded
-   */
-  void recordEntryLocation(String key, int firstTarget, int lastTarget);
 }

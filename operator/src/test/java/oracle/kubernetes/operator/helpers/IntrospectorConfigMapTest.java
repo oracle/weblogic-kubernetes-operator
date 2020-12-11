@@ -391,19 +391,6 @@ public class IntrospectorConfigMapTest {
           .data(new HashMap<>(entries));
   }
 
-  @Test
-  public void whenDomainIsModelInImageAndEncodedZipTooLargeForSingleMap_reportRange() {
-    configureDomain().withDomainHomeSourceType(DomainSourceType.FromModel);
-    introspectResult
-          .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
-          .defineFile("domainzip.secure", LARGE_DATA_VALUE)
-          .addToPacket();
-
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
-
-    assertThat(getIntrospectorConfigMapValue("domainzip.secure.range"), equalTo("0 2"));
-  }
-
   @Nonnull
   private V1ObjectMeta createOperatorMetadata() {
     return new V1ObjectMeta().putLabelsItem(CREATEDBYOPERATOR_LABEL, "true");
