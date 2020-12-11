@@ -629,6 +629,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenReplicasLessThanDynClusterSize_createsEvent() {
+    startNoServers();
     setCluster1Replicas(0);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
     setCluster1AllowReplicasBelowMinDynClusterSize(false);
@@ -641,6 +642,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenReplicasLessThanDynClusterSize_addValidationWarning() {
+    startNoServers();
     setCluster1Replicas(0);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
     setCluster1AllowReplicasBelowMinDynClusterSize(false);
@@ -669,6 +671,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenReplicasExceedsMaxDynClusterSize_createsEvent() {
+    startNoServers();
     setCluster1Replicas(10);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
 
@@ -680,6 +683,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenReplicasExceedsMaxDynClusterSize_addValidationWarning() {
+    startNoServers();
     setCluster1Replicas(10);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
 
