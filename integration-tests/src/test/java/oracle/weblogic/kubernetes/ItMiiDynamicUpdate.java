@@ -453,7 +453,7 @@ class ItMiiDynamicUpdate {
   }
 
   /**
-   * Negative test: Changing the domain name using dynamic update.
+   * Negative test: Changing the domain name using mii dynamic update.
    */
   @Test
   @Order(5)
@@ -491,13 +491,13 @@ class ItMiiDynamicUpdate {
     assertTrue(miiDynamicUpdateDomain.getStatus().getMessage().contains(expectedErrorMsg),
         String.format("failed to find the error msg %s in domain status message", expectedErrorMsg));
 
-    // check the domain status conditions contains the error msg
+    // check the domain status condition message contains the error msg
     logger.info("verifying the domain status condition message contains the expected error msg");
-    assertTrue(domainStatusConditionContainsErrorMsg(miiDynamicUpdateDomain, expectedErrorMsg),
+    assertTrue(domainStatusConditionMsgContainsErrorMsg(miiDynamicUpdateDomain, expectedErrorMsg),
         String.format("domain status condition does not contain error msg %s", expectedErrorMsg));
   }
 
-  private boolean domainStatusConditionContainsErrorMsg(Domain domain, String errorMsg) {
+  private boolean domainStatusConditionMsgContainsErrorMsg(Domain domain, String errorMsg) {
     for (DomainCondition domainCondition : domain.getStatus().getConditions()) {
       if (domainCondition.getType().equalsIgnoreCase("Failed")
           && domainCondition.getMessage().contains(errorMsg)) {
@@ -517,47 +517,62 @@ class ItMiiDynamicUpdate {
   }
 
   private void verifyIntrospectorFails(String expectedErrorMsg) {
-    //verify the introspector pod is created
+    // verify the introspector pod is created
     logger.info("Verifying introspector pod is created");
     String introspectJobName = getIntrospectJobName(domainUid);
     checkPodExists(introspectJobName, domainUid, domainNamespace);
 
-    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-    V1Pod introspectorPod = assertDoesNotThrow(() -> getPod(domainNamespace, labelSelector, introspectJobName));
-    assertNotNull(introspectorPod);
-    assertNotNull(introspectorPod.getMetadata());
-    String introspectPodName = introspectorPod.getMetadata().getName();
+    // check whether the introspector log contains the expected error message
+    ConditionFactory withRetryPolicy = with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(2, SECONDS)
+        .atMost(2, MINUTES).await();
 
-    // check the introspect logs to see whether it contains the expected error message
-    withStandardRetryPolicy
+    withRetryPolicy
         .conditionEvaluationListener(
             condition ->
                 logger.info(
-                    "Checking for the log of introspector pod {0} contains the expected error msg {1}. "
-                        + "Elapsed time {2}ms, remaining time {3}ms",
-                    introspectPodName,
+                    "Checking for the log of introspector pod contains the expected error msg {0}. "
+                        + "Elapsed time {1}ms, remaining time {2}ms",
                     expectedErrorMsg,
                     condition.getElapsedTimeInMS(),
                     condition.getRemainingTimeInMS()))
         .until(() ->
-            podLogContainsExpectedErrorMsg(introspectPodName, domainNamespace, expectedErrorMsg));
+            podLogContainsExpectedErrorMsg(introspectJobName, domainNamespace, expectedErrorMsg));
 
     // check the status phase of the introspector pod is failed
-    withStandardRetryPolicy
+    withRetryPolicy
         .conditionEvaluationListener(
             condition ->
                 logger.info(
-                    "Checking for status phase of introspector pod {0} is Failed"
-                        + "Elapsed time {1}ms, remaining time {2}ms",
-                    introspectPodName, condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS()))
+                    "Checking for status phase of introspector pod is failed. "
+                        + "Elapsed time {0}ms, remaining time {1}ms",
+                    condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS()))
         .until(() ->
-            getPodStatusPhase(domainNamespace, labelSelector, introspectPodName).equalsIgnoreCase("Failed"));
+            podStatusPhaseContainsString(domainNamespace, introspectJobName, "Failed"));
   }
 
-  private boolean podLogContainsExpectedErrorMsg(String podName, String namespace, String errormsg) {
-    String introspectorLog = assertDoesNotThrow(() -> getPodLog(podName, namespace));
+  private String getPodNameFromJobName(String namespace, String jobName) {
+    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    V1Pod introspectorPod = assertDoesNotThrow(() -> getPod(namespace, labelSelector, jobName));
+    assertNotNull(introspectorPod);
+    assertNotNull(introspectorPod.getMetadata());
+    return introspectorPod.getMetadata().getName();
+  }
+
+  private boolean podLogContainsExpectedErrorMsg(String introspectJobName, String namespace, String errormsg) {
+
+    String introspectPodName = getPodNameFromJobName(namespace, introspectJobName);
+
+    String introspectorLog = assertDoesNotThrow(() -> getPodLog(introspectPodName, namespace));
     logger.info("introspector log: {0}", introspectorLog);
     return introspectorLog.contains(errormsg);
+  }
+
+  private boolean podStatusPhaseContainsString(String namespace, String jobName, String expectedPhase) {
+    String introspectPodName = getPodNameFromJobName(namespace, jobName);
+    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    return assertDoesNotThrow(() ->
+        getPodStatusPhase(namespace, labelSelector, introspectPodName).equalsIgnoreCase(expectedPhase));
   }
 
   private void verifyPodsNotRolled(Map<String, DateTime> podsCreationTimes) {

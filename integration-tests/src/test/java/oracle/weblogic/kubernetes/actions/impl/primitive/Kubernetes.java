@@ -537,7 +537,12 @@ public class Kubernetes {
    */
   public static String getPodStatusPhase(String namespace, String labelSelectors, String podName) throws ApiException {
     V1Pod pod = getPod(namespace, labelSelectors, podName);
-    return pod.getStatus().getPhase();
+    if (pod != null && pod.getStatus() != null) {
+      return pod.getStatus().getPhase();
+    } else {
+      getLogger().info("Pod does not exist or pod status is null");
+      return "";
+    }
   }
 
   /**
