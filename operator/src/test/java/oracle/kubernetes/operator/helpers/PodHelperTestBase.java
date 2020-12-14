@@ -48,7 +48,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
+import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
@@ -81,9 +81,12 @@ import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
@@ -93,6 +96,7 @@ import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.helpers.Matchers.ProbeMatcher.hasExpectedTuning;
+import static oracle.kubernetes.operator.helpers.Matchers.VolumeMatcher.volume;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.readOnlyVolumeMount;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.writableVolumeMount;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
@@ -100,9 +104,11 @@ import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.INTROSPECTOR_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_VOLUME;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_INITIAL_DELAY;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_PERIOD;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_TIMEOUT;
@@ -170,7 +176,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   Domain getDomain() {
-    return (Domain) testSupport.getResourceWithName(DOMAIN, DOMAIN_NAME);
+    return testSupport.getResourceWithName(DOMAIN, DOMAIN_NAME);
   }
 
   String getPodName() {
@@ -388,7 +394,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
             writableVolumeMount(
-                SIT_CONFIG_MAP_VOLUME, "/weblogic-operator/introspector"),
+                  INTROSPECTOR_VOLUME, "/weblogic-operator/introspector"),
             readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
             readOnlyVolumeMount("weblogic-scripts-cm-volume", "/weblogic-operator/scripts")));
   }
@@ -402,11 +408,24 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
             writableVolumeMount(
-                SIT_CONFIG_MAP_VOLUME, "/weblogic-operator/introspector"),
+                  INTROSPECTOR_VOLUME, "/weblogic-operator/introspector"),
             readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
             readOnlyVolumeMount("weblogic-scripts-cm-volume", "/weblogic-operator/scripts"),
             readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
                 RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH))); 
+  }
+
+  @Test
+  public void whenIntrospectionCreatesMultipleConfigMaps_createCorrespondingVolumeMounts() {
+    testSupport.addToPacket(NUM_CONFIG_MAPS, "3");
+
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+              hasItem(writableVolumeMount(INTROSPECTOR_VOLUME, "/weblogic-operator/introspector")),
+              hasItem(writableVolumeMount(INTROSPECTOR_VOLUME + "_1", "/weblogic-operator/introspector_1")),
+              hasItem(writableVolumeMount(INTROSPECTOR_VOLUME + "_2", "/weblogic-operator/introspector_2"))
+              ));
   }
 
   public void reportInspectionWasRun() {
@@ -606,7 +625,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     assertThat(logRecords, containsInfo(getPatchedMessageKey()));
 
-    return (V1Pod) testSupport.getResourceWithName(KubernetesTestSupport.POD, getPodName());
+    return testSupport.getResourceWithName(KubernetesTestSupport.POD, getPodName());
   }
 
   protected abstract ServerConfigurator configureServer(
@@ -1038,20 +1057,20 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   @Test
   public void whenMiiSecretsHashChanged_replacePod() {
-    testSupport.addToPacket(IntrospectorConfigMapKeys.SECRETS_MD_5, "originalSecret");
+    testSupport.addToPacket(IntrospectorConfigMapConstants.SECRETS_MD_5, "originalSecret");
     initializeExistingPod();
 
-    testSupport.addToPacket(IntrospectorConfigMapKeys.SECRETS_MD_5, "newSecret");
+    testSupport.addToPacket(IntrospectorConfigMapConstants.SECRETS_MD_5, "newSecret");
 
     verifyPodReplaced();
   }
 
   @Test
   public void whenMiiDomainZipHashChanged_replacePod() {
-    testSupport.addToPacket(IntrospectorConfigMapKeys.DOMAINZIP_HASH, "originalSecret");
+    testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "originalSecret");
     initializeExistingPod();
 
-    testSupport.addToPacket(IntrospectorConfigMapKeys.DOMAINZIP_HASH, "newSecret");
+    testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "newSecret");
 
     verifyPodReplaced();
   }
@@ -1139,7 +1158,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         .addPortsItem(
             new V1ContainerPort().name("default").containerPort(listenPort).protocol("TCP"))
         .lifecycle(createLifecycle())
-        .volumeMounts(PodDefaults.getStandardVolumeMounts(UID))
+        .volumeMounts(PodDefaults.getStandardVolumeMounts(UID, 1))
         .command(createStartCommand())
         .addEnvItem(envItem("DOMAIN_NAME", DOMAIN_NAME))
         .addEnvItem(envItem("DOMAIN_HOME", "/u01/oracle/user_projects/domains"))
@@ -1168,7 +1187,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         .securityContext(new V1PodSecurityContext())
         .containers(Collections.singletonList(createPodSpecContainer()))
         .nodeSelector(Collections.emptyMap())
-        .volumes(PodDefaults.getStandardVolumes(UID));
+        .volumes(PodDefaults.getStandardVolumes(UID, 1));
   }
 
   static V1PodSecurityContext createPodSecurityContext(long runAsGroup) {
@@ -1235,6 +1254,26 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     configureDomain().withDefaultImage(null);
 
     assertThat(getCreatedPodSpecContainer().getImage(), equalTo(DEFAULT_IMAGE));
+  }
+
+  @Test
+  public void verifyStandardVolumes() {
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasItem(volume(INTROSPECTOR_VOLUME, UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)),
+              hasItem(volume(DEBUG_CM_VOLUME, UID + DOMAIN_DEBUG_CONFIG_MAP_SUFFIX)),
+              hasItem(volume(SCRIPTS_VOLUME, SCRIPT_CONFIG_MAP_NAME))));
+  }
+
+  @Test
+  public void whenIntrospectionCreatesMultipleConfigMaps_createCorrespondingVolumes() {
+    testSupport.addToPacket(NUM_CONFIG_MAPS, "3");
+
+    assertThat(
+          getCreatedPod().getSpec().getVolumes(),
+          allOf(hasItem(volume(INTROSPECTOR_VOLUME, UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)),
+                hasItem(volume(INTROSPECTOR_VOLUME + "_1", UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX + "_1")),
+                hasItem(volume(INTROSPECTOR_VOLUME + "_2", UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX + "_2"))));
   }
 
   @Test
